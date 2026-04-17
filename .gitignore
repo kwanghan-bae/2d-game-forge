@@ -1,0 +1,41 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# build outputs
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# caches
+.turbo/
+.cache/
+coverage/
+playwright-report/
+test-results/
+.vitest/
+
+# native
+ios/App/Pods/
+ios/App/build/
+android/.gradle/
+android/build/
+android/app/build/
+
+# editors / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
