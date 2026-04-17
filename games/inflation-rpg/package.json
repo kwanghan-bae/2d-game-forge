@@ -1,0 +1,49 @@
+{
+  "name": "@forge/game-inflation-rpg",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./game": "./src/startGame.ts"
+  },
+  "scripts": {
+    "dev": "next dev --port 3100",
+    "build": "next build",
+    "build:web": "next build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src tests",
+    "e2e": "playwright test",
+    "cap:sync": "cap sync",
+    "build:ios": "next build && cap sync ios && cap open ios",
+    "build:android": "next build && cap sync android && cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.2",
+    "@preact/signals-react": "^3.10.0",
+    "bignumber.js": "^9.3.1",
+    "next": "16.1.1",
+    "phaser": "^3.90.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@playwright/test": "^1.57.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "jsdom": "^27.4.0",
+    "tailwindcss": "^4",
+    "typescript": "^5.6.0",
+    "vitest": "^4.0.16",
+    "@vitest/coverage-v8": "^4.0.16"
+  }
+}
