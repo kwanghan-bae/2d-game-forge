@@ -27,6 +27,15 @@ export default [
       boundaries,
     },
     settings: {
+      'import/resolver': {
+        typescript: { alwaysTryTypes: true },
+        node: true,
+      },
+      'boundaries/include': [
+        'packages/**/*.{ts,tsx}',
+        'apps/**/*.{ts,tsx}',
+        'games/**/*.{ts,tsx}',
+      ],
       'boundaries/elements': [
         { type: 'core', pattern: 'packages/2d-core/**' },
         { type: 'genre', pattern: 'packages/2d-*-core/**' },
