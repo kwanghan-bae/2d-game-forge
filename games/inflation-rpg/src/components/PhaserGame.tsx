@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { EventBus } from '../game/EventBus';
-import StartGame from '../game/main';
+import { StartGame } from '../startGame';
 
 /**
  * PhaserGame 컴포넌트에 전달되는 프로퍼티 인터페이스입니다.
@@ -22,7 +22,7 @@ export function usePhaserGame(currentActiveScene?: (scene: Phaser.Scene) => void
     useEffect(() => {
         if (game.current) return;
 
-        const phaserInstance = StartGame(containerId);
+        const phaserInstance = StartGame({ parent: containerId, assetsBasePath: '', exposeTestHooks: false });
         game.current = phaserInstance;
 
         if (typeof window !== 'undefined') {
