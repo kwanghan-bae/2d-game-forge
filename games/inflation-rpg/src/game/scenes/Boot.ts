@@ -16,8 +16,13 @@ export class Boot extends Scene {
      * Preloader에서 즉시 사용할 기본 이미지를 로드합니다.
      */
     preload() {
-        // 로딩 화면 배경으로 사용할 이미지 로드
-        this.load.image('background', 'assets/images/pixel_battle_bg.png');
+        const base = this.game.registry.get('assetsBasePath');
+        if (typeof base === 'string' && base.length > 0) {
+            this.load.setBaseURL(base);
+            this.load.image('background', 'images/pixel_battle_bg.png');
+        } else {
+            this.load.image('background', 'assets/images/pixel_battle_bg.png');
+        }
     }
 
     /**
