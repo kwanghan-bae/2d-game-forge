@@ -6,6 +6,7 @@
     "noEmit": true,
     "plugins": [{ "name": "next" }],
     "paths": {
+      "@/game/*": ["../../games/inflation-rpg/src/game/*"],
       "@/*": ["./src/*"]
     }
   },
