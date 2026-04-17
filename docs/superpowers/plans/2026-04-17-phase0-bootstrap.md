@@ -1,10 +1,10 @@
-# Phase 0 — Bootstrap Implementation Plan
+# Phase 0 — Bootstrap 구현 계획
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Create the `2d-game-forge` pnpm + Turborepo monorepo skeleton with an empty portal app and a placeholder `@forge/core` package. `pnpm dev` must show the portal with a "no games yet" message, and `pnpm turbo run typecheck lint` must pass.
+**목표:** pnpm + Turborepo monorepo 스켈레톤을 생성한다. 빈 포털 앱과 플레이스홀더 `@forge/core` 패키지를 포함한다. `pnpm dev` 실행 시 "아직 게임 없음" 메시지가 있는 포털이 표시되어야 하고, `pnpm turbo run typecheck lint`가 통과되어야 한다.
 
-**Architecture:** Single-repo monorepo. `apps/dev-shell` is a Next.js 16 app that will dynamically load games from `games/*`. `packages/*` hosts reusable code. Turborepo caches builds by dependency graph. CI enforces typecheck, lint, and a dependency boundaries rule. No game code exists yet — Phase 1 plan ports korea-inflation-rpg.
+**아키텍처:** Single-repo monorepo. `apps/dev-shell`은 Next.js 16 앱으로, `games/*`에서 게임을 동적으로 로드한다. `packages/*`에는 재사용 가능한 코드를 둔다. Turborepo는 의존성 그래프에 따라 빌드를 캐싱한다. CI는 typecheck, lint, 의존성 방향 규칙을 강제한다. Phase 0에는 게임 코드가 존재하지 않는다 — Phase 1 계획에서 korea-inflation-rpg를 이식한다.
 
 **Tech Stack:**
 - pnpm workspaces (v9+)
@@ -12,19 +12,19 @@
 - TypeScript 5 (strict)
 - Next.js 16 + React 19 (dev-shell)
 - Tailwind v4 (dev-shell UI)
-- Vitest 4 (unit tests for shared types)
-- Playwright 1.57 (portal smoke)
+- Vitest 4 (공용 타입 단위 테스트)
+- Playwright 1.57 (포털 smoke test)
 - Zod 4 (manifest schema)
-- ESLint 9 + `eslint-plugin-boundaries` (dependency direction enforcement)
-- `madge` (circular dependency detection)
+- ESLint 9 + `eslint-plugin-boundaries` (의존성 방향 강제)
+- `madge` (순환 의존성 탐지)
 
 **Spec:** `docs/superpowers/specs/2026-04-17-2d-game-forge-initial-design.md`
 
 ---
 
-## File Structure
+## 파일 구조
 
-Files created in this plan (all paths relative to repo root `/Users/joel/Desktop/git/2d-game-forge/`):
+이 계획에서 생성하는 파일 목록 (모든 경로는 레포 루트 `/Users/joel/Desktop/git/2d-game-forge/` 기준 상대 경로):
 
 ```
 package.json                              # root (pnpm scripts, devDeps)
@@ -60,32 +60,32 @@ apps/dev-shell/
 └── playwright.config.ts
 ```
 
-Each file has one responsibility. `@forge/core` in this phase only hosts the shared `GameManifest` schema so the dev-shell has a typed contract. Everything else in `@forge/core` waits until Phase 1.
+각 파일은 단일 책임을 가진다. Phase 0에서 `@forge/core`는 공유 `GameManifest` schema만 제공하여 dev-shell이 타입화된 계약을 갖도록 한다. `@forge/core`의 나머지 내용은 Phase 1을 기다린다.
 
 ---
 
-## Task Order and Dependencies
+## 태스크 순서와 의존성
 
-Tasks run sequentially. Each task ends with a commit. Do not skip the commit step — it makes rollback and review easy.
+태스크는 순차적으로 실행한다. 각 태스크는 commit으로 끝난다. commit 단계를 건너뛰지 않는다 — 롤백과 리뷰가 쉬워진다.
 
 ---
 
-### Task 1: Lock Node version and package manager
+### 태스크 1: Node 버전과 패키지 매니저 고정
 
-**Files:**
-- Create: `.nvmrc`
-- Create: `.npmrc`
+**파일:**
+- 생성: `.nvmrc`
+- 생성: `.npmrc`
 
-- [ ] **Step 1: Pin Node version to 22 LTS**
+- [ ] **단계 1: Node 버전을 22 LTS로 고정한다**
 
-Write `.nvmrc`:
+`.nvmrc`를 작성한다:
 ```
 22
 ```
 
-- [ ] **Step 2: Configure pnpm strictness**
+- [ ] **단계 2: pnpm 엄격 모드를 설정한다**
 
-Write `.npmrc`:
+`.npmrc`를 작성한다:
 ```
 engine-strict=true
 save-exact=false
@@ -93,18 +93,18 @@ auto-install-peers=true
 node-linker=isolated
 ```
 
-- [ ] **Step 3: Verify Node is available**
+- [ ] **단계 3: Node가 사용 가능한지 확인한다**
 
-Run: `node --version`
-Expected: `v22.x.x`. If not, switch with `nvm use 22`.
+실행: `node --version`
+예상 결과: `v22.x.x`. 아닐 경우 `nvm use 22`로 전환한다.
 
-Run: `corepack --version`
-Expected: a version number. If `corepack` is missing, install Node 22 via nvm.
+실행: `corepack --version`
+예상 결과: 버전 번호. `corepack`이 없으면 nvm으로 Node 22를 설치한다.
 
-Run: `corepack enable pnpm && pnpm --version`
-Expected: `9.x` or higher.
+실행: `corepack enable pnpm && pnpm --version`
+예상 결과: `9.x` 이상.
 
-- [ ] **Step 4: Commit**
+- [ ] **단계 4: Commit**
 
 ```bash
 git add .nvmrc .npmrc
@@ -113,15 +113,15 @@ git commit -m "chore: pin node 22 and pnpm via corepack"
 
 ---
 
-### Task 2: Root package.json and workspace config
+### 태스크 2: 루트 package.json과 workspace 설정
 
-**Files:**
-- Create: `package.json` (root)
-- Create: `pnpm-workspace.yaml`
+**파일:**
+- 생성: `package.json` (루트)
+- 생성: `pnpm-workspace.yaml`
 
-- [ ] **Step 1: Write pnpm workspace globs**
+- [ ] **단계 1: pnpm workspace glob을 작성한다**
 
-Write `pnpm-workspace.yaml`:
+`pnpm-workspace.yaml`을 작성한다:
 ```yaml
 packages:
   - "apps/*"
@@ -130,9 +130,9 @@ packages:
   - "tooling/*"
 ```
 
-- [ ] **Step 2: Write root package.json**
+- [ ] **단계 2: 루트 package.json을 작성한다**
 
-Write `package.json`:
+`package.json`을 작성한다:
 ```json
 {
   "name": "2d-game-forge",
@@ -163,17 +163,17 @@ Write `package.json`:
 }
 ```
 
-- [ ] **Step 3: Install root deps**
+- [ ] **단계 3: 루트 dependency를 설치한다**
 
-Run: `pnpm install`
-Expected: `Done` with no errors. Creates `pnpm-lock.yaml` and root `node_modules`.
+실행: `pnpm install`
+예상 결과: 오류 없이 `Done`. `pnpm-lock.yaml`과 루트 `node_modules`가 생성된다.
 
-- [ ] **Step 4: Verify turbo is callable**
+- [ ] **단계 4: turbo 호출 가능 여부를 확인한다**
 
-Run: `pnpm turbo --version`
-Expected: `2.x.x`.
+실행: `pnpm turbo --version`
+예상 결과: `2.x.x`.
 
-- [ ] **Step 5: Commit**
+- [ ] **단계 5: Commit**
 
 ```bash
 git add package.json pnpm-workspace.yaml pnpm-lock.yaml
@@ -182,14 +182,14 @@ git commit -m "chore: init pnpm workspace with turbo"
 
 ---
 
-### Task 3: Shared TypeScript base config
+### 태스크 3: 공용 TypeScript 기본 설정
 
-**Files:**
-- Create: `tsconfig.base.json`
+**파일:**
+- 생성: `tsconfig.base.json`
 
-- [ ] **Step 1: Write base config**
+- [ ] **단계 1: 기본 설정을 작성한다**
 
-Write `tsconfig.base.json`:
+`tsconfig.base.json`을 작성한다:
 ```json
 {
   "compilerOptions": {
@@ -216,7 +216,7 @@ Write `tsconfig.base.json`:
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **단계 2: Commit**
 
 ```bash
 git add tsconfig.base.json
@@ -225,14 +225,14 @@ git commit -m "chore: add shared tsconfig.base.json"
 
 ---
 
-### Task 4: Turborepo pipeline config
+### 태스크 4: Turborepo pipeline 설정
 
-**Files:**
-- Create: `turbo.json`
+**파일:**
+- 생성: `turbo.json`
 
-- [ ] **Step 1: Write turbo.json**
+- [ ] **단계 1: turbo.json을 작성한다**
 
-Write `turbo.json`:
+`turbo.json`을 작성한다:
 ```json
 {
   "$schema": "https://turbo.build/schema.json",
@@ -269,12 +269,12 @@ Write `turbo.json`:
 }
 ```
 
-- [ ] **Step 2: Verify turbo parses the config**
+- [ ] **단계 2: turbo가 설정을 파싱하는지 확인한다**
 
-Run: `pnpm turbo run typecheck --dry-run=json | head -20`
-Expected: valid JSON describing the task graph, no workspaces yet (empty tasks array is fine).
+실행: `pnpm turbo run typecheck --dry-run=json | head -20`
+예상 결과: 태스크 그래프를 나타내는 유효한 JSON. 아직 workspace가 없으므로 tasks 배열이 비어 있어도 괜찮다.
 
-- [ ] **Step 3: Commit**
+- [ ] **단계 3: Commit**
 
 ```bash
 git add turbo.json
@@ -283,15 +283,15 @@ git commit -m "chore: add turbo pipeline config"
 
 ---
 
-### Task 5: Prettier config
+### 태스크 5: Prettier 설정
 
-**Files:**
-- Create: `.prettierrc.json`
-- Create: `.prettierignore`
+**파일:**
+- 생성: `.prettierrc.json`
+- 생성: `.prettierignore`
 
-- [ ] **Step 1: Write prettier config**
+- [ ] **단계 1: prettier 설정을 작성한다**
 
-Write `.prettierrc.json`:
+`.prettierrc.json`을 작성한다:
 ```json
 {
   "semi": true,
@@ -303,9 +303,9 @@ Write `.prettierrc.json`:
 }
 ```
 
-- [ ] **Step 2: Write prettier ignore**
+- [ ] **단계 2: prettier ignore를 작성한다**
 
-Write `.prettierignore`:
+`.prettierignore`를 작성한다:
 ```
 node_modules
 .next
@@ -318,7 +318,7 @@ test-results
 pnpm-lock.yaml
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **단계 3: Commit**
 
 ```bash
 git add .prettierrc.json .prettierignore
@@ -327,17 +327,17 @@ git commit -m "chore: add prettier config"
 
 ---
 
-### Task 6: Create @forge/core package skeleton (no logic yet)
+### 태스크 6: @forge/core 패키지 스켈레톤 생성 (로직 없음)
 
-**Files:**
-- Create: `packages/2d-core/package.json`
-- Create: `packages/2d-core/tsconfig.json`
-- Create: `packages/2d-core/src/index.ts`
-- Create: `packages/2d-core/README.md`
+**파일:**
+- 생성: `packages/2d-core/package.json`
+- 생성: `packages/2d-core/tsconfig.json`
+- 생성: `packages/2d-core/src/index.ts`
+- 생성: `packages/2d-core/README.md`
 
-- [ ] **Step 1: Write package manifest**
+- [ ] **단계 1: 패키지 manifest를 작성한다**
 
-Write `packages/2d-core/package.json`:
+`packages/2d-core/package.json`을 작성한다:
 ```json
 {
   "name": "@forge/core",
@@ -367,9 +367,9 @@ Write `packages/2d-core/package.json`:
 }
 ```
 
-- [ ] **Step 2: Write tsconfig**
+- [ ] **단계 2: tsconfig를 작성한다**
 
-Write `packages/2d-core/tsconfig.json`:
+`packages/2d-core/tsconfig.json`을 작성한다:
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -381,13 +381,11 @@ Write `packages/2d-core/tsconfig.json`:
 }
 ```
 
-`rootDir` is intentionally omitted: under `noEmit: true` it has no effect on
-output layout, and setting it to `./src` conflicts with `include: tests/**/*`
-(TS6059).
+`rootDir`는 의도적으로 생략한다: `noEmit: true` 상태에서는 출력 레이아웃에 영향을 주지 않으며, `./src`로 설정하면 `include: tests/**/*`와 충돌한다 (TS6059).
 
-- [ ] **Step 3: Write README**
+- [ ] **단계 3: README를 작성한다**
 
-Write `packages/2d-core/README.md`:
+`packages/2d-core/README.md`를 작성한다:
 ```markdown
 # @forge/core
 
@@ -402,36 +400,35 @@ demand per the "rule of three" — see the initial design spec.
   loads a game.
 ```
 
-- [ ] **Step 4: Write index barrel**
+- [ ] **단계 4: index barrel을 작성한다**
 
-Write `packages/2d-core/src/index.ts`:
+`packages/2d-core/src/index.ts`를 작성한다:
 ```ts
 export { GameManifest, parseGameManifest } from './manifest';
 export type { GameManifestInput, GameManifestValue } from './manifest';
 ```
 
-- [ ] **Step 5: Install package deps**
+- [ ] **단계 5: 패키지 dependency를 설치한다**
 
-Run: `pnpm install`
-Expected: `@forge/core` is linked into the workspace, zod is downloaded.
+실행: `pnpm install`
+예상 결과: `@forge/core`가 workspace에 링크되고, zod가 다운로드된다.
 
-- [ ] **Step 6: Commit (manifest file added in Task 7)**
+- [ ] **단계 6: Commit 보류 (manifest 파일은 태스크 7에서 추가됨)**
 
-Do not commit yet. Task 7 adds the `manifest.ts` file that `index.ts` imports
-from, so committing now would leave a broken build. Proceed directly to Task 7.
+지금은 commit하지 않는다. 태스크 7에서 `index.ts`가 import하는 `manifest.ts` 파일을 추가하므로, 지금 commit하면 빌드가 깨진 상태가 된다. 태스크 7로 바로 진행한다.
 
 ---
 
-### Task 7: GameManifest schema (TDD)
+### 태스크 7: GameManifest schema (TDD)
 
-**Files:**
-- Create: `packages/2d-core/src/manifest.ts`
-- Create: `packages/2d-core/tests/manifest.test.ts`
-- Create: `packages/2d-core/vitest.config.ts`
+**파일:**
+- 생성: `packages/2d-core/src/manifest.ts`
+- 생성: `packages/2d-core/tests/manifest.test.ts`
+- 생성: `packages/2d-core/vitest.config.ts`
 
-- [ ] **Step 1: Write vitest config**
+- [ ] **단계 1: vitest config를 작성한다**
 
-Write `packages/2d-core/vitest.config.ts`:
+`packages/2d-core/vitest.config.ts`를 작성한다:
 ```ts
 import { defineConfig } from 'vitest/config';
 
@@ -443,9 +440,9 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [ ] **단계 2: 실패하는 테스트를 작성한다**
 
-Write `packages/2d-core/tests/manifest.test.ts`:
+`packages/2d-core/tests/manifest.test.ts`를 작성한다:
 ```ts
 import { describe, expect, it } from 'vitest';
 import { parseGameManifest } from '../src/manifest';
@@ -495,14 +492,14 @@ describe('parseGameManifest', () => {
 });
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [ ] **단계 3: 테스트를 실행하여 실패를 확인한다**
 
-Run: `pnpm --filter @forge/core test`
-Expected: FAIL with "Cannot find module '../src/manifest'" or equivalent.
+실행: `pnpm --filter @forge/core test`
+예상 결과: "Cannot find module '../src/manifest'" 또는 동등한 오류로 FAIL.
 
-- [ ] **Step 4: Write the manifest schema**
+- [ ] **단계 4: manifest schema를 작성한다**
 
-Write `packages/2d-core/src/manifest.ts`:
+`packages/2d-core/src/manifest.ts`를 작성한다:
 ```ts
 import { z } from 'zod';
 
@@ -524,17 +521,17 @@ export function parseGameManifest(input: unknown): GameManifestValue {
 }
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [ ] **단계 5: 테스트를 실행하여 통과를 확인한다**
 
-Run: `pnpm --filter @forge/core test`
-Expected: 4 passed.
+실행: `pnpm --filter @forge/core test`
+예상 결과: 4개 통과.
 
-- [ ] **Step 6: Typecheck the package**
+- [ ] **단계 6: 패키지를 typecheck한다**
 
-Run: `pnpm --filter @forge/core typecheck`
-Expected: exit 0.
+실행: `pnpm --filter @forge/core typecheck`
+예상 결과: exit 0.
 
-- [ ] **Step 7: Commit**
+- [ ] **단계 7: Commit**
 
 ```bash
 git add packages/2d-core pnpm-lock.yaml
@@ -543,21 +540,21 @@ git commit -m "feat(core): add GameManifest zod schema"
 
 ---
 
-### Task 8: Create @forge/dev-shell Next.js app
+### 태스크 8: @forge/dev-shell Next.js 앱 생성
 
-**Files:**
-- Create: `apps/dev-shell/package.json`
-- Create: `apps/dev-shell/tsconfig.json`
-- Create: `apps/dev-shell/next.config.ts`
-- Create: `apps/dev-shell/next-env.d.ts`
-- Create: `apps/dev-shell/postcss.config.mjs`
-- Create: `apps/dev-shell/tailwind.config.ts`
-- Create: `apps/dev-shell/src/app/layout.tsx`
-- Create: `apps/dev-shell/src/app/globals.css`
+**파일:**
+- 생성: `apps/dev-shell/package.json`
+- 생성: `apps/dev-shell/tsconfig.json`
+- 생성: `apps/dev-shell/next.config.ts`
+- 생성: `apps/dev-shell/next-env.d.ts`
+- 생성: `apps/dev-shell/postcss.config.mjs`
+- 생성: `apps/dev-shell/tailwind.config.ts`
+- 생성: `apps/dev-shell/src/app/layout.tsx`
+- 생성: `apps/dev-shell/src/app/globals.css`
 
-- [ ] **Step 1: Write package manifest**
+- [ ] **단계 1: 패키지 manifest를 작성한다**
 
-Write `apps/dev-shell/package.json`:
+`apps/dev-shell/package.json`을 작성한다:
 ```json
 {
   "name": "@forge/dev-shell",
@@ -591,9 +588,9 @@ Write `apps/dev-shell/package.json`:
 }
 ```
 
-- [ ] **Step 2: Write tsconfig**
+- [ ] **단계 2: tsconfig를 작성한다**
 
-Write `apps/dev-shell/tsconfig.json`:
+`apps/dev-shell/tsconfig.json`을 작성한다:
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -616,9 +613,9 @@ Write `apps/dev-shell/tsconfig.json`:
 }
 ```
 
-- [ ] **Step 3: Write next config**
+- [ ] **단계 3: next config를 작성한다**
 
-Write `apps/dev-shell/next.config.ts`:
+`apps/dev-shell/next.config.ts`를 작성한다:
 ```ts
 import type { NextConfig } from 'next';
 
@@ -632,26 +629,26 @@ const config: NextConfig = {
 export default config;
 ```
 
-- [ ] **Step 4: Write Next type shim**
+- [ ] **단계 4: Next 타입 shim을 작성한다**
 
-Write `apps/dev-shell/next-env.d.ts`:
+`apps/dev-shell/next-env.d.ts`를 작성한다:
 ```ts
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
 ```
 
-- [ ] **Step 5: Write PostCSS config**
+- [ ] **단계 5: PostCSS 설정을 작성한다**
 
-Write `apps/dev-shell/postcss.config.mjs`:
+`apps/dev-shell/postcss.config.mjs`를 작성한다:
 ```js
 export default {
   plugins: { '@tailwindcss/postcss': {} },
 };
 ```
 
-- [ ] **Step 6: Write Tailwind config**
+- [ ] **단계 6: Tailwind 설정을 작성한다**
 
-Write `apps/dev-shell/tailwind.config.ts`:
+`apps/dev-shell/tailwind.config.ts`를 작성한다:
 ```ts
 import type { Config } from 'tailwindcss';
 
@@ -662,9 +659,9 @@ const config: Config = {
 export default config;
 ```
 
-- [ ] **Step 7: Write root layout**
+- [ ] **단계 7: 루트 레이아웃을 작성한다**
 
-Write `apps/dev-shell/src/app/layout.tsx`:
+`apps/dev-shell/src/app/layout.tsx`를 작성한다:
 ```tsx
 import type { ReactNode } from 'react';
 import './globals.css';
@@ -683,9 +680,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 8: Write globals CSS**
+- [ ] **단계 8: globals CSS를 작성한다**
 
-Write `apps/dev-shell/src/app/globals.css`:
+`apps/dev-shell/src/app/globals.css`를 작성한다:
 ```css
 @import 'tailwindcss';
 
@@ -697,27 +694,27 @@ body {
 }
 ```
 
-- [ ] **Step 9: Install deps**
+- [ ] **단계 9: dependency를 설치한다**
 
-Run: `pnpm install`
-Expected: `Done`. `@forge/core` is linked via `workspace:*`.
+실행: `pnpm install`
+예상 결과: `Done`. `@forge/core`가 `workspace:*`를 통해 링크된다.
 
-- [ ] **Step 10: Do not commit yet — Task 9 adds the pages**
+- [ ] **단계 10: 아직 commit하지 않는다 — 태스크 9에서 페이지를 추가함**
 
-The app does not yet have any page. Next will fail to build. Proceed to Task 9.
+앱에 아직 페이지가 없다. Next가 빌드에 실패한다. 태스크 9로 진행한다.
 
 ---
 
-### Task 9: Portal selector page and game loader route (no games registered yet)
+### 태스크 9: 포털 selector 페이지와 game loader 라우트 (아직 게임 없음)
 
-**Files:**
-- Create: `apps/dev-shell/src/lib/registry.ts`
-- Create: `apps/dev-shell/src/app/page.tsx`
-- Create: `apps/dev-shell/src/app/games/[slug]/page.tsx`
+**파일:**
+- 생성: `apps/dev-shell/src/lib/registry.ts`
+- 생성: `apps/dev-shell/src/app/page.tsx`
+- 생성: `apps/dev-shell/src/app/games/[slug]/page.tsx`
 
-- [ ] **Step 1: Write the empty registry**
+- [ ] **단계 1: 빈 registry를 작성한다**
 
-Write `apps/dev-shell/src/lib/registry.ts`:
+`apps/dev-shell/src/lib/registry.ts`를 작성한다:
 ```ts
 import type { GameManifestValue } from '@forge/core/manifest';
 
@@ -733,12 +730,11 @@ export function findGame(slug: string): RegisteredGame | undefined {
 }
 ```
 
-Phase 1 will push manifests into this array when `games/inflation-rpg` is
-registered. For Phase 0 it stays empty.
+Phase 1에서 `games/inflation-rpg`가 등록될 때 manifest를 이 배열에 push한다. Phase 0에서는 비어 있는 상태를 유지한다.
 
-- [ ] **Step 2: Write the selector page**
+- [ ] **단계 2: selector 페이지를 작성한다**
 
-Write `apps/dev-shell/src/app/page.tsx`:
+`apps/dev-shell/src/app/page.tsx`를 작성한다:
 ```tsx
 import Link from 'next/link';
 import { registeredGames } from '@/lib/registry';
@@ -779,9 +775,9 @@ export default function HomePage() {
 }
 ```
 
-- [ ] **Step 3: Write the dynamic game route**
+- [ ] **단계 3: 동적 game 라우트를 작성한다**
 
-Write `apps/dev-shell/src/app/games/[slug]/page.tsx`:
+`apps/dev-shell/src/app/games/[slug]/page.tsx`를 작성한다:
 ```tsx
 import { notFound } from 'next/navigation';
 import { findGame } from '@/lib/registry';
@@ -809,24 +805,23 @@ export default async function GamePage({ params }: GamePageProps) {
 }
 ```
 
-- [ ] **Step 4: Start the dev server**
+- [ ] **단계 4: dev 서버를 시작한다**
 
-Run: `pnpm --filter @forge/dev-shell dev` (in a separate terminal or background)
-Expected: `Ready` message. `http://localhost:3000` shows the home page with
-the "아직 등록된 게임이 없습니다" message.
+실행: `pnpm --filter @forge/dev-shell dev` (별도 터미널 또는 백그라운드에서)
+예상 결과: `Ready` 메시지. `http://localhost:3000`에서 "아직 등록된 게임이 없습니다" 메시지가 있는 홈 페이지가 표시된다.
 
-Manual check: open the URL in a browser.
+브라우저에서 URL을 열어 수동으로 확인한다.
 
-- [ ] **Step 5: Stop the dev server**
+- [ ] **단계 5: dev 서버를 종료한다**
 
-Ctrl+C or kill the background job.
+Ctrl+C 또는 백그라운드 작업을 종료한다.
 
-- [ ] **Step 6: Typecheck**
+- [ ] **단계 6: Typecheck를 실행한다**
 
-Run: `pnpm --filter @forge/dev-shell typecheck`
-Expected: exit 0.
+실행: `pnpm --filter @forge/dev-shell typecheck`
+예상 결과: exit 0.
 
-- [ ] **Step 7: Commit**
+- [ ] **단계 7: Commit**
 
 ```bash
 git add apps/dev-shell pnpm-lock.yaml
@@ -835,15 +830,15 @@ git commit -m "feat(dev-shell): add portal selector and game route"
 
 ---
 
-### Task 10: Portal smoke E2E (Playwright)
+### 태스크 10: 포털 smoke E2E (Playwright)
 
-**Files:**
-- Create: `apps/dev-shell/playwright.config.ts`
-- Create: `apps/dev-shell/tests/e2e/portal.spec.ts`
+**파일:**
+- 생성: `apps/dev-shell/playwright.config.ts`
+- 생성: `apps/dev-shell/tests/e2e/portal.spec.ts`
 
-- [ ] **Step 1: Write the failing smoke test**
+- [ ] **단계 1: 실패하는 smoke test를 작성한다**
 
-Write `apps/dev-shell/tests/e2e/portal.spec.ts`:
+`apps/dev-shell/tests/e2e/portal.spec.ts`를 작성한다:
 ```ts
 import { expect, test } from '@playwright/test';
 
@@ -861,9 +856,9 @@ test('unknown game slug renders 404', async ({ page }) => {
 });
 ```
 
-- [ ] **Step 2: Write the Playwright config**
+- [ ] **단계 2: Playwright config를 작성한다**
 
-Write `apps/dev-shell/playwright.config.ts`:
+`apps/dev-shell/playwright.config.ts`를 작성한다:
 ```ts
 import { defineConfig, devices } from '@playwright/test';
 
@@ -890,17 +885,17 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: Install Playwright browsers**
+- [ ] **단계 3: Playwright 브라우저를 설치한다**
 
-Run: `pnpm --filter @forge/dev-shell exec playwright install chromium`
-Expected: chromium downloaded.
+실행: `pnpm --filter @forge/dev-shell exec playwright install chromium`
+예상 결과: chromium이 다운로드된다.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [ ] **단계 4: 테스트를 실행하여 통과를 확인한다**
 
-Run: `pnpm --filter @forge/dev-shell e2e`
-Expected: 2 passed. (Playwright starts its own dev server via `webServer`.)
+실행: `pnpm --filter @forge/dev-shell e2e`
+예상 결과: 2개 통과. (Playwright가 `webServer`를 통해 자체 dev 서버를 시작한다.)
 
-- [ ] **Step 5: Commit**
+- [ ] **단계 5: Commit**
 
 ```bash
 git add apps/dev-shell
@@ -909,31 +904,29 @@ git commit -m "test(dev-shell): add portal smoke e2e"
 
 ---
 
-### Task 11: ESLint flat config with boundary enforcement
+### 태스크 11: boundary 강제가 포함된 ESLint flat config
 
-**Files:**
-- Create: `eslint.config.mjs`
+**파일:**
+- 생성: `eslint.config.mjs`
 
-- [ ] **Step 1: Install eslint-plugin-boundaries**
+- [ ] **단계 1: eslint-plugin-boundaries를 설치한다**
 
-Run:
+실행:
 ```bash
 pnpm add -Dw eslint-plugin-boundaries @typescript-eslint/parser @typescript-eslint/eslint-plugin
 ```
 
-Expected: deps added to root `package.json`.
+예상 결과: 루트 `package.json`에 dependency가 추가된다.
 
-- [ ] **Step 2: Install `eslint-plugin-boundaries@^5`**
+- [ ] **단계 2: `eslint-plugin-boundaries@^5`를 설치한다**
 
-Run: `pnpm add -Dw eslint-plugin-boundaries@^5.0.0 eslint-plugin-import eslint-import-resolver-typescript`
+실행: `pnpm add -Dw eslint-plugin-boundaries@^5.0.0 eslint-plugin-import eslint-import-resolver-typescript`
 
-Why: boundaries v6 renamed `element-types` to `dependencies` and left the old
-name as a deprecated silent alias that does nothing. v5 is the last version
-where the config below actually enforces rules.
+이유: boundaries v6에서 `element-types`가 `dependencies`로 이름이 바뀌었으며, 기존 이름은 아무 동작도 하지 않는 deprecated silent alias로 남아 있다. v5는 아래 설정이 실제로 규칙을 강제하는 마지막 버전이다.
 
-- [ ] **Step 3: Write the flat config**
+- [ ] **단계 3: flat config를 작성한다**
 
-Write `eslint.config.mjs`:
+`eslint.config.mjs`를 작성한다:
 ```js
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -1007,36 +1000,23 @@ export default [
 ];
 ```
 
-Three details that matter:
-- `boundaries/root-path`: without this, patterns are matched against the CWD
-  at lint-invocation time. When turbo runs `eslint src tests` inside a
-  package, patterns like `packages/2d-core/**` no longer match and every
-  file falls through to "no element" → rule silently passes.
-- `mode: 'full'`: default folder mode treats any ancestor directory match as
-  a hit, so `apps/dev-shell/src/app/games/[slug]/page.tsx` would be classified
-  as `game` because `games/[slug]` looks like a `games/*` folder. Full mode
-  anchors the pattern to the root-relative file path.
-- Self-allow on every element (`allow: ['core']` for core, etc.): with
-  `default: 'disallow'`, same-layer imports are also blocked unless
-  whitelisted. A test file under `packages/2d-core/tests/` importing from
-  `../src/manifest` is a `core → core` import that must be permitted.
+주의할 세 가지 사항:
+- `boundaries/root-path`: 이 설정이 없으면 패턴이 lint 실행 시점의 CWD를 기준으로 매칭된다. turbo가 패키지 내부에서 `eslint src tests`를 실행할 때 `packages/2d-core/**` 같은 패턴이 더 이상 매칭되지 않아 모든 파일이 "no element" 상태로 통과된다.
+- `mode: 'full'`: 기본 folder 모드는 조상 디렉터리 매칭을 허용하므로 `apps/dev-shell/src/app/games/[slug]/page.tsx`가 `games/[slug]`처럼 보여 `game`으로 분류될 수 있다. Full 모드는 패턴을 루트 기준 상대 파일 경로에 고정한다.
+- 모든 element에 자기 자신 허용 (`allow: ['core']` 등): `default: 'disallow'`를 사용하면 같은 계층의 import도 허용 목록에 없으면 차단된다. `packages/2d-core/tests/`의 테스트 파일이 `../src/manifest`를 import하는 것은 `core → core` import이므로 허용되어야 한다.
 
-- [ ] **Step 3: Add lint script hook at root**
+- [ ] **단계 3: 루트에 lint script hook을 추가한다**
 
-No root change needed — each workspace's `lint` script runs `eslint` with the
-repo-level flat config because ESLint 9 flat configs are discovered upward from
-the file being linted.
+루트 변경은 필요 없다 — ESLint 9 flat config는 lint 대상 파일에서 위 방향으로 탐색되므로 각 workspace의 `lint` 스크립트가 `eslint`를 실행할 때 레포 레벨 flat config가 자동으로 사용된다.
 
-- [ ] **Step 4: Run lint across workspaces**
+- [ ] **단계 4: workspace 전체에서 lint를 실행한다**
 
-Run: `pnpm turbo run lint`
-Expected: workspaces without a `lint` script are skipped; `@forge/dev-shell`
-passes (Next built-in lint) and `@forge/core` passes.
+실행: `pnpm turbo run lint`
+예상 결과: `lint` 스크립트가 없는 workspace는 건너뜀; `@forge/dev-shell`과 `@forge/core` 모두 통과.
 
-If either fails on the current source, fix the lint error before committing.
-Do not disable the rule.
+현재 소스에서 lint 오류가 발생하면 commit 전에 수정한다. 규칙을 비활성화하지 않는다.
 
-- [ ] **Step 5: Commit**
+- [ ] **단계 5: Commit**
 
 ```bash
 git add eslint.config.mjs package.json pnpm-lock.yaml
@@ -1045,33 +1025,32 @@ git commit -m "chore: add eslint flat config with layer boundaries"
 
 ---
 
-### Task 12: Circular dependency guard
+### 태스크 12: 순환 의존성 검사
 
-**Files:**
-- Modify: `package.json` (already has `circular` script from Task 2)
+**파일:**
+- 수정: `package.json` (태스크 2에서 이미 `circular` 스크립트 포함)
 
-- [ ] **Step 1: Run the circular check**
+- [ ] **단계 1: 순환 검사를 실행한다**
 
-Run: `pnpm circular`
-Expected: `No circular dependency found!` (madge default success message).
+실행: `pnpm circular`
+예상 결과: `No circular dependency found!` (madge 기본 성공 메시지).
 
-If any circulars surface, fix them before proceeding — do not commit with a
-circular dependency present.
+순환 의존성이 발생하면 진행 전에 수정한다 — 순환 의존성이 있는 상태로 commit하지 않는다.
 
-- [ ] **Step 2: Commit (no new files — checkpoint only)**
+- [ ] **단계 2: Commit 없음 (새 파일 없음 — 체크포인트만)**
 
-Skip the commit for this task; the command is already wired and green.
+이 태스크는 commit을 건너뛴다; 명령이 이미 연결되어 있고 통과 상태다.
 
 ---
 
-### Task 13: CI workflow
+### 태스크 13: CI 워크플로우
 
-**Files:**
-- Create: `.github/workflows/ci.yml`
+**파일:**
+- 생성: `.github/workflows/ci.yml`
 
-- [ ] **Step 1: Write the CI workflow**
+- [ ] **단계 1: CI 워크플로우를 작성한다**
 
-Write `.github/workflows/ci.yml`:
+`.github/workflows/ci.yml`을 작성한다:
 ```yaml
 name: CI
 
@@ -1127,7 +1106,7 @@ jobs:
       - run: pnpm --filter @forge/dev-shell e2e
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **단계 2: Commit**
 
 ```bash
 git add .github/workflows/ci.yml
@@ -1136,91 +1115,91 @@ git commit -m "chore: add CI with typecheck, lint, test, e2e, circular"
 
 ---
 
-### Task 14: End-to-end verification on a clean checkout
+### 태스크 14: 클린 체크아웃으로 전체 검증
 
-**Files:** (none — verification only)
+**파일:** (없음 — 검증만)
 
-- [ ] **Step 1: Clean install**
+- [ ] **단계 1: 클린 설치**
 
-Run:
+실행:
 ```bash
 rm -rf node_modules apps/*/node_modules packages/*/node_modules
 pnpm install --frozen-lockfile
 ```
-Expected: no errors. `pnpm-lock.yaml` is unchanged.
+예상 결과: 오류 없음. `pnpm-lock.yaml`이 변경되지 않음.
 
-- [ ] **Step 2: Run full pipeline**
+- [ ] **단계 2: 전체 pipeline을 실행한다**
 
-Run: `pnpm turbo run typecheck lint test`
-Expected: all workspaces green.
+실행: `pnpm turbo run typecheck lint test`
+예상 결과: 모든 workspace 통과.
 
-- [ ] **Step 3: Run circular check**
+- [ ] **단계 3: 순환 검사를 실행한다**
 
-Run: `pnpm circular`
-Expected: `No circular dependency found!`.
+실행: `pnpm circular`
+예상 결과: `No circular dependency found!`.
 
-- [ ] **Step 4: Run E2E**
+- [ ] **단계 4: E2E를 실행한다**
 
-Run: `pnpm --filter @forge/dev-shell e2e`
-Expected: 2 passed.
+실행: `pnpm --filter @forge/dev-shell e2e`
+예상 결과: 2개 통과.
 
-- [ ] **Step 5: Manual browser verification**
+- [ ] **단계 5: 브라우저 수동 검증**
 
-Run: `pnpm dev` (background).
+실행: `pnpm dev` (백그라운드).
 
-Open http://localhost:3000 in a local browser.
-Confirm:
-- Heading reads "2d-game-forge".
-- Empty-state message "아직 등록된 게임이 없습니다" is visible.
-- http://localhost:3000/games/does-not-exist returns the Next.js 404 page.
+로컬 브라우저에서 http://localhost:3000을 연다.
+확인:
+- 헤딩이 "2d-game-forge"로 표시된다.
+- 빈 상태 메시지 "아직 등록된 게임이 없습니다"가 보인다.
+- http://localhost:3000/games/does-not-exist에서 Next.js 404 페이지가 반환된다.
 
-Stop the dev server.
+dev 서버를 종료한다.
 
-- [ ] **Step 6: Tag the checkpoint**
+- [ ] **단계 6: 체크포인트를 태그한다**
 
 ```bash
 git tag phase-0-complete
 git log --oneline | head -20
 ```
 
-Do not push the tag automatically — confirm with the user before pushing.
+태그를 자동으로 push하지 않는다 — push 전에 사용자에게 확인한다.
 
 ---
 
-## Self-Review Notes
+## 셀프 리뷰 노트
 
-**Spec coverage:**
-- §1 레포 구조 → Tasks 2, 6, 8 create the layout described.
-- §1 패키지 네임스페이스 → `@forge/core` (Task 6) and `@forge/dev-shell` (Task 8) created with exact names from spec.
-- §1 의존성 방향 규칙 → Task 11 enforces `core → genre → plugin → content → game → app` via eslint-plugin-boundaries; Task 12 adds madge for circular detection.
-- §1 Day 1 상태 → Task 6 creates `@forge/core` as a near-empty shell holding only the manifest schema. `2d-rpg-core`, `economy-inflation`, `content-korean-folklore` are **intentionally not created** (matches spec's "존재하지 않음").
-- §1 공용 설정 → Task 3 (tsconfig.base.json), Task 4 (turbo pipeline).
-- §2 개발 모드 포털 → Task 9 creates the `/` selector and `/games/[slug]` route. The registry is empty in Phase 0, to be populated in Phase 1.
-- §2 동일 `StartGame` 엔트리 원칙 → Not implemented yet (no game exists). `RegisteredGame.load` field in `registry.ts` is the slot where Phase 1 will wire `StartGame(config)`.
-- §2 매니페스트 기반 부팅 → Task 7 defines `GameManifest` schema; Phase 1 will add `StartGameConfig` when porting the real entry.
-- §2 CI 파이프라인 → Task 13 runs typecheck + lint + test + e2e + circular on PR.
-- §4 테스트 계층 → Task 7 pattern establishes `packages/*/tests/`; Task 10 establishes `apps/dev-shell/tests/e2e/`. Phase 1 will add `games/<name>/tests/`.
-- §4 의존성 방향 린트 → Task 11.
-- §4 순환 참조 탐지 → Tasks 2 & 12 (madge script).
-- §4 번들 크기 스모크 → **Deferred to Phase 1** when a real game produces a bundle. Not a Phase 0 gap.
-- §3 Phase 0 산출물 요구 → "`pnpm dev` 로 포털이 뜸, 아직 게임 없음" satisfied by Task 14 Step 5.
+**Spec 커버리지:**
+- §1 레포 구조 → 태스크 2, 6, 8에서 명세된 레이아웃을 생성한다.
+- §1 패키지 네임스페이스 → `@forge/core` (태스크 6)와 `@forge/dev-shell` (태스크 8)이 spec에 명시된 정확한 이름으로 생성된다.
+- §1 의존성 방향 규칙 → 태스크 11에서 eslint-plugin-boundaries를 통해 `core → genre → plugin → content → game → app`을 강제하고, 태스크 12에서 순환 탐지용 madge를 추가한다.
+- §1 Day 1 상태 → 태스크 6에서 `@forge/core`를 manifest schema만 보유한 거의 빈 shell로 생성한다. `2d-rpg-core`, `economy-inflation`, `content-korean-folklore`는 **의도적으로 생성하지 않는다** (spec의 "존재하지 않음"에 부합).
+- §1 공용 설정 → 태스크 3 (tsconfig.base.json), 태스크 4 (turbo pipeline).
+- §2 개발 모드 포털 → 태스크 9에서 `/` selector와 `/games/[slug]` 라우트를 생성한다. Phase 0에서 registry는 비어 있으며, Phase 1에서 채워진다.
+- §2 동일 `StartGame` 엔트리 원칙 → 아직 구현되지 않음 (게임이 존재하지 않음). `registry.ts`의 `RegisteredGame.load` 필드가 Phase 1에서 `StartGame(config)`를 연결할 슬롯이다.
+- §2 매니페스트 기반 부팅 → 태스크 7에서 `GameManifest` schema를 정의하고, Phase 1에서 실제 엔트리 이식 시 `StartGameConfig`를 추가한다.
+- §2 CI 파이프라인 → 태스크 13에서 PR 시 typecheck + lint + test + e2e + circular를 실행한다.
+- §4 테스트 계층 → 태스크 7 패턴으로 `packages/*/tests/`를 정립하고, 태스크 10으로 `apps/dev-shell/tests/e2e/`를 정립한다. Phase 1에서 `games/<name>/tests/`가 추가된다.
+- §4 의존성 방향 lint → 태스크 11.
+- §4 순환 참조 탐지 → 태스크 2 & 12 (madge 스크립트).
+- §4 번들 크기 smoke → **Phase 1로 연기**. 실제 게임이 번들을 생성할 때까지 Phase 0에서는 해당 없음.
+- §3 Phase 0 산출물 요구 → "`pnpm dev` 로 포털이 뜸, 아직 게임 없음"은 태스크 14 단계 5에서 충족된다.
 
-**Placeholder scan:** No TBD/TODO left. All code blocks complete. No "similar to Task N" short-hands.
+**플레이스홀더 검사:** TBD/TODO 없음. 모든 코드 블록 완성. "태스크 N과 유사" 형태의 단축 표현 없음.
 
-**Type consistency:** `parseGameManifest` (Task 7) is imported in `apps/dev-shell/src/lib/registry.ts` (Task 9) via `GameManifestValue` type, not the function itself. Matches. `RegisteredGame.manifest` typed as `GameManifestValue`, which is what Task 7 exports.
+**타입 일관성:** `parseGameManifest` (태스크 7)는 `apps/dev-shell/src/lib/registry.ts` (태스크 9)에서 함수 자체가 아닌 `GameManifestValue` 타입으로 import된다. 일치함. `RegisteredGame.manifest`의 타입은 `GameManifestValue`로, 태스크 7에서 export하는 것과 동일하다.
 
-**Known deferrals (intentional, documented in plan):**
-- Bundle-size smoke → Phase 1.
-- Real `StartGame(config)` entry wiring → Phase 1.
-- `@forge/core` runtime utilities (EventBus, SaveManager, etc.) → promoted later per Phase 2 rule of three.
+**의도적 연기 항목 (계획에 문서화됨):**
+- 번들 크기 smoke → Phase 1.
+- 실제 `StartGame(config)` 엔트리 연결 → Phase 1.
+- `@forge/core` 런타임 유틸리티 (EventBus, SaveManager 등) → Phase 2의 rule of three에 따라 이후 승격.
 
 ---
 
-## Execution Handoff
+## 실행 핸드오프
 
-Plan complete and saved to `docs/superpowers/plans/2026-04-17-phase0-bootstrap.md`. Two execution options:
+계획이 완성되어 `docs/superpowers/plans/2026-04-17-phase0-bootstrap.md`에 저장된다. 두 가지 실행 방식이 있다:
 
-1. **Subagent-Driven (recommended)** — I dispatch a fresh subagent per task, review between tasks, fast iteration. Best for a 14-task scaffolding plan where each task is small and independent.
-2. **Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints.
+1. **Subagent 방식 (권장)** — 태스크별로 새 subagent를 dispatch하고, 태스크 사이에 리뷰를 진행한다. 반복이 빠르다. 각 태스크가 작고 독립적인 14개 태스크 scaffold 계획에 최적이다.
+2. **인라인 실행** — 현재 세션에서 executing-plans를 사용해 체크포인트와 함께 태스크를 일괄 실행한다.
 
-Which approach?
+어떤 방식으로 진행할까?
