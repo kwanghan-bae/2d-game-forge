@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import { findGame } from '@/lib/registry';
-import type { GameMountProps } from './GameMount';
+
+export interface GameMountProps {
+  slug: string;
+  assetsBasePath: string;
+}
 
 export default function GameMountInner({ slug, assetsBasePath }: GameMountProps) {
   const containerId = `game-container-${slug}`;
