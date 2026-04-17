@@ -35,6 +35,11 @@ export class Preloader extends Scene {
      * 모든 게임 자원을 카테고리별로 나누어 로드합니다.
      */
     preload() {
+        const base = this.game.registry.get('assetsBasePath');
+        if (typeof base === 'string' && base.length > 0) {
+          this.load.setBaseURL(base);
+        }
+
         this.load.setPath('assets');
 
         this.loadBackgrounds();
