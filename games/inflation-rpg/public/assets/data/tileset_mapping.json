@@ -1,0 +1,535 @@
+{
+    "meta_info": {
+        "version": "2.0",
+        "grid_size": 32,
+        "sub_grid_size": 16,
+        "description": "Exhaustive mapping of all game assets for Korea Inflation RPG."
+    },
+    "categories": {
+        "Building": [
+            {
+                "id": "hanok_roof_center",
+                "file": "joseon_building_tileset.png",
+                "x": 32,
+                "y": 0,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "roof",
+                    "style": "blue_tile",
+                    "layer": "decoration"
+                }
+            },
+            {
+                "id": "hanok_roof_left",
+                "file": "joseon_building_tileset.png",
+                "x": 0,
+                "y": 0,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "roof_edge",
+                    "style": "blue_tile"
+                }
+            },
+            {
+                "id": "hanok_roof_right",
+                "file": "joseon_building_tileset.png",
+                "x": 64,
+                "y": 0,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "roof_edge",
+                    "style": "blue_tile"
+                }
+            },
+            {
+                "id": "hanok_wall_white",
+                "file": "joseon_building_tileset.png",
+                "x": 32,
+                "y": 32,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "wall",
+                    "material": "plaster",
+                    "collision": true
+                }
+            },
+            {
+                "id": "hanok_wall_wood_pillars",
+                "file": "joseon_building_tileset.png",
+                "x": 0,
+                "y": 32,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "wall",
+                    "material": "wood",
+                    "collision": true
+                }
+            },
+            {
+                "id": "stone_pagoda",
+                "file": "pixel_tileset.png",
+                "x": 384,
+                "y": 256,
+                "w": 32,
+                "h": 64,
+                "properties": {
+                    "type": "structure",
+                    "name": "pagoda",
+                    "korean_trait": true
+                }
+            },
+            {
+                "id": "palace_foundation_grey",
+                "file": "tileset_joseon_extra.jpg",
+                "x": 0,
+                "y": 128,
+                "w": 96,
+                "h": 32,
+                "properties": {
+                    "type": "foundation"
+                }
+            },
+            {
+                "id": "palace_pavilion",
+                "file": "joseon_building_tileset.png",
+                "x": 480,
+                "y": 64,
+                "w": 128,
+                "h": 96,
+                "properties": {
+                    "type": "structure",
+                    "name": "palace"
+                }
+            }
+        ],
+        "Wall": [
+            {
+                "id": "fortress_wall_center",
+                "file": "joseon_building_tileset.png",
+                "x": 32,
+                "y": 64,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "collision": true,
+                    "type": "city_wall"
+                }
+            },
+            {
+                "id": "fortress_wall_top",
+                "file": "joseon_building_tileset.png",
+                "x": 32,
+                "y": 96,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "collision": true,
+                    "type": "city_wall_top"
+                }
+            },
+            {
+                "id": "namdaemun_gate",
+                "file": "pixel_tileset.png",
+                "x": 128,
+                "y": 320,
+                "w": 96,
+                "h": 64,
+                "properties": {
+                    "collision": true,
+                    "name": "namdaemun",
+                    "is_gate": true
+                }
+            }
+        ],
+        "Nature": [
+            {
+                "id": "pine_tree_tall",
+                "file": "pixel_tileset.png",
+                "x": 192,
+                "y": 64,
+                "w": 32,
+                "h": 64,
+                "properties": {
+                    "season": "all",
+                    "korean_trait": true
+                }
+            },
+            {
+                "id": "bamboo_cluster",
+                "file": "pixel_tileset.png",
+                "x": 224,
+                "y": 64,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "plant",
+                    "korean_trait": true
+                }
+            },
+            {
+                "id": "snow_pine_tree",
+                "file": "tileset_biome_1.jpg",
+                "x": 0,
+                "y": 128,
+                "w": 32,
+                "h": 64,
+                "properties": {
+                    "biome": "snow"
+                }
+            },
+            {
+                "id": "dead_tree",
+                "file": "tileset_biome_2.jpg",
+                "x": 64,
+                "y": 128,
+                "w": 32,
+                "h": 64,
+                "properties": {
+                    "biome": "desert"
+                }
+            },
+            {
+                "id": "lava_rock_large",
+                "file": "tileset_biome_2.jpg",
+                "x": 0,
+                "y": 192,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "biome": "lava"
+                }
+            },
+            {
+                "id": "ghost_willow",
+                "file": "tileset_biome_4.jpg",
+                "x": 224,
+                "y": 32,
+                "w": 64,
+                "h": 96,
+                "properties": {
+                    "biome": "ghost"
+                }
+            }
+        ],
+        "Prop": [
+            {
+                "id": "market_stall_food",
+                "file": "roguelike_decor.png",
+                "x": 64,
+                "y": 160,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "shop",
+                    "sub_grid": true
+                }
+            },
+            {
+                "id": "market_stall_weapons",
+                "file": "roguelike_decor.png",
+                "x": 96,
+                "y": 160,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "shop",
+                    "sub_grid": true
+                }
+            },
+            {
+                "id": "crate_stack",
+                "file": "roguelike_decor.png",
+                "x": 96,
+                "y": 160,
+                "w": 16,
+                "h": 32,
+                "properties": {
+                    "type": "scatter"
+                }
+            },
+            {
+                "id": "kimchi_pot",
+                "file": "roguelike_decor.png",
+                "x": 32,
+                "y": 192,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "type": "korean_tradition",
+                    "sub_grid": true
+                }
+            },
+            {
+                "id": "lantern_pole",
+                "file": "roguelike_decor.png",
+                "x": 16,
+                "y": 144,
+                "w": 16,
+                "h": 32,
+                "properties": {
+                    "type": "light"
+                }
+            },
+            {
+                "id": "rice_sack",
+                "file": "roguelike_decor.png",
+                "x": 128,
+                "y": 176,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "type": "food"
+                }
+            },
+            {
+                "id": "wooden_fence_h",
+                "file": "roguelike_decor.png",
+                "x": 0,
+                "y": 96,
+                "w": 32,
+                "h": 16,
+                "properties": {
+                    "type": "barrier"
+                }
+            },
+            {
+                "id": "wooden_fence_v",
+                "file": "roguelike_decor.png",
+                "x": 0,
+                "y": 112,
+                "w": 16,
+                "h": 32,
+                "properties": {
+                    "type": "barrier"
+                }
+            },
+            {
+                "id": "guide_sign",
+                "file": "roguelike_decor.png",
+                "x": 48,
+                "y": 144,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "type": "info"
+                }
+            },
+            {
+                "id": "weapon_rack_swords",
+                "file": "roguelike_decor.png",
+                "x": 80,
+                "y": 128,
+                "w": 32,
+                "h": 32,
+                "properties": {
+                    "type": "military"
+                }
+            },
+            {
+                "id": "large_barrel",
+                "file": "roguelike_decor.png",
+                "x": 32,
+                "y": 128,
+                "w": 16,
+                "h": 32,
+                "properties": {
+                    "type": "storage"
+                }
+            },
+            {
+                "id": "small_pot_cluster",
+                "file": "roguelike_decor.png",
+                "x": 64,
+                "y": 192,
+                "w": 32,
+                "h": 16,
+                "properties": {
+                    "type": "decor"
+                }
+            }
+        ],
+        "Ground": [
+            {
+                "id": "grass_base_hanyang",
+                "file": "joseon_tileset.png",
+                "x": 0,
+                "y": 0,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "autotile": true,
+                    "biome": "hanyang"
+                }
+            },
+            {
+                "id": "dirt_path_hanyang",
+                "file": "joseon_tileset.png",
+                "x": 96,
+                "y": 0,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "autotile": true,
+                    "biome": "hanyang"
+                }
+            },
+            {
+                "id": "rice_paddy_water",
+                "file": "tileset_joseon_extra.jpg",
+                "x": 192,
+                "y": 0,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "biome": "farmland",
+                    "type": "water"
+                }
+            },
+            {
+                "id": "snow_field_base",
+                "file": "tileset_biome_1.jpg",
+                "x": 0,
+                "y": 256,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "biome": "snow",
+                    "autotile": true
+                }
+            },
+            {
+                "id": "ice_lake",
+                "file": "tileset_biome_1.jpg",
+                "x": 192,
+                "y": 320,
+                "w": 64,
+                "h": 64,
+                "properties": {
+                    "biome": "snow",
+                    "type": "fluid"
+                }
+            },
+            {
+                "id": "desert_sand_base",
+                "file": "tileset_biome_2.jpg",
+                "x": 192,
+                "y": 256,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "biome": "desert",
+                    "autotile": true
+                }
+            },
+            {
+                "id": "desert_cliffs",
+                "file": "tileset_biome_2.jpg",
+                "x": 0,
+                "y": 0,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "biome": "desert",
+                    "type": "wall"
+                }
+            },
+            {
+                "id": "lava_crust_base",
+                "file": "tileset_biome_2.jpg",
+                "x": 128,
+                "y": 256,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "biome": "lava",
+                    "autotile": true
+                }
+            },
+            {
+                "id": "ghost_swamp_base",
+                "file": "tileset_biome_4.jpg",
+                "x": 0,
+                "y": 256,
+                "w": 96,
+                "h": 96,
+                "properties": {
+                    "biome": "ghost",
+                    "autotile": true
+                }
+            }
+        ],
+        "Character": [
+            {
+                "id": "npc_villager_m",
+                "file": "tiny_town_sheet.png",
+                "x": 0,
+                "y": 0,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "role": "civilian"
+                }
+            },
+            {
+                "id": "npc_villager_f",
+                "file": "tiny_town_sheet.png",
+                "x": 16,
+                "y": 0,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "role": "civilian"
+                }
+            },
+            {
+                "id": "npc_guard",
+                "file": "tiny_town_sheet.png",
+                "x": 32,
+                "y": 16,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "role": "guard"
+                }
+            },
+            {
+                "id": "npc_king",
+                "file": "tiny_town_sheet.png",
+                "x": 48,
+                "y": 16,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "role": "royalty"
+                }
+            },
+            {
+                "id": "monster_skeleton",
+                "file": "tiny_battle_sheet.png",
+                "x": 0,
+                "y": 32,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "type": "hostile"
+                }
+            },
+            {
+                "id": "monster_slime",
+                "file": "tiny_battle_sheet.png",
+                "x": 16,
+                "y": 32,
+                "w": 16,
+                "h": 16,
+                "properties": {
+                    "type": "hostile"
+                }
+            }
+        ]
+    }
+}

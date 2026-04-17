@@ -4,8 +4,11 @@
     "jsx": "preserve",
     "allowJs": true,
     "noEmit": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
     "plugins": [{ "name": "next" }],
     "paths": {
+      "@/game/*": ["../../games/inflation-rpg/src/game/*"],
       "@/*": ["./src/*"]
     }
   },

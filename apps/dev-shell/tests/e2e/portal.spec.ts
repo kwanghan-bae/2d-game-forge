@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-test('portal shows empty state when no games are registered', async ({ page }) => {
+test('portal lists registered games', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '2d-game-forge' })).toBeVisible();
-  await expect(page.getByTestId('no-games')).toContainText(
-    '아직 등록된 게임이 없습니다',
-  );
+  await expect(
+    page.getByRole('link', { name: /조선 인플레이션 RPG/ }),
+  ).toBeVisible();
 });
 
 test('unknown game slug renders 404', async ({ page }) => {
