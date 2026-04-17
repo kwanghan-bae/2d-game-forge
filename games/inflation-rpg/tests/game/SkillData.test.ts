@@ -6,7 +6,7 @@ import {
     SKILL_CATALOG,
     getSkillById,
     getSkillsByClass
-} from '../src/game/data/SkillData';
+} from '../../src/game/data/SkillData';
 
 describe('SkillData', () => {
     describe('SKILL_CATALOG 구조', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getScaledMonsterStats } from '../src/game/data/Monsters';
+import { getScaledMonsterStats } from '../../src/game/data/Monsters';
 import BigNumber from 'bignumber.js';
 
 describe('Monster Scaling', () => {

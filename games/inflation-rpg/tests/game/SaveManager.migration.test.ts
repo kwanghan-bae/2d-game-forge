@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SaveManager } from '../src/game/utils/SaveManager';
+import { SaveManager } from '../../src/game/utils/SaveManager';
 
 describe('SaveManager - 데이터 마이그레이션', () => {
     let saveManager: SaveManager;

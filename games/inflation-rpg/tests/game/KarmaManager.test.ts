@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { KarmaManager } from '../src/game/utils/KarmaManager';
+import { KarmaManager } from '../../src/game/utils/KarmaManager';
 
 /**
  * KarmaManager 클래스의 비즈니스 로직 및 에지 케이스를 검증하는 테스트 스위트입니다.

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { BossAI } from '../src/game/core/BossAI';
-import { MonsterData } from '../src/game/data/Monsters';
+import { BossAI } from '../../src/game/core/BossAI';
+import { MonsterData } from '../../src/game/data/Monsters';
 
 describe('BossAI System', () => {
   let bossAI: BossAI;

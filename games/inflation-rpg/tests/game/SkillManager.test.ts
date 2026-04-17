@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SkillManager, SkillUseResult } from '../src/game/core/SkillManager';
-import { StatusEffectType, StatusEffect } from '../src/game/data/SkillData';
+import { SkillManager, SkillUseResult } from '../../src/game/core/SkillManager';
+import { StatusEffectType, StatusEffect } from '../../src/game/data/SkillData';
 
 describe('SkillManager', () => {
     let skillManager: SkillManager;

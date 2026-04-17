@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NumberFormatter } from '../src/game/utils/NumberFormatter';
+import { NumberFormatter } from '../../src/game/utils/NumberFormatter';
 
 describe('NumberFormatter', () => {
     describe('formatCompact - 경계값', () => {
