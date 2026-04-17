@@ -374,13 +374,16 @@ Write `packages/2d-core/tsconfig.json`:
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./src",
     "outDir": "./dist",
     "noEmit": true
   },
   "include": ["src/**/*", "tests/**/*"]
 }
 ```
+
+`rootDir` is intentionally omitted: under `noEmit: true` it has no effect on
+output layout, and setting it to `./src` conflicts with `include: tests/**/*`
+(TS6059).
 
 - [ ] **Step 3: Write README**
 
