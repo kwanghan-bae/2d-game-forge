@@ -1,6 +1,10 @@
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import boundaries from 'eslint-plugin-boundaries';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
+
+const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -31,18 +35,19 @@ export default [
         typescript: { alwaysTryTypes: true },
         node: true,
       },
+      'boundaries/root-path': repoRoot,
       'boundaries/include': [
         'packages/**/*.{ts,tsx}',
         'apps/**/*.{ts,tsx}',
         'games/**/*.{ts,tsx}',
       ],
       'boundaries/elements': [
-        { type: 'core', pattern: 'packages/2d-core/**' },
-        { type: 'genre', pattern: 'packages/2d-*-core/**' },
-        { type: 'plugin', pattern: 'packages/economy-*/**' },
-        { type: 'content', pattern: 'packages/content-*/**' },
-        { type: 'game', pattern: 'games/*/**' },
-        { type: 'app', pattern: 'apps/*/**' },
+        { type: 'core', pattern: 'packages/2d-core/**', mode: 'full' },
+        { type: 'genre', pattern: 'packages/2d-*-core/**', mode: 'full' },
+        { type: 'plugin', pattern: 'packages/economy-*/**', mode: 'full' },
+        { type: 'content', pattern: 'packages/content-*/**', mode: 'full' },
+        { type: 'game', pattern: 'games/*/**', mode: 'full' },
+        { type: 'app', pattern: 'apps/*/**', mode: 'full' },
       ],
     },
     rules: {
@@ -51,12 +56,12 @@ export default [
         {
           default: 'disallow',
           rules: [
-            { from: 'core', allow: [] },
-            { from: 'genre', allow: ['core'] },
-            { from: 'plugin', allow: ['core'] },
-            { from: 'content', allow: ['core', 'genre'] },
-            { from: 'game', allow: ['core', 'genre', 'plugin', 'content'] },
-            { from: 'app', allow: ['core', 'genre', 'plugin', 'content', 'game'] },
+            { from: 'core', allow: ['core'] },
+            { from: 'genre', allow: ['core', 'genre'] },
+            { from: 'plugin', allow: ['core', 'plugin'] },
+            { from: 'content', allow: ['core', 'genre', 'content'] },
+            { from: 'game', allow: ['core', 'genre', 'plugin', 'content', 'game'] },
+            { from: 'app', allow: ['core', 'genre', 'plugin', 'content', 'game', 'app'] },
           ],
         },
       ],
