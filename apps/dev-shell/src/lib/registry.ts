@@ -2,10 +2,25 @@ import type { GameManifestValue } from '@forge/core/manifest';
 
 export interface RegisteredGame {
   manifest: GameManifestValue;
-  load: () => Promise<unknown>;
+  load: () => Promise<{
+    StartGame: (config: {
+      parent: string;
+      assetsBasePath: string;
+      exposeTestHooks: boolean;
+    }) => unknown;
+  }>;
 }
 
-export const registeredGames: RegisteredGame[] = [];
+export const registeredGames: RegisteredGame[] = [
+  {
+    manifest: {
+      slug: 'inflation-rpg',
+      title: '조선 인플레이션 RPG',
+      assetsBasePath: '/games/inflation-rpg/assets',
+    },
+    load: () => import('@forge/game-inflation-rpg'),
+  },
+];
 
 export function findGame(slug: string): RegisteredGame | undefined {
   return registeredGames.find((g) => g.manifest.slug === slug);

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import { findGame } from '@/lib/registry';
+import { findManifest } from '@/lib/registry.server';
+import GameMount from '@/components/GameMount';
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;
@@ -7,18 +8,17 @@ interface GamePageProps {
 
 export default async function GamePage({ params }: GamePageProps) {
   const { slug } = await params;
-  const game = findGame(slug);
-  if (!game) notFound();
+  const manifest = findManifest(slug);
+  if (!manifest) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-2xl font-bold">{game.manifest.title}</h1>
-      <p
-        data-testid="game-placeholder"
-        className="mt-3 text-sm text-slate-400"
-      >
-        게임 로더는 Phase 1 에서 `StartGame(config)` 을 호출하도록 연결됩니다.
-      </p>
+    <main className="mx-auto max-w-5xl px-4 py-6">
+      <h1 className="text-xl font-semibold" data-testid="game-title">
+        {manifest.title}
+      </h1>
+      <div className="mt-4">
+        <GameMount slug={slug} assetsBasePath={manifest.assetsBasePath} />
+      </div>
     </main>
   );
 }
