@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MonsterData, getBossList, isBossMonster, MONSTERS } from '../src/game/data/Monsters';
+import { MonsterData, getBossList, isBossMonster, MONSTERS } from '../../src/game/data/Monsters';
 
 describe('Boss Monster Data', () => {
   describe('산군 (Tiger Lord) - ID 9001', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateClassStats, applyPassiveEffect, Stats, PassiveEffectResult } from '../src/game/utils/StatCalculator';
-import { ClassId } from '../src/game/data/ClassData';
+import { calculateClassStats, applyPassiveEffect, Stats, PassiveEffectResult } from '../../src/game/utils/StatCalculator';
+import { ClassId } from '../../src/game/data/ClassData';
 
 describe('StatCalculator', () => {
   describe('calculateClassStats()', () => {

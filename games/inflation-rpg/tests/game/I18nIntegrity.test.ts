@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import ko from '../src/game/i18n/ko.json';
-import en from '../src/game/i18n/en.json';
+import ko from '../../src/game/i18n/ko.json';
+import en from '../../src/game/i18n/en.json';
 
 describe('I18n 리소스 무결성 검증', () => {
     /**

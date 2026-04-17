@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { InflationManager } from '../src/game/utils/InflationManager';
+import { InflationManager } from '../../src/game/utils/InflationManager';
 
 describe('InflationManager', () => {
   let inflationManager: InflationManager;

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GameState } from '../src/game/GameState';
+import { GameState } from '../../src/game/GameState';
 
 describe('GameState Migration', () => {
     let gameState: GameState;

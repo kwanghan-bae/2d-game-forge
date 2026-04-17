@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DataManager } from '../src/game/DataManager';
+import { DataManager } from '../../src/game/DataManager';
 
 describe('Monster Gold Balance - 밸런스 검증', () => {
     describe('Rank 기반 배율 검증', () => {

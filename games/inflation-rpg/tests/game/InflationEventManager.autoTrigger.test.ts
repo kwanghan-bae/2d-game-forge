@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { InflationEventManager, InflationEventType } from '../src/game/utils/InflationEventManager';
+import { InflationEventManager, InflationEventType } from '../../src/game/utils/InflationEventManager';
 
 describe('InflationEventManager - Auto Trigger', () => {
     let eventManager: InflationEventManager;

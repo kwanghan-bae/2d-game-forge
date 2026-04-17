@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ReincarnationManager } from '../src/game/utils/ReincarnationManager';
-import { GameState } from '../src/game/GameState';
-import { ItemType } from '../src/game/data/ItemData';
+import { ReincarnationManager } from '../../src/game/utils/ReincarnationManager';
+import { GameState } from '../../src/game/GameState';
+import { ItemType } from '../../src/game/data/ItemData';
 
 describe('ReincarnationManager', () => {
   let reincarnationMgr: ReincarnationManager;

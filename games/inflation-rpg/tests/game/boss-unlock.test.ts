@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GameState } from '../src/game/GameState';
+import { GameState } from '../../src/game/GameState';
 
 describe('Boss Unlock System (WorldMap Logic)', () => {
     let gameState: GameState;

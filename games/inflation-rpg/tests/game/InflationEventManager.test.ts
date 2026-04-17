@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { InflationEventManager, InflationEvent, InflationEventType } from '../src/game/utils/InflationEventManager';
-import { InflationManager } from '../src/game/utils/InflationManager';
+import { InflationEventManager, InflationEvent, InflationEventType } from '../../src/game/utils/InflationEventManager';
+import { InflationManager } from '../../src/game/utils/InflationManager';
 
 describe('InflationEventManager', () => {
     let eventManager: InflationEventManager;

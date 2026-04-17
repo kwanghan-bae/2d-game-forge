@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CLASS_CATALOG, ClassId, getClassById, getClassByRequirement } from '../src/game/data/ClassData';
+import { CLASS_CATALOG, ClassId, getClassById, getClassByRequirement } from '../../src/game/data/ClassData';
 
 describe('ClassData', () => {
     describe('CLASS_CATALOG Structure', () => {

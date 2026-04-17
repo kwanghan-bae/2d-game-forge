@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DataManager } from '../src/game/DataManager';
+import { DataManager } from '../../src/game/DataManager';
 
 describe('DataManager', () => {
     beforeEach(async () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { GameState } from '../src/game/GameState';
-import { InflationManager } from '../src/game/utils/InflationManager';
-import { SaveManager } from '../src/game/utils/SaveManager';
+import { GameState } from '../../src/game/GameState';
+import { InflationManager } from '../../src/game/utils/InflationManager';
+import { SaveManager } from '../../src/game/utils/SaveManager';
 
 describe('SaveManager', () => {
     let saveManager: SaveManager;

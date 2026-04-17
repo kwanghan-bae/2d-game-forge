@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { I18n } from '../src/game/i18n/I18nManager';
+import { I18n } from '../../src/game/i18n/I18nManager';
 
 describe('I18nManager', () => {
     let i18n: I18n;

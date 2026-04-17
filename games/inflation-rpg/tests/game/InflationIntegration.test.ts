@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GameState } from '../src/game/GameState';
-import { getScaledMonsterStats, MONSTERS } from '../src/game/data/Monsters';
+import { GameState } from '../../src/game/GameState';
+import { getScaledMonsterStats, MONSTERS } from '../../src/game/data/Monsters';
 import BigNumber from 'bignumber.js';
 
 /**
