@@ -19,7 +19,7 @@ export class GameTestHelper {
     async waitForScene(sceneKey: string, timeout: number = 10000) {
         await this.page.waitForFunction(
             (key) => {
-                const game = (window as any).game;
+                const game = (window as any).phaserGame;
                 const scene = game?.scene?.getScenes(true)[0];
                 return scene && scene.scene.key === key;
             },
@@ -34,7 +34,7 @@ export class GameTestHelper {
      */
     async startScene(sceneKey: string) {
         await this.page.evaluate((key) => {
-            (window as any).game.scene.getScenes(true)[0].scene.start(key);
+            (window as any).phaserGame.scene.getScenes(true)[0].scene.start(key);
         }, sceneKey);
     }
 
@@ -89,7 +89,7 @@ export class GameTestHelper {
      */
     async triggerBattle() {
         await this.page.evaluate(() => {
-            const scene = (window as any).game.scene.getScenes(true)[0];
+            const scene = (window as any).phaserGame.scene.getScenes(true)[0];
             scene.triggerEncounter();
         });
     }
@@ -108,7 +108,7 @@ export class GameTestHelper {
      */
     async openShop() {
         await this.page.evaluate(() => {
-            const scene = (window as any).game.scene.getScenes(true)[0];
+            const scene = (window as any).phaserGame.scene.getScenes(true)[0];
             scene.scene.start('ShopScene');
         });
         await this.page.waitForTimeout(1000);
@@ -119,7 +119,7 @@ export class GameTestHelper {
      */
     async openInventory() {
         await this.page.evaluate(() => {
-            const scene = (window as any).game.scene.getScenes(true)[0];
+            const scene = (window as any).phaserGame.scene.getScenes(true)[0];
             scene.scene.start('InventoryScene');
         });
         await this.page.waitForTimeout(1000);
@@ -132,7 +132,7 @@ export class GameTestHelper {
      */
     async isSceneActive(sceneKey: string): Promise<boolean> {
         return await this.page.evaluate((key) => {
-            const scenes = (window as any).game.scene.getScenes(true);
+            const scenes = (window as any).phaserGame.scene.getScenes(true);
             return scenes.some((s: any) => s.scene.key === key);
         }, sceneKey);
     }
@@ -239,7 +239,7 @@ export class GameTestHelper {
      */
     async triggerBossBattle(bossId: number) {
         await this.page.evaluate((id) => {
-            const scene = (window as any).game.scene.getScenes(true)[0];
+            const scene = (window as any).phaserGame.scene.getScenes(true)[0];
             scene.scene.start('BattleScene', { monsterId: id });
         }, bossId);
     }
