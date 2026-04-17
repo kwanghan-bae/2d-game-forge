@@ -1,11 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import type { GameMountProps } from './GameMountInner';
 
-export interface GameMountProps {
-  slug: string;
-  assetsBasePath: string;
-}
+export type { GameMountProps };
 
 // Load the actual game mount lazily, with SSR disabled, so Phaser
 // (which requires a browser environment) is never executed server-side.
