@@ -25,7 +25,7 @@ export default function GameMountInner({ slug, assetsBasePath }: GameMountProps)
       gameInstance = mod.StartGame({
         parent: containerId,
         assetsBasePath,
-        exposeTestHooks: true,
+        exposeTestHooks: process.env.NODE_ENV !== 'production',
       }) as typeof gameInstance;
       instanceRef.current = gameInstance;
     });
