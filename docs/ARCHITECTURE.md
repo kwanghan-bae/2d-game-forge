@@ -7,6 +7,12 @@
 [설계 스펙](superpowers/specs/2026-04-17-2d-game-forge-initial-design.md)에
 박제되어 있다. 이 문서는 그 결과를 압축한 운영 가이드다.
 
+forge 는 **2D 게임 프레임워크**다. 특정 장르나 테마에 묶이지 않는다. 4계층
+케이크의 각 슬롯은 새 패키지를 추가하는 방식으로 확장된다 — 새 장르 코어
+(`2d-puzzle-core` 등), 새 플러그인, 새 콘텐츠 팩(`content-roma`,
+`content-fantasy` 등). 첫 작업으로 한국 테마와 RPG 장르를 다루지만, 그 자체는
+프레임워크의 제약이 아니다.
+
 ## 1. 4계층 케이크
 
 전체 코드는 네 개의 의존 계층으로 구성된다.
@@ -29,8 +35,8 @@
 | 계층 | 패키지 prefix | 책임 | 현재 존재 여부 |
 |---|---|---|---|
 | 게임 | `@forge/game-*` | 한 게임의 밸런스·고유 시스템·매니페스트·릴리스 설정 | `inflation-rpg` 1개 |
-| 콘텐츠 팩 | `@forge/content-*` | 테마(스프라이트·BGM·폰트·인물 데이터·i18n)를 게임 간 공유 | 미존재 |
-| 장르 코어 | `@forge/{genre}-core` | RPG·idle·플랫포머처럼 같은 장르의 게임들이 공유할 시스템 (전투·스킬·인벤토리 등) | 미존재 |
+| 콘텐츠 팩 | `@forge/content-*` | 테마(스프라이트·BGM·폰트·인물 데이터·i18n)를 게임 간 공유. **언제든 새 테마 팩 추가 가능** (예: `content-korean-folklore`, `content-roma`, `content-fantasy`) | 미존재. 첫 한국 테마 콘텐츠는 inflation-rpg 내부에 있음 |
+| 장르 코어 | `@forge/{genre}-core` | RPG·idle·플랫포머·퍼즐처럼 같은 장르의 게임들이 공유할 시스템 (전투·스킬·인벤토리 등). **장르가 늘어나면 새 패키지 추가** | 미존재 |
 | 플러그인 | `@forge/{plugin-name}` (예: `economy-inflation`) | 장르 독립적이지만 모든 게임이 쓰지 않는 기능. 코어보다 옵션 성격 | 미존재 |
 | 코어 | `@forge/core` | 모든 2D 게임의 바닥 — 부팅, EventBus, SaveManager, i18n, Capacitor 헬퍼, E2E hook | 1개. 현재는 `GameManifest` 스키마만 |
 
