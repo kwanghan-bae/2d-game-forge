@@ -38,9 +38,10 @@ export class Preloader extends Scene {
         const base = this.game.registry.get('assetsBasePath');
         if (typeof base === 'string' && base.length > 0) {
           this.load.setBaseURL(base);
+        } else {
+          // Fallback for callers that don't set the registry value (e.g. legacy).
+          this.load.setPath('assets');
         }
-
-        this.load.setPath('assets');
 
         this.loadBackgrounds();
         this.loadSpritesheets();
