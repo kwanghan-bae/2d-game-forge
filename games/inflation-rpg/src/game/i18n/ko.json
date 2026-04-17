@@ -1,0 +1,45 @@
+{
+    "ui": {
+        "title": "무한성장: 조선의 검",
+        "start": "수련 시작",
+        "inventory": "봇짐",
+        "settings": "설정",
+        "back": "뒤로가기",
+        "confirm": "확인",
+        "cancel": "취소",
+        "zone_prefix": "지역: "
+    },
+    "stats": {
+        "hp": "체력",
+        "atk": "공격력",
+        "def": "방어력",
+        "level": "레벨",
+        "gold": "엽전"
+    },
+    "battle": {
+        "attack": "공격",
+        "flee": "도망",
+        "victory": "승 리!",
+        "defeat": "패 배...",
+        "start": "전투 시작! (자동)",
+        "enemy_attack": "적 공격!",
+        "player_turn": "당신의 차례입니다.",
+        "enemy_turn": "적의 차례입니다.",
+        "damage": "{{amount}}의 피해!",
+        "critical": "회심의 일격!",
+        "level_up": "깨달음을 얻었습니다! (Lv. {{level}})",
+        "player_hp": "내 체력",
+        "enemy_hp": "체력"
+    },
+    "monsters": {
+        "unknown": "정체불명의 그림자"
+    },
+    "locations": {
+        "gyeongbokgung": "경복궁",
+        "yaksu": "신비한 약수터",
+        "yaksu_message": "맑고 시원한 약수를 마셔 피로가 가십니다! (발걸음 수 -50)"
+    },
+    "boss": {
+        "boss_requirement": "산군을 먼저 처치해야 합니다!"
+    }
+}

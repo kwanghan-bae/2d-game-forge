@@ -1,0 +1,45 @@
+{
+    "ui": {
+        "title": "Infinite Growth: Joseon's Sword",
+        "start": "Start Training",
+        "inventory": "Inventory",
+        "settings": "Settings",
+        "back": "Back",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "zone_prefix": "Zone: "
+    },
+    "stats": {
+        "hp": "HP",
+        "atk": "ATK",
+        "def": "DEF",
+        "level": "Level",
+        "gold": "Gold"
+    },
+    "battle": {
+        "attack": "Attack",
+        "flee": "Flee",
+        "victory": "VICTORY",
+        "defeat": "DEFEAT",
+        "start": "Battle Start! (Auto)",
+        "enemy_attack": "The Enemy Attacks!",
+        "player_turn": "Your Turn",
+        "enemy_turn": "Enemy Turn",
+        "damage": "{{amount}} Damage!",
+        "critical": "Critical Hit!",
+        "level_up": "Level Up! (Lv. {{level}})",
+        "player_hp": "Player HP",
+        "enemy_hp": "HP"
+    },
+    "monsters": {
+        "unknown": "Unknown Shadow"
+    },
+    "locations": {
+        "gyeongbokgung": "Gyeongbokgung",
+        "yaksu": "Mystic Yaksu Spring",
+        "yaksu_message": "The cool spring water refreshes you! (Steps -50)"
+    },
+    "boss": {
+        "boss_requirement": "You must defeat Sanggun first!"
+    }
+}
