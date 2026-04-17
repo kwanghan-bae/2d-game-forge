@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { registeredGames } from '@/lib/registry';
+import { manifests as registeredManifests } from '@/lib/registry.server';
 
 export default function HomePage() {
   return (
@@ -9,7 +9,7 @@ export default function HomePage() {
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold">Games</h2>
-        {registeredGames.length === 0 ? (
+        {registeredManifests.length === 0 ? (
           <p
             data-testid="no-games"
             className="mt-3 rounded-md border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300"
@@ -18,7 +18,7 @@ export default function HomePage() {
           </p>
         ) : (
           <ul className="mt-3 space-y-2">
-            {registeredGames.map(({ manifest }) => (
+            {registeredManifests.map((manifest) => (
               <li key={manifest.slug}>
                 <Link
                   href={`/games/${manifest.slug}`}

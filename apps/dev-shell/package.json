@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@forge/core": "workspace:*",
+    "@forge/game-inflation-rpg": "workspace:*",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"
