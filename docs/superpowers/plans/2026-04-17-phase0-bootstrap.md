@@ -353,7 +353,7 @@ Write `packages/2d-core/package.json`:
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "eslint src"
+    "lint": "eslint src tests"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -407,7 +407,7 @@ demand per the "rule of three" — see the initial design spec.
 Write `packages/2d-core/src/index.ts`:
 ```ts
 export { GameManifest, parseGameManifest } from './manifest';
-export type { GameManifestInput } from './manifest';
+export type { GameManifestInput, GameManifestValue } from './manifest';
 ```
 
 - [ ] **Step 5: Install package deps**
@@ -569,7 +569,7 @@ Write `apps/dev-shell/package.json`:
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint",
+    "lint": "eslint src tests",
     "e2e": "playwright test"
   },
   "dependencies": {
@@ -923,13 +923,25 @@ pnpm add -Dw eslint-plugin-boundaries @typescript-eslint/parser @typescript-esli
 
 Expected: deps added to root `package.json`.
 
-- [ ] **Step 2: Write the flat config**
+- [ ] **Step 2: Install `eslint-plugin-boundaries@^5`**
+
+Run: `pnpm add -Dw eslint-plugin-boundaries@^5.0.0 eslint-plugin-import eslint-import-resolver-typescript`
+
+Why: boundaries v6 renamed `element-types` to `dependencies` and left the old
+name as a deprecated silent alias that does nothing. v5 is the last version
+where the config below actually enforces rules.
+
+- [ ] **Step 3: Write the flat config**
 
 Write `eslint.config.mjs`:
 ```js
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import boundaries from 'eslint-plugin-boundaries';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
+
+const repoRoot = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -956,13 +968,23 @@ export default [
       boundaries,
     },
     settings: {
+      'import/resolver': {
+        typescript: { alwaysTryTypes: true },
+        node: true,
+      },
+      'boundaries/root-path': repoRoot,
+      'boundaries/include': [
+        'packages/**/*.{ts,tsx}',
+        'apps/**/*.{ts,tsx}',
+        'games/**/*.{ts,tsx}',
+      ],
       'boundaries/elements': [
-        { type: 'core', pattern: 'packages/2d-core/**' },
-        { type: 'genre', pattern: 'packages/2d-*-core/**' },
-        { type: 'plugin', pattern: 'packages/economy-*/**' },
-        { type: 'content', pattern: 'packages/content-*/**' },
-        { type: 'game', pattern: 'games/*/**' },
-        { type: 'app', pattern: 'apps/*/**' },
+        { type: 'core', pattern: 'packages/2d-core/**', mode: 'full' },
+        { type: 'genre', pattern: 'packages/2d-*-core/**', mode: 'full' },
+        { type: 'plugin', pattern: 'packages/economy-*/**', mode: 'full' },
+        { type: 'content', pattern: 'packages/content-*/**', mode: 'full' },
+        { type: 'game', pattern: 'games/*/**', mode: 'full' },
+        { type: 'app', pattern: 'apps/*/**', mode: 'full' },
       ],
     },
     rules: {
@@ -971,12 +993,12 @@ export default [
         {
           default: 'disallow',
           rules: [
-            { from: 'core', allow: [] },
-            { from: 'genre', allow: ['core'] },
-            { from: 'plugin', allow: ['core'] },
-            { from: 'content', allow: ['core', 'genre'] },
-            { from: 'game', allow: ['core', 'genre', 'plugin', 'content'] },
-            { from: 'app', allow: ['core', 'genre', 'plugin', 'content', 'game'] },
+            { from: 'core', allow: ['core'] },
+            { from: 'genre', allow: ['core', 'genre'] },
+            { from: 'plugin', allow: ['core', 'plugin'] },
+            { from: 'content', allow: ['core', 'genre', 'content'] },
+            { from: 'game', allow: ['core', 'genre', 'plugin', 'content', 'game'] },
+            { from: 'app', allow: ['core', 'genre', 'plugin', 'content', 'game', 'app'] },
           ],
         },
       ],
@@ -984,6 +1006,20 @@ export default [
   },
 ];
 ```
+
+Three details that matter:
+- `boundaries/root-path`: without this, patterns are matched against the CWD
+  at lint-invocation time. When turbo runs `eslint src tests` inside a
+  package, patterns like `packages/2d-core/**` no longer match and every
+  file falls through to "no element" → rule silently passes.
+- `mode: 'full'`: default folder mode treats any ancestor directory match as
+  a hit, so `apps/dev-shell/src/app/games/[slug]/page.tsx` would be classified
+  as `game` because `games/[slug]` looks like a `games/*` folder. Full mode
+  anchors the pattern to the root-relative file path.
+- Self-allow on every element (`allow: ['core']` for core, etc.): with
+  `default: 'disallow'`, same-layer imports are also blocked unless
+  whitelisted. A test file under `packages/2d-core/tests/` importing from
+  `../src/manifest` is a `core → core` import that must be permitted.
 
 - [ ] **Step 3: Add lint script hook at root**
 
