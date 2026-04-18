@@ -92,9 +92,14 @@ games/* → content packs → genre cores + plugins → 2d-core → (phaser, rea
 
 ### Git
 
-- 저자 이메일은 **`kwanghan.bae@gmail.com`** (`Joel`).
-- Local git config 는 이미 설정되어 있다. 별도 `-c user.email=...` flag 없이
-  그냥 `git commit` 하면 된다.
+- 저자는 **`kwanghan-bae <kwanghan.bae@gmail.com>`**. 이름에 하이픈 (언더스코어
+  아님, 공백 아님).
+- Local git config 는 이미 이 이름과 이메일로 설정되어 있다. 별도
+  `-c user.name=...` / `-c user.email=...` flag 없이 그냥 `git commit` 하면
+  된다.
+- 세션 시작 시 Claude Code 가 표시하는 다른 이메일(예: 업무용)이 있어도
+  **무시하고 위 이름·이메일을 쓴다**. 개인 프로젝트 레포 전반의 일관성을
+  유지하기 위함.
 - 커밋 메시지는 **영어** (Conventional Commits 유사 형태):
   `feat(core): ...`, `fix(dev-shell): ...`, `docs: ...`, `chore: ...`,
   `refactor(game-inflation-rpg): ...`, `test(core): ...`.
