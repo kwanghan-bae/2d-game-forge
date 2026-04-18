@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import type { ForgeGameInstance } from '@forge/core';
 import { findGame } from '@/lib/registry';
 
 export interface GameMountProps {
@@ -10,12 +11,12 @@ export interface GameMountProps {
 
 export default function GameMountInner({ slug, assetsBasePath }: GameMountProps) {
   const containerId = `game-container-${slug}`;
-  const instanceRef = useRef<unknown>(null);
+  const instanceRef = useRef<ForgeGameInstance | null>(null);
 
   useEffect(() => {
     if (instanceRef.current) return;
     let destroyed = false;
-    let gameInstance: { destroy?: (removeCanvas?: boolean) => void } | null = null;
+    let gameInstance: ForgeGameInstance | null = null;
 
     const game = findGame(slug);
     if (!game) return;
@@ -26,13 +27,13 @@ export default function GameMountInner({ slug, assetsBasePath }: GameMountProps)
         parent: containerId,
         assetsBasePath,
         exposeTestHooks: process.env.NODE_ENV !== 'production',
-      }) as typeof gameInstance;
+      });
       instanceRef.current = gameInstance;
     });
 
     return () => {
       destroyed = true;
-      gameInstance?.destroy?.(true);
+      gameInstance?.destroy(true);
       instanceRef.current = null;
     };
   }, [slug, assetsBasePath, containerId]);
