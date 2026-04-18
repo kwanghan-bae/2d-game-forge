@@ -229,9 +229,6 @@ SSR 단계에서 실패한다.
 - **upstream 호환 키** — `'korea_inflation_rpg_save'` localStorage 키와
   `com.korea.inflationrpg` Capacitor appId 가 그대로 살아있다. `SaveManager`
   를 `@forge/core` 로 승격할 때 namespace 패턴으로 통합한다.
-- **`StartGame` 반환 타입 `unknown`** — `apps/dev-shell/src/lib/registry.ts`
-  에서 `StartGame` 의 반환을 `unknown` 으로 받는다. 게임 #2 도착 시
-  `@forge/core` 에 `ForgeGameInstance` 인터페이스 정의로 해소한다.
 
 ## 9. 더 자세한 의도
 
