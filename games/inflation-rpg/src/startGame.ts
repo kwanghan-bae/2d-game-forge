@@ -27,7 +27,7 @@ export function StartGame(config: StartGameConfig): Phaser.Game {
       gameState: GameState.getInstance(),
       inflationManager: InflationManager.getInstance(),
       ReincarnationManager,
-      phaserGame: game,
+      gameInstance: game,
     });
     EventBus.on('current-scene-ready', (scene: Phaser.Scene) => {
       exposeTestHooks({ currentScene: scene });
