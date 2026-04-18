@@ -1,3 +1,6 @@
+# brainstorming sessions
+.superpowers/
+
 # deps
 node_modules/
 .pnpm-store/
