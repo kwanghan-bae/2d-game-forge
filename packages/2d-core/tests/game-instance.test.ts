@@ -23,6 +23,6 @@ describe('StartGameFn', () => {
     type Fn = StartGameFn<{ parent: string }>;
     const fn: Fn = () => ({ destroy: () => {} });
     const result = fn({ parent: 'x' });
-    expectTypeOf(result).toMatchTypeOf<ForgeGameInstance>();
+    expectTypeOf(result).toExtend<ForgeGameInstance>();
   });
 });
