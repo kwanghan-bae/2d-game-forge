@@ -1,4 +1,4 @@
-import type { GameManifestValue } from '@forge/core/manifest';
+import type { GameManifestValue, ForgeGameInstance } from '@forge/core';
 
 export interface RegisteredGame {
   manifest: GameManifestValue;
@@ -7,7 +7,7 @@ export interface RegisteredGame {
       parent: string;
       assetsBasePath: string;
       exposeTestHooks: boolean;
-    }) => unknown;
+    }) => ForgeGameInstance;
   }>;
 }
 
