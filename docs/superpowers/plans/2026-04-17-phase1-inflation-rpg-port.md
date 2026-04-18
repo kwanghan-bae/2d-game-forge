@@ -1,23 +1,35 @@
-# Phase 1 — inflation-rpg Curated Port Implementation Plan
+# Phase 1 — inflation-rpg 큐레이션 이식 구현 plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Port korea-inflation-rpg into `games/inflation-rpg/` as the first real game in the forge, booted from the dev-shell portal via a config-driven `StartGame()` entry. Keep only the main play loop, core managers, core data, and the math/save/balance invariants as tests. Verify the game plays end-to-end through the portal and that a standalone web build + Capacitor sync succeed.
+**목표:** korea-inflation-rpg 를 `games/inflation-rpg/` 로 이식해 forge 안의
+첫 번째 실제 게임으로 만든다. 부팅은 dev-shell 포털을 통해 config 기반
+`StartGame()` 엔트리로 수행된다. 메인 플레이 루프, 코어 매니저, 코어 데이터,
+수학·세이브·밸런스 불변식 테스트만 남긴다. 포털 경유 end-to-end 플레이와
+standalone 웹 빌드 + Capacitor sync 가 모두 성공하는지 검증한다.
 
-**Architecture:** `games/inflation-rpg/` becomes a new `@forge/*` workspace. The Phaser entry is refactored from `StartGame(parent: string)` to `StartGame(config: StartGameConfig)` so the dev-shell portal and a future standalone Next shell share one entry. Asset loading uses `this.load.setBaseURL(config.assetsBasePath)` so the same game code works under `/games/inflation-rpg/assets/...` (portal) and `/assets/...` (standalone). No code is promoted to `@forge/core` yet — the "rule of three" waits for game A.
+**아키텍처:** `games/inflation-rpg/` 는 새 `@forge/*` workspace 가 된다.
+Phaser 엔트리는 `StartGame(parent: string)` 에서 `StartGame(config: StartGameConfig)`
+로 refactor 되어 dev-shell 포털과 향후 standalone Next 셸이 하나의 엔트리를
+공유한다. 에셋 로딩은 `this.load.setBaseURL(config.assetsBasePath)` 을 사용해
+같은 게임 코드가 `/games/inflation-rpg/assets/...` (포털) 과 `/assets/...`
+(standalone) 양쪽에서 동작한다. 아직 어떤 코드도 `@forge/core` 로 승격되지
+않는다 — "3의 규칙"이 게임 A 를 기다린다.
 
-**Tech Stack:** Phaser 3.90 (existing), React 19 / Next 16 (existing), @preact/signals-react, bignumber.js, zod, Capacitor 8, Vitest 4, Playwright 1.57. All inherited from korea-inflation-rpg.
+**기술 스택:** Phaser 3.90 (기존), React 19 / Next 16 (기존),
+@preact/signals-react, bignumber.js, zod, Capacitor 8, Vitest 4, Playwright 1.57.
+모두 korea-inflation-rpg 에서 상속.
 
 **Spec:** `docs/superpowers/specs/2026-04-17-2d-game-forge-initial-design.md`
-**Prior plan:** `docs/superpowers/plans/2026-04-17-phase0-bootstrap.md` (Phase 0 complete — repo skeleton + @forge/core shell + dev-shell portal).
+**이전 plan:** `docs/superpowers/plans/2026-04-17-phase0-bootstrap.md` (Phase 0 완료 — 레포 골격 + @forge/core shell + dev-shell 포털).
 
-**Source repo:** `/Users/joel/Desktop/git/korea-inflation-rpg/` (NOT inside this monorepo; do NOT modify it).
+**Source 레포:** `/Users/joel/Desktop/git/korea-inflation-rpg/` (이 모노레포 바깥; 수정 금지).
 
 ---
 
-## File Structure
+## 파일 구조
 
-Files created (relative to repo root `/Users/joel/Desktop/git/2d-game-forge/`):
+생성될 파일들 (레포 루트 `/Users/joel/Desktop/git/2d-game-forge/` 기준):
 
 ```
 games/inflation-rpg/
@@ -80,27 +92,29 @@ apps/dev-shell/
 └── src/app/games/[slug]/page.tsx                # MODIFIED: mount game container, invoke StartGame
 ```
 
-Each file has one clear responsibility. `src/game/` is the existing game's code moved wholesale (minus deletions); `src/startGame.ts` and `src/index.ts` are new seams for the forge's dev-shell mode.
+각 파일은 하나의 명확한 책임을 가진다. `src/game/` 은 기존 게임 코드를 통째로
+옮긴 결과다 (삭제분 제외). `src/startGame.ts` 와 `src/index.ts` 는 forge 의
+dev-shell 모드를 위한 새 seam 이다.
 
 ---
 
-## Task Order and Dependencies
+## 태스크 순서와 의존성
 
-Tasks are sequential. Each ends with a commit.
+태스크는 순차적으로 실행된다. 각 태스크는 커밋으로 끝난다.
 
 ---
 
-### Task 1: Create `games/inflation-rpg/` workspace skeleton
+### 태스크 1: `games/inflation-rpg/` workspace 골격 생성
 
-**Files:**
-- Create: `games/inflation-rpg/package.json`
-- Create: `games/inflation-rpg/tsconfig.json`
-- Create: `games/inflation-rpg/README.md`
-- Delete: `games/.gitkeep` (now redundant)
+**파일:**
+- 생성: `games/inflation-rpg/package.json`
+- 생성: `games/inflation-rpg/tsconfig.json`
+- 생성: `games/inflation-rpg/README.md`
+- 삭제: `games/.gitkeep` (이제 불필요)
 
-- [ ] **Step 1: Write package.json**
+- [ ] **단계 1: package.json 작성**
 
-Write `games/inflation-rpg/package.json`:
+`games/inflation-rpg/package.json` 작성:
 ```json
 {
   "name": "@forge/game-inflation-rpg",
@@ -153,9 +167,9 @@ Write `games/inflation-rpg/package.json`:
 }
 ```
 
-- [ ] **Step 2: Write tsconfig**
+- [ ] **단계 2: tsconfig 작성**
 
-Write `games/inflation-rpg/tsconfig.json`:
+`games/inflation-rpg/tsconfig.json` 작성:
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -180,9 +194,9 @@ Write `games/inflation-rpg/tsconfig.json`:
 }
 ```
 
-- [ ] **Step 3: Write README**
+- [ ] **단계 3: README 작성**
 
-Write `games/inflation-rpg/README.md`:
+`games/inflation-rpg/README.md` 작성:
 ```markdown
 # @forge/game-inflation-rpg
 
@@ -218,19 +232,20 @@ local. When a second game lands, we will promote shared pieces (e.g.
 SaveManager, EventBus, i18n) to `@forge/core` per the rule of three.
 ```
 
-- [ ] **Step 4: Remove placeholder**
+- [ ] **단계 4: placeholder 제거**
 
-Run:
+실행:
 ```bash
 rm games/.gitkeep
 ```
 
-- [ ] **Step 5: Install deps**
+- [ ] **단계 5: 의존성 설치**
 
-Run: `pnpm install`
-Expected: `@forge/game-inflation-rpg` shows up in the workspace graph; phaser, capacitor, etc. downloaded.
+실행: `pnpm install`
+예상: `@forge/game-inflation-rpg` 가 workspace 그래프에 등장. phaser, capacitor
+등이 다운로드된다.
 
-- [ ] **Step 6: Commit**
+- [ ] **단계 6: 커밋**
 
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg pnpm-lock.yaml
@@ -240,16 +255,16 @@ git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "fe
 
 ---
 
-### Task 2: Copy curated source tree from korea-inflation-rpg
+### 태스크 2: korea-inflation-rpg 에서 큐레이션된 소스 트리 복사
 
-Bulk copy — no modifications yet. Items marked DROP are not copied.
+벌크 복사 — 아직 수정은 없다. DROP 표시된 항목은 복사하지 않는다.
 
-**Upstream root:** `/Users/joel/Desktop/git/korea-inflation-rpg/`
-**Target root:** `/Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/`
+**Upstream 루트:** `/Users/joel/Desktop/git/korea-inflation-rpg/`
+**Target 루트:** `/Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/`
 
-- [ ] **Step 1: Copy src/game tree**
+- [ ] **단계 1: src/game 트리 복사**
 
-Run (from repo root `/Users/joel/Desktop/git/2d-game-forge/`):
+레포 루트 (`/Users/joel/Desktop/git/2d-game-forge/`) 에서 실행:
 ```bash
 UPSTREAM=/Users/joel/Desktop/git/korea-inflation-rpg
 TARGET=games/inflation-rpg
@@ -279,9 +294,9 @@ cp -R "$UPSTREAM/src/game/utils"      "$TARGET/src/game/utils"
 # DO NOT copy src/game/tests — handled in Task 10 with curation.
 ```
 
-- [ ] **Step 2: Copy src/app + src/components (for release-mode only)**
+- [ ] **단계 2: src/app + src/components 복사 (release-mode 전용)**
 
-Run:
+실행:
 ```bash
 UPSTREAM=/Users/joel/Desktop/git/korea-inflation-rpg
 TARGET=games/inflation-rpg
@@ -294,9 +309,9 @@ cp "$UPSTREAM/src/app/favicon.ico"   "$TARGET/src/app/"
 cp "$UPSTREAM/src/components/PhaserGame.tsx" "$TARGET/src/components/"
 ```
 
-- [ ] **Step 3: Copy public/assets tree (curation happens in Task 8)**
+- [ ] **단계 3: public/assets 트리 복사 (큐레이션은 태스크 8 에서)**
 
-Run:
+실행:
 ```bash
 UPSTREAM=/Users/joel/Desktop/git/korea-inflation-rpg
 TARGET=games/inflation-rpg
@@ -309,9 +324,9 @@ rm -rf "$TARGET/public/assets/data/raw_concept"
 find "$TARGET/public/assets" -name "*.meta" -delete 2>/dev/null || true
 ```
 
-- [ ] **Step 4: Copy the single E2E helper we will keep**
+- [ ] **단계 4: 남길 단일 E2E helper 복사**
 
-Run:
+실행:
 ```bash
 UPSTREAM=/Users/joel/Desktop/git/korea-inflation-rpg
 TARGET=games/inflation-rpg
@@ -321,11 +336,12 @@ cp "$UPSTREAM/tests/e2e/helpers/GameTestHelper.ts" "$TARGET/tests/e2e/helpers/"
 cp "$UPSTREAM/tests/e2e/game_flow.spec.ts" "$TARGET/tests/e2e/full-game-flow.spec.ts"
 ```
 
-Note the file rename: `game_flow.spec.ts` → `full-game-flow.spec.ts` (matches the spec §3 Phase 1's "full-game-flow.spec.ts" naming).
+파일명 변경 주의: `game_flow.spec.ts` → `full-game-flow.spec.ts` (spec §3 Phase 1
+의 "full-game-flow.spec.ts" 명명과 일치).
 
-- [ ] **Step 5: Copy vitest test files (whole directory — curation in Task 10)**
+- [ ] **단계 5: vitest 테스트 파일 복사 (디렉터리 전체 — 큐레이션은 태스크 10 에서)**
 
-Run:
+실행:
 ```bash
 UPSTREAM=/Users/joel/Desktop/git/korea-inflation-rpg
 TARGET=games/inflation-rpg
@@ -334,9 +350,9 @@ mkdir -p "$TARGET/tests/game"
 cp "$UPSTREAM/tests/game/"*.ts "$TARGET/tests/game/"
 ```
 
-- [ ] **Step 6: Sanity checks — inventory of what's been copied**
+- [ ] **단계 6: 정상성 확인 — 복사된 파일 인벤토리**
 
-Run:
+실행:
 ```bash
 find games/inflation-rpg -type f | wc -l
 find games/inflation-rpg -name "*.ts" -path "*/src/*" | wc -l
@@ -344,11 +360,10 @@ find games/inflation-rpg -name "*.test.ts" | wc -l
 find games/inflation-rpg/public/assets -type f | wc -l
 ```
 
-Record the numbers in the commit body for later reference. Expected rough
-magnitudes: ~300 total files, ~80 source .ts under src/, ~35 test files,
-~85 asset files.
+나중의 참조를 위해 숫자를 커밋 본문에 기록한다. 예상 대략적인 규모:
+전체 ~300 파일, src/ 아래 소스 .ts ~80개, 테스트 파일 ~35개, 에셋 파일 ~85개.
 
-- [ ] **Step 7: Commit**
+- [ ] **단계 7: 커밋**
 
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg
@@ -360,20 +375,21 @@ task prunes and refactors. Source path: /Users/joel/Desktop/git/korea-inflation-
 
 ---
 
-### Task 3: Write `StartGameConfig` + `startGame.ts` wrapper (TDD)
+### 태스크 3: `StartGameConfig` + `startGame.ts` wrapper 작성 (TDD)
 
-The new public entry. Takes a config object, owns lifecycle, exposes test hooks only in dev/test mode.
+새로운 공개 엔트리. config 객체를 받고, lifecycle 을 소유하며, dev/test 모드에서만
+테스트 hook 을 노출한다.
 
-**Files:**
-- Create: `games/inflation-rpg/src/startGame.ts`
-- Create: `games/inflation-rpg/src/game/testHooks.ts`
-- Create: `games/inflation-rpg/vitest.config.ts`
-- Create: `games/inflation-rpg/tests/game/startGame.test.ts`
-- Modify: `games/inflation-rpg/src/game/main.ts`
+**파일:**
+- 생성: `games/inflation-rpg/src/startGame.ts`
+- 생성: `games/inflation-rpg/src/game/testHooks.ts`
+- 생성: `games/inflation-rpg/vitest.config.ts`
+- 생성: `games/inflation-rpg/tests/game/startGame.test.ts`
+- 수정: `games/inflation-rpg/src/game/main.ts`
 
-- [ ] **Step 1: Write the vitest config**
+- [ ] **단계 1: vitest config 작성**
 
-Write `games/inflation-rpg/vitest.config.ts`:
+`games/inflation-rpg/vitest.config.ts` 작성:
 ```ts
 import { defineConfig } from 'vitest/config';
 
@@ -386,9 +402,9 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 2: Write the failing test for StartGameConfig shape**
+- [ ] **단계 2: StartGameConfig shape 에 대한 실패하는 테스트 작성**
 
-Write `games/inflation-rpg/tests/game/startGame.test.ts`:
+`games/inflation-rpg/tests/game/startGame.test.ts` 작성:
 ```ts
 import { describe, expect, it } from 'vitest';
 import type { StartGameConfig } from '../../src/startGame';
@@ -407,14 +423,14 @@ describe('StartGameConfig', () => {
 });
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [ ] **단계 3: 테스트가 실패하는지 확인**
 
-Run: `pnpm --filter @forge/game-inflation-rpg test`
-Expected: FAIL with `Cannot find module '../../src/startGame'`.
+실행: `pnpm --filter @forge/game-inflation-rpg test`
+예상: `Cannot find module '../../src/startGame'` 로 FAIL.
 
-- [ ] **Step 4: Add the testHooks helper**
+- [ ] **단계 4: testHooks helper 추가**
 
-Write `games/inflation-rpg/src/game/testHooks.ts`:
+`games/inflation-rpg/src/game/testHooks.ts` 작성:
 ```ts
 import type { GameState } from './GameState';
 import type { InflationManager } from './utils/InflationManager';
@@ -444,9 +460,9 @@ export function exposeTestHooks(slots: TestHookSlots): void {
 }
 ```
 
-- [ ] **Step 5: Refactor `src/game/main.ts` to expose a Phaser config factory only**
+- [ ] **단계 5: `src/game/main.ts` 를 순수 Phaser config factory 로 refactor**
 
-Open `games/inflation-rpg/src/game/main.ts` and replace the file's contents with:
+`games/inflation-rpg/src/game/main.ts` 를 열어 내용을 다음으로 교체:
 ```ts
 import { Boot } from './scenes/Boot';
 import { Preloader } from './scenes/Preloader';
@@ -496,12 +512,12 @@ export function buildPhaserConfig(opts: PhaserConfigOptions): Phaser.Types.Core.
 }
 ```
 
-This removes the side effects and `window.*` assignments that used to live
-in `main.ts`. Those moved to `startGame.ts` (next step) and are now opt-in.
+`main.ts` 에 살던 side effect 와 `window.*` 할당은 제거된다. 이들은
+`startGame.ts` (다음 단계) 로 옮겨지고, 이제 opt-in 이 된다.
 
-- [ ] **Step 6: Write `startGame.ts`**
+- [ ] **단계 6: `startGame.ts` 작성**
 
-Write `games/inflation-rpg/src/startGame.ts`:
+`games/inflation-rpg/src/startGame.ts` 작성:
 ```ts
 import Phaser from 'phaser';
 import { buildPhaserConfig } from './game/main';
@@ -543,25 +559,25 @@ export function StartGame(config: StartGameConfig): Phaser.Game {
 }
 ```
 
-- [ ] **Step 7: Run the test to verify it passes**
+- [ ] **단계 7: 테스트가 통과하는지 확인**
 
-Run: `pnpm --filter @forge/game-inflation-rpg test tests/game/startGame.test.ts`
-Expected: 1 passed.
+실행: `pnpm --filter @forge/game-inflation-rpg test tests/game/startGame.test.ts`
+예상: 1 passed.
 
-- [ ] **Step 8: Typecheck**
+- [ ] **단계 8: Typecheck**
 
-Run: `pnpm --filter @forge/game-inflation-rpg typecheck`
-Expected: exit 0. If tsc complains about other test files referring to the
-old `main.ts` exports, **ignore them for now** — Task 10 will delete the
-out-of-scope tests. This typecheck is scoped to `startGame.ts` and the
-production files it imports. If *production* files fail to compile, fix
-them before proceeding.
+실행: `pnpm --filter @forge/game-inflation-rpg typecheck`
+예상: exit 0. 다른 테스트 파일이 구 `main.ts` export 를 참조해서 tsc 가
+불평하면 **지금은 무시한다** — 태스크 10 이 scope 밖 테스트들을 삭제할 것이다.
+이 typecheck 는 `startGame.ts` 와 그것이 import 하는 production 파일에만
+관심이 있다. 만약 *production* 파일이 컴파일 실패하면 계속 진행하기 전에
+수정한다.
 
-To narrow typecheck to production only during this task, run:
+이 태스크 중 typecheck 를 production 만으로 좁히려면 실행:
 `pnpm --filter @forge/game-inflation-rpg exec tsc --noEmit --project tsconfig.json 2>&1 | grep -v '^tests/game/'`
-and inspect.
+후 검사.
 
-- [ ] **Step 9: Commit**
+- [ ] **단계 9: 커밋**
 
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg
@@ -574,26 +590,26 @@ leaks globals unless the caller opts in via config.exposeTestHooks."
 
 ---
 
-### Task 4: Update Preloader to use `assetsBasePath` from the registry
+### 태스크 4: Preloader 가 registry 에서 `assetsBasePath` 를 읽도록 수정
 
-The Preloader currently loads `'images/title_bg.png'` as a relative path.
-Phaser resolves that against the page URL, which breaks in dev-shell mode
-where the page is `/games/inflation-rpg` (so `images/...` would resolve
-against that). Reading the per-game base URL off the registry makes the
-same code work in every mount mode.
+Preloader 는 현재 `'images/title_bg.png'` 를 상대 경로로 로드한다. Phaser 는
+이를 페이지 URL 에 대해 해석하는데, dev-shell 모드에서는 페이지가
+`/games/inflation-rpg` 이므로 `images/...` 가 그 경로 기준으로 해석되어 깨진다.
+게임별 base URL 을 registry 에서 읽으면 같은 코드가 모든 마운트 모드에서
+동작한다.
 
-**Files:**
-- Modify: `games/inflation-rpg/src/game/scenes/Preloader.ts`
+**파일:**
+- 수정: `games/inflation-rpg/src/game/scenes/Preloader.ts`
 
-- [ ] **Step 1: Read the current Preloader**
+- [ ] **단계 1: 현재 Preloader 읽기**
 
-Run: `cat games/inflation-rpg/src/game/scenes/Preloader.ts | head -40`
-Note the existing `preload()` method body (starts ~line 45-50 with image loads).
+실행: `cat games/inflation-rpg/src/game/scenes/Preloader.ts | head -40`
+기존 `preload()` 메서드 본문 (약 45~50 행부터 image 로드들이 시작) 을 확인한다.
 
-- [ ] **Step 2: Add `setBaseURL` call at the top of `preload()`**
+- [ ] **단계 2: `preload()` 최상단에 `setBaseURL` 호출 추가**
 
-Edit `games/inflation-rpg/src/game/scenes/Preloader.ts`. Locate the
-`preload()` method. Insert, as the **first statement** inside `preload()`:
+`games/inflation-rpg/src/game/scenes/Preloader.ts` 를 편집한다.
+`preload()` 메서드를 찾아, **첫 번째 문장**으로 다음을 삽입:
 ```ts
     const base = this.game.registry.get('assetsBasePath');
     if (typeof base === 'string' && base.length > 0) {
@@ -601,16 +617,16 @@ Edit `games/inflation-rpg/src/game/scenes/Preloader.ts`. Locate the
     }
 ```
 
-Every subsequent `this.load.image(...)` / `this.load.spritesheet(...)` /
-`this.load.audio(...)` call remains unchanged — they now resolve relative
-to the configured base URL.
+이후의 모든 `this.load.image(...)` / `this.load.spritesheet(...)` /
+`this.load.audio(...)` 호출은 그대로 둔다 — 이제 설정된 base URL 에 대해
+상대적으로 해석된다.
 
-- [ ] **Step 3: Verify with typecheck**
+- [ ] **단계 3: typecheck 로 검증**
 
-Run: `pnpm --filter @forge/game-inflation-rpg typecheck 2>&1 | tail -5`
-Expected: exit 0 (or only the tests/ errors Task 10 will clean up).
+실행: `pnpm --filter @forge/game-inflation-rpg typecheck 2>&1 | tail -5`
+예상: exit 0 (또는 태스크 10 이 치울 tests/ 에러만).
 
-- [ ] **Step 4: Commit**
+- [ ] **단계 4: 커밋**
 
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg/src/game/scenes/Preloader.ts
@@ -619,16 +635,16 @@ git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "fe
 
 ---
 
-### Task 5: Add `gameManifest` and the package `src/index.ts` barrel
+### 태스크 5: `gameManifest` 와 패키지 `src/index.ts` barrel 추가
 
-Exposes the game to the dev-shell registry in a single import.
+게임을 dev-shell registry 에 단일 import 로 노출시킨다.
 
-**Files:**
-- Create: `games/inflation-rpg/src/index.ts`
+**파일:**
+- 생성: `games/inflation-rpg/src/index.ts`
 
-- [ ] **Step 1: Write `src/index.ts`**
+- [ ] **단계 1: `src/index.ts` 작성**
 
-Write `games/inflation-rpg/src/index.ts`:
+`games/inflation-rpg/src/index.ts` 작성:
 ```ts
 import { parseGameManifest } from '@forge/core/manifest';
 import type { GameManifestValue } from '@forge/core/manifest';
@@ -643,20 +659,20 @@ export { StartGame } from './startGame';
 export type { StartGameConfig } from './startGame';
 ```
 
-- [ ] **Step 2: Add workspace dep on @forge/core**
+- [ ] **단계 2: @forge/core 에 대한 workspace 의존성 추가**
 
-Run (from repo root):
+레포 루트에서 실행:
 ```bash
 pnpm --filter @forge/game-inflation-rpg add @forge/core@workspace:*
 ```
-Expected: `dependencies.@forge/core` added to the game's package.json.
+예상: 게임의 package.json 에 `dependencies.@forge/core` 가 추가된다.
 
-- [ ] **Step 3: Typecheck the barrel**
+- [ ] **단계 3: barrel typecheck**
 
-Run: `pnpm --filter @forge/game-inflation-rpg typecheck 2>&1 | grep -v '^tests/game/' | tail -5`
-Expected: exit 0 for production files.
+실행: `pnpm --filter @forge/game-inflation-rpg typecheck 2>&1 | grep -v '^tests/game/' | tail -5`
+예상: production 파일에 대해 exit 0.
 
-- [ ] **Step 4: Commit**
+- [ ] **단계 4: 커밋**
 
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg pnpm-lock.yaml
@@ -665,21 +681,23 @@ git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "fe
 
 ---
 
-### Task 6: Release-mode Next shell + capacitor config
+### 태스크 6: Release-mode Next 셸 + Capacitor config
 
-Keeps the copied release-mode React wrapper working so `pnpm --filter @forge/game-inflation-rpg build` produces a standalone static site.
+복사된 release-mode React wrapper 가 계속 동작하도록 해,
+`pnpm --filter @forge/game-inflation-rpg build` 가 standalone 정적 사이트를
+생성하도록 한다.
 
-**Files:**
-- Create: `games/inflation-rpg/next.config.ts`
-- Create: `games/inflation-rpg/next-env.d.ts`
-- Create: `games/inflation-rpg/capacitor.config.ts`
-- Create: `games/inflation-rpg/postcss.config.mjs`
-- Create: `games/inflation-rpg/tailwind.config.ts`
-- Modify: `games/inflation-rpg/src/components/PhaserGame.tsx`
+**파일:**
+- 생성: `games/inflation-rpg/next.config.ts`
+- 생성: `games/inflation-rpg/next-env.d.ts`
+- 생성: `games/inflation-rpg/capacitor.config.ts`
+- 생성: `games/inflation-rpg/postcss.config.mjs`
+- 생성: `games/inflation-rpg/tailwind.config.ts`
+- 수정: `games/inflation-rpg/src/components/PhaserGame.tsx`
 
-- [ ] **Step 1: Write next.config.ts**
+- [ ] **단계 1: next.config.ts 작성**
 
-Write `games/inflation-rpg/next.config.ts`:
+`games/inflation-rpg/next.config.ts` 작성:
 ```ts
 import type { NextConfig } from 'next';
 
@@ -692,17 +710,17 @@ const config: NextConfig = {
 export default config;
 ```
 
-- [ ] **Step 2: Write next-env shim**
+- [ ] **단계 2: next-env shim 작성**
 
-Write `games/inflation-rpg/next-env.d.ts`:
+`games/inflation-rpg/next-env.d.ts` 작성:
 ```ts
 /// <reference types="next" />
 /// <reference types="next/image-types/global" />
 ```
 
-- [ ] **Step 3: Write capacitor.config.ts**
+- [ ] **단계 3: capacitor.config.ts 작성**
 
-Write `games/inflation-rpg/capacitor.config.ts`:
+`games/inflation-rpg/capacitor.config.ts` 작성:
 ```ts
 import type { CapacitorConfig } from '@capacitor/cli';
 
@@ -715,16 +733,16 @@ const config: CapacitorConfig = {
 export default config;
 ```
 
-- [ ] **Step 4: Write postcss + tailwind config**
+- [ ] **단계 4: postcss + tailwind config 작성**
 
-Write `games/inflation-rpg/postcss.config.mjs`:
+`games/inflation-rpg/postcss.config.mjs` 작성:
 ```js
 export default {
   plugins: { '@tailwindcss/postcss': {} },
 };
 ```
 
-Write `games/inflation-rpg/tailwind.config.ts`:
+`games/inflation-rpg/tailwind.config.ts` 작성:
 ```ts
 import type { Config } from 'tailwindcss';
 
@@ -735,10 +753,9 @@ const config: Config = {
 export default config;
 ```
 
-- [ ] **Step 5: Rewrite `src/components/PhaserGame.tsx` to use the new StartGame**
+- [ ] **단계 5: `src/components/PhaserGame.tsx` 를 새 StartGame 사용하도록 재작성**
 
-Open `games/inflation-rpg/src/components/PhaserGame.tsx` and replace its
-contents with:
+`games/inflation-rpg/src/components/PhaserGame.tsx` 를 열어 내용을 다음으로 교체:
 ```tsx
 'use client';
 
@@ -779,17 +796,17 @@ export default function PhaserGame({
 }
 ```
 
-- [ ] **Step 6: Verify release-mode Next shell builds**
+- [ ] **단계 6: release-mode Next 셸이 빌드되는지 검증**
 
-Run: `pnpm --filter @forge/game-inflation-rpg build 2>&1 | tail -20`
-Expected: Next build succeeds, produces `out/`. If it fails because of
-references to code in `src/app/page.tsx` that imports `PhaserGame` from
-`@/components/PhaserGame`, ensure the import path matches.
+실행: `pnpm --filter @forge/game-inflation-rpg build 2>&1 | tail -20`
+예상: Next build 성공, `out/` 생성. 실패 시 원인은 보통
+`src/app/page.tsx` 가 `@/components/PhaserGame` 에서 `PhaserGame` 을 import 하는
+경로가 안 맞을 때이니, import 경로 일치를 확인한다.
 
-Inspect `out/` briefly: `ls games/inflation-rpg/out/` — should contain
-`index.html` and static asset directories.
+`out/` 를 간단히 확인: `ls games/inflation-rpg/out/` — `index.html` 과 정적
+에셋 디렉터리가 있어야 한다.
 
-- [ ] **Step 7: Commit**
+- [ ] **단계 7: 커밋**
 
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg
@@ -798,27 +815,27 @@ git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "fe
 
 ---
 
-### Task 7: Register inflation-rpg with the dev-shell portal
+### 태스크 7: dev-shell 포털에 inflation-rpg 등록
 
-Hook the game into the Phase 0 portal so visiting
-`http://localhost:3000/games/inflation-rpg` boots the Phaser game.
+Phase 0 포털에 게임을 연결해, `http://localhost:3000/games/inflation-rpg`
+방문 시 Phaser 게임이 부팅되도록 한다.
 
-**Files:**
-- Modify: `apps/dev-shell/src/lib/registry.ts`
-- Modify: `apps/dev-shell/src/app/games/[slug]/page.tsx`
-- Create: `apps/dev-shell/src/components/GameMount.tsx`
-- Modify: `apps/dev-shell/package.json` (add workspace dep on game)
+**파일:**
+- 수정: `apps/dev-shell/src/lib/registry.ts`
+- 수정: `apps/dev-shell/src/app/games/[slug]/page.tsx`
+- 생성: `apps/dev-shell/src/components/GameMount.tsx`
+- 수정: `apps/dev-shell/package.json` (게임에 대한 workspace dep 추가)
 
-- [ ] **Step 1: Add workspace dep**
+- [ ] **단계 1: workspace 의존성 추가**
 
-Run:
+실행:
 ```bash
 pnpm --filter @forge/dev-shell add @forge/game-inflation-rpg@workspace:*
 ```
 
-- [ ] **Step 2: Update the registry**
+- [ ] **단계 2: registry 업데이트**
 
-Replace `apps/dev-shell/src/lib/registry.ts` with:
+`apps/dev-shell/src/lib/registry.ts` 를 다음으로 교체:
 ```ts
 import type { GameManifestValue } from '@forge/core/manifest';
 
@@ -849,14 +866,14 @@ export function findGame(slug: string): RegisteredGame | undefined {
 }
 ```
 
-Note: the manifest is inlined here rather than re-imported from the game.
-Manifests in the registry are metadata — they must be serializable and
-statically analyzable at dev-shell build time. The `load` callback is where
-the game's actual code is dynamically imported.
+주의: manifest 는 게임에서 재-import 하지 않고 여기에 인라인된다.
+registry 의 manifest 는 메타데이터 — dev-shell 빌드 시점에 직렬화 가능하고
+정적 분석 가능해야 한다. `load` 콜백이 실제 게임 코드를 dynamic import 하는
+부분이다.
 
-- [ ] **Step 3: Create the client-side mount component**
+- [ ] **단계 3: 클라이언트 측 mount 컴포넌트 생성**
 
-Write `apps/dev-shell/src/components/GameMount.tsx`:
+`apps/dev-shell/src/components/GameMount.tsx` 작성:
 ```tsx
 'use client';
 
@@ -897,9 +914,9 @@ export default function GameMount({ game }: GameMountProps) {
 }
 ```
 
-- [ ] **Step 4: Update `[slug]/page.tsx` to render the mount**
+- [ ] **단계 4: `[slug]/page.tsx` 를 mount 렌더하도록 업데이트**
 
-Replace `apps/dev-shell/src/app/games/[slug]/page.tsx` with:
+`apps/dev-shell/src/app/games/[slug]/page.tsx` 를 다음으로 교체:
 ```tsx
 import { notFound } from 'next/navigation';
 import { findGame } from '@/lib/registry';
@@ -927,59 +944,60 @@ export default async function GamePage({ params }: GamePageProps) {
 }
 ```
 
-- [ ] **Step 5: Update Next transpile list**
+- [ ] **단계 5: Next transpile 목록 업데이트**
 
-Open `apps/dev-shell/next.config.ts` and add the game to `transpilePackages`.
-Replace:
+`apps/dev-shell/next.config.ts` 를 열어 `transpilePackages` 에 게임을 추가.
+다음을:
 ```ts
   transpilePackages: ['@forge/core'],
 ```
-with:
+이렇게 교체:
 ```ts
   transpilePackages: ['@forge/core', '@forge/game-inflation-rpg'],
 ```
 
-- [ ] **Step 6: Serve the game's assets through the dev-shell origin**
+- [ ] **단계 6: 게임의 에셋을 dev-shell origin 에서 서빙**
 
-The dev-shell's Next serves only `apps/dev-shell/public/`. The game's
-assets live in `games/inflation-rpg/public/assets/`. Link them so requests
-to `/games/inflation-rpg/assets/...` resolve.
+dev-shell 의 Next 는 `apps/dev-shell/public/` 만 서빙한다. 게임 에셋은
+`games/inflation-rpg/public/assets/` 에 있다. `/games/inflation-rpg/assets/...`
+요청이 해석되도록 이들을 연결한다.
 
-Run:
+실행:
 ```bash
 mkdir -p apps/dev-shell/public/games/inflation-rpg
 ln -sf "../../../../games/inflation-rpg/public/assets" apps/dev-shell/public/games/inflation-rpg/assets
 ls -la apps/dev-shell/public/games/inflation-rpg/
 ```
-Expected: `assets -> ../../../../games/inflation-rpg/public/assets` shown
-as a symlink.
+예상: `assets -> ../../../../games/inflation-rpg/public/assets` 가 symlink 로
+표시된다.
 
-Verify the link targets the right directory:
+symlink 가 올바른 디렉터리를 가리키는지 검증:
 ```bash
 ls apps/dev-shell/public/games/inflation-rpg/assets/images/ | head -5
 ```
-Expected: `chosun_battle_bg.png`, etc.
+예상: `chosun_battle_bg.png` 등.
 
-- [ ] **Step 7: Manually verify the portal boots the game**
+- [ ] **단계 7: 포털이 게임을 부팅하는지 수동 검증**
 
-Run the dev server (in a separate terminal, or background): `pnpm dev`.
+dev 서버를 별도 터미널 또는 background 에서 실행: `pnpm dev`.
 
-Open `http://localhost:3000/games/inflation-rpg` in a browser and confirm:
-- Page header shows "조선 인플레이션 RPG".
-- Phaser canvas renders (the Preloader screen, then the MainMenu).
-- Browser DevTools Network tab shows `/games/inflation-rpg/assets/images/title_bg.png` returning 200.
+브라우저에서 `http://localhost:3000/games/inflation-rpg` 를 열고 확인:
+- 페이지 헤더에 "조선 인플레이션 RPG" 표시.
+- Phaser 캔버스가 렌더된다 (Preloader 화면 → MainMenu).
+- 브라우저 DevTools Network 탭에
+  `/games/inflation-rpg/assets/images/title_bg.png` 가 200 을 반환.
 
-If assets 404, check:
-- Symlink points to an existing directory.
-- `game.registry.get('assetsBasePath')` returns the expected string
-  (add a `console.log` inside `Preloader.preload()` temporarily if needed;
-  remove it before commit).
+에셋이 404 면 확인:
+- symlink 가 존재하는 디렉터리를 가리키는가.
+- `game.registry.get('assetsBasePath')` 가 기대한 문자열을 반환하는가
+  (필요하면 `Preloader.preload()` 안에 임시 `console.log` 추가; 커밋 전에
+  제거).
 
-Stop the dev server.
+dev 서버 정지.
 
-- [ ] **Step 8: Commit**
+- [ ] **단계 8: 커밋**
 
-Include the symlink in git (git tracks symlinks as-is).
+symlink 를 git 에 포함 (git 은 symlink 를 그대로 추적한다).
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add apps/dev-shell pnpm-lock.yaml
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "feat(dev-shell): mount inflation-rpg via dynamic import and expose its assets
@@ -992,22 +1010,21 @@ works in dev and static export."
 
 ---
 
-### Task 8: Curate public/assets — drop unused
+### 태스크 8: public/assets 큐레이션 — 미사용 제거
 
-Removes assets that aren't needed for the core play loop. The list below
-is derived from what `Preloader.ts` references plus UI/sound files needed
-by the scenes we kept.
+코어 플레이 루프에 필요하지 않은 에셋을 제거한다. 아래 목록은 `Preloader.ts`
+가 참조하는 것 + 유지한 씬들이 필요로 하는 UI/사운드 파일에서 파생된다.
 
-**Files:**
-- Delete under `games/inflation-rpg/public/assets/`:
-  - `images/*_backup.*` (explicit "backup" duplicates)
-  - any image NOT referenced by `Preloader.ts` image/spritesheet loads
-  - `sounds/` entries NOT referenced by `Preloader.ts` audio loads
-  - already deleted in Task 2: `data/raw_concept/`, `*.meta`
+**파일:**
+- `games/inflation-rpg/public/assets/` 아래에서 삭제:
+  - `images/*_backup.*` (명시적 "backup" 중복)
+  - `Preloader.ts` 의 image/spritesheet 로드가 참조하지 않는 이미지
+  - `Preloader.ts` 의 audio 로드가 참조하지 않는 `sounds/` 항목
+  - 태스크 2 에서 이미 삭제됨: `data/raw_concept/`, `*.meta`
 
-- [ ] **Step 1: Collect the referenced asset paths**
+- [ ] **단계 1: 참조된 에셋 경로 수집**
 
-Run:
+실행:
 ```bash
 grep -oE "'(images|sounds)/[^']+'" games/inflation-rpg/src/game/scenes/Preloader.ts \
   | sort -u > /tmp/inflation-rpg-assets-used.txt
@@ -1015,18 +1032,18 @@ wc -l /tmp/inflation-rpg-assets-used.txt
 head -20 /tmp/inflation-rpg-assets-used.txt
 ```
 
-- [ ] **Step 2: List currently shipped assets**
+- [ ] **단계 2: 현재 배포된 에셋 나열**
 
-Run:
+실행:
 ```bash
 (cd games/inflation-rpg/public/assets && find images sounds -type f) \
   | sort -u > /tmp/inflation-rpg-assets-present.txt
 wc -l /tmp/inflation-rpg-assets-present.txt
 ```
 
-- [ ] **Step 3: Compute the unreferenced set**
+- [ ] **단계 3: 미참조 집합 계산**
 
-Run:
+실행:
 ```bash
 sed "s/'//g" /tmp/inflation-rpg-assets-used.txt > /tmp/used-cleaned.txt
 comm -23 /tmp/inflation-rpg-assets-present.txt /tmp/used-cleaned.txt > /tmp/unreferenced.txt
@@ -1034,46 +1051,44 @@ wc -l /tmp/unreferenced.txt
 cat /tmp/unreferenced.txt
 ```
 
-- [ ] **Step 4: Review each unreferenced file**
+- [ ] **단계 4: 미참조 파일별 검토**
 
-Open `/tmp/unreferenced.txt`. For each listed file, decide:
-- **Delete** if it's a clear backup (`*_backup.*`), preview/screenshot, or an
-  older version of a kept sheet.
-- **Keep** if the Preloader loads it indirectly (some scenes call
-  `this.load.image` outside `Preloader.preload` — grep for the filename
-  across `src/game/` to be sure).
+`/tmp/unreferenced.txt` 를 연다. 각 항목에 대해:
+- 명백한 backup (`*_backup.*`), preview/screenshot, 유지한 sheet 의 구버전
+  인 경우 **삭제**.
+- Preloader 가 간접적으로 로드하는 경우 (일부 씬이 `Preloader.preload` 밖에서
+  `this.load.image` 를 호출) **유지** — `src/game/` 전역에서 파일명을 grep
+  해서 확인한다.
 
-Suggested mechanical pass for the obvious ones:
+명백한 것에 대한 기계적 처리:
 ```bash
 find games/inflation-rpg/public/assets/images \
   -type f \( -name "*_backup.*" -o -name "preview.*" \) -print -delete
 ```
 
-For anything else on the unreferenced list, grep before deleting:
+나머지는 삭제 전에 grep:
 ```bash
 # example for each candidate:
 grep -rn "<filename>" games/inflation-rpg/src/ || echo "NOT REFERENCED — safe to delete"
 ```
 
-Delete only the files with no references. Do not delete tilemap JSON,
-font files, or anything the game's runtime expects even if it's not in
-`Preloader.ts` directly.
+참조가 없는 파일만 삭제한다. tilemap JSON, 폰트 파일, 혹은 `Preloader.ts` 에
+직접 없어도 게임 런타임이 기대하는 것은 삭제하지 않는다.
 
-- [ ] **Step 5: Re-run the Preloader in the dev-shell portal**
+- [ ] **단계 5: dev-shell 포털에서 Preloader 재실행**
 
-Start `pnpm dev`, visit `http://localhost:3000/games/inflation-rpg`, and
-watch the Network tab for any 404s. If any referenced asset is missing,
-restore it from the upstream repo:
+`pnpm dev` 시작, `http://localhost:3000/games/inflation-rpg` 방문, Network 탭
+에서 404 를 확인한다. 참조된 에셋이 없어졌다면 upstream 에서 복원:
 ```bash
 UPSTREAM=/Users/joel/Desktop/git/korea-inflation-rpg
 cp "$UPSTREAM/public/assets/<path>" games/inflation-rpg/public/assets/<path>
 ```
 
-Stop the dev server.
+dev 서버 정지.
 
-- [ ] **Step 6: Commit**
+- [ ] **단계 6: 커밋**
 
-Record the final count in the commit message:
+최종 개수를 커밋 메시지에 기록:
 ```bash
 AFTER=$(find games/inflation-rpg/public/assets -type f | wc -l | tr -d ' ')
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg/public
@@ -1082,19 +1097,19 @@ git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "ch
 
 ---
 
-### Task 9: Curate `tests/game/` (vitest) — keep math/save/balance invariants only
+### 태스크 9: `tests/game/` (vitest) 큐레이션 — 수학/세이브/밸런스 불변식만 유지
 
-Per spec §3 Phase 1: keep `InflationManager`, `StatCalculator`,
-`SaveManager.migration`, `Monsters` balance, `KarmaManager`,
+spec §3 Phase 1 에 따라: `InflationManager`, `StatCalculator`,
+`SaveManager.migration`, `Monsters` 밸런스, `KarmaManager`,
 `ReincarnationManager`, `SkillManager`, `GameState.migration`, `SkillData`,
-`ClassData`. Drop the rest.
+`ClassData` 를 유지한다. 나머지는 삭제한다.
 
-**Files:**
-- Delete: `games/inflation-rpg/tests/game/*.ts` except the listed keepers.
+**파일:**
+- 삭제: 목록에 없는 `games/inflation-rpg/tests/game/*.ts`.
 
-- [ ] **Step 1: Delete out-of-scope test files**
+- [ ] **단계 1: scope 밖 테스트 파일 삭제**
 
-Run (from repo root):
+레포 루트에서 실행:
 ```bash
 cd games/inflation-rpg/tests/game
 
@@ -1140,44 +1155,44 @@ done
 cd -
 ```
 
-Expected deletions: all `BattleScene*.test.ts` (includes .ui, .rewards,
-.class, .test, Effects), `GumihoGimmick.test.ts`, `ShopScene*.test.ts`,
-`InventoryScene.ui.test.ts`, `skill-usage.spec.ts`, `StatManager.signals.test.ts`,
-`yaksu.test.ts`, `BalanceSimulation.test.ts`, `GridPhysics.test.ts`, and
-`tests/game/startGame.test.ts` from Task 3 stays (it's in scope).
+예상 삭제: 모든 `BattleScene*.test.ts` (.ui, .rewards, .class, .test, Effects),
+`GumihoGimmick.test.ts`, `ShopScene*.test.ts`, `InventoryScene.ui.test.ts`,
+`skill-usage.spec.ts`, `StatManager.signals.test.ts`, `yaksu.test.ts`,
+`BalanceSimulation.test.ts`, `GridPhysics.test.ts`. 태스크 3 의
+`tests/game/startGame.test.ts` 는 scope 에 있으니 유지된다.
 
-Also keep the TDD test from Task 3: re-check by running
-`ls games/inflation-rpg/tests/game/startGame.test.ts` — if missing, it was
-incorrectly deleted. Restore if needed.
+태스크 3 의 TDD 테스트도 유지 확인:
+`ls games/inflation-rpg/tests/game/startGame.test.ts` — 없으면 잘못 삭제된
+것이니 복원한다.
 
-- [ ] **Step 2: Adjust test `import` paths**
+- [ ] **단계 2: 테스트 `import` 경로 조정**
 
-Upstream tests import with path alias `@/game/...` (`@` → `src/`). Our
-`tsconfig.json` already maps `@/*` to `./src/*`, so paths work unchanged.
-Verify:
+upstream 테스트는 path alias `@/game/...` (`@` → `src/`) 로 import 한다. 우리
+`tsconfig.json` 이 `@/*` 를 `./src/*` 로 매핑하고 있어 경로는 그대로 동작한다.
+검증:
 ```bash
 grep -h "from '@/" games/inflation-rpg/tests/game/*.ts | head -5
 ```
-Expected: lines like `from '@/game/utils/InflationManager'`. These resolve
-correctly against our tsconfig path map.
+예상: `from '@/game/utils/InflationManager'` 형태의 라인. 우리 tsconfig path
+map 에 정상 해석된다.
 
-- [ ] **Step 3: Run the curated vitest suite**
+- [ ] **단계 3: 큐레이션된 vitest suite 실행**
 
-Run: `pnpm --filter @forge/game-inflation-rpg test 2>&1 | tail -20`
-Expected: a high pass rate. Record the exact count.
+실행: `pnpm --filter @forge/game-inflation-rpg test 2>&1 | tail -20`
+예상: 높은 통과율. 정확한 카운트를 기록한다.
 
-If any test fails due to the Task 3 `main.ts` refactor or a test that
-indirectly loads a deleted utility, examine the failure. Options:
-- If a kept test imports a now-deleted helper, **add the helper back** from
-  the upstream repo (it's not in the explicit keep list but is needed as a
-  dependency of a keeper).
-- If a kept test depends on `window.gameState` being auto-exposed, update
-  the test to explicitly call `exposeTestHooks({...})` or accept the break
-  if it was coupling to the old leaky initialization (document in report).
+실패가 발생하면, 태스크 3 의 `main.ts` refactor 또는 삭제된 유틸을 간접 로드
+하는 테스트로 인한 것이니 각 실패를 검사한다. 선택:
+- 유지 테스트가 이제 삭제된 helper 를 import 한다면, upstream 레포에서
+  **helper 를 다시 추가**한다 (명시적 keep 목록엔 없지만 keeper 의 의존성으로
+  필요).
+- 유지 테스트가 `window.gameState` 의 자동 노출에 의존한다면, 테스트를 업데이트
+  해 명시적으로 `exposeTestHooks({...})` 를 호출하게 하거나, 오래된 누수성
+  초기화에 결합된 테스트라면 깨진 채 받아들인다 (리포트에 문서화).
 
-- [ ] **Step 4: Commit**
+- [ ] **단계 4: 커밋**
 
-Record the numbers:
+숫자 기록:
 ```bash
 BEFORE=$(git -C /Users/joel/Desktop/git/korea-inflation-rpg ls-files "tests/game/" | wc -l | tr -d ' ')
 AFTER=$(ls games/inflation-rpg/tests/game/ | wc -l | tr -d ' ')
@@ -1192,19 +1207,19 @@ Remaining suite is the rule-of-three safety net for later promotion to
 
 ---
 
-### Task 10: Playwright E2E — portal-anchored full game flow
+### 태스크 10: Playwright E2E — 포털에 고정된 full game flow
 
-Keep only `full-game-flow.spec.ts` (already renamed in Task 2). Make it
-target the portal URL. Keep `GameTestHelper.ts` (already copied).
+`full-game-flow.spec.ts` (태스크 2 에서 이미 이름 변경) 만 유지한다. 포털 URL
+을 target 으로 만든다. `GameTestHelper.ts` 는 유지한다 (이미 복사됨).
 
-**Files:**
-- Create: `games/inflation-rpg/playwright.config.ts`
-- Modify: `games/inflation-rpg/tests/e2e/full-game-flow.spec.ts` (update routes)
-- Modify: `games/inflation-rpg/tests/e2e/helpers/GameTestHelper.ts` (update any hardcoded paths)
+**파일:**
+- 생성: `games/inflation-rpg/playwright.config.ts`
+- 수정: `games/inflation-rpg/tests/e2e/full-game-flow.spec.ts` (라우트 업데이트)
+- 수정: `games/inflation-rpg/tests/e2e/helpers/GameTestHelper.ts` (hardcoded 경로 업데이트)
 
-- [ ] **Step 1: Write Playwright config**
+- [ ] **단계 1: Playwright config 작성**
 
-Write `games/inflation-rpg/playwright.config.ts`:
+`games/inflation-rpg/playwright.config.ts` 작성:
 ```ts
 import { defineConfig, devices } from '@playwright/test';
 import path from 'node:path';
@@ -1235,16 +1250,16 @@ export default defineConfig({
 });
 ```
 
-Note: `workers: 1` because the dev-shell is a single dev server and the
-game writes to one localStorage key; parallel workers would race.
+주의: `workers: 1` 은 dev-shell 이 단일 dev 서버이고 게임이 하나의
+localStorage 키에 write 하기 때문이다. 병렬 worker 는 race 가 난다.
 
-- [ ] **Step 2: Update the spec to navigate through the portal**
+- [ ] **단계 2: spec 이 포털을 경유하도록 업데이트**
 
-Open `games/inflation-rpg/tests/e2e/full-game-flow.spec.ts`. Its `page.goto('/')`
-calls currently expect the game at the root. Replace every
-`page.goto('/')` with `page.goto('/games/inflation-rpg')`.
+`games/inflation-rpg/tests/e2e/full-game-flow.spec.ts` 를 연다. 그 `page.goto('/')`
+호출들은 현재 게임이 루트에 있다고 기대한다. 모든 `page.goto('/')` 를
+`page.goto('/games/inflation-rpg')` 로 교체한다.
 
-Search and replace within the file:
+파일 내 검색·교체:
 ```bash
 sed -i '' "s|page\\.goto('/')|page.goto('/games/inflation-rpg')|g" \
   games/inflation-rpg/tests/e2e/full-game-flow.spec.ts
@@ -1252,15 +1267,16 @@ sed -i '' "s|page\\.goto(\"/\")|page.goto(\"/games/inflation-rpg\")|g" \
   games/inflation-rpg/tests/e2e/full-game-flow.spec.ts
 ```
 
-Verify manually:
+수동 검증:
 ```bash
 grep -n "page.goto" games/inflation-rpg/tests/e2e/full-game-flow.spec.ts
 ```
-All `page.goto` calls must target `/games/inflation-rpg` (or deeper paths).
+모든 `page.goto` 호출이 `/games/inflation-rpg` (또는 그 하위 경로) 를 가리켜야
+한다.
 
-- [ ] **Step 3: Update the helper the same way**
+- [ ] **단계 3: helper 도 동일하게 업데이트**
 
-Same sed treatment on the helper:
+helper 에 동일한 sed 적용:
 ```bash
 sed -i '' "s|page\\.goto('/')|page.goto('/games/inflation-rpg')|g" \
   games/inflation-rpg/tests/e2e/helpers/GameTestHelper.ts
@@ -1269,25 +1285,25 @@ sed -i '' "s|page\\.goto(\"/\")|page.goto(\"/games/inflation-rpg\")|g" \
 grep -n "page.goto" games/inflation-rpg/tests/e2e/helpers/GameTestHelper.ts
 ```
 
-- [ ] **Step 4: Install Playwright browsers for the new workspace**
+- [ ] **단계 4: 새 workspace 에 Playwright 브라우저 설치**
 
-Run: `pnpm --filter @forge/game-inflation-rpg exec playwright install chromium`
-Expected: chromium available (may reuse the dev-shell install).
+실행: `pnpm --filter @forge/game-inflation-rpg exec playwright install chromium`
+예상: chromium 가용 (dev-shell 설치 재사용 가능).
 
-- [ ] **Step 5: Run the E2E**
+- [ ] **단계 5: E2E 실행**
 
-Run: `pnpm --filter @forge/game-inflation-rpg e2e 2>&1 | tail -10`
-Expected: `1 passed`.
+실행: `pnpm --filter @forge/game-inflation-rpg e2e 2>&1 | tail -10`
+예상: `1 passed`.
 
-If failures:
-- Exact failure at the first Phaser-dependent step → the game did not boot
-  in the portal. Check Network for asset 404s, console for errors.
-- Timeout waiting for `window.gameState` → `exposeTestHooks: true` missing
-  or testHooks.ts branch broken.
-- Missing selector on the MainMenu → verify Preloader finished (slow CI).
-  Increase the wait timeout in the helper if it's a flake.
+실패 시:
+- Phaser 의존 첫 단계에서 정확히 실패 → 포털에서 게임이 부팅되지 않았다.
+  asset 404 또는 콘솔 에러를 확인.
+- `window.gameState` 대기 timeout → `exposeTestHooks: true` 누락이거나
+  testHooks.ts 브랜치가 깨짐.
+- MainMenu 의 selector 누락 → Preloader 가 끝났는지 검증 (느린 CI).
+  flake 라면 helper 의 wait timeout 을 늘린다.
 
-- [ ] **Step 6: Commit**
+- [ ] **단계 6: 커밋**
 
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add games/inflation-rpg/playwright.config.ts games/inflation-rpg/tests/e2e
@@ -1296,44 +1312,45 @@ git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "te
 
 ---
 
-### Task 11: End-to-end verification, turbo pipeline, release build
+### 태스크 11: End-to-end 검증, turbo pipeline, release 빌드
 
-- [ ] **Step 1: Clean install**
+- [ ] **단계 1: Clean install**
 
-Run:
+실행:
 ```bash
 rm -rf node_modules apps/*/node_modules packages/*/node_modules games/*/node_modules
 pnpm install --frozen-lockfile
 ```
-Expected: no errors. Lockfile unchanged.
+예상: 에러 없음. Lockfile 변경 없음.
 
-- [ ] **Step 2: Full turbo pipeline**
+- [ ] **단계 2: 전체 turbo pipeline**
 
-Run: `pnpm turbo run typecheck lint test --force 2>&1 | tail -15`
-Expected: all workspaces green. The game's vitest suite runs the curated
-tests.
+실행: `pnpm turbo run typecheck lint test --force 2>&1 | tail -15`
+예상: 모든 workspace 가 녹색. 게임의 vitest suite 가 큐레이션된 테스트를
+실행한다.
 
-- [ ] **Step 3: Circular dependency check**
+- [ ] **단계 3: 순환 의존성 검사**
 
-Run: `pnpm circular 2>&1 | tail -3`
-Expected: `No circular dependency found!`.
+실행: `pnpm circular 2>&1 | tail -3`
+예상: `No circular dependency found!`.
 
-- [ ] **Step 4: Portal E2E**
+- [ ] **단계 4: 포털 E2E**
 
-Run: `pnpm --filter @forge/game-inflation-rpg e2e 2>&1 | tail -8`
-Expected: `1 passed`.
+실행: `pnpm --filter @forge/game-inflation-rpg e2e 2>&1 | tail -8`
+예상: `1 passed`.
 
-- [ ] **Step 5: Portal smoke still green**
+- [ ] **단계 5: 포털 smoke 가 여전히 녹색인지**
 
-Run: `pnpm --filter @forge/dev-shell e2e 2>&1 | tail -6`
-Expected: `2 passed`. (Phase 0 smoke still works — now one of the two
-tests covers a state where inflation-rpg IS registered. Update the Phase 0
-test if necessary: if the "no games registered" assertion now fails because
-a game IS registered, rewrite the test to assert the portal lists at least
-one game. This is a **permitted Phase 0 test update**, documented inline.)
+실행: `pnpm --filter @forge/dev-shell e2e 2>&1 | tail -6`
+예상: `2 passed`. (Phase 0 smoke 가 여전히 동작 — 이제 둘 중 하나는
+inflation-rpg 가 등록된 상태를 검증한다. 필요하면 Phase 0 테스트 업데이트:
+"no games registered" assertion 이 이제 게임이 등록되어 실패한다면, 포털이
+적어도 하나의 게임을 나열하는지 검증하도록 테스트를 다시 쓴다. 이는 **허용된
+Phase 0 테스트 업데이트**로, 인라인에 기록된다.)
 
-If the Phase 0 smoke fails on that assertion, open
-`apps/dev-shell/tests/e2e/portal.spec.ts` and replace the first test body:
+Phase 0 smoke 가 해당 assertion 에서 실패하면,
+`apps/dev-shell/tests/e2e/portal.spec.ts` 를 열어 첫 테스트 본문을 다음으로
+교체:
 ```ts
 test('portal lists registered games', async ({ page }) => {
   await page.goto('/');
@@ -1344,112 +1361,112 @@ test('portal lists registered games', async ({ page }) => {
 });
 ```
 
-- [ ] **Step 6: Release build verification**
+- [ ] **단계 6: Release 빌드 검증**
 
-Run: `pnpm --filter @forge/game-inflation-rpg build 2>&1 | tail -15`
-Expected: Next emits to `games/inflation-rpg/out/`. Verify:
+실행: `pnpm --filter @forge/game-inflation-rpg build 2>&1 | tail -15`
+예상: Next 가 `games/inflation-rpg/out/` 으로 emit. 검증:
 ```bash
 ls games/inflation-rpg/out/
 test -f games/inflation-rpg/out/index.html && echo "HTML OK"
 test -d games/inflation-rpg/out/assets && echo "ASSETS OK"
 ```
-Both should print `OK`.
+둘 다 `OK` 를 출력해야 한다.
 
-- [ ] **Step 7: Capacitor sync smoke**
+- [ ] **단계 7: Capacitor sync smoke**
 
-Run: `pnpm --filter @forge/game-inflation-rpg exec cap sync 2>&1 | tail -15`
-Expected: Capacitor reports success. If this is the first run, it may ask
-to add platforms — that is acceptable: add iOS and Android via the commands
-Capacitor suggests, or skip if the sync step alone returns exit 0.
+실행: `pnpm --filter @forge/game-inflation-rpg exec cap sync 2>&1 | tail -15`
+예상: Capacitor 가 성공을 보고한다. 첫 실행이라면 플랫폼 추가를 요청할 수
+있는데, 이는 허용된다: Capacitor 가 제안하는 명령으로 iOS 와 Android 를
+추가하거나, sync 단계만 exit 0 이면 건너뛴다.
 
-Do NOT attempt `build:ios` or `build:android` in this task — they open
-native IDEs and require platform SDKs. Leave those for manual
-verification by the user.
+이 태스크에서 `build:ios` 나 `build:android` 는 **시도하지 않는다** — 네이티브
+IDE 를 열고 플랫폼 SDK 를 요구한다. 사용자의 수동 검증으로 남긴다.
 
-- [ ] **Step 8: Manual portal play-through (human gate)**
+- [ ] **단계 8: 수동 포털 플레이 스루 (human gate)**
 
-Run `pnpm dev`. Open `http://localhost:3000/games/inflation-rpg`.
+`pnpm dev` 실행. `http://localhost:3000/games/inflation-rpg` 를 연다.
 
-Verify manually:
-- MainMenu → "새 게임" (or equivalent) starts the flow.
-- Class select screen appears.
-- After picking Hwarang, world map appears.
-- Stepping into an encounter starts a battle.
-- After a battle win, gold and XP update.
-- Opening Inventory / Shop works without console errors.
-- Refreshing the page restores state (SaveManager with original key
-  `'korea_inflation_rpg_save'` is still working).
+수동 검증:
+- MainMenu → "새 게임" (또는 동등한 메뉴) 가 플로우를 시작한다.
+- Class select 화면이 나타난다.
+- 화랑을 고르면 world map 이 나타난다.
+- 인카운터에 들어가면 전투가 시작된다.
+- 전투 승리 후 골드와 XP 가 갱신된다.
+- Inventory / Shop 열기가 콘솔 에러 없이 동작한다.
+- 페이지 새로고침이 상태를 복원한다 (SaveManager 가 원본 키
+  `'korea_inflation_rpg_save'` 로 여전히 작동).
 
-Stop the dev server.
+dev 서버 정지.
 
-- [ ] **Step 9: Final commit if any test updates were made, then tag**
+- [ ] **단계 9: 테스트 업데이트가 있었으면 최종 커밋, 그리고 태그**
 
-If Step 5 required a Phase 0 smoke update, commit it now:
+단계 5 에서 Phase 0 smoke 업데이트가 필요했다면 지금 커밋:
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" add apps/dev-shell/tests
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" commit -m "test(dev-shell): portal smoke now asserts at least one game is registered"
 ```
 
-Tag the result:
+결과에 태그:
 ```bash
 git -c user.name="Joel" -c user.email="joel.ship@kakaopaycorp.com" tag phase-1-complete
 git log --oneline | head -20
 ```
 
-Do NOT push the tag automatically — confirm with the user.
+태그를 자동으로 push 하지 않는다 — 사용자가 확인한다.
 
 ---
 
-## Self-Review
+## 셀프 리뷰
 
-**1. Spec coverage:**
+**1. Spec 커버리지:**
 
-| Spec section | Task |
+| Spec 섹션 | 태스크 |
 |---|---|
-| §0 Phase 1 success #1 (inflation-rpg plays with curated tests) | Tasks 2, 4, 9, 10, 11 |
-| §0 Phase 1 success #2 (`pnpm dev` loads inflation-rpg) | Task 7 |
-| §0 Phase 1 success #3 (iOS/Android build command exists) | Tasks 1 (scripts), 6 (capacitor config), 11 (smoke) |
-| §2 동일 `StartGame` 엔트리 | Task 3 (config-driven), Task 6 (release), Task 7 (portal) |
-| §2 매니페스트 기반 부팅 | Task 5 (gameManifest), Task 7 (registry uses it) |
-| §2 저장 네임스페이스 | **Not applied in Phase 1** — spec says "승격 시 리팩터 분리". `SaveManager` stays inside inflation-rpg with the upstream key. Phase 2 or later handles namespacing. |
-| §2 전역 테스트 훅 격리 | Task 3 — `exposeTestHooks` is opt-in via `StartGameConfig.exposeTestHooks`. |
-| §3 Phase 1 code curation (scenes, managers) | Task 2 (only the listed files are copied — orphaned experiments like `suggest_csv/`, `docs/`, `scripts/` are not copied in the first place) |
-| §3 Phase 1 asset curation | Task 8 |
-| §3 Phase 1 test curation (Vitest 100-150, one E2E) | Tasks 9 (Vitest) and 10 (Playwright) |
-| §3 Phase 1 stopping condition (tests green, manual play ok) | Task 11 |
+| §0 Phase 1 성공 #1 (큐레이션 테스트와 함께 inflation-rpg 플레이) | 태스크 2, 4, 9, 10, 11 |
+| §0 Phase 1 성공 #2 (`pnpm dev` 로 inflation-rpg 로드) | 태스크 7 |
+| §0 Phase 1 성공 #3 (iOS/Android 빌드 명령 존재) | 태스크 1 (스크립트), 6 (capacitor config), 11 (smoke) |
+| §2 동일 `StartGame` 엔트리 | 태스크 3 (config 기반), 태스크 6 (release), 태스크 7 (portal) |
+| §2 manifest 기반 부팅 | 태스크 5 (gameManifest), 태스크 7 (registry 가 이를 사용) |
+| §2 저장 namespace | **Phase 1 에서 적용 안 함** — spec 이 "승격 시 refactor 분리"라고 명시. `SaveManager` 는 upstream 키 그대로 inflation-rpg 안에 남는다. Phase 2 이후에서 namespace 처리. |
+| §2 전역 테스트 hook 격리 | 태스크 3 — `exposeTestHooks` 는 `StartGameConfig.exposeTestHooks` 로 opt-in. |
+| §3 Phase 1 코드 큐레이션 (씬, 매니저) | 태스크 2 (목록 파일만 복사 — `suggest_csv/`, `docs/`, `scripts/` 같은 orphan 실험은 애초에 복사되지 않음) |
+| §3 Phase 1 에셋 큐레이션 | 태스크 8 |
+| §3 Phase 1 테스트 큐레이션 (Vitest 100~150, E2E 하나) | 태스크 9 (Vitest) 와 10 (Playwright) |
+| §3 Phase 1 중단 조건 (테스트 녹색, 수동 플레이 OK) | 태스크 11 |
 
-**2. Placeholder scan:** No TBD/TODO. Every code block is complete. All
-decisions the implementer must make (asset keep/delete judgement calls in
-Task 8, Phase 0 smoke update in Task 11 Step 5) are accompanied by the
-exact criterion and the exact replacement text.
+**2. Placeholder 스캔:** TBD/TODO 없음. 모든 코드 블록이 완전하다. 구현자가
+내려야 할 결정 (태스크 8 의 asset keep/delete judgement, 태스크 11 단계 5 의
+Phase 0 smoke 업데이트) 은 정확한 기준과 정확한 교체 텍스트와 함께 제공된다.
 
-**3. Type consistency:**
-- `StartGameConfig` (Task 3) fields `parent`, `assetsBasePath`,
-  `exposeTestHooks` match usage in Task 6 (PhaserGame.tsx), Task 7
-  (registry and GameMount), and Task 10 (e2e doesn't reference config
-  directly — uses `window.gameState` via helper).
-- `GameManifestValue` (from `@forge/core/manifest`) is used identically in
-  Task 5 (barrel), Task 7 (registry). `gameManifest` object literal in
-  both Task 5 and Task 7 Step 2 has identical `slug`/`title`/`assetsBasePath`
-  values.
-- `buildPhaserConfig({ parent })` (Task 3 main.ts) is called by
-  `StartGame(config)` passing `{ parent: config.parent }` — signature matches.
-- `exposeTestHooks(slots)` (Task 3 testHooks.ts) keys match the fields
-  used in `startGame.ts` — `gameState`, `inflationManager`,
-  `ReincarnationManager`, `phaserGame`, `currentScene`.
+**3. 타입 일관성:**
+- `StartGameConfig` (태스크 3) 필드 `parent`, `assetsBasePath`,
+  `exposeTestHooks` 가 태스크 6 (PhaserGame.tsx), 태스크 7 (registry 와
+  GameMount), 태스크 10 (e2e 는 config 직접 참조 안 하고 helper 를 통해
+  `window.gameState` 사용) 과 일치.
+- `GameManifestValue` (from `@forge/core/manifest`) 이 태스크 5 (barrel),
+  태스크 7 (registry) 에서 동일하게 사용. `gameManifest` 객체 리터럴이 태스크
+  5 와 태스크 7 단계 2 에서 `slug`/`title`/`assetsBasePath` 값이 동일.
+- `buildPhaserConfig({ parent })` (태스크 3 main.ts) 가 `StartGame(config)` 가
+  `{ parent: config.parent }` 를 넘기며 호출 — signature 가 일치.
+- `exposeTestHooks(slots)` (태스크 3 testHooks.ts) 의 key 가 `startGame.ts` 에서
+  사용하는 필드들 — `gameState`, `inflationManager`, `ReincarnationManager`,
+  `phaserGame`, `currentScene` — 과 일치.
 
-**4. Scope check:** Everything in scope for Phase 1 per spec §3. No
-package promotion (`packages/2d-core` remains `GameManifest`-only), no
-content pack split (Korean folklore stays inside `games/inflation-rpg/`),
-no genre core created.
+**4. Scope 체크:** spec §3 기준 Phase 1 scope 안의 모든 것. 패키지 승격 없음
+(`packages/2d-core` 는 `GameManifest` 전용 유지), 콘텐츠 팩 분리 없음 (한국
+설화는 `games/inflation-rpg/` 안에 유지), 장르 코어 생성 없음.
 
 ---
 
-## Execution Handoff
+## 실행 핸드오프
 
-Plan complete and saved to `docs/superpowers/plans/2026-04-17-phase1-inflation-rpg-port.md`. Two execution options:
+plan 완료, `docs/superpowers/plans/2026-04-17-phase1-inflation-rpg-port.md` 에
+저장됨. 실행 옵션 두 가지:
 
-1. **Subagent-Driven (recommended)** — I dispatch a fresh subagent per task, review between tasks, fast iteration. Best fit for the 11-task arc where some tasks (bulk copy, asset curation, test curation) have real judgement calls.
-2. **Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints.
+1. **Subagent 방식 (권장)** — 태스크마다 fresh subagent 를 dispatch, 태스크
+   사이 리뷰, 빠른 반복. 11-태스크 아크 중 일부 태스크 (벌크 복사, asset
+   큐레이션, 테스트 큐레이션) 가 실제 판단을 요구하는 경우에 적합.
+2. **Inline 실행** — executing-plans 로 이 세션에서 실행, 체크포인트와 함께
+   batch 실행.
 
-Which approach?
+어느 쪽?
