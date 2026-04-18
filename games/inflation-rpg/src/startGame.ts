@@ -4,7 +4,7 @@ import { EventBus } from './game/EventBus';
 import { GameState } from './game/GameState';
 import { InflationManager } from './game/utils/InflationManager';
 import { ReincarnationManager } from './game/utils/ReincarnationManager';
-import { exposeTestHooks } from './game/testHooks';
+import { exposeTestHooks } from '@forge/core';
 
 export interface StartGameConfig {
   /** DOM id of the container div into which Phaser will render. */
@@ -27,7 +27,7 @@ export function StartGame(config: StartGameConfig): Phaser.Game {
       gameState: GameState.getInstance(),
       inflationManager: InflationManager.getInstance(),
       ReincarnationManager,
-      phaserGame: game,
+      gameInstance: game,
     });
     EventBus.on('current-scene-ready', (scene: Phaser.Scene) => {
       exposeTestHooks({ currentScene: scene });

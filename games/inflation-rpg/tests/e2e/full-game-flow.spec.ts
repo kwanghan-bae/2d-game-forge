@@ -5,7 +5,7 @@ test.describe('Korea Inflation RPG Game Flow', () => {
         await page.goto('/games/inflation-rpg');
         // Wait for game to initialize and first scene to be active
         await page.waitForFunction(() => {
-            const game = (window as any).phaserGame;
+            const game = (window as any).gameInstance;
             return game && game.scene.getScenes(true).length > 0;
         });
     });
@@ -16,13 +16,13 @@ test.describe('Korea Inflation RPG Game Flow', () => {
 
         // Wait for MainMenu scene to be active
         await page.waitForFunction(() => {
-            const game = (window as any).phaserGame;
+            const game = (window as any).gameInstance;
             const scene = game.scene.getScenes(true)[0];
             return scene && scene.scene.key === 'MainMenu';
         });
 
         const sceneKey = await page.evaluate(() => {
-            return (window as any).phaserGame.scene.getScenes(true)[0].scene.key;
+            return (window as any).gameInstance.scene.getScenes(true)[0].scene.key;
         });
         expect(sceneKey).toBe('MainMenu');
     });
@@ -30,67 +30,67 @@ test.describe('Korea Inflation RPG Game Flow', () => {
     test('should start game and enter world map', async ({ page }) => {
         // Wait for MainMenu
         await page.waitForFunction(() => {
-            const game = (window as any).phaserGame;
+            const game = (window as any).gameInstance;
             const scene = game.scene.getScenes(true)[0];
             return scene && scene.scene.key === 'MainMenu';
         });
 
         // DIRECT BYPASS: Trigger scene start programmatically due to Canvas click flakiness in CI/Test env
         await page.evaluate(() => {
-            const game = (window as any).phaserGame;
+            const game = (window as any).gameInstance;
             // Simulate start button callback
             game.scene.getScenes(true)[0].scene.start('WorldMap');
         });
 
         // Wait for scene transition to WorldMap
         await page.waitForFunction(() => {
-            const game = (window as any).phaserGame;
+            const game = (window as any).gameInstance;
             const scene = game.scene.getScenes(true)[0];
             return scene && scene.scene.key === 'WorldMap';
         }, { timeout: 5000 });
 
         const sceneKey = await page.evaluate(() => {
-            return (window as any).phaserGame.scene.getScenes(true)[0].scene.key;
+            return (window as any).gameInstance.scene.getScenes(true)[0].scene.key;
         });
         expect(sceneKey).toBe('WorldMap');
     });
 
     test('should trigger battle after movement', async ({ page }) => {
         // Go to WorldMap
-        await page.waitForFunction(() => (window as any).phaserGame?.scene?.getScenes(true)[0]?.scene.key === 'MainMenu');
+        await page.waitForFunction(() => (window as any).gameInstance?.scene?.getScenes(true)[0]?.scene.key === 'MainMenu');
         await page.evaluate(() => {
-            (window as any).phaserGame.scene.getScenes(true)[0].scene.start('WorldMap');
+            (window as any).gameInstance.scene.getScenes(true)[0].scene.start('WorldMap');
         });
-        await page.waitForFunction(() => (window as any).phaserGame?.scene?.getScenes(true)[0]?.scene.key === 'WorldMap');
+        await page.waitForFunction(() => (window as any).gameInstance?.scene?.getScenes(true)[0]?.scene.key === 'WorldMap');
 
         // Verify WorldMap active: player sprite should be present (procedural tilemap, no static map image)
         const playerExists = await page.evaluate(() => {
-            const scene = (window as any).phaserGame.scene.getScenes(true)[0];
+            const scene = (window as any).gameInstance.scene.getScenes(true)[0];
             return !!scene.children.list.find((o: any) => o.texture && o.texture.key === 'joseon_warrior_sheet');
         });
         expect(playerExists).toBe(true);
 
         // DIRECT BYPASS: Simulate encounter trigger directly to verify scene transition
         await page.evaluate(() => {
-            const scene = (window as any).phaserGame.scene.getScenes(true)[0];
+            const scene = (window as any).gameInstance.scene.getScenes(true)[0];
             // @ts-ignore - trigger encounter directly
             scene.triggerEncounter();
         });
 
         // Wait for BattleScene
         await page.waitForFunction(() => {
-            const game = (window as any).phaserGame;
+            const game = (window as any).gameInstance;
             const scene = game.scene.getScenes(true)[0];
             return scene && scene.scene.key === 'BattleScene';
         }, { timeout: 10000 });
 
-        const sceneKey = await page.evaluate(() => (window as any).phaserGame.scene.getScenes(true)[0].scene.key);
+        const sceneKey = await page.evaluate(() => (window as any).gameInstance.scene.getScenes(true)[0].scene.key);
         expect(sceneKey).toBe('BattleScene');
 
         // Check BattleScene HUD is rendered (battle log always shows "전투 시작" text)
         // Skill buttons require a selectedClass; the HUD is always rendered
         await page.waitForFunction(() => {
-            const scene = (window as any).phaserGame.scene.getScenes(true)[0];
+            const scene = (window as any).gameInstance.scene.getScenes(true)[0];
             if (!scene) return false;
 
             const children = scene.children.list;
