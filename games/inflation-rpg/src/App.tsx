@@ -1,13 +1,19 @@
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { useGameStore } from './store/gameStore';
 import { MainMenu } from './screens/MainMenu';
 import { ClassSelect } from './screens/ClassSelect';
 import { WorldMap } from './screens/WorldMap';
-import { Battle } from './screens/Battle';
 import { Inventory } from './screens/Inventory';
 import { Shop } from './screens/Shop';
 import { GameOver } from './screens/GameOver';
 import type { StartGameConfig } from './types';
+
+// ssr: false prevents Phaser (imported by Battle) from being bundled into the server-side render
+const Battle = dynamic(() => import('./screens/Battle').then((m) => ({ default: m.Battle })), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface AppProps {
   config: StartGameConfig;
