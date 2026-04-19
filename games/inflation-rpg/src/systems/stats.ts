@@ -1,0 +1,48 @@
+import type { StatKey, Equipment, AllocatedStats } from '../types';
+import type { IStatSystem } from '@forge/core';
+
+export const BASE_STATS: AllocatedStats = { hp: 100, atk: 10, def: 10, agi: 5, luc: 5 };
+export const SP_INCREASE: AllocatedStats = { hp: 5, atk: 3, def: 3, agi: 2, luc: 2 };
+
+export function calcRawStat(key: StatKey, allocated: number, charMult: number): number {
+  return (BASE_STATS[key] + allocated * SP_INCREASE[key]) * charMult;
+}
+
+export function calcEquipmentPercentMult(key: StatKey, equipped: Equipment[]): number {
+  return equipped.reduce((mult, item) => {
+    const pct = item.stats.percent?.[key] ?? 0;
+    return mult * (1 + pct / 100);
+  }, 1);
+}
+
+export function calcEquipmentFlat(key: StatKey, equipped: Equipment[]): number {
+  return equipped.reduce((sum, item) => sum + (item.stats.flat?.[key] ?? 0), 0);
+}
+
+export function calcFinalStat(
+  key: StatKey,
+  allocated: number,
+  charMult: number,
+  equipped: Equipment[],
+  baseAbilityMult: number
+): number {
+  const raw = calcRawStat(key, allocated, charMult);
+  const flat = calcEquipmentFlat(key, equipped);
+  const pct = calcEquipmentPercentMult(key, equipped);
+  return Math.floor((raw + flat) * pct * baseAbilityMult);
+}
+
+export function calcDamageReduction(def: number): number {
+  return def / (def + 500);
+}
+
+export function calcCritChance(agi: number, luc: number): number {
+  return Math.min(0.95, 0.05 + agi * 0.001 + luc * 0.0005);
+}
+
+export const statSystem: IStatSystem = {
+  calcFinalStat: (base, spPoints, percentMult, charMult, baseAbilityMult) =>
+    Math.floor((base + spPoints) * percentMult * charMult * baseAbilityMult),
+  calcDamageReduction,
+  calcCritChance,
+};
