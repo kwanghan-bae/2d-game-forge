@@ -1,6 +1,5 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
-import { StartGame } from '../startGame';
 import type { ForgeGameInstance } from '@forge/core';
 
 export default function Page() {
@@ -10,13 +9,22 @@ export default function Page() {
   useEffect(() => {
     if (!containerRef.current) return;
     containerRef.current.id = 'game-container';
-    gameRef.current = StartGame({
-      parent: 'game-container',
-      assetsBasePath: '/assets',
-      exposeTestHooks: process.env.NODE_ENV !== 'production',
+    let cancelled = false;
+
+    // Dynamic import keeps Phaser out of the SSR bundle — effects never run server-side
+    import('../startGame').then(({ StartGame }) => {
+      if (cancelled || !containerRef.current) return;
+      gameRef.current = StartGame({
+        parent: 'game-container',
+        assetsBasePath: '/assets',
+        exposeTestHooks: process.env.NODE_ENV !== 'production',
+      });
     });
+
     return () => {
+      cancelled = true;
       gameRef.current?.destroy();
+      gameRef.current = null;
     };
   }, []);
 
