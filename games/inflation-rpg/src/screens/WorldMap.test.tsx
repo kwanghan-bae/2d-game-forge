@@ -24,12 +24,30 @@ describe('WorldMap', () => {
 
   it('shows current level', () => {
     render(<WorldMap />);
-    expect(screen.getByText(/Lv.*1/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Lv\.1$/i)).toBeInTheDocument();
   });
 
-  it('available areas are clickable', () => {
+  it('마을 입구 (minLevel 1) is accessible at level 1', () => {
     render(<WorldMap />);
-    expect(screen.getByRole('button', { name: /마을 입구/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /마을 입구/i })).not.toBeDisabled();
+  });
+
+  it('주막 거리 (minLevel 30) is locked at level 15', () => {
+    useGameStore.setState({ run: { ...runWithChar, level: 15 } });
+    render(<WorldMap />);
+    const btn = screen.getByRole('button', { name: /주막 거리/i });
+    expect(btn).toBeDisabled();
+  });
+
+  it('주막 거리 shows Lv.30 필요 text when locked', () => {
+    render(<WorldMap />); // level 1
+    expect(screen.getByText(/Lv\.30 필요/i)).toBeInTheDocument();
+  });
+
+  it('주막 거리 is accessible at exactly level 30', () => {
+    useGameStore.setState({ run: { ...runWithChar, level: 30 } });
+    render(<WorldMap />);
+    expect(screen.getByRole('button', { name: /주막 거리/i })).not.toBeDisabled();
   });
 
   it('entering area triggers battle screen after BP deduct', async () => {

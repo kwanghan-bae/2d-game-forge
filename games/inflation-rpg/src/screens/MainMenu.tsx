@@ -3,7 +3,11 @@ import { useGameStore } from '../store/gameStore';
 
 export function MainMenu() {
   const setScreen = useGameStore((s) => s.setScreen);
+  const abandonRun = useGameStore((s) => s.abandonRun);
   const meta = useGameStore((s) => s.meta);
+  const runCharacterId = useGameStore((s) => s.run.characterId);
+
+  const hasActiveRun = runCharacterId !== '';
 
   return (
     <div className="screen" style={{ background: 'linear-gradient(180deg,#1a1030 0%,#0f0f1a 100%)', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
@@ -20,17 +24,33 @@ export function MainMenu() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: 200 }}>
-        <button className="btn-primary" onClick={() => setScreen('class-select')}>
-          게임 시작
-        </button>
-        {meta.hardModeUnlocked && (
-          <button
-            className="btn-primary"
-            style={{ background: 'var(--danger)' }}
-            onClick={() => setScreen('class-select')}
-          >
-            하드모드
-          </button>
+        {hasActiveRun ? (
+          <>
+            <button className="btn-primary" onClick={() => setScreen('world-map')}>
+              런 이어하기
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => { abandonRun(); setScreen('class-select'); }}
+            >
+              새로 시작
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn-primary" onClick={() => setScreen('class-select')}>
+              게임 시작
+            </button>
+            {meta.hardModeUnlocked && (
+              <button
+                className="btn-primary"
+                style={{ background: 'var(--danger)' }}
+                onClick={() => setScreen('class-select')}
+              >
+                하드모드
+              </button>
+            )}
+          </>
         )}
         <button className="btn-secondary" onClick={() => setScreen('inventory')}>
           인벤토리
