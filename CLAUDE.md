@@ -31,7 +31,10 @@ Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 
 - `phase-1-complete` — inflation-rpg 이식 (첫 게임)
 - `phase-1.5a-complete` — `@forge/core` 선제 contract (ForgeGameInstance,
   exposeTestHooks, createSaveEnvelopeSchema)
-- 다음: 게임 #2 브레인스토밍 또는 Phase 1.5b (forge CLI 도구)
+- `phase-2-complete` — inflation-rpg 충실 클론 완성 (React Shell + Phaser 전투,
+  16 캐릭터, BP 시스템, 장비 인벤토리, 14 월드맵 구역, 하드모드, Zustand store,
+  60 Vitest 테스트, E2E smoke test)
+- 다음: 게임 #2 브레인스토밍 또는 Phase 2.5 (UX 다듬기·실제 플레이 테스트)
 
 ## 명령 치트시트
 
