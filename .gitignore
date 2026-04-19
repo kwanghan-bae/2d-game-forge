@@ -42,3 +42,4 @@ android/app/build/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+.worktrees/
