@@ -37,22 +37,22 @@ export function WorldMap() {
       {/* Area list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {areas.map((area) => {
-          const inRange = run.level >= area.levelRange[0] * 0.5;
+          const isLocked = run.level < area.levelRange[0];
           return (
             <button
               key={area.id}
               role="button"
               aria-label={area.nameKR}
-              disabled={!inRange}
-              onClick={() => enterArea(area)}
+              disabled={isLocked}
+              onClick={isLocked ? undefined : () => enterArea(area)}
               style={{
                 background: area.bossId ? '#1a0a0a' : 'var(--bg-card)',
                 border: `1px solid ${area.bossId ? 'var(--danger)' : 'var(--border)'}`,
                 borderRadius: 8,
                 padding: '10px 14px',
                 textAlign: 'left',
-                cursor: inRange ? 'pointer' : 'not-allowed',
-                opacity: inRange ? 1 : 0.4,
+                cursor: isLocked ? 'default' : 'pointer',
+                opacity: isLocked ? 0.4 : 1,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -62,9 +62,15 @@ export function WorldMap() {
                 {area.nameKR}
                 {area.bossId && <span style={{ fontSize: 10, background: 'var(--danger)', color: '#fff', borderRadius: 3, padding: '0 5px', marginLeft: 6 }}>BOSS</span>}
               </span>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {area.levelRange[0].toLocaleString()}~{area.levelRange[1] === Infinity ? '∞' : area.levelRange[1].toLocaleString()}
-              </span>
+              {isLocked ? (
+                <span style={{ fontSize: 11, color: 'var(--danger)' }}>
+                  Lv.{area.levelRange[0].toLocaleString()} 필요
+                </span>
+              ) : (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  {area.levelRange[0].toLocaleString()}~{area.levelRange[1] === Infinity ? '∞' : area.levelRange[1].toLocaleString()}
+                </span>
+              )}
             </button>
           );
         })}
