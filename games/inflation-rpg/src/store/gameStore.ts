@@ -43,6 +43,7 @@ interface GameStore {
   setScreen: (s: Screen) => void;
   startRun: (characterId: string, isHardMode: boolean) => void;
   endRun: () => void;
+  abandonRun: () => void;
   encounterMonster: () => void;
   defeatRun: () => void;
   gainLevels: (levels: number, spGained: number) => void;
@@ -74,6 +75,8 @@ export const useGameStore = create<GameStore>()(
           screen: 'game-over',
         });
       },
+
+      abandonRun: () => set({ run: INITIAL_RUN, screen: 'main-menu' }),
 
       encounterMonster: () =>
         set((s) => ({ run: { ...s.run, bp: onEncounter(s.run.bp) } })),
@@ -134,7 +137,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      partialize: (state) => ({ meta: state.meta }),
+      partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
   )
 );
