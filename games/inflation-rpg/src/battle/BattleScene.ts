@@ -37,7 +37,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create() {
-    const { run, meta } = useGameStore.getState();
+    const { run } = useGameStore.getState();
     const area = run.currentAreaId;
     const bosses = getBossesForArea(area, run.isHardMode);
     const hasBoss = bosses.length > 0;
