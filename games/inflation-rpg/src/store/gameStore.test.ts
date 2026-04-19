@@ -64,4 +64,15 @@ describe('GameStore', () => {
     useGameStore.getState().addEquipment(item);
     expect(useGameStore.getState().meta.inventory.weapons).toHaveLength(1);
   });
+
+  it('abandonRun: resets run to INITIAL_RUN and screen to main-menu', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().gainLevels(50, 100);
+    useGameStore.getState().abandonRun();
+    const state = useGameStore.getState();
+    expect(state.run.characterId).toBe('');
+    expect(state.run.level).toBe(1);
+    expect(state.run.statPoints).toBe(0);
+    expect(state.screen).toBe('main-menu');
+  });
 });
