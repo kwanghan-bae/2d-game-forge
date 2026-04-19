@@ -1,38 +1,29 @@
-import Phaser from 'phaser';
-import { buildPhaserConfig } from './game/main';
-import { EventBus } from './game/EventBus';
-import { GameState } from './game/GameState';
-import { InflationManager } from './game/utils/InflationManager';
-import { ReincarnationManager } from './game/utils/ReincarnationManager';
-import { exposeTestHooks } from '@forge/core';
+import React from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import type { ForgeGameInstance } from '@forge/core';
+import { App } from './App';
+import './styles/game.css';
 
 export interface StartGameConfig {
-  /** DOM id of the container div into which Phaser will render. */
   parent: string;
-  /** Base URL prepended to every asset load (Phaser `load.setBaseURL`). */
   assetsBasePath: string;
-  /** If true, attach GameState / managers / scene refs to window for E2E. */
   exposeTestHooks: boolean;
 }
 
-export function StartGame(config: StartGameConfig): Phaser.Game {
-  const phaserConfig = buildPhaserConfig({ parent: config.parent });
-  const game = new Phaser.Game(phaserConfig);
+export function StartGame(config: StartGameConfig): ForgeGameInstance {
+  const container = document.getElementById(config.parent);
+  if (!container) throw new Error(`#${config.parent} not found`);
 
-  // Preloader reads the base URL off the game registry before loading.
-  game.registry.set('assetsBasePath', config.assetsBasePath);
+  const root: Root = createRoot(container);
+  root.render(React.createElement(App, { config }));
 
   if (config.exposeTestHooks) {
-    exposeTestHooks({
-      gameState: GameState.getInstance(),
-      inflationManager: InflationManager.getInstance(),
-      ReincarnationManager,
-      gameInstance: game,
-    });
-    EventBus.on('current-scene-ready', (scene: Phaser.Scene) => {
-      exposeTestHooks({ currentScene: scene });
-    });
+    (window as unknown as Record<string, unknown>)['gameConfig'] = config;
   }
 
-  return game;
+  return {
+    destroy() {
+      root.unmount();
+    },
+  };
 }
