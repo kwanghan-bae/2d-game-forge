@@ -7,7 +7,7 @@ import { Battle } from './screens/Battle';
 import { Inventory } from './screens/Inventory';
 import { Shop } from './screens/Shop';
 import { GameOver } from './screens/GameOver';
-import type { StartGameConfig } from './startGame';
+import type { StartGameConfig } from './types';
 
 interface AppProps {
   config: StartGameConfig;

@@ -111,3 +111,9 @@ export type Screen =
   | 'inventory'
   | 'shop'
   | 'game-over';
+
+export interface StartGameConfig {
+  parent: string;
+  assetsBasePath: string;
+  exposeTestHooks: boolean;
+}
