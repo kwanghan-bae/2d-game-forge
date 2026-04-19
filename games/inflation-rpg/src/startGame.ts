@@ -1,14 +1,11 @@
 import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { ForgeGameInstance } from '@forge/core';
+import type { StartGameConfig } from './types';
 import { App } from './App';
 import './styles/game.css';
 
-export interface StartGameConfig {
-  parent: string;
-  assetsBasePath: string;
-  exposeTestHooks: boolean;
-}
+export type { StartGameConfig };
 
 export function StartGame(config: StartGameConfig): ForgeGameInstance {
   const container = document.getElementById(config.parent);
