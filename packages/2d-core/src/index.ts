@@ -7,3 +7,10 @@ export { exposeTestHooks } from './test-hooks';
 export type { StandardTestHookSlots, TestHookSlots } from './test-hooks';
 
 export { createSaveEnvelopeSchema, SaveEnvelopeMeta } from './save-envelope';
+
+export type {
+  IStatSystem,
+  IBattlePointSystem,
+  IProgressionSystem,
+  CharacterClassBase,
+} from './game-interfaces';
