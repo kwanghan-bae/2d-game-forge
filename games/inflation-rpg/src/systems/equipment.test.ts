@@ -5,6 +5,7 @@ import {
   addToInventory,
   removeFromInventory,
   getAllEquipped,
+  getEquippedItemsList,
 } from './equipment';
 import type { Equipment, Inventory } from '../types';
 
@@ -59,5 +60,37 @@ describe('Equipment System', () => {
       accessories: [],
     };
     expect(getAllEquipped(inv)).toHaveLength(1);
+  });
+});
+
+const testSword: Equipment = {
+  id: 'w-sword', name: '검', slot: 'weapon', rarity: 'common',
+  stats: { flat: { atk: 80 } }, dropAreaIds: [], price: 300,
+};
+const testArmor: Equipment = {
+  id: 'a-cloth', name: '갑옷', slot: 'armor', rarity: 'common',
+  stats: { flat: { def: 20 } }, dropAreaIds: [], price: 150,
+};
+
+describe('getEquippedItemsList', () => {
+  const inv: Inventory = {
+    weapons: [testSword],
+    armors: [testArmor],
+    accessories: [],
+  };
+
+  it('returns items matching equippedItemIds in order', () => {
+    const result = getEquippedItemsList(inv, ['a-cloth', 'w-sword']);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.id).toBe('a-cloth');
+    expect(result[1]!.id).toBe('w-sword');
+  });
+
+  it('ignores IDs not found in inventory', () => {
+    expect(getEquippedItemsList(inv, ['non-existent'])).toHaveLength(0);
+  });
+
+  it('returns empty array when equippedItemIds is empty', () => {
+    expect(getEquippedItemsList(inv, [])).toHaveLength(0);
   });
 });
