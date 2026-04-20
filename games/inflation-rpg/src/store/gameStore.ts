@@ -23,6 +23,8 @@ export const SLOT_COSTS: Record<number, number> = {
   9: 50_000_000,
 };
 
+export const MAX_EQUIP_SLOTS = 10;
+
 export const INITIAL_RUN: RunState = {
   characterId: '',
   level: 1,
@@ -186,6 +188,19 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
+      version: 1,
+      migrate: (persisted: unknown, fromVersion: number) => {
+        const s = persisted as { meta?: Partial<MetaState>; run?: RunState };
+        if (fromVersion < 1) {
+          s.meta = {
+            equippedItemIds: [],
+            equipSlotCount: 1,
+            lastPlayedCharId: '',
+            ...s.meta,
+          };
+        }
+        return s;
+      },
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
   )
