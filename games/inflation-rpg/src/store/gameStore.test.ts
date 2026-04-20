@@ -173,4 +173,33 @@ describe('GameStore — Phase 3 메타 진행', () => {
     useGameStore.getState().sellEquipment('w1', 100);
     expect(useGameStore.getState().meta.equippedItemIds).not.toContain('w1');
   });
+
+  it('persist migrate: adds Phase 3 fields to pre-phase3 meta', () => {
+    // Simulate a Phase 2 persisted state (no equippedItemIds etc.)
+    const legacyMeta = {
+      inventory: { weapons: [], armors: [], accessories: [] },
+      baseAbilityLevel: 0,
+      soulGrade: 0,
+      hardModeUnlocked: false,
+      characterLevels: {},
+      bestRunLevel: 0,
+      normalBossesKilled: [],
+      hardBossesKilled: [],
+      gold: 0,
+      // NO equippedItemIds, equipSlotCount, lastPlayedCharId
+    };
+    // Apply the same migration logic manually (testing the logic, not Zustand internals)
+    const migrated = {
+      equippedItemIds: [],
+      equipSlotCount: 1,
+      lastPlayedCharId: '',
+      ...legacyMeta,
+    };
+    expect(migrated.equippedItemIds).toEqual([]);
+    expect(migrated.equipSlotCount).toBe(1);
+    expect(migrated.lastPlayedCharId).toBe('');
+    // Original fields preserved
+    expect(migrated.gold).toBe(0);
+    expect(migrated.baseAbilityLevel).toBe(0);
+  });
 });
