@@ -30,12 +30,14 @@ export function ClassSelect() {
         {CHARACTERS.map((char) => {
           const isUnlocked = unlockedIds.has(char.id);
           const isSelected = selected === char.id;
+          const charLv = meta.characterLevels[char.id] ?? 0;
           return (
             <CharCard
               key={char.id}
               char={char}
               unlocked={isUnlocked}
               selected={isSelected}
+              charLv={charLv}
               onSelect={() => isUnlocked && setSelected(char.id)}
             />
           );
@@ -58,10 +60,11 @@ export function ClassSelect() {
   );
 }
 
-function CharCard({ char, unlocked, selected, onSelect }: {
+function CharCard({ char, unlocked, selected, charLv, onSelect }: {
   char: Character;
   unlocked: boolean;
   selected: boolean;
+  charLv: number;
   onSelect: () => void;
 }) {
   return (
@@ -81,6 +84,11 @@ function CharCard({ char, unlocked, selected, onSelect }: {
         position: 'relative',
       }}
     >
+      {charLv > 0 && (
+        <div style={{ position: 'absolute', top: 2, right: 2, background: 'var(--accent)', color: '#1a1a24', fontSize: 8, fontWeight: 700, borderRadius: 3, padding: '1px 3px', lineHeight: 1.2 }}>
+          Lv.{charLv}
+        </div>
+      )}
       <div style={{ fontSize: 24, lineHeight: 1 }}>{unlocked ? char.emoji : '🔒'}</div>
       <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 600, marginTop: 4 }}>
         {unlocked ? char.nameKR : '???'}
