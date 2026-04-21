@@ -34,7 +34,13 @@ Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 
 - `phase-2-complete` — inflation-rpg 충실 클론 완성 (React Shell + Phaser 전투,
   16 캐릭터, BP 시스템, 장비 인벤토리, 14 월드맵 구역, 하드모드, Zustand store,
   60 Vitest 테스트, E2E smoke test)
-- 다음: 게임 #2 브레인스토밍 또는 Phase 2.5 (UX 다듬기·실제 플레이 테스트)
+- `phase-2.5-complete` — 런 퍼시스트 + 레벨 게이팅 (run 재개/포기, 구역 레벨 제한)
+- `phase-3-complete` — 메타 진행 시스템 (캐릭터 레벨, 장비 슬롯 확장, 장비 계승,
+  상점 재설계, 인벤토리 장착 슬롯 UI, GameOver 레벨업 연출)
+- `phase-4a-complete` — MobileUX Layer (safe area CSS, 44px 터치 타겟,
+  overscroll 잠금, Phaser Scale.FIT, Inventory·Shop 스크롤,
+  viewport-fit=cover, Playwright iPhone 14 E2E 테스트)
+- 다음: Phase 4b (SoundManager — BGM 3트랙 + SFX 12개 + 전투 파티클)
 
 ## 명령 치트시트
 
