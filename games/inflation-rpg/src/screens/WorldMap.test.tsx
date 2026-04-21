@@ -48,6 +48,18 @@ describe('WorldMap', () => {
     expect(screen.getByRole('button', { name: /마왕의 성/i })).toBeInTheDocument();
   });
 
+  it('마왕의 성 is visible but locked in hard mode at level 1', () => {
+    useGameStore.setState({ run: { ...baseRun, isHardMode: true } });
+    render(<WorldMap />);
+    expect(screen.getByRole('button', { name: /마왕의 성/i })).toBeDisabled();
+  });
+
+  it('깊은 숲 unlocks at exactly level 500', () => {
+    useGameStore.setState({ run: { ...baseRun, level: 500 } });
+    render(<WorldMap />);
+    expect(screen.getByRole('button', { name: /깊은 숲/i })).not.toBeDisabled();
+  });
+
   it('clicking 조선 평야 shows RegionMap with 마을 입구', async () => {
     render(<WorldMap />);
     await userEvent.click(screen.getByRole('button', { name: /조선 평야/i }));

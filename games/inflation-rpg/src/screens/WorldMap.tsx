@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { REGIONS } from '../data/regions';
-import { MAP_AREAS } from '../data/maps';
+import { getAreasByRegion } from '../data/maps';
 import { RegionMap } from './RegionMap';
 
 export function WorldMap() {
@@ -16,7 +16,7 @@ export function WorldMap() {
   }
 
   const isRegionUnlocked = (regionId: string) =>
-    MAP_AREAS.some((a) => a.regionId === regionId && run.level >= a.levelRange[0]);
+    getAreasByRegion(regionId, run.isHardMode).some((a) => run.level >= a.levelRange[0]);
 
   const visibleRegions = REGIONS.filter((r) => !r.isHardOnly || run.isHardMode);
 
