@@ -106,7 +106,10 @@ export function Inventory() {
       </div>
 
       {/* Items */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+      <div
+          className="scroll-list"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, maxHeight: '45vh' }}
+        >
         {tabItems.map((item) => {
           const isEquipped = meta.equippedItemIds.includes(item.id);
           return (
