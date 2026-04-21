@@ -38,3 +38,10 @@ export function removeFromInventory(inv: Inventory, itemId: string): Inventory {
 export function getAllEquipped(inv: Inventory): Equipment[] {
   return [...inv.weapons, ...inv.armors, ...inv.accessories];
 }
+
+export function getEquippedItemsList(inv: Inventory, equippedItemIds: string[]): Equipment[] {
+  const all = getAllEquipped(inv);
+  return equippedItemIds
+    .map((id) => all.find((e) => e.id === id))
+    .filter((e): e is Equipment => e !== undefined);
+}

@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { calcFinalStat, calcDamageReduction, calcCritChance } from '../systems/stats';
 import { applyExpGain } from '../systems/experience';
 import { calcBaseAbilityMult } from '../systems/progression';
-import { getAllEquipped } from '../systems/equipment';
+import { getEquippedItemsList } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
 import { pickMonster } from '../data/monsters';
 import { getBossesForArea } from '../data/bosses';
@@ -75,13 +75,15 @@ export class BattleScene extends Phaser.Scene {
     if (!char) return;
 
     const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
-    const allEquipped = getAllEquipped(meta.inventory);
+    const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
+    const charLv = meta.characterLevels[run.characterId] ?? 0;
+    const charLevelMult = 1 + charLv * 0.1;
 
-    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility);
-    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility);
-    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility);
-    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility);
-    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility);
+    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult);
+    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult);
+    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult);
+    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult);
+    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult);
 
     const crit = Math.random() < calcCritChance(playerAGI, playerLUC);
     const combo = Math.random() < 0.05 + playerAGI * 0.0005;

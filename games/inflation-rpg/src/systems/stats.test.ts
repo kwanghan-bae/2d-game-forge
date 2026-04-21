@@ -72,4 +72,14 @@ describe('Stats System', () => {
     // agi=1000: 0.05 + 1.0 = 1.05 → clamped to 0.95
     expect(calcCritChance(1000, 0)).toBe(0.95);
   });
+
+  it('calcFinalStat: charLevelMult scales the final result', () => {
+    // atk: base=10, sp=0, charClassMult=1, noEquip, baseAbility=1, charLevelMult=1.3
+    // raw = (10 + 0) * 1 = 10; flat=0; pct=1; floor(10 * 1 * 1 * 1.3) = 13
+    expect(calcFinalStat('atk', 0, 1.0, noEquip, 1, 1.3)).toBe(13);
+  });
+
+  it('calcFinalStat: charLevelMult defaults to 1 (backward compat)', () => {
+    expect(calcFinalStat('atk', 0, 1.0, noEquip, 1)).toBe(10);
+  });
 });

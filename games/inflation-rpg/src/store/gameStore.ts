@@ -11,6 +11,20 @@ import { addToInventory, removeFromInventory } from '../systems/equipment';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
+export const SLOT_COSTS: Record<number, number> = {
+  1: 5_000,
+  2: 15_000,
+  3: 50_000,
+  4: 150_000,
+  5: 500_000,
+  6: 1_500_000,
+  7: 5_000_000,
+  8: 15_000_000,
+  9: 50_000_000,
+};
+
+export const MAX_EQUIP_SLOTS = 10;
+
 export const INITIAL_RUN: RunState = {
   characterId: '',
   level: 1,
@@ -34,6 +48,9 @@ export const INITIAL_META: MetaState = {
   normalBossesKilled: [],
   hardBossesKilled: [],
   gold: 0,
+  equippedItemIds: [],
+  equipSlotCount: 1,
+  lastPlayedCharId: '',
 };
 
 interface GameStore {
@@ -52,6 +69,9 @@ interface GameStore {
   bossDrop: (bossId: string, bpReward: number) => void;
   addEquipment: (item: Equipment) => void;
   sellEquipment: (itemId: string, price: number) => void;
+  equipItem: (itemId: string) => void;
+  unequipItem: (itemId: string) => void;
+  buyEquipSlot: () => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -69,9 +89,17 @@ export const useGameStore = create<GameStore>()(
       endRun: () => {
         const { run, meta } = get();
         const bestRunLevel = Math.max(meta.bestRunLevel, run.level);
+        const charId = run.characterId;
+        const prevCharLv = meta.characterLevels[charId] ?? 0;
         set({
           run: INITIAL_RUN,
-          meta: { ...meta, bestRunLevel, hardModeUnlocked: isHardModeUnlocked(bestRunLevel) },
+          meta: {
+            ...meta,
+            bestRunLevel,
+            hardModeUnlocked: isHardModeUnlocked(bestRunLevel),
+            characterLevels: { ...meta.characterLevels, [charId]: prevCharLv + 1 },
+            lastPlayedCharId: charId,
+          },
           screen: 'game-over',
         });
       },
@@ -131,12 +159,48 @@ export const useGameStore = create<GameStore>()(
           meta: {
             ...s.meta,
             inventory: removeFromInventory(s.meta.inventory, itemId),
+            equippedItemIds: s.meta.equippedItemIds.filter((id) => id !== itemId),
             gold: s.meta.gold + price,
           },
         })),
+
+      equipItem: (itemId) =>
+        set((s) => {
+          if (s.meta.equippedItemIds.length >= s.meta.equipSlotCount) return s;
+          if (s.meta.equippedItemIds.includes(itemId)) return s;
+          return { meta: { ...s.meta, equippedItemIds: [...s.meta.equippedItemIds, itemId] } };
+        }),
+
+      unequipItem: (itemId) =>
+        set((s) => ({
+          meta: { ...s.meta, equippedItemIds: s.meta.equippedItemIds.filter((id) => id !== itemId) },
+        })),
+
+      buyEquipSlot: () =>
+        set((s) => {
+          const cost = SLOT_COSTS[s.meta.equipSlotCount];
+          if (!cost || s.run.goldThisRun < cost) return s;
+          return {
+            run: { ...s.run, goldThisRun: s.run.goldThisRun - cost },
+            meta: { ...s.meta, equipSlotCount: s.meta.equipSlotCount + 1 },
+          };
+        }),
     }),
     {
       name: 'korea_inflation_rpg_save',
+      version: 1,
+      migrate: (persisted: unknown, fromVersion: number) => {
+        const s = persisted as { meta?: Partial<MetaState>; run?: RunState };
+        if (fromVersion < 1) {
+          s.meta = {
+            equippedItemIds: [],
+            equipSlotCount: 1,
+            lastPlayedCharId: '',
+            ...s.meta,
+          };
+        }
+        return s;
+      },
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
   )

@@ -38,4 +38,17 @@ describe('ClassSelect', () => {
     expect(state.run.characterId).toBe('hwarang');
     expect(state.screen).toBe('world-map');
   });
+
+  it('shows character level badge when charLv > 0', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, characterLevels: { hwarang: 3 } },
+    }));
+    render(<ClassSelect />);
+    expect(screen.getByText(/Lv\.3/)).toBeInTheDocument();
+  });
+
+  it('does not show level badge when charLv is 0 or absent', () => {
+    render(<ClassSelect />);
+    expect(screen.queryByText(/Lv\.\d/)).not.toBeInTheDocument();
+  });
 });
