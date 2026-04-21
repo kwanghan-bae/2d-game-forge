@@ -58,6 +58,42 @@ pnpm --filter @forge/game-inflation-rpg build:ios      # Capacitor sync + Xcode
 pnpm --filter @forge/game-inflation-rpg build:android  # Capacitor sync + Android Studio
 ```
 
+## 모바일 로컬 실행
+
+### 사전 요구 사항
+
+| 플랫폼 | 필요한 것 |
+|--------|-----------|
+| iOS | macOS + Xcode 15+ + CocoaPods (`brew install cocoapods`) |
+| Android | Android Studio + JDK 17+ + Android SDK (API 34+) |
+
+### iOS 시뮬레이터 / 실기기
+
+```bash
+pnpm --filter @forge/game-inflation-rpg build:ios
+# Xcode 에서 디바이스 선택 → Run (⌘R)
+# Portrait 전용: Xcode → Target → Deployment Info → Landscape 체크 해제
+```
+
+### Android 에뮬레이터 / 실기기
+
+```bash
+pnpm --filter @forge/game-inflation-rpg build:android
+# Android Studio 에서 디바이스 선택 → Run
+# Portrait 전용: AndroidManifest.xml → android:screenOrientation="portrait"
+```
+
+### E2E 모바일 레이아웃 테스트 (Playwright)
+
+```bash
+# iPhone 14 프로파일만
+pnpm --filter @forge/game-inflation-rpg e2e -- --project=iphone14
+# Desktop Chrome 만
+pnpm --filter @forge/game-inflation-rpg e2e -- --project=chromium
+# 전체 (두 프로파일)
+pnpm --filter @forge/game-inflation-rpg e2e
+```
+
 ## 디렉터리 구조
 
 ```
