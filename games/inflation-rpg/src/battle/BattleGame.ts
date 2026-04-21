@@ -12,10 +12,14 @@ export function createBattleGame(opts: BattleGameOptions): Phaser.Game {
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent: opts.parent,
-    width: 360,
-    height: 400,
     backgroundColor: '#0a1218',
     scene: BattleScene,
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: 360,
+      height: 400,
+    },
     callbacks: {
       postBoot: (game) => {
         game.scene.start('BattleScene', {
