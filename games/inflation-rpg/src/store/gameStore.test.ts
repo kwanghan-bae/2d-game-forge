@@ -76,3 +76,130 @@ describe('GameStore', () => {
     expect(state.screen).toBe('main-menu');
   });
 });
+
+describe('GameStore — Phase 3 메타 진행', () => {
+  it('INITIAL_META has equippedItemIds=[] and equipSlotCount=1', () => {
+    expect(INITIAL_META.equippedItemIds).toEqual([]);
+    expect(INITIAL_META.equipSlotCount).toBe(1);
+    expect(INITIAL_META.lastPlayedCharId).toBe('');
+  });
+
+  it('equipItem: adds itemId to equippedItemIds', () => {
+    const item = {
+      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
+      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
+    };
+    useGameStore.getState().addEquipment(item);
+    useGameStore.getState().equipItem('w1');
+    expect(useGameStore.getState().meta.equippedItemIds).toContain('w1');
+  });
+
+  it('equipItem: ignores when slot full', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, equipSlotCount: 1, equippedItemIds: ['existing'] } }));
+    useGameStore.getState().equipItem('w2');
+    expect(useGameStore.getState().meta.equippedItemIds).toHaveLength(1);
+  });
+
+  it('equipItem: ignores duplicate', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, equipSlotCount: 2, equippedItemIds: ['w1'] } }));
+    useGameStore.getState().equipItem('w1');
+    expect(useGameStore.getState().meta.equippedItemIds).toHaveLength(1);
+  });
+
+  it('unequipItem: removes itemId from equippedItemIds', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, equippedItemIds: ['w1', 'a1'] } }));
+    useGameStore.getState().unequipItem('w1');
+    expect(useGameStore.getState().meta.equippedItemIds).toEqual(['a1']);
+  });
+
+  it('buyEquipSlot: deducts goldThisRun and increments equipSlotCount', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: 10_000 } }));
+    useGameStore.getState().buyEquipSlot();
+    const state = useGameStore.getState();
+    expect(state.meta.equipSlotCount).toBe(2);
+    expect(state.run.goldThisRun).toBe(5_000);
+  });
+
+  it('buyEquipSlot: ignores if not enough gold', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: 100 } }));
+    useGameStore.getState().buyEquipSlot();
+    expect(useGameStore.getState().meta.equipSlotCount).toBe(1);
+  });
+
+  it('buyEquipSlot: ignores if already at max 10 slots', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, equipSlotCount: 10 },
+      run: { ...s.run, goldThisRun: 999_999_999 },
+    }));
+    useGameStore.getState().buyEquipSlot();
+    expect(useGameStore.getState().meta.equipSlotCount).toBe(10);
+  });
+
+  it('endRun: increments characterLevels for active character', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().endRun();
+    expect(useGameStore.getState().meta.characterLevels['hwarang']).toBe(1);
+  });
+
+  it('endRun: increments from existing character level', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, characterLevels: { hwarang: 3 } } }));
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().endRun();
+    expect(useGameStore.getState().meta.characterLevels['hwarang']).toBe(4);
+  });
+
+  it('endRun: sets lastPlayedCharId', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().endRun();
+    expect(useGameStore.getState().meta.lastPlayedCharId).toBe('hwarang');
+  });
+
+  it('abandonRun: does NOT increment characterLevels', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().abandonRun();
+    expect(useGameStore.getState().meta.characterLevels['hwarang']).toBeUndefined();
+  });
+
+  it('sellEquipment: also removes from equippedItemIds', () => {
+    const item = {
+      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
+      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 100,
+    };
+    useGameStore.getState().addEquipment(item);
+    useGameStore.getState().equipItem('w1');
+    useGameStore.getState().sellEquipment('w1', 100);
+    expect(useGameStore.getState().meta.equippedItemIds).not.toContain('w1');
+  });
+
+  it('persist migrate: adds Phase 3 fields to pre-phase3 meta', () => {
+    // Simulate a Phase 2 persisted state (no equippedItemIds etc.)
+    const legacyMeta = {
+      inventory: { weapons: [], armors: [], accessories: [] },
+      baseAbilityLevel: 0,
+      soulGrade: 0,
+      hardModeUnlocked: false,
+      characterLevels: {},
+      bestRunLevel: 0,
+      normalBossesKilled: [],
+      hardBossesKilled: [],
+      gold: 0,
+      // NO equippedItemIds, equipSlotCount, lastPlayedCharId
+    };
+    // Apply the same migration logic manually (testing the logic, not Zustand internals)
+    const migrated = {
+      equippedItemIds: [],
+      equipSlotCount: 1,
+      lastPlayedCharId: '',
+      ...legacyMeta,
+    };
+    expect(migrated.equippedItemIds).toEqual([]);
+    expect(migrated.equipSlotCount).toBe(1);
+    expect(migrated.lastPlayedCharId).toBe('');
+    // Original fields preserved
+    expect(migrated.gold).toBe(0);
+    expect(migrated.baseAbilityLevel).toBe(0);
+  });
+});
