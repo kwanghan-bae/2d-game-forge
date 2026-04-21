@@ -64,9 +64,13 @@ export interface Boss {
 export interface MapArea {
   id: string;
   nameKR: string;
+  regionId: string;
   levelRange: [number, number];
   bossId?: string;
   isHardOnly: boolean;
+  mapX: number;
+  mapY: number;
+  icon: string;
 }
 
 export type AllocatedStats = Record<StatKey, number>;
