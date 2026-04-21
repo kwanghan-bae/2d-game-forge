@@ -34,10 +34,7 @@ test.describe('Mobile layout — iPhone 14 viewport', () => {
   });
 
   test('viewport-fit=cover meta tag present', async ({ page }) => {
-    const viewport = await page.$eval(
-      'meta[name="viewport"]',
-      (el) => el.getAttribute('content') ?? ''
-    );
+    const viewport = await page.locator('meta[name="viewport"]').getAttribute('content') ?? '';
     expect(viewport).toContain('viewport-fit=cover');
   });
 
