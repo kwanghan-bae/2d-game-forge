@@ -63,7 +63,7 @@ export function Shop() {
 
       {/* 장비 구매 */}
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>⚔️ 장비</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="scroll-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '55vh' }}>
         {EQUIPMENT_CATALOG.map((item) => {
           const canBuy = run.goldThisRun >= item.price && canDrop(meta.inventory, item.slot);
           const statStr = Object.entries(item.stats.percent ?? {})
