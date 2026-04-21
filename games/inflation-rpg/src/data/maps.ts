@@ -1,5 +1,8 @@
 import type { MapArea } from '../types';
 
+// bossId 필드는 UI 배지(빨간 테두리, BOSS 표시)용이다. 실제 전투 보스 스폰은
+// BattleScene이 boss.areaId로 검색하므로 bosses.ts를 기준으로 한다.
+// 현재 bossId 값 중 bosses.ts에 미정의된 것들은 향후 추가될 보스의 placeholder다.
 export const MAP_AREAS: MapArea[] = [
   // ── Region: plains (조선 평야) ── 22구역 Lv 1–5,000
   { id: 'village-entrance',  nameKR: '마을 입구',    regionId: 'plains', levelRange: [1, 8],          bossId: undefined,              isHardOnly: false, mapX: 30, mapY: 85, icon: 'village' },
