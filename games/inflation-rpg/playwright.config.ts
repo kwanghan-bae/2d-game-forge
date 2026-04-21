@@ -18,6 +18,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'iphone14', use: { ...devices['iPhone 14'] } },
   ],
   webServer: {
     command: 'pnpm --filter @forge/dev-shell dev',
