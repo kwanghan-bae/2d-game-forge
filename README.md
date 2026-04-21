@@ -58,32 +58,22 @@ pnpm --filter @forge/game-inflation-rpg build:ios      # Capacitor sync + Xcode
 pnpm --filter @forge/game-inflation-rpg build:android  # Capacitor sync + Android Studio
 ```
 
-## 모바일 로컬 실행
+## 모바일 UI 확인
 
-### 사전 요구 사항
+모바일 레이아웃 개발·테스트는 **로컬 브라우저**에서 한다. Capacitor 빌드는
+실기기 배포용이다.
 
-| 플랫폼 | 필요한 것 |
-|--------|-----------|
-| iOS | macOS + Xcode 15+ + CocoaPods (`brew install cocoapods`) |
-| Android | Android Studio + JDK 17+ + Android SDK (API 34+) |
-
-### iOS 시뮬레이터 / 실기기
+### 브라우저에서 모바일 뷰 확인
 
 ```bash
-pnpm --filter @forge/game-inflation-rpg build:ios
-# Xcode 에서 디바이스 선택 → Run (⌘R)
-# Portrait 전용: Xcode → Target → Deployment Info → Landscape 체크 해제
+pnpm dev  # http://localhost:3000 포털 실행
 ```
 
-### Android 에뮬레이터 / 실기기
-
-```bash
-pnpm --filter @forge/game-inflation-rpg build:android
-# Android Studio 에서 디바이스 선택 → Run
-# Portrait 전용: AndroidManifest.xml → android:screenOrientation="portrait"
-```
+Chrome DevTools → Toggle device toolbar (⌘⇧M) → iPhone 14 (390×844) 선택.
 
 ### E2E 모바일 레이아웃 테스트 (Playwright)
+
+Playwright 가 iPhone 14 viewport 로 자동 실행한다 — 시뮬레이터 불필요.
 
 ```bash
 # iPhone 14 프로파일만
@@ -92,6 +82,20 @@ pnpm --filter @forge/game-inflation-rpg e2e -- --project=iphone14
 pnpm --filter @forge/game-inflation-rpg e2e -- --project=chromium
 # 전체 (두 프로파일)
 pnpm --filter @forge/game-inflation-rpg e2e
+```
+
+### 실기기 빌드 (iOS / Android)
+
+실기기나 스토어 배포가 필요할 때만 사용한다.
+
+| 플랫폼 | 사전 요구 사항 |
+|--------|----------------|
+| iOS | macOS + Xcode 15+ + CocoaPods (`brew install cocoapods`) |
+| Android | Android Studio + JDK 17+ + Android SDK (API 34+) |
+
+```bash
+pnpm --filter @forge/game-inflation-rpg build:ios      # → Xcode 에서 Run
+pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에서 Run
 ```
 
 ## 디렉터리 구조
