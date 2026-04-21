@@ -13,17 +13,16 @@
 
 ## 현재 상태
 
-- **Phase 0 — Bootstrap** 완료 (`phase-0-complete` 태그). pnpm + Turborepo
-  monorepo 골격, `@forge/core` 의 `GameManifest` 스키마, `@forge/dev-shell`
-  Next.js 포털, Playwright smoke E2E, ESLint 계층 boundary 룰, CI 가 갖춰져
-  있다.
-- **Phase 1 — inflation-rpg 이식** 완료 (`phase-1-complete` 태그).
-  korea-inflation-rpg 의 핵심 플레이 루프가 `games/inflation-rpg/` 워크스페이스로
-  이식되었다. 포털에서 `/games/inflation-rpg` 경로로 부팅된다. Vitest 450개,
-  Playwright 3개가 통과한다.
-- 다음 단계는 **Phase 2 — 두 번째 게임**. 미착수. 두 번째 게임이 도착하면
-  inflation-rpg 와 공유되는 부분이 `@forge/core` 또는 장르 코어 패키지로
-  승격된다 ("3의 규칙").
+- **Phase 0~1.5a** 완료. 모노레포 골격, `@forge/core` contract, dev-shell 포털.
+- **Phase 2** 완료 (`phase-2-complete`). inflation-rpg 충실 클론 — React Shell +
+  Phaser 전투, 16 캐릭터, BP 시스템, 장비 인벤토리, 14 월드맵 구역, 하드모드,
+  Zustand store, 103 Vitest 테스트.
+- **Phase 2.5** 완료 (`phase-2.5-complete`). 런 퍼시스트 + 레벨 게이팅.
+- **Phase 3** 완료 (`phase-3-complete`). 메타 진행 — 캐릭터 레벨, 장비 슬롯
+  확장(goldThisRun 소비), 장비 계승(런 간 유지), 상점·인벤토리 재설계.
+- **Phase 4a** 완료. MobileUX Layer — safe area CSS, 44px 터치 타겟, overscroll
+  잠금, Phaser Scale.FIT 반응형 캔버스, Playwright iPhone 14 E2E 테스트.
+- 다음: **Phase 4b** — SoundManager (BGM 3트랙 + SFX 12개 + 전투 파티클).
 
 ## Quick start
 
