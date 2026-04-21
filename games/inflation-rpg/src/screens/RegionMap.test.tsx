@@ -55,4 +55,9 @@ describe('RegionMap (plains)', () => {
     render(<RegionMap regionId="plains" onBack={vi.fn()} />);
     expect(screen.getByText(/조선 평야/i)).toBeInTheDocument();
   });
+
+  it('does not show areas from other regions', () => {
+    render(<RegionMap regionId="plains" onBack={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /숲의 입구/i })).not.toBeInTheDocument();
+  });
 });

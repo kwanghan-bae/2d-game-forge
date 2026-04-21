@@ -37,6 +37,7 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
   const setScreen = useGameStore((s) => s.setScreen);
   const encounterMonster = useGameStore((s) => s.encounterMonster);
   const endRun = useGameStore((s) => s.endRun);
+  const setCurrentArea = useGameStore((s) => s.setCurrentArea);
   const [lockedInfo, setLockedInfo] = React.useState<MapArea | null>(null);
 
   const region = getRegionById(regionId);
@@ -51,7 +52,7 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
       endRun();
       return;
     }
-    useGameStore.setState((s) => ({ run: { ...s.run, currentAreaId: area.id } }));
+    setCurrentArea(area.id);
     setScreen('battle');
   };
 
