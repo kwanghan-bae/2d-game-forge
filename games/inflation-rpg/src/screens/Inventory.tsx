@@ -107,8 +107,8 @@ export function Inventory() {
 
       {/* Items */}
       <div
-          className="forge-scroll-list"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, maxHeight: '45vh' }}
+          className="forge-scroll-list forge-inventory-grid"
+          style={{ maxHeight: '45vh' }}
         >
         {tabItems.map((item) => {
           const isEquipped = meta.equippedItemIds.includes(item.id);
