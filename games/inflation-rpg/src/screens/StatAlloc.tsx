@@ -23,7 +23,7 @@ export function StatAlloc({ onClose }: StatAllocProps) {
       position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
     }}>
-      <div className="panel" style={{ width: '90%', maxWidth: 340 }}>
+      <div className="forge-panel" style={{ width: '90%', maxWidth: 340 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
           <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>Lv.{run.level} 달성! 스탯 배분</span>
           <span style={{
@@ -55,7 +55,7 @@ export function StatAlloc({ onClose }: StatAllocProps) {
         ))}
 
         <button
-          className="btn-primary"
+          className="forge-btn primary"
           style={{ width: '100%', marginTop: 8, opacity: run.statPoints > 0 ? 0.6 : 1 }}
           onClick={onClose}
         >

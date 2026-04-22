@@ -17,9 +17,9 @@ export function ClassSelect() {
   };
 
   return (
-    <div className="screen" style={{ padding: 16 }}>
+    <div className="forge-screen" style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen('main-menu')}>
+        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen('main-menu')}>
           ← 뒤로
         </button>
         <span style={{ color: 'var(--forge-accent)', fontWeight: 700 }}>영웅을 선택하라</span>
@@ -49,7 +49,7 @@ export function ClassSelect() {
       )}
 
       <button
-        className="btn-primary"
+        className="forge-btn primary"
         style={{ width: '100%', marginTop: 'auto', opacity: selected ? 1 : 0.4 }}
         disabled={!selected}
         onClick={handleStart}
@@ -102,7 +102,7 @@ function CharCard({ char, unlocked, selected, charLv, onSelect }: {
 
 function CharDetail({ char }: { char: Character }) {
   return (
-    <div className="panel" style={{ marginBottom: 12 }}>
+    <div className="forge-panel" style={{ marginBottom: 12 }}>
       <div style={{ fontWeight: 700, color: 'var(--forge-accent)', marginBottom: 4 }}>
         {char.emoji} {char.nameKR}
       </div>
