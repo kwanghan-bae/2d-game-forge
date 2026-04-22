@@ -12,13 +12,13 @@ export function MainMenu() {
   return (
     <div className="screen" style={{ background: 'linear-gradient(180deg,#1a1030 0%,#0f0f1a 100%)', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
-        <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--accent)', letterSpacing: 2 }}>
+        <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--forge-accent)', letterSpacing: 2 }}>
           INFLATION
         </div>
-        <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--danger)', letterSpacing: 2 }}>
+        <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--forge-danger)', letterSpacing: 2 }}>
           RPG
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: 'var(--forge-text-muted)', marginTop: 4 }}>
           배틀 포인트를 소비해 최고 레벨을 달성하라
         </div>
       </div>
@@ -44,7 +44,7 @@ export function MainMenu() {
             {meta.hardModeUnlocked && (
               <button
                 className="btn-primary"
-                style={{ background: 'var(--danger)' }}
+                style={{ background: 'var(--forge-danger)' }}
                 onClick={() => setScreen('class-select')}
               >
                 하드모드
@@ -60,7 +60,7 @@ export function MainMenu() {
         </button>
       </div>
 
-      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--forge-text-muted)' }}>
         최고 기록: Lv.{meta.bestRunLevel.toLocaleString()}
       </div>
     </div>

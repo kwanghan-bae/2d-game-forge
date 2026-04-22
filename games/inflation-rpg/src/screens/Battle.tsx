@@ -42,15 +42,15 @@ export function Battle() {
 
   return (
     <div className="screen" style={{ position: 'relative' }}>
-      <div style={{ padding: '8px 14px', background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)', display: 'flex', gap: 8 }}>
-        <span style={{ fontSize: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 5, padding: '3px 8px', color: 'var(--bp-color)', fontWeight: 700 }}>
+      <div style={{ padding: '8px 14px', background: 'var(--forge-bg-panel)', borderBottom: '1px solid var(--forge-border)', display: 'flex', gap: 8 }}>
+        <span style={{ fontSize: 12, background: 'var(--forge-bg-card)', border: '1px solid var(--forge-border)', borderRadius: 5, padding: '3px 8px', color: 'var(--forge-stat-bp)', fontWeight: 700 }}>
           ⚡{run.bp}
         </span>
-        <span style={{ fontSize: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 5, padding: '3px 8px', color: 'var(--hp-color)', fontWeight: 700 }}>
+        <span style={{ fontSize: 12, background: 'var(--forge-bg-card)', border: '1px solid var(--forge-border)', borderRadius: 5, padding: '3px 8px', color: 'var(--forge-stat-hp)', fontWeight: 700 }}>
           Lv.{run.level.toLocaleString()}
         </span>
         {run.statPoints > 0 && (
-          <span style={{ fontSize: 12, background: 'var(--accent-dim)', border: '1px solid var(--accent)', borderRadius: 5, padding: '3px 8px', color: 'var(--accent)', fontWeight: 700 }}>
+          <span style={{ fontSize: 12, background: 'var(--forge-accent-dim)', border: '1px solid var(--forge-accent)', borderRadius: 5, padding: '3px 8px', color: 'var(--forge-accent)', fontWeight: 700 }}>
             SP {run.statPoints}
           </span>
         )}

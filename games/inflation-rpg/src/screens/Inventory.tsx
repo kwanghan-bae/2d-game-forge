@@ -43,13 +43,13 @@ export function Inventory() {
         <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
         </button>
-        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>인벤토리</span>
-        <span style={{ fontSize: 12, color: 'var(--luc-color)' }}>💰 {meta.gold.toLocaleString()}</span>
+        <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>인벤토리</span>
+        <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>💰 {meta.gold.toLocaleString()}</span>
       </div>
 
       {/* Equipped Slots */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
+        <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
           장착 슬롯 ({meta.equippedItemIds.length}/{meta.equipSlotCount})
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -65,15 +65,15 @@ export function Inventory() {
             }
             if (item) {
               return (
-                <div key={i} onClick={() => unequipItem(item.id)} style={{ width: 58, height: 58, background: 'var(--bg-card)', border: '2px solid var(--accent)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, cursor: 'pointer', padding: 2 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
-                  <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>해제</div>
+                <div key={i} onClick={() => unequipItem(item.id)} style={{ width: 58, height: 58, background: 'var(--forge-bg-card)', border: '2px solid var(--forge-accent)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, cursor: 'pointer', padding: 2 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--forge-accent)', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
+                  <div style={{ fontSize: 9, color: 'var(--forge-text-muted)' }}>해제</div>
                 </div>
               );
             }
             return (
-              <div key={i} style={{ width: 58, height: 58, background: 'var(--bg-card)', border: '2px dashed #2a4060', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>비어있음</span>
+              <div key={i} style={{ width: 58, height: 58, background: 'var(--forge-bg-card)', border: '2px dashed #2a4060', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 10, color: 'var(--forge-text-muted)' }}>비어있음</span>
               </div>
             );
           })}
@@ -92,10 +92,10 @@ export function Inventory() {
               onClick={() => setActiveSlot(tab.slot)}
               style={{
                 flex: 1,
-                background: activeSlot === tab.slot ? 'var(--accent-dim)' : 'var(--bg-card)',
-                border: `1px solid ${activeSlot === tab.slot ? 'var(--accent)' : 'var(--border)'}`,
+                background: activeSlot === tab.slot ? 'var(--forge-accent-dim)' : 'var(--forge-bg-card)',
+                border: `1px solid ${activeSlot === tab.slot ? 'var(--forge-accent)' : 'var(--forge-border)'}`,
                 borderRadius: 6, padding: '6px 4px', fontSize: 11,
-                color: activeSlot === tab.slot ? 'var(--accent)' : 'var(--text-muted)',
+                color: activeSlot === tab.slot ? 'var(--forge-accent)' : 'var(--forge-text-muted)',
                 cursor: 'pointer',
               }}
             >
@@ -125,7 +125,7 @@ export function Inventory() {
           );
         })}
         {tabItems.length === 0 && (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)', padding: 24 }}>
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--forge-text-muted)', padding: 24 }}>
             장비가 없습니다
           </div>
         )}
@@ -143,7 +143,7 @@ function EquipmentCard({ item, isEquipped, canEquip, onEquip, onUnequip, onSell 
   onSell: () => void;
 }) {
   const rarityColor: Record<string, string> = {
-    common: 'var(--border)', rare: '#c060e0', epic: '#60a0e0', legendary: 'var(--accent)',
+    common: 'var(--forge-border)', rare: '#c060e0', epic: '#60a0e0', legendary: 'var(--forge-accent)',
   };
   const statStr = Object.entries(item.stats.percent ?? {})
     .map(([k, v]) => `${k.toUpperCase()}+${v}%`)
@@ -151,14 +151,14 @@ function EquipmentCard({ item, isEquipped, canEquip, onEquip, onUnequip, onSell 
     .join(' ');
 
   return (
-    <div style={{ background: 'var(--bg-card)', border: `1px solid ${isEquipped ? 'var(--accent)' : rarityColor[item.rarity]}`, borderRadius: 8, padding: 10 }}>
+    <div style={{ background: 'var(--forge-bg-card)', border: `1px solid ${isEquipped ? 'var(--forge-accent)' : rarityColor[item.rarity]}`, borderRadius: 8, padding: 10 }}>
       <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{item.name}</div>
-      <div style={{ fontSize: 11, color: 'var(--atk-color)', marginBottom: 6 }}>{statStr}</div>
+      <div style={{ fontSize: 11, color: 'var(--forge-stat-atk)', marginBottom: 6 }}>{statStr}</div>
       <div style={{ display: 'flex', gap: 4 }}>
         {isEquipped ? (
           <button
             onClick={onUnequip}
-            style={{ fontSize: 11, background: 'var(--accent-dim)', border: '1px solid var(--accent)', borderRadius: 4, padding: '2px 6px', color: 'var(--accent)', cursor: 'pointer' }}
+            style={{ fontSize: 11, background: 'var(--forge-accent-dim)', border: '1px solid var(--forge-accent)', borderRadius: 4, padding: '2px 6px', color: 'var(--forge-accent)', cursor: 'pointer' }}
           >
             해제
           </button>
@@ -166,14 +166,14 @@ function EquipmentCard({ item, isEquipped, canEquip, onEquip, onUnequip, onSell 
           <button
             onClick={onEquip}
             disabled={!canEquip}
-            style={{ fontSize: 11, background: canEquip ? 'var(--accent-dim)' : 'none', border: `1px solid ${canEquip ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 4, padding: '2px 6px', color: canEquip ? 'var(--accent)' : 'var(--text-muted)', cursor: canEquip ? 'pointer' : 'default' }}
+            style={{ fontSize: 11, background: canEquip ? 'var(--forge-accent-dim)' : 'none', border: `1px solid ${canEquip ? 'var(--forge-accent)' : 'var(--forge-border)'}`, borderRadius: 4, padding: '2px 6px', color: canEquip ? 'var(--forge-accent)' : 'var(--forge-text-muted)', cursor: canEquip ? 'pointer' : 'default' }}
           >
             장착
           </button>
         )}
         <button
           onClick={onSell}
-          style={{ fontSize: 11, background: 'none', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px', color: 'var(--text-muted)', cursor: 'pointer' }}
+          style={{ fontSize: 11, background: 'none', border: '1px solid var(--forge-border)', borderRadius: 4, padding: '2px 8px', color: 'var(--forge-text-muted)', cursor: 'pointer' }}
         >
           매각 {item.price.toLocaleString()}G
         </button>

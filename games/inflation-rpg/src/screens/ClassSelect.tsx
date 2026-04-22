@@ -22,8 +22,8 @@ export function ClassSelect() {
         <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen('main-menu')}>
           ← 뒤로
         </button>
-        <span style={{ color: 'var(--accent)', fontWeight: 700 }}>영웅을 선택하라</span>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>영혼등급 {meta.soulGrade}</span>
+        <span style={{ color: 'var(--forge-accent)', fontWeight: 700 }}>영웅을 선택하라</span>
+        <span style={{ fontSize: 12, color: 'var(--forge-text-muted)' }}>영혼등급 {meta.soulGrade}</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
@@ -74,8 +74,8 @@ function CharCard({ char, unlocked, selected, charLv, onSelect }: {
       className={selected ? 'selected' : ''}
       onClick={onSelect}
       style={{
-        background: selected ? 'var(--accent-dim)' : 'var(--bg-card)',
-        border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+        background: selected ? 'var(--forge-accent-dim)' : 'var(--forge-bg-card)',
+        border: `1px solid ${selected ? 'var(--forge-accent)' : 'var(--forge-border)'}`,
         borderRadius: 8,
         padding: '8px 4px',
         textAlign: 'center',
@@ -85,15 +85,15 @@ function CharCard({ char, unlocked, selected, charLv, onSelect }: {
       }}
     >
       {charLv > 0 && (
-        <div style={{ position: 'absolute', top: 2, right: 2, background: 'var(--accent)', color: '#1a1a24', fontSize: 8, fontWeight: 700, borderRadius: 3, padding: '1px 3px', lineHeight: 1.2 }}>
+        <div style={{ position: 'absolute', top: 2, right: 2, background: 'var(--forge-accent)', color: '#1a1a24', fontSize: 8, fontWeight: 700, borderRadius: 3, padding: '1px 3px', lineHeight: 1.2 }}>
           Lv.{charLv}
         </div>
       )}
       <div style={{ fontSize: 24, lineHeight: 1 }}>{unlocked ? char.emoji : '🔒'}</div>
-      <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 600, marginTop: 4 }}>
+      <div style={{ fontSize: 10, color: 'var(--forge-text-secondary)', fontWeight: 600, marginTop: 4 }}>
         {unlocked ? char.nameKR : '???'}
       </div>
-      <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+      <div style={{ fontSize: 9, color: 'var(--forge-text-muted)' }}>
         {unlocked ? char.statFocus : ''}
       </div>
     </button>
@@ -103,13 +103,13 @@ function CharCard({ char, unlocked, selected, charLv, onSelect }: {
 function CharDetail({ char }: { char: Character }) {
   return (
     <div className="panel" style={{ marginBottom: 12 }}>
-      <div style={{ fontWeight: 700, color: 'var(--accent)', marginBottom: 4 }}>
+      <div style={{ fontWeight: 700, color: 'var(--forge-accent)', marginBottom: 4 }}>
         {char.emoji} {char.nameKR}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>
+      <div style={{ fontSize: 12, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
         {char.statFocus}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+      <div style={{ fontSize: 12, color: 'var(--forge-text-secondary)' }}>
         패시브: {char.passiveSkill.nameKR} — {char.passiveSkill.description}
       </div>
     </div>
