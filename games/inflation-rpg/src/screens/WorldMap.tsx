@@ -22,7 +22,7 @@ export function WorldMap() {
 
   return (
     <div
-      className="screen"
+      className="forge-screen"
       style={{
         position: 'relative',
         width: '100%',
@@ -164,10 +164,10 @@ export function WorldMap() {
           background: 'rgba(0,0,0,0.45)',
         }}
       >
-        <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setScreen('inventory')}>
+        <button className="forge-btn secondary" style={{ flex: 1 }} onClick={() => setScreen('inventory')}>
           인벤토리
         </button>
-        <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setScreen('shop')}>
+        <button className="forge-btn secondary" style={{ flex: 1 }} onClick={() => setScreen('shop')}>
           상점
         </button>
       </div>

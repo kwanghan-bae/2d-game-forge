@@ -1,25 +1,25 @@
 :root {
-  --bg-base: #0f0f14;
-  --bg-panel: #1a1a24;
-  --bg-card: #1e1e2e;
-  --border: #2a2a38;
-  --accent: #f0c060;
-  --accent-dim: #2a2410;
-  --text-primary: #e8e0d0;
-  --text-secondary: #c8b88a;
-  --text-muted: #666;
-  --hp-color: #60e060;
-  --atk-color: #e09060;
-  --def-color: #60a0e0;
-  --agi-color: #c060e0;
-  --luc-color: #e0c060;
-  --bp-color: #60c0f0;
-  --danger: #e05050;
+  --forge-bg-base: #0f0f14;
+  --forge-bg-panel: #1a1a24;
+  --forge-bg-card: #1e1e2e;
+  --forge-border: #2a2a38;
+  --forge-accent: #f0c060;
+  --forge-accent-dim: #2a2410;
+  --forge-text-primary: #e8e0d0;
+  --forge-text-secondary: #c8b88a;
+  --forge-text-muted: #666;
+  --forge-stat-hp: #60e060;
+  --forge-stat-atk: #e09060;
+  --forge-stat-def: #60a0e0;
+  --forge-stat-agi: #c060e0;
+  --forge-stat-luc: #e0c060;
+  --forge-stat-bp: #60c0f0;
+  --forge-danger: #e05050;
 }
 
-.game-root {
-  background: var(--bg-base);
-  color: var(--text-primary);
+.forge-ui-root {
+  background: var(--forge-bg-base);
+  color: var(--forge-text-primary);
   font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   min-height: 100dvh;
   max-width: 430px;
@@ -28,7 +28,7 @@
   overflow-x: hidden;
 }
 
-.screen {
+.forge-screen {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -39,8 +39,8 @@
   box-sizing: border-box;
 }
 
-.btn-primary {
-  background: var(--accent);
+.forge-btn.primary {
+  background: var(--forge-accent);
   color: #1a1a24;
   font-weight: 700;
   border: none;
@@ -52,10 +52,10 @@
   touch-action: manipulation;
 }
 
-.btn-secondary {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
+.forge-btn.secondary {
+  background: var(--forge-bg-card);
+  color: var(--forge-text-primary);
+  border: 1px solid var(--forge-border);
   border-radius: 8px;
   padding: 10px 24px;
   cursor: pointer;
@@ -64,15 +64,27 @@
   touch-action: manipulation;
 }
 
-.panel {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+.forge-panel {
+  background: var(--forge-bg-panel);
+  border: 1px solid var(--forge-border);
   border-radius: 10px;
   padding: 14px;
 }
 
-.scroll-list {
+.forge-scroll-list {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+}
+
+.forge-gauge {
+  position: relative;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.forge-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }

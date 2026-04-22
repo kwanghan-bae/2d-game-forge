@@ -23,7 +23,7 @@ export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
 
   return (
-    <div className="game-root" data-assets-base={config.assetsBasePath}>
+    <div className="forge-ui-root" data-assets-base={config.assetsBasePath}>
       {screen === 'main-menu'    && <MainMenu />}
       {screen === 'class-select' && <ClassSelect />}
       {screen === 'world-map'    && <WorldMap />}
