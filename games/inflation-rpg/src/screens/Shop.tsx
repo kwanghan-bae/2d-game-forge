@@ -22,9 +22,9 @@ export function Shop() {
   const nextSlotCost = SLOT_COSTS[meta.equipSlotCount];
 
   return (
-    <div className="screen" style={{ padding: 16 }}>
+    <div className="forge-screen" style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
+        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
         </button>
         <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>상점</span>
@@ -39,7 +39,7 @@ export function Shop() {
           <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
             🔧 장비 슬롯 업그레이드 (현재 {meta.equipSlotCount}/10)
           </div>
-          <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="forge-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 13 }}>슬롯 확장</div>
               <div style={{ fontSize: 11, color: 'var(--forge-text-muted)' }}>장착 슬롯 +1 (영구)</div>
@@ -63,7 +63,7 @@ export function Shop() {
 
       {/* 장비 구매 */}
       <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>⚔️ 장비</div>
-      <div className="scroll-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '55vh' }}>
+      <div className="forge-scroll-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '55vh' }}>
         {EQUIPMENT_CATALOG.map((item) => {
           const canBuy = run.goldThisRun >= item.price && canDrop(meta.inventory, item.slot);
           const statStr = Object.entries(item.stats.percent ?? {})
@@ -71,7 +71,7 @@ export function Shop() {
             .concat(Object.entries(item.stats.flat ?? {}).map(([k, v]) => `${k.toUpperCase()}+${v}`))
             .join(' ');
           return (
-            <div key={item.id} className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={item.id} className="forge-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{item.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--forge-stat-atk)' }}>{statStr}</div>

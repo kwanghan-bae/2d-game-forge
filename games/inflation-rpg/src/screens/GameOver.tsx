@@ -10,10 +10,10 @@ export function GameOver() {
   const prevCharLv = newCharLv - 1;
 
   return (
-    <div className="screen" style={{ alignItems: 'center', justifyContent: 'center', gap: 20, padding: 24 }}>
+    <div className="forge-screen" style={{ alignItems: 'center', justifyContent: 'center', gap: 20, padding: 24 }}>
       <div style={{ fontSize: 48 }}>💀</div>
       <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--forge-danger)' }}>런 종료</div>
-      <div className="panel" style={{ width: '100%', textAlign: 'center' }}>
+      <div className="forge-panel" style={{ width: '100%', textAlign: 'center' }}>
         <div style={{ fontSize: 13, color: 'var(--forge-text-muted)', marginBottom: 4 }}>최고 기록</div>
         <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--forge-accent)' }}>
           Lv.{meta.bestRunLevel.toLocaleString()}
@@ -24,7 +24,7 @@ export function GameOver() {
         </div>
       </div>
       {charId && newCharLv > 0 && (
-        <div className="panel" style={{ width: '100%', textAlign: 'center' }}>
+        <div className="forge-panel" style={{ width: '100%', textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: 'var(--forge-text-muted)', marginBottom: 4 }}>캐릭터 성장</div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--forge-accent)' }}>
             캐릭터 레벨 {prevCharLv} → {newCharLv}
@@ -34,10 +34,10 @@ export function GameOver() {
           </div>
         </div>
       )}
-      <button className="btn-primary" style={{ width: '100%' }} onClick={() => setScreen('class-select')}>
+      <button className="forge-btn primary" style={{ width: '100%' }} onClick={() => setScreen('class-select')}>
         다시 도전
       </button>
-      <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setScreen('main-menu')}>
+      <button className="forge-btn secondary" style={{ width: '100%' }} onClick={() => setScreen('main-menu')}>
         메인 메뉴
       </button>
     </div>

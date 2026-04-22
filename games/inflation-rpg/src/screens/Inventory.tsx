@@ -37,10 +37,10 @@ export function Inventory() {
   const backScreen = run.characterId ? 'world-map' : 'main-menu';
 
   return (
-    <div className="screen" style={{ padding: 16 }}>
+    <div className="forge-screen" style={{ padding: 16 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
+        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
         </button>
         <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>인벤토리</span>
@@ -107,7 +107,7 @@ export function Inventory() {
 
       {/* Items */}
       <div
-          className="scroll-list"
+          className="forge-scroll-list"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, maxHeight: '45vh' }}
         >
         {tabItems.map((item) => {
