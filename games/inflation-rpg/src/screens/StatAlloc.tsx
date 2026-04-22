@@ -38,8 +38,8 @@ export function StatAlloc({ onClose }: StatAllocProps) {
           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 10px', background: 'var(--forge-bg-base)', borderRadius: 6 }}>
             <span style={{ width: 36, fontSize: 12, color: 'var(--forge-text-secondary)', fontWeight: 600 }}>{label}</span>
             <span style={{ width: 56, fontWeight: 700, color, fontSize: 13 }}>{run.allocated[key]}</span>
-            <div style={{ flex: 1, height: 6, background: 'var(--forge-border)', borderRadius: 3 }}>
-              <div style={{ height: '100%', borderRadius: 3, background: color, width: `${Math.min(100, run.allocated[key] / 10)}%` }} />
+            <div className="forge-gauge" style={{ flex: 1, height: 6, background: 'var(--forge-border)' }}>
+              <div style={{ height: '100%', background: color, width: `${Math.min(100, run.allocated[key] / 10)}%` }} />
             </div>
             <button
               onClick={() => allocateSP(key, 1)}
