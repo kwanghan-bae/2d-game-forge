@@ -72,6 +72,7 @@ interface GameStore {
   equipItem: (itemId: string) => void;
   unequipItem: (itemId: string) => void;
   buyEquipSlot: () => void;
+  setCurrentArea: (areaId: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -185,6 +186,8 @@ export const useGameStore = create<GameStore>()(
             meta: { ...s.meta, equipSlotCount: s.meta.equipSlotCount + 1 },
           };
         }),
+
+      setCurrentArea: (areaId) => set((s) => ({ run: { ...s.run, currentAreaId: areaId } })),
     }),
     {
       name: 'korea_inflation_rpg_save',
