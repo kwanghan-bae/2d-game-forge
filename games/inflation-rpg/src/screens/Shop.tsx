@@ -27,8 +27,8 @@ export function Shop() {
         <button className="btn-secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
         </button>
-        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>상점</span>
-        <span style={{ fontSize: 12, color: 'var(--luc-color)' }}>
+        <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>상점</span>
+        <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>
           💰 {run.goldThisRun.toLocaleString()}G
         </span>
       </div>
@@ -36,21 +36,21 @@ export function Shop() {
       {/* 슬롯 확장 */}
       {nextSlotCost && (
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
+          <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
             🔧 장비 슬롯 업그레이드 (현재 {meta.equipSlotCount}/10)
           </div>
           <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 13 }}>슬롯 확장</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>장착 슬롯 +1 (영구)</div>
+              <div style={{ fontSize: 11, color: 'var(--forge-text-muted)' }}>장착 슬롯 +1 (영구)</div>
             </div>
             <button
               aria-label="슬롯 확장"
               disabled={run.goldThisRun < nextSlotCost}
               onClick={buyEquipSlot}
               style={{
-                background: run.goldThisRun >= nextSlotCost ? 'var(--accent)' : 'var(--bg-card)',
-                color: run.goldThisRun >= nextSlotCost ? '#1a1a24' : 'var(--text-muted)',
+                background: run.goldThisRun >= nextSlotCost ? 'var(--forge-accent)' : 'var(--forge-bg-card)',
+                color: run.goldThisRun >= nextSlotCost ? '#1a1a24' : 'var(--forge-text-muted)',
                 border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 700,
                 cursor: run.goldThisRun >= nextSlotCost ? 'pointer' : 'default',
               }}
@@ -62,7 +62,7 @@ export function Shop() {
       )}
 
       {/* 장비 구매 */}
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>⚔️ 장비</div>
+      <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>⚔️ 장비</div>
       <div className="scroll-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '55vh' }}>
         {EQUIPMENT_CATALOG.map((item) => {
           const canBuy = run.goldThisRun >= item.price && canDrop(meta.inventory, item.slot);
@@ -74,14 +74,14 @@ export function Shop() {
             <div key={item.id} className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{item.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--atk-color)' }}>{statStr}</div>
+                <div style={{ fontSize: 11, color: 'var(--forge-stat-atk)' }}>{statStr}</div>
               </div>
               <button
                 disabled={!canBuy}
                 onClick={() => buyEquipment(item.id, item.price)}
                 style={{
-                  background: canBuy ? 'var(--accent)' : 'var(--bg-card)',
-                  color: canBuy ? '#1a1a24' : 'var(--text-muted)',
+                  background: canBuy ? 'var(--forge-accent)' : 'var(--forge-bg-card)',
+                  color: canBuy ? '#1a1a24' : 'var(--forge-text-muted)',
                   border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 700,
                   cursor: canBuy ? 'pointer' : 'default',
                 }}

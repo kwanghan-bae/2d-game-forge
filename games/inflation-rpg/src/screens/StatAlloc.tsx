@@ -3,11 +3,11 @@ import { useGameStore } from '../store/gameStore';
 import type { AllocatedStats } from '../types';
 
 const STAT_LABELS: { key: keyof AllocatedStats; label: string; color: string }[] = [
-  { key: 'hp',  label: 'HP',  color: 'var(--hp-color)' },
-  { key: 'atk', label: 'ATK', color: 'var(--atk-color)' },
-  { key: 'def', label: 'DEF', color: 'var(--def-color)' },
-  { key: 'agi', label: 'AGI', color: 'var(--agi-color)' },
-  { key: 'luc', label: 'LUC', color: 'var(--luc-color)' },
+  { key: 'hp',  label: 'HP',  color: 'var(--forge-stat-hp)' },
+  { key: 'atk', label: 'ATK', color: 'var(--forge-stat-atk)' },
+  { key: 'def', label: 'DEF', color: 'var(--forge-stat-def)' },
+  { key: 'agi', label: 'AGI', color: 'var(--forge-stat-agi)' },
+  { key: 'luc', label: 'LUC', color: 'var(--forge-stat-luc)' },
 ];
 
 interface StatAllocProps {
@@ -25,20 +25,20 @@ export function StatAlloc({ onClose }: StatAllocProps) {
     }}>
       <div className="panel" style={{ width: '90%', maxWidth: 340 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-          <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Lv.{run.level} 달성! 스탯 배분</span>
+          <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>Lv.{run.level} 달성! 스탯 배분</span>
           <span style={{
-            background: 'var(--accent-dim)', border: '1px solid var(--accent)',
-            borderRadius: 5, padding: '2px 10px', fontSize: 12, color: 'var(--accent)', fontWeight: 700,
+            background: 'var(--forge-accent-dim)', border: '1px solid var(--forge-accent)',
+            borderRadius: 5, padding: '2px 10px', fontSize: 12, color: 'var(--forge-accent)', fontWeight: 700,
           }}>
             SP: {run.statPoints}
           </span>
         </div>
 
         {STAT_LABELS.map(({ key, label, color }) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 10px', background: 'var(--bg-base)', borderRadius: 6 }}>
-            <span style={{ width: 36, fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</span>
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 10px', background: 'var(--forge-bg-base)', borderRadius: 6 }}>
+            <span style={{ width: 36, fontSize: 12, color: 'var(--forge-text-secondary)', fontWeight: 600 }}>{label}</span>
             <span style={{ width: 56, fontWeight: 700, color, fontSize: 13 }}>{run.allocated[key]}</span>
-            <div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 3 }}>
+            <div style={{ flex: 1, height: 6, background: 'var(--forge-border)', borderRadius: 3 }}>
               <div style={{ height: '100%', borderRadius: 3, background: color, width: `${Math.min(100, run.allocated[key] / 10)}%` }} />
             </div>
             <button
@@ -46,8 +46,8 @@ export function StatAlloc({ onClose }: StatAllocProps) {
               disabled={run.statPoints < 1}
               style={{
                 width: 24, height: 24, borderRadius: 4,
-                border: `1px solid ${run.statPoints > 0 ? 'var(--accent)' : 'var(--border)'}`,
-                background: 'var(--bg-card)', color: run.statPoints > 0 ? 'var(--accent)' : 'var(--text-muted)',
+                border: `1px solid ${run.statPoints > 0 ? 'var(--forge-accent)' : 'var(--forge-border)'}`,
+                background: 'var(--forge-bg-card)', color: run.statPoints > 0 ? 'var(--forge-accent)' : 'var(--forge-text-muted)',
                 cursor: run.statPoints > 0 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1,
               }}
             >+</button>
