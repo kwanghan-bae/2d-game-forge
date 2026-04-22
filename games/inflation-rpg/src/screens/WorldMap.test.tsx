@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldMap } from './WorldMap';
 import { useGameStore, INITIAL_META } from '../store/gameStore';
 
-const runWithChar = {
+const baseRun = {
   characterId: 'hwarang', level: 1, exp: 0, bp: 28, statPoints: 0,
   allocated: { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 },
   currentAreaId: 'village-entrance', isHardMode: false,
@@ -13,7 +13,7 @@ const runWithChar = {
 };
 
 beforeEach(() => {
-  useGameStore.setState({ screen: 'world-map', run: runWithChar, meta: INITIAL_META });
+  useGameStore.setState({ screen: 'world-map', run: baseRun, meta: INITIAL_META });
 });
 
 describe('WorldMap', () => {
@@ -27,34 +27,58 @@ describe('WorldMap', () => {
     expect(screen.getByText(/^Lv\.1$/i)).toBeInTheDocument();
   });
 
-  it('마을 입구 (minLevel 1) is accessible at level 1', () => {
+  it('조선 평야 region is visible and unlocked at level 1', () => {
     render(<WorldMap />);
-    expect(screen.getByRole('button', { name: /마을 입구/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /조선 평야/i })).not.toBeDisabled();
   });
 
-  it('주막 거리 (minLevel 30) is locked at level 15', () => {
-    useGameStore.setState({ run: { ...runWithChar, level: 15 } });
+  it('깊은 숲 region is locked at level 1 (minLevel 500)', () => {
     render(<WorldMap />);
-    const btn = screen.getByRole('button', { name: /주막 거리/i });
-    expect(btn).toBeDisabled();
+    expect(screen.getByRole('button', { name: /깊은 숲/i })).toBeDisabled();
   });
 
-  it('주막 거리 shows Lv.30 필요 text when locked', () => {
-    render(<WorldMap />); // level 1
-    expect(screen.getByText(/Lv\.30 필요/i)).toBeInTheDocument();
+  it('마왕의 성 region is hidden in normal mode', () => {
+    render(<WorldMap />);
+    expect(screen.queryByRole('button', { name: /마왕의 성/i })).not.toBeInTheDocument();
   });
 
-  it('주막 거리 is accessible at exactly level 30', () => {
-    useGameStore.setState({ run: { ...runWithChar, level: 30 } });
+  it('마왕의 성 region is visible in hard mode', () => {
+    useGameStore.setState({ run: { ...baseRun, isHardMode: true } });
     render(<WorldMap />);
-    expect(screen.getByRole('button', { name: /주막 거리/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /마왕의 성/i })).toBeInTheDocument();
   });
 
-  it('entering area triggers battle screen after BP deduct', async () => {
+  it('마왕의 성 is visible but locked in hard mode at level 1', () => {
+    useGameStore.setState({ run: { ...baseRun, isHardMode: true } });
     render(<WorldMap />);
+    expect(screen.getByRole('button', { name: /마왕의 성/i })).toBeDisabled();
+  });
+
+  it('깊은 숲 unlocks at exactly level 500', () => {
+    useGameStore.setState({ run: { ...baseRun, level: 500 } });
+    render(<WorldMap />);
+    expect(screen.getByRole('button', { name: /깊은 숲/i })).not.toBeDisabled();
+  });
+
+  it('clicking 조선 평야 shows RegionMap with 마을 입구', async () => {
+    render(<WorldMap />);
+    await userEvent.click(screen.getByRole('button', { name: /조선 평야/i }));
+    expect(screen.getByRole('button', { name: /마을 입구/i })).toBeInTheDocument();
+  });
+
+  it('← button in RegionMap returns to WorldMap region list', async () => {
+    render(<WorldMap />);
+    await userEvent.click(screen.getByRole('button', { name: /조선 평야/i }));
+    await userEvent.click(screen.getByRole('button', { name: /뒤로가기/i }));
+    expect(screen.getByRole('button', { name: /조선 평야/i })).toBeInTheDocument();
+  });
+
+  it('entering area from RegionMap triggers battle screen after BP deduct', async () => {
+    render(<WorldMap />);
+    await userEvent.click(screen.getByRole('button', { name: /조선 평야/i }));
     await userEvent.click(screen.getByRole('button', { name: /마을 입구/i }));
     const state = useGameStore.getState();
     expect(state.screen).toBe('battle');
-    expect(state.run.bp).toBe(27); // 28 - 1
+    expect(state.run.bp).toBe(27);
   });
 });
