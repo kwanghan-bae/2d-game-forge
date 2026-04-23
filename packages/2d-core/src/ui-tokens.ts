@@ -36,3 +36,8 @@ export interface ForgeGaugeProps {
 export interface ForgeInventoryGridProps {
   columns?: 2 | 3 | 4;
 }
+
+export interface ForgeScreenProps {
+  /** safe-area-inset padding 을 수동으로 비활성화. 기본값 true (모든 방향 적용). */
+  safeArea?: boolean;
+}
