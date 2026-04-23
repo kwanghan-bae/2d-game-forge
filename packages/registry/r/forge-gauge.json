@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "forge-gauge",
+  "type": "registry:ui",
+  "title": "ForgeGauge",
+  "description": "Forge-UI 스텟 게이지 바. hp/atk/def/agi/luc/bp 토큰 지원.",
+  "dependencies": ["@forge/core", "clsx"],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "packages/registry/src/ui/forge-gauge.tsx",
+      "type": "registry:ui",
+      "target": "src/components/ui/forge-gauge.tsx"
+    },
+    {
+      "path": "packages/registry/src/lib/utils.ts",
+      "type": "registry:lib",
+      "target": "src/lib/utils.ts"
+    }
+  ]
+}
