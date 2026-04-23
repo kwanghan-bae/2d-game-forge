@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "forge-inventory-grid",
+  "type": "registry:ui",
+  "title": "ForgeInventoryGrid",
+  "description": "Forge-UI 인벤토리 그리드. 2/3/4 컬럼 지원.",
+  "dependencies": ["@forge/core", "clsx"],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "packages/registry/src/ui/forge-inventory-grid.tsx",
+      "type": "registry:ui",
+      "target": "src/components/ui/forge-inventory-grid.tsx"
+    },
+    {
+      "path": "packages/registry/src/lib/utils.ts",
+      "type": "registry:lib",
+      "target": "src/lib/utils.ts"
+    }
+  ]
+}
