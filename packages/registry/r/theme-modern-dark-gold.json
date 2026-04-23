@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "theme-modern-dark-gold",
+  "type": "registry:theme",
+  "title": "Modern Dark + Gold theme",
+  "description": "Forge-UI 기본 테마 — #0f0f14 배경에 #f0c060 골드 악센트. inflation-rpg 원래 미학.",
+  "files": [
+    {
+      "path": "packages/registry/src/themes/modern-dark-gold.css",
+      "type": "registry:theme",
+      "target": "src/styles/modern-dark-gold.css"
+    }
+  ]
+}
