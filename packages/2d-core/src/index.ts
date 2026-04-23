@@ -22,4 +22,5 @@ export type {
   ForgePanelProps,
   ForgeGaugeProps,
   ForgeInventoryGridProps,
+  ForgeScreenProps,
 } from './ui-tokens';
