@@ -9,7 +9,7 @@ test.describe('Mobile layout — iPhone 14 viewport', () => {
     await page.goto(GAME_URL);
     await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
     await page.reload();
-    await page.waitForSelector('.game-root', { timeout: 10000 });
+    await page.waitForSelector('.forge-screen', { timeout: 10000 });
   });
 
   test('no horizontal overflow', async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe('Mobile layout — iPhone 14 viewport', () => {
   });
 
   test('primary buttons meet 44px touch target height', async ({ page }) => {
-    const buttons = page.locator('.btn-primary, .btn-secondary');
+    const buttons = page.locator('.forge-btn.primary, .forge-btn.secondary');
     const count = await buttons.count();
     expect(count).toBeGreaterThan(0);
 
@@ -34,12 +34,14 @@ test.describe('Mobile layout — iPhone 14 viewport', () => {
   });
 
   test('viewport-fit=cover meta tag present', async ({ page }) => {
-    const viewport = await page.locator('meta[name="viewport"]').getAttribute('content') ?? '';
+    // Use first() to handle both standalone and dev-shell modes where two viewport
+    // meta tags may be rendered (one from each layout). Both should include viewport-fit=cover.
+    const viewport = await page.locator('meta[name="viewport"]').first().getAttribute('content') ?? '';
     expect(viewport).toContain('viewport-fit=cover');
   });
 
-  test('game-root does not exceed viewport width', async ({ page }) => {
-    const box = await page.locator('.game-root').boundingBox();
+  test('forge-screen does not exceed viewport width', async ({ page }) => {
+    const box = await page.locator('.forge-screen').boundingBox();
     const viewportSize = page.viewportSize()!;
     expect(box).not.toBeNull();
     expect(box!.width).toBeLessThanOrEqual(viewportSize.width);
