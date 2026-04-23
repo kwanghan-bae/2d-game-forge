@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "forge-screen",
+  "type": "registry:ui",
+  "title": "ForgeScreen",
+  "description": "앱 최상위 래퍼. safe-area padding + 100dvh 높이.",
+  "dependencies": ["@forge/core", "clsx"],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "packages/registry/src/ui/forge-screen.tsx",
+      "type": "registry:ui",
+      "target": "src/components/ui/forge-screen.tsx"
+    },
+    {
+      "path": "packages/registry/src/lib/utils.ts",
+      "type": "registry:lib",
+      "target": "src/lib/utils.ts"
+    }
+  ]
+}
