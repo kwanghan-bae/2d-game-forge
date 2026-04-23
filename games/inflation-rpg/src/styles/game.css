@@ -1,21 +1,8 @@
-:root {
-  --forge-bg-base: #0f0f14;
-  --forge-bg-panel: #1a1a24;
-  --forge-bg-card: #1e1e2e;
-  --forge-border: #2a2a38;
-  --forge-accent: #f0c060;
-  --forge-accent-dim: #2a2410;
-  --forge-text-primary: #e8e0d0;
-  --forge-text-secondary: #c8b88a;
-  --forge-text-muted: #666;
-  --forge-stat-hp: #60e060;
-  --forge-stat-atk: #e09060;
-  --forge-stat-def: #60a0e0;
-  --forge-stat-agi: #c060e0;
-  --forge-stat-luc: #e0c060;
-  --forge-stat-bp: #60c0f0;
-  --forge-danger: #e05050;
-}
+/*
+ * --forge-* CSS 변수는 @/styles/modern-dark-gold.css (theme registry item) 가 정의한다.
+ * 여기에는 .forge-* 클래스 선언만 남긴다. 이 블록은 grandfathered 이며,
+ * 신규 컴포넌트는 registry 를 통해 추가한다.
+ */
 
 .forge-ui-root {
   background: var(--forge-bg-base);
