@@ -1,0 +1,37 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "@forge/registry",
+  "homepage": "https://github.com/kwanghan-bae/2d-game-forge",
+  "items": [
+    {
+      "name": "theme-modern-dark-gold",
+      "type": "registry:theme",
+      "title": "Modern Dark + Gold theme"
+    },
+    {
+      "name": "forge-screen",
+      "type": "registry:ui",
+      "title": "ForgeScreen"
+    },
+    {
+      "name": "forge-button",
+      "type": "registry:ui",
+      "title": "ForgeButton"
+    },
+    {
+      "name": "forge-panel",
+      "type": "registry:ui",
+      "title": "ForgePanel"
+    },
+    {
+      "name": "forge-gauge",
+      "type": "registry:ui",
+      "title": "ForgeGauge"
+    },
+    {
+      "name": "forge-inventory-grid",
+      "type": "registry:ui",
+      "title": "ForgeInventoryGrid"
+    }
+  ]
+}
