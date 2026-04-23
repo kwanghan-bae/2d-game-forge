@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "forge-button",
+  "type": "registry:ui",
+  "title": "ForgeButton",
+  "description": "Forge-UI 기본 버튼. primary / secondary / disabled variant.",
+  "dependencies": ["@forge/core", "clsx"],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "packages/registry/src/ui/forge-button.tsx",
+      "type": "registry:ui",
+      "target": "src/components/ui/forge-button.tsx"
+    },
+    {
+      "path": "packages/registry/src/lib/utils.ts",
+      "type": "registry:lib",
+      "target": "src/lib/utils.ts"
+    }
+  ]
+}
