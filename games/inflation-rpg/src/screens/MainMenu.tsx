@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ForgeButton } from '@/components/ui/forge-button';
+import { ForgeScreen } from '@/components/ui/forge-screen';
 
 export function MainMenu() {
   const setScreen = useGameStore((s) => s.setScreen);
@@ -11,7 +12,7 @@ export function MainMenu() {
   const hasActiveRun = runCharacterId !== '';
 
   return (
-    <div className="forge-screen" style={{ background: 'linear-gradient(180deg,#1a1030 0%,#0f0f1a 100%)', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+    <ForgeScreen style={{ background: 'linear-gradient(180deg,#1a1030 0%,#0f0f1a 100%)', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
         <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--forge-accent)', letterSpacing: 2 }}>
           INFLATION
@@ -64,6 +65,6 @@ export function MainMenu() {
       <div style={{ marginTop: 8, fontSize: 12, color: 'var(--forge-text-muted)' }}>
         최고 기록: Lv.{meta.bestRunLevel.toLocaleString()}
       </div>
-    </div>
+    </ForgeScreen>
   );
 }
