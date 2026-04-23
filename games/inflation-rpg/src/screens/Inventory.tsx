@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { Equipment, EquipmentSlot } from '../types';
 import { SLOT_LIMITS } from '../systems/equipment';
+import { ForgeButton } from '@/components/ui/forge-button';
 
 const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
   { slot: 'weapon',    label: '무기',     emoji: '⚔️' },
@@ -40,9 +41,9 @@ export function Inventory() {
     <div className="forge-screen" style={{ padding: 16 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
+        <ForgeButton variant="secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
-        </button>
+        </ForgeButton>
         <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>인벤토리</span>
         <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>💰 {meta.gold.toLocaleString()}</span>
       </div>

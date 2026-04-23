@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { AllocatedStats } from '../types';
+import { ForgeButton } from '@/components/ui/forge-button';
 
 const STAT_LABELS: { key: keyof AllocatedStats; label: string; color: string }[] = [
   { key: 'hp',  label: 'HP',  color: 'var(--forge-stat-hp)' },
@@ -54,13 +55,13 @@ export function StatAlloc({ onClose }: StatAllocProps) {
           </div>
         ))}
 
-        <button
-          className="forge-btn primary"
+        <ForgeButton
+          variant="primary"
           style={{ width: '100%', marginTop: 8, opacity: run.statPoints > 0 ? 0.6 : 1 }}
           onClick={onClose}
         >
           {run.statPoints > 0 ? `확인 (SP ${run.statPoints} 남음)` : '확인'}
-        </button>
+        </ForgeButton>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { getRegionById } from '../data/regions';
 import { getAreasByRegion } from '../data/maps';
 import { isRunOver } from '../systems/bp';
 import type { MapArea } from '../types';
+import { ForgeButton } from '@/components/ui/forge-button';
 
 const ICON_EMOJI: Record<string, string> = {
   village: '🏘️', wheat: '🌾', 'water-drop': '💧', coins: '🪙', beer: '🍺',
@@ -248,12 +249,12 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
           background: 'rgba(0,0,0,0.55)',
         }}
       >
-        <button className="forge-btn secondary" style={{ flex: 1 }} onClick={() => setScreen('inventory')}>
+        <ForgeButton variant="secondary" style={{ flex: 1 }} onClick={() => setScreen('inventory')}>
           인벤토리
-        </button>
-        <button className="forge-btn secondary" style={{ flex: 1 }} onClick={() => setScreen('shop')}>
+        </ForgeButton>
+        <ForgeButton variant="secondary" style={{ flex: 1 }} onClick={() => setScreen('shop')}>
           상점
-        </button>
+        </ForgeButton>
       </div>
     </div>
   );

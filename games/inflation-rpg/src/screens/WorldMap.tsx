@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { REGIONS } from '../data/regions';
 import { getAreasByRegion } from '../data/maps';
 import { RegionMap } from './RegionMap';
+import { ForgeButton } from '@/components/ui/forge-button';
 
 export function WorldMap() {
   const run = useGameStore((s) => s.run);
@@ -164,12 +165,12 @@ export function WorldMap() {
           background: 'rgba(0,0,0,0.45)',
         }}
       >
-        <button className="forge-btn secondary" style={{ flex: 1 }} onClick={() => setScreen('inventory')}>
+        <ForgeButton variant="secondary" style={{ flex: 1 }} onClick={() => setScreen('inventory')}>
           인벤토리
-        </button>
-        <button className="forge-btn secondary" style={{ flex: 1 }} onClick={() => setScreen('shop')}>
+        </ForgeButton>
+        <ForgeButton variant="secondary" style={{ flex: 1 }} onClick={() => setScreen('shop')}>
           상점
-        </button>
+        </ForgeButton>
       </div>
     </div>
   );
