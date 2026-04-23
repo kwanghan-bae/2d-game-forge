@@ -2,6 +2,7 @@ import React from 'react';
 import { useGameStore, SLOT_COSTS } from '../store/gameStore';
 import { EQUIPMENT_CATALOG } from '../data/equipment';
 import { canDrop } from '../systems/equipment';
+import { ForgeButton } from '@/components/ui/forge-button';
 
 export function Shop() {
   const meta = useGameStore((s) => s.meta);
@@ -24,9 +25,9 @@ export function Shop() {
   return (
     <div className="forge-screen" style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
+        <ForgeButton variant="secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
-        </button>
+        </ForgeButton>
         <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>상점</span>
         <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>
           💰 {run.goldThisRun.toLocaleString()}G

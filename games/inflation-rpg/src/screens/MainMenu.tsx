@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
+import { ForgeButton } from '@/components/ui/forge-button';
 
 export function MainMenu() {
   const setScreen = useGameStore((s) => s.setScreen);
@@ -26,38 +27,38 @@ export function MainMenu() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: 200 }}>
         {hasActiveRun ? (
           <>
-            <button className="forge-btn primary" onClick={() => setScreen('world-map')}>
+            <ForgeButton variant="primary" onClick={() => setScreen('world-map')}>
               런 이어하기
-            </button>
-            <button
-              className="forge-btn secondary"
+            </ForgeButton>
+            <ForgeButton
+              variant="secondary"
               onClick={() => { abandonRun(); setScreen('class-select'); }}
             >
               새로 시작
-            </button>
+            </ForgeButton>
           </>
         ) : (
           <>
-            <button className="forge-btn primary" onClick={() => setScreen('class-select')}>
+            <ForgeButton variant="primary" onClick={() => setScreen('class-select')}>
               게임 시작
-            </button>
+            </ForgeButton>
             {meta.hardModeUnlocked && (
-              <button
-                className="forge-btn primary"
+              <ForgeButton
+                variant="primary"
                 style={{ background: 'var(--forge-danger)' }}
                 onClick={() => setScreen('class-select')}
               >
                 하드모드
-              </button>
+              </ForgeButton>
             )}
           </>
         )}
-        <button className="forge-btn secondary" onClick={() => setScreen('inventory')}>
+        <ForgeButton variant="secondary" onClick={() => setScreen('inventory')}>
           인벤토리
-        </button>
-        <button className="forge-btn secondary" onClick={() => setScreen('shop')}>
+        </ForgeButton>
+        <ForgeButton variant="secondary" onClick={() => setScreen('shop')}>
           상점
-        </button>
+        </ForgeButton>
       </div>
 
       <div style={{ marginTop: 8, fontSize: 12, color: 'var(--forge-text-muted)' }}>

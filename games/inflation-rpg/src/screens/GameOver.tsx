@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
+import { ForgeButton } from '@/components/ui/forge-button';
 
 export function GameOver() {
   const meta = useGameStore((s) => s.meta);
@@ -34,12 +35,12 @@ export function GameOver() {
           </div>
         </div>
       )}
-      <button className="forge-btn primary" style={{ width: '100%' }} onClick={() => setScreen('class-select')}>
+      <ForgeButton variant="primary" style={{ width: '100%' }} onClick={() => setScreen('class-select')}>
         다시 도전
-      </button>
-      <button className="forge-btn secondary" style={{ width: '100%' }} onClick={() => setScreen('main-menu')}>
+      </ForgeButton>
+      <ForgeButton variant="secondary" style={{ width: '100%' }} onClick={() => setScreen('main-menu')}>
         메인 메뉴
-      </button>
+      </ForgeButton>
     </div>
   );
 }
