@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { StatAlloc } from './StatAlloc';
 import { createBattleGame } from '../battle/BattleGame';
 import type Phaser from 'phaser';
+import { ForgeScreen } from '@/components/ui/forge-screen';
 
 export function Battle() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -41,7 +42,7 @@ export function Battle() {
   };
 
   return (
-    <div className="forge-screen" style={{ position: 'relative' }}>
+    <ForgeScreen style={{ position: 'relative' }}>
       <div style={{ padding: '8px 14px', background: 'var(--forge-bg-panel)', borderBottom: '1px solid var(--forge-border)', display: 'flex', gap: 8 }}>
         <span style={{ fontSize: 12, background: 'var(--forge-bg-card)', border: '1px solid var(--forge-border)', borderRadius: 5, padding: '3px 8px', color: 'var(--forge-stat-bp)', fontWeight: 700 }}>
           ⚡{run.bp}
@@ -61,6 +62,6 @@ export function Battle() {
       {showStatAlloc && run.statPoints > 0 && (
         <StatAlloc onClose={handleStatAllocClose} />
       )}
-    </div>
+    </ForgeScreen>
   );
 }

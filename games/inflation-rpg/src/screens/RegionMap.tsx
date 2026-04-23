@@ -5,6 +5,7 @@ import { getAreasByRegion } from '../data/maps';
 import { isRunOver } from '../systems/bp';
 import type { MapArea } from '../types';
 import { ForgeButton } from '@/components/ui/forge-button';
+import { ForgeScreen } from '@/components/ui/forge-screen';
 
 const ICON_EMOJI: Record<string, string> = {
   village: '🏘️', wheat: '🌾', 'water-drop': '💧', coins: '🪙', beer: '🍺',
@@ -58,8 +59,7 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
   };
 
   return (
-    <div
-      className="forge-screen"
+    <ForgeScreen
       style={{
         position: 'relative',
         width: '100%',
@@ -256,6 +256,6 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
           상점
         </ForgeButton>
       </div>
-    </div>
+    </ForgeScreen>
   );
 }

@@ -4,6 +4,7 @@ import { REGIONS } from '../data/regions';
 import { getAreasByRegion } from '../data/maps';
 import { RegionMap } from './RegionMap';
 import { ForgeButton } from '@/components/ui/forge-button';
+import { ForgeScreen } from '@/components/ui/forge-screen';
 
 export function WorldMap() {
   const run = useGameStore((s) => s.run);
@@ -22,8 +23,7 @@ export function WorldMap() {
   const visibleRegions = REGIONS.filter((r) => !r.isHardOnly || run.isHardMode);
 
   return (
-    <div
-      className="forge-screen"
+    <ForgeScreen
       style={{
         position: 'relative',
         width: '100%',
@@ -172,6 +172,6 @@ export function WorldMap() {
           상점
         </ForgeButton>
       </div>
-    </div>
+    </ForgeScreen>
   );
 }
