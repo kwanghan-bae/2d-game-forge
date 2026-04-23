@@ -1,0 +1,21 @@
+{
+  "name": "@forge/registry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local shadcn registry of Forge-UI components and themes. Sources are copied into each game via `pnpm dlx shadcn add`.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@forge/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "react": "19.2.3",
+    "typescript": "^5.6.0",
+    "vitest": "^4.0.16"
+  }
+}
