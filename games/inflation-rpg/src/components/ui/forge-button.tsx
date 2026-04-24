@@ -1,4 +1,3 @@
-// packages/registry/src/ui/forge-button.tsx
 import * as React from 'react';
 import type { ForgeButtonProps } from '@forge/core';
 import { cn } from '@/lib/utils';
