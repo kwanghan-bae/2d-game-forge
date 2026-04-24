@@ -61,7 +61,7 @@ export default [
             { from: 'genre', allow: ['core', 'genre'] },
             { from: 'plugin', allow: ['core', 'plugin'] },
             { from: 'content', allow: ['core', 'genre', 'content'] },
-            { from: 'registry', allow: ['core'] },
+            { from: 'registry', allow: ['core', 'registry'] },
             { from: 'game', allow: ['core', 'genre', 'plugin', 'content', 'game', 'registry'] },
             { from: 'app', allow: ['core', 'genre', 'plugin', 'content', 'game', 'app'] },
           ],

@@ -6,7 +6,8 @@
   "description": "Local shadcn registry of Forge-UI components and themes. Sources are copied into each game via `pnpm dlx shadcn add`.",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint src tests"
   },
   "dependencies": {
     "@forge/core": "workspace:^",

@@ -51,6 +51,19 @@
   touch-action: manipulation;
 }
 
+.forge-btn.disabled {
+  background: var(--forge-bg-card);
+  color: var(--forge-text-muted);
+  border: 1px solid var(--forge-border);
+  border-radius: 8px;
+  padding: 10px 24px;
+  cursor: not-allowed;
+  font-size: 15px;
+  min-height: 44px;
+  opacity: 0.5;
+  touch-action: manipulation;
+}
+
 .forge-panel {
   background: var(--forge-bg-panel);
   border: 1px solid var(--forge-border);
