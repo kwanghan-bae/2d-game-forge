@@ -1,4 +1,3 @@
-// packages/registry/src/ui/forge-gauge.tsx
 import * as React from 'react';
 import type { ForgeGaugeProps, ForgeStatToken } from '@forge/core';
 import { cn } from '@/lib/utils';
@@ -34,7 +33,6 @@ export const ForgeGauge = React.forwardRef<
       {...props}
     >
       <div
-        className="forge-gauge__fill"
         style={{ width: `${pct}%`, background: color, height: '100%' }}
       />
     </div>

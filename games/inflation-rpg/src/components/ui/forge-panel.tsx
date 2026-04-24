@@ -1,4 +1,3 @@
-// packages/registry/src/ui/forge-panel.tsx
 import * as React from 'react';
 import type { ForgePanelProps } from '@forge/core';
 import { cn } from '@/lib/utils';

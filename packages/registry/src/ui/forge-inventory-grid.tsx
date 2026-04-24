@@ -1,4 +1,3 @@
-// packages/registry/src/ui/forge-inventory-grid.tsx
 import * as React from 'react';
 import type { ForgeInventoryGridProps } from '@forge/core';
 import { cn } from '@/lib/utils';
