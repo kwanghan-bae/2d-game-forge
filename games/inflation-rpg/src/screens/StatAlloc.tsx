@@ -1,13 +1,17 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { AllocatedStats } from '../types';
+import { ForgeButton } from '@/components/ui/forge-button';
+import { ForgePanel } from '@/components/ui/forge-panel';
+import { ForgeGauge } from '@/components/ui/forge-gauge';
+import type { ForgeStatToken } from '@forge/core';
 
-const STAT_LABELS: { key: keyof AllocatedStats; label: string; color: string }[] = [
-  { key: 'hp',  label: 'HP',  color: 'var(--forge-stat-hp)' },
-  { key: 'atk', label: 'ATK', color: 'var(--forge-stat-atk)' },
-  { key: 'def', label: 'DEF', color: 'var(--forge-stat-def)' },
-  { key: 'agi', label: 'AGI', color: 'var(--forge-stat-agi)' },
-  { key: 'luc', label: 'LUC', color: 'var(--forge-stat-luc)' },
+const STAT_LABELS: { key: keyof AllocatedStats; label: string; stat: ForgeStatToken }[] = [
+  { key: 'hp',  label: 'HP',  stat: 'hp' },
+  { key: 'atk', label: 'ATK', stat: 'atk' },
+  { key: 'def', label: 'DEF', stat: 'def' },
+  { key: 'agi', label: 'AGI', stat: 'agi' },
+  { key: 'luc', label: 'LUC', stat: 'luc' },
 ];
 
 interface StatAllocProps {
@@ -23,7 +27,7 @@ export function StatAlloc({ onClose }: StatAllocProps) {
       position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
     }}>
-      <div className="forge-panel" style={{ width: '90%', maxWidth: 340 }}>
+      <ForgePanel style={{ width: '90%', maxWidth: 340 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
           <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>Lv.{run.level} 달성! 스탯 배분</span>
           <span style={{
@@ -34,13 +38,15 @@ export function StatAlloc({ onClose }: StatAllocProps) {
           </span>
         </div>
 
-        {STAT_LABELS.map(({ key, label, color }) => (
+        {STAT_LABELS.map(({ key, label, stat }) => (
           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 10px', background: 'var(--forge-bg-base)', borderRadius: 6 }}>
             <span style={{ width: 36, fontSize: 12, color: 'var(--forge-text-secondary)', fontWeight: 600 }}>{label}</span>
-            <span style={{ width: 56, fontWeight: 700, color, fontSize: 13 }}>{run.allocated[key]}</span>
-            <div className="forge-gauge" style={{ flex: 1, height: 6, background: 'var(--forge-border)' }}>
-              <div style={{ height: '100%', background: color, width: `${Math.min(100, run.allocated[key] / 10)}%` }} />
-            </div>
+            <span style={{ width: 56, fontWeight: 700, color: `var(--forge-stat-${stat})`, fontSize: 13 }}>{run.allocated[key]}</span>
+            <ForgeGauge
+              stat={stat}
+              value={Math.min(1, run.allocated[key] / 10)}
+              style={{ flex: 1, height: 6, background: 'var(--forge-border)' }}
+            />
             <button
               onClick={() => allocateSP(key, 1)}
               disabled={run.statPoints < 1}
@@ -54,14 +60,14 @@ export function StatAlloc({ onClose }: StatAllocProps) {
           </div>
         ))}
 
-        <button
-          className="forge-btn primary"
+        <ForgeButton
+          variant="primary"
           style={{ width: '100%', marginTop: 8, opacity: run.statPoints > 0 ? 0.6 : 1 }}
           onClick={onClose}
         >
           {run.statPoints > 0 ? `확인 (SP ${run.statPoints} 남음)` : '확인'}
-        </button>
-      </div>
+        </ForgeButton>
+      </ForgePanel>
     </div>
   );
 }

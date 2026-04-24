@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "forge-panel",
+  "type": "registry:ui",
+  "title": "ForgePanel",
+  "description": "Forge-UI 레이아웃 컨테이너. inset / elevated variant.",
+  "dependencies": ["@forge/core", "clsx"],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "packages/registry/src/ui/forge-panel.tsx",
+      "type": "registry:ui",
+      "target": "src/components/ui/forge-panel.tsx"
+    },
+    {
+      "path": "packages/registry/src/lib/utils.ts",
+      "type": "registry:lib",
+      "target": "src/lib/utils.ts"
+    }
+  ]
+}
