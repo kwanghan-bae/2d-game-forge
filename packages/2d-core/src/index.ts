@@ -22,4 +22,8 @@ export type {
   ForgePanelProps,
   ForgeGaugeProps,
   ForgeInventoryGridProps,
+  ForgeScreenProps,
 } from './ui-tokens';
+
+export { readForgeToken, resolveForgeTheme } from './theme-bridge';
+export type { ForgeThemeBridge } from './theme-bridge';

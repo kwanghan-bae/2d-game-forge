@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { Equipment, EquipmentSlot } from '../types';
 import { SLOT_LIMITS } from '../systems/equipment';
+import { ForgeButton } from '@/components/ui/forge-button';
+import { ForgeInventoryGrid } from '@/components/ui/forge-inventory-grid';
+import { ForgeScreen } from '@/components/ui/forge-screen';
 
 const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
   { slot: 'weapon',    label: '무기',     emoji: '⚔️' },
@@ -37,12 +40,12 @@ export function Inventory() {
   const backScreen = run.characterId ? 'world-map' : 'main-menu';
 
   return (
-    <div className="forge-screen" style={{ padding: 16 }}>
+    <ForgeScreen style={{ padding: 16 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
+        <ForgeButton variant="secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
-        </button>
+        </ForgeButton>
         <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>인벤토리</span>
         <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>💰 {meta.gold.toLocaleString()}</span>
       </div>
@@ -106,8 +109,8 @@ export function Inventory() {
       </div>
 
       {/* Items */}
-      <div
-          className="forge-scroll-list forge-inventory-grid"
+      <ForgeInventoryGrid
+          className="forge-scroll-list"
           style={{ maxHeight: '45vh' }}
         >
         {tabItems.map((item) => {
@@ -129,8 +132,8 @@ export function Inventory() {
             장비가 없습니다
           </div>
         )}
-      </div>
-    </div>
+      </ForgeInventoryGrid>
+    </ForgeScreen>
   );
 }
 

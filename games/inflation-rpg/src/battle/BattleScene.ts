@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { resolveForgeTheme } from '@forge/core';
 import { useGameStore } from '../store/gameStore';
 import { calcFinalStat, calcDamageReduction, calcCritChance } from '../systems/stats';
 import { applyExpGain } from '../systems/experience';
@@ -37,12 +38,13 @@ export class BattleScene extends Phaser.Scene {
   }
 
   create() {
+    const theme = resolveForgeTheme();
     const { run } = useGameStore.getState();
     const area = run.currentAreaId;
     const bosses = getBossesForArea(area, run.isHardMode);
     const hasBoss = bosses.length > 0;
 
-    const bg = this.add.rectangle(0, 0, 360, 600, 0x0a1218).setOrigin(0);
+    const bg = this.add.rectangle(0, 0, 360, 600, theme.bg).setOrigin(0);
     void bg;
 
     if (hasBoss && Math.random() < 0.25) {
@@ -60,8 +62,8 @@ export class BattleScene extends Phaser.Scene {
     this.enemyHP = this.enemyMaxHP;
 
     this.enemyText = this.add.text(16, 16, this.enemyName, { fontSize: '16px', color: '#e05050' });
-    this.hpBarBg = this.add.rectangle(16, 44, 320, 10, 0x1a1a2a).setOrigin(0);
-    this.hpBarFill = this.add.rectangle(16, 44, 320, 10, 0xe03030).setOrigin(0);
+    this.hpBarBg = this.add.rectangle(16, 44, 320, 10, theme.panel).setOrigin(0);
+    this.hpBarFill = this.add.rectangle(16, 44, 320, 10, theme.hp).setOrigin(0);
     this.logText = this.add.text(16, 64, '', { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
 
     void this.enemyText; void this.hpBarBg;

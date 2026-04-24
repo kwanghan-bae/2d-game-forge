@@ -2,6 +2,9 @@ import React from 'react';
 import { useGameStore, SLOT_COSTS } from '../store/gameStore';
 import { EQUIPMENT_CATALOG } from '../data/equipment';
 import { canDrop } from '../systems/equipment';
+import { ForgeButton } from '@/components/ui/forge-button';
+import { ForgePanel } from '@/components/ui/forge-panel';
+import { ForgeScreen } from '@/components/ui/forge-screen';
 
 export function Shop() {
   const meta = useGameStore((s) => s.meta);
@@ -22,11 +25,11 @@ export function Shop() {
   const nextSlotCost = SLOT_COSTS[meta.equipSlotCount];
 
   return (
-    <div className="forge-screen" style={{ padding: 16 }}>
+    <ForgeScreen style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
+        <ForgeButton variant="secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen(backScreen)}>
           ← 뒤로
-        </button>
+        </ForgeButton>
         <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>상점</span>
         <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>
           💰 {run.goldThisRun.toLocaleString()}G
@@ -39,7 +42,7 @@ export function Shop() {
           <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
             🔧 장비 슬롯 업그레이드 (현재 {meta.equipSlotCount}/10)
           </div>
-          <div className="forge-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <ForgePanel style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 13 }}>슬롯 확장</div>
               <div style={{ fontSize: 11, color: 'var(--forge-text-muted)' }}>장착 슬롯 +1 (영구)</div>
@@ -57,7 +60,7 @@ export function Shop() {
             >
               {nextSlotCost.toLocaleString()}G
             </button>
-          </div>
+          </ForgePanel>
         </div>
       )}
 
@@ -71,7 +74,7 @@ export function Shop() {
             .concat(Object.entries(item.stats.flat ?? {}).map(([k, v]) => `${k.toUpperCase()}+${v}`))
             .join(' ');
           return (
-            <div key={item.id} className="forge-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <ForgePanel key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{item.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--forge-stat-atk)' }}>{statStr}</div>
@@ -88,10 +91,10 @@ export function Shop() {
               >
                 {item.price.toLocaleString()}G
               </button>
-            </div>
+            </ForgePanel>
           );
         })}
       </div>
-    </div>
+    </ForgeScreen>
   );
 }

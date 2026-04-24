@@ -434,3 +434,112 @@ pnpm --filter @forge/game-<slug> exec cap sync
   현재 공개 API.
 - [games/inflation-rpg/README.md](../games/inflation-rpg/README.md) — 첫 게임의
   실제 적용 예시.
+
+## 14. Canonical forge-app 디렉토리 구조
+
+새 게임 워크스페이스 (`games/<new-game>/`) 는 반드시 다음 최소 구조를 가진다.
+이 계약은 [Forge-UI Opus 재설계 스펙](./superpowers/specs/2026-04-22-forge-ui-opus-redesign-spec.md) Layer C 가 정의하며,
+`@forge/create-game` CLI (미구현) 가 장래에 이 구조를 자동 생성한다.
+
+```
+games/<new-game>/
+├── package.json              # name: "@forge/game-<name>", type: "module"
+├── tsconfig.json             # extends: "../../tsconfig.base.json"
+├── next.config.ts            # output: 'export'
+├── capacitor.config.ts       # ios/android 타겟
+├── components.json           # shadcn CLI 설정 (aliases: components/ui, utils)
+├── playwright.config.ts
+├── vitest.config.ts
+├── public/
+│   └── manifest.json         # @forge/core GameManifest (Zod 검증)
+├── src/
+│   ├── app/                  # Next.js App Router
+│   │   ├── layout.tsx
+│   │   ├── globals.css       # @import "../styles/<theme>.css" (CSS @import 은 @/alias 못 씀)
+│   │   └── page.tsx          # <Game /> 마운트 지점
+│   ├── components/
+│   │   └── ui/               # registry 에서 복사된 forge-* 컴포넌트 (수동 복사 — CLI 미지원)
+│   ├── lib/
+│   │   └── utils.ts          # cn() helper (registry/src/lib/utils.ts 에서 복사)
+│   ├── styles/
+│   │   └── <theme>.css       # registry/src/themes/<theme>.css 에서 복사
+│   ├── startGame.ts          # StartGameFn 구현 (ForgeGameInstance 반환)
+│   └── index.ts              # 패키지 엔트리
+└── e2e/
+    └── smoke.spec.ts         # 최소 smoke test (메인 메뉴 렌더 + 클릭)
+```
+
+### 14.1. 필수 스크립트 (package.json)
+
+```json
+{
+  "scripts": {
+    "dev": "next dev --port <assigned-port>",
+    "build": "next build",
+    "build:web": "next build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src tests",
+    "e2e": "playwright test",
+    "cap:sync": "cap sync",
+    "build:ios": "next build && cap sync ios && cap open ios",
+    "build:android": "next build && cap sync android && cap open android"
+  }
+}
+```
+
+### 14.2. 워크스페이스 deps 최소 세트
+
+```json
+{
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@forge/core": "workspace:^",
+    "clsx": "^2.1.1",
+    "next": "^16.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4"
+  }
+}
+```
+
+Phaser 등 엔진 의존성은 **게임이 실제로 사용할 때만** 추가한다 (YAGNI).
+
+### 14.3. 초기 registry 복사 시퀀스
+
+**현재 방식 (수동 복사)** — shadcn CLI 의 `file:` 경로 지원 미비로 수동 복사가 표준.
+
+```bash
+cd games/<new-game>
+
+# 1. lib helper + theme CSS
+mkdir -p src/lib src/styles src/components/ui
+cp ../../packages/registry/src/lib/utils.ts src/lib/utils.ts
+cp ../../packages/registry/src/themes/modern-dark-gold.css src/styles/modern-dark-gold.css
+
+# 2. UI 컴포넌트 (필요한 것만)
+cp ../../packages/registry/src/ui/forge-screen.tsx src/components/ui/forge-screen.tsx
+cp ../../packages/registry/src/ui/forge-button.tsx src/components/ui/forge-button.tsx
+# ... 필요한 추가 컴포넌트
+
+# 3. clsx 의존성
+pnpm add clsx@^2.1.1
+```
+
+**참고**: shadcn CLI 의 `pnpm dlx shadcn@latest add file:...` 는 2026-04 현재 `file:` URL scheme 을 지원하지 않음. 공식 지원 추가 혹은 자체 CLI (Layer C create-game) 구현 시 변경될 예정.
+
+### 14.4. dev-shell 등록
+
+[`apps/dev-shell/src/lib/registry.ts`](../apps/dev-shell/src/lib/registry.ts) 와
+[`registry.server.ts`](../apps/dev-shell/src/lib/registry.server.ts) 에 새 게임 엔트리를 추가한다.
+server 쪽은 매니페스트만, client 쪽은 dynamic import 콜백을 등록.
+
+dev-shell 의 `tsconfig.json` 과 `next.config.ts` 에 새 게임의 `@/components/ui/*`, `@/lib/*` alias 도 cross-workspace 로 등록해야 dev-shell 에서 게임 화면이 렌더된다.
+
+### 14.5. ESLint boundaries element 자동 인식
+
+새 게임은 `eslint.config.mjs` 의 `games/*/**` 패턴에 의해 자동으로 `game` element 로 분류된다.
+별도 설정 불필요.

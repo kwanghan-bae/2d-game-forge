@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { CHARACTERS, getUnlockedCharacters } from '../data/characters';
 import type { Character } from '../types';
+import { ForgeButton } from '@/components/ui/forge-button';
+import { ForgePanel } from '@/components/ui/forge-panel';
+import { ForgeScreen } from '@/components/ui/forge-screen';
 
 export function ClassSelect() {
   const [selected, setSelected] = useState<string | null>(null);
@@ -17,11 +20,11 @@ export function ClassSelect() {
   };
 
   return (
-    <div className="forge-screen" style={{ padding: 16 }}>
+    <ForgeScreen style={{ padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <button className="forge-btn secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen('main-menu')}>
+        <ForgeButton variant="secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setScreen('main-menu')}>
           ← 뒤로
-        </button>
+        </ForgeButton>
         <span style={{ color: 'var(--forge-accent)', fontWeight: 700 }}>영웅을 선택하라</span>
         <span style={{ fontSize: 12, color: 'var(--forge-text-muted)' }}>영혼등급 {meta.soulGrade}</span>
       </div>
@@ -48,15 +51,15 @@ export function ClassSelect() {
         <CharDetail char={CHARACTERS.find((c) => c.id === selected)!} />
       )}
 
-      <button
-        className="forge-btn primary"
+      <ForgeButton
+        variant="primary"
         style={{ width: '100%', marginTop: 'auto', opacity: selected ? 1 : 0.4 }}
         disabled={!selected}
         onClick={handleStart}
       >
         모험 시작
-      </button>
-    </div>
+      </ForgeButton>
+    </ForgeScreen>
   );
 }
 
@@ -102,7 +105,7 @@ function CharCard({ char, unlocked, selected, charLv, onSelect }: {
 
 function CharDetail({ char }: { char: Character }) {
   return (
-    <div className="forge-panel" style={{ marginBottom: 12 }}>
+    <ForgePanel style={{ marginBottom: 12 }}>
       <div style={{ fontWeight: 700, color: 'var(--forge-accent)', marginBottom: 4 }}>
         {char.emoji} {char.nameKR}
       </div>
@@ -112,6 +115,6 @@ function CharDetail({ char }: { char: Character }) {
       <div style={{ fontSize: 12, color: 'var(--forge-text-secondary)' }}>
         패시브: {char.passiveSkill.nameKR} — {char.passiveSkill.description}
       </div>
-    </div>
+    </ForgePanel>
   );
 }

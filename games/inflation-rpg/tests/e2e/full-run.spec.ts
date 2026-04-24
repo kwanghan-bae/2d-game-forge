@@ -9,7 +9,7 @@ test.describe('Inflation RPG — full run smoke test', () => {
     await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
     await page.reload();
     // Wait for React hydration
-    await page.waitForSelector('.game-root', { timeout: 10000 });
+    await page.waitForSelector('.forge-screen', { timeout: 10000 });
   });
 
   test('main menu renders', async ({ page }) => {
@@ -31,7 +31,9 @@ test.describe('Inflation RPG — full run smoke test', () => {
     await page.getByRole('button', { name: '게임 시작' }).click();
     await page.getByRole('button', { name: '화랑' }).first().click();
     await page.getByRole('button', { name: '모험 시작' }).click();
-    // Enter first area — BP decrements to 29
+    // WorldMap: click first region (조선 평야) to open RegionMap
+    await page.getByRole('button', { name: '조선 평야' }).click();
+    // RegionMap: Enter first area — BP decrements to 29
     await page.getByRole('button', { name: '마을 입구' }).click();
     await expect(page.getByText(/BP.*29/)).toBeVisible({ timeout: 5000 });
   });
@@ -51,7 +53,7 @@ test.describe('Inflation RPG — full run smoke test', () => {
       }));
     }, SAVE_KEY);
     await page.reload();
-    await page.waitForSelector('.game-root', { timeout: 10000 });
+    await page.waitForSelector('.forge-screen', { timeout: 10000 });
 
     await page.getByRole('button', { name: '게임 시작' }).click();
     await page.getByRole('button', { name: '화랑' }).first().click();
@@ -68,6 +70,9 @@ test.describe('Inflation RPG — full run smoke test', () => {
       }
     });
 
+    // WorldMap: click first region (조선 평야) to open RegionMap
+    await page.getByRole('button', { name: '조선 평야' }).click();
+    // RegionMap: Enter first area
     await page.getByRole('button', { name: '마을 입구' }).click();
     // BP 1 → encounter deducts 1 → 0 → run ends
     await expect(page.getByText('런 종료')).toBeVisible({ timeout: 10000 });

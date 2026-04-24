@@ -19,6 +19,13 @@ const config: NextConfig = {
       // like `import { Direction } from '@/game/physics/Direction'` resolve
       // to the correct location within the game package, not dev-shell/src/.
       '@/game': path.join(gameInflationRpgSrc, 'game'),
+      // Override @/components/ui so that forge-* component imports like
+      // `import { ForgeButton } from '@/components/ui/forge-button'` resolve
+      // to the game's own src/components/ui/, not dev-shell/src/components/.
+      '@/components/ui': path.join(gameInflationRpgSrc, 'components/ui'),
+      // Override @/lib so that `import { cn } from '@/lib/utils'` inside
+      // game components resolves to the game's src/lib/, not dev-shell/src/lib/.
+      '@/lib': path.join(gameInflationRpgSrc, 'lib'),
     },
   },
 };
