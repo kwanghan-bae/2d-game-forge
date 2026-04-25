@@ -73,9 +73,55 @@ export function MainMenu() {
         </ForgeButton>
       </div>
 
+      <VolumeControls />
+
       <div style={{ marginTop: 8, fontSize: 12, color: 'var(--forge-text-muted)' }}>
         최고 기록: Lv.{meta.bestRunLevel.toLocaleString()}
       </div>
     </ForgeScreen>
+  );
+}
+
+function VolumeControls() {
+  const meta = useGameStore((s) => s.meta);
+  const setVolumes = useGameStore((s) => s.setVolumes);
+  return (
+    <div
+      style={{
+        display: 'flex', flexDirection: 'column', gap: 6, width: 200,
+        padding: 10, background: 'var(--forge-bg-panel)',
+        border: '1px solid var(--forge-border)', borderRadius: 8,
+        fontSize: 11, color: 'var(--forge-text-secondary)',
+      }}
+    >
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 32 }}>BGM</span>
+        <input
+          type="range" min={0} max={100}
+          value={Math.round(meta.musicVolume * 100)}
+          onChange={(e) => setVolumes(Number(e.target.value) / 100, meta.sfxVolume, meta.muted)}
+          style={{ flex: 1 }}
+        />
+        <span style={{ width: 28, textAlign: 'right' }}>{Math.round(meta.musicVolume * 100)}</span>
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 32 }}>SFX</span>
+        <input
+          type="range" min={0} max={100}
+          value={Math.round(meta.sfxVolume * 100)}
+          onChange={(e) => setVolumes(meta.musicVolume, Number(e.target.value) / 100, meta.muted)}
+          style={{ flex: 1 }}
+        />
+        <span style={{ width: 28, textAlign: 'right' }}>{Math.round(meta.sfxVolume * 100)}</span>
+      </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          type="checkbox"
+          checked={meta.muted}
+          onChange={(e) => setVolumes(meta.musicVolume, meta.sfxVolume, e.target.checked)}
+        />
+        음소거
+      </label>
+    </div>
   );
 }
