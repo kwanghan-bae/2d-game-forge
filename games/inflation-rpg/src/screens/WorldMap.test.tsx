@@ -10,6 +10,7 @@ const baseRun = {
   allocated: { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 },
   currentAreaId: 'village-entrance', isHardMode: false,
   monstersDefeated: 0, goldThisRun: 0,
+  currentStage: 1, dungeonRunMonstersDefeated: 0,
 };
 
 beforeEach(() => {
@@ -73,12 +74,12 @@ describe('WorldMap', () => {
     expect(screen.getByRole('button', { name: /조선 평야/i })).toBeInTheDocument();
   });
 
-  it('entering area from RegionMap triggers battle screen after BP deduct', async () => {
+  it('entering area from RegionMap triggers dungeon screen after BP deduct', async () => {
     render(<WorldMap />);
     await userEvent.click(screen.getByRole('button', { name: /조선 평야/i }));
     await userEvent.click(screen.getByRole('button', { name: /마을 입구/i }));
     const state = useGameStore.getState();
-    expect(state.screen).toBe('battle');
+    expect(state.screen).toBe('dungeon');
     expect(state.run.bp).toBe(27);
   });
 });
