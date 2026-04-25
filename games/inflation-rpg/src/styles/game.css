@@ -4,6 +4,16 @@
  * 신규 컴포넌트는 registry 를 통해 추가한다.
  */
 
+/* Equipment rarity colors */
+:root {
+  --forge-rarity-common: #c8b88a;
+  --forge-rarity-uncommon: #6cd96c;
+  --forge-rarity-rare: #60a0e0;
+  --forge-rarity-epic: #c060e0;
+  --forge-rarity-legendary: #f0c060;
+  --forge-rarity-mythic: #e05050;
+}
+
 .forge-ui-root {
   background: var(--forge-bg-base);
   color: var(--forge-text-primary);
