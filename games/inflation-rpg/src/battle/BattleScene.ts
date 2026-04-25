@@ -121,6 +121,23 @@ export class BattleScene extends Phaser.Scene {
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp, monstersDefeated: s.run.monstersDefeated + 1 } }));
+      useGameStore.getState().incrementDungeonKill();
+
+      // Check stage progression after each kill
+      const stateAfterKill = useGameStore.getState();
+      const currentRun = stateAfterKill.run;
+      const area = MAP_AREAS.find(a => a.id === currentRun.currentAreaId);
+      if (area) {
+        const stageThreshold = currentRun.currentStage * area.stageMonsterCount;
+        if (currentRun.dungeonRunMonstersDefeated >= stageThreshold) {
+          if (currentRun.currentStage >= area.stageCount) {
+            this.onDungeonComplete();
+            return;
+          } else {
+            stateAfterKill.advanceStage();
+          }
+        }
+      }
 
       if (spGained > 0) {
         this.callbacks.onLevelUp(newLevel);
@@ -139,11 +156,17 @@ export class BattleScene extends Phaser.Scene {
       this.combatTimer?.remove();
       const newBP = onDefeat(run.bp, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
+      useGameStore.getState().resetDungeon();
       if (isRunOver(newBP)) {
         useGameStore.getState().endRun();
       } else {
         this.callbacks.onBattleEnd(false);
       }
     }
+  }
+
+  private onDungeonComplete() {
+    useGameStore.getState().resetDungeon();
+    useGameStore.getState().setScreen('world-map');
   }
 }
