@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { Equipment, EquipmentSlot } from '../types';
 import { SLOT_LIMITS } from '../systems/equipment';
+import { getCraftCost, getNextTier } from '../systems/crafting';
+import { getEquipmentById } from '../data/equipment';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeInventoryGrid } from '@/components/ui/forge-inventory-grid';
+import { ForgePanel } from '@/components/ui/forge-panel';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 
 const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
@@ -14,11 +17,13 @@ const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
 
 export function Inventory() {
   const [activeSlot, setActiveSlot] = useState<EquipmentSlot>('weapon');
+  const [mainTab, setMainTab] = useState<'inventory' | 'craft'>('inventory');
   const meta = useGameStore((s) => s.meta);
   const setScreen = useGameStore((s) => s.setScreen);
   const sellEquipment = useGameStore((s) => s.sellEquipment);
   const equipItem = useGameStore((s) => s.equipItem);
   const unequipItem = useGameStore((s) => s.unequipItem);
+  const craft = useGameStore((s) => s.craft);
   const run = useGameStore((s) => s.run);
 
   const allItems: Equipment[] = [
@@ -39,6 +44,18 @@ export function Inventory() {
   const isFull = meta.equippedItemIds.length >= meta.equipSlotCount;
   const backScreen = run.characterId ? 'world-map' : 'main-menu';
 
+  const craftable = useMemo(() => {
+    const groups: Record<string, number> = {};
+    for (const item of allItems) groups[item.id] = (groups[item.id] ?? 0) + 1;
+    return Object.entries(groups)
+      .filter(([, count]) => count >= 3)
+      .map(([id, count]) => {
+        const equipment = getEquipmentById(id);
+        return equipment ? { id, count, equipment } : null;
+      })
+      .filter((e): e is { id: string; count: number; equipment: Equipment } => e !== null);
+  }, [meta.inventory]);
+
   return (
     <ForgeScreen style={{ padding: 16 }}>
       {/* Header */}
@@ -50,89 +67,152 @@ export function Inventory() {
         <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>💰 {meta.gold.toLocaleString()}</span>
       </div>
 
-      {/* Equipped Slots */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
-          장착 슬롯 ({meta.equippedItemIds.length}/{meta.equipSlotCount})
-        </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {Array.from({ length: 10 }).map((_, i) => {
-            const item = equippedItems[i];
-            const isOwned = i < meta.equipSlotCount;
-            if (!isOwned) {
+      {/* 메인 탭 토글 */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <ForgeButton
+          variant={mainTab === 'inventory' ? 'primary' : 'secondary'}
+          style={{ flex: 1, fontSize: 13 }}
+          onClick={() => setMainTab('inventory')}
+        >
+          인벤토리
+        </ForgeButton>
+        <ForgeButton
+          variant={mainTab === 'craft' ? 'primary' : 'secondary'}
+          style={{ flex: 1, fontSize: 13 }}
+          onClick={() => setMainTab('craft')}
+        >
+          합성
+        </ForgeButton>
+      </div>
+
+      {mainTab === 'inventory' && (
+        <>
+          {/* Equipped Slots */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
+              장착 슬롯 ({meta.equippedItemIds.length}/{meta.equipSlotCount})
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {Array.from({ length: 10 }).map((_, i) => {
+                const item = equippedItems[i];
+                const isOwned = i < meta.equipSlotCount;
+                if (!isOwned) {
+                  return (
+                    <div key={i} style={{ width: 58, height: 58, background: '#111', border: '2px dashed #1a1a1a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 18, opacity: 0.3 }}>🔒</span>
+                    </div>
+                  );
+                }
+                if (item) {
+                  return (
+                    <div key={i} onClick={() => unequipItem(item.id)} style={{ width: 58, height: 58, background: 'var(--forge-bg-card)', border: '2px solid var(--forge-accent)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, cursor: 'pointer', padding: 2 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--forge-accent)', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
+                      <div style={{ fontSize: 9, color: 'var(--forge-text-muted)' }}>해제</div>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} style={{ width: 58, height: 58, background: 'var(--forge-bg-card)', border: '2px dashed #2a4060', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 10, color: 'var(--forge-text-muted)' }}>비어있음</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Slot Filter Tabs */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+            {TABS.map((tab) => {
+              const count = tab.slot === 'weapon' ? meta.inventory.weapons.length
+                : tab.slot === 'armor' ? meta.inventory.armors.length
+                : meta.inventory.accessories.length;
               return (
-                <div key={i} style={{ width: 58, height: 58, background: '#111', border: '2px dashed #1a1a1a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 18, opacity: 0.3 }}>🔒</span>
-                </div>
+                <button
+                  key={tab.slot}
+                  onClick={() => setActiveSlot(tab.slot)}
+                  style={{
+                    flex: 1,
+                    background: activeSlot === tab.slot ? 'var(--forge-accent-dim)' : 'var(--forge-bg-card)',
+                    border: `1px solid ${activeSlot === tab.slot ? 'var(--forge-accent)' : 'var(--forge-border)'}`,
+                    borderRadius: 6, padding: '6px 4px', fontSize: 11,
+                    color: activeSlot === tab.slot ? 'var(--forge-accent)' : 'var(--forge-text-muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tab.emoji} {tab.label} {count}/{SLOT_LIMITS[tab.slot]}
+                </button>
               );
-            }
-            if (item) {
+            })}
+          </div>
+
+          {/* Items */}
+          <ForgeInventoryGrid
+            className="forge-scroll-list"
+            style={{ maxHeight: '45vh' }}
+          >
+            {tabItems.map((item) => {
+              const isEquipped = meta.equippedItemIds.includes(item.id);
               return (
-                <div key={i} onClick={() => unequipItem(item.id)} style={{ width: 58, height: 58, background: 'var(--forge-bg-card)', border: '2px solid var(--forge-accent)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, cursor: 'pointer', padding: 2 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--forge-accent)', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
-                  <div style={{ fontSize: 9, color: 'var(--forge-text-muted)' }}>해제</div>
-                </div>
+                <EquipmentCard
+                  key={item.id}
+                  item={item}
+                  isEquipped={isEquipped}
+                  canEquip={!isFull && !isEquipped}
+                  onEquip={() => equipItem(item.id)}
+                  onUnequip={() => unequipItem(item.id)}
+                  onSell={() => sellEquipment(item.id, item.price)}
+                />
               );
-            }
-            return (
-              <div key={i} style={{ width: 58, height: 58, background: 'var(--forge-bg-card)', border: '2px dashed #2a4060', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 10, color: 'var(--forge-text-muted)' }}>비어있음</span>
+            })}
+            {tabItems.length === 0 && (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--forge-text-muted)', padding: 24 }}>
+                장비가 없습니다
               </div>
+            )}
+          </ForgeInventoryGrid>
+        </>
+      )}
+
+      {mainTab === 'craft' && (
+        <div className="forge-scroll-list" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          {craftable.length === 0 && (
+            <p style={{ padding: 16, color: 'var(--forge-text-muted)' }}>
+              합성 가능한 아이템이 없다 (같은 장비 3개 이상 필요).
+            </p>
+          )}
+          {craftable.map(({ id, count, equipment }) => {
+            const nextTier = getNextTier(equipment.rarity);
+            const cost = getCraftCost(equipment.rarity);
+            const canAfford = meta.gold >= cost;
+            const canCraft = nextTier !== null;
+            return (
+              <ForgePanel key={id} style={{ margin: '8px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 700 }}>{equipment.name}</span>
+                  <span style={{ fontSize: 11, color: 'var(--forge-text-secondary)' }}>
+                    x{count}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, marginTop: 6 }}>
+                  {equipment.rarity} → {nextTier ?? '—'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--forge-accent)', marginTop: 2 }}>
+                  비용: {cost.toLocaleString()}G {!canAfford && '(골드 부족)'}
+                </div>
+                {canCraft && canAfford ? (
+                  <ForgeButton variant="primary" style={{ marginTop: 8 }} onClick={() => craft(id)}>
+                    합성
+                  </ForgeButton>
+                ) : (
+                  <ForgeButton variant="disabled" style={{ marginTop: 8 }} disabled>
+                    {!canCraft ? '최상위 등급' : '골드 부족'}
+                  </ForgeButton>
+                )}
+              </ForgePanel>
             );
           })}
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-        {TABS.map((tab) => {
-          const count = tab.slot === 'weapon' ? meta.inventory.weapons.length
-            : tab.slot === 'armor' ? meta.inventory.armors.length
-            : meta.inventory.accessories.length;
-          return (
-            <button
-              key={tab.slot}
-              onClick={() => setActiveSlot(tab.slot)}
-              style={{
-                flex: 1,
-                background: activeSlot === tab.slot ? 'var(--forge-accent-dim)' : 'var(--forge-bg-card)',
-                border: `1px solid ${activeSlot === tab.slot ? 'var(--forge-accent)' : 'var(--forge-border)'}`,
-                borderRadius: 6, padding: '6px 4px', fontSize: 11,
-                color: activeSlot === tab.slot ? 'var(--forge-accent)' : 'var(--forge-text-muted)',
-                cursor: 'pointer',
-              }}
-            >
-              {tab.emoji} {tab.label} {count}/{SLOT_LIMITS[tab.slot]}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Items */}
-      <ForgeInventoryGrid
-          className="forge-scroll-list"
-          style={{ maxHeight: '45vh' }}
-        >
-        {tabItems.map((item) => {
-          const isEquipped = meta.equippedItemIds.includes(item.id);
-          return (
-            <EquipmentCard
-              key={item.id}
-              item={item}
-              isEquipped={isEquipped}
-              canEquip={!isFull && !isEquipped}
-              onEquip={() => equipItem(item.id)}
-              onUnequip={() => unequipItem(item.id)}
-              onSell={() => sellEquipment(item.id, item.price)}
-            />
-          );
-        })}
-        {tabItems.length === 0 && (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--forge-text-muted)', padding: 24 }}>
-            장비가 없습니다
-          </div>
-        )}
-      </ForgeInventoryGrid>
+      )}
     </ForgeScreen>
   );
 }

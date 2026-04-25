@@ -80,6 +80,31 @@ export interface MapArea {
   finalStageIsBoss: boolean;
 }
 
+export type QuestType = 'kill_count' | 'boss_defeat' | 'item_collect';
+
+export interface QuestTarget {
+  monsterId?: string;
+  bossId?: string;
+  equipmentId?: string;
+  count: number;
+}
+
+export interface QuestReward {
+  gold?: number;
+  bp?: number;
+  equipmentId?: string;
+}
+
+export interface Quest {
+  id: string;
+  regionId: string;
+  nameKR: string;
+  description: string;
+  type: QuestType;
+  target: QuestTarget;
+  reward: QuestReward;
+}
+
 export type AllocatedStats = Record<StatKey, number>;
 
 export interface Inventory {
@@ -116,6 +141,8 @@ export interface MetaState {
   equippedItemIds: string[];   // 장착된 아이템 ID 목록 (순서 = 슬롯 순서)
   equipSlotCount: number;      // 현재 보유 슬롯 수. 기본값 1, 최대 10
   lastPlayedCharId: string;    // GameOver에서 캐릭터 레벨 표시용
+  questProgress: Record<string, number>;
+  questsCompleted: string[];
 }
 
 export type Screen =
@@ -127,7 +154,8 @@ export type Screen =
   | 'stat-alloc'
   | 'inventory'
   | 'shop'
-  | 'game-over';
+  | 'game-over'
+  | 'quests';
 
 export interface StartGameConfig {
   parent: string;

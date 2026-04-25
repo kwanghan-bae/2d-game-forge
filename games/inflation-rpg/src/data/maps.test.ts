@@ -4,6 +4,7 @@ import { BOSSES } from './bosses';
 import { MONSTERS } from './monsters';
 import { REGIONS } from './regions';
 import { EQUIPMENT_CATALOG } from './equipment';
+import { QUESTS } from './quests';
 
 describe('maps integrity', () => {
   it('every MapArea.bossId is defined in BOSSES', () => {
@@ -86,5 +87,60 @@ describe('Layer 2 dungeon structure', () => {
       const expected = area.bossId !== undefined;
       expect(area.finalStageIsBoss, `${area.id}`).toBe(expected);
     }
+  });
+});
+
+describe('Layer 3 quest integrity', () => {
+  it('every quest has a valid regionId', () => {
+    const regionIds = new Set(REGIONS.map((r) => r.id));
+    const broken: string[] = [];
+    for (const q of QUESTS) {
+      if (!regionIds.has(q.regionId)) broken.push(`${q.id} -> ${q.regionId}`);
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('boss_defeat quests reference existing bosses', () => {
+    const bossIds = new Set(BOSSES.map((b) => b.id));
+    const broken: string[] = [];
+    for (const q of QUESTS) {
+      if (q.type === 'boss_defeat' && q.target.bossId && !bossIds.has(q.target.bossId)) {
+        broken.push(`${q.id} -> ${q.target.bossId}`);
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('item_collect quests reference existing equipment', () => {
+    const equipmentIds = new Set(EQUIPMENT_CATALOG.map((e) => e.id));
+    const broken: string[] = [];
+    for (const q of QUESTS) {
+      if (q.type === 'item_collect' && q.target.equipmentId && !equipmentIds.has(q.target.equipmentId)) {
+        broken.push(`${q.id} -> ${q.target.equipmentId}`);
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('reward equipmentId references existing equipment', () => {
+    const equipmentIds = new Set(EQUIPMENT_CATALOG.map((e) => e.id));
+    const broken: string[] = [];
+    for (const q of QUESTS) {
+      if (q.reward.equipmentId && !equipmentIds.has(q.reward.equipmentId)) {
+        broken.push(`${q.id} reward -> ${q.reward.equipmentId}`);
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it('kill_count quests with monsterId reference existing monsters', () => {
+    const monsterIds = new Set(MONSTERS.map((m) => m.id));
+    const broken: string[] = [];
+    for (const q of QUESTS) {
+      if (q.type === 'kill_count' && q.target.monsterId && !monsterIds.has(q.target.monsterId)) {
+        broken.push(`${q.id} -> ${q.target.monsterId}`);
+      }
+    }
+    expect(broken).toEqual([]);
   });
 });

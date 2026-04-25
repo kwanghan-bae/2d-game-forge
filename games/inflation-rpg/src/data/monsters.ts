@@ -40,11 +40,11 @@ export const MONSTERS: Monster[] = [
   { id: 'coast-deepfish',  nameKR: '심해어',     emoji: '🐟', levelMin: 15000, levelMax: 150000,  hpMult: 1.7, atkMult: 1.7, defMult: 1.0, expMult: 1.7, goldMult: 1.4, isBoss: false, regionTags: ['coast'] },
 
   // ── underground (5종) ──
-  { id: 'cave-bat',        nameKR: '박쥐',       emoji: '🦇', levelMin: 1000,  levelMax: 10000,   hpMult: 0.6, atkMult: 1.1, defMult: 0.4, expMult: 1.1, goldMult: 0.9, isBoss: false, regionTags: ['underground'] },
-  { id: 'cave-spider',     nameKR: '거대거미',   emoji: '🕷️', levelMin: 2000,  levelMax: 20000,   hpMult: 0.9, atkMult: 1.3, defMult: 0.7, expMult: 1.3, goldMult: 1.1, isBoss: false, regionTags: ['underground'] },
-  { id: 'cave-miner-ghost',nameKR: '광부영혼',   emoji: '👷', levelMin: 5000,  levelMax: 50000,   hpMult: 1.1, atkMult: 1.2, defMult: 1.0, expMult: 1.4, goldMult: 1.7, isBoss: false, regionTags: ['underground'] },
-  { id: 'cave-golem',      nameKR: '석상골렘',   emoji: '🗿', levelMin: 12000, levelMax: 120000,  hpMult: 2.2, atkMult: 1.4, defMult: 2.5, expMult: 1.6, goldMult: 1.4, isBoss: false, regionTags: ['underground'] },
-  { id: 'cave-salamander', nameKR: '도롱뇽',     emoji: '🦎', levelMin: 800,   levelMax: 12000,   hpMult: 0.7, atkMult: 1.0, defMult: 0.6, expMult: 1.0, goldMult: 1.0, isBoss: false, regionTags: ['underground'] },
+  { id: 'cave-bat',        nameKR: '박쥐',       emoji: '🦇', levelMin: 1000,  levelMax: 10000,   hpMult: 0.6, atkMult: 1.1, defMult: 0.4, expMult: 1.1, goldMult: 0.9, isBoss: false, regionTags: ['underworld'] },
+  { id: 'cave-spider',     nameKR: '거대거미',   emoji: '🕷️', levelMin: 2000,  levelMax: 20000,   hpMult: 0.9, atkMult: 1.3, defMult: 0.7, expMult: 1.3, goldMult: 1.1, isBoss: false, regionTags: ['underworld'] },
+  { id: 'cave-miner-ghost',nameKR: '광부영혼',   emoji: '👷', levelMin: 5000,  levelMax: 50000,   hpMult: 1.1, atkMult: 1.2, defMult: 1.0, expMult: 1.4, goldMult: 1.7, isBoss: false, regionTags: ['underworld'] },
+  { id: 'cave-golem',      nameKR: '석상골렘',   emoji: '🗿', levelMin: 12000, levelMax: 120000,  hpMult: 2.2, atkMult: 1.4, defMult: 2.5, expMult: 1.6, goldMult: 1.4, isBoss: false, regionTags: ['underworld'] },
+  { id: 'cave-salamander', nameKR: '도롱뇽',     emoji: '🦎', levelMin: 800,   levelMax: 12000,   hpMult: 0.7, atkMult: 1.0, defMult: 0.6, expMult: 1.0, goldMult: 1.0, isBoss: false, regionTags: ['underworld'] },
 
   // ── heaven-realm (5종) ──
   { id: 'heaven-immortal', nameKR: '선동',       emoji: '👼', levelMin: 30000,  levelMax: 300000,  hpMult: 1.5, atkMult: 1.6, defMult: 1.2, expMult: 1.8, goldMult: 1.7, isBoss: false, regionTags: ['heaven-realm'] },
