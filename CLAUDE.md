@@ -53,10 +53,12 @@ Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 
 - `phase-content-story-complete` — Layer 5: 26 스토리 (10 region enter +
   16 boss defeat) + StoryModal
 - `phase-content-expansion-complete` — Layer 1-5 묶음 최종 태그
-- 다음: **Phase 4c (Tutorial — 신규 유저 온보딩, 콘텐츠 폭발 후 우선순위 상승)** →
-  Phase 4b (SoundManager — BGM 3 + SFX 12 + 전투 파티클) →
-  콘텐츠 균형 패치 (32 스킬 / 109 보스 데미지 배수 조정) →
-  Phase 5 (Monetization)
+- `phase-4c-tutorial-complete` — 7-step 신규 유저 온보딩 오버레이
+  (TutorialOverlay, MetaState.tutorialDone/Step, MainMenu auto-start + restart)
+- `phase-4b-sound-complete` — SoundManager + CC0 audio 인프라
+  (Kenney/OpenGameArt 출처. SFX 12 + BGM 3 path 정의, screen 별 BGM 자동 전환,
+  볼륨 슬라이더, 사운드 파일 누락 시 silent fallback)
+- 다음: 콘텐츠 균형 패치 (스킬/보스 데미지 배수 조정) → Phase 5 (Monetization)
 
 ## 명령 치트시트
 
