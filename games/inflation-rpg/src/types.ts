@@ -75,6 +75,9 @@ export interface MapArea {
   mapX: number;
   mapY: number;
   icon: string;
+  stageCount: number;
+  stageMonsterCount: number;
+  finalStageIsBoss: boolean;
 }
 
 export type AllocatedStats = Record<StatKey, number>;
@@ -96,6 +99,8 @@ export interface RunState {
   isHardMode: boolean;
   monstersDefeated: number;
   goldThisRun: number;
+  currentStage: number;
+  dungeonRunMonstersDefeated: number;
 }
 
 export interface MetaState {
@@ -118,6 +123,7 @@ export type Screen =
   | 'class-select'
   | 'world-map'
   | 'battle'
+  | 'dungeon'
   | 'stat-alloc'
   | 'inventory'
   | 'shop'
