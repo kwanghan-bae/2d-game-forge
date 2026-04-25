@@ -16,6 +16,8 @@ export const BOSSES: Boss[] = [
   { id: 'abyss-lord',     nameKR: '심연의 군주',  emoji: '🕳️',  areaId: 'hard-abyss',       bpReward: 4, isHardMode: true,  hpMult: 15, atkMult: 3 },
   { id: 'void-king',      nameKR: '공허의 왕',    emoji: '🌑', areaId: 'hard-void',        bpReward: 5, isHardMode: true,  hpMult: 18, atkMult: 3.5 },
   { id: 'hard-goblin',    nameKR: '도깨비 왕',    emoji: '👺', areaId: 'goblin-pass',      bpReward: 4, isHardMode: true,  hpMult: 15, atkMult: 3 },
+  { id: 'hard-gate-guardian', nameKR: '관문 대신',  emoji: '🏮', areaId: 'baekdu-gate',      bpReward: 4, isHardMode: true,  hpMult: 15, atkMult: 3 },
+  { id: 'hard-sea-god',   nameKR: '심해신',       emoji: '🌊', areaId: 'dragon-palace',    bpReward: 5, isHardMode: true,  hpMult: 18, atkMult: 3.5 },
   { id: 'hard-dragon',    nameKR: '황금룡',       emoji: '✨', areaId: 'black-dragon-den', bpReward: 5, isHardMode: true,  hpMult: 20, atkMult: 4 },
   { id: 'hard-reaper',    nameKR: '사신',         emoji: '🔱', areaId: 'underworld-gate',  bpReward: 5, isHardMode: true,  hpMult: 20, atkMult: 4 },
   { id: 'hard-emperor',   nameKR: '천제',         emoji: '🏆', areaId: 'jade-palace',      bpReward: 6, isHardMode: true,  hpMult: 25, atkMult: 4.5 },
