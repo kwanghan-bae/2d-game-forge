@@ -146,7 +146,12 @@ function EquipmentCard({ item, isEquipped, canEquip, onEquip, onUnequip, onSell 
   onSell: () => void;
 }) {
   const rarityColor: Record<string, string> = {
-    common: 'var(--forge-border)', rare: '#c060e0', epic: '#60a0e0', legendary: 'var(--forge-accent)',
+    common: 'var(--forge-rarity-common)',
+    uncommon: 'var(--forge-rarity-uncommon)',
+    rare: 'var(--forge-rarity-rare)',
+    epic: 'var(--forge-rarity-epic)',
+    legendary: 'var(--forge-rarity-legendary)',
+    mythic: 'var(--forge-rarity-mythic)',
   };
   const statStr = Object.entries(item.stats.percent ?? {})
     .map(([k, v]) => `${k.toUpperCase()}+${v}%`)
