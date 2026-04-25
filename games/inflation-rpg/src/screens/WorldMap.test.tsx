@@ -74,12 +74,12 @@ describe('WorldMap', () => {
     expect(screen.getByRole('button', { name: /조선 평야/i })).toBeInTheDocument();
   });
 
-  it('entering area from RegionMap triggers battle screen after BP deduct', async () => {
+  it('entering area from RegionMap triggers dungeon screen after BP deduct', async () => {
     render(<WorldMap />);
     await userEvent.click(screen.getByRole('button', { name: /조선 평야/i }));
     await userEvent.click(screen.getByRole('button', { name: /마을 입구/i }));
     const state = useGameStore.getState();
-    expect(state.screen).toBe('battle');
+    expect(state.screen).toBe('dungeon');
     expect(state.run.bp).toBe(27);
   });
 });
