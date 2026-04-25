@@ -257,6 +257,9 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
         <ForgeButton variant="secondary" style={{ flex: 1 }} onClick={() => setScreen('shop')}>
           상점
         </ForgeButton>
+        <ForgeButton variant="secondary" style={{ flex: 1 }} onClick={() => setScreen('quests')}>
+          퀘스트
+        </ForgeButton>
       </div>
     </ForgeScreen>
   );
