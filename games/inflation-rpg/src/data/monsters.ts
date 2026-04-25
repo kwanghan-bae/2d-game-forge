@@ -67,10 +67,24 @@ export const MONSTERS: Monster[] = [
   { id: 'chaos-bubble',    nameKR: '시간거품',   emoji: '⏳', levelMin: 300000,  levelMax: 3000000,  hpMult: 2.2, atkMult: 1.7, defMult: 1.8, expMult: 2.1, goldMult: 1.8, isBoss: false, regionTags: ['chaos'] },
   { id: 'chaos-void',      nameKR: '공허파편',   emoji: '🌑', levelMin: 500000,  levelMax: 5000000,  hpMult: 2.5, atkMult: 2.5, defMult: 2.0, expMult: 2.3, goldMult: 2.0, isBoss: false, regionTags: ['chaos'] },
 
+  // ── volcano (5종) ──
+  { id: 'volcano-sprite',    nameKR: '화염 정령',     emoji: '🔥', levelMin: 100000, levelMax: 1000000,  hpMult: 2.0, atkMult: 2.2, defMult: 1.5, expMult: 2.0, goldMult: 1.7, isBoss: false, regionTags: ['volcano'] },
+  { id: 'volcano-golem',     nameKR: '용암 골렘',     emoji: '🪨', levelMin: 150000, levelMax: 1500000,  hpMult: 2.8, atkMult: 2.0, defMult: 2.5, expMult: 2.1, goldMult: 1.8, isBoss: false, regionTags: ['volcano'] },
+  { id: 'volcano-wyrm',      nameKR: '용암룡',       emoji: '🐉', levelMin: 200000, levelMax: 2000000,  hpMult: 3.2, atkMult: 2.5, defMult: 1.8, expMult: 2.3, goldMult: 2.0, isBoss: false, regionTags: ['volcano'] },
+  { id: 'volcano-phoenix',   nameKR: '불사조',       emoji: '🦅', levelMin: 300000, levelMax: 3000000,  hpMult: 2.5, atkMult: 2.8, defMult: 1.6, expMult: 2.4, goldMult: 2.1, isBoss: false, regionTags: ['volcano'] },
+  { id: 'volcano-lord',      nameKR: '화산의 군주',   emoji: '👹', levelMin: 500000, levelMax: 5000000,  hpMult: 3.5, atkMult: 3.2, defMult: 2.2, expMult: 2.6, goldMult: 2.3, isBoss: false, regionTags: ['volcano'] },
+
   // ── final-realm (3종) ──
   { id: 'final-shadow',    nameKR: '종말의그림자', emoji: '🖤', levelMin: 1000000, levelMax: Infinity, hpMult: 3.0, atkMult: 2.8, defMult: 2.3, expMult: 2.5, goldMult: 2.0, isBoss: false, regionTags: ['final-realm'] },
   { id: 'final-warrior',   nameKR: '신화전사',     emoji: '⚔️', levelMin: 2000000, levelMax: Infinity, hpMult: 3.5, atkMult: 3.2, defMult: 2.5, expMult: 2.6, goldMult: 2.1, isBoss: false, regionTags: ['final-realm'] },
   { id: 'final-titan',     nameKR: '거신',         emoji: '🗿', levelMin: 5000000, levelMax: Infinity, hpMult: 4.0, atkMult: 3.5, defMult: 3.0, expMult: 2.8, goldMult: 2.2, isBoss: false, regionTags: ['final-realm'] },
+
+  // ── demon-castle (5종) ──
+  { id: 'demon-imp',       nameKR: '마족병',       emoji: '👿', levelMin: 400000, levelMax: 4000000,  hpMult: 2.2, atkMult: 2.4, defMult: 1.8, expMult: 2.2, goldMult: 1.9, isBoss: false, regionTags: ['demon-castle'] },
+  { id: 'demon-sorcerer',  nameKR: '마술사',       emoji: '🧙', levelMin: 500000, levelMax: 5000000,  hpMult: 1.8, atkMult: 3.0, defMult: 1.5, expMult: 2.4, goldMult: 2.0, isBoss: false, regionTags: ['demon-castle'] },
+  { id: 'demon-knight',    nameKR: '마극사',       emoji: '⚔️', levelMin: 600000, levelMax: 6000000,  hpMult: 3.0, atkMult: 2.6, defMult: 2.2, expMult: 2.5, goldMult: 2.2, isBoss: false, regionTags: ['demon-castle'] },
+  { id: 'demon-general',   nameKR: '마장',         emoji: '🎖️', levelMin: 800000, levelMax: 8000000,  hpMult: 3.5, atkMult: 2.9, defMult: 2.6, expMult: 2.6, goldMult: 2.4, isBoss: false, regionTags: ['demon-castle'] },
+  { id: 'demon-overlord',  nameKR: '마대공',       emoji: '👹', levelMin: 1000000, levelMax: 10000000, hpMult: 4.0, atkMult: 3.5, defMult: 3.0, expMult: 2.8, goldMult: 2.6, isBoss: false, regionTags: ['demon-castle'] },
 ];
 
 export function getMonstersForLevel(level: number, regionId?: string): Monster[] {
