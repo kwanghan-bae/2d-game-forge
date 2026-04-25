@@ -8,6 +8,7 @@ import { getEquippedItemsList } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
 import { pickMonster } from '../data/monsters';
 import { getBossesForArea } from '../data/bosses';
+import { MAP_AREAS } from '../data/maps';
 import { isRunOver, onDefeat } from '../systems/bp';
 
 interface BattleCallbacks {
@@ -55,7 +56,8 @@ export class BattleScene extends Phaser.Scene {
       this.enemyMaxHP = Math.floor(run.level * 50 * boss.hpMult);
     } else {
       this.isBoss = false;
-      const monster = pickMonster(run.level);
+      const currentArea = MAP_AREAS.find(a => a.id === area);
+      const monster = pickMonster(run.level, currentArea?.regionId);
       this.enemyName = `${monster.emoji} ${monster.nameKR}`;
       this.enemyMaxHP = Math.floor(run.level * 20 * monster.hpMult);
     }

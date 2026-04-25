@@ -41,7 +41,7 @@ export const REGIONS: Region[] = [
     isHardOnly: false,
   },
   {
-    id: 'sea',
+    id: 'coast',
     nameKR: '동해 바다',
     emoji: '🌊',
     worldX: 72,
@@ -61,6 +61,16 @@ export const REGIONS: Region[] = [
     isHardOnly: false,
   },
   {
+    id: 'final-realm',
+    nameKR: '최종의 경계',
+    emoji: '⚫',
+    worldX: 50,
+    worldY: 5,
+    bgGradient: 'linear-gradient(160deg, #1a0033 0%, #330066 50%, #1a0033 100%)',
+    bgPattern: 'radial-gradient(ellipse at 50% 50%, rgba(255,0,255,0.08) 0%, transparent 70%)',
+    isHardOnly: false,
+  },
+  {
     id: 'underworld',
     nameKR: '저승',
     emoji: '💀',
@@ -71,7 +81,7 @@ export const REGIONS: Region[] = [
     isHardOnly: false,
   },
   {
-    id: 'heaven',
+    id: 'heaven-realm',
     nameKR: '천상계',
     emoji: '☁️',
     worldX: 30,
