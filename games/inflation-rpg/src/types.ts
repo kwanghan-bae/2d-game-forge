@@ -167,6 +167,9 @@ export interface MetaState {
   regionsVisited: string[];
   tutorialDone: boolean;
   tutorialStep: number;
+  musicVolume: number;
+  sfxVolume: number;
+  muted: boolean;
 }
 
 export interface TutorialStep {

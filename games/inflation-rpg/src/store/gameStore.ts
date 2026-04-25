@@ -60,6 +60,9 @@ export const INITIAL_META: MetaState = {
   regionsVisited: [],
   tutorialDone: false,
   tutorialStep: -1,
+  musicVolume: 0.5,
+  sfxVolume: 0.7,
+  muted: false,
 };
 
 interface GameStore {
@@ -95,6 +98,7 @@ interface GameStore {
   advanceTutorial: () => void;
   skipTutorial: () => void;
   restartTutorial: () => void;
+  setVolumes: (music: number, sfx: number, muted: boolean) => void;
   pendingStoryId: string | null;
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
@@ -329,6 +333,7 @@ export const useGameStore = create<GameStore>()(
       }),
       skipTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: true, tutorialStep: -1 } })),
       restartTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: false, tutorialStep: 0 } })),
+      setVolumes: (music, sfx, muted) => set((s) => ({ meta: { ...s.meta, musicVolume: music, sfxVolume: sfx, muted } })),
 
       craft: (equipmentId: string): boolean => {
         const state = get();
@@ -404,6 +409,9 @@ export const useGameStore = create<GameStore>()(
           regionsVisited: meta.regionsVisited ?? [],
           tutorialDone: meta.tutorialDone ?? false,
           tutorialStep: meta.tutorialStep ?? -1,
+          musicVolume: meta.musicVolume ?? 0.5,
+          sfxVolume: meta.sfxVolume ?? 0.7,
+          muted: meta.muted ?? false,
         } as MetaState;
         return s;
       },
