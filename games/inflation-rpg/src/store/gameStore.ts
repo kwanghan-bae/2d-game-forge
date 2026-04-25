@@ -9,6 +9,7 @@ import {
 } from '../systems/progression';
 import { addToInventory, removeFromInventory } from '../systems/equipment';
 import { QUESTS, getQuestById } from '../data/quests';
+import { attemptCraft } from '../systems/crafting';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -296,9 +297,49 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
-      // L3-4 에서 채울 stub
-      craft: (_equipmentId: string): boolean => {
-        return false;
+      craft: (equipmentId: string): boolean => {
+        const state = get();
+        const allItems = [
+          ...state.meta.inventory.weapons,
+          ...state.meta.inventory.armors,
+          ...state.meta.inventory.accessories,
+        ];
+        const attempt = attemptCraft(allItems, equipmentId, state.meta.gold);
+        if (!attempt.ok || !attempt.result || attempt.cost === undefined) return false;
+        const result = attempt.result;
+        const cost = attempt.cost;
+
+        set(s => {
+          // 1. Remove 3 instances of source from the matching slot inventory
+          const slotKey: 'weapons' | 'armors' | 'accessories' =
+            result.slot === 'weapon' ? 'weapons' :
+            result.slot === 'armor' ? 'armors' : 'accessories';
+          const sourceList = s.meta.inventory[slotKey];
+          let removed = 0;
+          const filtered = sourceList.filter(item => {
+            if (removed < 3 && item.id === equipmentId) {
+              removed++;
+              return false;
+            }
+            return true;
+          });
+
+          // 2. Add result to the same slot
+          const newSlotList = [...filtered, result];
+
+          return {
+            meta: {
+              ...s.meta,
+              gold: s.meta.gold - cost,
+              inventory: {
+                ...s.meta.inventory,
+                [slotKey]: newSlotList,
+              },
+            },
+          };
+        });
+
+        return true;
       },
     }),
     {
