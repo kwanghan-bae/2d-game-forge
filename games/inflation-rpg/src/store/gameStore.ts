@@ -36,6 +36,8 @@ export const INITIAL_RUN: RunState = {
   isHardMode: false,
   monstersDefeated: 0,
   goldThisRun: 0,
+  currentStage: 1,
+  dungeonRunMonstersDefeated: 0,
 };
 
 export const INITIAL_META: MetaState = {
@@ -73,6 +75,9 @@ interface GameStore {
   unequipItem: (itemId: string) => void;
   buyEquipSlot: () => void;
   setCurrentArea: (areaId: string) => void;
+  advanceStage: () => void;
+  resetDungeon: () => void;
+  incrementDungeonKill: () => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -188,12 +193,32 @@ export const useGameStore = create<GameStore>()(
         }),
 
       setCurrentArea: (areaId) => set((s) => ({ run: { ...s.run, currentAreaId: areaId } })),
+
+      advanceStage: () => set((s) => ({
+        run: { ...s.run, currentStage: s.run.currentStage + 1 },
+      })),
+
+      resetDungeon: () => set((s) => ({
+        run: {
+          ...s.run,
+          currentStage: 1,
+          dungeonRunMonstersDefeated: 0,
+        },
+      })),
+
+      incrementDungeonKill: () => set((s) => ({
+        run: {
+          ...s.run,
+          dungeonRunMonstersDefeated: s.run.dungeonRunMonstersDefeated + 1,
+          monstersDefeated: s.run.monstersDefeated + 1,
+        },
+      })),
     }),
     {
       name: 'korea_inflation_rpg_save',
       version: 1,
       migrate: (persisted: unknown, fromVersion: number) => {
-        const s = persisted as { meta?: Partial<MetaState>; run?: RunState };
+        const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
         if (fromVersion < 1) {
           s.meta = {
             equippedItemIds: [],
@@ -202,6 +227,13 @@ export const useGameStore = create<GameStore>()(
             ...s.meta,
           };
         }
+        // Inject defaults for dungeon stage fields added in content-layer2
+        const run = s.run ?? {};
+        s.run = {
+          ...run,
+          currentStage: run.currentStage ?? 1,
+          dungeonRunMonstersDefeated: run.dungeonRunMonstersDefeated ?? 0,
+        } as RunState;
         return s;
       },
       partialize: (state) => ({ meta: state.meta, run: state.run }),

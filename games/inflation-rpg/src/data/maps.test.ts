@@ -66,3 +66,25 @@ describe('Layer 1 content integrity', () => {
     expect(BOSSES.length).toBeGreaterThanOrEqual(50);
   });
 });
+
+describe('Layer 2 dungeon structure', () => {
+  it('every area has stageCount in [5, 10]', () => {
+    for (const area of MAP_AREAS) {
+      expect(area.stageCount, `${area.id} stageCount`).toBeGreaterThanOrEqual(5);
+      expect(area.stageCount, `${area.id} stageCount`).toBeLessThanOrEqual(10);
+    }
+  });
+
+  it('every area has stageMonsterCount > 0', () => {
+    for (const area of MAP_AREAS) {
+      expect(area.stageMonsterCount, `${area.id} stageMonsterCount`).toBeGreaterThan(0);
+    }
+  });
+
+  it('finalStageIsBoss matches bossId presence', () => {
+    for (const area of MAP_AREAS) {
+      const expected = area.bossId !== undefined;
+      expect(area.finalStageIsBoss, `${area.id}`).toBe(expected);
+    }
+  });
+});
