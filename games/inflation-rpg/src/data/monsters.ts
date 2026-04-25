@@ -73,12 +73,23 @@ export const MONSTERS: Monster[] = [
   { id: 'final-titan',     nameKR: '거신',         emoji: '🗿', levelMin: 5000000, levelMax: Infinity, hpMult: 4.0, atkMult: 3.5, defMult: 3.0, expMult: 2.8, goldMult: 2.2, isBoss: false, regionTags: ['final-realm'] },
 ];
 
-export function getMonstersForLevel(level: number): Monster[] {
-  return MONSTERS.filter(m => m.levelMin <= level && m.levelMax >= level);
+export function getMonstersForLevel(level: number, regionId?: string): Monster[] {
+  return MONSTERS.filter(m =>
+    m.levelMin <= level &&
+    m.levelMax >= level &&
+    (m.regionTags.includes('*') || (regionId !== undefined && m.regionTags.includes(regionId)))
+  );
 }
 
-export function pickMonster(level: number): Monster {
-  const pool = getMonstersForLevel(level);
-  if (pool.length === 0) return MONSTERS[MONSTERS.length - 1]!;
+export function pickMonster(level: number, regionId?: string): Monster {
+  const pool = getMonstersForLevel(level, regionId);
+  if (pool.length === 0) {
+    // Fallback: region-tag 무관 공통 풀
+    const commonPool = MONSTERS.filter(m =>
+      m.regionTags.includes('*') && m.levelMin <= level && m.levelMax >= level
+    );
+    if (commonPool.length === 0) return MONSTERS[MONSTERS.length - 1]!;
+    return commonPool[Math.floor(Math.random() * commonPool.length)]!;
+  }
   return pool[Math.floor(Math.random() * pool.length)]!;
 }
