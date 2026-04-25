@@ -154,7 +154,8 @@ export type Screen =
   | 'stat-alloc'
   | 'inventory'
   | 'shop'
-  | 'game-over';
+  | 'game-over'
+  | 'quests';
 
 export interface StartGameConfig {
   parent: string;

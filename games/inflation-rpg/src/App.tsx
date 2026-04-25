@@ -8,6 +8,7 @@ import { Dungeon } from './screens/Dungeon';
 import { Inventory } from './screens/Inventory';
 import { Shop } from './screens/Shop';
 import { GameOver } from './screens/GameOver';
+import { Quests } from './screens/Quests';
 import type { StartGameConfig } from './types';
 
 // ssr: false prevents Phaser (imported by Battle) from being bundled into the server-side render
@@ -33,6 +34,7 @@ export function App({ config }: AppProps) {
       {screen === 'inventory'    && <Inventory />}
       {screen === 'shop'         && <Shop />}
       {screen === 'game-over'    && <GameOver />}
+      {screen === 'quests'       && <Quests />}
     </div>
   );
 }
