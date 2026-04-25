@@ -8,6 +8,8 @@ import {
   isHardModeUnlocked,
 } from '../systems/progression';
 import { addToInventory, removeFromInventory } from '../systems/equipment';
+import { QUESTS, getQuestById } from '../data/quests';
+import { attemptCraft } from '../systems/crafting';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -53,6 +55,8 @@ export const INITIAL_META: MetaState = {
   equippedItemIds: [],
   equipSlotCount: 1,
   lastPlayedCharId: '',
+  questProgress: {},
+  questsCompleted: [],
 };
 
 interface GameStore {
@@ -78,6 +82,13 @@ interface GameStore {
   advanceStage: () => void;
   resetDungeon: () => void;
   incrementDungeonKill: () => void;
+  incrementQuestProgress: (questId: string, by?: number) => void;
+  completeQuest: (questId: string) => void;
+  trackKill: (monsterId: string, regionId: string) => void;
+  trackBossDefeat: (bossId: string) => void;
+  trackItemCollect: (equipmentId: string) => void;
+  // Stub — real impl in L3-4
+  craft: (equipmentId: string) => boolean;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -157,8 +168,10 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      addEquipment: (item) =>
-        set((s) => ({ meta: { ...s.meta, inventory: addToInventory(s.meta.inventory, item) } })),
+      addEquipment: (item) => {
+        set((s) => ({ meta: { ...s.meta, inventory: addToInventory(s.meta.inventory, item) } }));
+        get().trackItemCollect(item.id);
+      },
 
       sellEquipment: (itemId, price) =>
         set((s) => ({
@@ -213,6 +226,123 @@ export const useGameStore = create<GameStore>()(
           monstersDefeated: s.run.monstersDefeated + 1,
         },
       })),
+
+      incrementQuestProgress: (questId, by = 1) =>
+        set((s) => {
+          const current = s.meta.questProgress[questId] ?? 0;
+          return {
+            meta: {
+              ...s.meta,
+              questProgress: { ...s.meta.questProgress, [questId]: current + by },
+            },
+          };
+        }),
+
+      completeQuest: (questId) => {
+        const state = get();
+        if (state.meta.questsCompleted.includes(questId)) return;
+        const quest = getQuestById(questId);
+        if (!quest) return;
+        const progress = state.meta.questProgress[questId] ?? 0;
+        if (progress < quest.target.count) return; // 진행도 미충족
+
+        // 보상 적용 + completed 마킹
+        set((s) => {
+          const gold = s.meta.gold + (quest.reward.gold ?? 0);
+          // bp 보상은 run.bp 에. run 미진행 시 무시.
+          let runBp = s.run.bp;
+          if (quest.reward.bp && s.run.characterId) {
+            runBp += quest.reward.bp;
+          }
+          // TODO(L3-4): quest.reward.equipmentId 장비 보상 inventory 추가
+          return {
+            meta: {
+              ...s.meta,
+              gold,
+              questsCompleted: [...s.meta.questsCompleted, questId],
+            },
+            run: { ...s.run, bp: runBp },
+          };
+        });
+      },
+
+      trackKill: (monsterId, regionId) => {
+        const state = get();
+        for (const q of QUESTS) {
+          if (q.type !== 'kill_count') continue;
+          if (state.meta.questsCompleted.includes(q.id)) continue;
+          const matchesMonster = q.target.monsterId === monsterId;
+          const matchesRegion = q.target.monsterId === undefined && q.regionId === regionId;
+          if (matchesMonster || matchesRegion) {
+            get().incrementQuestProgress(q.id);
+          }
+        }
+      },
+
+      trackBossDefeat: (bossId) => {
+        const state = get();
+        for (const q of QUESTS) {
+          if (q.type !== 'boss_defeat') continue;
+          if (q.target.bossId !== bossId) continue;
+          if (state.meta.questsCompleted.includes(q.id)) continue;
+          get().incrementQuestProgress(q.id);
+        }
+      },
+
+      trackItemCollect: (equipmentId) => {
+        const state = get();
+        for (const q of QUESTS) {
+          if (q.type !== 'item_collect') continue;
+          if (q.target.equipmentId !== equipmentId) continue;
+          if (state.meta.questsCompleted.includes(q.id)) continue;
+          get().incrementQuestProgress(q.id);
+        }
+      },
+
+      craft: (equipmentId: string): boolean => {
+        const state = get();
+        const allItems = [
+          ...state.meta.inventory.weapons,
+          ...state.meta.inventory.armors,
+          ...state.meta.inventory.accessories,
+        ];
+        const attempt = attemptCraft(allItems, equipmentId, state.meta.gold);
+        if (!attempt.ok || !attempt.result || attempt.cost === undefined) return false;
+        const result = attempt.result;
+        const cost = attempt.cost;
+
+        set(s => {
+          // 1. Remove 3 instances of source from the matching slot inventory
+          const slotKey: 'weapons' | 'armors' | 'accessories' =
+            result.slot === 'weapon' ? 'weapons' :
+            result.slot === 'armor' ? 'armors' : 'accessories';
+          const sourceList = s.meta.inventory[slotKey];
+          let removed = 0;
+          const filtered = sourceList.filter(item => {
+            if (removed < 3 && item.id === equipmentId) {
+              removed++;
+              return false;
+            }
+            return true;
+          });
+
+          // 2. Add result to the same slot
+          const newSlotList = [...filtered, result];
+
+          return {
+            meta: {
+              ...s.meta,
+              gold: s.meta.gold - cost,
+              inventory: {
+                ...s.meta.inventory,
+                [slotKey]: newSlotList,
+              },
+            },
+          };
+        });
+
+        return true;
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
@@ -234,6 +364,13 @@ export const useGameStore = create<GameStore>()(
           currentStage: run.currentStage ?? 1,
           dungeonRunMonstersDefeated: run.dungeonRunMonstersDefeated ?? 0,
         } as RunState;
+        // Inject defaults for quest fields added in content-layer3
+        const meta = s.meta ?? {};
+        s.meta = {
+          ...meta,
+          questProgress: meta.questProgress ?? {},
+          questsCompleted: meta.questsCompleted ?? [],
+        } as MetaState;
         return s;
       },
       partialize: (state) => ({ meta: state.meta, run: state.run }),
