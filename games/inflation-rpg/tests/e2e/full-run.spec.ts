@@ -33,8 +33,11 @@ test.describe('Inflation RPG — full run smoke test', () => {
     await page.getByRole('button', { name: '모험 시작' }).click();
     // WorldMap: click first region (조선 평야) to open RegionMap
     await page.getByRole('button', { name: '조선 평야' }).click();
-    // RegionMap: Enter first area — BP decrements to 29
+    // RegionMap: Enter first area — transitions to Dungeon screen
     await page.getByRole('button', { name: '마을 입구' }).click();
+    // Dungeon header shows stage progress (마을 입구 has stageCount: 7)
+    await expect(page.getByText(/Stage 1 \/ \d+/)).toBeVisible({ timeout: 5000 });
+    // BP decrements to 29 (encounter cost)
     await expect(page.getByText(/BP.*29/)).toBeVisible({ timeout: 5000 });
   });
 
