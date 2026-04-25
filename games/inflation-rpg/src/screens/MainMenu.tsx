@@ -8,8 +8,16 @@ export function MainMenu() {
   const abandonRun = useGameStore((s) => s.abandonRun);
   const meta = useGameStore((s) => s.meta);
   const runCharacterId = useGameStore((s) => s.run.characterId);
+  const setTutorialStep = useGameStore((s) => s.setTutorialStep);
+  const restartTutorial = useGameStore((s) => s.restartTutorial);
 
   const hasActiveRun = runCharacterId !== '';
+
+  React.useEffect(() => {
+    if (!meta.tutorialDone && meta.tutorialStep === -1) {
+      setTutorialStep(0);
+    }
+  }, [meta.tutorialDone, meta.tutorialStep, setTutorialStep]);
 
   return (
     <ForgeScreen style={{ background: 'linear-gradient(180deg,#1a1030 0%,#0f0f1a 100%)', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
@@ -59,6 +67,9 @@ export function MainMenu() {
         </ForgeButton>
         <ForgeButton variant="secondary" onClick={() => setScreen('shop')}>
           상점
+        </ForgeButton>
+        <ForgeButton variant="secondary" onClick={restartTutorial}>
+          튜토리얼 다시
         </ForgeButton>
       </div>
 

@@ -165,6 +165,15 @@ export interface MetaState {
   questProgress: Record<string, number>;
   questsCompleted: string[];
   regionsVisited: string[];
+  tutorialDone: boolean;
+  tutorialStep: number;
+}
+
+export interface TutorialStep {
+  id: string;
+  screen: Screen;
+  textKR: string;
+  ctaKR: string;
 }
 
 export type Screen =
