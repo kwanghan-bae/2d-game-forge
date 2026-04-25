@@ -54,7 +54,6 @@ export function Inventory() {
         return equipment ? { id, count, equipment } : null;
       })
       .filter((e): e is { id: string; count: number; equipment: Equipment } => e !== null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta.inventory]);
 
   return (
