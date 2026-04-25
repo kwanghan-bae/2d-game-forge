@@ -10,6 +10,11 @@ import { pickMonster } from '../data/monsters';
 import { getBossesForArea } from '../data/bosses';
 import { MAP_AREAS } from '../data/maps';
 import { isRunOver, onDefeat } from '../systems/bp';
+import {
+  createSkillState, isSkillReady, fireSkill, computeSkillEffect,
+  type SkillState, type SkillEffectResult,
+} from './SkillSystem';
+import type { ActiveSkill } from '../types';
 
 interface BattleCallbacks {
   onLevelUp: (newLevel: number) => void;
@@ -30,6 +35,10 @@ export class BattleScene extends Phaser.Scene {
   private hpBarFill?: Phaser.GameObjects.Rectangle;
   private enemyText?: Phaser.GameObjects.Text;
   private logText?: Phaser.GameObjects.Text;
+  private skillState: SkillState = createSkillState();
+  private activeSkills: ActiveSkill[] = [];
+  private cachedPlayerAtk = 0;
+  private cachedPlayerHpMax = 0;
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -72,6 +81,19 @@ export class BattleScene extends Phaser.Scene {
 
     void this.enemyText; void this.hpBarBg;
     this.combatTimer = this.time.addEvent({ delay: 600, callback: this.doRound, callbackScope: this, loop: true });
+
+    // Cache player stats and active skills for skill system
+    const char = getCharacterById(run.characterId);
+    if (char) {
+      this.activeSkills = [...char.activeSkills];
+      const { meta } = useGameStore.getState();
+      const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
+      const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
+      const charLv = meta.characterLevels[run.characterId] ?? 0;
+      const charLevelMult = 1 + charLv * 0.1;
+      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult);
+      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult);
+    }
   }
 
   private doRound() {
@@ -173,6 +195,52 @@ export class BattleScene extends Phaser.Scene {
         this.callbacks.onBattleEnd(false);
       }
     }
+  }
+
+  update(time: number, _delta: number) {
+    this.updateSkills(time);
+  }
+
+  private updateSkills(time: number) {
+    if (!this.activeSkills.length) return;
+    if (this.enemyHP <= 0) return; // 전투 종료 후 발동 방지
+
+    for (const skill of this.activeSkills) {
+      if (isSkillReady(this.skillState, skill, time)) {
+        const result = computeSkillEffect(
+          skill,
+          this.cachedPlayerAtk,
+          this.cachedPlayerHpMax,
+          this.enemyHP,
+          this.enemyMaxHP,
+        );
+        this.applySkillResult(result);
+        fireSkill(this.skillState, skill, time);
+      }
+    }
+  }
+
+  private applySkillResult(result: SkillEffectResult) {
+    if (result.damage !== undefined) {
+      this.enemyHP = Math.max(0, this.enemyHP - result.damage);
+      // HP 바 갱신
+      const ratio = this.enemyHP / this.enemyMaxHP;
+      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    }
+    // heal: 플레이어 HP 는 doRound 에서 추정치 사용 — 스킬 힐은 캐시값 조정
+    // buff: 현재 구현에서는 no-op (고급 구현 시 stat 버프 레이어 추가)
+    this.showVfxEmoji(result.vfxEmoji);
+  }
+
+  private showVfxEmoji(emoji: string) {
+    const text = this.add.text(180, 250, emoji, { fontSize: '40px' }).setOrigin(0.5);
+    this.tweens.add({
+      targets: text,
+      y: 200,
+      alpha: 0,
+      duration: 800,
+      onComplete: () => text.destroy(),
+    });
   }
 
   private onDungeonComplete() {
