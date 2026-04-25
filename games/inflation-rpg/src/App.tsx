@@ -10,6 +10,7 @@ import { Shop } from './screens/Shop';
 import { GameOver } from './screens/GameOver';
 import { Quests } from './screens/Quests';
 import { TutorialOverlay } from './components/TutorialOverlay';
+import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
 import type { StartGameConfig } from './types';
 
 // ssr: false prevents Phaser (imported by Battle) from being bundled into the server-side render
@@ -24,6 +25,15 @@ interface AppProps {
 
 export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
+  const meta = useGameStore((s) => s.meta);
+
+  React.useEffect(() => {
+    setVolumes(meta.musicVolume, meta.sfxVolume, meta.muted);
+  }, [meta.musicVolume, meta.sfxVolume, meta.muted]);
+
+  React.useEffect(() => {
+    playBgm(bgmIdForScreen(screen));
+  }, [screen]);
 
   return (
     <div className="forge-ui-root" data-assets-base={config.assetsBasePath}>
