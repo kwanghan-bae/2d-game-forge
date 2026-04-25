@@ -112,8 +112,27 @@ function CharDetail({ char }: { char: Character }) {
       <div style={{ fontSize: 12, color: 'var(--forge-text-muted)', marginBottom: 6 }}>
         {char.statFocus}
       </div>
-      <div style={{ fontSize: 12, color: 'var(--forge-text-secondary)' }}>
+      <div style={{ fontSize: 12, color: 'var(--forge-text-secondary)', marginBottom: 8 }}>
         패시브: {char.passiveSkill.nameKR} — {char.passiveSkill.description}
+      </div>
+
+      <div style={{ paddingTop: 8, borderTop: '1px solid var(--forge-border)' }}>
+        <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6, fontWeight: 600 }}>
+          액티브 스킬
+        </div>
+        {char.activeSkills.map((skill) => (
+          <div key={skill.id} style={{ fontSize: 11, lineHeight: 1.6, marginBottom: 6 }}>
+            <div style={{ color: 'var(--forge-accent)' }}>
+              {skill.vfxEmoji} {skill.nameKR}
+              <span style={{ color: 'var(--forge-text-muted)', marginLeft: 6, fontSize: 10 }}>
+                ({skill.cooldownSec}s)
+              </span>
+            </div>
+            <div style={{ color: 'var(--forge-text-secondary)', fontSize: 10, marginTop: 2 }}>
+              {skill.description}
+            </div>
+          </div>
+        ))}
       </div>
     </ForgePanel>
   );
