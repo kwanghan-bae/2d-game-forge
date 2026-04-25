@@ -40,7 +40,23 @@ Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 
 - `phase-4a-complete` — MobileUX Layer (safe area CSS, 44px 터치 타겟,
   overscroll 잠금, Phaser Scale.FIT, Inventory·Shop 스크롤,
   viewport-fit=cover, Playwright iPhone 14 E2E 테스트)
-- 다음: Phase 4b (SoundManager — BGM 3트랙 + SFX 12개 + 전투 파티클)
+- `forge-ui-opus-complete` — Forge-UI 재설계: shadcn registry 모델
+  (`packages/registry/`), `@forge/core` Phaser-React 토큰 브릿지,
+  inflation-rpg 가 5 forge-* 컴포넌트 + theme-modern-dark-gold 소비.
+  `phase-forge-ui-layer-b-complete` 도 동일 작업의 중간 태그.
+- `phase-content-data-complete` — Layer 1: 몬스터 8→61 / 장비 15→41 / 보스 18→109
+- `phase-content-dungeon-complete` — Layer 2: 모든 120 area 가 5-10 stage 던전
+- `phase-content-craft-quest-complete` — Layer 3: 28 quest + 합성 시스템
+  (3개→1 tier 상승, common→mythic 6 tier)
+- `phase-content-skills-complete` — Layer 4: 32 액티브 스킬 (16 캐릭터 × 2)
+  + SkillSystem (cooldown + multi_hit/aoe/heal/buff/execute)
+- `phase-content-story-complete` — Layer 5: 26 스토리 (10 region enter +
+  16 boss defeat) + StoryModal
+- `phase-content-expansion-complete` — Layer 1-5 묶음 최종 태그
+- 다음: **Phase 4c (Tutorial — 신규 유저 온보딩, 콘텐츠 폭발 후 우선순위 상승)** →
+  Phase 4b (SoundManager — BGM 3 + SFX 12 + 전투 파티클) →
+  콘텐츠 균형 패치 (32 스킬 / 109 보스 데미지 배수 조정) →
+  Phase 5 (Monetization)
 
 ## 명령 치트시트
 
@@ -177,10 +193,21 @@ inflation-rpg 는 `@/game/...` alias 를 쓰고 있고, 이를 위해 dev-shell 
   - `ForgeGameInstance`, `StartGameFn` (타입)
   - `exposeTestHooks`, `StandardTestHookSlots`, `TestHookSlots`
   - `createSaveEnvelopeSchema<T>`, `SaveEnvelopeMeta`
-- 테스트: 19 passed.
-- **구현 코드는 없음**. 위 API 는 모두 타입/계약 레벨 또는 매우 얇은 유틸.
+  - `ForgeCSSTokens`, `ForgeStatToken`, `ForgeButtonProps`, `ForgePanelProps`,
+    `ForgeGaugeProps`, `ForgeInventoryGridProps`, `ForgeScreenProps` (UI 토큰 계약)
+  - `readForgeToken`, `resolveForgeTheme`, `ForgeThemeBridge` (Phaser-React 브릿지)
+- 테스트: 23 passed (19 기존 + 4 theme-bridge).
+- **구현 코드는 없음**. 위 API 는 모두 타입/계약 레벨 또는 매우 얇은 유틸 (theme-bridge ~30 줄).
   실제 `SaveManager`, `EventBus`, `I18nManager` 등 구현은 inflation-rpg 내부
   에 있고 게임 #2 도착 시 승격 예정.
+
+## `@forge/registry` 현재 상태
+
+- **로컬 shadcn registry** — Forge-UI 의 공용 컴포넌트/테마 소스 호스팅.
+  각 게임은 수동 복사 (shadcn CLI 의 `file:` 경로 미지원 발견 — 2026-04 기준).
+- **현재 아이템** (6): theme-modern-dark-gold + forge-screen/button/panel/gauge/inventory-grid
+- 테스트: 7 passed (1 manifest + 6 file-existence checks).
+- **새 게임 추가 시**: [docs/CONTRIBUTING.md §14](docs/CONTRIBUTING.md) 참조.
 
 ## Claude 행동 선호
 
