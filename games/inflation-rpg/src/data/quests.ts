@@ -69,16 +69,16 @@ export const QUESTS: Quest[] = [
     type: 'kill_count', target: { monsterId: 'coast-mermaid', count: 30 },
     reward: { gold: 35000 } },
 
-  // ── underground (3 quest) ──
-  { id: 'q-cave-1', regionId: 'underground', nameKR: '동굴 탐험가',
+  // ── underworld (3 quest) ──
+  { id: 'q-cave-1', regionId: 'underworld', nameKR: '동굴 탐험가',
     description: '거대거미 50마리 처치',
     type: 'kill_count', target: { monsterId: 'cave-spider', count: 50 },
     reward: { gold: 30000 } },
-  { id: 'q-cave-2', regionId: 'underground', nameKR: '광부의 안식',
+  { id: 'q-cave-2', regionId: 'underworld', nameKR: '광부의 안식',
     description: '광부영혼 100마리 처치',
     type: 'kill_count', target: { monsterId: 'cave-miner-ghost', count: 100 },
     reward: { gold: 60000, equipmentId: 'w-pickaxe' } },
-  { id: 'q-cave-3', regionId: 'underground', nameKR: '석상의 침묵',
+  { id: 'q-cave-3', regionId: 'underworld', nameKR: '석상의 침묵',
     description: '석상골렘 30마리 처치',
     type: 'kill_count', target: { monsterId: 'cave-golem', count: 30 },
     reward: { gold: 80000, bp: 3 } },
