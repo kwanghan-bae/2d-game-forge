@@ -9,6 +9,7 @@ import { getCharacterById } from '../data/characters';
 import { pickMonster } from '../data/monsters';
 import { getBossesForArea } from '../data/bosses';
 import { MAP_AREAS } from '../data/maps';
+import { getBossDefeatStory } from '../data/stories';
 import { isRunOver, onDefeat } from '../systems/bp';
 import {
   createSkillState, isSkillReady, fireSkill, computeSkillEffect,
@@ -138,6 +139,8 @@ export class BattleScene extends Phaser.Scene {
       if (this.isBoss && this.bossId) {
         this.callbacks.onBossKill(this.bossId, 5);
         useGameStore.getState().trackBossDefeat(this.bossId);
+        const story = getBossDefeatStory(this.bossId);
+        if (story) useGameStore.getState().setPendingStory(story.id);
       }
 
       const expGain = Math.floor(run.level * 10);

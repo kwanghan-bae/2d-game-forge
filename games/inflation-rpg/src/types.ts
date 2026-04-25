@@ -164,6 +164,7 @@ export interface MetaState {
   lastPlayedCharId: string;    // GameOver에서 캐릭터 레벨 표시용
   questProgress: Record<string, number>;
   questsCompleted: string[];
+  regionsVisited: string[];
 }
 
 export type Screen =
@@ -177,6 +178,15 @@ export type Screen =
   | 'shop'
   | 'game-over'
   | 'quests';
+
+export type StoryType = 'region_enter' | 'boss_defeat';
+
+export interface Story {
+  id: string;
+  type: StoryType;
+  refId: string;     // regionId or bossId
+  textKR: string;
+}
 
 export interface StartGameConfig {
   parent: string;
