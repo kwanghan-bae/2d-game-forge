@@ -168,8 +168,10 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      addEquipment: (item) =>
-        set((s) => ({ meta: { ...s.meta, inventory: addToInventory(s.meta.inventory, item) } })),
+      addEquipment: (item) => {
+        set((s) => ({ meta: { ...s.meta, inventory: addToInventory(s.meta.inventory, item) } }));
+        get().trackItemCollect(item.id);
+      },
 
       sellEquipment: (itemId, price) =>
         set((s) => ({
