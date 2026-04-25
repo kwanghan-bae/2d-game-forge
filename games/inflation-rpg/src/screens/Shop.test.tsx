@@ -62,8 +62,8 @@ describe('Shop — 장비 구매', () => {
   it('구매 후 goldThisRun 차감 및 inventory 추가', async () => {
     useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: 1_000 } }));
     render(<Shop />);
-    // 단도 (100G)
-    const btn = screen.getByRole('button', { name: /100/i });
+    // 단도 (100G) — find by role and text match that includes toLocaleString formatting
+    const btn = screen.getByRole('button', { name: '100G' });
     await userEvent.click(btn);
     expect(useGameStore.getState().run.goldThisRun).toBe(900);
     expect(useGameStore.getState().meta.inventory.weapons.length).toBeGreaterThan(0);

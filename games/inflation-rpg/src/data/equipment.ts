@@ -1,6 +1,7 @@
 import type { Equipment } from '../types';
 
 export const EQUIPMENT_CATALOG: Equipment[] = [
+  // ── Existing 15 (preserved) ──
   // Weapons — flat (early game)
   { id: 'w-knife',     name: '단도',   slot: 'weapon', rarity: 'common',    stats: { flat: { atk: 30 } },               dropAreaIds: ['village-entrance', 'tavern-street'], price: 100 },
   { id: 'w-sword',     name: '철검',   slot: 'weapon', rarity: 'common',    stats: { flat: { atk: 80 } },               dropAreaIds: ['goblin-pass', 'baekdu-gate'],        price: 300 },
@@ -20,6 +21,46 @@ export const EQUIPMENT_CATALOG: Equipment[] = [
   { id: 'acc-ring-bp3',name: 'BP반지+3',slot:'accessory',rarity:'rare',    stats: {},                                   dropAreaIds: ['goblin-pass', 'baekdu-gate'],        price: 3000 },
   { id: 'acc-necklace', name: '회복목걸이',slot:'accessory',rarity:'rare',  stats: { percent: { hp: 50 } },              dropAreaIds: ['kumgang-foot', 'dragon-palace'],      price: 5000 },
   { id: 'acc-luc-gem',  name: '행운석', slot:'accessory',rarity:'epic',    stats: { percent: { luc: 100 } },            dropAreaIds: ['jade-palace', 'chaos-land'],          price: 15000 },
+
+  // ── Uncommon tier (6 신규) ──
+  { id: 'w-club',      name: '곤봉',       slot: 'weapon', rarity: 'uncommon', stats: { flat: { atk: 50 } },                          dropAreaIds: ['farm-fields', 'brook-side'],   price: 200 },
+  { id: 'w-dagger',    name: '비수',       slot: 'weapon', rarity: 'uncommon', stats: { flat: { atk: 60 }, percent: { agi: 5 } },     dropAreaIds: ['market-street', 'tavern-street'], price: 250 },
+  { id: 'a-padded',    name: '누비옷',     slot: 'armor',  rarity: 'uncommon', stats: { flat: { def: 35, hp: 80 } },                  dropAreaIds: ['farm-fields', 'brook-side'],   price: 220 },
+  { id: 'a-hide',      name: '가죽두건',  slot: 'armor',  rarity: 'uncommon', stats: { flat: { def: 50, hp: 120 } },                 dropAreaIds: ['market-street'], price: 280 },
+  { id: 'acc-amulet',  name: '부적',       slot: 'accessory', rarity: 'uncommon', stats: { flat: { hp: 30 } },                       dropAreaIds: ['tavern-street', 'beacon-hill'], price: 350 },
+  { id: 'acc-charm',   name: '복주머니',  slot: 'accessory', rarity: 'uncommon', stats: { percent: { luc: 20 } },                    dropAreaIds: ['market-street'], price: 400 },
+
+  // ── Mythic tier (6 신규) ──
+  { id: 'w-mythic-sword',  name: '천년검',     slot: 'weapon',    rarity: 'mythic', stats: { percent: { atk: 1500 } },         dropAreaIds: ['final-realm'],                     price: 200000 },
+  { id: 'w-mythic-bow',    name: '신궁',       slot: 'weapon',    rarity: 'mythic', stats: { percent: { atk: 1200, agi: 300 } }, dropAreaIds: ['time-rift', 'chaos-land'],      price: 180000 },
+  { id: 'a-mythic-robe',   name: '천룡갑',     slot: 'armor',     rarity: 'mythic', stats: { percent: { hp: 1000, def: 800 } }, dropAreaIds: ['final-realm'],                    price: 250000 },
+  { id: 'a-mythic-aura',   name: '신성가호',  slot: 'armor',     rarity: 'mythic', stats: { percent: { hp: 800, def: 1000 } }, dropAreaIds: ['jade-palace', 'chaos-land'],     price: 220000 },
+  { id: 'acc-mythic-gem',  name: '운명석',     slot: 'accessory', rarity: 'mythic', stats: { percent: { luc: 500 } },          dropAreaIds: ['final-realm'],                    price: 300000 },
+  { id: 'acc-mythic-ring', name: '천공반지',  slot: 'accessory', rarity: 'mythic', stats: { percent: { hp: 500, atk: 300 } }, dropAreaIds: ['time-rift', 'jade-palace'],     price: 280000 },
+
+  // ── Region-specific drops (14 신규) ──
+  // Coast (해양)
+  { id: 'w-trident',       name: '삼지창',     slot: 'weapon',    rarity: 'rare',      stats: { flat: { atk: 250 } },             dropAreaIds: ['dragon-palace'],     price: 1200 },
+  { id: 'a-shell-armor',   name: '조개갑옷',   slot: 'armor',     rarity: 'rare',      stats: { flat: { def: 180 }, percent: { hp: 25 } }, dropAreaIds: ['dragon-palace'], price: 1800 },
+  // Underground
+  { id: 'w-pickaxe',       name: '광부곡괭이', slot: 'weapon',    rarity: 'epic',      stats: { percent: { atk: 150 } },          dropAreaIds: ['cave-deep'],         price: 5000 },
+  { id: 'a-ore-armor',     name: '광석갑',     slot: 'armor',     rarity: 'epic',      stats: { percent: { def: 200, hp: 100 } }, dropAreaIds: ['cave-deep'],         price: 6500 },
+  // Heaven-realm
+  { id: 'w-celestial-spear',name: '선풍창',    slot: 'weapon',    rarity: 'legendary', stats: { percent: { atk: 700 } },          dropAreaIds: ['jade-palace'],       price: 35000 },
+  // Underworld
+  { id: 'w-soulreaper',    name: '영혼낫',     slot: 'weapon',    rarity: 'legendary', stats: { percent: { atk: 600 } },          dropAreaIds: ['underworld-gate'],   price: 30000 },
+  // Forest
+  { id: 'w-vine-bow',      name: '덩굴활',     slot: 'weapon',    rarity: 'rare',      stats: { flat: { atk: 180 } },             dropAreaIds: ['forest-heart'],      price: 1000 },
+  { id: 'a-bark-armor',    name: '수피갑',     slot: 'armor',     rarity: 'rare',      stats: { flat: { def: 130, hp: 200 } },    dropAreaIds: ['forest-heart'],      price: 1300 },
+  // Mountains
+  { id: 'a-stone-armor',   name: '석갑',       slot: 'armor',     rarity: 'rare',      stats: { flat: { def: 200, hp: 250 } },    dropAreaIds: ['kumgang-foot'],      price: 1700 },
+  // Chaos
+  { id: 'acc-chaos-orb',   name: '혼돈구',     slot: 'accessory', rarity: 'epic',      stats: { percent: { luc: 200, atk: 50 } }, dropAreaIds: ['chaos-land'],        price: 18000 },
+  { id: 'acc-time-shard',  name: '시간조각',  slot: 'accessory', rarity: 'epic',      stats: { percent: { agi: 250 } },          dropAreaIds: ['time-rift'],         price: 17000 },
+  // Plains
+  { id: 'acc-spirit-talisman', name: '영부적', slot: 'accessory',rarity: 'rare',      stats: { percent: { hp: 80 } },            dropAreaIds: ['cursed-fields'],      price: 4000 },
+  { id: 'w-rust-blade',    name: '녹슨검',     slot: 'weapon',    rarity: 'common',    stats: { flat: { atk: 40 } },              dropAreaIds: ['ruined-village'],     price: 150 },
+  { id: 'a-tribal-armor',  name: '부족갑',     slot: 'armor',     rarity: 'rare',      stats: { flat: { def: 100 }, percent: { hp: 20 } }, dropAreaIds: ['wanderer-camp'], price: 1100 },
 ];
 
 export function getEquipmentById(id: string): Equipment | undefined {
