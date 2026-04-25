@@ -43,11 +43,11 @@ describe('RegionMap (plains)', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('entering unlocked area triggers battle screen and deducts BP', async () => {
+  it('entering unlocked area triggers dungeon screen and deducts BP', async () => {
     render(<RegionMap regionId="plains" onBack={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: /마을 입구/i }));
     const state = useGameStore.getState();
-    expect(state.screen).toBe('battle');
+    expect(state.screen).toBe('dungeon');
     expect(state.run.bp).toBe(27);
     expect(state.run.currentAreaId).toBe('village-entrance');
   });
