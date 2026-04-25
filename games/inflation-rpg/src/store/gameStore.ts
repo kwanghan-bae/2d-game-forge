@@ -89,6 +89,8 @@ interface GameStore {
   trackBossDefeat: (bossId: string) => void;
   trackItemCollect: (equipmentId: string) => void;
   markRegionVisited: (regionId: string) => void;
+  pendingStoryId: string | null;
+  setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
   craft: (equipmentId: string) => boolean;
 }
@@ -307,6 +309,9 @@ export const useGameStore = create<GameStore>()(
           meta: { ...s.meta, regionsVisited: [...s.meta.regionsVisited, regionId] },
         };
       }),
+
+      pendingStoryId: null,
+      setPendingStory: (storyId) => set({ pendingStoryId: storyId }),
 
       craft: (equipmentId: string): boolean => {
         const state = get();
