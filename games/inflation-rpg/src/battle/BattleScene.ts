@@ -25,6 +25,7 @@ export class BattleScene extends Phaser.Scene {
   private enemyName = '';
   private isBoss = false;
   private bossId?: string;
+  private currentMonsterId = '';
   private hpBarBg?: Phaser.GameObjects.Rectangle;
   private hpBarFill?: Phaser.GameObjects.Rectangle;
   private enemyText?: Phaser.GameObjects.Text;
@@ -58,6 +59,7 @@ export class BattleScene extends Phaser.Scene {
       this.isBoss = false;
       const currentArea = MAP_AREAS.find(a => a.id === area);
       const monster = pickMonster(run.level, currentArea?.regionId);
+      this.currentMonsterId = monster.id;
       this.enemyName = `${monster.emoji} ${monster.nameKR}`;
       this.enemyMaxHP = Math.floor(run.level * 20 * monster.hpMult);
     }
@@ -113,6 +115,7 @@ export class BattleScene extends Phaser.Scene {
 
       if (this.isBoss && this.bossId) {
         this.callbacks.onBossKill(this.bossId, 5);
+        useGameStore.getState().trackBossDefeat(this.bossId);
       }
 
       const expGain = Math.floor(run.level * 10);
@@ -122,6 +125,13 @@ export class BattleScene extends Phaser.Scene {
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp, monstersDefeated: s.run.monstersDefeated + 1 } }));
       useGameStore.getState().incrementDungeonKill();
+      if (!this.isBoss) {
+        const storeState = useGameStore.getState();
+        const currentArea = MAP_AREAS.find(a => a.id === storeState.run.currentAreaId);
+        if (currentArea) {
+          storeState.trackKill(this.currentMonsterId, currentArea.regionId);
+        }
+      }
 
       // Check stage progression after each kill
       const stateAfterKill = useGameStore.getState();
