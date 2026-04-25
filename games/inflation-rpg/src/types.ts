@@ -1,7 +1,8 @@
 export type StatKey = 'hp' | 'atk' | 'def' | 'agi' | 'luc';
 
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
-export type EquipmentRarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type EquipmentRarity =
+  | 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
 export interface EquipmentStats {
   flat?: Partial<Record<StatKey, number>>;
@@ -48,6 +49,7 @@ export interface Monster {
   expMult: number;
   goldMult: number;
   isBoss: false;
+  regionTags: string[];
 }
 
 export interface Boss {
@@ -59,6 +61,8 @@ export interface Boss {
   isHardMode: boolean;
   hpMult: number;
   atkMult: number;
+  guaranteedDrop?: string;
+  storyOnDefeat?: string;
 }
 
 export interface MapArea {
