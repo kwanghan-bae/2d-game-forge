@@ -10,6 +10,7 @@ const baseRun = {
   allocated: { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 },
   currentAreaId: 'village-entrance', isHardMode: false,
   monstersDefeated: 0, goldThisRun: 0,
+  currentStage: 1, dungeonRunMonstersDefeated: 0,
 };
 
 beforeEach(() => {
