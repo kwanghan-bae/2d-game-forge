@@ -2,10 +2,12 @@ import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getRegionById } from '../data/regions';
 import { getAreasByRegion } from '../data/maps';
+import { getRegionEnterStory } from '../data/stories';
 import { isRunOver } from '../systems/bp';
 import type { MapArea } from '../types';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeScreen } from '@/components/ui/forge-screen';
+import { StoryModal } from '../components/StoryModal';
 
 const ICON_EMOJI: Record<string, string> = {
   village: '🏘️', wheat: '🌾', 'water-drop': '💧', coins: '🪙', beer: '🍺',
@@ -36,15 +38,31 @@ interface RegionMapProps {
 
 export function RegionMap({ regionId, onBack }: RegionMapProps) {
   const run = useGameStore((s) => s.run);
+  const meta = useGameStore((s) => s.meta);
   const setScreen = useGameStore((s) => s.setScreen);
   const encounterMonster = useGameStore((s) => s.encounterMonster);
   const endRun = useGameStore((s) => s.endRun);
   const setCurrentArea = useGameStore((s) => s.setCurrentArea);
   const resetDungeon = useGameStore((s) => s.resetDungeon);
+  const markRegionVisited = useGameStore((s) => s.markRegionVisited);
   const [lockedInfo, setLockedInfo] = React.useState<MapArea | null>(null);
+  const [showStory, setShowStory] = React.useState(false);
 
   const region = getRegionById(regionId);
+
+  React.useEffect(() => {
+    if (!region) return;
+    if (meta.regionsVisited.includes(region.id)) return;
+    if (getRegionEnterStory(region.id)) setShowStory(true);
+  }, [region, meta.regionsVisited]);
+
+  const closeStory = () => {
+    if (region) markRegionVisited(region.id);
+    setShowStory(false);
+  };
+
   if (!region) return null;
+  const enterStory = getRegionEnterStory(region.id);
 
   const areas = getAreasByRegion(regionId, run.isHardMode);
 
@@ -261,6 +279,15 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
           퀘스트
         </ForgeButton>
       </div>
+
+      {showStory && enterStory && (
+        <StoryModal
+          title={region.nameKR}
+          emoji={region.emoji}
+          textKR={enterStory.textKR}
+          onClose={closeStory}
+        />
+      )}
     </ForgeScreen>
   );
 }

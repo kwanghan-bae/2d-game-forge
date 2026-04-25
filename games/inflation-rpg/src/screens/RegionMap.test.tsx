@@ -14,7 +14,11 @@ const baseRun = {
 };
 
 beforeEach(() => {
-  useGameStore.setState({ screen: 'world-map', run: baseRun, meta: INITIAL_META });
+  useGameStore.setState({
+    screen: 'world-map',
+    run: baseRun,
+    meta: { ...INITIAL_META, regionsVisited: ['plains'] },
+  });
 });
 
 describe('RegionMap (plains)', () => {

@@ -57,6 +57,7 @@ export const INITIAL_META: MetaState = {
   lastPlayedCharId: '',
   questProgress: {},
   questsCompleted: [],
+  regionsVisited: [],
 };
 
 interface GameStore {
@@ -87,6 +88,9 @@ interface GameStore {
   trackKill: (monsterId: string, regionId: string) => void;
   trackBossDefeat: (bossId: string) => void;
   trackItemCollect: (equipmentId: string) => void;
+  markRegionVisited: (regionId: string) => void;
+  pendingStoryId: string | null;
+  setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
   craft: (equipmentId: string) => boolean;
 }
@@ -299,6 +303,16 @@ export const useGameStore = create<GameStore>()(
         }
       },
 
+      markRegionVisited: (regionId) => set((s) => {
+        if (s.meta.regionsVisited.includes(regionId)) return s;
+        return {
+          meta: { ...s.meta, regionsVisited: [...s.meta.regionsVisited, regionId] },
+        };
+      }),
+
+      pendingStoryId: null,
+      setPendingStory: (storyId) => set({ pendingStoryId: storyId }),
+
       craft: (equipmentId: string): boolean => {
         const state = get();
         const allItems = [
@@ -370,6 +384,7 @@ export const useGameStore = create<GameStore>()(
           ...meta,
           questProgress: meta.questProgress ?? {},
           questsCompleted: meta.questsCompleted ?? [],
+          regionsVisited: meta.regionsVisited ?? [],
         } as MetaState;
         return s;
       },

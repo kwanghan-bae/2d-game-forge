@@ -4,6 +4,8 @@ import { StatAlloc } from './StatAlloc';
 import { createBattleGame } from '../battle/BattleGame';
 import type Phaser from 'phaser';
 import { ForgeScreen } from '@/components/ui/forge-screen';
+import { StoryModal } from '../components/StoryModal';
+import { getStoryById } from '../data/stories';
 
 export function Battle() {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -12,6 +14,9 @@ export function Battle() {
   const run = useGameStore((s) => s.run);
   const setScreen = useGameStore((s) => s.setScreen);
   const bossDrop = useGameStore((s) => s.bossDrop);
+  const pendingStoryId = useGameStore((s) => s.pendingStoryId);
+  const setPendingStory = useGameStore((s) => s.setPendingStory);
+  const pendingStory = pendingStoryId ? getStoryById(pendingStoryId) : null;
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -61,6 +66,14 @@ export function Battle() {
 
       {showStatAlloc && run.statPoints > 0 && (
         <StatAlloc onClose={handleStatAllocClose} />
+      )}
+
+      {pendingStory && (
+        <StoryModal
+          title="보스 처치"
+          textKR={pendingStory.textKR}
+          onClose={() => setPendingStory(null)}
+        />
       )}
     </ForgeScreen>
   );
