@@ -3,6 +3,7 @@ import { resolveForgeTheme } from '@forge/core';
 import { useGameStore } from '../store/gameStore';
 import { calcFinalStat, calcDamageReduction, calcCritChance } from '../systems/stats';
 import { applyExpGain } from '../systems/experience';
+import { playSfx } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedItemsList } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
@@ -141,6 +142,9 @@ export class BattleScene extends Phaser.Scene {
         useGameStore.getState().trackBossDefeat(this.bossId);
         const story = getBossDefeatStory(this.bossId);
         if (story) useGameStore.getState().setPendingStory(story.id);
+        playSfx('boss-victory');
+      } else {
+        playSfx('hit');
       }
 
       const expGain = Math.floor(run.level * 10);
@@ -175,6 +179,7 @@ export class BattleScene extends Phaser.Scene {
       }
 
       if (spGained > 0) {
+        playSfx('levelup');
         this.callbacks.onLevelUp(newLevel);
       } else {
         this.callbacks.onBattleEnd(true);
@@ -189,6 +194,7 @@ export class BattleScene extends Phaser.Scene {
 
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
+      playSfx('defeat');
       const newBP = onDefeat(run.bp, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
       useGameStore.getState().resetDungeon();
