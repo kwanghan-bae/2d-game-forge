@@ -27,6 +27,26 @@ export interface PassiveSkill {
   value: number;
 }
 
+export type ActiveSkillType = 'multi_hit' | 'aoe' | 'heal' | 'buff' | 'execute';
+
+export interface ActiveSkill {
+  id: string;
+  nameKR: string;
+  description: string;
+  cooldownSec: number;
+  effect: {
+    type: ActiveSkillType;
+    multiplier?: number;
+    targets?: number;
+    healPercent?: number;
+    buffStat?: StatKey;
+    buffPercent?: number;
+    buffDurationSec?: number;
+    executeThreshold?: number;
+  };
+  vfxEmoji: string;
+}
+
 export interface Character {
   id: string;
   nameKR: string;
@@ -35,6 +55,7 @@ export interface Character {
   statMultipliers: Record<StatKey, number>;
   passiveSkill: PassiveSkill;
   unlockSoulGrade: number;
+  activeSkills: [ActiveSkill, ActiveSkill];
 }
 
 export interface Monster {
