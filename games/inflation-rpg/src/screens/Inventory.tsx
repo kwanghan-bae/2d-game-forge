@@ -4,6 +4,7 @@ import type { Equipment, EquipmentSlot } from '../types';
 import { SLOT_LIMITS } from '../systems/equipment';
 import { getCraftCost, getNextTier } from '../systems/crafting';
 import { getEquipmentById } from '../data/equipment';
+import { CHARACTERS } from '../data/characters';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeInventoryGrid } from '@/components/ui/forge-inventory-grid';
 import { ForgePanel } from '@/components/ui/forge-panel';
@@ -17,7 +18,7 @@ const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
 
 export function Inventory() {
   const [activeSlot, setActiveSlot] = useState<EquipmentSlot>('weapon');
-  const [mainTab, setMainTab] = useState<'inventory' | 'craft'>('inventory');
+  const [mainTab, setMainTab] = useState<'inventory' | 'craft' | 'skills'>('inventory');
   const meta = useGameStore((s) => s.meta);
   const setScreen = useGameStore((s) => s.setScreen);
   const sellEquipment = useGameStore((s) => s.sellEquipment);
@@ -82,6 +83,13 @@ export function Inventory() {
           onClick={() => setMainTab('craft')}
         >
           합성
+        </ForgeButton>
+        <ForgeButton
+          variant={mainTab === 'skills' ? 'primary' : 'secondary'}
+          style={{ flex: 1, fontSize: 13 }}
+          onClick={() => setMainTab('skills')}
+        >
+          스킬
         </ForgeButton>
       </div>
 
@@ -213,6 +221,47 @@ export function Inventory() {
           })}
         </div>
       )}
+
+      {mainTab === 'skills' && (() => {
+        const char = CHARACTERS.find((c) => c.id === run.characterId);
+        if (!char) {
+          return (
+            <p style={{ padding: 16, color: 'var(--forge-text-muted)' }}>
+              캐릭터 정보를 찾을 수 없다.
+            </p>
+          );
+        }
+        return (
+          <div className="forge-scroll-list" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+            <ForgePanel style={{ margin: '8px 16px' }}>
+              <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 4 }}>
+                패시브
+              </div>
+              <div style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>
+                {char.passiveSkill.nameKR}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--forge-text-secondary)', marginTop: 4 }}>
+                {char.passiveSkill.description}
+              </div>
+            </ForgePanel>
+            {char.activeSkills.map((s) => (
+              <ForgePanel key={s.id} style={{ margin: '8px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>
+                    {s.vfxEmoji} {s.nameKR}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--forge-text-muted)' }}>
+                    쿨다운 {s.cooldownSec}s
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--forge-text-secondary)', marginTop: 6 }}>
+                  {s.description}
+                </div>
+              </ForgePanel>
+            ))}
+          </div>
+        );
+      })()}
     </ForgeScreen>
   );
 }
