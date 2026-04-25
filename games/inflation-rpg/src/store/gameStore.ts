@@ -58,6 +58,8 @@ export const INITIAL_META: MetaState = {
   questProgress: {},
   questsCompleted: [],
   regionsVisited: [],
+  tutorialDone: false,
+  tutorialStep: -1,
 };
 
 interface GameStore {
@@ -89,6 +91,10 @@ interface GameStore {
   trackBossDefeat: (bossId: string) => void;
   trackItemCollect: (equipmentId: string) => void;
   markRegionVisited: (regionId: string) => void;
+  setTutorialStep: (index: number) => void;
+  advanceTutorial: () => void;
+  skipTutorial: () => void;
+  restartTutorial: () => void;
   pendingStoryId: string | null;
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
@@ -313,6 +319,17 @@ export const useGameStore = create<GameStore>()(
       pendingStoryId: null,
       setPendingStory: (storyId) => set({ pendingStoryId: storyId }),
 
+      setTutorialStep: (index) => set((s) => ({ meta: { ...s.meta, tutorialStep: index } })),
+      advanceTutorial: () => set((s) => {
+        const next = s.meta.tutorialStep + 1;
+        if (next >= 7) {
+          return { meta: { ...s.meta, tutorialDone: true, tutorialStep: -1 } };
+        }
+        return { meta: { ...s.meta, tutorialStep: next } };
+      }),
+      skipTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: true, tutorialStep: -1 } })),
+      restartTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: false, tutorialStep: 0 } })),
+
       craft: (equipmentId: string): boolean => {
         const state = get();
         const allItems = [
@@ -385,6 +402,8 @@ export const useGameStore = create<GameStore>()(
           questProgress: meta.questProgress ?? {},
           questsCompleted: meta.questsCompleted ?? [],
           regionsVisited: meta.regionsVisited ?? [],
+          tutorialDone: meta.tutorialDone ?? false,
+          tutorialStep: meta.tutorialStep ?? -1,
         } as MetaState;
         return s;
       },
