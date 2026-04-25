@@ -63,19 +63,19 @@ export const MAP_AREAS: MapArea[] = [
   { id: 'summit-beyond',     nameKR: '구름 너머 정상',regionId: 'mountains', levelRange: [130000, 180000],bossId: 'sky-mountain-lord', isHardOnly: false, mapX: 48, mapY: 2,  icon: 'star' },
 
   // ── Region: sea (동해 바다) ── 13구역 Lv 20,000–400,000
-  { id: 'coastline',         nameKR: '해안가',         regionId: 'sea', levelRange: [20000, 35000],   bossId: undefined,           isHardOnly: false, mapX: 30, mapY: 85, icon: 'anchor' },
-  { id: 'tidal-flats',       nameKR: '갯벌',           regionId: 'sea', levelRange: [28000, 45000],   bossId: undefined,           isHardOnly: false, mapX: 55, mapY: 80, icon: 'crab' },
-  { id: 'cliff-coast',       nameKR: '파도치는 절벽',  regionId: 'sea', levelRange: [38000, 58000],   bossId: 'wave-spirit',       isHardOnly: false, mapX: 72, mapY: 75, icon: 'wave' },
-  { id: 'deep-entrance',     nameKR: '심해 입구',      regionId: 'sea', levelRange: [50000, 75000],   bossId: undefined,           isHardOnly: false, mapX: 38, mapY: 65, icon: 'fish' },
-  { id: 'dragon-palace',     nameKR: '용궁 어귀',      regionId: 'sea', levelRange: [65000, 95000],   bossId: 'sea-god',           isHardOnly: false, mapX: 62, mapY: 60, icon: 'trident' },
-  { id: 'coral-palace',      nameKR: '산호 궁전',      regionId: 'sea', levelRange: [80000, 115000],  bossId: undefined,           isHardOnly: false, mapX: 28, mapY: 52, icon: 'coral' },
-  { id: 'deep-cave',         nameKR: '심해 동굴',      regionId: 'sea', levelRange: [95000, 135000],  bossId: undefined,           isHardOnly: false, mapX: 58, mapY: 45, icon: 'cave' },
-  { id: 'dragon-treasury',   nameKR: '용왕의 보고',    regionId: 'sea', levelRange: [115000, 160000], bossId: 'dragon-king-guard', isHardOnly: false, mapX: 75, mapY: 38, icon: 'treasure' },
-  { id: 'storm-vortex',      nameKR: '폭풍의 소용돌이',regionId: 'sea', levelRange: [135000, 185000], bossId: undefined,           isHardOnly: false, mapX: 35, mapY: 30, icon: 'vortex' },
-  { id: 'glacier-sea',       nameKR: '빙하 바다',      regionId: 'sea', levelRange: [160000, 220000], bossId: 'ice-sea-dragon',    isHardOnly: false, mapX: 60, mapY: 25, icon: 'ice' },
-  { id: 'undersea-volcano',  nameKR: '해저 화산',      regionId: 'sea', levelRange: [195000, 270000], bossId: undefined,           isHardOnly: false, mapX: 25, mapY: 18, icon: 'fire' },
-  { id: 'deep-palace',       nameKR: '용궁 심층',      regionId: 'sea', levelRange: [240000, 330000], bossId: 'true-sea-god',      isHardOnly: false, mapX: 55, mapY: 12, icon: 'palace' },
-  { id: 'abyss-throne',      nameKR: '심해 왕좌',      regionId: 'sea', levelRange: [300000, 400000], bossId: 'abyss-sea-ruler',   isHardOnly: false, mapX: 42, mapY: 5,  icon: 'throne' },
+  { id: 'coastline',         nameKR: '해안가',         regionId: 'coast', levelRange: [20000, 35000],   bossId: undefined,           isHardOnly: false, mapX: 30, mapY: 85, icon: 'anchor' },
+  { id: 'tidal-flats',       nameKR: '갯벌',           regionId: 'coast', levelRange: [28000, 45000],   bossId: undefined,           isHardOnly: false, mapX: 55, mapY: 80, icon: 'crab' },
+  { id: 'cliff-coast',       nameKR: '파도치는 절벽',  regionId: 'coast', levelRange: [38000, 58000],   bossId: 'wave-spirit',       isHardOnly: false, mapX: 72, mapY: 75, icon: 'wave' },
+  { id: 'deep-entrance',     nameKR: '심해 입구',      regionId: 'coast', levelRange: [50000, 75000],   bossId: undefined,           isHardOnly: false, mapX: 38, mapY: 65, icon: 'fish' },
+  { id: 'dragon-palace',     nameKR: '용궁 어귀',      regionId: 'coast', levelRange: [65000, 95000],   bossId: 'sea-god',           isHardOnly: false, mapX: 62, mapY: 60, icon: 'trident' },
+  { id: 'coral-palace',      nameKR: '산호 궁전',      regionId: 'coast', levelRange: [80000, 115000],  bossId: undefined,           isHardOnly: false, mapX: 28, mapY: 52, icon: 'coral' },
+  { id: 'deep-cave',         nameKR: '심해 동굴',      regionId: 'coast', levelRange: [95000, 135000],  bossId: undefined,           isHardOnly: false, mapX: 58, mapY: 45, icon: 'cave' },
+  { id: 'dragon-treasury',   nameKR: '용왕의 보고',    regionId: 'coast', levelRange: [115000, 160000], bossId: 'dragon-king-guard', isHardOnly: false, mapX: 75, mapY: 38, icon: 'treasure' },
+  { id: 'storm-vortex',      nameKR: '폭풍의 소용돌이',regionId: 'coast', levelRange: [135000, 185000], bossId: undefined,           isHardOnly: false, mapX: 35, mapY: 30, icon: 'vortex' },
+  { id: 'glacier-sea',       nameKR: '빙하 바다',      regionId: 'coast', levelRange: [160000, 220000], bossId: 'ice-sea-dragon',    isHardOnly: false, mapX: 60, mapY: 25, icon: 'ice' },
+  { id: 'undersea-volcano',  nameKR: '해저 화산',      regionId: 'coast', levelRange: [195000, 270000], bossId: undefined,           isHardOnly: false, mapX: 25, mapY: 18, icon: 'fire' },
+  { id: 'deep-palace',       nameKR: '용궁 심층',      regionId: 'coast', levelRange: [240000, 330000], bossId: 'true-sea-god',      isHardOnly: false, mapX: 55, mapY: 12, icon: 'palace' },
+  { id: 'abyss-throne',      nameKR: '심해 왕좌',      regionId: 'coast', levelRange: [300000, 400000], bossId: 'abyss-sea-ruler',   isHardOnly: false, mapX: 42, mapY: 5,  icon: 'throne' },
 
   // ── Region: volcano (화산 지대) ── 13구역 Lv 100,000–2,100,000
   { id: 'volcano-foot',      nameKR: '화산 기슭',   regionId: 'volcano', levelRange: [100000, 160000],  bossId: undefined,        isHardOnly: false, mapX: 30, mapY: 88, icon: 'mountain' },
@@ -108,16 +108,16 @@ export const MAP_AREAS: MapArea[] = [
   { id: 'underworld-depths', nameKR: '저승 최심층',     regionId: 'underworld', levelRange: [8000000, Infinity],bossId: 'underworld-lord',     isHardOnly: false, mapX: 42, mapY: 2,  icon: 'abyss' },
 
   // ── Region: heaven (천상계) ── 10구역 Lv 2,000,000–32,000,000
-  { id: 'cloud-gate',        nameKR: '구름 관문',   regionId: 'heaven', levelRange: [2000000, 3000000],   bossId: 'cloud-guardian',          isHardOnly: false, mapX: 50, mapY: 88, icon: 'cloud' },
-  { id: 'fairy-valley',      nameKR: '선녀 계곡',   regionId: 'heaven', levelRange: [2700000, 4000000],   bossId: undefined,                 isHardOnly: false, mapX: 30, mapY: 78, icon: 'feather' },
-  { id: 'celestial-garden',  nameKR: '천상 정원',   regionId: 'heaven', levelRange: [3600000, 5200000],   bossId: 'celestial-garden-spirit', isHardOnly: false, mapX: 68, mapY: 72, icon: 'flower' },
-  { id: 'jade-palace',       nameKR: '옥황상제 궁전',regionId: 'heaven', levelRange: [4800000, 6800000],  bossId: 'jade-emperor',            isHardOnly: false, mapX: 45, mapY: 60, icon: 'palace' },
-  { id: 'star-field',        nameKR: '별자리 지대', regionId: 'heaven', levelRange: [6200000, 8800000],   bossId: undefined,                 isHardOnly: false, mapX: 25, mapY: 50, icon: 'star' },
-  { id: 'thunder-divine',    nameKR: '천둥신 영역', regionId: 'heaven', levelRange: [8200000, 11500000],  bossId: 'thunder-celestial',       isHardOnly: false, mapX: 65, mapY: 42, icon: 'lightning' },
-  { id: 'immortal-realm',    nameKR: '신선 경지',   regionId: 'heaven', levelRange: [10500000, 15000000], bossId: undefined,                 isHardOnly: false, mapX: 40, mapY: 32, icon: 'yin-yang' },
-  { id: 'heaven-depths',     nameKR: '천상계 심층', regionId: 'heaven', levelRange: [13500000, 19000000], bossId: 'celestial-lord',          isHardOnly: false, mapX: 68, mapY: 22, icon: 'crown' },
-  { id: 'chaos-door',        nameKR: '혼돈의 문 앞',regionId: 'heaven', levelRange: [17000000, 24000000], bossId: undefined,                 isHardOnly: false, mapX: 30, mapY: 15, icon: 'portal' },
-  { id: 'heaven-deepest',    nameKR: '천상 최심층', regionId: 'heaven', levelRange: [22000000, 32000000], bossId: 'heaven-ruler',            isHardOnly: false, mapX: 52, mapY: 8,  icon: 'infinity' },
+  { id: 'cloud-gate',        nameKR: '구름 관문',   regionId: 'heaven-realm', levelRange: [2000000, 3000000],   bossId: 'cloud-guardian',          isHardOnly: false, mapX: 50, mapY: 88, icon: 'cloud' },
+  { id: 'fairy-valley',      nameKR: '선녀 계곡',   regionId: 'heaven-realm', levelRange: [2700000, 4000000],   bossId: undefined,                 isHardOnly: false, mapX: 30, mapY: 78, icon: 'feather' },
+  { id: 'celestial-garden',  nameKR: '천상 정원',   regionId: 'heaven-realm', levelRange: [3600000, 5200000],   bossId: 'celestial-garden-spirit', isHardOnly: false, mapX: 68, mapY: 72, icon: 'flower' },
+  { id: 'jade-palace',       nameKR: '옥황상제 궁전',regionId: 'heaven-realm', levelRange: [4800000, 6800000],  bossId: 'jade-emperor',            isHardOnly: false, mapX: 45, mapY: 60, icon: 'palace' },
+  { id: 'star-field',        nameKR: '별자리 지대', regionId: 'heaven-realm', levelRange: [6200000, 8800000],   bossId: undefined,                 isHardOnly: false, mapX: 25, mapY: 50, icon: 'star' },
+  { id: 'thunder-divine',    nameKR: '천둥신 영역', regionId: 'heaven-realm', levelRange: [8200000, 11500000],  bossId: 'thunder-celestial',       isHardOnly: false, mapX: 65, mapY: 42, icon: 'lightning' },
+  { id: 'immortal-realm',    nameKR: '신선 경지',   regionId: 'heaven-realm', levelRange: [10500000, 15000000], bossId: undefined,                 isHardOnly: false, mapX: 40, mapY: 32, icon: 'yin-yang' },
+  { id: 'heaven-depths',     nameKR: '천상계 심층', regionId: 'heaven-realm', levelRange: [13500000, 19000000], bossId: 'celestial-lord',          isHardOnly: false, mapX: 68, mapY: 22, icon: 'crown' },
+  { id: 'chaos-door',        nameKR: '혼돈의 문 앞',regionId: 'heaven-realm', levelRange: [17000000, 24000000], bossId: undefined,                 isHardOnly: false, mapX: 30, mapY: 15, icon: 'portal' },
+  { id: 'heaven-deepest',    nameKR: '천상 최심층', regionId: 'heaven-realm', levelRange: [22000000, 32000000], bossId: 'heaven-ruler',            isHardOnly: false, mapX: 52, mapY: 8,  icon: 'infinity' },
 
   // ── Region: chaos (혼돈의 끝) ── 9구역 visible + 1 hidden Lv 15,000,000–∞
   { id: 'chaos-land',        nameKR: '혼돈의 땅',    regionId: 'chaos', levelRange: [15000000, 25000000],   bossId: 'chaos-god',          isHardOnly: false, mapX: 50, mapY: 88, icon: 'chaos' },
@@ -128,7 +128,7 @@ export const MAP_AREAS: MapArea[] = [
   { id: 'primal-void',       nameKR: '원초의 공허',  regionId: 'chaos', levelRange: [125000000, 210000000], bossId: undefined,            isHardOnly: false, mapX: 38, mapY: 35, icon: 'black-hole' },
   { id: 'god-battlefield',   nameKR: '신들의 전장',  regionId: 'chaos', levelRange: [190000000, 320000000], bossId: 'god-of-gods',        isHardOnly: false, mapX: 65, mapY: 25, icon: 'crossed-swords' },
   { id: 'final-gate',        nameKR: '최종 구역 입구',regionId: 'chaos', levelRange: [300000000, 500000000],bossId: undefined,            isHardOnly: false, mapX: 30, mapY: 15, icon: 'gate' },
-  { id: 'final-realm',       nameKR: '최종 구역',    regionId: 'chaos', levelRange: [450000000, Infinity],  bossId: 'final-boss',         isHardOnly: false, mapX: 55, mapY: 8,  icon: 'crown' },
+  { id: 'final-realm',       nameKR: '최종 구역',    regionId: 'final-realm', levelRange: [450000000, Infinity],  bossId: 'final-boss',         isHardOnly: false, mapX: 55, mapY: 8,  icon: 'crown' },
   // hidden: levelRange[0] === Infinity → UI에서 렌더링 스킵
   { id: 'primordial-chaos',  nameKR: '태초의 혼돈',  regionId: 'chaos', levelRange: [Infinity, Infinity],   bossId: 'primordial-chaos',   isHardOnly: false, mapX: 42, mapY: 2,  icon: 'infinity' },
 
