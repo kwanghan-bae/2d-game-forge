@@ -203,3 +203,25 @@ describe('GameStore — Phase 3 메타 진행', () => {
     expect(migrated.baseAbilityLevel).toBe(0);
   });
 });
+
+describe('Currency actions', () => {
+  it('gainDR adds to meta.dr', () => {
+    useGameStore.setState({
+      meta: { ...useGameStore.getState().meta, dr: 0 },
+    });
+    useGameStore.getState().gainDR(150);
+    expect(useGameStore.getState().meta.dr).toBe(150);
+    useGameStore.getState().gainDR(25);
+    expect(useGameStore.getState().meta.dr).toBe(175);
+  });
+
+  it('gainEnhanceStones adds to meta.enhanceStones', () => {
+    useGameStore.setState({
+      meta: { ...useGameStore.getState().meta, enhanceStones: 0 },
+    });
+    useGameStore.getState().gainEnhanceStones(3);
+    expect(useGameStore.getState().meta.enhanceStones).toBe(3);
+    useGameStore.getState().gainEnhanceStones(10);
+    expect(useGameStore.getState().meta.enhanceStones).toBe(13);
+  });
+});
