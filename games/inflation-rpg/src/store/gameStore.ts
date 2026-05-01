@@ -121,7 +121,15 @@ export const useGameStore = create<GameStore>()(
       setScreen: (screen) => set({ screen }),
 
       startRun: (characterId, isHardMode) =>
-        set({ run: { ...INITIAL_RUN, characterId, isHardMode }, screen: 'world-map' }),
+        set((s) => ({
+          run: {
+            ...INITIAL_RUN,
+            characterId,
+            isHardMode,
+            currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
+          },
+          screen: 'world-map',
+        })),
 
       endRun: () => {
         const { run, meta } = get();
