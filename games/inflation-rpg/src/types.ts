@@ -207,3 +207,30 @@ export interface StartGameConfig {
   assetsBasePath: string;
   exposeTestHooks: boolean;
 }
+
+// ── Phase B (300h redesign) — Dungeon/Floor 모델 ──
+
+export type DungeonUnlock =
+  | { type: 'start' }
+  | { type: 'boss-count'; count: number }
+  | { type: 'asc-tier'; tier: number }
+  | { type: 'hardmode' };
+
+export interface Dungeon {
+  id: string;
+  nameKR: string;
+  emoji: string;
+  themeColor: string;        // CSS color (hex or var() reference) for UI accent
+  unlockGate: DungeonUnlock;
+  monsterPool: string[];     // monster IDs that spawn in this dungeon
+  isHardOnly: boolean;
+}
+
+export type BossType = 'mini' | 'major' | 'sub' | 'final';
+
+export interface FloorInfo {
+  dungeonId: string;
+  floorNumber: number;       // 1-indexed
+  monsterLevel: number;      // computed from floor depth
+  bossType: BossType | null; // null = 일반 floor
+}
