@@ -36,6 +36,7 @@ export const INITIAL_RUN: RunState = {
   allocated: INITIAL_ALLOCATED,
   currentAreaId: 'village-entrance',
   currentDungeonId: null,
+  currentFloor: 1,
   isHardMode: false,
   monstersDefeated: 0,
   goldThisRun: 0,
@@ -89,6 +90,7 @@ interface GameStore {
   buyEquipSlot: () => void;
   setCurrentArea: (areaId: string) => void;
   selectDungeon: (dungeonId: string | null) => void;
+  setCurrentFloor: (floor: number) => void;
   advanceStage: () => void;
   resetDungeon: () => void;
   incrementDungeonKill: (monsterLevel: number) => void;
@@ -128,7 +130,7 @@ export const useGameStore = create<GameStore>()(
             isHardMode,
             currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
           },
-          screen: 'world-map',
+          screen: s.run.currentDungeonId !== null ? 'dungeon-floors' : 'world-map',
         })),
 
       endRun: () => {
@@ -245,6 +247,8 @@ export const useGameStore = create<GameStore>()(
       setCurrentArea: (areaId) => set((s) => ({ run: { ...s.run, currentAreaId: areaId } })),
       selectDungeon: (dungeonId) =>
         set((s) => ({ run: { ...s.run, currentDungeonId: dungeonId } })),
+      setCurrentFloor: (floor) =>
+        set((s) => ({ run: { ...s.run, currentFloor: floor } })),
 
       advanceStage: () => set((s) => ({
         run: { ...s.run, currentStage: s.run.currentStage + 1 },
@@ -420,7 +424,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 3,
+      version: 4,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
         if (fromVersion < 1) {
@@ -459,6 +463,10 @@ export const useGameStore = create<GameStore>()(
         // Phase B-2 — currentDungeonId 추가
         if (fromVersion < 3 && s.run) {
           s.run.currentDungeonId = s.run.currentDungeonId ?? null;
+        }
+        // Phase B-3α — currentFloor 추가
+        if (fromVersion < 4 && s.run) {
+          s.run.currentFloor = s.run.currentFloor ?? 1;
         }
         return s;
       },
