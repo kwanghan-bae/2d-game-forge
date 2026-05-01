@@ -35,6 +35,7 @@ export const INITIAL_RUN: RunState = {
   statPoints: 0,
   allocated: INITIAL_ALLOCATED,
   currentAreaId: 'village-entrance',
+  currentDungeonId: null,
   isHardMode: false,
   monstersDefeated: 0,
   goldThisRun: 0,
@@ -408,7 +409,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
         if (fromVersion < 1) {
@@ -443,6 +444,10 @@ export const useGameStore = create<GameStore>()(
         if (fromVersion < 2 && s.meta) {
           s.meta.dr = s.meta.dr ?? 0;
           s.meta.enhanceStones = s.meta.enhanceStones ?? 0;
+        }
+        // Phase B-2 — currentDungeonId 추가
+        if (fromVersion < 3 && s.run) {
+          s.run.currentDungeonId = s.run.currentDungeonId ?? null;
         }
         return s;
       },
