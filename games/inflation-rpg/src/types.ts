@@ -142,6 +142,7 @@ export interface RunState {
   statPoints: number;
   allocated: AllocatedStats;
   currentAreaId: string;
+  currentDungeonId: string | null;   // Phase B-2 — 선택된 던전 ID, 미선택 시 null
   isHardMode: boolean;
   monstersDefeated: number;
   goldThisRun: number;
@@ -183,6 +184,7 @@ export interface TutorialStep {
 
 export type Screen =
   | 'main-menu'
+  | 'town'
   | 'class-select'
   | 'world-map'
   | 'battle'
