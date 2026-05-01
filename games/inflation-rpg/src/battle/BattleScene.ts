@@ -152,15 +152,17 @@ export class BattleScene extends Phaser.Scene {
       const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode);
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
-      useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp, monstersDefeated: s.run.monstersDefeated + 1 } }));
-      useGameStore.getState().incrementDungeonKill();
+      useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));
       if (!this.isBoss) {
+        // Non-boss: DR = round(level * 0.5), counter increments owned by incrementDungeonKill
+        useGameStore.getState().incrementDungeonKill(run.level);
         const storeState = useGameStore.getState();
         const currentArea = MAP_AREAS.find(a => a.id === storeState.run.currentAreaId);
         if (currentArea) {
           storeState.trackKill(this.currentMonsterId, currentArea.regionId);
         }
       }
+      // Boss: DR + stones + counter increments are all owned by bossDrop (called via onBossKill above)
 
       // Check stage progression after each kill
       const stateAfterKill = useGameStore.getState();
@@ -195,7 +197,11 @@ export class BattleScene extends Phaser.Scene {
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
       playSfx('defeat');
-      const newBP = onDefeat(run.bp, run.isHardMode);
+      // 현재 BattleScene 의 적 ATK 가 run.level * 8 로 계산되므로 (line 190 부근),
+      // 같은 run.level 을 몬스터 레벨로 사용. Phase B 에서 던전 floor 별 정확한
+      // 몬스터 레벨로 교체.
+      const monsterLevel = run.level;
+      const newBP = onDefeat(run.bp, monsterLevel, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
       useGameStore.getState().resetDungeon();
       if (isRunOver(newBP)) {

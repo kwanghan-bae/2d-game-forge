@@ -2,6 +2,7 @@ import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeScreen } from '@/components/ui/forge-screen';
+import { formatNumber } from '../lib/format';
 
 export function MainMenu() {
   const setScreen = useGameStore((s) => s.setScreen);
@@ -75,7 +76,13 @@ export function MainMenu() {
 
       <VolumeControls />
 
-      <div style={{ marginTop: 8, fontSize: 12, color: 'var(--forge-text-muted)' }}>
+      <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--forge-text-secondary)', marginTop: 4 }}>
+        <span>💰 {formatNumber(meta.gold)}</span>
+        <span>DR {formatNumber(meta.dr)}</span>
+        <span>강화석 {formatNumber(meta.enhanceStones)}</span>
+      </div>
+
+      <div style={{ marginTop: 4, fontSize: 12, color: 'var(--forge-text-muted)' }}>
         최고 기록: Lv.{meta.bestRunLevel.toLocaleString()}
       </div>
     </ForgeScreen>

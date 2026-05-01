@@ -52,6 +52,8 @@ export const INITIAL_META: MetaState = {
   normalBossesKilled: [],
   hardBossesKilled: [],
   gold: 0,
+  dr: 0,
+  enhanceStones: 0,
   equippedItemIds: [],
   equipSlotCount: 1,
   lastPlayedCharId: '',
@@ -73,8 +75,8 @@ interface GameStore {
   startRun: (characterId: string, isHardMode: boolean) => void;
   endRun: () => void;
   abandonRun: () => void;
-  encounterMonster: () => void;
-  defeatRun: () => void;
+  encounterMonster: (monsterLevel: number) => void;
+  defeatRun: (monsterLevel: number) => void;
   gainLevels: (levels: number, spGained: number) => void;
   gainExp: (exp: number) => void;
   allocateSP: (stat: keyof AllocatedStats, amount: number) => void;
@@ -87,7 +89,7 @@ interface GameStore {
   setCurrentArea: (areaId: string) => void;
   advanceStage: () => void;
   resetDungeon: () => void;
-  incrementDungeonKill: () => void;
+  incrementDungeonKill: (monsterLevel: number) => void;
   incrementQuestProgress: (questId: string, by?: number) => void;
   completeQuest: (questId: string) => void;
   trackKill: (monsterId: string, regionId: string) => void;
@@ -99,6 +101,8 @@ interface GameStore {
   skipTutorial: () => void;
   restartTutorial: () => void;
   setVolumes: (music: number, sfx: number, muted: boolean) => void;
+  gainDR: (amount: number) => void;
+  gainEnhanceStones: (amount: number) => void;
   pendingStoryId: string | null;
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
@@ -137,11 +141,11 @@ export const useGameStore = create<GameStore>()(
 
       abandonRun: () => set({ run: INITIAL_RUN, screen: 'main-menu' }),
 
-      encounterMonster: () =>
-        set((s) => ({ run: { ...s.run, bp: onEncounter(s.run.bp) } })),
+      encounterMonster: (monsterLevel) =>
+        set((s) => ({ run: { ...s.run, bp: onEncounter(s.run.bp, monsterLevel) } })),
 
-      defeatRun: () =>
-        set((s) => ({ run: { ...s.run, bp: onDefeat(s.run.bp, s.run.isHardMode) } })),
+      defeatRun: (monsterLevel) =>
+        set((s) => ({ run: { ...s.run, bp: onDefeat(s.run.bp, monsterLevel, s.run.isHardMode) } })),
 
       gainLevels: (levels, spGained) =>
         set((s) => ({
@@ -171,13 +175,22 @@ export const useGameStore = create<GameStore>()(
           const hardKilled = s.run.isHardMode
             ? progressionOnBossKill(bossId, s.meta.hardBossesKilled, 9)
             : s.meta.hardBossesKilled;
+          const drGained = bpReward * 100;
+          const stonesGained = bpReward;
           return {
-            run: { ...s.run, bp: bpOnBossKill(s.run.bp, bpReward) },
+            run: {
+              ...s.run,
+              bp: bpOnBossKill(s.run.bp, bpReward),
+              dungeonRunMonstersDefeated: s.run.dungeonRunMonstersDefeated + 1,
+              monstersDefeated: s.run.monstersDefeated + 1,
+            },
             meta: {
               ...s.meta,
               normalBossesKilled: normalKilled,
               hardBossesKilled: hardKilled,
               baseAbilityLevel: getBaseAbilityLevel(normalKilled, hardKilled),
+              dr: s.meta.dr + drGained,
+              enhanceStones: s.meta.enhanceStones + stonesGained,
             },
           };
         }),
@@ -233,13 +246,20 @@ export const useGameStore = create<GameStore>()(
         },
       })),
 
-      incrementDungeonKill: () => set((s) => ({
-        run: {
-          ...s.run,
-          dungeonRunMonstersDefeated: s.run.dungeonRunMonstersDefeated + 1,
-          monstersDefeated: s.run.monstersDefeated + 1,
-        },
-      })),
+      incrementDungeonKill: (monsterLevel) => set((s) => {
+        const drGained = Math.max(1, Math.round(monsterLevel * 0.5));
+        return {
+          run: {
+            ...s.run,
+            dungeonRunMonstersDefeated: s.run.dungeonRunMonstersDefeated + 1,
+            monstersDefeated: s.run.monstersDefeated + 1,
+          },
+          meta: {
+            ...s.meta,
+            dr: s.meta.dr + drGained,
+          },
+        };
+      }),
 
       incrementQuestProgress: (questId, by = 1) =>
         set((s) => {
@@ -335,6 +355,12 @@ export const useGameStore = create<GameStore>()(
       restartTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: false, tutorialStep: 0 } })),
       setVolumes: (music, sfx, muted) => set((s) => ({ meta: { ...s.meta, musicVolume: music, sfxVolume: sfx, muted } })),
 
+      gainDR: (amount) =>
+        set((s) => ({ meta: { ...s.meta, dr: s.meta.dr + amount } })),
+
+      gainEnhanceStones: (amount) =>
+        set((s) => ({ meta: { ...s.meta, enhanceStones: s.meta.enhanceStones + amount } })),
+
       craft: (equipmentId: string): boolean => {
         const state = get();
         const allItems = [
@@ -382,7 +408,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 1,
+      version: 2,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
         if (fromVersion < 1) {
@@ -413,6 +439,11 @@ export const useGameStore = create<GameStore>()(
           sfxVolume: meta.sfxVolume ?? 0.7,
           muted: meta.muted ?? false,
         } as MetaState;
+        // Inject defaults for DR + enhanceStones added in phase-a-foundation
+        if (fromVersion < 2 && s.meta) {
+          s.meta.dr = s.meta.dr ?? 0;
+          s.meta.enhanceStones = s.meta.enhanceStones ?? 0;
+        }
         return s;
       },
       partialize: (state) => ({ meta: state.meta, run: state.run }),
