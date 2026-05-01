@@ -107,3 +107,25 @@ export function pickMonster(level: number, regionId?: string): Monster {
   }
   return pool[Math.floor(Math.random() * pool.length)]!;
 }
+
+export function getMonstersForPool(pool: string[]): Monster[] {
+  return MONSTERS.filter(m => pool.includes(m.id));
+}
+
+export function pickMonsterFromPool(level: number, pool: string[]): Monster {
+  if (pool.length === 0) {
+    throw new Error('pickMonsterFromPool: pool is empty');
+  }
+  const candidates = getMonstersForPool(pool);
+  if (candidates.length === 0) {
+    throw new Error(`pickMonsterFromPool: no valid monster IDs in pool: ${pool.join(',')}`);
+  }
+  const inRange = candidates.filter(m => m.levelMin <= level && m.levelMax >= level);
+  if (inRange.length > 0) {
+    return inRange[Math.floor(Math.random() * inRange.length)]!;
+  }
+  const sorted = [...candidates].sort(
+    (a, b) => Math.abs(a.levelMin - level) - Math.abs(b.levelMin - level)
+  );
+  return sorted[0]!;
+}
