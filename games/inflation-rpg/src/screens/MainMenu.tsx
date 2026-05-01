@@ -49,6 +49,9 @@ export function MainMenu() {
           </>
         ) : (
           <>
+            <ForgeButton variant="primary" onClick={() => setScreen('town')}>
+              🏘️ 마을로 (B-2 신규)
+            </ForgeButton>
             <ForgeButton variant="primary" onClick={() => setScreen('class-select')}>
               게임 시작
             </ForgeButton>

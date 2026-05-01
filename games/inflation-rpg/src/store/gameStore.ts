@@ -35,6 +35,7 @@ export const INITIAL_RUN: RunState = {
   statPoints: 0,
   allocated: INITIAL_ALLOCATED,
   currentAreaId: 'village-entrance',
+  currentDungeonId: null,
   isHardMode: false,
   monstersDefeated: 0,
   goldThisRun: 0,
@@ -87,6 +88,7 @@ interface GameStore {
   unequipItem: (itemId: string) => void;
   buyEquipSlot: () => void;
   setCurrentArea: (areaId: string) => void;
+  selectDungeon: (dungeonId: string | null) => void;
   advanceStage: () => void;
   resetDungeon: () => void;
   incrementDungeonKill: (monsterLevel: number) => void;
@@ -119,7 +121,15 @@ export const useGameStore = create<GameStore>()(
       setScreen: (screen) => set({ screen }),
 
       startRun: (characterId, isHardMode) =>
-        set({ run: { ...INITIAL_RUN, characterId, isHardMode }, screen: 'world-map' }),
+        set((s) => ({
+          run: {
+            ...INITIAL_RUN,
+            characterId,
+            isHardMode,
+            currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
+          },
+          screen: 'world-map',
+        })),
 
       endRun: () => {
         const { run, meta } = get();
@@ -233,6 +243,8 @@ export const useGameStore = create<GameStore>()(
         }),
 
       setCurrentArea: (areaId) => set((s) => ({ run: { ...s.run, currentAreaId: areaId } })),
+      selectDungeon: (dungeonId) =>
+        set((s) => ({ run: { ...s.run, currentDungeonId: dungeonId } })),
 
       advanceStage: () => set((s) => ({
         run: { ...s.run, currentStage: s.run.currentStage + 1 },
@@ -408,7 +420,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
         if (fromVersion < 1) {
@@ -443,6 +455,10 @@ export const useGameStore = create<GameStore>()(
         if (fromVersion < 2 && s.meta) {
           s.meta.dr = s.meta.dr ?? 0;
           s.meta.enhanceStones = s.meta.enhanceStones ?? 0;
+        }
+        // Phase B-2 — currentDungeonId 추가
+        if (fromVersion < 3 && s.run) {
+          s.run.currentDungeonId = s.run.currentDungeonId ?? null;
         }
         return s;
       },
