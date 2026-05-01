@@ -34,34 +34,75 @@ describe('getBossType', () => {
   });
 });
 
-describe('getMonsterLevel', () => {
-  it('floor 1..10: level = floor', () => {
+describe('getMonsterLevel — anchor exact values', () => {
+  it('floor 1 → level 1', () => {
     expect(getMonsterLevel(1)).toBe(1);
-    expect(getMonsterLevel(2)).toBe(2);
+  });
+
+  it('floor 10 → level 10', () => {
     expect(getMonsterLevel(10)).toBe(10);
   });
 
-  it('floor 11..30: level = floor(floor² / 5)', () => {
-    expect(getMonsterLevel(11)).toBe(24);
-    expect(getMonsterLevel(15)).toBe(45);
-    expect(getMonsterLevel(20)).toBe(80);
+  it('floor 30 → level 180', () => {
     expect(getMonsterLevel(30)).toBe(180);
   });
 
-  it('floor 31..100: level = floor(floor³ / 1000)', () => {
-    expect(getMonsterLevel(31)).toBe(29);
-    expect(getMonsterLevel(50)).toBe(125);
+  it('floor 100 → level 1000', () => {
     expect(getMonsterLevel(100)).toBe(1000);
   });
 
-  it('floor 100+: level = floor(L(100) × 2^((F - 100)/30))', () => {
-    expect(getMonsterLevel(100)).toBe(1000);
-    expect(getMonsterLevel(130)).toBe(2000);
-    expect(getMonsterLevel(160)).toBe(4000);
-    expect(getMonsterLevel(190)).toBe(8000);
+  it('floor 200 → level 10,000', () => {
+    expect(getMonsterLevel(200)).toBe(10_000);
   });
 
-  it('throws or returns 1 for invalid floor (<= 0)', () => {
+  it('floor 500 → level 100,000', () => {
+    expect(getMonsterLevel(500)).toBe(100_000);
+  });
+
+  it('floor 1000 → level 1,000,000', () => {
+    expect(getMonsterLevel(1000)).toBe(1_000_000);
+  });
+});
+
+describe('getMonsterLevel — past 1000 (×10 every 500)', () => {
+  it('floor 1500 → 10M', () => {
+    expect(getMonsterLevel(1500)).toBe(10_000_000);
+  });
+
+  it('floor 2000 → 100M', () => {
+    expect(getMonsterLevel(2000)).toBe(100_000_000);
+  });
+});
+
+describe('getMonsterLevel — interpolation properties', () => {
+  it('monotonic non-decreasing across floors 1..1000', () => {
+    let prev = 0;
+    for (let f = 1; f <= 1000; f++) {
+      const lv = getMonsterLevel(f);
+      expect(lv).toBeGreaterThanOrEqual(prev);
+      prev = lv;
+    }
+  });
+
+  it('continuous at floor 30 boundary (no cliff)', () => {
+    // Old curve had 180 → 29 cliff. New curve must keep going up smoothly.
+    expect(getMonsterLevel(30)).toBe(180);
+    const f31 = getMonsterLevel(31);
+    expect(f31).toBeGreaterThanOrEqual(180);
+    expect(f31).toBeLessThan(200);
+  });
+
+  it('floor 50 is between anchors 30 (180) and 100 (1000)', () => {
+    const lv = getMonsterLevel(50);
+    expect(lv).toBeGreaterThan(180);
+    expect(lv).toBeLessThan(1000);
+  });
+
+  it('floor 130 ≈ 1995 (segment 100..200, geometric)', () => {
+    expect(getMonsterLevel(130)).toBe(1995);
+  });
+
+  it('returns 1 for invalid floor (<= 0)', () => {
     expect(getMonsterLevel(0)).toBe(1);
     expect(getMonsterLevel(-5)).toBe(1);
   });
@@ -69,28 +110,26 @@ describe('getMonsterLevel', () => {
 
 describe('getFloorInfo', () => {
   it('combines dungeonId + floor + level + bossType', () => {
-    const info = getFloorInfo('plains', 5);
+    const info = getFloorInfo('plains', 30);
     expect(info).toEqual({
       dungeonId: 'plains',
-      floorNumber: 5,
-      monsterLevel: 5,
-      bossType: 'mini',
+      floorNumber: 30,
+      monsterLevel: 180,
+      bossType: 'final',
     });
   });
 
   it('non-boss floor', () => {
     const info = getFloorInfo('forest', 7);
-    expect(info).toEqual({
-      dungeonId: 'forest',
-      floorNumber: 7,
-      monsterLevel: 7,
-      bossType: null,
-    });
+    expect(info.dungeonId).toBe('forest');
+    expect(info.floorNumber).toBe(7);
+    expect(info.bossType).toBeNull();
+    expect(info.monsterLevel).toBeGreaterThan(0);
   });
 
-  it('deep floor — uses 100+ curve, sub-boss every 5', () => {
+  it('deep floor 130 — geometric segment 100..200, sub-boss every 5', () => {
     const info = getFloorInfo('mountains', 130);
-    expect(info.monsterLevel).toBe(2000);
+    expect(info.monsterLevel).toBe(1995);
     expect(info.bossType).toBe('sub');
   });
 });

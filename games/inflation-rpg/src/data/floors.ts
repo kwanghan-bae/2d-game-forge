@@ -10,14 +10,39 @@ export function getBossType(floorNumber: number): BossType | null {
   return null;
 }
 
+// Spec Section 11.2 Curve 1 — anchor + geometric interpolation.
+// 인접 anchor 사이는 기하 보간으로 단조·연속 증가. floor 1000 이후는
+// 매 500 floor 마다 ×10 으로 무한 확장.
+const FLOOR_LEVEL_ANCHORS: ReadonlyArray<readonly [number, number]> = [
+  [1, 1],
+  [10, 10],
+  [30, 180],
+  [100, 1_000],
+  [200, 10_000],
+  [500, 100_000],
+  [1000, 1_000_000],
+];
+
 export function getMonsterLevel(floorNumber: number): number {
   if (floorNumber <= 0) return 1;
-  if (floorNumber <= 10) return floorNumber;
-  if (floorNumber <= 30) return Math.floor((floorNumber * floorNumber) / 5);
-  if (floorNumber <= 100) return Math.floor((floorNumber ** 3) / 1000);
-  // 100+ : L(100) = 1000, ×2 every 30 floors
-  const L100 = 1000;
-  return Math.floor(L100 * Math.pow(2, (floorNumber - 100) / 30));
+
+  const last = FLOOR_LEVEL_ANCHORS[FLOOR_LEVEL_ANCHORS.length - 1]!;
+  const [lastF, lastL] = last;
+  if (floorNumber >= lastF) {
+    // ×10 every 500 floors past the last anchor.
+    return Math.floor(lastL * Math.pow(10, (floorNumber - lastF) / 500));
+  }
+
+  for (let i = 0; i < FLOOR_LEVEL_ANCHORS.length - 1; i++) {
+    const [a1, l1] = FLOOR_LEVEL_ANCHORS[i]!;
+    const [a2, l2] = FLOOR_LEVEL_ANCHORS[i + 1]!;
+    if (floorNumber <= a2) {
+      const t = (floorNumber - a1) / (a2 - a1);
+      return Math.floor(l1 * Math.pow(l2 / l1, t));
+    }
+  }
+
+  return 1;
 }
 
 export function getFloorInfo(dungeonId: string, floorNumber: number): FloorInfo {

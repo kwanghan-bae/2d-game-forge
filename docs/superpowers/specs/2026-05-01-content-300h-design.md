@@ -574,15 +574,45 @@ N번째 reroll 시 ×1.5N (스팸 방지)
 
 #### Curve 1 — Floor depth → Monster level
 
-```
-L(F) = floor 1~10:    F (1~10)
-L(F) = floor 11~30:   F²/5         (floor 30 = level 180)
-L(F) = floor 31~100:  F³/1000      (floor 100 = level 1000)
-L(F) = floor 100+:    L(100) × 2^((F-100)/30)  (지수 가속)
-                        floor 200 = level ~10k
-                        floor 500 = level ~100k
-                        floor 1000 = level ~1M
-```
+**앵커 + 기하 보간 (geometric interpolation between anchors)**.
+floor 1 부터 1000 까지 7 개 anchor 정의. 인접 anchor 사이는 기하 보간
+(`L(F) = l1 × (l2/l1)^((F-a1)/(a2-a1))`). floor 1000 이후는 매 500 floor
+마다 ×10 으로 무한 확장.
+
+| Floor | Level | 의미 |
+|---|---|---|
+| 1 | 1 | 시작 |
+| 10 | 10 | 1차 plateau (튜토리얼 끝) |
+| 30 | 180 | named final boss tier |
+| 100 | 1,000 | 심층 시작 (named floor 끝) |
+| 200 | 10,000 | exponential 진입 |
+| 500 | 100,000 | 깊은 심층 |
+| 1000 | 1,000,000 | 극심층 |
+| 1000+ | 10⁶ × 10^((F−1000)/500) | 무한 (∞) |
+
+특성:
+- **단조 증가** — 모든 F 에서 `L(F+1) ≥ L(F)`. floor 30→31 절벽 없음.
+- **anchor 일치** — 표의 모든 좌표가 정확히 출력됨 (보간 함수의 정의 자체).
+- **부드러운 가속** — 구간마다 다른 성장 비율이지만 boundary 에서 연속.
+- **Phase B-1 구현**: `getMonsterLevel(F)` in `src/data/floors.ts`.
+
+floor 별 예시 값 (구현 검증용):
+
+| Floor | Level |
+|---|---|
+| 5 | 4 |
+| 10 | 10 |
+| 15 | 20 |
+| 20 | 42 |
+| 30 | 180 |
+| 31 | 184 |
+| 50 | 286 |
+| 100 | 1,000 |
+| 130 | 1,995 |
+| 200 | 10,000 |
+| 500 | 100,000 |
+| 1000 | 1,000,000 |
+| 1500 | 10,000,000 |
 
 #### Curve 2 — Monster HP/ATK at level L
 
