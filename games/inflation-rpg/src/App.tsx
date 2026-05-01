@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic';
 import { useGameStore } from './store/gameStore';
 import { MainMenu } from './screens/MainMenu';
 import { Town } from './screens/Town';
+import { DungeonFloors } from './screens/DungeonFloors';
 import { ClassSelect } from './screens/ClassSelect';
 import { WorldMap } from './screens/WorldMap';
 import { Dungeon } from './screens/Dungeon';
@@ -38,9 +39,10 @@ export function App({ config }: AppProps) {
 
   return (
     <div className="forge-ui-root" data-assets-base={config.assetsBasePath}>
-      {screen === 'main-menu'    && <MainMenu />}
-      {screen === 'town'         && <Town />}
-      {screen === 'class-select' && <ClassSelect />}
+      {screen === 'main-menu'      && <MainMenu />}
+      {screen === 'town'           && <Town />}
+      {screen === 'dungeon-floors' && <DungeonFloors />}
+      {screen === 'class-select'   && <ClassSelect />}
       {screen === 'world-map'    && <WorldMap />}
       {screen === 'battle'       && <Battle />}
       {screen === 'dungeon'      && <Dungeon />}
