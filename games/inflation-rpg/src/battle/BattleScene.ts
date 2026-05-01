@@ -195,7 +195,11 @@ export class BattleScene extends Phaser.Scene {
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
       playSfx('defeat');
-      const newBP = onDefeat(run.bp, run.isHardMode);
+      // 현재 BattleScene 의 적 ATK 가 run.level * 8 로 계산되므로 (line 190 부근),
+      // 같은 run.level 을 몬스터 레벨로 사용. Phase B 에서 던전 floor 별 정확한
+      // 몬스터 레벨로 교체.
+      const monsterLevel = run.level;
+      const newBP = onDefeat(run.bp, monsterLevel, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
       useGameStore.getState().resetDungeon();
       if (isRunOver(newBP)) {
