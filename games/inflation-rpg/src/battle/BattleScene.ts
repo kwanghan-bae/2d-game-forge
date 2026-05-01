@@ -153,7 +153,7 @@ export class BattleScene extends Phaser.Scene {
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp, monstersDefeated: s.run.monstersDefeated + 1 } }));
-      useGameStore.getState().incrementDungeonKill();
+      useGameStore.getState().incrementDungeonKill(run.level);
       if (!this.isBoss) {
         const storeState = useGameStore.getState();
         const currentArea = MAP_AREAS.find(a => a.id === storeState.run.currentAreaId);
