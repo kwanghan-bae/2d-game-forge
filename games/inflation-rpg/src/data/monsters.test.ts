@@ -11,9 +11,12 @@ describe('pickMonsterFromPool', () => {
   });
 
   it('falls back to the closest-matching monster in pool when no exact level match', () => {
+    // forest-fox: levelMin 500 (|500-100| = 400)
+    // forest-bear: levelMin 2000 (|2000-100| = 1900)
+    // forest-fox is closer to player level 100 → must be picked.
     const pool = ['forest-bear', 'forest-fox'];
     const m = pickMonsterFromPool(100, pool);
-    expect(['forest-bear', 'forest-fox']).toContain(m.id);
+    expect(m.id).toBe('forest-fox');
   });
 
   it('returns first available when pool is otherwise valid', () => {
