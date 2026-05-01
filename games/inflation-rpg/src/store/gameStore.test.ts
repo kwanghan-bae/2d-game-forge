@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, INITIAL_RUN, INITIAL_META } from './gameStore';
+import { STARTING_BP } from '../systems/bp';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
@@ -20,17 +21,30 @@ describe('GameStore', () => {
     expect(state.screen).toBe('world-map');
   });
 
-  it('encounterMonster: decrements BP by 1', () => {
+  it('encounterMonster: decrements BP by encounterCost(level)', () => {
     useGameStore.getState().startRun('hwarang', false);
-    useGameStore.getState().encounterMonster();
-    expect(useGameStore.getState().run.bp).toBe(29);
+    useGameStore.getState().encounterMonster(1);
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 1);
   });
 
-  it('defeatRun normal: decrements BP by 2', () => {
+  it('encounterMonster: scales with level', () => {
     useGameStore.getState().startRun('hwarang', false);
-    useGameStore.getState().encounterMonster(); // -1 = 29
-    useGameStore.getState().defeatRun();        // -2 = 27
-    expect(useGameStore.getState().run.bp).toBe(27);
+    useGameStore.getState().encounterMonster(100);
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 3); // ceil(log10(100))+1=3
+  });
+
+  it('defeatRun normal: -defeatCost(level)', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().encounterMonster(1);  // -1 → 29
+    useGameStore.getState().defeatRun(1);          // -2 → 27
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 1 - 2);
+  });
+
+  it('defeatRun hard: -defeatCost(level) × 2', () => {
+    useGameStore.getState().startRun('hwarang', true);
+    useGameStore.getState().encounterMonster(1);  // -1 → 29
+    useGameStore.getState().defeatRun(1);          // -2×2=-4 → 25
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 1 - 4);
   });
 
   it('allocateSP: increases allocated stat, decreases statPoints', () => {
