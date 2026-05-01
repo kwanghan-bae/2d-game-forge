@@ -52,6 +52,8 @@ export const INITIAL_META: MetaState = {
   normalBossesKilled: [],
   hardBossesKilled: [],
   gold: 0,
+  dr: 0,
+  enhanceStones: 0,
   equippedItemIds: [],
   equipSlotCount: 1,
   lastPlayedCharId: '',
@@ -382,7 +384,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 1,
+      version: 2,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
         if (fromVersion < 1) {
@@ -413,6 +415,11 @@ export const useGameStore = create<GameStore>()(
           sfxVolume: meta.sfxVolume ?? 0.7,
           muted: meta.muted ?? false,
         } as MetaState;
+        // Inject defaults for DR + enhanceStones added in phase-a-foundation
+        if (fromVersion < 2 && s.meta) {
+          s.meta.dr = s.meta.dr ?? 0;
+          s.meta.enhanceStones = s.meta.enhanceStones ?? 0;
+        }
         return s;
       },
       partialize: (state) => ({ meta: state.meta, run: state.run }),
