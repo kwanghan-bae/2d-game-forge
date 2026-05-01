@@ -75,8 +75,8 @@ interface GameStore {
   startRun: (characterId: string, isHardMode: boolean) => void;
   endRun: () => void;
   abandonRun: () => void;
-  encounterMonster: () => void;
-  defeatRun: () => void;
+  encounterMonster: (monsterLevel: number) => void;
+  defeatRun: (monsterLevel: number) => void;
   gainLevels: (levels: number, spGained: number) => void;
   gainExp: (exp: number) => void;
   allocateSP: (stat: keyof AllocatedStats, amount: number) => void;
@@ -141,11 +141,11 @@ export const useGameStore = create<GameStore>()(
 
       abandonRun: () => set({ run: INITIAL_RUN, screen: 'main-menu' }),
 
-      encounterMonster: () =>
-        set((s) => ({ run: { ...s.run, bp: onEncounter(s.run.bp) } })),
+      encounterMonster: (monsterLevel) =>
+        set((s) => ({ run: { ...s.run, bp: onEncounter(s.run.bp, monsterLevel) } })),
 
-      defeatRun: () =>
-        set((s) => ({ run: { ...s.run, bp: onDefeat(s.run.bp, s.run.isHardMode) } })),
+      defeatRun: (monsterLevel) =>
+        set((s) => ({ run: { ...s.run, bp: onDefeat(s.run.bp, monsterLevel, s.run.isHardMode) } })),
 
       gainLevels: (levels, spGained) =>
         set((s) => ({
