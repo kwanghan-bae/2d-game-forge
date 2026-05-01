@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Dungeon } from './Dungeon';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, INITIAL_RUN, INITIAL_META } from '../store/gameStore';
 
 // Mock Battle to avoid Phaser imports (which fail in jsdom)
 vi.mock('./Battle', () => ({
@@ -12,19 +12,13 @@ describe('Dungeon', () => {
   beforeEach(() => {
     useGameStore.setState({
       run: {
+        ...INITIAL_RUN,
         characterId: 'warrior',
-        level: 1,
-        exp: 0,
-        bp: 0,
-        statPoints: 0,
-        allocated: { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 },
         currentAreaId: 'village-entrance',
-        isHardMode: false,
-        monstersDefeated: 0,
-        goldThisRun: 0,
-        currentStage: 1,
-        dungeonRunMonstersDefeated: 0,
+        currentDungeonId: null,
+        currentFloor: 1,
       },
+      meta: { ...INITIAL_META },
     } as any);
   });
 
@@ -44,6 +38,7 @@ describe('Dungeon', () => {
         ...useGameStore.getState().run,
         currentAreaId: 'old-fortress', // has bossId 'plains-ghost'
         currentStage: 10,
+        currentDungeonId: null,
       },
     } as any);
     render(<Dungeon />);
@@ -53,5 +48,26 @@ describe('Dungeon', () => {
   it('renders Battle child component', () => {
     render(<Dungeon />);
     expect(screen.getByTestId('battle-mock')).toBeInTheDocument();
+  });
+});
+
+describe('Dungeon — new flow header', () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      screen: 'dungeon',
+      run: {
+        ...INITIAL_RUN,
+        characterId: 'hwarang',
+        currentDungeonId: 'plains',
+        currentFloor: 7,
+      },
+      meta: { ...INITIAL_META },
+    });
+  });
+
+  it('renders dungeon name + floor in new flow', () => {
+    render(<Dungeon />);
+    expect(screen.getByText(/평야/)).toBeInTheDocument();
+    expect(screen.getByText(/F7/)).toBeInTheDocument();
   });
 });
