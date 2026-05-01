@@ -68,8 +68,14 @@ export function RegionMap({ regionId, onBack }: RegionMapProps) {
 
   const enterArea = (area: MapArea) => {
     setLockedInfo(null);
-    encounterMonster();
-    if (isRunOver(run.bp - 1)) {
+    // 영역의 하한 레벨을 몬스터 레벨로 사용. Phase B 에서 던전 floor 별 정확한
+    // 레벨로 교체 예정.
+    const monsterLevel = area.levelRange[0];
+    encounterMonster(monsterLevel);
+    // BP 가 0 이하가 되었는지 확인 (encounter 이후 상태로). 비용이 더 이상 -1
+    // 고정이 아니므로 store 상태 재조회로 검사.
+    const newBP = useGameStore.getState().run.bp;
+    if (isRunOver(newBP)) {
       endRun();
       return;
     }

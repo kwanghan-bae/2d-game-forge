@@ -159,6 +159,8 @@ export interface MetaState {
   normalBossesKilled: string[];
   hardBossesKilled: string[];
   gold: number;
+  dr: number;             // 차원 간섭력 — 단일 메인 영구 화폐
+  enhanceStones: number;  // 강화석 — 장비 강화 소모재
   equippedItemIds: string[];   // 장착된 아이템 ID 목록 (순서 = 슬롯 순서)
   equipSlotCount: number;      // 현재 보유 슬롯 수. 기본값 1, 최대 10
   lastPlayedCharId: string;    // GameOver에서 캐릭터 레벨 표시용

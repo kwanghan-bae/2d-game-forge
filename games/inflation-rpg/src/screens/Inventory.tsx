@@ -9,6 +9,7 @@ import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeInventoryGrid } from '@/components/ui/forge-inventory-grid';
 import { ForgePanel } from '@/components/ui/forge-panel';
 import { ForgeScreen } from '@/components/ui/forge-screen';
+import { formatNumber } from '../lib/format';
 
 const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
   { slot: 'weapon',    label: '무기',     emoji: '⚔️' },
@@ -65,7 +66,7 @@ export function Inventory() {
           ← 뒤로
         </ForgeButton>
         <span style={{ fontWeight: 700, color: 'var(--forge-accent)' }}>인벤토리</span>
-        <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>💰 {meta.gold.toLocaleString()}</span>
+        <span style={{ fontSize: 12, color: 'var(--forge-stat-luc)' }}>💰 {formatNumber(meta.gold)}</span>
       </div>
 
       {/* 메인 탭 토글 */}

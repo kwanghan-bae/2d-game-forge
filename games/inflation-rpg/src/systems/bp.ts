@@ -1,13 +1,21 @@
-import type { IBattlePointSystem } from '@forge/core';
-
 export const STARTING_BP = 30;
 
-export function onEncounter(current: number): number {
-  return current - 1;
+export function encounterCost(monsterLevel: number): number {
+  if (monsterLevel <= 1) return 1;
+  return Math.ceil(Math.log10(monsterLevel)) + 1;
 }
 
-export function onDefeat(current: number, isHard: boolean): number {
-  return current - (isHard ? 4 : 2);
+export function defeatCost(monsterLevel: number): number {
+  return 2 * encounterCost(monsterLevel);
+}
+
+export function onEncounter(current: number, monsterLevel: number): number {
+  return current - encounterCost(monsterLevel);
+}
+
+export function onDefeat(current: number, monsterLevel: number, isHard: boolean): number {
+  const base = defeatCost(monsterLevel);
+  return current - (isHard ? base * 2 : base);
 }
 
 export function onBossKill(current: number, reward: number): number {
@@ -17,9 +25,3 @@ export function onBossKill(current: number, reward: number): number {
 export function isRunOver(bp: number): boolean {
   return bp <= 0;
 }
-
-export const bpSystem: IBattlePointSystem = {
-  onEncounter,
-  onDefeat,
-  onBossKill,
-};

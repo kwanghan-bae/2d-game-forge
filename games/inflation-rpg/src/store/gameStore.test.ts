@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, INITIAL_RUN, INITIAL_META } from './gameStore';
+import { STARTING_BP } from '../systems/bp';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
@@ -20,17 +21,30 @@ describe('GameStore', () => {
     expect(state.screen).toBe('world-map');
   });
 
-  it('encounterMonster: decrements BP by 1', () => {
+  it('encounterMonster: decrements BP by encounterCost(level)', () => {
     useGameStore.getState().startRun('hwarang', false);
-    useGameStore.getState().encounterMonster();
-    expect(useGameStore.getState().run.bp).toBe(29);
+    useGameStore.getState().encounterMonster(1);
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 1);
   });
 
-  it('defeatRun normal: decrements BP by 2', () => {
+  it('encounterMonster: scales with level', () => {
     useGameStore.getState().startRun('hwarang', false);
-    useGameStore.getState().encounterMonster(); // -1 = 29
-    useGameStore.getState().defeatRun();        // -2 = 27
-    expect(useGameStore.getState().run.bp).toBe(27);
+    useGameStore.getState().encounterMonster(100);
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 3); // ceil(log10(100))+1=3
+  });
+
+  it('defeatRun normal: -defeatCost(level)', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().encounterMonster(1);  // -1 → 29
+    useGameStore.getState().defeatRun(1);          // -2 → 27
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 1 - 2);
+  });
+
+  it('defeatRun hard: -defeatCost(level) × 2', () => {
+    useGameStore.getState().startRun('hwarang', true);
+    useGameStore.getState().encounterMonster(1);  // -1 → 29
+    useGameStore.getState().defeatRun(1);          // -2×2=-4 → 25
+    expect(useGameStore.getState().run.bp).toBe(STARTING_BP - 1 - 4);
   });
 
   it('allocateSP: increases allocated stat, decreases statPoints', () => {
@@ -201,5 +215,56 @@ describe('GameStore — Phase 3 메타 진행', () => {
     // Original fields preserved
     expect(migrated.gold).toBe(0);
     expect(migrated.baseAbilityLevel).toBe(0);
+  });
+});
+
+describe('Currency actions', () => {
+  it('gainDR adds to meta.dr', () => {
+    useGameStore.setState({
+      meta: { ...useGameStore.getState().meta, dr: 0 },
+    });
+    useGameStore.getState().gainDR(150);
+    expect(useGameStore.getState().meta.dr).toBe(150);
+    useGameStore.getState().gainDR(25);
+    expect(useGameStore.getState().meta.dr).toBe(175);
+  });
+
+  it('gainEnhanceStones adds to meta.enhanceStones', () => {
+    useGameStore.setState({
+      meta: { ...useGameStore.getState().meta, enhanceStones: 0 },
+    });
+    useGameStore.getState().gainEnhanceStones(3);
+    expect(useGameStore.getState().meta.enhanceStones).toBe(3);
+    useGameStore.getState().gainEnhanceStones(10);
+    expect(useGameStore.getState().meta.enhanceStones).toBe(13);
+  });
+});
+
+describe('Currency on combat events', () => {
+  it('incrementDungeonKill grants DR proportional to monster level', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    const before = useGameStore.getState().meta.dr;
+    useGameStore.getState().incrementDungeonKill(100);
+    expect(useGameStore.getState().meta.dr).toBe(before + 50);  // 100 * 0.5
+  });
+
+  it('incrementDungeonKill min DR is 1', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    const before = useGameStore.getState().meta.dr;
+    useGameStore.getState().incrementDungeonKill(0);
+    expect(useGameStore.getState().meta.dr).toBe(before + 1);
+  });
+
+  it('bossDrop grants DR + stones AND increments kill counters', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    const beforeMeta = useGameStore.getState().meta;
+    const beforeRun = useGameStore.getState().run;
+    useGameStore.getState().bossDrop('test-boss', 5);
+    const afterMeta = useGameStore.getState().meta;
+    const afterRun = useGameStore.getState().run;
+    expect(afterMeta.dr).toBe(beforeMeta.dr + 500);                                               // bpReward * 100
+    expect(afterMeta.enhanceStones).toBe(beforeMeta.enhanceStones + 5);                           // bpReward * 1
+    expect(afterRun.dungeonRunMonstersDefeated).toBe(beforeRun.dungeonRunMonstersDefeated + 1);   // counter
+    expect(afterRun.monstersDefeated).toBe(beforeRun.monstersDefeated + 1);                       // counter
   });
 });
