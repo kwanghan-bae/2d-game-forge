@@ -101,6 +101,8 @@ interface GameStore {
   skipTutorial: () => void;
   restartTutorial: () => void;
   setVolumes: (music: number, sfx: number, muted: boolean) => void;
+  gainDR: (amount: number) => void;
+  gainEnhanceStones: (amount: number) => void;
   pendingStoryId: string | null;
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
@@ -336,6 +338,12 @@ export const useGameStore = create<GameStore>()(
       skipTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: true, tutorialStep: -1 } })),
       restartTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: false, tutorialStep: 0 } })),
       setVolumes: (music, sfx, muted) => set((s) => ({ meta: { ...s.meta, musicVolume: music, sfxVolume: sfx, muted } })),
+
+      gainDR: (amount) =>
+        set((s) => ({ meta: { ...s.meta, dr: s.meta.dr + amount } })),
+
+      gainEnhanceStones: (amount) =>
+        set((s) => ({ meta: { ...s.meta, enhanceStones: s.meta.enhanceStones + amount } })),
 
       craft: (equipmentId: string): boolean => {
         const state = get();
