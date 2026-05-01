@@ -178,7 +178,12 @@ export const useGameStore = create<GameStore>()(
           const drGained = bpReward * 100;
           const stonesGained = bpReward;
           return {
-            run: { ...s.run, bp: bpOnBossKill(s.run.bp, bpReward) },
+            run: {
+              ...s.run,
+              bp: bpOnBossKill(s.run.bp, bpReward),
+              dungeonRunMonstersDefeated: s.run.dungeonRunMonstersDefeated + 1,
+              monstersDefeated: s.run.monstersDefeated + 1,
+            },
             meta: {
               ...s.meta,
               normalBossesKilled: normalKilled,
