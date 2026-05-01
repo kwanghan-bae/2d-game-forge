@@ -88,6 +88,7 @@ interface GameStore {
   unequipItem: (itemId: string) => void;
   buyEquipSlot: () => void;
   setCurrentArea: (areaId: string) => void;
+  selectDungeon: (dungeonId: string | null) => void;
   advanceStage: () => void;
   resetDungeon: () => void;
   incrementDungeonKill: (monsterLevel: number) => void;
@@ -234,6 +235,8 @@ export const useGameStore = create<GameStore>()(
         }),
 
       setCurrentArea: (areaId) => set((s) => ({ run: { ...s.run, currentAreaId: areaId } })),
+      selectDungeon: (dungeonId) =>
+        set((s) => ({ run: { ...s.run, currentDungeonId: dungeonId } })),
 
       advanceStage: () => set((s) => ({
         run: { ...s.run, currentStage: s.run.currentStage + 1 },
