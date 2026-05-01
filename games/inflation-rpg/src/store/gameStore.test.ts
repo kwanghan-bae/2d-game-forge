@@ -285,9 +285,18 @@ describe('selectDungeon', () => {
     expect(useGameStore.getState().run.currentDungeonId).toBeNull();
   });
 
-  it('startRun resets currentDungeonId to null', () => {
-    useGameStore.getState().startRun('hwarang', false);
+  it('startRun preserves currentDungeonId set by Town selection', () => {
+    // Simulate Town → ClassSelect → startRun flow
     useGameStore.getState().selectDungeon('plains');
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().run.currentDungeonId).toBe('plains');
+    expect(useGameStore.getState().run.characterId).toBe('hwarang');
+    expect(useGameStore.getState().run.isHardMode).toBe(false);
+  });
+
+  it('startRun with no prior dungeon selection leaves currentDungeonId null', () => {
+    // Existing flow (MainMenu → ClassSelect, skipping Town) — backwards compat
+    useGameStore.getState().selectDungeon(null); // ensure no carryover
     useGameStore.getState().startRun('mudang', true);
     expect(useGameStore.getState().run.currentDungeonId).toBeNull();
     expect(useGameStore.getState().run.characterId).toBe('mudang');
