@@ -89,7 +89,7 @@ interface GameStore {
   setCurrentArea: (areaId: string) => void;
   advanceStage: () => void;
   resetDungeon: () => void;
-  incrementDungeonKill: () => void;
+  incrementDungeonKill: (monsterLevel: number) => void;
   incrementQuestProgress: (questId: string, by?: number) => void;
   completeQuest: (questId: string) => void;
   trackKill: (monsterId: string, regionId: string) => void;
@@ -175,6 +175,8 @@ export const useGameStore = create<GameStore>()(
           const hardKilled = s.run.isHardMode
             ? progressionOnBossKill(bossId, s.meta.hardBossesKilled, 9)
             : s.meta.hardBossesKilled;
+          const drGained = bpReward * 100;
+          const stonesGained = bpReward;
           return {
             run: { ...s.run, bp: bpOnBossKill(s.run.bp, bpReward) },
             meta: {
@@ -182,6 +184,8 @@ export const useGameStore = create<GameStore>()(
               normalBossesKilled: normalKilled,
               hardBossesKilled: hardKilled,
               baseAbilityLevel: getBaseAbilityLevel(normalKilled, hardKilled),
+              dr: s.meta.dr + drGained,
+              enhanceStones: s.meta.enhanceStones + stonesGained,
             },
           };
         }),
@@ -237,13 +241,20 @@ export const useGameStore = create<GameStore>()(
         },
       })),
 
-      incrementDungeonKill: () => set((s) => ({
-        run: {
-          ...s.run,
-          dungeonRunMonstersDefeated: s.run.dungeonRunMonstersDefeated + 1,
-          monstersDefeated: s.run.monstersDefeated + 1,
-        },
-      })),
+      incrementDungeonKill: (monsterLevel) => set((s) => {
+        const drGained = Math.max(1, Math.round(monsterLevel * 0.5));
+        return {
+          run: {
+            ...s.run,
+            dungeonRunMonstersDefeated: s.run.dungeonRunMonstersDefeated + 1,
+            monstersDefeated: s.run.monstersDefeated + 1,
+          },
+          meta: {
+            ...s.meta,
+            dr: s.meta.dr + drGained,
+          },
+        };
+      }),
 
       incrementQuestProgress: (questId, by = 1) =>
         set((s) => {

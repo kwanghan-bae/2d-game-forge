@@ -239,3 +239,28 @@ describe('Currency actions', () => {
     expect(useGameStore.getState().meta.enhanceStones).toBe(13);
   });
 });
+
+describe('Currency on combat events', () => {
+  it('incrementDungeonKill grants DR proportional to monster level', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    const before = useGameStore.getState().meta.dr;
+    useGameStore.getState().incrementDungeonKill(100);
+    expect(useGameStore.getState().meta.dr).toBe(before + 50);  // 100 * 0.5
+  });
+
+  it('incrementDungeonKill min DR is 1', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    const before = useGameStore.getState().meta.dr;
+    useGameStore.getState().incrementDungeonKill(0);
+    expect(useGameStore.getState().meta.dr).toBe(before + 1);
+  });
+
+  it('bossDrop grants DR (×100) and enhanceStones (×1) per bpReward', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    const before = useGameStore.getState().meta;
+    useGameStore.getState().bossDrop('test-boss', 5);
+    const after = useGameStore.getState().meta;
+    expect(after.dr).toBe(before.dr + 500);
+    expect(after.enhanceStones).toBe(before.enhanceStones + 5);
+  });
+});
