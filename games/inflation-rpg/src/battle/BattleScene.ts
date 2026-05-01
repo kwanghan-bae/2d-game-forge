@@ -7,7 +7,9 @@ import { playSfx } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedItemsList } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
-import { pickMonster } from '../data/monsters';
+import { pickMonster, pickMonsterFromPool } from '../data/monsters';
+import { getDungeonById } from '../data/dungeons';
+import { getFloorInfo } from '../data/floors';
 import { getBossesForArea } from '../data/bosses';
 import { MAP_AREAS } from '../data/maps';
 import { getBossDefeatStory } from '../data/stories';
@@ -60,7 +62,9 @@ export class BattleScene extends Phaser.Scene {
     const bg = this.add.rectangle(0, 0, 360, 600, theme.bg).setOrigin(0);
     void bg;
 
-    if (hasBoss && Math.random() < 0.25) {
+    const isNewFlow = run.currentDungeonId !== null;
+
+    if (!isNewFlow && hasBoss && Math.random() < 0.25) {
       const boss = bosses[0]!;
       this.isBoss = true;
       this.bossId = boss.id;
@@ -68,11 +72,23 @@ export class BattleScene extends Phaser.Scene {
       this.enemyMaxHP = Math.floor(run.level * 50 * boss.hpMult);
     } else {
       this.isBoss = false;
-      const currentArea = MAP_AREAS.find(a => a.id === area);
-      const monster = pickMonster(run.level, currentArea?.regionId);
-      this.currentMonsterId = monster.id;
-      this.enemyName = `${monster.emoji} ${monster.nameKR}`;
-      this.enemyMaxHP = Math.floor(run.level * 20 * monster.hpMult);
+      if (isNewFlow) {
+        // 신 flow — 던전 monsterPool 에서 floor monsterLevel 기반 몬스터 픽.
+        const dungeon = getDungeonById(run.currentDungeonId!);
+        const info = getFloorInfo(run.currentDungeonId!, run.currentFloor);
+        const monsterLevel = info.monsterLevel;
+        const monster = pickMonsterFromPool(monsterLevel, dungeon!.monsterPool);
+        this.currentMonsterId = monster.id;
+        this.enemyName = `${monster.emoji} ${monster.nameKR}`;
+        this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
+      } else {
+        // 구 flow — 구역 regionId 기반 몬스터 픽.
+        const currentArea = MAP_AREAS.find(a => a.id === area);
+        const monster = pickMonster(run.level, currentArea?.regionId);
+        this.currentMonsterId = monster.id;
+        this.enemyName = `${monster.emoji} ${monster.nameKR}`;
+        this.enemyMaxHP = Math.floor(run.level * 20 * monster.hpMult);
+      }
     }
     this.enemyHP = this.enemyMaxHP;
 
@@ -167,6 +183,20 @@ export class BattleScene extends Phaser.Scene {
       // Check stage progression after each kill
       const stateAfterKill = useGameStore.getState();
       const currentRun = stateAfterKill.run;
+
+      if (currentRun.currentDungeonId !== null) {
+        // 신 flow — 1 floor = 1 처치 → 다음 floor + DungeonFloors 화면 복귀.
+        this.combatTimer?.remove();
+        if (spGained > 0) {
+          playSfx('levelup');
+          this.callbacks.onLevelUp(newLevel);
+        }
+        stateAfterKill.setCurrentFloor(currentRun.currentFloor + 1);
+        stateAfterKill.setScreen('dungeon-floors');
+        return;
+      }
+
+      // 구 flow — stage threshold 진행.
       const area = MAP_AREAS.find(a => a.id === currentRun.currentAreaId);
       if (area) {
         const stageThreshold = currentRun.currentStage * area.stageMonsterCount;
@@ -189,7 +219,10 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
 
-    const enemyATK = Math.floor(run.level * 8 * (this.isBoss ? 2 : 1));
+    const monsterLevelForAtk = run.currentDungeonId !== null
+      ? getFloorInfo(run.currentDungeonId, run.currentFloor).monsterLevel
+      : run.level;
+    const enemyATK = Math.floor(monsterLevelForAtk * 8 * (this.isBoss ? 2 : 1));
     const reduction = calcDamageReduction(playerDEF);
     const dmgTaken = Math.floor(enemyATK * (1 - reduction));
     const currentHPEstimate = playerHP - (run.monstersDefeated * dmgTaken * 0.1);
@@ -197,10 +230,10 @@ export class BattleScene extends Phaser.Scene {
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
       playSfx('defeat');
-      // 현재 BattleScene 의 적 ATK 가 run.level * 8 로 계산되므로 (line 190 부근),
-      // 같은 run.level 을 몬스터 레벨로 사용. Phase B 에서 던전 floor 별 정확한
-      // 몬스터 레벨로 교체.
-      const monsterLevel = run.level;
+      // 신 flow 는 floor monsterLevel, 구 flow 는 run.level 을 패배 BP 계산에 사용한다.
+      const monsterLevel = run.currentDungeonId !== null
+        ? getFloorInfo(run.currentDungeonId, run.currentFloor).monsterLevel
+        : run.level;
       const newBP = onDefeat(run.bp, monsterLevel, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
       useGameStore.getState().resetDungeon();
