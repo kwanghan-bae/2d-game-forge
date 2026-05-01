@@ -152,15 +152,17 @@ export class BattleScene extends Phaser.Scene {
       const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode);
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
-      useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp, monstersDefeated: s.run.monstersDefeated + 1 } }));
-      useGameStore.getState().incrementDungeonKill(run.level);
+      useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));
       if (!this.isBoss) {
+        // Non-boss: DR = round(level * 0.5), counter increments owned by incrementDungeonKill
+        useGameStore.getState().incrementDungeonKill(run.level);
         const storeState = useGameStore.getState();
         const currentArea = MAP_AREAS.find(a => a.id === storeState.run.currentAreaId);
         if (currentArea) {
           storeState.trackKill(this.currentMonsterId, currentArea.regionId);
         }
       }
+      // Boss: DR + stones + counter increments are all owned by bossDrop (called via onBossKill above)
 
       // Check stage progression after each kill
       const stateAfterKill = useGameStore.getState();

@@ -255,12 +255,16 @@ describe('Currency on combat events', () => {
     expect(useGameStore.getState().meta.dr).toBe(before + 1);
   });
 
-  it('bossDrop grants DR (×100) and enhanceStones (×1) per bpReward', () => {
+  it('bossDrop grants DR + stones AND increments kill counters', () => {
     useGameStore.getState().startRun('hwarang', false);
-    const before = useGameStore.getState().meta;
+    const beforeMeta = useGameStore.getState().meta;
+    const beforeRun = useGameStore.getState().run;
     useGameStore.getState().bossDrop('test-boss', 5);
-    const after = useGameStore.getState().meta;
-    expect(after.dr).toBe(before.dr + 500);
-    expect(after.enhanceStones).toBe(before.enhanceStones + 5);
+    const afterMeta = useGameStore.getState().meta;
+    const afterRun = useGameStore.getState().run;
+    expect(afterMeta.dr).toBe(beforeMeta.dr + 500);                                               // bpReward * 100
+    expect(afterMeta.enhanceStones).toBe(beforeMeta.enhanceStones + 5);                           // bpReward * 1
+    expect(afterRun.dungeonRunMonstersDefeated).toBe(beforeRun.dungeonRunMonstersDefeated + 1);   // counter
+    expect(afterRun.monstersDefeated).toBe(beforeRun.monstersDefeated + 1);                       // counter
   });
 });
