@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MONSTERS, pickMonsterFromPool, getMonstersForPool } from './monsters';
+import { pickMonsterFromPool, getMonstersForPool } from './monsters';
 
 describe('pickMonsterFromPool', () => {
   it('returns a monster from the given pool whose level range contains the player level', () => {
