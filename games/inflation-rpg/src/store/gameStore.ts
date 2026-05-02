@@ -67,6 +67,10 @@ export const INITIAL_META: MetaState = {
   musicVolume: 0.5,
   sfxVolume: 0.7,
   muted: false,
+  // Phase B-3β1 — dungeon progress + finals
+  dungeonProgress: {},
+  dungeonFinalsCleared: [],
+  pendingFinalClearedId: null,
 };
 
 interface GameStore {
@@ -107,6 +111,9 @@ interface GameStore {
   setVolumes: (music: number, sfx: number, muted: boolean) => void;
   gainDR: (amount: number) => void;
   gainEnhanceStones: (amount: number) => void;
+  markDungeonProgress: (dungeonId: string, floor: number) => void;
+  markFinalCleared: (dungeonId: string) => void;
+  setPendingFinalCleared: (dungeonId: string | null) => void;
   pendingStoryId: string | null;
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
@@ -377,6 +384,35 @@ export const useGameStore = create<GameStore>()(
       gainEnhanceStones: (amount) =>
         set((s) => ({ meta: { ...s.meta, enhanceStones: s.meta.enhanceStones + amount } })),
 
+      markDungeonProgress: (dungeonId, floor) =>
+        set((s) => {
+          const prev = s.meta.dungeonProgress[dungeonId]?.maxFloor ?? 0;
+          if (floor <= prev) return s;
+          return {
+            meta: {
+              ...s.meta,
+              dungeonProgress: {
+                ...s.meta.dungeonProgress,
+                [dungeonId]: { maxFloor: floor },
+              },
+            },
+          };
+        }),
+
+      markFinalCleared: (dungeonId) =>
+        set((s) => {
+          if (s.meta.dungeonFinalsCleared.includes(dungeonId)) return s;
+          return {
+            meta: {
+              ...s.meta,
+              dungeonFinalsCleared: [...s.meta.dungeonFinalsCleared, dungeonId],
+            },
+          };
+        }),
+
+      setPendingFinalCleared: (dungeonId) =>
+        set((s) => ({ meta: { ...s.meta, pendingFinalClearedId: dungeonId } })),
+
       craft: (equipmentId: string): boolean => {
         const state = get();
         const allItems = [
@@ -424,7 +460,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
         if (fromVersion < 1) {
@@ -467,6 +503,12 @@ export const useGameStore = create<GameStore>()(
         // Phase B-3α — currentFloor 추가
         if (fromVersion < 4 && s.run) {
           s.run.currentFloor = s.run.currentFloor ?? 1;
+        }
+        // Phase B-3β1 — dungeonProgress / dungeonFinalsCleared / pendingFinalClearedId 추가
+        if (fromVersion < 5 && s.meta) {
+          s.meta.dungeonProgress = s.meta.dungeonProgress ?? {};
+          s.meta.dungeonFinalsCleared = s.meta.dungeonFinalsCleared ?? [];
+          s.meta.pendingFinalClearedId = s.meta.pendingFinalClearedId ?? null;
         }
         return s;
       },
