@@ -5,8 +5,6 @@ import { MainMenu } from './screens/MainMenu';
 import { Town } from './screens/Town';
 import { DungeonFloors } from './screens/DungeonFloors';
 import { ClassSelect } from './screens/ClassSelect';
-import { WorldMap } from './screens/WorldMap';
-import { Dungeon } from './screens/Dungeon';
 import { Inventory } from './screens/Inventory';
 import { Shop } from './screens/Shop';
 import { GameOver } from './screens/GameOver';
@@ -44,9 +42,7 @@ export function App({ config }: AppProps) {
       {screen === 'town'           && <Town />}
       {screen === 'dungeon-floors' && <DungeonFloors />}
       {screen === 'class-select'   && <ClassSelect />}
-      {screen === 'world-map'    && <WorldMap />}
       {screen === 'battle'       && <Battle />}
-      {screen === 'dungeon'      && <Dungeon />}
       {screen === 'inventory'    && <Inventory />}
       {screen === 'shop'         && <Shop />}
       {screen === 'game-over'    && <GameOver />}

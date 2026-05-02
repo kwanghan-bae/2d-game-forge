@@ -44,7 +44,7 @@ export function DungeonFloors() {
       endRun();
       return;
     }
-    setScreen('dungeon');
+    setScreen('battle');
   };
 
   const backToTown = () => {
