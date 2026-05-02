@@ -43,6 +43,8 @@ export class BattleScene extends Phaser.Scene {
   private activeSkills: ActiveSkill[] = [];
   private cachedPlayerAtk = 0;
   private cachedPlayerHpMax = 0;
+  // 신 flow 시 floor 기반 monsterLevel 을 전투 내내 캐시. legacy 시 null.
+  private cachedMonsterLevel: number | null = null;
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -77,11 +79,13 @@ export class BattleScene extends Phaser.Scene {
         const dungeon = getDungeonById(run.currentDungeonId!);
         const info = getFloorInfo(run.currentDungeonId!, run.currentFloor);
         const monsterLevel = info.monsterLevel;
+        this.cachedMonsterLevel = monsterLevel;
         const monster = pickMonsterFromPool(monsterLevel, dungeon!.monsterPool);
         this.currentMonsterId = monster.id;
         this.enemyName = `${monster.emoji} ${monster.nameKR}`;
         this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
       } else {
+        this.cachedMonsterLevel = null;
         // 구 flow — 구역 regionId 기반 몬스터 픽.
         const currentArea = MAP_AREAS.find(a => a.id === area);
         const monster = pickMonster(run.level, currentArea?.regionId);
@@ -186,7 +190,7 @@ export class BattleScene extends Phaser.Scene {
 
       if (currentRun.currentDungeonId !== null) {
         // 신 flow — 1 floor = 1 처치 → 다음 floor + DungeonFloors 화면 복귀.
-        this.combatTimer?.remove();
+        // (combatTimer 는 이미 line 154 에서 제거됨.)
         if (spGained > 0) {
           playSfx('levelup');
           this.callbacks.onLevelUp(newLevel);
@@ -219,9 +223,7 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
 
-    const monsterLevelForAtk = run.currentDungeonId !== null
-      ? getFloorInfo(run.currentDungeonId, run.currentFloor).monsterLevel
-      : run.level;
+    const monsterLevelForAtk = this.cachedMonsterLevel ?? run.level;
     const enemyATK = Math.floor(monsterLevelForAtk * 8 * (this.isBoss ? 2 : 1));
     const reduction = calcDamageReduction(playerDEF);
     const dmgTaken = Math.floor(enemyATK * (1 - reduction));
@@ -230,10 +232,8 @@ export class BattleScene extends Phaser.Scene {
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
       playSfx('defeat');
-      // 신 flow 는 floor monsterLevel, 구 flow 는 run.level 을 패배 BP 계산에 사용한다.
-      const monsterLevel = run.currentDungeonId !== null
-        ? getFloorInfo(run.currentDungeonId, run.currentFloor).monsterLevel
-        : run.level;
+      // 신 flow 는 캐시된 floor monsterLevel, 구 flow 는 run.level 사용.
+      const monsterLevel = this.cachedMonsterLevel ?? run.level;
       const newBP = onDefeat(run.bp, monsterLevel, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
       useGameStore.getState().resetDungeon();
