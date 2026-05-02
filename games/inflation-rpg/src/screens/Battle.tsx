@@ -29,7 +29,7 @@ export function Battle() {
       },
       onBattleEnd: (_victory) => {
         gameRef.current?.destroy(true);
-        setScreen('world-map');
+        setScreen('town');
       },
       onBossKill: (bossId, bpReward) => {
         bossDrop(bossId, bpReward);

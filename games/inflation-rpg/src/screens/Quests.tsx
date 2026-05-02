@@ -68,7 +68,7 @@ export function Quests() {
         })}
       </div>
       <div style={{ padding: '0 16px 16px' }}>
-        <ForgeButton variant="secondary" style={{ width: '100%' }} onClick={() => setScreen('world-map')}>
+        <ForgeButton variant="secondary" style={{ width: '100%' }} onClick={() => setScreen('town')}>
           돌아가기
         </ForgeButton>
       </div>

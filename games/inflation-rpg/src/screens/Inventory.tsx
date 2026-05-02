@@ -44,7 +44,7 @@ export function Inventory() {
     : meta.inventory.accessories;
 
   const isFull = meta.equippedItemIds.length >= meta.equipSlotCount;
-  const backScreen = run.characterId ? 'world-map' : 'main-menu';
+  const backScreen = run.characterId ? 'town' : 'main-menu';
 
   const craftable = useMemo(() => {
     const groups: Record<string, number> = {};

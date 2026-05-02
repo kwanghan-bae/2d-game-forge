@@ -42,7 +42,7 @@ describe('Inventory — 기존 테스트', () => {
   it('back button returns to previous screen', async () => {
     render(<Inventory />);
     await userEvent.click(screen.getByRole('button', { name: /뒤로/i }));
-    expect(['main-menu', 'world-map']).toContain(useGameStore.getState().screen);
+    expect(['main-menu', 'town']).toContain(useGameStore.getState().screen);
   });
 });
 

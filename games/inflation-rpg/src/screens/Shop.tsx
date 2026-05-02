@@ -21,7 +21,7 @@ export function Shop() {
     useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun - price } }));
   };
 
-  const backScreen = run.characterId ? 'world-map' : 'main-menu';
+  const backScreen = run.characterId ? 'town' : 'main-menu';
   const nextSlotCost = SLOT_COSTS[meta.equipSlotCount];
 
   return (
