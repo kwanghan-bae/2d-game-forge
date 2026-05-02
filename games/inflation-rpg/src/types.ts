@@ -143,6 +143,7 @@ export interface RunState {
   allocated: AllocatedStats;
   currentAreaId: string;
   currentDungeonId: string | null;   // Phase B-2 — 선택된 던전 ID, 미선택 시 null
+  currentFloor: number;              // B-3α — 신 flow 던전 floor (1..N). 런 종료 시 1 로 리셋.
   isHardMode: boolean;
   monstersDefeated: number;
   goldThisRun: number;
@@ -185,6 +186,7 @@ export interface TutorialStep {
 export type Screen =
   | 'main-menu'
   | 'town'
+  | 'dungeon-floors'
   | 'class-select'
   | 'world-map'
   | 'battle'

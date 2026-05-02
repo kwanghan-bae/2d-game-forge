@@ -33,7 +33,7 @@ describe('TutorialOverlay', () => {
 
   it('advance button increments step', () => {
     render(<TutorialOverlay />);
-    fireEvent.click(screen.getByText('시작'));
+    fireEvent.click(screen.getByText('마을로'));
     expect(useGameStore.getState().meta.tutorialStep).toBe(1);
   });
 

@@ -80,6 +80,7 @@ export function playBgm(id: string | null): void {
 const SCREEN_BGM: Partial<Record<Screen, string>> = {
   'main-menu': 'lobby',
   'town': 'lobby',
+  'dungeon-floors': 'lobby',
   'class-select': 'lobby',
   'world-map': 'field',
   inventory: 'field',
