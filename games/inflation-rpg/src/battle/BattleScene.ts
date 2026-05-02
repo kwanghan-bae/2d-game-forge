@@ -235,13 +235,31 @@ export class BattleScene extends Phaser.Scene {
       const currentRun = stateAfterKill.run;
 
       if (currentRun.currentDungeonId !== null) {
-        // 신 flow — 1 floor = 1 처치 → 다음 floor + DungeonFloors 화면 복귀.
-        // (combatTimer 는 이미 line 154 에서 제거됨.)
+        // 신 flow — 처치 후 다음 행동 결정
+        // (combatTimer 는 이미 line 204 에서 제거됨.)
         if (spGained > 0) {
           playSfx('levelup');
           this.callbacks.onLevelUp(newLevel);
         }
-        stateAfterKill.setCurrentFloor(currentRun.currentFloor + 1);
+
+        const dungeonId = currentRun.currentDungeonId;
+        const finishedFloor = currentRun.currentFloor;
+        const bossType = getBossType(finishedFloor);
+
+        if (bossType === 'final') {
+          // Final 처치 — 1회 영구 보상 + 정복 모달 + 마을 강제 복귀.
+          // (this.bossId / bossDrop 은 이미 위쪽 onBossKill 콜백 통해 처리됨.)
+          stateAfterKill.markFinalCleared(dungeonId);
+          stateAfterKill.markDungeonProgress(dungeonId, 30);
+          stateAfterKill.setPendingFinalCleared(dungeonId);
+          stateAfterKill.setScreen('town');
+          return;
+        }
+
+        // 일반 / mini / major / sub — 다음 floor 로 진행 (30 cap)
+        const nextFloor = Math.min(finishedFloor + 1, 30);
+        stateAfterKill.markDungeonProgress(dungeonId, nextFloor);
+        stateAfterKill.setCurrentFloor(nextFloor);
         stateAfterKill.setScreen('dungeon-floors');
         return;
       }
