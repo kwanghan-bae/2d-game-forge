@@ -1,15 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { STORIES, getRegionEnterStory } from './stories';
 import { BOSSES } from './bosses';
+import { DUNGEONS } from './dungeons';
 
 describe('stories integrity', () => {
-  it('every region_enter story resolves correctly', () => {
-    const regionEnterStories = STORIES.filter(s => s.type === 'region_enter');
-    expect(regionEnterStories.length).toBeGreaterThan(0);
-    for (const story of regionEnterStories) {
-      const found = getRegionEnterStory(story.refId);
-      expect(found).toBeDefined();
-    }
+  it('every dungeon has a region_enter story', () => {
+    const missing = DUNGEONS.filter((d) => !getRegionEnterStory(d.id)).map((d) => d.id);
+    expect(missing).toEqual([]);
   });
 
   it('all story IDs are unique', () => {
