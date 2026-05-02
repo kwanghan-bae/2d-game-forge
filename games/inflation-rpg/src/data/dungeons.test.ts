@@ -71,12 +71,14 @@ describe('Phase B-3β1 — Dungeon.bossIds', () => {
 
   it('every bossId references a real BOSSES entry', () => {
     const knownIds = new Set(BOSSES.map(b => b.id));
+    const broken: string[] = [];
     for (const d of DUNGEONS) {
       const all = [d.bossIds.mini, d.bossIds.major, ...d.bossIds.sub, d.bossIds.final];
       for (const id of all) {
-        expect(knownIds.has(id)).toBe(true);
+        if (!knownIds.has(id)) broken.push(`${d.id} -> ${id}`);
       }
     }
+    expect(broken, `Dungeons reference undefined bosses: ${broken.join(', ')}`).toEqual([]);
   });
 
   it('plains dungeon bossIds match locked mapping', () => {
