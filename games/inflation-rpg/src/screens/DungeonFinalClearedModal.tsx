@@ -44,7 +44,7 @@ export function DungeonFinalClearedModal() {
           {emoji} <strong>{nameKR}</strong> 의 최종 보스를 처치했다.
         </p>
         <p style={{ color: 'var(--forge-text-secondary)', fontSize: 12, margin: '12px 0' }}>
-          이 던전의 final 보상은 1회 영구 마킹됨.
+          "정복자" 칭호를 획득. 이 던전의 final 보상은 1회 영구 마킹됨.
         </p>
         <ForgeButton
           variant="primary"

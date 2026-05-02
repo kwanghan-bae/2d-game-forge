@@ -23,7 +23,7 @@ describe('DungeonFinalClearedModal', () => {
     });
     render(<DungeonFinalClearedModal />);
     expect(screen.getByText(/평야/)).toBeInTheDocument();
-    expect(screen.getByText(/정복/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /정복 완료/ })).toBeInTheDocument();
   });
 
   it('close button clears pendingFinalClearedId', () => {
