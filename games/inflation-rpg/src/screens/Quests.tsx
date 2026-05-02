@@ -7,8 +7,11 @@ import { ForgeButton } from '@/components/ui/forge-button';
 
 export function Quests() {
   const meta = useGameStore((s) => s.meta);
+  const currentDungeonId = useGameStore((s) => s.run.currentDungeonId);
   const completeQuest = useGameStore((s) => s.completeQuest);
   const setScreen = useGameStore((s) => s.setScreen);
+
+  const inDungeonFlow = currentDungeonId !== null;
 
   return (
     <ForgeScreen>
@@ -19,9 +22,15 @@ export function Quests() {
         {QUESTS.map((q) => {
           const progress = meta.questProgress[q.id] ?? 0;
           const completed = meta.questsCompleted.includes(q.id);
-          const claimable = !completed && progress >= q.target.count;
+          const claimable = !inDungeonFlow && !completed && progress >= q.target.count;
           return (
-            <ForgePanel key={q.id} style={{ margin: '8px 16px' }}>
+            <ForgePanel
+              key={q.id}
+              style={{
+                margin: '8px 16px',
+                opacity: inDungeonFlow ? 0.55 : 1,
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontWeight: 700 }}>{q.nameKR}</span>
                 <span style={{ fontSize: 11, color: 'var(--forge-text-secondary)' }}>
@@ -39,12 +48,17 @@ export function Quests() {
                 {q.reward.bp ? `BP+${q.reward.bp} ` : ''}
                 {q.reward.equipmentId ? `${q.reward.equipmentId}` : ''}
               </div>
+              {inDungeonFlow && (
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--forge-text-secondary)', fontStyle: 'italic' }}>
+                  재설계 예정 — Phase F
+                </div>
+              )}
               {claimable && (
                 <ForgeButton variant="primary" style={{ marginTop: 8 }} onClick={() => completeQuest(q.id)}>
                   보상 수령
                 </ForgeButton>
               )}
-              {completed && (
+              {completed && !inDungeonFlow && (
                 <div style={{ marginTop: 8, color: 'var(--forge-stat-hp)', fontSize: 12 }}>
                   ✅ 완료
                 </div>
