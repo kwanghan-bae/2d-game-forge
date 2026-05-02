@@ -37,7 +37,7 @@ export function GameOver() {
           </div>
         </ForgePanel>
       )}
-      <ForgeButton variant="primary" style={{ width: '100%' }} onClick={() => setScreen('class-select')}>
+      <ForgeButton variant="primary" style={{ width: '100%' }} onClick={() => setScreen('town')}>
         다시 도전
       </ForgeButton>
       <ForgeButton variant="secondary" style={{ width: '100%' }} onClick={() => setScreen('main-menu')}>

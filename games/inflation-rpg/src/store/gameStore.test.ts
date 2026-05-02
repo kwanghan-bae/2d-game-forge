@@ -303,3 +303,44 @@ describe('selectDungeon', () => {
     expect(useGameStore.getState().run.isHardMode).toBe(true);
   });
 });
+
+describe('Phase B-3α — currentFloor + dungeon-floors routing', () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      screen: 'main-menu',
+      run: { ...INITIAL_RUN },
+      meta: { ...INITIAL_META },
+    });
+  });
+
+  it('INITIAL_RUN.currentFloor === 1', () => {
+    expect(INITIAL_RUN.currentFloor).toBe(1);
+  });
+
+  it('setCurrentFloor updates run.currentFloor', () => {
+    useGameStore.getState().setCurrentFloor(7);
+    expect(useGameStore.getState().run.currentFloor).toBe(7);
+  });
+
+  it('startRun routes to dungeon-floors when currentDungeonId is set', () => {
+    useGameStore.getState().selectDungeon('plains');
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().screen).toBe('dungeon-floors');
+    expect(useGameStore.getState().run.currentDungeonId).toBe('plains');
+    expect(useGameStore.getState().run.currentFloor).toBe(1);
+  });
+
+  it('startRun routes to world-map when currentDungeonId is null (legacy flow)', () => {
+    useGameStore.getState().selectDungeon(null);
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().screen).toBe('world-map');
+  });
+
+  it('endRun resets currentFloor to 1', () => {
+    useGameStore.getState().selectDungeon('plains');
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.getState().setCurrentFloor(15);
+    useGameStore.getState().endRun();
+    expect(useGameStore.getState().run.currentFloor).toBe(1);
+  });
+});

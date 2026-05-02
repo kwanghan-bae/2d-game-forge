@@ -17,10 +17,10 @@ describe('MainMenu — no active run', () => {
     expect(screen.getByText(/INFLATION/i)).toBeInTheDocument();
   });
 
-  it('게임 시작 button navigates to class-select', async () => {
+  it('마을로 button navigates to town', async () => {
     render(<MainMenu />);
-    await userEvent.click(screen.getByRole('button', { name: /게임 시작/i }));
-    expect(useGameStore.getState().screen).toBe('class-select');
+    await userEvent.click(screen.getByRole('button', { name: /마을로/i }));
+    expect(useGameStore.getState().screen).toBe('town');
   });
 
   it('인벤토리 button navigates to inventory', async () => {
@@ -45,22 +45,25 @@ describe('MainMenu — active run exists', () => {
     expect(screen.getByRole('button', { name: /런 이어하기/i })).toBeInTheDocument();
   });
 
-  it('게임 시작 button is NOT shown when active run exists', () => {
-    render(<MainMenu />);
-    expect(screen.queryByRole('button', { name: /게임 시작/i })).not.toBeInTheDocument();
-  });
 
-  it('런 이어하기 navigates to world-map', async () => {
+  it('런 이어하기 navigates to dungeon-floors when currentDungeonId is set', async () => {
+    useGameStore.setState({ run: { ...activeRun, currentDungeonId: 'wastelands-1' } });
     render(<MainMenu />);
     await userEvent.click(screen.getByRole('button', { name: /런 이어하기/i }));
-    expect(useGameStore.getState().screen).toBe('world-map');
+    expect(useGameStore.getState().screen).toBe('dungeon-floors');
   });
 
-  it('새로 시작 resets run and navigates to class-select', async () => {
+  it('런 이어하기 navigates to town when currentDungeonId is null', async () => {
+    render(<MainMenu />);
+    await userEvent.click(screen.getByRole('button', { name: /런 이어하기/i }));
+    expect(useGameStore.getState().screen).toBe('town');
+  });
+
+  it('새로 시작 resets run and navigates to town', async () => {
     render(<MainMenu />);
     await userEvent.click(screen.getByRole('button', { name: /새로 시작/i }));
     const state = useGameStore.getState();
     expect(state.run.characterId).toBe('');
-    expect(state.screen).toBe('class-select');
+    expect(state.screen).toBe('town');
   });
 });

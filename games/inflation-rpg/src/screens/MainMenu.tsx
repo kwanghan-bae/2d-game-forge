@@ -37,34 +37,26 @@ export function MainMenu() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: 200 }}>
         {hasActiveRun ? (
           <>
-            <ForgeButton variant="primary" onClick={() => setScreen('world-map')}>
+            <ForgeButton
+              variant="primary"
+              onClick={() => {
+                const dungeonId = useGameStore.getState().run.currentDungeonId;
+                setScreen(dungeonId !== null ? 'dungeon-floors' : 'town');
+              }}
+            >
               런 이어하기
             </ForgeButton>
             <ForgeButton
               variant="secondary"
-              onClick={() => { abandonRun(); setScreen('class-select'); }}
+              onClick={() => { abandonRun(); setScreen('town'); }}
             >
               새로 시작
             </ForgeButton>
           </>
         ) : (
-          <>
-            <ForgeButton variant="primary" onClick={() => setScreen('town')}>
-              🏘️ 마을로 (B-2 신규)
-            </ForgeButton>
-            <ForgeButton variant="primary" onClick={() => setScreen('class-select')}>
-              게임 시작
-            </ForgeButton>
-            {meta.hardModeUnlocked && (
-              <ForgeButton
-                variant="primary"
-                style={{ background: 'var(--forge-danger)' }}
-                onClick={() => setScreen('class-select')}
-              >
-                하드모드
-              </ForgeButton>
-            )}
-          </>
+          <ForgeButton variant="primary" onClick={() => setScreen('town')}>
+            🏘️ 마을로
+          </ForgeButton>
         )}
         <ForgeButton variant="secondary" onClick={() => setScreen('inventory')}>
           인벤토리
