@@ -43,9 +43,9 @@ test.describe('Phase B-3α — dungeon flow smoke', () => {
     await expect(page.getByTestId('floor-card-1')).not.toBeDisabled();
     await expect(page.getByTestId('floor-card-2')).toBeDisabled();
 
-    // floor 1 진입 → dungeon header
+    // floor 1 진입 → battle 화면
     await page.getByTestId('floor-card-1').click();
-    await expect(page.getByTestId('dungeon-header')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('battle-header')).toBeVisible({ timeout: 5000 });
   });
 
   test('back to town clears currentDungeonId', async ({ page }) => {
