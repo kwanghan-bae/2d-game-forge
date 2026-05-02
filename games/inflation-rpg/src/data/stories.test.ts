@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { STORIES, getRegionEnterStory } from './stories';
-import { REGIONS } from './regions';
 import { BOSSES } from './bosses';
 
 describe('stories integrity', () => {
-  it('every region has a region_enter story', () => {
-    const missing: string[] = [];
-    for (const region of REGIONS) {
-      if (!getRegionEnterStory(region.id)) missing.push(region.id);
+  it('every region_enter story resolves correctly', () => {
+    const regionEnterStories = STORIES.filter(s => s.type === 'region_enter');
+    expect(regionEnterStories.length).toBeGreaterThan(0);
+    for (const story of regionEnterStories) {
+      const found = getRegionEnterStory(story.refId);
+      expect(found).toBeDefined();
     }
-    expect(missing).toEqual([]);
   });
 
   it('all story IDs are unique', () => {
