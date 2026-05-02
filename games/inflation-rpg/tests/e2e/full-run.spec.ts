@@ -3,7 +3,11 @@ import { test, expect } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
-test.describe('Inflation RPG — full run smoke test', () => {
+// SKIPPED in B-3α — these tests rely on the legacy "게임 시작" entry button which
+// MainMenu 가 제거함 (구 flow 진입로 차단). 구 flow 코드 자체는 B-3β 에서 일괄
+// 제거 예정이므로 임시 마이그레이션 대신 skip 으로 처리. 신 flow 의 e2e 는
+// dungeon-flow.spec.ts 에 신설.
+test.describe.skip('Inflation RPG — full run smoke test', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(GAME_URL);
     await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
