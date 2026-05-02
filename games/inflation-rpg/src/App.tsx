@@ -12,6 +12,7 @@ import { Shop } from './screens/Shop';
 import { GameOver } from './screens/GameOver';
 import { Quests } from './screens/Quests';
 import { TutorialOverlay } from './components/TutorialOverlay';
+import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
 import type { StartGameConfig } from './types';
 
@@ -51,6 +52,7 @@ export function App({ config }: AppProps) {
       {screen === 'game-over'    && <GameOver />}
       {screen === 'quests'       && <Quests />}
       <TutorialOverlay />
+      <DungeonFinalClearedModal />
     </div>
   );
 }
