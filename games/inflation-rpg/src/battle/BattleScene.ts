@@ -9,8 +9,9 @@ import { getEquippedItemsList } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
 import { pickMonster, pickMonsterFromPool } from '../data/monsters';
 import { getDungeonById } from '../data/dungeons';
-import { getFloorInfo } from '../data/floors';
-import { getBossesForArea } from '../data/bosses';
+import { getFloorInfo, getBossType } from '../data/floors';
+import { getBossesForArea, getBossById } from '../data/bosses';
+import type { BossType } from '../types';
 import { MAP_AREAS } from '../data/maps';
 import { getBossDefeatStory } from '../data/stories';
 import { isRunOver, onDefeat } from '../systems/bp';
@@ -19,6 +20,29 @@ import {
   type SkillState, type SkillEffectResult,
 } from './SkillSystem';
 import type { ActiveSkill } from '../types';
+
+function pickBossIdByType(
+  bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
+  type: BossType,
+  floor: number,
+): string {
+  switch (type) {
+    case 'mini':
+      return bossIds.mini;
+    case 'major':
+      return bossIds.major;
+    case 'final':
+      return bossIds.final;
+    case 'sub': {
+      // floor 15→sub[0], 20→sub[1], 25→sub[2]. 심층 (>30, every 5) 은 floor 기반 라운드 로빈.
+      if (floor === 15) return bossIds.sub[0];
+      if (floor === 20) return bossIds.sub[1];
+      if (floor === 25) return bossIds.sub[2];
+      const idx = Math.floor((floor - 30) / 5) % 3;
+      return bossIds.sub[idx]!;
+    }
+  }
+}
 
 interface BattleCallbacks {
   onLevelUp: (newLevel: number) => void;
@@ -67,32 +91,54 @@ export class BattleScene extends Phaser.Scene {
     const isNewFlow = run.currentDungeonId !== null;
 
     if (!isNewFlow && hasBoss && Math.random() < 0.25) {
+      // 구 flow — 25% 보스 출현 (그대로)
       const boss = bosses[0]!;
       this.isBoss = true;
       this.bossId = boss.id;
       this.enemyName = `👹 ${boss.nameKR}`;
       this.enemyMaxHP = Math.floor(run.level * 50 * boss.hpMult);
-    } else {
-      this.isBoss = false;
-      if (isNewFlow) {
-        // 신 flow — 던전 monsterPool 에서 floor monsterLevel 기반 몬스터 픽.
-        const dungeon = getDungeonById(run.currentDungeonId!);
-        const info = getFloorInfo(run.currentDungeonId!, run.currentFloor);
-        const monsterLevel = info.monsterLevel;
-        this.cachedMonsterLevel = monsterLevel;
+    } else if (isNewFlow) {
+      const dungeon = getDungeonById(run.currentDungeonId!);
+      const info = getFloorInfo(run.currentDungeonId!, run.currentFloor);
+      const monsterLevel = info.monsterLevel;
+      this.cachedMonsterLevel = monsterLevel;
+
+      const bossType: BossType | null = info.bossType;
+      if (bossType !== null && dungeon) {
+        // 신 flow — 보스 floor
+        const bossId = pickBossIdByType(dungeon.bossIds, bossType, run.currentFloor);
+        const boss = getBossById(bossId);
+        if (boss) {
+          this.isBoss = true;
+          this.bossId = boss.id;
+          const bossEmoji = bossType === 'final' ? '⭐' : '👹';
+          this.enemyName = `${bossEmoji} ${boss.nameKR}`;
+          this.enemyMaxHP = Math.floor(monsterLevel * 50 * boss.hpMult);
+        } else {
+          // 데이터 결함 — 일반 몹으로 fallback
+          this.isBoss = false;
+          const monster = pickMonsterFromPool(monsterLevel, dungeon.monsterPool);
+          this.currentMonsterId = monster.id;
+          this.enemyName = `${monster.emoji} ${monster.nameKR}`;
+          this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
+        }
+      } else {
+        // 신 flow — 일반 floor
+        this.isBoss = false;
         const monster = pickMonsterFromPool(monsterLevel, dungeon!.monsterPool);
         this.currentMonsterId = monster.id;
         this.enemyName = `${monster.emoji} ${monster.nameKR}`;
         this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
-      } else {
-        this.cachedMonsterLevel = null;
-        // 구 flow — 구역 regionId 기반 몬스터 픽.
-        const currentArea = MAP_AREAS.find(a => a.id === area);
-        const monster = pickMonster(run.level, currentArea?.regionId);
-        this.currentMonsterId = monster.id;
-        this.enemyName = `${monster.emoji} ${monster.nameKR}`;
-        this.enemyMaxHP = Math.floor(run.level * 20 * monster.hpMult);
       }
+    } else {
+      // 구 flow — 일반 (기존)
+      this.isBoss = false;
+      this.cachedMonsterLevel = null;
+      const currentArea = MAP_AREAS.find(a => a.id === area);
+      const monster = pickMonster(run.level, currentArea?.regionId);
+      this.currentMonsterId = monster.id;
+      this.enemyName = `${monster.emoji} ${monster.nameKR}`;
+      this.enemyMaxHP = Math.floor(run.level * 20 * monster.hpMult);
     }
     this.enemyHP = this.enemyMaxHP;
 
@@ -189,13 +235,31 @@ export class BattleScene extends Phaser.Scene {
       const currentRun = stateAfterKill.run;
 
       if (currentRun.currentDungeonId !== null) {
-        // 신 flow — 1 floor = 1 처치 → 다음 floor + DungeonFloors 화면 복귀.
-        // (combatTimer 는 이미 line 154 에서 제거됨.)
+        // 신 flow — 처치 후 다음 행동 결정
+        // (combatTimer 는 이미 line 204 에서 제거됨.)
         if (spGained > 0) {
           playSfx('levelup');
           this.callbacks.onLevelUp(newLevel);
         }
-        stateAfterKill.setCurrentFloor(currentRun.currentFloor + 1);
+
+        const dungeonId = currentRun.currentDungeonId;
+        const finishedFloor = currentRun.currentFloor;
+        const bossType = getBossType(finishedFloor);
+
+        if (bossType === 'final') {
+          // Final 처치 — 1회 영구 보상 + 정복 모달 + 마을 강제 복귀.
+          // (this.bossId / bossDrop 은 이미 위쪽 onBossKill 콜백 통해 처리됨.)
+          stateAfterKill.markFinalCleared(dungeonId);
+          stateAfterKill.markDungeonProgress(dungeonId, 30);
+          stateAfterKill.setPendingFinalCleared(dungeonId);
+          stateAfterKill.setScreen('town');
+          return;
+        }
+
+        // 일반 / mini / major / sub — 다음 floor 로 진행 (30 cap)
+        const nextFloor = Math.min(finishedFloor + 1, 30);
+        stateAfterKill.markDungeonProgress(dungeonId, nextFloor);
+        stateAfterKill.setCurrentFloor(nextFloor);
         stateAfterKill.setScreen('dungeon-floors');
         return;
       }

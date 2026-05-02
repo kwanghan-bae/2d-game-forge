@@ -169,6 +169,10 @@ export interface MetaState {
   questProgress: Record<string, number>;
   questsCompleted: string[];
   regionsVisited: string[];
+  // Phase B-3β1 — 신 dungeon flow 영구 진행도
+  dungeonProgress: Record<string, { maxFloor: number }>;  // 던전별 도달 최대 floor
+  dungeonFinalsCleared: string[];                          // final boss 처치한 dungeonId 리스트 (1회 영구 보상 게이트)
+  pendingFinalClearedId: string | null;                    // final 처치 직후 town 진입 시 모달 트리거
   tutorialDone: boolean;
   tutorialStep: number;
   musicVolume: number;
@@ -227,6 +231,21 @@ export interface Dungeon {
   themeColor: string;        // CSS color (hex or var() reference) for UI accent
   unlockGate: DungeonUnlock;
   monsterPool: string[];     // monster IDs that spawn in this dungeon
+  /**
+   * Phase B-3β1 — boss IDs per floor type. References boss IDs in bosses.ts.
+   *  - mini    → floor 5
+   *  - major   → floor 10
+   *  - sub[0]  → floor 15
+   *  - sub[1]  → floor 20
+   *  - sub[2]  → floor 25
+   *  - final   → floor 30 (1회 영구 보상)
+   */
+  bossIds: {
+    mini: string;
+    major: string;
+    sub: [string, string, string];
+    final: string;
+  };
   isHardOnly: boolean;
 }
 
