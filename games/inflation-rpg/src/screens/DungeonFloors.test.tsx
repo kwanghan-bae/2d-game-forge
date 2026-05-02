@@ -50,3 +50,43 @@ describe('DungeonFloors', () => {
     expect(screen.getByText(/평야/)).toBeInTheDocument();
   });
 });
+
+describe('DungeonFloors — boss cards', () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      screen: 'dungeon-floors',
+      run: { ...INITIAL_RUN, characterId: 'hwarang', currentDungeonId: 'plains', currentFloor: 30 },
+      meta: { ...INITIAL_META },
+    });
+  });
+
+  it('floor 5 (mini) card has data-boss="mini"', () => {
+    render(<DungeonFloors />);
+    expect(screen.getByTestId('floor-card-5')).toHaveAttribute('data-boss', 'mini');
+  });
+
+  it('floor 10 (major) card has data-boss="major"', () => {
+    render(<DungeonFloors />);
+    expect(screen.getByTestId('floor-card-10')).toHaveAttribute('data-boss', 'major');
+  });
+
+  it('floor 15/20/25 (sub) cards have data-boss="sub"', () => {
+    render(<DungeonFloors />);
+    expect(screen.getByTestId('floor-card-15')).toHaveAttribute('data-boss', 'sub');
+    expect(screen.getByTestId('floor-card-20')).toHaveAttribute('data-boss', 'sub');
+    expect(screen.getByTestId('floor-card-25')).toHaveAttribute('data-boss', 'sub');
+  });
+
+  it('floor 30 (final) card has data-boss="final" and shows ⭐', () => {
+    render(<DungeonFloors />);
+    const card = screen.getByTestId('floor-card-30');
+    expect(card).toHaveAttribute('data-boss', 'final');
+    expect(card.textContent).toContain('⭐');
+  });
+
+  it('non-boss floors have data-boss="none"', () => {
+    render(<DungeonFloors />);
+    expect(screen.getByTestId('floor-card-1')).toHaveAttribute('data-boss', 'none');
+    expect(screen.getByTestId('floor-card-7')).toHaveAttribute('data-boss', 'none');
+  });
+});
