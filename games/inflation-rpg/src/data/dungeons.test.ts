@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DUNGEONS, getDungeonById, getStartDungeons } from './dungeons';
+import { BOSSES } from './bosses';
 
 describe('DUNGEONS catalog', () => {
   it('has the 3 starter dungeons', () => {
@@ -54,5 +55,45 @@ describe('getStartDungeons', () => {
     for (const d of start) {
       expect(d.unlockGate.type).toBe('start');
     }
+  });
+});
+
+describe('Phase B-3β1 — Dungeon.bossIds', () => {
+  it('every dungeon has bossIds with correct shape', () => {
+    for (const d of DUNGEONS) {
+      expect(d.bossIds).toBeDefined();
+      expect(typeof d.bossIds.mini).toBe('string');
+      expect(typeof d.bossIds.major).toBe('string');
+      expect(d.bossIds.sub).toHaveLength(3);
+      expect(typeof d.bossIds.final).toBe('string');
+    }
+  });
+
+  it('every bossId references a real BOSSES entry', () => {
+    const knownIds = new Set(BOSSES.map(b => b.id));
+    const broken: string[] = [];
+    for (const d of DUNGEONS) {
+      const all = [d.bossIds.mini, d.bossIds.major, ...d.bossIds.sub, d.bossIds.final];
+      for (const id of all) {
+        if (!knownIds.has(id)) broken.push(`${d.id} -> ${id}`);
+      }
+    }
+    expect(broken, `Dungeons reference undefined bosses: ${broken.join(', ')}`).toEqual([]);
+  });
+
+  it('plains dungeon bossIds match locked mapping', () => {
+    const plains = getDungeonById('plains')!;
+    expect(plains.bossIds.mini).toBe('plains-ghost');
+    expect(plains.bossIds.major).toBe('spirit-post-guardian');
+    expect(plains.bossIds.sub).toEqual(['cursed-plains', 'plains-lord', 'goblin-chief']);
+    expect(plains.bossIds.final).toBe('gate-guardian');
+  });
+
+  it('forest dungeon final = chaos-god', () => {
+    expect(getDungeonById('forest')!.bossIds.final).toBe('chaos-god');
+  });
+
+  it('mountains dungeon final = jade-emperor', () => {
+    expect(getDungeonById('mountains')!.bossIds.final).toBe('jade-emperor');
   });
 });

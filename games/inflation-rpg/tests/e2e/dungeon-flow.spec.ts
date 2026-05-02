@@ -63,4 +63,26 @@ test.describe('Phase B-3α — dungeon flow smoke', () => {
     await expect(page.getByText(/마을$/)).toBeVisible();
     await expect(page.getByTestId('town-dungeon-plains')).toBeVisible();
   });
+
+  test('Phase B-3β1 — boss floor cards visually differentiated (locked state)', async ({ page }) => {
+    // Main menu → Town
+    await page.getByRole('button', { name: /마을로/ }).click();
+
+    // Town: 평야 던전 입장
+    await page
+      .getByTestId('town-dungeon-plains')
+      .getByRole('button', { name: '입장' })
+      .click();
+
+    // ClassSelect: 화랑 (always unlocked) + 모험 시작
+    await page.getByRole('button', { name: '화랑' }).first().click();
+    await page.getByRole('button', { name: '모험 시작' }).click();
+
+    // DungeonFloors — floor 1 활성, floor 5/10/15/30 잠금 but data-boss 속성 검증
+    await expect(page.getByTestId('floor-card-1')).toHaveAttribute('data-boss', 'none');
+    await expect(page.getByTestId('floor-card-5')).toHaveAttribute('data-boss', 'mini');
+    await expect(page.getByTestId('floor-card-10')).toHaveAttribute('data-boss', 'major');
+    await expect(page.getByTestId('floor-card-15')).toHaveAttribute('data-boss', 'sub');
+    await expect(page.getByTestId('floor-card-30')).toHaveAttribute('data-boss', 'final');
+  });
 });
