@@ -1,12 +1,13 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getDungeonById } from '../data/dungeons';
-import { getFloorInfo } from '../data/floors';
+import { getFloorInfo, getBossType } from '../data/floors';
 import { isRunOver } from '../systems/bp';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgePanel } from '@/components/ui/forge-panel';
 import { formatNumber } from '../lib/format';
+import type { BossType } from '../types';
 
 const NAMED_FLOOR_COUNT = 30;
 
@@ -92,22 +93,48 @@ export function DungeonFloors() {
           const info = getFloorInfo(dungeon.id, floor);
           const locked = floor > run.currentFloor;
           const isCurrent = floor === run.currentFloor;
+          const bossType: BossType | null = getBossType(floor);
+          const dataBoss = bossType ?? 'none';
+
+          const bossBg: Partial<Record<BossType, string>> = {
+            mini: '#5a4a1f',
+            major: '#7a3f1f',
+            sub: '#5a1f5a',
+            final: '#aa1f1f',
+          };
+          const baseBg = isCurrent
+            ? 'var(--forge-accent)'
+            : locked
+            ? 'rgba(0,0,0,0.6)'
+            : bossType
+            ? bossBg[bossType]
+            : 'var(--forge-bg-panel)';
+
+          const label = bossType === 'final'
+            ? `⭐F${floor}`
+            : bossType
+            ? `👹F${floor}`
+            : `F${floor}`;
+
           return (
             <button
               key={floor}
               data-testid={`floor-card-${floor}`}
+              data-boss={dataBoss}
               disabled={locked}
               onClick={() => enterFloor(floor)}
               style={{
                 minHeight: 56,
                 padding: 'var(--forge-space-2)',
-                background: isCurrent
-                  ? 'var(--forge-accent)'
-                  : locked
-                  ? 'rgba(0,0,0,0.6)'
-                  : 'var(--forge-bg-panel)',
+                background: baseBg,
                 color: isCurrent ? '#000' : 'var(--forge-text-primary)',
-                border: `1px solid ${isCurrent ? 'var(--forge-accent)' : 'var(--forge-border)'}`,
+                border: `1px solid ${
+                  isCurrent
+                    ? 'var(--forge-accent)'
+                    : bossType === 'final'
+                    ? '#ffd700'
+                    : 'var(--forge-border)'
+                }`,
                 borderRadius: 6,
                 cursor: locked ? 'not-allowed' : 'pointer',
                 opacity: locked ? 0.5 : 1,
@@ -120,7 +147,7 @@ export function DungeonFloors() {
               }}
             >
               <div style={{ fontWeight: 700 }}>
-                {locked ? '🔒' : `F${floor}`}
+                {locked ? '🔒' : label}
               </div>
               <div style={{ fontSize: 10, opacity: 0.85 }}>
                 Lv {formatNumber(info.monsterLevel)}
