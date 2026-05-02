@@ -11,6 +11,12 @@ export const DUNGEONS: Dungeon[] = [
       'plains-imp', 'plains-rat', 'plains-crow', 'plains-bandit', 'plains-ronin',
       'slime', 'goblin',
     ],
+    bossIds: {
+      mini: 'plains-ghost',
+      major: 'spirit-post-guardian',
+      sub: ['cursed-plains', 'plains-lord', 'goblin-chief'],
+      final: 'gate-guardian',
+    },
     isHardOnly: false,
   },
   {
@@ -23,6 +29,12 @@ export const DUNGEONS: Dungeon[] = [
       'forest-fox', 'forest-squirrel', 'forest-bear', 'forest-spirit', 'forest-snake',
       'slime', 'goblin', 'tiger',
     ],
+    bossIds: {
+      mini: 'gumiho',
+      major: 'tree-spirit',
+      sub: ['black-tiger', 'cursed-tree-spirit', 'forest-ruler'],
+      final: 'chaos-god',
+    },
     isHardOnly: false,
   },
   {
@@ -35,6 +47,12 @@ export const DUNGEONS: Dungeon[] = [
       'mountain-goat', 'mountain-bandit', 'mountain-eagle', 'mountain-miner', 'mountain-grey',
       'goblin', 'tiger',
     ],
+    bossIds: {
+      mini: 'mountain-god',
+      major: 'kumgang-spirit',
+      sub: ['thunder-god', 'sky-mountain-lord', 'black-dragon'],
+      final: 'jade-emperor',
+    },
     isHardOnly: false,
   },
 ];
