@@ -7,12 +7,11 @@ import { playSfx } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedItemsList } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
-import { pickMonster, pickMonsterFromPool } from '../data/monsters';
+import { pickMonsterFromPool } from '../data/monsters';
 import { getDungeonById } from '../data/dungeons';
 import { getFloorInfo, getBossType } from '../data/floors';
-import { getBossesForArea, getBossById } from '../data/bosses';
+import { getBossById } from '../data/bosses';
 import type { BossType } from '../types';
-import { MAP_AREAS } from '../data/maps';
 import { getBossDefeatStory } from '../data/stories';
 import { isRunOver, onDefeat } from '../systems/bp';
 import {
@@ -81,64 +80,41 @@ export class BattleScene extends Phaser.Scene {
   create() {
     const theme = resolveForgeTheme();
     const { run } = useGameStore.getState();
-    const area = run.currentAreaId;
-    const bosses = getBossesForArea(area, run.isHardMode);
-    const hasBoss = bosses.length > 0;
 
     const bg = this.add.rectangle(0, 0, 360, 600, theme.bg).setOrigin(0);
     void bg;
 
-    const isNewFlow = run.currentDungeonId !== null;
+    // 신 flow only — currentDungeonId is invariant non-null at this point.
+    const dungeon = getDungeonById(run.currentDungeonId!);
+    const info = getFloorInfo(run.currentDungeonId!, run.currentFloor);
+    const monsterLevel = info.monsterLevel;
+    this.cachedMonsterLevel = monsterLevel;
 
-    if (!isNewFlow && hasBoss && Math.random() < 0.25) {
-      // 구 flow — 25% 보스 출현 (그대로)
-      const boss = bosses[0]!;
-      this.isBoss = true;
-      this.bossId = boss.id;
-      this.enemyName = `👹 ${boss.nameKR}`;
-      this.enemyMaxHP = Math.floor(run.level * 50 * boss.hpMult);
-    } else if (isNewFlow) {
-      const dungeon = getDungeonById(run.currentDungeonId!);
-      const info = getFloorInfo(run.currentDungeonId!, run.currentFloor);
-      const monsterLevel = info.monsterLevel;
-      this.cachedMonsterLevel = monsterLevel;
-
-      const bossType: BossType | null = info.bossType;
-      if (bossType !== null && dungeon) {
-        // 신 flow — 보스 floor
-        const bossId = pickBossIdByType(dungeon.bossIds, bossType, run.currentFloor);
-        const boss = getBossById(bossId);
-        if (boss) {
-          this.isBoss = true;
-          this.bossId = boss.id;
-          const bossEmoji = bossType === 'final' ? '⭐' : '👹';
-          this.enemyName = `${bossEmoji} ${boss.nameKR}`;
-          this.enemyMaxHP = Math.floor(monsterLevel * 50 * boss.hpMult);
-        } else {
-          // 데이터 결함 — 일반 몹으로 fallback
-          this.isBoss = false;
-          const monster = pickMonsterFromPool(monsterLevel, dungeon.monsterPool);
-          this.currentMonsterId = monster.id;
-          this.enemyName = `${monster.emoji} ${monster.nameKR}`;
-          this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
-        }
+    const bossType: BossType | null = info.bossType;
+    if (bossType !== null && dungeon) {
+      const bossId = pickBossIdByType(dungeon.bossIds, bossType, run.currentFloor);
+      const boss = getBossById(bossId);
+      if (boss) {
+        this.isBoss = true;
+        this.bossId = boss.id;
+        const bossEmoji = bossType === 'final' ? '⭐' : '👹';
+        this.enemyName = `${bossEmoji} ${boss.nameKR}`;
+        this.enemyMaxHP = Math.floor(monsterLevel * 50 * boss.hpMult);
       } else {
-        // 신 flow — 일반 floor
+        // 데이터 결함 — 일반 몹으로 fallback
         this.isBoss = false;
-        const monster = pickMonsterFromPool(monsterLevel, dungeon!.monsterPool);
+        const monster = pickMonsterFromPool(monsterLevel, dungeon.monsterPool);
         this.currentMonsterId = monster.id;
         this.enemyName = `${monster.emoji} ${monster.nameKR}`;
         this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
       }
     } else {
-      // 구 flow — 일반 (기존)
+      // 신 flow — 일반 floor
       this.isBoss = false;
-      this.cachedMonsterLevel = null;
-      const currentArea = MAP_AREAS.find(a => a.id === area);
-      const monster = pickMonster(run.level, currentArea?.regionId);
+      const monster = pickMonsterFromPool(monsterLevel, dungeon!.monsterPool);
       this.currentMonsterId = monster.id;
       this.enemyName = `${monster.emoji} ${monster.nameKR}`;
-      this.enemyMaxHP = Math.floor(run.level * 20 * monster.hpMult);
+      this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
     }
     this.enemyHP = this.enemyMaxHP;
 
@@ -222,10 +198,8 @@ export class BattleScene extends Phaser.Scene {
       if (!this.isBoss) {
         // Non-boss: DR = round(level * 0.5), counter increments owned by incrementDungeonKill
         useGameStore.getState().incrementDungeonKill(run.level);
-        const storeState = useGameStore.getState();
-        const currentArea = MAP_AREAS.find(a => a.id === storeState.run.currentAreaId);
-        if (currentArea) {
-          storeState.trackKill(this.currentMonsterId, currentArea.regionId);
+        if (this.currentMonsterId) {
+          useGameStore.getState().trackKill(this.currentMonsterId);
         }
       }
       // Boss: DR + stones + counter increments are all owned by bossDrop (called via onBossKill above)
@@ -252,6 +226,7 @@ export class BattleScene extends Phaser.Scene {
           stateAfterKill.markFinalCleared(dungeonId);
           stateAfterKill.markDungeonProgress(dungeonId, 30);
           stateAfterKill.setPendingFinalCleared(dungeonId);
+          stateAfterKill.selectDungeon(null);
           stateAfterKill.setScreen('town');
           return;
         }
@@ -264,20 +239,8 @@ export class BattleScene extends Phaser.Scene {
         return;
       }
 
-      // 구 flow — stage threshold 진행.
-      const area = MAP_AREAS.find(a => a.id === currentRun.currentAreaId);
-      if (area) {
-        const stageThreshold = currentRun.currentStage * area.stageMonsterCount;
-        if (currentRun.dungeonRunMonstersDefeated >= stageThreshold) {
-          if (currentRun.currentStage >= area.stageCount) {
-            this.onDungeonComplete();
-            return;
-          } else {
-            stateAfterKill.advanceStage();
-          }
-        }
-      }
-
+      // currentDungeonId is invariant non-null in new flow — the dungeon-flow branch above always returns.
+      // Defensive: if we somehow reach here, end the battle as a level-up or normal victory.
       if (spGained > 0) {
         playSfx('levelup');
         this.callbacks.onLevelUp(newLevel);
@@ -357,6 +320,6 @@ export class BattleScene extends Phaser.Scene {
 
   private onDungeonComplete() {
     useGameStore.getState().resetDungeon();
-    useGameStore.getState().setScreen('world-map');
+    useGameStore.getState().setScreen('town');
   }
 }
