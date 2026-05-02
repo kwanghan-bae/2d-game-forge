@@ -96,7 +96,7 @@ export function DungeonFloors() {
           const bossType: BossType | null = getBossType(floor);
           const dataBoss = bossType ?? 'none';
 
-          const bossBg: Partial<Record<BossType, string>> = {
+          const bossBg: Record<BossType, string> = {
             mini: '#5a4a1f',
             major: '#7a3f1f',
             sub: '#5a1f5a',
