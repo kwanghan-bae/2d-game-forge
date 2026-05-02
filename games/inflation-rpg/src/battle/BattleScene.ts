@@ -66,8 +66,8 @@ export class BattleScene extends Phaser.Scene {
   private activeSkills: ActiveSkill[] = [];
   private cachedPlayerAtk = 0;
   private cachedPlayerHpMax = 0;
-  // 신 flow 시 floor 기반 monsterLevel 을 전투 내내 캐시. legacy 시 null.
-  private cachedMonsterLevel: number | null = null;
+  // floor 기반 monsterLevel 을 전투 내내 캐시. create() 에서 항상 셋.
+  private cachedMonsterLevel = 0;
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -250,7 +250,7 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
 
-    const monsterLevelForAtk = this.cachedMonsterLevel ?? run.level;
+    const monsterLevelForAtk = this.cachedMonsterLevel;
     const enemyATK = Math.floor(monsterLevelForAtk * 8 * (this.isBoss ? 2 : 1));
     const reduction = calcDamageReduction(playerDEF);
     const dmgTaken = Math.floor(enemyATK * (1 - reduction));
@@ -259,8 +259,7 @@ export class BattleScene extends Phaser.Scene {
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
       playSfx('defeat');
-      // 신 flow 는 캐시된 floor monsterLevel, 구 flow 는 run.level 사용.
-      const monsterLevel = this.cachedMonsterLevel ?? run.level;
+      const monsterLevel = this.cachedMonsterLevel;
       const newBP = onDefeat(run.bp, monsterLevel, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
       useGameStore.getState().resetDungeon();
@@ -318,8 +317,4 @@ export class BattleScene extends Phaser.Scene {
     });
   }
 
-  private onDungeonComplete() {
-    useGameStore.getState().resetDungeon();
-    useGameStore.getState().setScreen('town');
-  }
 }

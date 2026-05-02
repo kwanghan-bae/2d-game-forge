@@ -390,8 +390,8 @@ describe('Phase B-3β1 — dungeon progress + finals', () => {
   });
 });
 
-describe('Phase B-3β2 — persist v6 strips currentAreaId', () => {
-  it('INITIAL_RUN has no currentAreaId field', () => {
+describe('Phase B-3β2 — INITIAL_RUN shape', () => {
+  it('has no currentAreaId field (legacy world-map flow removed)', () => {
     expect((INITIAL_RUN as unknown as { currentAreaId?: string }).currentAreaId).toBeUndefined();
   });
 });
