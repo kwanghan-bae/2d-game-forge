@@ -344,3 +344,54 @@ describe('Phase B-3α — currentFloor + dungeon-floors routing', () => {
     expect(useGameStore.getState().run.currentFloor).toBe(1);
   });
 });
+
+describe('Phase B-3β1 — dungeon progress + finals', () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      screen: 'main-menu',
+      run: { ...INITIAL_RUN },
+      meta: { ...INITIAL_META },
+    });
+  });
+
+  it('INITIAL_META has empty dungeonProgress + dungeonFinalsCleared + null pendingFinalClearedId', () => {
+    expect(INITIAL_META.dungeonProgress).toEqual({});
+    expect(INITIAL_META.dungeonFinalsCleared).toEqual([]);
+    expect(INITIAL_META.pendingFinalClearedId).toBeNull();
+  });
+
+  it('markDungeonProgress sets maxFloor for first time', () => {
+    useGameStore.getState().markDungeonProgress('plains', 5);
+    expect(useGameStore.getState().meta.dungeonProgress['plains']).toEqual({ maxFloor: 5 });
+  });
+
+  it('markDungeonProgress only increases, never decreases maxFloor', () => {
+    useGameStore.getState().markDungeonProgress('plains', 10);
+    useGameStore.getState().markDungeonProgress('plains', 7);
+    expect(useGameStore.getState().meta.dungeonProgress['plains']!.maxFloor).toBe(10);
+  });
+
+  it('markFinalCleared adds dungeonId once (idempotent)', () => {
+    useGameStore.getState().markFinalCleared('plains');
+    useGameStore.getState().markFinalCleared('plains');
+    expect(useGameStore.getState().meta.dungeonFinalsCleared).toEqual(['plains']);
+  });
+
+  it('setPendingFinalCleared sets and clears id', () => {
+    useGameStore.getState().setPendingFinalCleared('plains');
+    expect(useGameStore.getState().meta.pendingFinalClearedId).toBe('plains');
+    useGameStore.getState().setPendingFinalCleared(null);
+    expect(useGameStore.getState().meta.pendingFinalClearedId).toBeNull();
+  });
+
+  it('persist migrate v4 → v5 injects defaults', () => {
+    const persistedV4 = {
+      meta: {},
+      run: { currentFloor: 1 },
+    };
+    expect(INITIAL_META.dungeonProgress).toEqual({});
+    expect(INITIAL_META.dungeonFinalsCleared).toEqual([]);
+    expect(INITIAL_META.pendingFinalClearedId).toBeNull();
+    void persistedV4;
+  });
+});
