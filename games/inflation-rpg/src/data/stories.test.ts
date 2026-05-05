@@ -1,14 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { STORIES, getRegionEnterStory } from './stories';
-import { REGIONS } from './regions';
 import { BOSSES } from './bosses';
+import { DUNGEONS } from './dungeons';
 
 describe('stories integrity', () => {
-  it('every region has a region_enter story', () => {
-    const missing: string[] = [];
-    for (const region of REGIONS) {
-      if (!getRegionEnterStory(region.id)) missing.push(region.id);
-    }
+  it('every dungeon has a region_enter story', () => {
+    const missing = DUNGEONS.filter((d) => !getRegionEnterStory(d.id)).map((d) => d.id);
     expect(missing).toEqual([]);
   });
 

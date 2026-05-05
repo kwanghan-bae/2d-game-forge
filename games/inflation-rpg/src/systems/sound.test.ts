@@ -9,9 +9,9 @@ describe('sound system', () => {
   it('bgmIdForScreen maps known screens', () => {
     expect(bgmIdForScreen('main-menu')).toBe('lobby');
     expect(bgmIdForScreen('class-select')).toBe('lobby');
-    expect(bgmIdForScreen('world-map')).toBe('field');
+    expect(bgmIdForScreen('town')).toBe('lobby');
+    expect(bgmIdForScreen('dungeon-floors')).toBe('lobby');
     expect(bgmIdForScreen('inventory')).toBe('field');
-    expect(bgmIdForScreen('dungeon')).toBe('battle');
     expect(bgmIdForScreen('battle')).toBe('battle');
   });
 
