@@ -82,6 +82,7 @@ const SCREEN_BGM: Partial<Record<Screen, string>> = {
   'town': 'lobby',
   'dungeon-floors': 'lobby',
   'class-select': 'lobby',
+  ascension: 'lobby',
   inventory: 'field',
   shop: 'field',
   quests: 'field',
