@@ -222,6 +222,12 @@ export class BattleScene extends Phaser.Scene {
         const finishedFloor = currentRun.currentFloor;
         const bossType = getBossType(finishedFloor);
 
+        // Phase F-1: 심층 floor 균열석 drop (floor / 50, 0 for floor < 50).
+        const stonesGained = Math.floor(finishedFloor / 50);
+        if (stonesGained > 0) {
+          stateAfterKill.gainCrackStones(stonesGained);
+        }
+
         if (bossType === 'final') {
           const isFirstClear = !stateAfterKill.meta.dungeonFinalsCleared.includes(dungeonId);
           if (isFirstClear) {
