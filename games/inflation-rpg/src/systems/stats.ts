@@ -25,12 +25,13 @@ export function calcFinalStat(
   charMult: number,
   equipped: Equipment[],
   baseAbilityMult: number,
-  charLevelMult = 1
+  charLevelMult = 1,
+  ascTierMult = 1
 ): number {
   const raw = calcRawStat(key, allocated, charMult);
   const flat = calcEquipmentFlat(key, equipped);
   const pct = calcEquipmentPercentMult(key, equipped);
-  return Math.floor((raw + flat) * pct * baseAbilityMult * charLevelMult);
+  return Math.floor((raw + flat) * pct * baseAbilityMult * charLevelMult * ascTierMult);
 }
 
 export function calcDamageReduction(def: number): number {

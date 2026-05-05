@@ -82,4 +82,14 @@ describe('Stats System', () => {
   it('calcFinalStat: charLevelMult defaults to 1 (backward compat)', () => {
     expect(calcFinalStat('atk', 0, 1.0, noEquip, 1)).toBe(10);
   });
+
+  it('calcFinalStat: ascTierMult scales the final result (Tier 1 = ×1.1)', () => {
+    // base atk 10, sp 0, charMult 1, no equip, baseAbility 1, charLevelMult 1, ascTierMult 1.1
+    // floor(10 * 1 * 1 * 1.1) = 11
+    expect(calcFinalStat('atk', 0, 1.0, noEquip, 1, 1, 1.1)).toBe(11);
+  });
+
+  it('calcFinalStat: ascTierMult defaults to 1 (backward compat)', () => {
+    expect(calcFinalStat('atk', 0, 1.0, noEquip, 1, 1)).toBe(10);
+  });
 });
