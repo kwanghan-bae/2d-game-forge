@@ -31,12 +31,14 @@ describe('ClassSelect', () => {
   });
 
   it('게임 시작 starts run with selected character', async () => {
+    // New flow requires a dungeon to be selected before startRun (invariant).
+    useGameStore.getState().selectDungeon('plains');
     render(<ClassSelect />);
     await userEvent.click(screen.getByRole('button', { name: /화랑/i }));
     await userEvent.click(screen.getByRole('button', { name: /모험 시작/i }));
     const state = useGameStore.getState();
     expect(state.run.characterId).toBe('hwarang');
-    expect(state.screen).toBe('world-map');
+    expect(state.screen).toBe('dungeon-floors');
   });
 
   it('shows character level badge when charLv > 0', () => {

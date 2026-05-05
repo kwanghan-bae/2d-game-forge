@@ -12,13 +12,13 @@ describe('GameStore', () => {
     expect(useGameStore.getState().screen).toBe('main-menu');
   });
 
-  it('startRun: sets characterId, resets run, navigates to world-map', () => {
+  it('startRun: sets characterId, resets run, navigates to dungeon-floors', () => {
     useGameStore.getState().startRun('hwarang', false);
     const state = useGameStore.getState();
     expect(state.run.characterId).toBe('hwarang');
     expect(state.run.bp).toBe(30);
     expect(state.run.level).toBe(1);
-    expect(state.screen).toBe('world-map');
+    expect(state.screen).toBe('dungeon-floors');
   });
 
   it('encounterMonster: decrements BP by encounterCost(level)', () => {
@@ -330,12 +330,6 @@ describe('Phase B-3α — currentFloor + dungeon-floors routing', () => {
     expect(useGameStore.getState().run.currentFloor).toBe(1);
   });
 
-  it('startRun routes to world-map when currentDungeonId is null (legacy flow)', () => {
-    useGameStore.getState().selectDungeon(null);
-    useGameStore.getState().startRun('hwarang', false);
-    expect(useGameStore.getState().screen).toBe('world-map');
-  });
-
   it('endRun resets currentFloor to 1', () => {
     useGameStore.getState().selectDungeon('plains');
     useGameStore.getState().startRun('hwarang', false);
@@ -393,5 +387,11 @@ describe('Phase B-3β1 — dungeon progress + finals', () => {
     expect(INITIAL_META.dungeonFinalsCleared).toEqual([]);
     expect(INITIAL_META.pendingFinalClearedId).toBeNull();
     void persistedV4;
+  });
+});
+
+describe('Phase B-3β2 — INITIAL_RUN shape', () => {
+  it('has no currentAreaId field (legacy world-map flow removed)', () => {
+    expect((INITIAL_RUN as unknown as { currentAreaId?: string }).currentAreaId).toBeUndefined();
   });
 });

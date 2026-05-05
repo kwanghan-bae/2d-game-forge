@@ -28,14 +28,14 @@ describe('DungeonFloors', () => {
     expect(screen.getByTestId('floor-card-6')).toBeDisabled();
   });
 
-  it('click on accessible floor sets currentFloor + transitions to dungeon', () => {
+  it('click on accessible floor sets currentFloor + transitions to battle', () => {
     useGameStore.setState({
       run: { ...INITIAL_RUN, characterId: 'hwarang', currentDungeonId: 'plains', currentFloor: 3, bp: 30 },
     });
     render(<DungeonFloors />);
     fireEvent.click(screen.getByTestId('floor-card-2'));
     expect(useGameStore.getState().run.currentFloor).toBe(2);
-    expect(useGameStore.getState().screen).toBe('dungeon');
+    expect(useGameStore.getState().screen).toBe('battle');
   });
 
   it('back button returns to town and clears currentDungeonId', () => {

@@ -21,7 +21,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 't-4-dungeon',
-    screen: 'dungeon',
+    screen: 'battle',
     textKR: '한 floor 마다 1 마리 처치 → 다음 floor 잠금 해제. 자동 전투니 지켜만 봐도 된다.',
     ctaKR: '다음',
   },

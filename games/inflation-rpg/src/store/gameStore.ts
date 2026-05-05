@@ -34,7 +34,6 @@ export const INITIAL_RUN: RunState = {
   bp: STARTING_BP,
   statPoints: 0,
   allocated: INITIAL_ALLOCATED,
-  currentAreaId: 'village-entrance',
   currentDungeonId: null,
   currentFloor: 1,
   isHardMode: false,
@@ -92,7 +91,6 @@ interface GameStore {
   equipItem: (itemId: string) => void;
   unequipItem: (itemId: string) => void;
   buyEquipSlot: () => void;
-  setCurrentArea: (areaId: string) => void;
   selectDungeon: (dungeonId: string | null) => void;
   setCurrentFloor: (floor: number) => void;
   advanceStage: () => void;
@@ -100,7 +98,7 @@ interface GameStore {
   incrementDungeonKill: (monsterLevel: number) => void;
   incrementQuestProgress: (questId: string, by?: number) => void;
   completeQuest: (questId: string) => void;
-  trackKill: (monsterId: string, regionId: string) => void;
+  trackKill: (monsterId: string) => void;
   trackBossDefeat: (bossId: string) => void;
   trackItemCollect: (equipmentId: string) => void;
   markRegionVisited: (regionId: string) => void;
@@ -137,7 +135,7 @@ export const useGameStore = create<GameStore>()(
             isHardMode,
             currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
           },
-          screen: s.run.currentDungeonId !== null ? 'dungeon-floors' : 'world-map',
+          screen: 'dungeon-floors',
         })),
 
       endRun: () => {
@@ -251,7 +249,6 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      setCurrentArea: (areaId) => set((s) => ({ run: { ...s.run, currentAreaId: areaId } })),
       selectDungeon: (dungeonId) =>
         set((s) => ({ run: { ...s.run, currentDungeonId: dungeonId } })),
       setCurrentFloor: (floor) =>
@@ -323,14 +320,12 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      trackKill: (monsterId, regionId) => {
+      trackKill: (monsterId) => {
         const state = get();
         for (const q of QUESTS) {
           if (q.type !== 'kill_count') continue;
           if (state.meta.questsCompleted.includes(q.id)) continue;
-          const matchesMonster = q.target.monsterId === monsterId;
-          const matchesRegion = q.target.monsterId === undefined && q.regionId === regionId;
-          if (matchesMonster || matchesRegion) {
+          if (q.target.monsterId === monsterId) {
             get().incrementQuestProgress(q.id);
           }
         }
@@ -460,9 +455,9 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 5,
+      version: 6,
       migrate: (persisted: unknown, fromVersion: number) => {
-        const s = persisted as { meta?: Partial<MetaState>; run?: Partial<RunState> };
+        const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
         if (fromVersion < 1) {
           s.meta = {
             equippedItemIds: [],
@@ -509,6 +504,10 @@ export const useGameStore = create<GameStore>()(
           s.meta.dungeonProgress = s.meta.dungeonProgress ?? {};
           s.meta.dungeonFinalsCleared = s.meta.dungeonFinalsCleared ?? [];
           s.meta.pendingFinalClearedId = s.meta.pendingFinalClearedId ?? null;
+        }
+        // Phase B-3β2 — currentAreaId 제거 (legacy world-map flow)
+        if (fromVersion < 6 && s.run) {
+          delete s.run.currentAreaId;
         }
         return s;
       },

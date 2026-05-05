@@ -29,7 +29,7 @@ export function Battle() {
       },
       onBattleEnd: (_victory) => {
         gameRef.current?.destroy(true);
-        setScreen('world-map');
+        setScreen('town');
       },
       onBossKill: (bossId, bpReward) => {
         bossDrop(bossId, bpReward);
@@ -48,7 +48,7 @@ export function Battle() {
 
   return (
     <ForgeScreen style={{ position: 'relative' }}>
-      <div style={{ padding: '8px 14px', background: 'var(--forge-bg-panel)', borderBottom: '1px solid var(--forge-border)', display: 'flex', gap: 8 }}>
+      <div data-testid="battle-header" style={{ padding: '8px 14px', background: 'var(--forge-bg-panel)', borderBottom: '1px solid var(--forge-border)', display: 'flex', gap: 8 }}>
         <span style={{ fontSize: 12, background: 'var(--forge-bg-card)', border: '1px solid var(--forge-border)', borderRadius: 5, padding: '3px 8px', color: 'var(--forge-stat-bp)', fontWeight: 700 }}>
           ⚡{run.bp}
         </span>
