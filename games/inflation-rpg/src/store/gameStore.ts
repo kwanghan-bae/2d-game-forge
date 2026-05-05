@@ -70,6 +70,10 @@ export const INITIAL_META: MetaState = {
   dungeonProgress: {},
   dungeonFinalsCleared: [],
   pendingFinalClearedId: null,
+  // Phase F-1 — Ascension
+  crackStones: 0,
+  ascTier: 0,
+  ascPoints: 0,
 };
 
 interface GameStore {
@@ -455,7 +459,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 6,
+      version: 7,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
         if (fromVersion < 1) {
@@ -508,6 +512,12 @@ export const useGameStore = create<GameStore>()(
         // Phase B-3β2 — currentAreaId 제거 (legacy world-map flow)
         if (fromVersion < 6 && s.run) {
           delete s.run.currentAreaId;
+        }
+        // Phase F-1 — Ascension fields
+        if (fromVersion < 7 && s.meta) {
+          s.meta.crackStones = s.meta.crackStones ?? 0;
+          s.meta.ascTier = s.meta.ascTier ?? 0;
+          s.meta.ascPoints = s.meta.ascPoints ?? 0;
         }
         return s;
       },

@@ -172,6 +172,10 @@ export interface MetaState {
   dungeonProgress: Record<string, { maxFloor: number }>;  // 던전별 도달 최대 floor
   dungeonFinalsCleared: string[];                          // final boss 처치한 dungeonId 리스트 (1회 영구 보상 게이트)
   pendingFinalClearedId: string | null;                    // final 처치 직후 town 진입 시 모달 트리거
+  // Phase F-1 — Ascension
+  crackStones: number;       // 차원 균열석 — Asc 비용 화폐
+  ascTier: number;           // 현재 Asc Tier (시작 0)
+  ascPoints: number;         // Tier 진입 시 N 누적 — F-5 Asc Tree 소비처
   tutorialDone: boolean;
   tutorialStep: number;
   musicVolume: number;
@@ -196,7 +200,8 @@ export type Screen =
   | 'inventory'
   | 'shop'
   | 'game-over'
-  | 'quests';
+  | 'quests'
+  | 'ascension';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
