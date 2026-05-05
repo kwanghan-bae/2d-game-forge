@@ -395,3 +395,128 @@ describe('Phase B-3β2 — INITIAL_RUN shape', () => {
     expect((INITIAL_RUN as unknown as { currentAreaId?: string }).currentAreaId).toBeUndefined();
   });
 });
+
+describe('Phase F-1 — Ascension', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('INITIAL_META has crackStones=0, ascTier=0, ascPoints=0', () => {
+    expect(INITIAL_META.crackStones).toBe(0);
+    expect(INITIAL_META.ascTier).toBe(0);
+    expect(INITIAL_META.ascPoints).toBe(0);
+  });
+
+  it('gainCrackStones increments meta.crackStones', () => {
+    useGameStore.getState().gainCrackStones(5);
+    expect(useGameStore.getState().meta.crackStones).toBe(5);
+    useGameStore.getState().gainCrackStones(3);
+    expect(useGameStore.getState().meta.crackStones).toBe(8);
+  });
+
+  it('canAscend reports finals-blocked when fewer than nextTier+2 dungeons cleared', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, dungeonFinalsCleared: ['plains'], crackStones: 100 },
+    }));
+    const result = useGameStore.getState().canAscend();
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('finals');
+    expect(result.nextTier).toBe(1);
+    expect(result.finalsRequired).toBe(3);
+    expect(result.finalsCleared).toBe(1);
+    expect(result.cost).toBe(1);
+  });
+
+  it('canAscend reports stones-blocked when crackStones < cost', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, dungeonFinalsCleared: ['plains', 'forest', 'mountains'], crackStones: 0 },
+    }));
+    const result = useGameStore.getState().canAscend();
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('stones');
+    expect(result.cost).toBe(1);
+  });
+
+  it('canAscend returns ok when conditions met (Tier 0 → 1)', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, dungeonFinalsCleared: ['plains', 'forest', 'mountains'], crackStones: 1 },
+    }));
+    const result = useGameStore.getState().canAscend();
+    expect(result.ok).toBe(true);
+    expect(result.nextTier).toBe(1);
+    expect(result.cost).toBe(1);
+    expect(result.reason).toBeNull();
+  });
+
+  it('ascend returns false and does not mutate when blocked', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, dungeonFinalsCleared: ['plains'], crackStones: 0 },
+    }));
+    const before = useGameStore.getState().meta;
+    expect(useGameStore.getState().ascend()).toBe(false);
+    expect(useGameStore.getState().meta.ascTier).toBe(before.ascTier);
+    expect(useGameStore.getState().meta.crackStones).toBe(before.crackStones);
+  });
+
+  it('ascend applies reset, advances tier, deducts stones, accrues points (Tier 0 → 1)', () => {
+    useGameStore.setState((s) => ({
+      run: { ...s.run, characterId: 'hwarang', level: 50, currentDungeonId: 'plains', currentFloor: 25 },
+      meta: {
+        ...s.meta,
+        dungeonFinalsCleared: ['plains', 'forest', 'mountains'],
+        crackStones: 5,
+        dr: 1000,
+        soulGrade: 3,
+        characterLevels: { hwarang: 7 },
+        normalBossesKilled: ['gate-guardian'],
+        enhanceStones: 42,
+      },
+    }));
+
+    expect(useGameStore.getState().ascend()).toBe(true);
+
+    const state = useGameStore.getState();
+    // Reset 적용
+    expect(state.run.characterId).toBe('');
+    expect(state.run.currentFloor).toBe(1);
+    expect(state.run.currentDungeonId).toBeNull();
+    expect(state.screen).toBe('main-menu');
+    expect(state.meta.dr).toBe(0);
+    expect(state.meta.soulGrade).toBe(0);
+    expect(state.meta.characterLevels).toEqual({});
+    expect(state.meta.normalBossesKilled).toEqual([]);
+    expect(state.meta.enhanceStones).toBe(0);
+    expect(state.meta.dungeonProgress).toEqual({});
+
+    // 보존 + 수정
+    expect(state.meta.ascTier).toBe(1);
+    expect(state.meta.crackStones).toBe(4); // 5 - 1
+    expect(state.meta.ascPoints).toBe(1); // 0 + 1
+    expect(state.meta.dungeonFinalsCleared).toEqual(['plains', 'forest', 'mountains']);
+  });
+
+  it('ascend keeps equipped items, drops unequipped from inventory', () => {
+    const equippedSword = {
+      id: 'sword-eq', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
+      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
+    };
+    const unequippedSword = {
+      id: 'sword-uneq', name: '도', slot: 'weapon' as const, rarity: 'common' as const,
+      stats: { flat: { atk: 5 } }, dropAreaIds: [], price: 0,
+    };
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        dungeonFinalsCleared: ['plains', 'forest', 'mountains'],
+        crackStones: 1,
+        inventory: { weapons: [equippedSword, unequippedSword], armors: [], accessories: [] },
+        equippedItemIds: ['sword-eq'],
+      },
+    }));
+    expect(useGameStore.getState().ascend()).toBe(true);
+    const inv = useGameStore.getState().meta.inventory;
+    expect(inv.weapons).toHaveLength(1);
+    expect(inv.weapons[0]!.id).toBe('sword-eq');
+    expect(useGameStore.getState().meta.equippedItemIds).toEqual(['sword-eq']);
+  });
+});
