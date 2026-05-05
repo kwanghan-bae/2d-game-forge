@@ -69,6 +69,16 @@ export function Town() {
         ))}
       </div>
 
+      <div style={{ textAlign: 'center', marginTop: 'var(--forge-space-4)' }}>
+        <ForgeButton
+          variant="secondary"
+          onClick={() => setScreen('ascension')}
+          data-testid="town-ascension-altar"
+        >
+          🌌 차원 제단
+        </ForgeButton>
+      </div>
+
       <div style={{ textAlign: 'center', marginTop: 'var(--forge-space-6)' }}>
         <ForgeButton variant="secondary" onClick={() => setScreen('main-menu')}>
           돌아가기
