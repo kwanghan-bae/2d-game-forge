@@ -13,6 +13,7 @@ const NAMED_FLOOR_COUNT = 30;
 
 export function DungeonFloors() {
   const run = useGameStore((s) => s.run);
+  const meta = useGameStore((s) => s.meta);
   const setScreen = useGameStore((s) => s.setScreen);
   const setCurrentFloor = useGameStore((s) => s.setCurrentFloor);
   const selectDungeon = useGameStore((s) => s.selectDungeon);
@@ -38,6 +39,19 @@ export function DungeonFloors() {
     if (floor > run.currentFloor) return;
     const info = getFloorInfo(dungeon.id, floor);
     setCurrentFloor(floor);
+    encounterMonster(info.monsterLevel);
+    const newBP = useGameStore.getState().run.bp;
+    if (isRunOver(newBP)) {
+      endRun();
+      return;
+    }
+    setScreen('battle');
+  };
+
+  const enterDeep = () => {
+    const deepest = Math.max(31, meta.dungeonProgress[dungeon.id]?.maxFloor ?? 0);
+    const info = getFloorInfo(dungeon.id, deepest);
+    setCurrentFloor(deepest);
     encounterMonster(info.monsterLevel);
     const newBP = useGameStore.getState().run.bp;
     if (isRunOver(newBP)) {
@@ -156,6 +170,28 @@ export function DungeonFloors() {
           );
         })}
       </div>
+      {meta.dungeonFinalsCleared.includes(dungeon.id) && (() => {
+        const deepest = Math.max(31, meta.dungeonProgress[dungeon.id]?.maxFloor ?? 0);
+        const deepInfo = getFloorInfo(dungeon.id, deepest);
+        return (
+          <ForgePanel
+            data-testid="dungeon-deep-panel"
+            style={{ margin: 'var(--forge-space-4) var(--forge-space-2)' }}
+          >
+            <ForgeButton
+              onClick={enterDeep}
+              data-testid="dungeon-deep-enter"
+              variant="primary"
+              style={{ width: '100%' }}
+            >
+              🌌 심층 진입 (F{deepest})
+            </ForgeButton>
+            <div style={{ fontSize: 11, color: 'var(--forge-text-secondary)', marginTop: 6, textAlign: 'center' }}>
+              Lv {formatNumber(deepInfo.monsterLevel)}
+            </div>
+          </ForgePanel>
+        );
+      })()}
     </ForgeScreen>
   );
 }

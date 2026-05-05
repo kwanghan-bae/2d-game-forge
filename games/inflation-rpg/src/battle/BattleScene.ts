@@ -221,18 +221,23 @@ export class BattleScene extends Phaser.Scene {
         const bossType = getBossType(finishedFloor);
 
         if (bossType === 'final') {
-          // Final 처치 — 1회 영구 보상 + 정복 모달 + 마을 강제 복귀.
-          // (this.bossId / bossDrop 은 이미 위쪽 onBossKill 콜백 통해 처리됨.)
-          stateAfterKill.markFinalCleared(dungeonId);
-          stateAfterKill.markDungeonProgress(dungeonId, 30);
-          stateAfterKill.setPendingFinalCleared(dungeonId);
-          stateAfterKill.selectDungeon(null);
-          stateAfterKill.setScreen('town');
-          return;
+          const isFirstClear = !stateAfterKill.meta.dungeonFinalsCleared.includes(dungeonId);
+          if (isFirstClear) {
+            // 첫 final 처치 — 정복자 의식 + 1회 영구 보상 + 마을 강제 복귀.
+            // (this.bossId / bossDrop 은 이미 위쪽 onBossKill 콜백 통해 처리됨.)
+            stateAfterKill.markFinalCleared(dungeonId);
+            stateAfterKill.markDungeonProgress(dungeonId, 31); // unlock 심층
+            stateAfterKill.setPendingFinalCleared(dungeonId);
+            stateAfterKill.selectDungeon(null);
+            stateAfterKill.setScreen('town');
+            return;
+          }
+          // 두 번째 이후 final — 일반 procedural 진행 (모달 X, run 계속).
+          // bossDrop 은 이미 onBossKill 통해 처리됨. fall through to advancement.
         }
 
-        // 일반 / mini / major / sub — 다음 floor 로 진행 (30 cap)
-        const nextFloor = Math.min(finishedFloor + 1, 30);
+        // 일반 / mini / major / sub / subsequent-final — 다음 floor 로 진행 (cap 없음).
+        const nextFloor = finishedFloor + 1;
         stateAfterKill.markDungeonProgress(dungeonId, nextFloor);
         stateAfterKill.setCurrentFloor(nextFloor);
         stateAfterKill.setScreen('dungeon-floors');

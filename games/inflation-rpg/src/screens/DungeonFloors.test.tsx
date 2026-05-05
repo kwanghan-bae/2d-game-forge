@@ -90,3 +90,46 @@ describe('DungeonFloors — boss cards', () => {
     expect(screen.getByTestId('floor-card-7')).toHaveAttribute('data-boss', 'none');
   });
 });
+
+describe('DungeonFloors — 심층 panel', () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      screen: 'dungeon-floors',
+      run: { ...INITIAL_RUN, characterId: 'hwarang', currentDungeonId: 'plains', currentFloor: 1, bp: 30 },
+      meta: { ...INITIAL_META },
+    });
+  });
+
+  it('hides the 심층 panel before first final clear', () => {
+    render(<DungeonFloors />);
+    expect(screen.queryByTestId('dungeon-deep-panel')).toBeNull();
+  });
+
+  it('shows the 심층 panel after first final clear with F31 label', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        dungeonFinalsCleared: ['plains'],
+        dungeonProgress: { plains: { maxFloor: 31 } },
+      },
+    }));
+    render(<DungeonFloors />);
+    const panel = screen.getByTestId('dungeon-deep-panel');
+    expect(panel).toBeInTheDocument();
+    expect(panel.textContent).toContain('F31');
+  });
+
+  it('clicking 심층 진입 enters battle at the deepest unlocked floor', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        dungeonFinalsCleared: ['plains'],
+        dungeonProgress: { plains: { maxFloor: 47 } },
+      },
+    }));
+    render(<DungeonFloors />);
+    fireEvent.click(screen.getByTestId('dungeon-deep-enter'));
+    expect(useGameStore.getState().run.currentFloor).toBe(47);
+    expect(useGameStore.getState().screen).toBe('battle');
+  });
+});
