@@ -14,7 +14,11 @@ import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
 import type { StartGameConfig } from './types';
 
-// ssr: false prevents Phaser (imported by Battle) from being bundled into the server-side render
+// ssr: false prevents Phaser (imported by Battle) from being bundled into the server-side render.
+// IMPORTANT: Battle MUST NOT be imported statically from anywhere else in the tree —
+// any static path bypasses this dynamic boundary and pulls Phaser into the SSR bundle,
+// which fails next build with "Export default doesn't exist in target module phaser.esm.js".
+// (Pre-β2 Dungeon.tsx had `import { Battle } from './Battle'` which broke build for weeks.)
 const Battle = dynamic(() => import('./screens/Battle').then((m) => ({ default: m.Battle })), {
   ssr: false,
   loading: () => null,
