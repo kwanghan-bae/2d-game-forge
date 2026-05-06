@@ -1,5 +1,5 @@
-import type { Equipment, EquipmentRarity } from '../types';
-import { EQUIPMENT_CATALOG, getEquipmentById } from '../data/equipment';
+import type { EquipmentInstance, EquipmentBase, EquipmentRarity } from '../types';
+import { EQUIPMENT_BASES, getEquipmentBase, createInstance } from '../data/equipment';
 
 const RARITY_ORDER: EquipmentRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
 
@@ -22,10 +22,10 @@ export function getCraftCost(fromRarity: EquipmentRarity): number {
   return TIER_UP_COST[fromRarity];
 }
 
-export function pickCraftResult(source: Equipment): Equipment | null {
+export function pickCraftResultBase(source: EquipmentBase): EquipmentBase | null {
   const nextTier = getNextTier(source.rarity);
   if (!nextTier) return null;
-  const candidates = EQUIPMENT_CATALOG.filter(
+  const candidates = EQUIPMENT_BASES.filter(
     e => e.slot === source.slot && e.rarity === nextTier
   );
   if (candidates.length === 0) return null;
@@ -37,24 +37,38 @@ export type CraftFailReason = 'not-enough-items' | 'no-next-tier' | 'no-result' 
 export interface CraftAttempt {
   ok: boolean;
   reason?: CraftFailReason;
-  result?: Equipment;
+  /** 성공 시 새 인스턴스 (enhanceLv = 0) */
+  result?: EquipmentInstance;
+  /** 새 인스턴스의 base. 비용/UI 계산에 사용 */
+  resultBase?: EquipmentBase;
   cost?: number;
+  /** 성공 시 소비할 instanceId 3개 — store 가 inventory 에서 제거 */
+  consumedInstanceIds?: [string, string, string];
 }
 
+/**
+ * 동일 baseId 인스턴스 3개를 합성한다. enhanceLv 손실 (결과 = lv 0).
+ */
 export function attemptCraft(
-  inventoryItems: Equipment[],
-  sourceId: string,
+  inventoryItems: EquipmentInstance[],
+  sourceBaseId: string,
   gold: number,
 ): CraftAttempt {
-  const source = getEquipmentById(sourceId);
+  const source = getEquipmentBase(sourceBaseId);
   if (!source) return { ok: false, reason: 'not-enough-items' };
-  const matching = inventoryItems.filter(i => i.id === sourceId);
+  const matching = inventoryItems.filter(i => i.baseId === sourceBaseId);
   if (matching.length < 3) return { ok: false, reason: 'not-enough-items' };
   const nextTier = getNextTier(source.rarity);
   if (!nextTier) return { ok: false, reason: 'no-next-tier' };
   const cost = getCraftCost(source.rarity);
   if (gold < cost) return { ok: false, reason: 'not-enough-gold', cost };
-  const result = pickCraftResult(source);
-  if (!result) return { ok: false, reason: 'no-result' };
-  return { ok: true, result, cost };
+  const resultBase = pickCraftResultBase(source);
+  if (!resultBase) return { ok: false, reason: 'no-result' };
+  const result = createInstance(resultBase.id);
+  const consumed: [string, string, string] = [
+    matching[0]!.instanceId,
+    matching[1]!.instanceId,
+    matching[2]!.instanceId,
+  ];
+  return { ok: true, result, resultBase, cost, consumedInstanceIds: consumed };
 }
