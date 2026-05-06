@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, INITIAL_RUN, INITIAL_META } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
+import type { EquipmentInstance } from '../types';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
@@ -71,10 +72,7 @@ describe('GameStore', () => {
   });
 
   it('addEquipment: adds to inventory', () => {
-    const item = {
-      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
-    };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
     useGameStore.getState().addEquipment(item);
     expect(useGameStore.getState().meta.inventory.weapons).toHaveLength(1);
   });
@@ -99,13 +97,10 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('equipItem: adds itemId to equippedItemIds', () => {
-    const item = {
-      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
-    };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
     useGameStore.getState().addEquipment(item);
-    useGameStore.getState().equipItem('w1');
-    expect(useGameStore.getState().meta.equippedItemIds).toContain('w1');
+    useGameStore.getState().equipItem('i1');
+    expect(useGameStore.getState().meta.equippedItemIds).toContain('i1');
   });
 
   it('equipItem: ignores when slot full', () => {
@@ -178,14 +173,11 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('sellEquipment: also removes from equippedItemIds', () => {
-    const item = {
-      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 100,
-    };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
     useGameStore.getState().addEquipment(item);
-    useGameStore.getState().equipItem('w1');
-    useGameStore.getState().sellEquipment('w1', 100);
-    expect(useGameStore.getState().meta.equippedItemIds).not.toContain('w1');
+    useGameStore.getState().equipItem('i1');
+    useGameStore.getState().sellEquipment('i1', 100);
+    expect(useGameStore.getState().meta.equippedItemIds).not.toContain('i1');
   });
 
   it('persist migrate: adds Phase 3 fields to pre-phase3 meta', () => {
@@ -259,7 +251,7 @@ describe('Currency on combat events', () => {
     useGameStore.getState().startRun('hwarang', false);
     const beforeMeta = useGameStore.getState().meta;
     const beforeRun = useGameStore.getState().run;
-    useGameStore.getState().bossDrop('test-boss', 5);
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
     const afterMeta = useGameStore.getState().meta;
     const afterRun = useGameStore.getState().run;
     expect(afterMeta.dr).toBe(beforeMeta.dr + 500);                                               // bpReward * 100
@@ -496,27 +488,388 @@ describe('Phase F-1 — Ascension', () => {
   });
 
   it('ascend keeps equipped items, drops unequipped from inventory', () => {
-    const equippedSword = {
-      id: 'sword-eq', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
-    };
-    const unequippedSword = {
-      id: 'sword-uneq', name: '도', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 5 } }, dropAreaIds: [], price: 0,
-    };
+    const equippedSword: EquipmentInstance = { instanceId: 'inst-eq', baseId: 'w-knife', enhanceLv: 0 };
+    const unequippedSword: EquipmentInstance = { instanceId: 'inst-uneq', baseId: 'w-sword', enhanceLv: 0 };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
         dungeonFinalsCleared: ['plains', 'forest', 'mountains'],
         crackStones: 1,
         inventory: { weapons: [equippedSword, unequippedSword], armors: [], accessories: [] },
-        equippedItemIds: ['sword-eq'],
+        equippedItemIds: ['inst-eq'],
       },
     }));
     expect(useGameStore.getState().ascend()).toBe(true);
     const inv = useGameStore.getState().meta.inventory;
     expect(inv.weapons).toHaveLength(1);
-    expect(inv.weapons[0]!.id).toBe('sword-eq');
-    expect(useGameStore.getState().meta.equippedItemIds).toEqual(['sword-eq']);
+    expect(inv.weapons[0]!.instanceId).toBe('inst-eq');
+    expect(useGameStore.getState().meta.equippedItemIds).toEqual(['inst-eq']);
+  });
+});
+
+describe('GameStore — Phase F-2 강화', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('enhanceItem: lv 0 → 1, 자원 차감 (common w-knife)', () => {
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        inventory: { ...s.meta.inventory, weapons: [inst] },
+        dr: 1000,
+        enhanceStones: 100,
+      },
+    }));
+    useGameStore.getState().enhanceItem('i1');
+    const m = useGameStore.getState().meta;
+    expect(m.inventory.weapons[0]?.enhanceLv).toBe(1);
+    expect(m.dr).toBe(1000 - 100);             // common lv0→1: dr cost 100
+    expect(m.enhanceStones).toBe(100 - 1);     // common lv0→1: stones 1
+  });
+
+  it('enhanceItem: 자원 부족 시 no-op', () => {
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 50, enhanceStones: 0 },
+    }));
+    useGameStore.getState().enhanceItem('i1');
+    const m = useGameStore.getState().meta;
+    expect(m.inventory.weapons[0]?.enhanceLv).toBe(0);
+    expect(m.dr).toBe(50);
+  });
+
+  it('enhanceItem: 잘못된 instanceId 무시', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, dr: 1000, enhanceStones: 100 } }));
+    useGameStore.getState().enhanceItem('does-not-exist');
+    const m = useGameStore.getState().meta;
+    expect(m.dr).toBe(1000);
+  });
+
+  it('enhanceItem: rare 등급 비용 적용 (lv0→1, rarityMult 2.5)', () => {
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        inventory: { ...s.meta.inventory, weapons: [inst] },
+        dr: 1000,
+        enhanceStones: 100,
+      },
+    }));
+    useGameStore.getState().enhanceItem('i1');
+    const m = useGameStore.getState().meta;
+    expect(m.dr).toBe(1000 - 250);            // rare lv0→1: dr 100*2.5 = 250
+    expect(m.enhanceStones).toBe(100 - 2.5);  // rare lv0→1: stones ceil(1/5)*2.5 = 2.5
+  });
+});
+
+describe('GameStore — Phase F-2+3 v8 migration', () => {
+  it('inventory becomes EquipmentInstance[] + equippedItemIds maps base→instance', () => {
+    const legacyMeta = {
+      ...INITIAL_META,
+      inventory: {
+        weapons: [{ id: 'w-knife', name: '단도', slot: 'weapon', rarity: 'common', stats: { flat: { atk: 30 } }, dropAreaIds: [], price: 100 }],
+        armors: [],
+        accessories: [],
+      },
+      equippedItemIds: ['w-knife'],
+    };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+
+    expect(migrated.meta.inventory.weapons).toHaveLength(1);
+    expect(migrated.meta.inventory.weapons[0]).toMatchObject({ baseId: 'w-knife', enhanceLv: 0 });
+    expect(typeof migrated.meta.inventory.weapons[0].instanceId).toBe('string');
+    expect(migrated.meta.equippedItemIds).toEqual([migrated.meta.inventory.weapons[0].instanceId]);
+  });
+
+  it('duplicate baseId in equippedItemIds maps to distinct instances', () => {
+    const legacyMeta = {
+      ...INITIAL_META,
+      inventory: {
+        weapons: [
+          { id: 'w-knife', name: '단도', slot: 'weapon', rarity: 'common', stats: { flat: { atk: 30 } }, dropAreaIds: [], price: 100 },
+          { id: 'w-knife', name: '단도', slot: 'weapon', rarity: 'common', stats: { flat: { atk: 30 } }, dropAreaIds: [], price: 100 },
+        ],
+        armors: [], accessories: [],
+      },
+      equippedItemIds: ['w-knife', 'w-knife'],
+    };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+
+    expect(migrated.meta.equippedItemIds).toHaveLength(2);
+    expect(migrated.meta.equippedItemIds[0]).not.toBe(migrated.meta.equippedItemIds[1]);
+  });
+
+  it('orphan equipped baseId is silently dropped', () => {
+    const legacyMeta = {
+      ...INITIAL_META,
+      inventory: { weapons: [], armors: [], accessories: [] },
+      equippedItemIds: ['w-knife'],
+    };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+    expect(migrated.meta.equippedItemIds).toEqual([]);
+  });
+
+  it('initializes new JP / skill fields with defaults', () => {
+    const legacyMeta = { ...INITIAL_META, inventory: { weapons: [], armors: [], accessories: [] }, equippedItemIds: [] };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+    expect(migrated.meta.jp).toEqual({});
+    expect(migrated.meta.jpCap).toEqual({ hwarang: 50, mudang: 50, choeui: 50 });
+    expect(migrated.meta.skillLevels).toEqual({});
+    expect(migrated.meta.ultSlotPicks.hwarang).toEqual([null, null, null, null]);
+  });
+});
+
+describe('GameStore — Phase F-3 JP — boss kill', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('awardJpOnBossKill: first-kill ×2 bonus, increments jp + jpEarnedTotal', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'hwarang' } }));
+    useGameStore.getState().awardJpOnBossKill('boss-mini-1', 'mini');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(2);
+    expect(m.jpEarnedTotal.hwarang).toBe(2);
+    expect(m.jpFirstKillAwarded.hwarang?.['boss-mini-1']).toBe(true);
+  });
+
+  it('awardJpOnBossKill: repeat kill = base only (no first bonus)', () => {
+    useGameStore.setState((s) => ({
+      run: { ...s.run, characterId: 'hwarang' },
+      meta: {
+        ...s.meta,
+        jpFirstKillAwarded: { hwarang: { 'boss-major-1': true } },
+      },
+    }));
+    useGameStore.getState().awardJpOnBossKill('boss-major-1', 'major');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(2);
+    expect(m.jpEarnedTotal.hwarang).toBe(2);
+  });
+
+  it('awardJpOnBossKill: cap reached → 0 grant', () => {
+    useGameStore.setState((s) => ({
+      run: { ...s.run, characterId: 'hwarang' },
+      meta: { ...s.meta, jpEarnedTotal: { hwarang: 50 } },
+    }));
+    useGameStore.getState().awardJpOnBossKill('boss-final-1', 'final');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang ?? 0).toBe(0);
+    expect(m.jpEarnedTotal.hwarang).toBe(50);
+    expect(m.jpFirstKillAwarded.hwarang?.['boss-final-1']).toBe(true);
+  });
+
+  it('awardJpOnBossKill: cap partially full → grants only headroom', () => {
+    useGameStore.setState((s) => ({
+      run: { ...s.run, characterId: 'hwarang' },
+      meta: { ...s.meta, jpEarnedTotal: { hwarang: 49 } },
+    }));
+    useGameStore.getState().awardJpOnBossKill('boss-final-1', 'final');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(1);
+    expect(m.jpEarnedTotal.hwarang).toBe(50);
+  });
+
+  it('awardJpOnBossKill: per-character isolated', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'mudang' } }));
+    useGameStore.getState().awardJpOnBossKill('boss-mini-1', 'mini');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.mudang).toBe(2);
+    expect(m.jp.hwarang ?? 0).toBe(0);
+  });
+});
+
+describe('GameStore — Phase F-3 광고 cap', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+  it('watchAdForJpCap: cap +50 영구', () => {
+    useGameStore.getState().watchAdForJpCap('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jpCap.hwarang).toBe(100);
+    useGameStore.getState().watchAdForJpCap('hwarang');
+    expect(useGameStore.getState().meta.jpCap.hwarang).toBe(150);
+  });
+});
+
+describe('GameStore — Phase F-3 JP — charLv milestone', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('awardJpOnCharLvMilestone: 50 도달 → +3 JP, jpCharLvAwarded=50', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, characterLevels: { hwarang: 50 } } }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(3);
+    expect(m.jpCharLvAwarded.hwarang).toBe(50);
+  });
+
+  it('awardJpOnCharLvMilestone: 100 도달 → +3 (50) +5 (100), 두 마일스톤 적용', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, characterLevels: { hwarang: 100 }, jpCap: { hwarang: 200 } },
+    }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(8);
+    expect(m.jpCharLvAwarded.hwarang).toBe(100);
+  });
+
+  it('awardJpOnCharLvMilestone: 이미 받은 마일스톤 재부여 ✗ (Asc reset 후에도)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        characterLevels: { hwarang: 0 },
+        jpCharLvAwarded: { hwarang: 100 },
+      },
+    }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang ?? 0).toBe(0);
+    expect(m.jpCharLvAwarded.hwarang).toBe(100);
+  });
+
+  it('awardJpOnCharLvMilestone: cap 적용', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        characterLevels: { hwarang: 1000 },
+        jpCap: { hwarang: 50 },
+        jpEarnedTotal: { hwarang: 48 },
+      },
+    }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jpEarnedTotal.hwarang).toBe(50);
+    expect(m.jpCharLvAwarded.hwarang).toBe(1000);
+  });
+
+  it('awardJpOnCharLvMilestone: 마일스톤 미달 시 no-op', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, characterLevels: { hwarang: 49 } } }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang ?? 0).toBe(0);
+    expect(m.jpCharLvAwarded.hwarang ?? 0).toBe(0);
+  });
+});
+
+describe('GameStore — Phase F-3 bossDrop wiring', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+  it('bossDrop: also calls awardJpOnBossKill with given bossType', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'hwarang' } }));
+    useGameStore.getState().bossDrop('test-boss', 10, 'major');
+    expect(useGameStore.getState().meta.jp.hwarang).toBe(4);  // major base 2 × first ×2
+  });
+});
+
+describe('GameStore — Phase F-3 levelUpSkill + pickUltSlot', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('levelUpSkill: base skill, JP 충분 → lv +1, jp 차감', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, jp: { hwarang: 10 } } }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang-strike');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang-strike']).toBe(1);
+    expect(m.jp.hwarang).toBe(9);
+  });
+
+  it('levelUpSkill: JP 부족 시 no-op', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, jp: { hwarang: 0 } } }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang-strike');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang-strike'] ?? 0).toBe(0);
+  });
+
+  it('levelUpSkill: ULT 가 슬롯에 없으면 no-op (slot pick 필요)', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, jp: { hwarang: 100 } } }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom'] ?? 0).toBe(0);
+    expect(m.jp.hwarang).toBe(100);
+  });
+
+  it('levelUpSkill: ULT 가 슬롯에 박혀있으면 lv +1', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        jp: { hwarang: 100 },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom']).toBe(1);
+    expect(m.jp.hwarang).toBe(97);
+  });
+
+  it('pickUltSlot: 슬롯 0 unlock(누적 50+) 됐을 때 박기', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, skillLevels: { hwarang: { 'hwarang-strike': 50 } } },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBe('hwarang_ult_ilseom');
+  });
+
+  it('pickUltSlot: 슬롯 미unlock 이면 no-op', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, skillLevels: { hwarang: { 'hwarang-strike': 49 } } },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBeNull();
+  });
+
+  it('pickUltSlot: 다른 슬롯에 같은 ULT 박혀있으면 거부', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        skillLevels: { hwarang: { 'hwarang-strike': 200 } },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 1, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[1]).toBeNull();
+  });
+
+  it('pickUltSlot: null = 슬롯 비우기 (lv 보존)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        skillLevels: { hwarang: { 'hwarang-strike': 50, 'hwarang_ult_ilseom': 5 } },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, null);
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBeNull();
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom']).toBe(5);
+  });
+
+  it('pickUltSlot: swap 후 다시 박으면 lv 그대로 재개', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        skillLevels: { hwarang: { 'hwarang-strike': 200, 'hwarang_ult_ilseom': 7, 'hwarang_ult_jinmyung': 3 } },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, null);
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_jinmyung');
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBe('hwarang_ult_ilseom');
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom']).toBe(7);
   });
 });

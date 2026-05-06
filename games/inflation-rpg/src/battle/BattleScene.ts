@@ -5,7 +5,7 @@ import { calcFinalStat, calcDamageReduction, calcCritChance } from '../systems/s
 import { applyExpGain } from '../systems/experience';
 import { playSfx } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
-import { getEquippedItemsList } from '../systems/equipment';
+import { getEquippedInstances } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
 import { pickMonsterFromPool } from '../data/monsters';
 import { getDungeonById } from '../data/dungeons';
@@ -19,6 +19,7 @@ import {
   type SkillState, type SkillEffectResult,
 } from './SkillSystem';
 import type { ActiveSkill } from '../types';
+import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -46,7 +47,7 @@ function pickBossIdByType(
 interface BattleCallbacks {
   onLevelUp: (newLevel: number) => void;
   onBattleEnd: (victory: boolean) => void;
-  onBossKill: (bossId: string, bpReward: number) => void;
+  onBossKill: (bossId: string, bpReward: number, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
 }
 
 export class BattleScene extends Phaser.Scene {
@@ -57,6 +58,7 @@ export class BattleScene extends Phaser.Scene {
   private enemyName = '';
   private isBoss = false;
   private bossId?: string;
+  private cachedBossType?: 'mini' | 'major' | 'sub' | 'final';
   private currentMonsterId = '';
   private hpBarBg?: Phaser.GameObjects.Rectangle;
   private hpBarFill?: Phaser.GameObjects.Rectangle;
@@ -97,6 +99,7 @@ export class BattleScene extends Phaser.Scene {
       if (boss) {
         this.isBoss = true;
         this.bossId = boss.id;
+        this.cachedBossType = bossType;
         const bossEmoji = bossType === 'final' ? '⭐' : '👹';
         this.enemyName = `${bossEmoji} ${boss.nameKR}`;
         this.enemyMaxHP = Math.floor(monsterLevel * 50 * boss.hpMult);
@@ -129,10 +132,10 @@ export class BattleScene extends Phaser.Scene {
     // Cache player stats and active skills for skill system
     const char = getCharacterById(run.characterId);
     if (char) {
-      this.activeSkills = [...char.activeSkills];
       const { meta } = useGameStore.getState();
+      this.activeSkills = buildActiveSkillsForCombat(run.characterId, meta);
       const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
-      const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
+      const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
       const charLv = meta.characterLevels[run.characterId] ?? 0;
       const charLevelMult = 1 + charLv * 0.1;
       const ascTierMult = 1 + 0.1 * meta.ascTier;
@@ -148,7 +151,7 @@ export class BattleScene extends Phaser.Scene {
     if (!char) return;
 
     const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
-    const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
+    const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
     const charLv = meta.characterLevels[run.characterId] ?? 0;
     const charLevelMult = 1 + charLv * 0.1;
     const ascTierMult = 1 + 0.1 * meta.ascTier;
@@ -182,7 +185,7 @@ export class BattleScene extends Phaser.Scene {
       this.combatTimer?.remove();
 
       if (this.isBoss && this.bossId) {
-        this.callbacks.onBossKill(this.bossId, 5);
+        this.callbacks.onBossKill(this.bossId, 5, this.cachedBossType ?? 'mini');
         useGameStore.getState().trackBossDefeat(this.bossId);
         const story = getBossDefeatStory(this.bossId);
         if (story) useGameStore.getState().setPendingStory(story.id);

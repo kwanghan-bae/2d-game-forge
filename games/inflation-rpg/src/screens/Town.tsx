@@ -79,6 +79,16 @@ export function Town() {
         </ForgeButton>
       </div>
 
+      <div style={{ textAlign: 'center', marginTop: 'var(--forge-space-4)' }}>
+        <ForgeButton
+          variant="secondary"
+          onClick={() => setScreen('skill-progression')}
+          data-testid="town-skill-progression"
+        >
+          🎓 직업소
+        </ForgeButton>
+      </div>
+
       <div style={{ textAlign: 'center', marginTop: 'var(--forge-space-6)' }}>
         <ForgeButton variant="secondary" onClick={() => setScreen('main-menu')}>
           돌아가기

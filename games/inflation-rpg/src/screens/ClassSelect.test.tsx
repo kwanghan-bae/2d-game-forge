@@ -12,9 +12,9 @@ beforeEach(() => {
 describe('ClassSelect', () => {
   it('renders 16 character cards', () => {
     render(<ClassSelect />);
-    // 4 unlocked by default (soul grade 0)
-    const cards = screen.getAllByRole('button', { name: /화랑|무당|초의|검객/i });
-    expect(cards.length).toBeGreaterThanOrEqual(4);
+    // 3 core chars unlocked by default (soul grade 0; 검객 is hard-gated)
+    const cards = screen.getAllByRole('button', { name: /화랑|무당|초의/i });
+    expect(cards.length).toBeGreaterThanOrEqual(3);
   });
 
   it('locked characters are not clickable', () => {
@@ -52,5 +52,21 @@ describe('ClassSelect', () => {
   it('does not show level badge when charLv is 0 or absent', () => {
     render(<ClassSelect />);
     expect(screen.queryByText(/Lv\.\d/)).not.toBeInTheDocument();
+  });
+
+  it('ClassSelect: 13 비핵심 캐릭터 (검객 포함) 는 selectable ✗', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, soulGrade: 9 } }));
+    render(<ClassSelect />);
+    // 16 - 3 core = 13 chars hard-gated (aria-label="잠김")
+    const lockedCards = screen.getAllByLabelText('잠김');
+    expect(lockedCards.length).toBeGreaterThanOrEqual(13);
+  });
+
+  it('ClassSelect: 핵심 3 (화랑/무당/초의) 는 selectable', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, soulGrade: 9 } }));
+    render(<ClassSelect />);
+    expect(screen.getAllByLabelText('화랑').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('무당').length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText('초의').length).toBeGreaterThan(0);
   });
 });

@@ -127,3 +127,9 @@ export function getCharacterById(id: string): Character | undefined {
 export function getUnlockedCharacters(soulGrade: number): Character[] {
   return CHARACTERS.filter(c => c.unlockSoulGrade <= soulGrade);
 }
+
+export const PHASE_F2F3_CORE_CHARS = ['hwarang', 'mudang', 'choeui'] as const;
+
+export function isCharLocked(charId: string): boolean {
+  return !PHASE_F2F3_CORE_CHARS.includes(charId as typeof PHASE_F2F3_CORE_CHARS[number]);
+}
