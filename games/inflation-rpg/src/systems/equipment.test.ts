@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import {
   SLOT_LIMITS,
-  canDrop,
+  canDropForBase,
   addToInventory,
   removeFromInventory,
-  getAllEquipped,
-  getEquippedItemsList,
+  getAllInstances,
+  getEquippedInstances,
 } from './equipment';
-import type { Equipment, Inventory } from '../types';
+import type { EquipmentBase, EquipmentInstance, Inventory } from '../types';
 
-const mkWeapon = (id: string): Equipment => ({
+const mkWeaponBase = (id: string): EquipmentBase => ({
   id, name: id, slot: 'weapon', rarity: 'common',
-  stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
+  baseStats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
+});
+
+const mkInstance = (instanceId: string, baseId: string): EquipmentInstance => ({
+  instanceId, baseId, enhanceLv: 0,
 });
 
 const emptyInv: Inventory = { weapons: [], armors: [], accessories: [] };
@@ -23,74 +27,74 @@ describe('Equipment System', () => {
     expect(SLOT_LIMITS.accessory).toBe(3);
   });
 
-  it('canDrop: true when slot not full', () => {
-    expect(canDrop(emptyInv, 'weapon')).toBe(true);
+  it('canDropForBase: true when slot not full', () => {
+    const base = mkWeaponBase('w-knife');
+    expect(canDropForBase(emptyInv, base)).toBe(true);
   });
 
-  it('canDrop: false when slot at limit', () => {
-    const fullWeapons = Array.from({ length: 10 }, (_, i) => mkWeapon(`w${i}`));
+  it('canDropForBase: false when slot at limit', () => {
+    const base = mkWeaponBase('w-knife');
+    const fullWeapons = Array.from({ length: 10 }, (_, i) => mkInstance(`inst${i}`, `w-knife`));
     const inv: Inventory = { ...emptyInv, weapons: fullWeapons };
-    expect(canDrop(inv, 'weapon')).toBe(false);
+    expect(canDropForBase(inv, base)).toBe(false);
   });
 
-  it('addToInventory: adds item to correct slot', () => {
-    const item = mkWeapon('sword');
-    const result = addToInventory(emptyInv, item);
+  it('addToInventory: adds instance to correct slot (real baseId required)', () => {
+    // Use real catalog ID so getEquipmentBase resolves
+    const inst = mkInstance('inst-sword', 'w-sword');
+    const result = addToInventory(emptyInv, inst);
     expect(result.weapons).toHaveLength(1);
-    expect(result.weapons[0]?.id).toBe('sword');
+    expect(result.weapons[0]?.instanceId).toBe('inst-sword');
   });
 
   it('addToInventory: does not add when slot full', () => {
-    const fullWeapons = Array.from({ length: 10 }, (_, i) => mkWeapon(`w${i}`));
+    const fullWeapons = Array.from({ length: 10 }, (_, i) => mkInstance(`inst${i}`, 'w-sword'));
     const inv: Inventory = { ...emptyInv, weapons: fullWeapons };
-    const result = addToInventory(inv, mkWeapon('extra'));
+    const extra = mkInstance('inst-extra', 'w-sword');
+    const result = addToInventory(inv, extra);
     expect(result.weapons).toHaveLength(10);
   });
 
-  it('removeFromInventory: removes by id', () => {
-    const inv: Inventory = { ...emptyInv, weapons: [mkWeapon('sword')] };
-    const result = removeFromInventory(inv, 'sword');
+  it('removeFromInventory: removes by instanceId', () => {
+    const inst = mkInstance('inst-sword', 'w-sword');
+    const inv: Inventory = { ...emptyInv, weapons: [inst] };
+    const result = removeFromInventory(inv, 'inst-sword');
     expect(result.weapons).toHaveLength(0);
   });
 
-  it('getAllEquipped: combines all slots', () => {
+  it('getAllInstances: combines all slots', () => {
+    const inst = mkInstance('inst-w1', 'w-sword');
     const inv: Inventory = {
-      weapons: [mkWeapon('w1')],
+      weapons: [inst],
       armors: [],
       accessories: [],
     };
-    expect(getAllEquipped(inv)).toHaveLength(1);
+    expect(getAllInstances(inv)).toHaveLength(1);
   });
 });
 
-const testSword: Equipment = {
-  id: 'w-sword', name: '검', slot: 'weapon', rarity: 'common',
-  stats: { flat: { atk: 80 } }, dropAreaIds: [], price: 300,
-};
-const testArmor: Equipment = {
-  id: 'a-cloth', name: '갑옷', slot: 'armor', rarity: 'common',
-  stats: { flat: { def: 20 } }, dropAreaIds: [], price: 150,
-};
+describe('getEquippedInstances', () => {
+  const testSword = mkInstance('inst-sword', 'w-sword');
+  const testArmor = mkInstance('inst-cloth', 'a-cloth');
 
-describe('getEquippedItemsList', () => {
   const inv: Inventory = {
     weapons: [testSword],
     armors: [testArmor],
     accessories: [],
   };
 
-  it('returns items matching equippedItemIds in order', () => {
-    const result = getEquippedItemsList(inv, ['a-cloth', 'w-sword']);
+  it('returns instances matching equippedItemIds in order', () => {
+    const result = getEquippedInstances(inv, ['inst-cloth', 'inst-sword']);
     expect(result).toHaveLength(2);
-    expect(result[0]!.id).toBe('a-cloth');
-    expect(result[1]!.id).toBe('w-sword');
+    expect(result[0]!.instanceId).toBe('inst-cloth');
+    expect(result[1]!.instanceId).toBe('inst-sword');
   });
 
   it('ignores IDs not found in inventory', () => {
-    expect(getEquippedItemsList(inv, ['non-existent'])).toHaveLength(0);
+    expect(getEquippedInstances(inv, ['non-existent'])).toHaveLength(0);
   });
 
   it('returns empty array when equippedItemIds is empty', () => {
-    expect(getEquippedItemsList(inv, [])).toHaveLength(0);
+    expect(getEquippedInstances(inv, [])).toHaveLength(0);
   });
 });

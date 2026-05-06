@@ -4,15 +4,17 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Inventory } from './Inventory';
 import { useGameStore, INITIAL_RUN, INITIAL_META } from '../store/gameStore';
-import type { Equipment } from '../types';
+import type { EquipmentInstance } from '../types';
 
-const sword: Equipment = {
-  id: 'w-sword', name: '철검', slot: 'weapon', rarity: 'common',
-  stats: { flat: { atk: 80 } }, dropAreaIds: [], price: 300,
+const sword: EquipmentInstance = {
+  instanceId: 'inst-sword',
+  baseId: 'w-sword',
+  enhanceLv: 0,
 };
-const cloth: Equipment = {
-  id: 'a-cloth', name: '베옷', slot: 'armor', rarity: 'common',
-  stats: { flat: { def: 20 } }, dropAreaIds: [], price: 150,
+const cloth: EquipmentInstance = {
+  instanceId: 'inst-cloth',
+  baseId: 'a-cloth',
+  enhanceLv: 0,
 };
 
 beforeEach(() => {
@@ -62,7 +64,7 @@ describe('Inventory — 장착 슬롯', () => {
     render(<Inventory />);
     const equipBtn = screen.getAllByRole('button', { name: /장착/i })[0];
     await userEvent.click(equipBtn!);
-    expect(useGameStore.getState().meta.equippedItemIds).toContain('w-sword');
+    expect(useGameStore.getState().meta.equippedItemIds).toContain('inst-sword');
   });
 
   it('해제 button appears after equipping', async () => {
@@ -74,16 +76,16 @@ describe('Inventory — 장착 슬롯', () => {
 
   it('클릭 해제 → equippedItemIds에서 제거', async () => {
     useGameStore.setState((s) => ({
-      meta: { ...s.meta, equippedItemIds: ['w-sword'], equipSlotCount: 1 },
+      meta: { ...s.meta, equippedItemIds: ['inst-sword'], equipSlotCount: 1 },
     }));
     render(<Inventory />);
     await userEvent.click(screen.getByRole('button', { name: /해제/i }));
-    expect(useGameStore.getState().meta.equippedItemIds).not.toContain('w-sword');
+    expect(useGameStore.getState().meta.equippedItemIds).not.toContain('inst-sword');
   });
 
   it('장착 button disabled when slots full', async () => {
     useGameStore.setState((s) => ({
-      meta: { ...s.meta, equippedItemIds: ['w-sword'], equipSlotCount: 1 },
+      meta: { ...s.meta, equippedItemIds: ['inst-sword'], equipSlotCount: 1 },
     }));
     render(<Inventory />);
     // 방어구 탭으로 전환

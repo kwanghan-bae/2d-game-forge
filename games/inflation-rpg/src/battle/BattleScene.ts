@@ -5,7 +5,7 @@ import { calcFinalStat, calcDamageReduction, calcCritChance } from '../systems/s
 import { applyExpGain } from '../systems/experience';
 import { playSfx } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
-import { getEquippedItemsList } from '../systems/equipment';
+import { getEquippedInstances } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
 import { pickMonsterFromPool } from '../data/monsters';
 import { getDungeonById } from '../data/dungeons';
@@ -132,7 +132,7 @@ export class BattleScene extends Phaser.Scene {
       this.activeSkills = [...char.activeSkills];
       const { meta } = useGameStore.getState();
       const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
-      const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
+      const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
       const charLv = meta.characterLevels[run.characterId] ?? 0;
       const charLevelMult = 1 + charLv * 0.1;
       const ascTierMult = 1 + 0.1 * meta.ascTier;
@@ -148,7 +148,7 @@ export class BattleScene extends Phaser.Scene {
     if (!char) return;
 
     const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
-    const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
+    const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
     const charLv = meta.characterLevels[run.characterId] ?? 0;
     const charLevelMult = 1 + charLv * 0.1;
     const ascTierMult = 1 + 0.1 * meta.ascTier;
