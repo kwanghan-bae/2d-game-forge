@@ -34,4 +34,10 @@ describe('Town screen', () => {
     fireEvent.click(screen.getByText('돌아가기'));
     expect(useGameStore.getState().screen).toBe('main-menu');
   });
+
+  it('Town: 직업소 버튼 → setScreen("skill-progression")', () => {
+    render(<Town />);
+    fireEvent.click(screen.getByTestId('town-skill-progression'));
+    expect(useGameStore.getState().screen).toBe('skill-progression');
+  });
 });
