@@ -769,3 +769,107 @@ describe('GameStore — Phase F-3 bossDrop wiring', () => {
     expect(useGameStore.getState().meta.jp.hwarang).toBe(4);  // major base 2 × first ×2
   });
 });
+
+describe('GameStore — Phase F-3 levelUpSkill + pickUltSlot', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('levelUpSkill: base skill, JP 충분 → lv +1, jp 차감', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, jp: { hwarang: 10 } } }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang-strike');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang-strike']).toBe(1);
+    expect(m.jp.hwarang).toBe(9);
+  });
+
+  it('levelUpSkill: JP 부족 시 no-op', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, jp: { hwarang: 0 } } }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang-strike');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang-strike'] ?? 0).toBe(0);
+  });
+
+  it('levelUpSkill: ULT 가 슬롯에 없으면 no-op (slot pick 필요)', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, jp: { hwarang: 100 } } }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom'] ?? 0).toBe(0);
+    expect(m.jp.hwarang).toBe(100);
+  });
+
+  it('levelUpSkill: ULT 가 슬롯에 박혀있으면 lv +1', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        jp: { hwarang: 100 },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().levelUpSkill('hwarang', 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom']).toBe(1);
+    expect(m.jp.hwarang).toBe(97);
+  });
+
+  it('pickUltSlot: 슬롯 0 unlock(누적 50+) 됐을 때 박기', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, skillLevels: { hwarang: { 'hwarang-strike': 50 } } },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBe('hwarang_ult_ilseom');
+  });
+
+  it('pickUltSlot: 슬롯 미unlock 이면 no-op', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, skillLevels: { hwarang: { 'hwarang-strike': 49 } } },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBeNull();
+  });
+
+  it('pickUltSlot: 다른 슬롯에 같은 ULT 박혀있으면 거부', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        skillLevels: { hwarang: { 'hwarang-strike': 200 } },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 1, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[1]).toBeNull();
+  });
+
+  it('pickUltSlot: null = 슬롯 비우기 (lv 보존)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        skillLevels: { hwarang: { 'hwarang-strike': 50, 'hwarang_ult_ilseom': 5 } },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, null);
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBeNull();
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom']).toBe(5);
+  });
+
+  it('pickUltSlot: swap 후 다시 박으면 lv 그대로 재개', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        skillLevels: { hwarang: { 'hwarang-strike': 200, 'hwarang_ult_ilseom': 7, 'hwarang_ult_jinmyung': 3 } },
+        ultSlotPicks: { ...s.meta.ultSlotPicks, hwarang: ['hwarang_ult_ilseom', null, null, null] },
+      },
+    }));
+    useGameStore.getState().pickUltSlot('hwarang', 0, null);
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_jinmyung');
+    useGameStore.getState().pickUltSlot('hwarang', 0, 'hwarang_ult_ilseom');
+    const m = useGameStore.getState().meta;
+    expect(m.ultSlotPicks.hwarang?.[0]).toBe('hwarang_ult_ilseom');
+    expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom']).toBe(7);
+  });
+});
