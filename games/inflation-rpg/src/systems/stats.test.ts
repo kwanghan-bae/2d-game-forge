@@ -9,17 +9,15 @@ import {
   calcDamageReduction,
   calcCritChance,
 } from './stats';
-import type { Equipment } from '../types';
+import type { EquipmentInstance } from '../types';
 
-const noEquip: Equipment[] = [];
-const pctWeapon: Equipment = {
-  id: 'w1', name: '검', slot: 'weapon', rarity: 'common',
-  stats: { percent: { atk: 100 } }, dropAreaIds: [], price: 0,
-};
-const flatWeapon: Equipment = {
-  id: 'w2', name: '도', slot: 'weapon', rarity: 'common',
-  stats: { flat: { atk: 50 } }, dropAreaIds: [], price: 0,
-};
+const noEquip: EquipmentInstance[] = [];
+
+// w-bluedragon (rare): baseStats.percent.atk = 80  → at enhanceLv=0, mult = 1 + 80/100 = 1.8
+const pctWeapon: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bluedragon', enhanceLv: 0 };
+
+// w-club (uncommon): baseStats.flat.atk = 50  → at enhanceLv=0, flat.atk = 50
+const flatWeapon: EquipmentInstance = { instanceId: 'i2', baseId: 'w-club', enhanceLv: 0 };
 
 describe('Stats System', () => {
   it('BASE_STATS has correct initial values', () => {
@@ -47,18 +45,21 @@ describe('Stats System', () => {
 
   it('calcEquipmentPercentMult: multiplicative stacking', () => {
     expect(calcEquipmentPercentMult('atk', noEquip)).toBe(1);
-    expect(calcEquipmentPercentMult('atk', [pctWeapon])).toBe(2); // +100%
+    // w-bluedragon at lv0: percent.atk=80 → mult = 1 + 80/100 = 1.8
+    expect(calcEquipmentPercentMult('atk', [pctWeapon])).toBe(1.8);
   });
 
   it('calcEquipmentFlat: additive', () => {
     expect(calcEquipmentFlat('atk', noEquip)).toBe(0);
+    // w-club at lv0: flat.atk=50
     expect(calcEquipmentFlat('atk', [flatWeapon])).toBe(50);
   });
 
   it('calcFinalStat: (raw + flat) * pct * baseAbility', () => {
-    // atk: base=10, sp=0, charMult=1, flat=50, pct=2 (100%), baseAbility=1
-    // (10 + 50) * 2 * 1 = 120
-    expect(calcFinalStat('atk', 0, 1.0, [flatWeapon, pctWeapon], 1)).toBe(120);
+    // atk: base=10, sp=0, charMult=1
+    // flat = 50 (w-club), pct = 1.8 (w-bluedragon 80%), baseAbility=1
+    // floor((10 + 50) * 1.8 * 1) = floor(108) = 108
+    expect(calcFinalStat('atk', 0, 1.0, [flatWeapon, pctWeapon], 1)).toBe(108);
   });
 
   it('calcDamageReduction: DEF/(DEF+500)', () => {

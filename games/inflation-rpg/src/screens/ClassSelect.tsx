@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { CHARACTERS, getUnlockedCharacters } from '../data/characters';
+import { CHARACTERS, getUnlockedCharacters, isCharLocked } from '../data/characters';
 import type { Character } from '../types';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgePanel } from '@/components/ui/forge-panel';
@@ -31,7 +31,7 @@ export function ClassSelect() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
         {CHARACTERS.map((char) => {
-          const isUnlocked = unlockedIds.has(char.id);
+          const isUnlocked = unlockedIds.has(char.id) && !isCharLocked(char.id);
           const isSelected = selected === char.id;
           const charLv = meta.characterLevels[char.id] ?? 0;
           return (
@@ -41,6 +41,7 @@ export function ClassSelect() {
               unlocked={isUnlocked}
               selected={isSelected}
               charLv={charLv}
+              hardGated={isCharLocked(char.id)}
               onSelect={() => isUnlocked && setSelected(char.id)}
             />
           );
@@ -63,11 +64,12 @@ export function ClassSelect() {
   );
 }
 
-function CharCard({ char, unlocked, selected, charLv, onSelect }: {
+function CharCard({ char, unlocked, selected, charLv, hardGated, onSelect }: {
   char: Character;
   unlocked: boolean;
   selected: boolean;
   charLv: number;
+  hardGated: boolean;
   onSelect: () => void;
 }) {
   return (
@@ -99,6 +101,9 @@ function CharCard({ char, unlocked, selected, charLv, onSelect }: {
       <div style={{ fontSize: 9, color: 'var(--forge-text-muted)' }}>
         {unlocked ? char.statFocus : ''}
       </div>
+      {hardGated && (
+        <div style={{ fontSize: 10, color: 'var(--forge-text-muted)', marginTop: 4 }}>차후 spec</div>
+      )}
     </button>
   );
 }

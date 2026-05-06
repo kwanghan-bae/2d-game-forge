@@ -71,4 +71,24 @@ describe('SkillSystem', () => {
     const result = computeSkillEffect(strike, 100, 1000, 500, 1000);
     expect(result.vfxEmoji).toBe('💥');
   });
+
+  it('computeSkillEffect: dmgMul doubles multi_hit damage', () => {
+    const skill = {
+      id: 's', nameKR: 's', description: '', cooldownSec: 1,
+      effect: { type: 'multi_hit' as const, multiplier: 2, targets: 1 },
+      vfxEmoji: '⚔️', dmgMul: 2,
+    };
+    const r = computeSkillEffect(skill as any, 100, 1000, 500, 1000);
+    expect(r.damage).toBe(400); // 100 * 2 * 1 * 2 = 400
+  });
+
+  it('computeSkillEffect: missing dmgMul defaults to ×1', () => {
+    const skill = {
+      id: 's', nameKR: 's', description: '', cooldownSec: 1,
+      effect: { type: 'multi_hit' as const, multiplier: 2, targets: 1 },
+      vfxEmoji: '⚔️',
+    };
+    const r = computeSkillEffect(skill as any, 100, 1000, 500, 1000);
+    expect(r.damage).toBe(200); // 100 * 2 * 1 * 1 = 200
+  });
 });
