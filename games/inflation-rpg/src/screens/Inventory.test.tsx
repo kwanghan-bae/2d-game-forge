@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Inventory } from './Inventory';
@@ -92,5 +92,29 @@ describe('Inventory — 장착 슬롯', () => {
     await userEvent.click(screen.getByRole('button', { name: /방어구/i }));
     const equipBtn = screen.queryByRole('button', { name: /^장착$/i });
     expect(equipBtn).toBeDisabled();
+  });
+});
+
+describe('Inventory — 강화 패널', () => {
+  it('강화 토글 클릭 시 enhance panel 표시', () => {
+    const inst: EquipmentInstance = { instanceId: 'inst-knife', baseId: 'w-knife', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 1000, enhanceStones: 100 },
+    }));
+    render(<Inventory />);
+    const toggle = screen.getByTestId('enhance-toggle-inst-knife');
+    fireEvent.click(toggle);
+    expect(screen.getByTestId('enhance-panel-inst-knife')).toBeInTheDocument();
+  });
+
+  it('enhance 버튼 클릭 시 enhanceLv 증가', () => {
+    const inst: EquipmentInstance = { instanceId: 'inst-knife', baseId: 'w-knife', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 1000, enhanceStones: 100 },
+    }));
+    render(<Inventory />);
+    fireEvent.click(screen.getByTestId('enhance-toggle-inst-knife'));
+    fireEvent.click(screen.getByTestId('enhance-btn-inst-knife'));
+    expect(useGameStore.getState().meta.inventory.weapons[0]?.enhanceLv).toBe(1);
   });
 });
