@@ -53,6 +53,13 @@ export interface ActiveSkill {
   vfxEmoji: string;
 }
 
+export type SkillKind = 'base' | 'ult';
+
+export interface UltSkillRow extends ActiveSkill {
+  charId: string;       // 'hwarang' | 'mudang' | 'choeui'
+  ultIndex: 1 | 2 | 3 | 4;
+}
+
 export interface Character {
   id: string;
   nameKR: string;
@@ -187,6 +194,14 @@ export interface MetaState {
   musicVolume: number;
   sfxVolume: number;
   muted: boolean;
+  // Phase F-2+3 — Skill Progression + JP system
+  jp: Record<string, number>;
+  jpEarnedTotal: Record<string, number>;
+  jpCap: Record<string, number>;
+  jpFirstKillAwarded: Record<string, Record<string, true>>;
+  jpCharLvAwarded: Record<string, number>;
+  skillLevels: Record<string, Record<string, number>>;
+  ultSlotPicks: Record<string, [string | null, string | null, string | null, string | null]>;
 }
 
 export interface TutorialStep {
@@ -207,7 +222,8 @@ export type Screen =
   | 'shop'
   | 'game-over'
   | 'quests'
-  | 'ascension';
+  | 'ascension'
+  | 'skill-progression';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
