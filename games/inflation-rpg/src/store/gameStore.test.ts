@@ -624,3 +624,76 @@ describe('GameStore — Phase F-2+3 v8 migration', () => {
     expect(migrated.meta.ultSlotPicks.hwarang).toEqual([null, null, null, null]);
   });
 });
+
+describe('GameStore — Phase F-3 JP — boss kill', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('awardJpOnBossKill: first-kill ×2 bonus, increments jp + jpEarnedTotal', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'hwarang' } }));
+    useGameStore.getState().awardJpOnBossKill('boss-mini-1', 'mini');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(2);
+    expect(m.jpEarnedTotal.hwarang).toBe(2);
+    expect(m.jpFirstKillAwarded.hwarang?.['boss-mini-1']).toBe(true);
+  });
+
+  it('awardJpOnBossKill: repeat kill = base only (no first bonus)', () => {
+    useGameStore.setState((s) => ({
+      run: { ...s.run, characterId: 'hwarang' },
+      meta: {
+        ...s.meta,
+        jpFirstKillAwarded: { hwarang: { 'boss-major-1': true } },
+      },
+    }));
+    useGameStore.getState().awardJpOnBossKill('boss-major-1', 'major');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(2);
+    expect(m.jpEarnedTotal.hwarang).toBe(2);
+  });
+
+  it('awardJpOnBossKill: cap reached → 0 grant', () => {
+    useGameStore.setState((s) => ({
+      run: { ...s.run, characterId: 'hwarang' },
+      meta: { ...s.meta, jpEarnedTotal: { hwarang: 50 } },
+    }));
+    useGameStore.getState().awardJpOnBossKill('boss-final-1', 'final');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang ?? 0).toBe(0);
+    expect(m.jpEarnedTotal.hwarang).toBe(50);
+    expect(m.jpFirstKillAwarded.hwarang?.['boss-final-1']).toBe(true);
+  });
+
+  it('awardJpOnBossKill: cap partially full → grants only headroom', () => {
+    useGameStore.setState((s) => ({
+      run: { ...s.run, characterId: 'hwarang' },
+      meta: { ...s.meta, jpEarnedTotal: { hwarang: 49 } },
+    }));
+    useGameStore.getState().awardJpOnBossKill('boss-final-1', 'final');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(1);
+    expect(m.jpEarnedTotal.hwarang).toBe(50);
+  });
+
+  it('awardJpOnBossKill: per-character isolated', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'mudang' } }));
+    useGameStore.getState().awardJpOnBossKill('boss-mini-1', 'mini');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.mudang).toBe(2);
+    expect(m.jp.hwarang ?? 0).toBe(0);
+  });
+});
+
+describe('GameStore — Phase F-3 광고 cap', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+  it('watchAdForJpCap: cap +50 영구', () => {
+    useGameStore.getState().watchAdForJpCap('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jpCap.hwarang).toBe(100);
+    useGameStore.getState().watchAdForJpCap('hwarang');
+    expect(useGameStore.getState().meta.jpCap.hwarang).toBe(150);
+  });
+});

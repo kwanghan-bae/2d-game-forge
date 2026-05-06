@@ -146,6 +146,9 @@ interface GameStore {
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
   craft: (equipmentId: string) => boolean;
+  // Phase F-3 — JP actions
+  awardJpOnBossKill: (bossId: string, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
+  watchAdForJpCap: (charId: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -563,6 +566,44 @@ export const useGameStore = create<GameStore>()(
 
         return true;
       },
+
+      // Phase F-3 — JP actions
+      awardJpOnBossKill: (bossId, bossType) => set((s) => {
+        const charId = s.run.characterId;
+        if (!charId) return s;
+        const baseJp = { mini: 1, major: 2, sub: 1, final: 5 }[bossType];
+        const isFirst = !s.meta.jpFirstKillAwarded[charId]?.[bossId];
+        const totalGain = isFirst ? baseJp * 2 : baseJp;
+
+        const cap = s.meta.jpCap[charId] ?? 0;
+        const earned = s.meta.jpEarnedTotal[charId] ?? 0;
+        const headroom = Math.max(0, cap - earned);
+        const granted = Math.min(totalGain, headroom);
+
+        const nextFirstAwarded = isFirst
+          ? {
+              ...s.meta.jpFirstKillAwarded,
+              [charId]: { ...(s.meta.jpFirstKillAwarded[charId] ?? {}), [bossId]: true as const },
+            }
+          : s.meta.jpFirstKillAwarded;
+
+        if (granted === 0) {
+          return { meta: { ...s.meta, jpFirstKillAwarded: nextFirstAwarded } };
+        }
+
+        return {
+          meta: {
+            ...s.meta,
+            jp: { ...s.meta.jp, [charId]: (s.meta.jp[charId] ?? 0) + granted },
+            jpEarnedTotal: { ...s.meta.jpEarnedTotal, [charId]: earned + granted },
+            jpFirstKillAwarded: nextFirstAwarded,
+          },
+        };
+      }),
+
+      watchAdForJpCap: (charId) => set((s) => ({
+        meta: { ...s.meta, jpCap: { ...s.meta.jpCap, [charId]: (s.meta.jpCap[charId] ?? 0) + 50 } },
+      })),
     }),
     {
       name: 'korea_inflation_rpg_save',
