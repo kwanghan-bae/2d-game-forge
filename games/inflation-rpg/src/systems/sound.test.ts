@@ -11,6 +11,7 @@ describe('sound system', () => {
     expect(bgmIdForScreen('class-select')).toBe('lobby');
     expect(bgmIdForScreen('town')).toBe('lobby');
     expect(bgmIdForScreen('dungeon-floors')).toBe('lobby');
+    expect(bgmIdForScreen('ascension')).toBe('lobby');
     expect(bgmIdForScreen('inventory')).toBe('field');
     expect(bgmIdForScreen('battle')).toBe('battle');
   });
