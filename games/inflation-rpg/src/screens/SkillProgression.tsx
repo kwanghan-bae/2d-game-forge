@@ -116,7 +116,7 @@ export function SkillProgression() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <ForgeButton variant="secondary" style={{ padding: '6px 14px' }} onClick={() => setScreen('town')}>← Town</ForgeButton>
         <span style={{ fontWeight: 700 }}>{character.nameKR}의 직업소</span>
-        <span style={{ fontSize: 12 }}>JP {charJp} | cap {charCap}</span>
+        <span data-testid="jp-cap" style={{ fontSize: 12 }}>JP {charJp} | 누적 {charEarned}/{charCap}</span>
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
