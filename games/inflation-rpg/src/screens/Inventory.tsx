@@ -4,7 +4,7 @@ import type { EquipmentInstance, EquipmentBase, EquipmentSlot } from '../types';
 import { SLOT_LIMITS } from '../systems/equipment';
 import { getCraftCost, getNextTier } from '../systems/crafting';
 import { getEquipmentBase } from '../data/equipment';
-import { getInstanceStats } from '../systems/enhance';
+import { enhanceCost, getInstanceStats } from '../systems/enhance';
 import { CHARACTERS } from '../data/characters';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeInventoryGrid } from '@/components/ui/forge-inventory-grid';
@@ -21,12 +21,14 @@ const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
 export function Inventory() {
   const [activeSlot, setActiveSlot] = useState<EquipmentSlot>('weapon');
   const [mainTab, setMainTab] = useState<'inventory' | 'craft' | 'skills'>('inventory');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const meta = useGameStore((s) => s.meta);
   const setScreen = useGameStore((s) => s.setScreen);
   const sellEquipment = useGameStore((s) => s.sellEquipment);
   const equipItem = useGameStore((s) => s.equipItem);
   const unequipItem = useGameStore((s) => s.unequipItem);
   const craft = useGameStore((s) => s.craft);
+  const enhanceItem = useGameStore((s) => s.enhanceItem);
   const run = useGameStore((s) => s.run);
 
   const allItems: EquipmentInstance[] = [
@@ -172,12 +174,17 @@ export function Inventory() {
                   inst={item}
                   isEquipped={isEquipped}
                   canEquip={!isFull && !isEquipped}
+                  expanded={expandedId === item.instanceId}
+                  onToggleExpand={() => setExpandedId((prev) => prev === item.instanceId ? null : item.instanceId)}
                   onEquip={() => equipItem(item.instanceId)}
                   onUnequip={() => unequipItem(item.instanceId)}
                   onSell={() => {
                     const base = getEquipmentBase(item.baseId);
                     sellEquipment(item.instanceId, base?.price ?? 0);
                   }}
+                  onEnhance={() => enhanceItem(item.instanceId)}
+                  dr={meta.dr}
+                  enhanceStones={meta.enhanceStones}
                 />
               );
             })}
@@ -275,13 +282,18 @@ export function Inventory() {
   );
 }
 
-function EquipmentCard({ inst, isEquipped, canEquip, onEquip, onUnequip, onSell }: {
+function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, onEquip, onUnequip, onSell, onEnhance, dr, enhanceStones }: {
   inst: EquipmentInstance;
   isEquipped: boolean;
   canEquip: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
   onEquip: () => void;
   onUnequip: () => void;
   onSell: () => void;
+  onEnhance: () => void;
+  dr: number;
+  enhanceStones: number;
 }) {
   const base = getEquipmentBase(inst.baseId);
   if (!base) return null;
@@ -302,11 +314,19 @@ function EquipmentCard({ inst, isEquipped, canEquip, onEquip, onUnequip, onSell 
     .join(' ');
   const displayName = `${base.name}${inst.enhanceLv > 0 ? ` +${inst.enhanceLv}` : ''}`;
 
+  const cost = enhanceCost(base.rarity, inst.enhanceLv);
+  const canAfford = dr >= cost.dr && enhanceStones >= cost.stones;
+  const nextStats = getInstanceStats({ ...inst, enhanceLv: inst.enhanceLv + 1 });
+  const nextStatStr = Object.entries(nextStats.percent ?? {})
+    .map(([k, v]) => `${k.toUpperCase()}+${v}%`)
+    .concat(Object.entries(nextStats.flat ?? {}).map(([k, v]) => `${k.toUpperCase()}+${v}`))
+    .join(' ');
+
   return (
     <div style={{ background: 'var(--forge-bg-card)', border: `1px solid ${isEquipped ? 'var(--forge-accent)' : rarityColor[base.rarity]}`, borderRadius: 8, padding: 10 }}>
       <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{displayName}</div>
       <div style={{ fontSize: 11, color: 'var(--forge-stat-atk)', marginBottom: 6 }}>{statStr}</div>
-      <div style={{ display: 'flex', gap: 4 }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
         {isEquipped ? (
           <button
             onClick={onUnequip}
@@ -329,7 +349,42 @@ function EquipmentCard({ inst, isEquipped, canEquip, onEquip, onUnequip, onSell 
         >
           매각 {base.price.toLocaleString()}G
         </button>
+        <button
+          onClick={onToggleExpand}
+          data-testid={`enhance-toggle-${inst.instanceId}`}
+          style={{ fontSize: 11, background: 'none', border: '1px solid var(--forge-border)', borderRadius: 4, padding: '2px 8px', color: 'var(--forge-text-muted)', cursor: 'pointer', marginLeft: 'auto' }}
+        >
+          {expanded ? '▴ 닫기' : '▾ 강화'}
+        </button>
       </div>
+      {expanded && (
+        <div
+          data-testid={`enhance-panel-${inst.instanceId}`}
+          style={{ marginTop: 8, padding: 8, borderTop: '1px solid var(--forge-border)', fontSize: 12 }}
+        >
+          <div style={{ color: 'var(--forge-text-muted)', marginBottom: 4 }}>현재 lv {inst.enhanceLv} → {nextStatStr || '—'}</div>
+          <div style={{ color: 'var(--forge-text-muted)', marginBottom: 6 }}>
+            비용: 강화석 {cost.stones} / DR {cost.dr.toLocaleString()}
+            {!canAfford && <span style={{ color: '#c44', marginLeft: 6 }}>(재료 부족)</span>}
+          </div>
+          <button
+            disabled={!canAfford}
+            onClick={onEnhance}
+            data-testid={`enhance-btn-${inst.instanceId}`}
+            style={{
+              fontSize: 12,
+              background: canAfford ? 'var(--forge-accent-dim)' : 'none',
+              border: `1px solid ${canAfford ? 'var(--forge-accent)' : 'var(--forge-border)'}`,
+              borderRadius: 4,
+              padding: '4px 12px',
+              color: canAfford ? 'var(--forge-accent)' : 'var(--forge-text-muted)',
+              cursor: canAfford ? 'pointer' : 'default',
+            }}
+          >
+            강화 +1
+          </button>
+        </div>
+      )}
     </div>
   );
 }
