@@ -12,6 +12,8 @@ import { QUESTS, getQuestById } from '../data/quests';
 import { attemptCraft } from '../systems/crafting';
 import { enhanceCost } from '../systems/enhance';
 import { getEquipmentBase } from '../data/equipment';
+import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
+import { getUltById } from '../data/jobskills';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -150,6 +152,8 @@ interface GameStore {
   awardJpOnBossKill: (bossId: string, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
   watchAdForJpCap: (charId: string) => void;
   awardJpOnCharLvMilestone: (charId: string) => void;
+  levelUpSkill: (charId: string, skillId: string) => void;
+  pickUltSlot: (charId: string, slotIndex: 0 | 1 | 2 | 3, ultSkillId: string | null) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -644,6 +648,47 @@ export const useGameStore = create<GameStore>()(
       watchAdForJpCap: (charId) => set((s) => ({
         meta: { ...s.meta, jpCap: { ...s.meta.jpCap, [charId]: (s.meta.jpCap[charId] ?? 0) + 50 } },
       })),
+
+      levelUpSkill: (charId, skillId) => set((s) => {
+        const isUlt = !!getUltById(skillId);
+        if (isUlt) {
+          const slots = s.meta.ultSlotPicks[charId];
+          if (!slots || !slots.includes(skillId)) return s;
+        }
+        const currLv = s.meta.skillLevels[charId]?.[skillId] ?? 0;
+        const cost = jpCostToLevel(isUlt ? 'ult' : 'base', currLv);
+        if ((s.meta.jp[charId] ?? 0) < cost) return s;
+        return {
+          meta: {
+            ...s.meta,
+            jp: { ...s.meta.jp, [charId]: (s.meta.jp[charId] ?? 0) - cost },
+            skillLevels: {
+              ...s.meta.skillLevels,
+              [charId]: {
+                ...(s.meta.skillLevels[charId] ?? {}),
+                [skillId]: currLv + 1,
+              },
+            },
+          },
+        };
+      }),
+
+      pickUltSlot: (charId, slotIndex, ultSkillId) => set((s) => {
+        if (ultSkillId === null) {
+          const slots = (s.meta.ultSlotPicks[charId] ?? [null, null, null, null]).slice() as [string|null, string|null, string|null, string|null];
+          slots[slotIndex] = null;
+          return { meta: { ...s.meta, ultSlotPicks: { ...s.meta.ultSlotPicks, [charId]: slots } } };
+        }
+        const ult = getUltById(ultSkillId);
+        if (!ult || ult.charId !== charId) return s;
+        const totalLv = totalSkillLv(s.meta.skillLevels, charId);
+        if (slotIndex >= ultSlotsUnlocked(totalLv)) return s;
+        const currentSlots = s.meta.ultSlotPicks[charId] ?? [null, null, null, null];
+        if (currentSlots.some((id, i) => id === ultSkillId && i !== slotIndex)) return s;
+        const slots = currentSlots.slice() as [string|null, string|null, string|null, string|null];
+        slots[slotIndex] = ultSkillId;
+        return { meta: { ...s.meta, ultSlotPicks: { ...s.meta.ultSlotPicks, [charId]: slots } } };
+      }),
     }),
     {
       name: 'korea_inflation_rpg_save',
