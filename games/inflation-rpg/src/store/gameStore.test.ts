@@ -507,6 +507,63 @@ describe('Phase F-1 — Ascension', () => {
   });
 });
 
+describe('GameStore — Phase F-2 강화', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('enhanceItem: lv 0 → 1, 자원 차감 (common w-knife)', () => {
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        inventory: { ...s.meta.inventory, weapons: [inst] },
+        dr: 1000,
+        enhanceStones: 100,
+      },
+    }));
+    useGameStore.getState().enhanceItem('i1');
+    const m = useGameStore.getState().meta;
+    expect(m.inventory.weapons[0]?.enhanceLv).toBe(1);
+    expect(m.dr).toBe(1000 - 100);             // common lv0→1: dr cost 100
+    expect(m.enhanceStones).toBe(100 - 1);     // common lv0→1: stones 1
+  });
+
+  it('enhanceItem: 자원 부족 시 no-op', () => {
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 50, enhanceStones: 0 },
+    }));
+    useGameStore.getState().enhanceItem('i1');
+    const m = useGameStore.getState().meta;
+    expect(m.inventory.weapons[0]?.enhanceLv).toBe(0);
+    expect(m.dr).toBe(50);
+  });
+
+  it('enhanceItem: 잘못된 instanceId 무시', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, dr: 1000, enhanceStones: 100 } }));
+    useGameStore.getState().enhanceItem('does-not-exist');
+    const m = useGameStore.getState().meta;
+    expect(m.dr).toBe(1000);
+  });
+
+  it('enhanceItem: rare 등급 비용 적용 (lv0→1, rarityMult 2.5)', () => {
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 0 };
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        inventory: { ...s.meta.inventory, weapons: [inst] },
+        dr: 1000,
+        enhanceStones: 100,
+      },
+    }));
+    useGameStore.getState().enhanceItem('i1');
+    const m = useGameStore.getState().meta;
+    expect(m.dr).toBe(1000 - 250);            // rare lv0→1: dr 100*2.5 = 250
+    expect(m.enhanceStones).toBe(100 - 2.5);  // rare lv0→1: stones ceil(1/5)*2.5 = 2.5
+  });
+});
+
 describe('GameStore — Phase F-2+3 v8 migration', () => {
   it('inventory becomes EquipmentInstance[] + equippedItemIds maps base→instance', () => {
     const legacyMeta = {
