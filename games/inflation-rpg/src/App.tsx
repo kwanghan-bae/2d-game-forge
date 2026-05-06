@@ -53,6 +53,9 @@ export function App({ config }: AppProps) {
       {screen === 'game-over'    && <GameOver />}
       {screen === 'quests'       && <Quests />}
       {screen === 'ascension'    && <Ascension />}
+      {screen === 'skill-progression' && (
+        <div data-testid="skill-progression-placeholder">SkillProgression placeholder (T23)</div>
+      )}
       <TutorialOverlay />
       <DungeonFinalClearedModal />
     </div>
