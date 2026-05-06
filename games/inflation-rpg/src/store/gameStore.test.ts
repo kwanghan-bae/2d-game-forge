@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, INITIAL_RUN, INITIAL_META } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
+import type { EquipmentInstance } from '../types';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
@@ -71,10 +72,7 @@ describe('GameStore', () => {
   });
 
   it('addEquipment: adds to inventory', () => {
-    const item = {
-      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
-    };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
     useGameStore.getState().addEquipment(item);
     expect(useGameStore.getState().meta.inventory.weapons).toHaveLength(1);
   });
@@ -99,13 +97,10 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('equipItem: adds itemId to equippedItemIds', () => {
-    const item = {
-      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
-    };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
     useGameStore.getState().addEquipment(item);
-    useGameStore.getState().equipItem('w1');
-    expect(useGameStore.getState().meta.equippedItemIds).toContain('w1');
+    useGameStore.getState().equipItem('i1');
+    expect(useGameStore.getState().meta.equippedItemIds).toContain('i1');
   });
 
   it('equipItem: ignores when slot full', () => {
@@ -178,14 +173,11 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('sellEquipment: also removes from equippedItemIds', () => {
-    const item = {
-      id: 'w1', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 100,
-    };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
     useGameStore.getState().addEquipment(item);
-    useGameStore.getState().equipItem('w1');
-    useGameStore.getState().sellEquipment('w1', 100);
-    expect(useGameStore.getState().meta.equippedItemIds).not.toContain('w1');
+    useGameStore.getState().equipItem('i1');
+    useGameStore.getState().sellEquipment('i1', 100);
+    expect(useGameStore.getState().meta.equippedItemIds).not.toContain('i1');
   });
 
   it('persist migrate: adds Phase 3 fields to pre-phase3 meta', () => {
@@ -496,27 +488,82 @@ describe('Phase F-1 — Ascension', () => {
   });
 
   it('ascend keeps equipped items, drops unequipped from inventory', () => {
-    const equippedSword = {
-      id: 'sword-eq', name: '검', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 10 } }, dropAreaIds: [], price: 0,
-    };
-    const unequippedSword = {
-      id: 'sword-uneq', name: '도', slot: 'weapon' as const, rarity: 'common' as const,
-      stats: { flat: { atk: 5 } }, dropAreaIds: [], price: 0,
-    };
+    const equippedSword: EquipmentInstance = { instanceId: 'inst-eq', baseId: 'w-knife', enhanceLv: 0 };
+    const unequippedSword: EquipmentInstance = { instanceId: 'inst-uneq', baseId: 'w-sword', enhanceLv: 0 };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
         dungeonFinalsCleared: ['plains', 'forest', 'mountains'],
         crackStones: 1,
         inventory: { weapons: [equippedSword, unequippedSword], armors: [], accessories: [] },
-        equippedItemIds: ['sword-eq'],
+        equippedItemIds: ['inst-eq'],
       },
     }));
     expect(useGameStore.getState().ascend()).toBe(true);
     const inv = useGameStore.getState().meta.inventory;
     expect(inv.weapons).toHaveLength(1);
-    expect(inv.weapons[0]!.id).toBe('sword-eq');
-    expect(useGameStore.getState().meta.equippedItemIds).toEqual(['sword-eq']);
+    expect(inv.weapons[0]!.instanceId).toBe('inst-eq');
+    expect(useGameStore.getState().meta.equippedItemIds).toEqual(['inst-eq']);
+  });
+});
+
+describe('GameStore — Phase F-2+3 v8 migration', () => {
+  it('inventory becomes EquipmentInstance[] + equippedItemIds maps base→instance', () => {
+    const legacyMeta = {
+      ...INITIAL_META,
+      inventory: {
+        weapons: [{ id: 'w-knife', name: '단도', slot: 'weapon', rarity: 'common', stats: { flat: { atk: 30 } }, dropAreaIds: [], price: 100 }],
+        armors: [],
+        accessories: [],
+      },
+      equippedItemIds: ['w-knife'],
+    };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+
+    expect(migrated.meta.inventory.weapons).toHaveLength(1);
+    expect(migrated.meta.inventory.weapons[0]).toMatchObject({ baseId: 'w-knife', enhanceLv: 0 });
+    expect(typeof migrated.meta.inventory.weapons[0].instanceId).toBe('string');
+    expect(migrated.meta.equippedItemIds).toEqual([migrated.meta.inventory.weapons[0].instanceId]);
+  });
+
+  it('duplicate baseId in equippedItemIds maps to distinct instances', () => {
+    const legacyMeta = {
+      ...INITIAL_META,
+      inventory: {
+        weapons: [
+          { id: 'w-knife', name: '단도', slot: 'weapon', rarity: 'common', stats: { flat: { atk: 30 } }, dropAreaIds: [], price: 100 },
+          { id: 'w-knife', name: '단도', slot: 'weapon', rarity: 'common', stats: { flat: { atk: 30 } }, dropAreaIds: [], price: 100 },
+        ],
+        armors: [], accessories: [],
+      },
+      equippedItemIds: ['w-knife', 'w-knife'],
+    };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+
+    expect(migrated.meta.equippedItemIds).toHaveLength(2);
+    expect(migrated.meta.equippedItemIds[0]).not.toBe(migrated.meta.equippedItemIds[1]);
+  });
+
+  it('orphan equipped baseId is silently dropped', () => {
+    const legacyMeta = {
+      ...INITIAL_META,
+      inventory: { weapons: [], armors: [], accessories: [] },
+      equippedItemIds: ['w-knife'],
+    };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+    expect(migrated.meta.equippedItemIds).toEqual([]);
+  });
+
+  it('initializes new JP / skill fields with defaults', () => {
+    const legacyMeta = { ...INITIAL_META, inventory: { weapons: [], armors: [], accessories: [] }, equippedItemIds: [] };
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const migrated = migrate({ meta: legacyMeta, run: INITIAL_RUN }, 7);
+    expect(migrated.meta.jp).toEqual({});
+    expect(migrated.meta.jpCap).toEqual({ hwarang: 50, mudang: 50, choeui: 50 });
+    expect(migrated.meta.skillLevels).toEqual({});
+    expect(migrated.meta.ultSlotPicks.hwarang).toEqual([null, null, null, null]);
   });
 });
