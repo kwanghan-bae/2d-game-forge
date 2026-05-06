@@ -10,6 +10,8 @@ import {
 import { addToInventory, removeFromInventory } from '../systems/equipment';
 import { QUESTS, getQuestById } from '../data/quests';
 import { attemptCraft } from '../systems/crafting';
+import { enhanceCost } from '../systems/enhance';
+import { getEquipmentBase } from '../data/equipment';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -113,6 +115,7 @@ interface GameStore {
   setVolumes: (music: number, sfx: number, muted: boolean) => void;
   gainDR: (amount: number) => void;
   gainEnhanceStones: (amount: number) => void;
+  enhanceItem: (instanceId: string) => void;
   markDungeonProgress: (dungeonId: string, floor: number) => void;
   markFinalCleared: (dungeonId: string) => void;
   setPendingFinalCleared: (dungeonId: string | null) => void;
@@ -393,6 +396,38 @@ export const useGameStore = create<GameStore>()(
 
       gainEnhanceStones: (amount) =>
         set((s) => ({ meta: { ...s.meta, enhanceStones: s.meta.enhanceStones + amount } })),
+
+      enhanceItem: (instanceId) =>
+        set((s) => {
+          const all = [
+            ...s.meta.inventory.weapons,
+            ...s.meta.inventory.armors,
+            ...s.meta.inventory.accessories,
+          ];
+          const inst = all.find((i) => i.instanceId === instanceId);
+          if (!inst) return s;
+          const base = getEquipmentBase(inst.baseId);
+          if (!base) return s;
+          const cost = enhanceCost(base.rarity, inst.enhanceLv);
+          if (s.meta.dr < cost.dr) return s;
+          if (s.meta.enhanceStones < cost.stones) return s;
+
+          const updateSlot = (list: EquipmentInstance[]) =>
+            list.map((i) => (i.instanceId === instanceId ? { ...i, enhanceLv: i.enhanceLv + 1 } : i));
+
+          return {
+            meta: {
+              ...s.meta,
+              dr: s.meta.dr - cost.dr,
+              enhanceStones: s.meta.enhanceStones - cost.stones,
+              inventory: {
+                weapons: updateSlot(s.meta.inventory.weapons),
+                armors: updateSlot(s.meta.inventory.armors),
+                accessories: updateSlot(s.meta.inventory.accessories),
+              },
+            },
+          };
+        }),
 
       markDungeonProgress: (dungeonId, floor) =>
         set((s) => {
