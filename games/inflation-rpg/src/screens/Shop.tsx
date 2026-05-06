@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGameStore, SLOT_COSTS } from '../store/gameStore';
-import { EQUIPMENT_CATALOG } from '../data/equipment';
-import { canDrop } from '../systems/equipment';
+import { EQUIPMENT_BASES, createInstance } from '../data/equipment';
+import { canDropForBase } from '../systems/equipment';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgePanel } from '@/components/ui/forge-panel';
 import { ForgeScreen } from '@/components/ui/forge-screen';
@@ -15,9 +15,10 @@ export function Shop() {
 
   const buyEquipment = (itemId: string, price: number) => {
     if (run.goldThisRun < price) return;
-    const item = EQUIPMENT_CATALOG.find((e) => e.id === itemId);
-    if (!item || !canDrop(meta.inventory, item.slot)) return;
-    addEquipment(item);
+    const item = EQUIPMENT_BASES.find((e) => e.id === itemId);
+    if (!item || !canDropForBase(meta.inventory, item)) return;
+    const inst = createInstance(item.id);
+    addEquipment(inst);
     useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun - price } }));
   };
 
@@ -67,11 +68,11 @@ export function Shop() {
       {/* 장비 구매 */}
       <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 6 }}>⚔️ 장비</div>
       <div className="forge-scroll-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '55vh' }}>
-        {EQUIPMENT_CATALOG.map((item) => {
-          const canBuy = run.goldThisRun >= item.price && canDrop(meta.inventory, item.slot);
-          const statStr = Object.entries(item.stats.percent ?? {})
+        {EQUIPMENT_BASES.map((item) => {
+          const canBuy = run.goldThisRun >= item.price && canDropForBase(meta.inventory, item);
+          const statStr = Object.entries(item.baseStats.percent ?? {})
             .map(([k, v]) => `${k.toUpperCase()}+${v}%`)
-            .concat(Object.entries(item.stats.flat ?? {}).map(([k, v]) => `${k.toUpperCase()}+${v}`))
+            .concat(Object.entries(item.baseStats.flat ?? {}).map(([k, v]) => `${k.toUpperCase()}+${v}`))
             .join(' ');
           return (
             <ForgePanel key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
