@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, Equipment, AllocatedStats } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats } from '../types';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
 import {
   onBossKill as progressionOnBossKill,
@@ -90,10 +90,10 @@ interface GameStore {
   gainExp: (exp: number) => void;
   allocateSP: (stat: keyof AllocatedStats, amount: number) => void;
   bossDrop: (bossId: string, bpReward: number) => void;
-  addEquipment: (item: Equipment) => void;
-  sellEquipment: (itemId: string, price: number) => void;
-  equipItem: (itemId: string) => void;
-  unequipItem: (itemId: string) => void;
+  addEquipment: (instance: EquipmentInstance) => void;
+  sellEquipment: (instanceId: string, price: number) => void;
+  equipItem: (instanceId: string) => void;
+  unequipItem: (instanceId: string) => void;
   buyEquipSlot: () => void;
   selectDungeon: (dungeonId: string | null) => void;
   setCurrentFloor: (floor: number) => void;
@@ -227,31 +227,31 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      addEquipment: (item) => {
-        set((s) => ({ meta: { ...s.meta, inventory: addToInventory(s.meta.inventory, item) } }));
-        get().trackItemCollect(item.id);
+      addEquipment: (instance) => {
+        set((s) => ({ meta: { ...s.meta, inventory: addToInventory(s.meta.inventory, instance) } }));
+        get().trackItemCollect(instance.baseId);
       },
 
-      sellEquipment: (itemId, price) =>
+      sellEquipment: (instanceId, price) =>
         set((s) => ({
           meta: {
             ...s.meta,
-            inventory: removeFromInventory(s.meta.inventory, itemId),
-            equippedItemIds: s.meta.equippedItemIds.filter((id) => id !== itemId),
+            inventory: removeFromInventory(s.meta.inventory, instanceId),
+            equippedItemIds: s.meta.equippedItemIds.filter((id) => id !== instanceId),
             gold: s.meta.gold + price,
           },
         })),
 
-      equipItem: (itemId) =>
+      equipItem: (instanceId) =>
         set((s) => {
           if (s.meta.equippedItemIds.length >= s.meta.equipSlotCount) return s;
-          if (s.meta.equippedItemIds.includes(itemId)) return s;
-          return { meta: { ...s.meta, equippedItemIds: [...s.meta.equippedItemIds, itemId] } };
+          if (s.meta.equippedItemIds.includes(instanceId)) return s;
+          return { meta: { ...s.meta, equippedItemIds: [...s.meta.equippedItemIds, instanceId] } };
         }),
 
-      unequipItem: (itemId) =>
+      unequipItem: (instanceId) =>
         set((s) => ({
-          meta: { ...s.meta, equippedItemIds: s.meta.equippedItemIds.filter((id) => id !== itemId) },
+          meta: { ...s.meta, equippedItemIds: s.meta.equippedItemIds.filter((id) => id !== instanceId) },
         })),
 
       buyEquipSlot: () =>
@@ -448,15 +448,8 @@ export const useGameStore = create<GameStore>()(
         const { nextTier, cost } = check;
         set((s) => {
           const equippedSet = new Set(s.meta.equippedItemIds);
-          const keepEquipped = (list: Equipment[]) => {
-            const seen = new Set<string>();
-            return list.filter((it) => {
-              if (!equippedSet.has(it.id)) return false;
-              if (seen.has(it.id)) return false;
-              seen.add(it.id);
-              return true;
-            });
-          };
+          const keepEquipped = (list: EquipmentInstance[]) =>
+            list.filter((inst) => equippedSet.has(inst.instanceId));
           return {
             run: INITIAL_RUN,
             screen: 'main-menu',
@@ -495,27 +488,18 @@ export const useGameStore = create<GameStore>()(
           ...state.meta.inventory.armors,
           ...state.meta.inventory.accessories,
         ];
-        const attempt = attemptCraft(allItems, equipmentId, state.meta.gold);
-        if (!attempt.ok || !attempt.result || attempt.cost === undefined) return false;
-        const result = attempt.result;
-        const cost = attempt.cost;
+        const sourceBaseId = equipmentId;
+        const attempt = attemptCraft(allItems, sourceBaseId, state.meta.gold);
+        if (!attempt.ok || !attempt.result || !attempt.resultBase || attempt.cost === undefined || !attempt.consumedInstanceIds) return false;
+        const { result, resultBase, cost, consumedInstanceIds } = attempt;
 
         set(s => {
-          // 1. Remove 3 instances of source from the matching slot inventory
           const slotKey: 'weapons' | 'armors' | 'accessories' =
-            result.slot === 'weapon' ? 'weapons' :
-            result.slot === 'armor' ? 'armors' : 'accessories';
-          const sourceList = s.meta.inventory[slotKey];
-          let removed = 0;
-          const filtered = sourceList.filter(item => {
-            if (removed < 3 && item.id === equipmentId) {
-              removed++;
-              return false;
-            }
-            return true;
-          });
+            resultBase.slot === 'weapon' ? 'weapons' :
+            resultBase.slot === 'armor' ? 'armors' : 'accessories';
+          const consumedSet = new Set(consumedInstanceIds);
 
-          // 2. Add result to the same slot
+          const filtered = s.meta.inventory[slotKey].filter(inst => !consumedSet.has(inst.instanceId));
           const newSlotList = [...filtered, result];
 
           return {
@@ -535,7 +519,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 7,
+      version: 8,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
         if (fromVersion < 1) {
@@ -594,6 +578,57 @@ export const useGameStore = create<GameStore>()(
           s.meta.crackStones = s.meta.crackStones ?? 0;
           s.meta.ascTier = s.meta.ascTier ?? 0;
           s.meta.ascPoints = s.meta.ascPoints ?? 0;
+        }
+        // Phase F-2+3 — Equipment instance refactor + JP system (v8)
+        if (fromVersion < 8 && s.meta) {
+          const m = s.meta as any;
+
+          // 1. inventory: Equipment[] → EquipmentInstance[]
+          const migrateSlot = (items: any[]): any[] =>
+            items.map((it: any) => ({
+              instanceId: crypto.randomUUID(),
+              baseId: it.id,
+              enhanceLv: 0,
+            }));
+          if (m.inventory) {
+            m.inventory.weapons = migrateSlot(m.inventory.weapons ?? []);
+            m.inventory.armors = migrateSlot(m.inventory.armors ?? []);
+            m.inventory.accessories = migrateSlot(m.inventory.accessories ?? []);
+          }
+
+          // 2. equippedItemIds: baseId[] → instanceId[]
+          const oldEquipped: string[] = m.equippedItemIds ?? [];
+          const allInstances = [
+            ...(m.inventory?.weapons ?? []),
+            ...(m.inventory?.armors ?? []),
+            ...(m.inventory?.accessories ?? []),
+          ];
+          const claimed = new Set<string>();
+          const newEquipped: string[] = [];
+          for (const oldBaseId of oldEquipped) {
+            const found = allInstances.find(
+              (inst: any) => inst.baseId === oldBaseId && !claimed.has(inst.instanceId)
+            );
+            if (found) {
+              claimed.add(found.instanceId);
+              newEquipped.push(found.instanceId);
+            }
+            // not found = orphan equipped — silently drop
+          }
+          m.equippedItemIds = newEquipped;
+
+          // 3. JP / Skill 신규 필드 (CP3 T15 에서 INITIAL_META 도 갱신될 예정. 본 마이그레이션은 v8 진입을 위해 default 셋업)
+          m.jp = m.jp ?? {};
+          m.jpEarnedTotal = m.jpEarnedTotal ?? {};
+          m.jpCap = m.jpCap ?? { hwarang: 50, mudang: 50, choeui: 50 };
+          m.jpFirstKillAwarded = m.jpFirstKillAwarded ?? {};
+          m.jpCharLvAwarded = m.jpCharLvAwarded ?? {};
+          m.skillLevels = m.skillLevels ?? {};
+          m.ultSlotPicks = m.ultSlotPicks ?? {
+            hwarang: [null, null, null, null],
+            mudang:  [null, null, null, null],
+            choeui:  [null, null, null, null],
+          };
         }
         return s;
       },
