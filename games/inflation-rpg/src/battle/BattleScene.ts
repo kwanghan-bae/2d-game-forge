@@ -19,6 +19,7 @@ import {
   type SkillState, type SkillEffectResult,
 } from './SkillSystem';
 import type { ActiveSkill } from '../types';
+import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -131,8 +132,8 @@ export class BattleScene extends Phaser.Scene {
     // Cache player stats and active skills for skill system
     const char = getCharacterById(run.characterId);
     if (char) {
-      this.activeSkills = [...char.activeSkills];
       const { meta } = useGameStore.getState();
+      this.activeSkills = buildActiveSkillsForCombat(run.characterId, meta);
       const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
       const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
       const charLv = meta.characterLevels[run.characterId] ?? 0;
