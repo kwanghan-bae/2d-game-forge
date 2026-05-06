@@ -21,7 +21,7 @@ test.describe('Phase F-2+3 — Enhance + SkillProgression smoke', () => {
     await page.getByTestId('town-skill-progression').click();
     await expect(page.getByText(/직업소/)).toBeVisible();
     await page.getByTestId('watch-ad-btn').click();
-    // After ad: cap should be 100. Look for "/100" appearance.
-    await expect(page.getByText(/\/100/)).toBeVisible();
+    // After ad: cap should be 100. jp-cap span shows "누적 X/100".
+    await expect(page.getByTestId('jp-cap')).toContainText('/100');
   });
 });

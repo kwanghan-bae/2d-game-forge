@@ -15,7 +15,7 @@ describe('SkillProgression', () => {
   it('renders header with current char + JP / cap', () => {
     render(<SkillProgression />);
     expect(screen.getByText(/직업소/)).toBeInTheDocument();
-    expect(screen.getByText(/0\/50/)).toBeInTheDocument();
+    expect(screen.getByTestId('jp-cap')).toHaveTextContent('/50');
   });
 
   it('shows base skill cards for hwarang (2 base skills)', () => {
