@@ -76,6 +76,18 @@ export const INITIAL_META: MetaState = {
   crackStones: 0,
   ascTier: 0,
   ascPoints: 0,
+  // Phase F-2+3 — JP / Skill Progression
+  jp: {},
+  jpEarnedTotal: {},
+  jpCap: { hwarang: 50, mudang: 50, choeui: 50 },
+  jpFirstKillAwarded: {},
+  jpCharLvAwarded: {},
+  skillLevels: {},
+  ultSlotPicks: {
+    hwarang: [null, null, null, null],
+    mudang:  [null, null, null, null],
+    choeui:  [null, null, null, null],
+  },
 };
 
 interface GameStore {
