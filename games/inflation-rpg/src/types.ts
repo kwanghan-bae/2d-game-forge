@@ -9,14 +9,20 @@ export interface EquipmentStats {
   percent?: Partial<Record<StatKey, number>>;
 }
 
-export interface Equipment {
+export interface EquipmentBase {
   id: string;
   name: string;
   slot: EquipmentSlot;
   rarity: EquipmentRarity;
-  stats: EquipmentStats;
+  baseStats: EquipmentStats;
   dropAreaIds: string[];
   price: number;
+}
+
+export interface EquipmentInstance {
+  instanceId: string;
+  baseId: string;
+  enhanceLv: number;
 }
 
 export interface PassiveSkill {
@@ -129,9 +135,9 @@ export interface Quest {
 export type AllocatedStats = Record<StatKey, number>;
 
 export interface Inventory {
-  weapons: Equipment[];
-  armors: Equipment[];
-  accessories: Equipment[];
+  weapons: EquipmentInstance[];
+  armors: EquipmentInstance[];
+  accessories: EquipmentInstance[];
 }
 
 export interface RunState {
