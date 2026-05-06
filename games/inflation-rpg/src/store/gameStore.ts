@@ -103,7 +103,7 @@ interface GameStore {
   gainLevels: (levels: number, spGained: number) => void;
   gainExp: (exp: number) => void;
   allocateSP: (stat: keyof AllocatedStats, amount: number) => void;
-  bossDrop: (bossId: string, bpReward: number) => void;
+  bossDrop: (bossId: string, bpReward: number, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
   addEquipment: (instance: EquipmentInstance) => void;
   sellEquipment: (instanceId: string, price: number) => void;
   equipItem: (instanceId: string) => void;
@@ -149,6 +149,7 @@ interface GameStore {
   // Phase F-3 — JP actions
   awardJpOnBossKill: (bossId: string, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
   watchAdForJpCap: (charId: string) => void;
+  awardJpOnCharLvMilestone: (charId: string) => void;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -187,6 +188,7 @@ export const useGameStore = create<GameStore>()(
           },
           screen: 'game-over',
         });
+        if (charId) get().awardJpOnCharLvMilestone(charId);
       },
 
       abandonRun: () => set({ run: INITIAL_RUN, screen: 'main-menu' }),
@@ -217,7 +219,7 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      bossDrop: (bossId, bpReward) =>
+      bossDrop: (bossId, bpReward, bossType) => {
         set((s) => {
           const normalKilled = s.run.isHardMode
             ? s.meta.normalBossesKilled
@@ -243,7 +245,9 @@ export const useGameStore = create<GameStore>()(
               enhanceStones: s.meta.enhanceStones + stonesGained,
             },
           };
-        }),
+        });
+        get().awardJpOnBossKill(bossId, bossType);
+      },
 
       addEquipment: (instance) => {
         set((s) => ({ meta: { ...s.meta, inventory: addToInventory(s.meta.inventory, instance) } }));
@@ -597,6 +601,42 @@ export const useGameStore = create<GameStore>()(
             jp: { ...s.meta.jp, [charId]: (s.meta.jp[charId] ?? 0) + granted },
             jpEarnedTotal: { ...s.meta.jpEarnedTotal, [charId]: earned + granted },
             jpFirstKillAwarded: nextFirstAwarded,
+          },
+        };
+      }),
+
+      awardJpOnCharLvMilestone: (charId) => set((s) => {
+        const charLv = s.meta.characterLevels[charId] ?? 0;
+        const lastAwarded = s.meta.jpCharLvAwarded[charId] ?? 0;
+        const milestones: Array<[number, number]> = [
+          [50, 3], [100, 5], [200, 10], [500, 15], [1000, 20],
+        ];
+
+        let totalGain = 0;
+        let newLastAwarded = lastAwarded;
+        for (const [m, jpReward] of milestones) {
+          if (charLv >= m && lastAwarded < m) {
+            totalGain += jpReward;
+            newLastAwarded = m;
+          }
+        }
+        if (totalGain === 0 && newLastAwarded === lastAwarded) return s;
+
+        const cap = s.meta.jpCap[charId] ?? 0;
+        const earned = s.meta.jpEarnedTotal[charId] ?? 0;
+        const headroom = Math.max(0, cap - earned);
+        const granted = Math.min(totalGain, headroom);
+
+        return {
+          meta: {
+            ...s.meta,
+            jp: granted > 0
+              ? { ...s.meta.jp, [charId]: (s.meta.jp[charId] ?? 0) + granted }
+              : s.meta.jp,
+            jpEarnedTotal: granted > 0
+              ? { ...s.meta.jpEarnedTotal, [charId]: earned + granted }
+              : s.meta.jpEarnedTotal,
+            jpCharLvAwarded: { ...s.meta.jpCharLvAwarded, [charId]: newLastAwarded },
           },
         };
       }),

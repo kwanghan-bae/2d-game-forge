@@ -5,7 +5,7 @@ interface BattleGameOptions {
   parent: string;
   onLevelUp: (newLevel: number) => void;
   onBattleEnd: (victory: boolean) => void;
-  onBossKill: (bossId: string, bpReward: number) => void;
+  onBossKill: (bossId: string, bpReward: number, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
 }
 
 export function createBattleGame(opts: BattleGameOptions): Phaser.Game {

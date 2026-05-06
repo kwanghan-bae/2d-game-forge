@@ -46,7 +46,7 @@ function pickBossIdByType(
 interface BattleCallbacks {
   onLevelUp: (newLevel: number) => void;
   onBattleEnd: (victory: boolean) => void;
-  onBossKill: (bossId: string, bpReward: number) => void;
+  onBossKill: (bossId: string, bpReward: number, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
 }
 
 export class BattleScene extends Phaser.Scene {
@@ -57,6 +57,7 @@ export class BattleScene extends Phaser.Scene {
   private enemyName = '';
   private isBoss = false;
   private bossId?: string;
+  private cachedBossType?: 'mini' | 'major' | 'sub' | 'final';
   private currentMonsterId = '';
   private hpBarBg?: Phaser.GameObjects.Rectangle;
   private hpBarFill?: Phaser.GameObjects.Rectangle;
@@ -97,6 +98,7 @@ export class BattleScene extends Phaser.Scene {
       if (boss) {
         this.isBoss = true;
         this.bossId = boss.id;
+        this.cachedBossType = bossType;
         const bossEmoji = bossType === 'final' ? '⭐' : '👹';
         this.enemyName = `${bossEmoji} ${boss.nameKR}`;
         this.enemyMaxHP = Math.floor(monsterLevel * 50 * boss.hpMult);
@@ -182,7 +184,7 @@ export class BattleScene extends Phaser.Scene {
       this.combatTimer?.remove();
 
       if (this.isBoss && this.bossId) {
-        this.callbacks.onBossKill(this.bossId, 5);
+        this.callbacks.onBossKill(this.bossId, 5, this.cachedBossType ?? 'mini');
         useGameStore.getState().trackBossDefeat(this.bossId);
         const story = getBossDefeatStory(this.bossId);
         if (story) useGameStore.getState().setPendingStory(story.id);

@@ -31,8 +31,8 @@ export function Battle() {
         gameRef.current?.destroy(true);
         setScreen('town');
       },
-      onBossKill: (bossId, bpReward) => {
-        bossDrop(bossId, bpReward);
+      onBossKill: (bossId, bpReward, bossType) => {
+        bossDrop(bossId, bpReward, bossType);
       },
     });
 

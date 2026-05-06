@@ -251,7 +251,7 @@ describe('Currency on combat events', () => {
     useGameStore.getState().startRun('hwarang', false);
     const beforeMeta = useGameStore.getState().meta;
     const beforeRun = useGameStore.getState().run;
-    useGameStore.getState().bossDrop('test-boss', 5);
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
     const afterMeta = useGameStore.getState().meta;
     const afterRun = useGameStore.getState().run;
     expect(afterMeta.dr).toBe(beforeMeta.dr + 500);                                               // bpReward * 100
@@ -695,5 +695,77 @@ describe('GameStore — Phase F-3 광고 cap', () => {
     expect(m.jpCap.hwarang).toBe(100);
     useGameStore.getState().watchAdForJpCap('hwarang');
     expect(useGameStore.getState().meta.jpCap.hwarang).toBe(150);
+  });
+});
+
+describe('GameStore — Phase F-3 JP — charLv milestone', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('awardJpOnCharLvMilestone: 50 도달 → +3 JP, jpCharLvAwarded=50', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, characterLevels: { hwarang: 50 } } }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(3);
+    expect(m.jpCharLvAwarded.hwarang).toBe(50);
+  });
+
+  it('awardJpOnCharLvMilestone: 100 도달 → +3 (50) +5 (100), 두 마일스톤 적용', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, characterLevels: { hwarang: 100 }, jpCap: { hwarang: 200 } },
+    }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang).toBe(8);
+    expect(m.jpCharLvAwarded.hwarang).toBe(100);
+  });
+
+  it('awardJpOnCharLvMilestone: 이미 받은 마일스톤 재부여 ✗ (Asc reset 후에도)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        characterLevels: { hwarang: 0 },
+        jpCharLvAwarded: { hwarang: 100 },
+      },
+    }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang ?? 0).toBe(0);
+    expect(m.jpCharLvAwarded.hwarang).toBe(100);
+  });
+
+  it('awardJpOnCharLvMilestone: cap 적용', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        characterLevels: { hwarang: 1000 },
+        jpCap: { hwarang: 50 },
+        jpEarnedTotal: { hwarang: 48 },
+      },
+    }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jpEarnedTotal.hwarang).toBe(50);
+    expect(m.jpCharLvAwarded.hwarang).toBe(1000);
+  });
+
+  it('awardJpOnCharLvMilestone: 마일스톤 미달 시 no-op', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, characterLevels: { hwarang: 49 } } }));
+    useGameStore.getState().awardJpOnCharLvMilestone('hwarang');
+    const m = useGameStore.getState().meta;
+    expect(m.jp.hwarang ?? 0).toBe(0);
+    expect(m.jpCharLvAwarded.hwarang ?? 0).toBe(0);
+  });
+});
+
+describe('GameStore — Phase F-3 bossDrop wiring', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+  it('bossDrop: also calls awardJpOnBossKill with given bossType', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'hwarang' } }));
+    useGameStore.getState().bossDrop('test-boss', 10, 'major');
+    expect(useGameStore.getState().meta.jp.hwarang).toBe(4);  // major base 2 × first ×2
   });
 });
