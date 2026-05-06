@@ -70,6 +70,10 @@ export const INITIAL_META: MetaState = {
   dungeonProgress: {},
   dungeonFinalsCleared: [],
   pendingFinalClearedId: null,
+  // Phase F-1 — Ascension
+  crackStones: 0,
+  ascTier: 0,
+  ascPoints: 0,
 };
 
 interface GameStore {
@@ -112,6 +116,17 @@ interface GameStore {
   markDungeonProgress: (dungeonId: string, floor: number) => void;
   markFinalCleared: (dungeonId: string) => void;
   setPendingFinalCleared: (dungeonId: string | null) => void;
+  // Phase F-1 — Ascension
+  gainCrackStones: (amount: number) => void;
+  canAscend: () => {
+    ok: boolean;
+    nextTier: number;
+    cost: number;
+    finalsRequired: number;
+    finalsCleared: number;
+    reason: 'finals' | 'stones' | null;
+  };
+  ascend: () => boolean;
   pendingStoryId: string | null;
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
@@ -408,6 +423,71 @@ export const useGameStore = create<GameStore>()(
       setPendingFinalCleared: (dungeonId) =>
         set((s) => ({ meta: { ...s.meta, pendingFinalClearedId: dungeonId } })),
 
+      // Phase F-1 — Ascension
+      gainCrackStones: (amount) =>
+        set((s) => ({ meta: { ...s.meta, crackStones: s.meta.crackStones + amount } })),
+
+      canAscend: () => {
+        const s = get();
+        const nextTier = s.meta.ascTier + 1;
+        const finalsRequired = nextTier + 2;
+        const finalsCleared = s.meta.dungeonFinalsCleared.length;
+        const cost = nextTier * nextTier;
+        if (finalsCleared < finalsRequired) {
+          return { ok: false, nextTier, cost, finalsRequired, finalsCleared, reason: 'finals' };
+        }
+        if (s.meta.crackStones < cost) {
+          return { ok: false, nextTier, cost, finalsRequired, finalsCleared, reason: 'stones' };
+        }
+        return { ok: true, nextTier, cost, finalsRequired, finalsCleared, reason: null };
+      },
+
+      ascend: () => {
+        const check = get().canAscend();
+        if (!check.ok) return false;
+        const { nextTier, cost } = check;
+        set((s) => {
+          const equippedSet = new Set(s.meta.equippedItemIds);
+          const keepEquipped = (list: Equipment[]) => {
+            const seen = new Set<string>();
+            return list.filter((it) => {
+              if (!equippedSet.has(it.id)) return false;
+              if (seen.has(it.id)) return false;
+              seen.add(it.id);
+              return true;
+            });
+          };
+          return {
+            run: INITIAL_RUN,
+            screen: 'main-menu',
+            meta: {
+              ...s.meta,
+              soulGrade: 0,
+              dr: 0,
+              enhanceStones: 0,
+              characterLevels: {},
+              normalBossesKilled: [],
+              hardBossesKilled: [],
+              baseAbilityLevel: 0,
+              questProgress: {},
+              questsCompleted: [],
+              regionsVisited: [],
+              dungeonProgress: {},
+              pendingFinalClearedId: null,
+              inventory: {
+                weapons: keepEquipped(s.meta.inventory.weapons),
+                armors: keepEquipped(s.meta.inventory.armors),
+                accessories: keepEquipped(s.meta.inventory.accessories),
+              },
+              crackStones: s.meta.crackStones - cost,
+              ascTier: nextTier,
+              ascPoints: s.meta.ascPoints + nextTier,
+            },
+          };
+        });
+        return true;
+      },
+
       craft: (equipmentId: string): boolean => {
         const state = get();
         const allItems = [
@@ -455,7 +535,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 6,
+      version: 7,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
         if (fromVersion < 1) {
@@ -508,6 +588,12 @@ export const useGameStore = create<GameStore>()(
         // Phase B-3β2 — currentAreaId 제거 (legacy world-map flow)
         if (fromVersion < 6 && s.run) {
           delete s.run.currentAreaId;
+        }
+        // Phase F-1 — Ascension fields
+        if (fromVersion < 7 && s.meta) {
+          s.meta.crackStones = s.meta.crackStones ?? 0;
+          s.meta.ascTier = s.meta.ascTier ?? 0;
+          s.meta.ascPoints = s.meta.ascPoints ?? 0;
         }
         return s;
       },

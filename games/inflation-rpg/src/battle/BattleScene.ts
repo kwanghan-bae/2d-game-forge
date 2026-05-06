@@ -135,8 +135,9 @@ export class BattleScene extends Phaser.Scene {
       const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
       const charLv = meta.characterLevels[run.characterId] ?? 0;
       const charLevelMult = 1 + charLv * 0.1;
-      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult);
-      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult);
+      const ascTierMult = 1 + 0.1 * meta.ascTier;
+      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult);
+      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult, ascTierMult);
     }
   }
 
@@ -150,12 +151,13 @@ export class BattleScene extends Phaser.Scene {
     const allEquipped = getEquippedItemsList(meta.inventory, meta.equippedItemIds);
     const charLv = meta.characterLevels[run.characterId] ?? 0;
     const charLevelMult = 1 + charLv * 0.1;
+    const ascTierMult = 1 + 0.1 * meta.ascTier;
 
-    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult);
-    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult);
-    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult);
-    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult);
-    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult);
+    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult);
+    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult);
+    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult, ascTierMult);
+    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult);
+    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult);
 
     const crit = Math.random() < calcCritChance(playerAGI, playerLUC);
     const combo = Math.random() < 0.05 + playerAGI * 0.0005;
@@ -219,6 +221,12 @@ export class BattleScene extends Phaser.Scene {
         const dungeonId = currentRun.currentDungeonId;
         const finishedFloor = currentRun.currentFloor;
         const bossType = getBossType(finishedFloor);
+
+        // Phase F-1: 심층 floor 균열석 drop (floor / 50, 0 for floor < 50).
+        const stonesGained = Math.floor(finishedFloor / 50);
+        if (stonesGained > 0) {
+          stateAfterKill.gainCrackStones(stonesGained);
+        }
 
         if (bossType === 'final') {
           const isFirstClear = !stateAfterKill.meta.dungeonFinalsCleared.includes(dungeonId);
