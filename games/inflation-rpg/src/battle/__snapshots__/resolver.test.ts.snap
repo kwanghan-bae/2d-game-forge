@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv1 normal': deterministic damage (no rng portion) 1`] = `100`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv1 normal': enemyATK 1`] = `8`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv1 normal': enemyMaxHP 1`] = `20`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv10 normal crit': deterministic damage (no rng portion) 1`] = `1200`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv10 normal crit': enemyATK 1`] = `80`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv10 normal crit': enemyMaxHP 1`] = `300`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv30 mini': deterministic damage (no rng portion) 1`] = `1000`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv30 mini': enemyATK 1`] = `480`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv30 mini': enemyMaxHP 1`] = `3000`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv180 final': deterministic damage (no rng portion) 1`] = `12000`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv180 final': enemyATK 1`] = `2880`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv180 final': enemyMaxHP 1`] = `45000`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv1000 deep': deterministic damage (no rng portion) 1`] = `50000`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv1000 deep': enemyATK 1`] = `8000`;
+
+exports[`battle resolver — pre-refactor BattleScene parity > 'lv1000 deep': enemyMaxHP 1`] = `20000`;
