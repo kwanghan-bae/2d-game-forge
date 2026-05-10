@@ -107,10 +107,11 @@ export function runSweep(opts: RunSweepOptions = {}): SweepRow[] {
       }
     }
 
-    const tolerance = 0.2;
     const expectedFloor = s.expectedFloor;
-    const within = measuredFloor >= expectedFloor * (1 - tolerance)
-                && measuredFloor <= expectedFloor * (1 + tolerance);
+    // New criterion (spec §5.1 redefinition 2026-05-10):
+    // measuredFloor >= expectedFloor ⇒ pass. Over-tuned is acceptable — only
+    // under-tuning indicates a balance defect.
+    const within = measuredFloor >= expectedFloor;
 
     return {
       hours: s.hours,

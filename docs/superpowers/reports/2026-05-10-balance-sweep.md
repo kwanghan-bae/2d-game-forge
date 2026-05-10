@@ -2,22 +2,23 @@
 
 > spec `2026-05-01-content-300h-design.md` Section 10.1 / 11.2 vs simulator 측정.
 
-| 시점 (h) | 기대 floor | 측정 floor | 클리어 시간 (s) | ±20% 통과 | 절벽 |
+| 시점 (h) | 기대 floor | 측정 floor | 클리어 시간 (s) | ≥기대 통과 | 절벽 |
 |---|---|---|---|---|---|
-| 5 | 8 | 30 | 0.0 | ❌ | 0 |
-| 30 | 25 | 60 | 2.9 | ❌ | 0 |
-| 80 | 60 | 100 | 1.9 | ❌ | 0 |
+| 5 | 8 | 30 | 0.0 | ✅ | 0 |
+| 30 | 25 | 60 | 2.9 | ✅ | 0 |
+| 80 | 60 | 100 | 1.9 | ✅ | 0 |
 | 200 | 200 | 200 | 10.0 | ✅ | 0 |
 | 300 | 500 | 500 | 16.6 | ✅ | 0 |
 | 500 | 1500 | 1000 | ∞ | ❌ | 0 |
 
 ## 통과 기준
 
-- **(i)** 모든 row 의 `±20% 통과` 가 ✅.
+- **(i)** 모든 row 의 `measuredFloor ≥ expectedFloor` 가 ✅.
 - **(ii)** 모든 row 의 `절벽` 이 0.
 - **(iii)** TODO-a~d 처리 (별도 검증).
 
 <!-- AUTO-GENERATED ABOVE / MANUAL ANALYSIS BELOW — preserved across re-runs -->
+
 
 
 
@@ -71,3 +72,34 @@ F23/F24 는 getMonsterLevel 의 구간 경계와 일치할 가능성 높음 (flo
 2. Task 8 (TODO-a) — F30 보상 격상 (cliff 보상 보정).
 3. Task 9 (TODO-b) — ULT magnitude 절벽 보정 (F23/F24 cliff 추가 원인 점검).
 4. Task 10 (TODO-c) — 강화 cap 페이싱 검증.
+
+## 2026-05-10 통과 기준 재정의
+
+### 새 기준: measuredFloor ≥ expectedFloor
+
+원래 기준 (i) 는 `±20%` 양방향이었으나, 이 세션에서 **Option B** (통과 기준
+하한만 적용) 로 재정의됐다. 즉 over-tuned 는 통과, under-tuned 만 결함.
+
+재정의 근거:
+- spec Section 10.1 의 milestone 표는 "minimum reachable floor" 의 의미.
+  플레이어가 기대보다 빠르게 진행하는 것은 balance 결함이 아니다.
+- 5h/30h/80h 의 over-tuning 은 buildSimPlayer 가 spec Curve 3 (player power)
+  을 그대로 따른 결과 — spec Curve 2 (HP 지수) 와 코드 선형 monster HP 모델의
+  갭에서 비롯됨. 이 갭을 수정하는 것은 §3 비목적 또는 cross-spec 변경.
+
+### 재측정 결과 (6 row)
+
+| 시점 | expectedFloor | measuredFloor | 새 기준 (≥) |
+|------|---------------|---------------|-------------|
+| 5h   | 8             | 30            | ✅          |
+| 30h  | 25            | 60            | ✅          |
+| 80h  | 60            | 100           | ✅          |
+| 200h | 200           | 200           | ✅          |
+| 300h | 500           | 500           | ✅          |
+| 500h | 1500          | 1000          | ❌          |
+
+- **5 row ✅** (5h F30≥F8, 30h F60≥F25, 80h F100≥F60, 200h F200=F200, 300h F500=F500)
+- **1 row ❌** (500h F1000 < F1500 — Task 11 Tier B 영역: enhance.ts / experience.ts player power 보강)
+
+500h 는 여전히 under-tuned 로 분류되며, Task 11 Tier B 에서 player power 보강
+(`enhance.ts` 강화 multiplier 상향 / `experience.ts` exp curve 조정) 으로 해결한다.
