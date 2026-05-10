@@ -26,7 +26,7 @@ export interface PlayerHitInput {
 
 export function resolvePlayerHit(input: PlayerHitInput): number {
   const critMul = input.crit ? 2.4 : 1;
-  const rngMul = 0.9 + input.rngRoll * 0.2; // (0.9, 1.1)
+  const rngMul = 0.9 + input.rngRoll * 0.2; // [0.9, 1.1)
   return Math.floor(input.playerATK * critMul * rngMul);
 }
 
