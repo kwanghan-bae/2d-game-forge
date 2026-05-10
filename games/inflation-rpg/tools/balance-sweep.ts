@@ -1,6 +1,7 @@
 // games/inflation-rpg/tools/balance-sweep.ts
 import { simulateFloor, createSeededRng, type SimPlayer, type SimEnemy } from './balance-sim';
 import { getMonsterLevel } from '../src/data/floors';
+import { getMonstersForLevel } from '../src/data/monsters';
 import { enhanceMultiplier } from '../src/systems/enhance';
 
 export interface MilestoneState {
@@ -54,8 +55,15 @@ function buildSimPlayer(s: MilestoneState): SimPlayer {
 
 const N_FULL = 100; // spec §7.2: full sweep N=100
 
-function clearTimeAtFloor(player: SimPlayer, floor: number, hpMult: number, n: number): number {
+function representativeHpMult(monsterLevel: number): number {
+  const candidates = getMonstersForLevel(monsterLevel);
+  if (candidates.length === 0) return 1.0;
+  return candidates.reduce((sum, m) => sum + m.hpMult, 0) / candidates.length;
+}
+
+function clearTimeAtFloor(player: SimPlayer, floor: number, n: number): number {
   const monsterLevel = getMonsterLevel(floor);
+  const hpMult = representativeHpMult(monsterLevel);
   const enemy: SimEnemy = { monsterLevel, isBoss: false, hpMult };
   let total = 0; let wins = 0;
   for (let i = 0; i < n; i++) {
@@ -71,14 +79,14 @@ export function runSweep(opts: RunSweepOptions = {}): SweepRow[] {
   const N = opts.n ?? N_FULL;
   return MILESTONES.map((s) => {
     const player = buildSimPlayer(s);
-    const t = clearTimeAtFloor(player, s.expectedFloor, 1.0, N);
+    const t = clearTimeAtFloor(player, s.expectedFloor, N);
 
     // measuredFloor = clearTime 이 maxTicks 초과 직전
     let measuredFloor = 1;
     // Probe uses n=10 — only need finite/infinite distinction, not precise time.
     const probe = [1, 5, 8, 10, 25, 30, 60, 100, 200, 500, 1000, 1500, 3000];
     for (const f of probe) {
-      const ct = clearTimeAtFloor(player, f, 1.0, 10);
+      const ct = clearTimeAtFloor(player, f, 10);
       if (Number.isFinite(ct)) measuredFloor = f;
       else break;
     }
@@ -89,7 +97,7 @@ export function runSweep(opts: RunSweepOptions = {}): SweepRow[] {
     const cliffEnd = s.expectedFloor + 5;
     const cliffTimes: number[] = [];
     for (let f = cliffStart; f <= cliffEnd + 1; f++) {
-      cliffTimes.push(clearTimeAtFloor(player, f, 1.0, N));
+      cliffTimes.push(clearTimeAtFloor(player, f, N));
     }
     for (let i = 0; i < cliffTimes.length - 1; i++) {
       const a = cliffTimes[i]!;
