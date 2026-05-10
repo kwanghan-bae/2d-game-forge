@@ -1,16 +1,24 @@
 import React, { useMemo, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
-import type { EquipmentInstance, EquipmentBase, EquipmentSlot } from '../types';
+import type { EquipmentInstance, EquipmentBase, EquipmentSlot, Modifier } from '../types';
 import { SLOT_LIMITS } from '../systems/equipment';
 import { getCraftCost, getNextTier } from '../systems/crafting';
 import { getEquipmentBase } from '../data/equipment';
 import { enhanceCost, getInstanceStats } from '../systems/enhance';
+import { getModifierMagnitude } from '../systems/modifiers';
 import { CHARACTERS } from '../data/characters';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeInventoryGrid } from '@/components/ui/forge-inventory-grid';
 import { ForgePanel } from '@/components/ui/forge-panel';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 import { formatNumber } from '../lib/format';
+
+function formatMagnitude(mod: Modifier, value: number): string {
+  if (mod.effectType === 'dot') return `${Math.floor(value)}/sec`;
+  if (mod.effectType === 'cc') return `${Math.floor(value)}ms`;
+  if (mod.effectType === 'shield') return `${Math.floor(value)} shield`;
+  return `+${(value * 100).toFixed(1)}%`;
+}
 
 const TABS: { slot: EquipmentSlot; label: string; emoji: string }[] = [
   { slot: 'weapon',    label: '무기',     emoji: '⚔️' },
@@ -383,6 +391,24 @@ function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, o
           >
             강화 +1
           </button>
+          {inst.modifiers.length > 0 && (
+            <div data-testid="modifier-list" style={{ marginTop: 8, borderTop: '1px solid var(--forge-border)', paddingTop: 6 }}>
+              <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 4 }}>수식어</div>
+              {inst.modifiers.map((mod) => {
+                const magnitude = getModifierMagnitude(mod, inst, base.rarity);
+                return (
+                  <div
+                    key={mod.id}
+                    data-testid={`modifier-${mod.id}`}
+                    style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}
+                  >
+                    <span style={{ color: 'var(--forge-text-secondary)' }}>{mod.nameKR}</span>
+                    <span style={{ color: 'var(--forge-accent)' }}>{formatMagnitude(mod, magnitude)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
