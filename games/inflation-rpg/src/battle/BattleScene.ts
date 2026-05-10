@@ -13,6 +13,7 @@ import { getFloorInfo, getBossType } from '../data/floors';
 import { getBossById } from '../data/bosses';
 import type { BossType } from '../types';
 import { getBossDefeatStory } from '../data/stories';
+import { resolveEnemyMaxHp, resolveEnemyAtk, resolvePlayerHit, resolveDamageTaken } from './resolver';
 import { isRunOver, onDefeat } from '../systems/bp';
 import {
   createSkillState, isSkillReady, fireSkill, computeSkillEffect,
@@ -102,14 +103,22 @@ export class BattleScene extends Phaser.Scene {
         this.cachedBossType = bossType;
         const bossEmoji = bossType === 'final' ? '⭐' : '👹';
         this.enemyName = `${bossEmoji} ${boss.nameKR}`;
-        this.enemyMaxHP = Math.floor(monsterLevel * 50 * boss.hpMult);
+        this.enemyMaxHP = resolveEnemyMaxHp({
+          monsterLevel,
+          isBoss: true,
+          hpMult: boss.hpMult,
+        });
       } else {
         // 데이터 결함 — 일반 몹으로 fallback
         this.isBoss = false;
         const monster = pickMonsterFromPool(monsterLevel, dungeon.monsterPool);
         this.currentMonsterId = monster.id;
         this.enemyName = `${monster.emoji} ${monster.nameKR}`;
-        this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
+        this.enemyMaxHP = resolveEnemyMaxHp({
+          monsterLevel,
+          isBoss: false,
+          hpMult: monster.hpMult,
+        });
       }
     } else {
       // 신 flow — 일반 floor
@@ -117,7 +126,11 @@ export class BattleScene extends Phaser.Scene {
       const monster = pickMonsterFromPool(monsterLevel, dungeon!.monsterPool);
       this.currentMonsterId = monster.id;
       this.enemyName = `${monster.emoji} ${monster.nameKR}`;
-      this.enemyMaxHP = Math.floor(monsterLevel * 20 * monster.hpMult);
+      this.enemyMaxHP = resolveEnemyMaxHp({
+        monsterLevel,
+        isBoss: false,
+        hpMult: monster.hpMult,
+      });
     }
     this.enemyHP = this.enemyMaxHP;
 
@@ -167,7 +180,11 @@ export class BattleScene extends Phaser.Scene {
     const hits = combo ? 3 : 1;
     let totalDmg = 0;
     for (let i = 0; i < hits; i++) {
-      totalDmg += Math.floor(playerATK * (crit ? 2.4 : 1) * (0.9 + Math.random() * 0.2));
+      totalDmg += resolvePlayerHit({
+        playerATK,
+        crit,
+        rngRoll: Math.random(),
+      });
     }
 
     this.enemyHP = Math.max(0, this.enemyHP - totalDmg);
@@ -267,9 +284,12 @@ export class BattleScene extends Phaser.Scene {
     }
 
     const monsterLevelForAtk = this.cachedMonsterLevel;
-    const enemyATK = Math.floor(monsterLevelForAtk * 8 * (this.isBoss ? 2 : 1));
+    const enemyATK = resolveEnemyAtk({
+      monsterLevel: monsterLevelForAtk,
+      isBoss: this.isBoss,
+    });
     const reduction = calcDamageReduction(playerDEF);
-    const dmgTaken = Math.floor(enemyATK * (1 - reduction));
+    const dmgTaken = resolveDamageTaken({ enemyATK, reduction });
     const currentHPEstimate = playerHP - (run.monstersDefeated * dmgTaken * 0.1);
 
     if (currentHPEstimate <= 0) {

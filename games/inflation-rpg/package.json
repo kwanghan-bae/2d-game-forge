@@ -19,7 +19,8 @@
     "e2e": "playwright test",
     "cap:sync": "cap sync",
     "build:ios": "next build && cap sync ios && cap open ios",
-    "build:android": "next build && cap sync android && cap open android"
+    "build:android": "next build && cap sync android && cap open android",
+    "balance:sweep": "tsx tools/balance-sweep-cli.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
@@ -53,6 +54,7 @@
     "happy-dom": "^20.9.0",
     "jsdom": "^27.4.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5.6.0",
     "vitest": "^4.0.16"
   }
