@@ -46,3 +46,29 @@ describe('getUltById', () => {
     expect(getUltById('nope')).toBeUndefined();
   });
 });
+
+// ── TODO-b: ULT effect field sanity (magnitude 양성값 검증) ──────────────────
+// jobskills.ts 는 per-lv 테이블 없이 고정 magnitude 를 갖는다.
+// lv 별 스케일링은 skillProgression.ts 에서 수행 — 거기에 단조성 guard 를 둔다.
+// 여기서는 데이터 자체의 magnitude 가 양수임을 보장한다.
+describe('ULT effect magnitude sanity (TODO-b)', () => {
+  for (const u of ULT_CATALOG) {
+    it(`${u.id}: effect magnitude is positive`, () => {
+      const { effect } = u;
+      switch (effect.type) {
+        case 'multi_hit':
+        case 'aoe':
+        case 'execute':
+          expect(effect.multiplier).toBeGreaterThan(0);
+          break;
+        case 'heal':
+          expect(effect.healPercent).toBeGreaterThan(0);
+          expect(effect.healPercent).toBeLessThanOrEqual(100);
+          break;
+        case 'buff':
+          expect(effect.buffPercent).toBeGreaterThan(0);
+          break;
+      }
+    });
+  }
+});
