@@ -68,6 +68,14 @@ describe('ULT effect magnitude sanity (TODO-b)', () => {
         case 'buff':
           expect(effect.buffPercent).toBeGreaterThan(0);
           break;
+        case 'debuff':
+          expect(effect.debuffStatPercent).toBeGreaterThan(0);
+          expect(effect.debuffDurationSec).toBeGreaterThan(0);
+          break;
+        case 'reflect':
+          expect(effect.reflectPercent).toBeGreaterThan(0);
+          expect(effect.reflectDurationSec).toBeGreaterThan(0);
+          break;
       }
     });
   }

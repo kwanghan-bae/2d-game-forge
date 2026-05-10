@@ -10,11 +10,13 @@ const sword: EquipmentInstance = {
   instanceId: 'inst-sword',
   baseId: 'w-sword',
   enhanceLv: 0,
+  modifiers: [],
 };
 const cloth: EquipmentInstance = {
   instanceId: 'inst-cloth',
   baseId: 'a-cloth',
   enhanceLv: 0,
+  modifiers: [],
 };
 
 beforeEach(() => {
@@ -97,7 +99,7 @@ describe('Inventory — 장착 슬롯', () => {
 
 describe('Inventory — 강화 패널', () => {
   it('강화 토글 클릭 시 enhance panel 표시', () => {
-    const inst: EquipmentInstance = { instanceId: 'inst-knife', baseId: 'w-knife', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'inst-knife', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 1000, enhanceStones: 100 },
     }));
@@ -108,7 +110,7 @@ describe('Inventory — 강화 패널', () => {
   });
 
   it('enhance 버튼 클릭 시 enhanceLv 증가', () => {
-    const inst: EquipmentInstance = { instanceId: 'inst-knife', baseId: 'w-knife', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'inst-knife', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 1000, enhanceStones: 100 },
     }));

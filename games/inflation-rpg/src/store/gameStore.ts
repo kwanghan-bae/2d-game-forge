@@ -12,6 +12,7 @@ import { QUESTS, getQuestById } from '../data/quests';
 import { attemptCraft } from '../systems/crafting';
 import { enhanceCost } from '../systems/enhance';
 import { getEquipmentBase } from '../data/equipment';
+import { rollModifiers, rerollCost, rerollOneSlot as rerollOneSlotFn, rerollAllSlots as rerollAllSlotsFn } from '../systems/modifiers';
 import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
 import { getUltById } from '../data/jobskills';
 
@@ -148,12 +149,44 @@ interface GameStore {
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
   craft: (equipmentId: string) => boolean;
+  // Phase D — Reroll actions
+  rerollOneSlot: (instanceId: string, slot: 'weapon' | 'armor' | 'accessory', slotIdx: number) => void;
+  rerollAllSlots: (instanceId: string, slot: 'weapon' | 'armor' | 'accessory') => void;
   // Phase F-3 — JP actions
   awardJpOnBossKill: (bossId: string, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
   watchAdForJpCap: (charId: string) => void;
   awardJpOnCharLvMilestone: (charId: string) => void;
   levelUpSkill: (charId: string, skillId: string) => void;
   pickUltSlot: (charId: string, slotIndex: 0 | 1 | 2 | 3, ultSkillId: string | null) => void;
+}
+
+// v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
+export function migrateV8ToV9(persisted: unknown): unknown {
+  const s = persisted as { meta?: Record<string, unknown> };
+  if (!s.meta) return persisted;
+
+  const migrateSlot = (items: unknown[], slot: 'weapon' | 'armor' | 'accessory'): unknown[] =>
+    items.map((item) => {
+      const it = item as Record<string, unknown>;
+      if (Array.isArray(it.modifiers) && it.modifiers.length > 0) return it;
+      const base = getEquipmentBase(it.baseId as string);
+      if (!base) return { ...it, modifiers: it.modifiers ?? [] };
+      const mods = rollModifiers(base.rarity, slot);
+      return { ...it, modifiers: mods };
+    });
+
+  const m = s.meta as Record<string, unknown>;
+  const inv = m.inventory as Record<string, unknown[]> | undefined;
+  if (inv) {
+    inv.weapons = migrateSlot(inv.weapons ?? [], 'weapon');
+    inv.armors = migrateSlot(inv.armors ?? [], 'armor');
+    inv.accessories = migrateSlot(inv.accessories ?? [], 'accessory');
+  }
+
+  // adsWatched 추가 (Phase E 대비)
+  if (m.adsWatched === undefined) m.adsWatched = 0;
+
+  return s;
 }
 
 export const useGameStore = create<GameStore>()(
@@ -690,10 +723,71 @@ export const useGameStore = create<GameStore>()(
         slots[slotIndex] = ultSkillId;
         return { meta: { ...s.meta, ultSlotPicks: { ...s.meta.ultSlotPicks, [charId]: slots } } };
       }),
+
+      // Phase D — Reroll actions
+      rerollOneSlot: (instanceId, slot, slotIdx) => {
+        const state = get();
+        const m = state.meta;
+        const slotKey = slot === 'weapon' ? 'weapons' : slot === 'armor' ? 'armors' : 'accessories';
+        const items = m.inventory[slotKey] as EquipmentInstance[];
+        const item = items.find((it) => it.instanceId === instanceId);
+        if (!item) return;
+        const base = getEquipmentBase(item.baseId);
+        if (!base) return;
+
+        const cost = rerollCost(m.rerollCount ?? 0, 'one');
+        if (m.dr < cost.dr || m.crackStones < cost.stones) return;
+
+        const updated = rerollOneSlotFn(item, base.rarity, slot, slotIdx);
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            dr: s.meta.dr - cost.dr,
+            crackStones: s.meta.crackStones - cost.stones,
+            rerollCount: (s.meta.rerollCount ?? 0) + 1,
+            inventory: {
+              ...s.meta.inventory,
+              [slotKey]: (s.meta.inventory[slotKey] as EquipmentInstance[]).map(
+                (it) => it.instanceId === instanceId ? updated : it
+              ),
+            },
+          },
+        }));
+      },
+
+      rerollAllSlots: (instanceId, slot) => {
+        const state = get();
+        const m = state.meta;
+        const slotKey = slot === 'weapon' ? 'weapons' : slot === 'armor' ? 'armors' : 'accessories';
+        const items = m.inventory[slotKey] as EquipmentInstance[];
+        const item = items.find((it) => it.instanceId === instanceId);
+        if (!item) return;
+        const base = getEquipmentBase(item.baseId);
+        if (!base) return;
+
+        const cost = rerollCost(m.rerollCount ?? 0, 'all');
+        if (m.dr < cost.dr || m.crackStones < cost.stones) return;
+
+        const updated = rerollAllSlotsFn(item, base.rarity, slot);
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            dr: s.meta.dr - cost.dr,
+            crackStones: s.meta.crackStones - cost.stones,
+            rerollCount: (s.meta.rerollCount ?? 0) + 1,
+            inventory: {
+              ...s.meta.inventory,
+              [slotKey]: (s.meta.inventory[slotKey] as EquipmentInstance[]).map(
+                (it) => it.instanceId === instanceId ? updated : it
+              ),
+            },
+          },
+        }));
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 8,
+      version: 9,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
         if (fromVersion < 1) {
@@ -763,6 +857,7 @@ export const useGameStore = create<GameStore>()(
               instanceId: crypto.randomUUID(),
               baseId: it.id,
               enhanceLv: 0,
+              modifiers: [],
             }));
           if (m.inventory) {
             m.inventory.weapons = migrateSlot(m.inventory.weapons ?? []);
@@ -803,6 +898,10 @@ export const useGameStore = create<GameStore>()(
             mudang:  [null, null, null, null],
             choeui:  [null, null, null, null],
           };
+        }
+        // v8 → v9: EquipmentInstance 에 modifiers 자동 굴림
+        if (fromVersion <= 8) {
+          return migrateV8ToV9(s);
         }
         return s;
       },

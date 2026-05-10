@@ -2,7 +2,11 @@
 import { resolveEnemyMaxHp, resolveEnemyAtk, resolvePlayerHit, resolveDamageTaken } from '../src/battle/resolver';
 import { computeSkillEffect, createSkillState, isSkillReady, fireSkill } from '../src/battle/SkillSystem';
 import { calcDamageReduction, calcCritChance } from '../src/systems/stats';
-import type { ActiveSkill } from '../src/types';
+import {
+  createEffectsState, addEffect, tickEffects,
+  type CombatStateForEffects,
+} from '../src/systems/effects';
+import type { ActiveSkill, Modifier } from '../src/types';
 
 export interface SimRng {
   next(): number; // [0, 1)
@@ -35,6 +39,7 @@ export interface SimPlayer {
   agi: number;
   luc: number;
   skills: Array<ActiveSkill & { dmgMul?: number }>;
+  modifiers?: Modifier[];  // Phase D — 장비 modifier 효과
 }
 
 export interface SimResult {
@@ -56,10 +61,45 @@ export function simulateFloor(
   const enemyMaxHp = enemyHp;
   const playerHp = player.hpMax;
   const skillState = createSkillState();
+  const effectsState = createEffectsState();
   const enemyAtk = resolveEnemyAtk(enemy);
   const reduction = calcDamageReduction(player.def);
   const damageTaken = resolveDamageTaken({ enemyATK: enemyAtk, reduction });
   let monstersDefeated = 0;
+
+  // Phase D — modifier effects → effectsState 등록.
+  // NOTE: shield/reflect/trigger 는 simulateFloor 의 적 공격 경로
+  // (currentHpEstimate 모델) 가 processIncomingDamage / evaluateTriggers 를
+  // 호출하지 않으므로, 현재는 effects map 에만 존재하고 실제 전투 수치에 영향
+  // 주지 않는다. dot 는 tickEffects → enemyHpDelta 경로로 이미 처리됨.
+  // Task 14 (통과 검증) 에서 processIncomingDamage 를 적 공격 경로에 연결하거나
+  // shield magnitude 를 hpMax 에 합산해야 sweep 이 modifier 효과를 실제 반영한다.
+  if (player.modifiers) {
+    for (const mod of player.modifiers) {
+      if (mod.effectType === 'shield') {
+        addEffect(effectsState, {
+          id: `shield_${mod.id}`,
+          effectType: 'shield', source: 'modifier', target: 'self',
+          durationMs: 999999, remainingMs: 999999, magnitude: mod.baseValue, stack: 1,
+        });
+      } else if (mod.effectType === 'reflect') {
+        addEffect(effectsState, {
+          id: `reflect_${mod.id}`,
+          effectType: 'reflect', source: 'modifier', target: 'self',
+          durationMs: 999999, remainingMs: 999999, magnitude: mod.baseValue, stack: 1,
+        });
+      } else if (mod.effectType === 'trigger') {
+        addEffect(effectsState, {
+          id: `trigger_${mod.id}`,
+          effectType: 'trigger', source: 'modifier', target: 'self',
+          durationMs: 999999, remainingMs: 999999, magnitude: mod.baseValue, stack: 1,
+          triggerCondition: mod.triggerCondition,
+        });
+      }
+      // dot/cc/debuff 는 attack 시 trigger — sim 에서는 단순화로 미반영.
+      // stat_mod 는 buildSimPlayer 에서 player.atk/def/hpMax 에 합산 (별도 처리).
+    }
+  }
 
   // Tick rate = 600ms (matches BattleScene combatTimer.delay).
   // Caveat: BattleScene.update runs at Phaser frame rate (~16ms), so a skill
@@ -115,6 +155,20 @@ export function simulateFloor(
         secondsTaken: tick * 0.6,
         remainingHpRatio: enemyHp / enemyMaxHp,
       };
+    }
+
+    // effects tick (BattleScene.update mirror)
+    const combat: CombatStateForEffects = {
+      selfHp: playerHp, selfMaxHp: player.hpMax,
+      enemyHp, enemyMaxHp,
+      selfAtk: player.atk, selfDef: player.def,
+    };
+    const tickResult = tickEffects(effectsState, combat, TICK_MS);
+    if (tickResult.stateDelta.enemyHpDelta) {
+      enemyHp = Math.max(0, enemyHp + tickResult.stateDelta.enemyHpDelta);
+      if (enemyHp <= 0) {
+        return { victory: true, ticksTaken: tick, secondsTaken: tick * 0.6, remainingHpRatio: 0 };
+      }
     }
   }
 

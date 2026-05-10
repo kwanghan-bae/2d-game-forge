@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useGameStore, INITIAL_RUN, INITIAL_META } from './gameStore';
+import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9 } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
 import type { EquipmentInstance } from '../types';
 
@@ -72,7 +72,7 @@ describe('GameStore', () => {
   });
 
   it('addEquipment: adds to inventory', () => {
-    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.getState().addEquipment(item);
     expect(useGameStore.getState().meta.inventory.weapons).toHaveLength(1);
   });
@@ -97,7 +97,7 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('equipItem: adds itemId to equippedItemIds', () => {
-    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.getState().addEquipment(item);
     useGameStore.getState().equipItem('i1');
     expect(useGameStore.getState().meta.equippedItemIds).toContain('i1');
@@ -173,7 +173,7 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('sellEquipment: also removes from equippedItemIds', () => {
-    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.getState().addEquipment(item);
     useGameStore.getState().equipItem('i1');
     useGameStore.getState().sellEquipment('i1', 100);
@@ -488,8 +488,8 @@ describe('Phase F-1 — Ascension', () => {
   });
 
   it('ascend keeps equipped items, drops unequipped from inventory', () => {
-    const equippedSword: EquipmentInstance = { instanceId: 'inst-eq', baseId: 'w-knife', enhanceLv: 0 };
-    const unequippedSword: EquipmentInstance = { instanceId: 'inst-uneq', baseId: 'w-sword', enhanceLv: 0 };
+    const equippedSword: EquipmentInstance = { instanceId: 'inst-eq', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
+    const unequippedSword: EquipmentInstance = { instanceId: 'inst-uneq', baseId: 'w-sword', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
@@ -513,7 +513,7 @@ describe('GameStore — Phase F-2 강화', () => {
   });
 
   it('enhanceItem: lv 0 → 1, 자원 차감 (common w-knife)', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
@@ -530,7 +530,7 @@ describe('GameStore — Phase F-2 강화', () => {
   });
 
   it('enhanceItem: 자원 부족 시 no-op', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 50, enhanceStones: 0 },
     }));
@@ -548,7 +548,7 @@ describe('GameStore — Phase F-2 강화', () => {
   });
 
   it('enhanceItem: rare 등급 비용 적용 (lv0→1, rarityMult 2.5)', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
@@ -901,5 +901,130 @@ describe('GameStore — Phase Balance-Patch TODO-a: F30 final boss stone reward'
     useGameStore.getState().bossDrop('mini-boss-id', 5, 'mini');
     const after = useGameStore.getState().meta.enhanceStones;
     expect(after - before).toBe(5); // bpReward unchanged for non-final
+  });
+});
+
+describe('persist v8 → v9 migration', () => {
+  it('attaches modifiers to existing equipment instances (rarity slots count)', () => {
+    const v8State = {
+      meta: {
+        inventory: {
+          weapons: [{ instanceId: 'w1', baseId: 'w-knife', enhanceLv: 5, modifiers: [] }],
+          armors: [],
+          accessories: [],
+        },
+      },
+    };
+
+    const result = migrateV8ToV9(v8State) as typeof v8State;
+    const weapon = result.meta.inventory.weapons[0];
+    expect(weapon).toBeDefined();
+    expect(weapon!.modifiers).toBeDefined();
+    expect(Array.isArray(weapon!.modifiers)).toBe(true);
+    // w-knife 는 common rarity → SLOTS_PER_RARITY[common] = 1
+    expect((weapon!.modifiers as unknown[]).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('preserves existing modifier-bearing items (idempotent)', () => {
+    const existingMod = {
+      id: 'mod_crit_damage',
+      nameKR: '크리데미지',
+      category: 'attack',
+      baseValue: 0.5,
+      effectType: 'stat_mod',
+      validSlots: ['weapon'],
+      rarityWeight: { common: 1, uncommon: 1, rare: 1, epic: 1, legendary: 1, mythic: 1 },
+    };
+    const v8State = {
+      meta: {
+        inventory: {
+          weapons: [{ instanceId: 'w1', baseId: 'w-knife', enhanceLv: 5, modifiers: [existingMod] }],
+          armors: [],
+          accessories: [],
+        },
+      },
+    };
+
+    const result = migrateV8ToV9(v8State) as typeof v8State;
+    expect(result.meta.inventory.weapons[0]?.modifiers).toEqual([existingMod]);
+  });
+
+  it('adds adsWatched: 0 if missing', () => {
+    const v8State = { meta: { inventory: { weapons: [], armors: [], accessories: [] } } };
+    const result = migrateV8ToV9(v8State) as { meta: { adsWatched: number } };
+    expect(result.meta.adsWatched).toBe(0);
+  });
+});
+
+describe('GameStore — Phase D rerollOneSlot / rerollAllSlots', () => {
+  const MOCK_MODIFIER = {
+    id: 'mod_crit_damage',
+    nameKR: '크리데미지',
+    category: 'attack' as const,
+    baseValue: 0.5,
+    effectType: 'stat_mod' as const,
+    validSlots: ['weapon' as const],
+    rarityWeight: { common: 1, uncommon: 1, rare: 1, epic: 1, legendary: 1, mythic: 1 },
+  };
+  const WEAPON_INSTANCE: EquipmentInstance = {
+    instanceId: 'test-weapon-1',
+    baseId: 'w-knife',
+    enhanceLv: 0,
+    modifiers: [MOCK_MODIFIER],
+  };
+
+  beforeEach(() => {
+    useGameStore.setState({
+      screen: 'main-menu',
+      run: INITIAL_RUN,
+      meta: {
+        ...INITIAL_META,
+        dr: 50_000_000,
+        crackStones: 500,
+        rerollCount: 0,
+        inventory: {
+          weapons: [WEAPON_INSTANCE],
+          armors: [],
+          accessories: [],
+        },
+      },
+    });
+  });
+
+  it('rerollOneSlot: deducts costs and increments rerollCount on success', () => {
+    useGameStore.getState().rerollOneSlot('test-weapon-1', 'weapon', 0);
+    const { meta } = useGameStore.getState();
+    // first reroll: cost = {dr: 25_000_000, stones: 250}
+    expect(meta.dr).toBe(50_000_000 - 25_000_000);
+    expect(meta.crackStones).toBe(500 - 250);
+    expect(meta.rerollCount).toBe(1);
+    // modifier at slot 0 should now be present (still length 1)
+    expect(meta.inventory.weapons[0]?.modifiers).toHaveLength(1);
+  });
+
+  it('rerollOneSlot: no-op when insufficient currency', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, dr: 0, crackStones: 0 } }));
+    useGameStore.getState().rerollOneSlot('test-weapon-1', 'weapon', 0);
+    const { meta } = useGameStore.getState();
+    expect(meta.dr).toBe(0);
+    expect(meta.rerollCount).toBe(0); // no change — no-op
+    // modifier unchanged
+    expect(meta.inventory.weapons[0]?.modifiers[0]?.id).toBe('mod_crit_damage');
+  });
+
+  it('rerollAllSlots: escalating cost on second reroll (rerollCount carries over)', () => {
+    // first reroll all: cost {dr: 100_000_000, stones: 1000}
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, dr: 300_000_000, crackStones: 3000 },
+    }));
+    useGameStore.getState().rerollAllSlots('test-weapon-1', 'weapon');
+    expect(useGameStore.getState().meta.rerollCount).toBe(1);
+
+    // second reroll all: cost floor(100_000_000 * 1.5) = 150_000_000
+    useGameStore.getState().rerollAllSlots('test-weapon-1', 'weapon');
+    const { meta } = useGameStore.getState();
+    expect(meta.rerollCount).toBe(2);
+    expect(meta.dr).toBe(300_000_000 - 100_000_000 - 150_000_000);
+    expect(meta.crackStones).toBe(3000 - 1000 - 1500);
   });
 });

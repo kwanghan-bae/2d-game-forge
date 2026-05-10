@@ -3,6 +3,8 @@ import { simulateFloor, createSeededRng, type SimPlayer, type SimEnemy } from '.
 import { getMonsterLevel } from '../src/data/floors';
 import { getMonstersForLevel } from '../src/data/monsters';
 import { enhanceMultiplier } from '../src/systems/enhance';
+import { rollModifiers } from '../src/systems/modifiers';
+import type { Modifier } from '../src/types';
 
 export interface MilestoneState {
   hours: number;
@@ -34,6 +36,20 @@ export interface SweepRow {
   cliffsDetected: number[];    // F 번호. clearTime(F+1)/clearTime(F) ≥ 1.5
 }
 
+// milestone 마다 typical modifier 추정 — deterministic seed (s.hours 기반).
+// weapon / armor / accessory 각 1개 롤 (3 슬롯 단순화; 실제 장비는 최대 4 슬롯).
+// NOTE: 현재 shield/reflect/trigger 는 simulateFloor 가 processIncomingDamage /
+// evaluateTriggers 를 호출하지 않아 실제 전투 수치에 영향 없음 (의도적 한계).
+// Task 14 에서 적 공격 경로에 processIncomingDamage 를 연결해야 실질 반영된다.
+function sampleMilestoneModifiers(s: MilestoneState): Modifier[] {
+  const seed = s.hours * 1000;
+  const seededRng = createSeededRng(seed);
+  const rng = () => seededRng.next();
+  return rollModifiers(s.equipRarity, 'weapon', rng)
+    .concat(rollModifiers(s.equipRarity, 'armor', rng))
+    .concat(rollModifiers(s.equipRarity, 'accessory', rng));
+}
+
 function buildSimPlayer(s: MilestoneState): SimPlayer {
   // Spec Section 11.2 Curve 3 의 ATK 식 근사:
   // base 110 × (1 + sp*0.03) × (1 + charLv*0.02) × (1 + 0.1*ascT)
@@ -50,7 +66,7 @@ function buildSimPlayer(s: MilestoneState): SimPlayer {
   const atk = Math.floor(baseATK * (1 + spAtk * 0.03) * charLvMul * ascMul * baseAbilityMul) + equipATK;
   const def = Math.floor(atk * 0.1);
   const hpMax = Math.floor(atk * 5);
-  return { atk, def, hpMax, agi: 30, luc: 30, skills: [] };
+  return { atk, def, hpMax, agi: 30, luc: 30, skills: [], modifiers: sampleMilestoneModifiers(s) };
 }
 
 const N_FULL = 100; // spec §7.2: full sweep N=100
