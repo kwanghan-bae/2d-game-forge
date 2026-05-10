@@ -955,3 +955,76 @@ describe('persist v8 → v9 migration', () => {
     expect(result.meta.adsWatched).toBe(0);
   });
 });
+
+describe('GameStore — Phase D rerollOneSlot / rerollAllSlots', () => {
+  const MOCK_MODIFIER = {
+    id: 'mod_crit_damage',
+    nameKR: '크리데미지',
+    category: 'attack' as const,
+    baseValue: 0.5,
+    effectType: 'stat_mod' as const,
+    validSlots: ['weapon' as const],
+    rarityWeight: { common: 1, uncommon: 1, rare: 1, epic: 1, legendary: 1, mythic: 1 },
+  };
+  const WEAPON_INSTANCE: EquipmentInstance = {
+    instanceId: 'test-weapon-1',
+    baseId: 'w-knife',
+    enhanceLv: 0,
+    modifiers: [MOCK_MODIFIER],
+  };
+
+  beforeEach(() => {
+    useGameStore.setState({
+      screen: 'main-menu',
+      run: INITIAL_RUN,
+      meta: {
+        ...INITIAL_META,
+        dr: 50_000_000,
+        crackStones: 500,
+        rerollCount: 0,
+        inventory: {
+          weapons: [WEAPON_INSTANCE],
+          armors: [],
+          accessories: [],
+        },
+      },
+    });
+  });
+
+  it('rerollOneSlot: deducts costs and increments rerollCount on success', () => {
+    useGameStore.getState().rerollOneSlot('test-weapon-1', 'weapon', 0);
+    const { meta } = useGameStore.getState();
+    // first reroll: cost = {dr: 25_000_000, stones: 250}
+    expect(meta.dr).toBe(50_000_000 - 25_000_000);
+    expect(meta.crackStones).toBe(500 - 250);
+    expect(meta.rerollCount).toBe(1);
+    // modifier at slot 0 should now be present (still length 1)
+    expect(meta.inventory.weapons[0]?.modifiers).toHaveLength(1);
+  });
+
+  it('rerollOneSlot: no-op when insufficient currency', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, dr: 0, crackStones: 0 } }));
+    useGameStore.getState().rerollOneSlot('test-weapon-1', 'weapon', 0);
+    const { meta } = useGameStore.getState();
+    expect(meta.dr).toBe(0);
+    expect(meta.rerollCount).toBe(0); // no change — no-op
+    // modifier unchanged
+    expect(meta.inventory.weapons[0]?.modifiers[0]?.id).toBe('mod_crit_damage');
+  });
+
+  it('rerollAllSlots: escalating cost on second reroll (rerollCount carries over)', () => {
+    // first reroll all: cost {dr: 100_000_000, stones: 1000}
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, dr: 300_000_000, crackStones: 3000 },
+    }));
+    useGameStore.getState().rerollAllSlots('test-weapon-1', 'weapon');
+    expect(useGameStore.getState().meta.rerollCount).toBe(1);
+
+    // second reroll all: cost floor(100_000_000 * 1.5) = 150_000_000
+    useGameStore.getState().rerollAllSlots('test-weapon-1', 'weapon');
+    const { meta } = useGameStore.getState();
+    expect(meta.rerollCount).toBe(2);
+    expect(meta.dr).toBe(300_000_000 - 100_000_000 - 150_000_000);
+    expect(meta.crackStones).toBe(3000 - 1000 - 1500);
+  });
+});

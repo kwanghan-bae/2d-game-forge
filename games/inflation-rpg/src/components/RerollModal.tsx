@@ -1,15 +1,14 @@
 import { useGameStore } from '../store/gameStore';
 import { rerollCost } from '../systems/modifiers';
-import type { EquipmentInstance, EquipmentRarity, SlotKind } from '../types';
+import type { EquipmentInstance, SlotKind } from '../types';
 
 interface Props {
   instance: EquipmentInstance;
-  rarity: EquipmentRarity;
   slot: SlotKind;
   onClose: () => void;
 }
 
-export function RerollModal({ instance, rarity: _rarity, slot, onClose }: Props) {
+export function RerollModal({ instance, slot, onClose }: Props) {
   const dr = useGameStore((s) => s.meta.dr);
   const stones = useGameStore((s) => s.meta.crackStones);
   const rerollCountSoFar = useGameStore((s) => s.meta.rerollCount ?? 0);
