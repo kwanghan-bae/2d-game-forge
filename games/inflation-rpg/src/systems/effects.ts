@@ -71,6 +71,52 @@ export function tickEffects(
   return { stateDelta: { selfHpDelta, enemyHpDelta, actionBlocked }, events };
 }
 
+// 받은 데미지 처리 — shield 흡수 + reflect trigger
+export interface IncomingDamageResult {
+  damageAfterShield: number;
+  reflectDamage: number;
+  events: EffectEvent[];
+}
+
+export function processIncomingDamage(
+  state: EffectsState,
+  rawDamage: number,
+): IncomingDamageResult {
+  let dmg = rawDamage;
+  let reflectDamage = 0;
+  const events: EffectEvent[] = [];
+
+  // shield 흡수 (먼저 적용)
+  for (const [id, eff] of state.active.entries()) {
+    if (eff.effectType !== 'shield') continue;
+    const absorbed = Math.min(dmg, eff.magnitude);
+    dmg -= absorbed;
+    eff.magnitude -= absorbed;
+    if (eff.magnitude <= 0) state.active.delete(id);
+    events.push({ kind: 'damage', target: 'self', amount: -absorbed, effectId: id });
+    if (dmg <= 0) break;
+  }
+
+  // reflect (남은 dmg 의 일부 반사)
+  for (const [id, eff] of state.active.entries()) {
+    if (eff.effectType !== 'reflect') continue;
+    reflectDamage += Math.floor(dmg * eff.magnitude);
+    events.push({ kind: 'damage', target: 'enemy', amount: Math.floor(dmg * eff.magnitude), effectId: id });
+  }
+
+  return { damageAfterShield: dmg, reflectDamage, events };
+}
+
+// 디버프 stat % multiplier (적 stat 에 곱)
+export function getDebuffStatMultiplier(state: EffectsState, target: 'enemy' | 'self'): number {
+  let mult = 1;
+  for (const eff of state.active.values()) {
+    if (eff.effectType !== 'debuff' || eff.target !== target) continue;
+    mult *= (1 - eff.magnitude * eff.stack);
+  }
+  return Math.max(0, mult);
+}
+
 export function evaluateTriggers(
   state: EffectsState,
   event: 'on_kill' | 'on_hit' | 'on_hp_change' | 'on_stack',

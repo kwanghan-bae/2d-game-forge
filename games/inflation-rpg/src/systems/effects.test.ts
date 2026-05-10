@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createEffectsState, addEffect, tickEffects, evaluateTriggers,
+  processIncomingDamage, getDebuffStatMultiplier,
   type CombatStateForEffects,
 } from './effects';
 import type { ActiveEffect } from '../types';
@@ -101,5 +102,55 @@ describe('evaluateTriggers', () => {
     });
     expect(evaluateTriggers(s, 'on_hit', baseCombat).length).toBe(0);
     expect(evaluateTriggers(s, 'on_kill', baseCombat).length).toBe(1);
+  });
+});
+
+describe('processIncomingDamage', () => {
+  it('shield absorbs incoming damage', () => {
+    const s = createEffectsState();
+    addEffect(s, {
+      id: 'shield_basic', effectType: 'shield', source: 'modifier', target: 'self',
+      durationMs: 5000, remainingMs: 5000, magnitude: 200, stack: 1,
+    });
+    const r = processIncomingDamage(s, 100);
+    expect(r.damageAfterShield).toBe(0);
+    expect(s.active.get('shield_basic')?.magnitude).toBe(100);
+  });
+
+  it('shield expires when fully absorbed', () => {
+    const s = createEffectsState();
+    addEffect(s, {
+      id: 'shield_basic', effectType: 'shield', source: 'modifier', target: 'self',
+      durationMs: 5000, remainingMs: 5000, magnitude: 50, stack: 1,
+    });
+    const r = processIncomingDamage(s, 100);
+    expect(r.damageAfterShield).toBe(50);
+    expect(s.active.size).toBe(0);
+  });
+
+  it('reflect returns damage to enemy', () => {
+    const s = createEffectsState();
+    addEffect(s, {
+      id: 'reflect_basic', effectType: 'reflect', source: 'ult', target: 'self',
+      durationMs: 3000, remainingMs: 3000, magnitude: 0.8, stack: 1,
+    });
+    const r = processIncomingDamage(s, 100);
+    expect(r.reflectDamage).toBe(80);
+  });
+});
+
+describe('getDebuffStatMultiplier', () => {
+  it('returns 1 when no debuff', () => {
+    const s = createEffectsState();
+    expect(getDebuffStatMultiplier(s, 'enemy')).toBe(1);
+  });
+
+  it('debuff -50% × stack 2 → 0', () => {
+    const s = createEffectsState();
+    addEffect(s, {
+      id: 'debuff_weaken', effectType: 'debuff', source: 'modifier', target: 'enemy',
+      durationMs: 3000, remainingMs: 3000, magnitude: 0.5, stack: 2,
+    });
+    expect(getDebuffStatMultiplier(s, 'enemy')).toBeCloseTo(0, 2);
   });
 });
