@@ -249,18 +249,13 @@ export function Inventory() {
         </div>
       )}
 
-      {rerollFor && (() => {
-        const base = getEquipmentBase(rerollFor.inst.baseId);
-        if (!base) return null;
-        return (
-          <RerollModal
-            instance={rerollFor.inst}
-            rarity={base.rarity}
-            slot={rerollFor.slot}
-            onClose={() => setRerollFor(null)}
-          />
-        );
-      })()}
+      {rerollFor && (
+        <RerollModal
+          instance={rerollFor.inst}
+          slot={rerollFor.slot}
+          onClose={() => setRerollFor(null)}
+        />
+      )}
 
       {mainTab === 'skills' && (() => {
         const char = CHARACTERS.find((c) => c.id === run.characterId);
