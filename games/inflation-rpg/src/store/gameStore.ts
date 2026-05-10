@@ -232,7 +232,8 @@ export const useGameStore = create<GameStore>()(
             ? progressionOnBossKill(bossId, s.meta.hardBossesKilled, 9)
             : s.meta.hardBossesKilled;
           const drGained = bpReward * 100;
-          const stonesGained = bpReward;
+          // Spec §2 TODO-a: final boss drops 50 enhanceStones (격상 5 → 50)
+          const stonesGained = bossType === 'final' ? 50 : bpReward;
           return {
             run: {
               ...s.run,
