@@ -21,6 +21,11 @@ import {
 } from './SkillSystem';
 import type { ActiveSkill } from '../types';
 import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
+import {
+  createEffectsState, tickEffects, processIncomingDamage,
+  type CombatStateForEffects,
+} from '../systems/effects';
+import type { EffectsState } from '../types';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -71,6 +76,7 @@ export class BattleScene extends Phaser.Scene {
   private cachedPlayerHpMax = 0;
   // floor 기반 monsterLevel 을 전투 내내 캐시. create() 에서 항상 셋.
   private cachedMonsterLevel = 0;
+  private effectsState: EffectsState = createEffectsState();
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -141,6 +147,8 @@ export class BattleScene extends Phaser.Scene {
 
     void this.enemyText; void this.hpBarBg;
     this.combatTimer = this.time.addEvent({ delay: 600, callback: this.doRound, callbackScope: this, loop: true });
+
+    this.effectsState = createEffectsState();
 
     // Cache player stats and active skills for skill system
     const char = getCharacterById(run.characterId);
@@ -289,8 +297,15 @@ export class BattleScene extends Phaser.Scene {
       isBoss: this.isBoss,
     });
     const reduction = calcDamageReduction(playerDEF);
-    const dmgTaken = resolveDamageTaken({ enemyATK, reduction });
-    const currentHPEstimate = playerHP - (run.monstersDefeated * dmgTaken * 0.1);
+    const rawDmgTaken = resolveDamageTaken({ enemyATK, reduction });
+    const incomingResult = processIncomingDamage(this.effectsState, rawDmgTaken);
+    const finalDmgTaken = incomingResult.damageAfterShield;
+    if (incomingResult.reflectDamage > 0) {
+      this.enemyHP = Math.max(0, this.enemyHP - incomingResult.reflectDamage);
+      const ratio = this.enemyHP / this.enemyMaxHP;
+      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    }
+    const currentHPEstimate = playerHP - (run.monstersDefeated * finalDmgTaken * 0.1);
 
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
@@ -309,6 +324,23 @@ export class BattleScene extends Phaser.Scene {
 
   update(time: number, _delta: number) {
     this.updateSkills(time);
+    const tickResult = tickEffects(this.effectsState, this.buildCombatStateForEffects(), _delta);
+    if (tickResult.stateDelta.enemyHpDelta) {
+      this.enemyHP = Math.max(0, this.enemyHP + tickResult.stateDelta.enemyHpDelta);
+      const ratio = this.enemyHP / this.enemyMaxHP;
+      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    }
+  }
+
+  private buildCombatStateForEffects(): CombatStateForEffects {
+    return {
+      selfHp: this.cachedPlayerHpMax,
+      selfMaxHp: this.cachedPlayerHpMax,
+      enemyHp: this.enemyHP,
+      enemyMaxHp: this.enemyMaxHP,
+      selfAtk: this.cachedPlayerAtk,
+      selfDef: 0,
+    };
   }
 
   private updateSkills(time: number) {
