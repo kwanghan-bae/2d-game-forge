@@ -12,7 +12,7 @@ import { QUESTS, getQuestById } from '../data/quests';
 import { attemptCraft } from '../systems/crafting';
 import { enhanceCost } from '../systems/enhance';
 import { getEquipmentBase } from '../data/equipment';
-import { rollModifiers } from '../systems/modifiers';
+import { rollModifiers, rerollCost, rerollOneSlot as rerollOneSlotFn, rerollAllSlots as rerollAllSlotsFn } from '../systems/modifiers';
 import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
 import { getUltById } from '../data/jobskills';
 
@@ -149,6 +149,9 @@ interface GameStore {
   setPendingStory: (storyId: string | null) => void;
   // Stub — real impl in L3-4
   craft: (equipmentId: string) => boolean;
+  // Phase D — Reroll actions
+  rerollOneSlot: (instanceId: string, slot: 'weapon' | 'armor' | 'accessory', slotIdx: number) => void;
+  rerollAllSlots: (instanceId: string, slot: 'weapon' | 'armor' | 'accessory') => void;
   // Phase F-3 — JP actions
   awardJpOnBossKill: (bossId: string, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
   watchAdForJpCap: (charId: string) => void;
@@ -720,6 +723,67 @@ export const useGameStore = create<GameStore>()(
         slots[slotIndex] = ultSkillId;
         return { meta: { ...s.meta, ultSlotPicks: { ...s.meta.ultSlotPicks, [charId]: slots } } };
       }),
+
+      // Phase D — Reroll actions
+      rerollOneSlot: (instanceId, slot, slotIdx) => {
+        const state = get();
+        const m = state.meta;
+        const slotKey = slot === 'weapon' ? 'weapons' : slot === 'armor' ? 'armors' : 'accessories';
+        const items = m.inventory[slotKey] as EquipmentInstance[];
+        const item = items.find((it) => it.instanceId === instanceId);
+        if (!item) return;
+        const base = getEquipmentBase(item.baseId);
+        if (!base) return;
+
+        const cost = rerollCost(m.rerollCount ?? 0, 'one');
+        if (m.dr < cost.dr || m.crackStones < cost.stones) return;
+
+        const updated = rerollOneSlotFn(item, base.rarity, slot, slotIdx);
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            dr: s.meta.dr - cost.dr,
+            crackStones: s.meta.crackStones - cost.stones,
+            rerollCount: (s.meta.rerollCount ?? 0) + 1,
+            inventory: {
+              ...s.meta.inventory,
+              [slotKey]: (s.meta.inventory[slotKey] as EquipmentInstance[]).map(
+                (it) => it.instanceId === instanceId ? updated : it
+              ),
+            },
+          },
+        }));
+      },
+
+      rerollAllSlots: (instanceId, slot) => {
+        const state = get();
+        const m = state.meta;
+        const slotKey = slot === 'weapon' ? 'weapons' : slot === 'armor' ? 'armors' : 'accessories';
+        const items = m.inventory[slotKey] as EquipmentInstance[];
+        const item = items.find((it) => it.instanceId === instanceId);
+        if (!item) return;
+        const base = getEquipmentBase(item.baseId);
+        if (!base) return;
+
+        const cost = rerollCost(m.rerollCount ?? 0, 'all');
+        if (m.dr < cost.dr || m.crackStones < cost.stones) return;
+
+        const updated = rerollAllSlotsFn(item, base.rarity, slot);
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            dr: s.meta.dr - cost.dr,
+            crackStones: s.meta.crackStones - cost.stones,
+            rerollCount: (s.meta.rerollCount ?? 0) + 1,
+            inventory: {
+              ...s.meta.inventory,
+              [slotKey]: (s.meta.inventory[slotKey] as EquipmentInstance[]).map(
+                (it) => it.instanceId === instanceId ? updated : it
+              ),
+            },
+          },
+        }));
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',

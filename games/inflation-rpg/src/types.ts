@@ -209,6 +209,8 @@ export interface MetaState {
   jpCharLvAwarded: Record<string, number>;
   skillLevels: Record<string, Record<string, number>>;
   ultSlotPicks: Record<string, [string | null, string | null, string | null, string | null]>;
+  // Phase D — Modifiers reroll count
+  rerollCount?: number;
 }
 
 export interface TutorialStep {
