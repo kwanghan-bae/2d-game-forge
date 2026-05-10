@@ -14,10 +14,10 @@ import type { EquipmentInstance } from '../types';
 const noEquip: EquipmentInstance[] = [];
 
 // w-bluedragon (rare): baseStats.percent.atk = 80  → at enhanceLv=0, mult = 1 + 80/100 = 1.8
-const pctWeapon: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bluedragon', enhanceLv: 0 };
+const pctWeapon: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bluedragon', enhanceLv: 0, modifiers: [] };
 
 // w-club (uncommon): baseStats.flat.atk = 50  → at enhanceLv=0, flat.atk = 50
-const flatWeapon: EquipmentInstance = { instanceId: 'i2', baseId: 'w-club', enhanceLv: 0 };
+const flatWeapon: EquipmentInstance = { instanceId: 'i2', baseId: 'w-club', enhanceLv: 0, modifiers: [] };
 
 describe('Stats System', () => {
   it('BASE_STATS has correct initial values', () => {

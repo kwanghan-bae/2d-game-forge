@@ -40,9 +40,9 @@ describe('crafting', () => {
 
   it('attemptCraft succeeds with 3+ instances + gold', () => {
     const items: EquipmentInstance[] = [
-      { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 },
-      { instanceId: 'i2', baseId: 'w-knife', enhanceLv: 0 },
-      { instanceId: 'i3', baseId: 'w-knife', enhanceLv: 0 },
+      { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] },
+      { instanceId: 'i2', baseId: 'w-knife', enhanceLv: 0, modifiers: [] },
+      { instanceId: 'i3', baseId: 'w-knife', enhanceLv: 0, modifiers: [] },
     ];
     const r = attemptCraft(items, 'w-knife', 1000);
     expect(r.ok).toBe(true);
@@ -55,9 +55,9 @@ describe('crafting', () => {
 
   it('attemptCraft fails with insufficient gold', () => {
     const items: EquipmentInstance[] = [
-      { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 },
-      { instanceId: 'i2', baseId: 'w-knife', enhanceLv: 0 },
-      { instanceId: 'i3', baseId: 'w-knife', enhanceLv: 0 },
+      { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] },
+      { instanceId: 'i2', baseId: 'w-knife', enhanceLv: 0, modifiers: [] },
+      { instanceId: 'i3', baseId: 'w-knife', enhanceLv: 0, modifiers: [] },
     ];
     const r = attemptCraft(items, 'w-knife', 50);
     expect(r.ok).toBe(false);

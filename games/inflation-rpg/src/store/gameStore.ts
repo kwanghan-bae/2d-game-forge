@@ -763,6 +763,7 @@ export const useGameStore = create<GameStore>()(
               instanceId: crypto.randomUUID(),
               baseId: it.id,
               enhanceLv: 0,
+              modifiers: [],
             }));
           if (m.inventory) {
             m.inventory.weapons = migrateSlot(m.inventory.weapons ?? []);

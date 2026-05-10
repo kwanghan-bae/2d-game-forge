@@ -72,7 +72,7 @@ describe('GameStore', () => {
   });
 
   it('addEquipment: adds to inventory', () => {
-    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.getState().addEquipment(item);
     expect(useGameStore.getState().meta.inventory.weapons).toHaveLength(1);
   });
@@ -97,7 +97,7 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('equipItem: adds itemId to equippedItemIds', () => {
-    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.getState().addEquipment(item);
     useGameStore.getState().equipItem('i1');
     expect(useGameStore.getState().meta.equippedItemIds).toContain('i1');
@@ -173,7 +173,7 @@ describe('GameStore — Phase 3 메타 진행', () => {
   });
 
   it('sellEquipment: also removes from equippedItemIds', () => {
-    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const item: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.getState().addEquipment(item);
     useGameStore.getState().equipItem('i1');
     useGameStore.getState().sellEquipment('i1', 100);
@@ -488,8 +488,8 @@ describe('Phase F-1 — Ascension', () => {
   });
 
   it('ascend keeps equipped items, drops unequipped from inventory', () => {
-    const equippedSword: EquipmentInstance = { instanceId: 'inst-eq', baseId: 'w-knife', enhanceLv: 0 };
-    const unequippedSword: EquipmentInstance = { instanceId: 'inst-uneq', baseId: 'w-sword', enhanceLv: 0 };
+    const equippedSword: EquipmentInstance = { instanceId: 'inst-eq', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
+    const unequippedSword: EquipmentInstance = { instanceId: 'inst-uneq', baseId: 'w-sword', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
@@ -513,7 +513,7 @@ describe('GameStore — Phase F-2 강화', () => {
   });
 
   it('enhanceItem: lv 0 → 1, 자원 차감 (common w-knife)', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
@@ -530,7 +530,7 @@ describe('GameStore — Phase F-2 강화', () => {
   });
 
   it('enhanceItem: 자원 부족 시 no-op', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: { ...s.meta, inventory: { ...s.meta.inventory, weapons: [inst] }, dr: 50, enhanceStones: 0 },
     }));
@@ -548,7 +548,7 @@ describe('GameStore — Phase F-2 강화', () => {
   });
 
   it('enhanceItem: rare 등급 비용 적용 (lv0→1, rarityMult 2.5)', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 0, modifiers: [] };
     useGameStore.setState((s) => ({
       meta: {
         ...s.meta,
