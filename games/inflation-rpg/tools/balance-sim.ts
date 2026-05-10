@@ -2,6 +2,10 @@
 import { resolveEnemyMaxHp, resolveEnemyAtk, resolvePlayerHit, resolveDamageTaken } from '../src/battle/resolver';
 import { computeSkillEffect, createSkillState, isSkillReady, fireSkill } from '../src/battle/SkillSystem';
 import { calcDamageReduction, calcCritChance } from '../src/systems/stats';
+import {
+  createEffectsState, tickEffects,
+  type CombatStateForEffects,
+} from '../src/systems/effects';
 import type { ActiveSkill } from '../src/types';
 
 export interface SimRng {
@@ -56,6 +60,7 @@ export function simulateFloor(
   const enemyMaxHp = enemyHp;
   const playerHp = player.hpMax;
   const skillState = createSkillState();
+  const effectsState = createEffectsState();
   const enemyAtk = resolveEnemyAtk(enemy);
   const reduction = calcDamageReduction(player.def);
   const damageTaken = resolveDamageTaken({ enemyATK: enemyAtk, reduction });
@@ -115,6 +120,20 @@ export function simulateFloor(
         secondsTaken: tick * 0.6,
         remainingHpRatio: enemyHp / enemyMaxHp,
       };
+    }
+
+    // effects tick (BattleScene.update mirror)
+    const combat: CombatStateForEffects = {
+      selfHp: playerHp, selfMaxHp: player.hpMax,
+      enemyHp, enemyMaxHp,
+      selfAtk: player.atk, selfDef: player.def,
+    };
+    const tickResult = tickEffects(effectsState, combat, TICK_MS);
+    if (tickResult.stateDelta.enemyHpDelta) {
+      enemyHp = Math.max(0, enemyHp + tickResult.stateDelta.enemyHpDelta);
+      if (enemyHp <= 0) {
+        return { victory: true, ticksTaken: tick, secondsTaken: tick * 0.6, remainingHpRatio: 0 };
+      }
     }
   }
 
