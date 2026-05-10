@@ -75,7 +75,8 @@ export function runSweep(opts: RunSweepOptions = {}): SweepRow[] {
 
     // measuredFloor = clearTime 이 maxTicks 초과 직전
     let measuredFloor = 1;
-    const probe = [1, 5, 10, 30, 100, 200, 500, 1000, 1500, 3000];
+    // Probe uses n=10 — only need finite/infinite distinction, not precise time.
+    const probe = [1, 5, 8, 10, 25, 30, 60, 100, 200, 500, 1000, 1500, 3000];
     for (const f of probe) {
       const ct = clearTimeAtFloor(player, f, 1.0, 10);
       if (Number.isFinite(ct)) measuredFloor = f;
@@ -84,12 +85,17 @@ export function runSweep(opts: RunSweepOptions = {}): SweepRow[] {
 
     // 단조성 check — milestone 주변 ±5 floor
     const cliffs: number[] = [];
-    const range = Math.max(1, s.expectedFloor - 5);
-    for (let f = range; f <= s.expectedFloor + 5; f++) {
-      const a = clearTimeAtFloor(player, f, 1.0, 10);
-      const b = clearTimeAtFloor(player, f + 1, 1.0, 10);
+    const cliffStart = Math.max(1, s.expectedFloor - 5);
+    const cliffEnd = s.expectedFloor + 5;
+    const cliffTimes: number[] = [];
+    for (let f = cliffStart; f <= cliffEnd + 1; f++) {
+      cliffTimes.push(clearTimeAtFloor(player, f, 1.0, N));
+    }
+    for (let i = 0; i < cliffTimes.length - 1; i++) {
+      const a = cliffTimes[i]!;
+      const b = cliffTimes[i + 1]!;
       if (Number.isFinite(a) && Number.isFinite(b) && b / a >= 1.5) {
-        cliffs.push(f);
+        cliffs.push(cliffStart + i);
       }
     }
 
