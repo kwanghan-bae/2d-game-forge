@@ -61,8 +61,16 @@ export function simulateFloor(
   const damageTaken = resolveDamageTaken({ enemyATK: enemyAtk, reduction });
   let monstersDefeated = 0;
 
+  // Tick rate = 600ms (matches BattleScene combatTimer.delay).
+  // Caveat: BattleScene.update runs at Phaser frame rate (~16ms), so a skill
+  // with cd < 600ms can fire multiple times between basic attacks in production
+  // but at most once per tick in sim. Negligible for current spec — milestone
+  // ULTs all have cd ≥ 1s. Re-evaluate when Phase D effect-pipeline lands.
   for (let tick = 0; tick < maxTicks; tick++) {
-    // 스킬 발동 (BattleScene.update mirror)
+    // Skill phase mirrors BattleScene.update.
+    // Note: only `result.damage` is applied here — heal / buff effects are no-op
+    // in the sim. Damage-type ULTs only. Phase 2 (D — effect-pipeline) will add
+    // proper effect application; until then milestone players pass `skills: []`.
     for (const skill of player.skills) {
       const nowMs = tick * TICK_MS;
       if (isSkillReady(skillState, skill, nowMs)) {
@@ -95,7 +103,10 @@ export function simulateFloor(
     }
 
     // 적 공격 (BattleScene 의 currentHpEstimate 모델 mirror)
-    monstersDefeated++; // 1 floor = 1 enemy 가정. BattleScene 식 재현용.
+    // Per-tick increment: intentionally diverges from BattleScene where
+    // run.monstersDefeated advances only on kill and is constant during a single
+    // fight. Sim approximates the fatigue model within one floor. See spec §7.2.
+    monstersDefeated++;
     const currentHpEstimate = playerHp - (monstersDefeated * damageTaken * 0.1);
     if (currentHpEstimate <= 0) {
       return {

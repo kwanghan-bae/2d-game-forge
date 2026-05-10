@@ -20,8 +20,10 @@ describe('balance-sim — determinism', () => {
     const r1 = simulateFloor(player, enemy, createSeededRng(1));
     const r2 = simulateFloor(player, enemy, createSeededRng(2));
 
-    // 결정성이지만 다른 seed 면 ticksTaken 미세 다를 가능성. 그냥 sanity check.
-    expect(r1.ticksTaken === r2.ticksTaken && r1.victory === r2.victory).toBeDefined();
+    // 다른 seed 는 RNG 분기 (crit / combo / playerHit roll) 에서 다른 경로를 탄다.
+    // 결과 객체가 완전히 같지 않은지만 확인 — 실제 ticksTaken/victory 가 어떻게
+    // 다른지는 case 별. 위 lv5 enemy + 평범한 player 셋업은 RNG 민감 영역이다.
+    expect(r1).not.toEqual(r2);
   });
 
   it('overpowered player → quick victory', () => {
