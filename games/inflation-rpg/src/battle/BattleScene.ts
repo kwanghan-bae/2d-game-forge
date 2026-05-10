@@ -21,6 +21,11 @@ import {
 } from './SkillSystem';
 import type { ActiveSkill } from '../types';
 import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
+import {
+  createEffectsState, tickEffects, processIncomingDamage, addEffect, getDebuffStatMultiplier,
+  type CombatStateForEffects,
+} from '../systems/effects';
+import type { EffectsState } from '../types';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -71,6 +76,7 @@ export class BattleScene extends Phaser.Scene {
   private cachedPlayerHpMax = 0;
   // floor 기반 monsterLevel 을 전투 내내 캐시. create() 에서 항상 셋.
   private cachedMonsterLevel = 0;
+  private effectsState: EffectsState = createEffectsState();
 
   constructor() {
     super({ key: 'BattleScene' });
@@ -141,6 +147,8 @@ export class BattleScene extends Phaser.Scene {
 
     void this.enemyText; void this.hpBarBg;
     this.combatTimer = this.time.addEvent({ delay: 600, callback: this.doRound, callbackScope: this, loop: true });
+
+    this.effectsState = createEffectsState();
 
     // Cache player stats and active skills for skill system
     const char = getCharacterById(run.characterId);
@@ -284,13 +292,21 @@ export class BattleScene extends Phaser.Scene {
     }
 
     const monsterLevelForAtk = this.cachedMonsterLevel;
-    const enemyATK = resolveEnemyAtk({
+    const debuffMult = getDebuffStatMultiplier(this.effectsState, 'enemy');
+    const enemyATK = Math.floor(resolveEnemyAtk({
       monsterLevel: monsterLevelForAtk,
       isBoss: this.isBoss,
-    });
+    }) * debuffMult);
     const reduction = calcDamageReduction(playerDEF);
-    const dmgTaken = resolveDamageTaken({ enemyATK, reduction });
-    const currentHPEstimate = playerHP - (run.monstersDefeated * dmgTaken * 0.1);
+    const rawDmgTaken = resolveDamageTaken({ enemyATK, reduction });
+    const incomingResult = processIncomingDamage(this.effectsState, rawDmgTaken);
+    const finalDmgTaken = incomingResult.damageAfterShield;
+    if (incomingResult.reflectDamage > 0) {
+      this.enemyHP = Math.max(0, this.enemyHP - incomingResult.reflectDamage);
+      const ratio = this.enemyHP / this.enemyMaxHP;
+      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    }
+    const currentHPEstimate = playerHP - (run.monstersDefeated * finalDmgTaken * 0.1);
 
     if (currentHPEstimate <= 0) {
       this.combatTimer?.remove();
@@ -309,6 +325,23 @@ export class BattleScene extends Phaser.Scene {
 
   update(time: number, _delta: number) {
     this.updateSkills(time);
+    const tickResult = tickEffects(this.effectsState, this.buildCombatStateForEffects(), _delta);
+    if (tickResult.stateDelta.enemyHpDelta) {
+      this.enemyHP = Math.max(0, this.enemyHP + tickResult.stateDelta.enemyHpDelta);
+      const ratio = this.enemyHP / this.enemyMaxHP;
+      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    }
+  }
+
+  private buildCombatStateForEffects(): CombatStateForEffects {
+    return {
+      selfHp: this.cachedPlayerHpMax,
+      selfMaxHp: this.cachedPlayerHpMax,
+      enemyHp: this.enemyHP,
+      enemyMaxHp: this.enemyMaxHP,
+      selfAtk: this.cachedPlayerAtk,
+      selfDef: 0,
+    };
   }
 
   private updateSkills(time: number) {
@@ -324,18 +357,41 @@ export class BattleScene extends Phaser.Scene {
           this.enemyHP,
           this.enemyMaxHP,
         );
-        this.applySkillResult(result);
+        this.applySkillResult(result, skill.id);
         fireSkill(this.skillState, skill, time);
       }
     }
   }
 
-  private applySkillResult(result: SkillEffectResult) {
+  private applySkillResult(result: SkillEffectResult, skillId: string) {
     if (result.damage !== undefined) {
       this.enemyHP = Math.max(0, this.enemyHP - result.damage);
-      // HP 바 갱신
       const ratio = this.enemyHP / this.enemyMaxHP;
       this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    }
+    if (result.debuff !== undefined) {
+      addEffect(this.effectsState, {
+        id: `debuff_${skillId}`,
+        effectType: 'debuff',
+        source: 'ult',
+        target: 'enemy',
+        durationMs: result.debuff.durationMs,
+        remainingMs: result.debuff.durationMs,
+        magnitude: result.debuff.statPercent,
+        stack: 1,
+      });
+    }
+    if (result.reflect !== undefined) {
+      addEffect(this.effectsState, {
+        id: `reflect_${skillId}`,
+        effectType: 'reflect',
+        source: 'ult',
+        target: 'self',
+        durationMs: result.reflect.durationMs,
+        remainingMs: result.reflect.durationMs,
+        magnitude: result.reflect.reflectPercent,
+        stack: 1,
+      });
     }
     // heal: 플레이어 HP 는 doRound 에서 추정치 사용 — 스킬 힐은 캐시값 조정
     // buff: 현재 구현에서는 no-op (고급 구현 시 stat 버프 레이어 추가)

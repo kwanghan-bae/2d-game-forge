@@ -15,7 +15,7 @@ const mkWeaponBase = (id: string): EquipmentBase => ({
 });
 
 const mkInstance = (instanceId: string, baseId: string): EquipmentInstance => ({
-  instanceId, baseId, enhanceLv: 0,
+  instanceId, baseId, enhanceLv: 0, modifiers: [],
 });
 
 const emptyInv: Inventory = { weapons: [], armors: [], accessories: [] };
