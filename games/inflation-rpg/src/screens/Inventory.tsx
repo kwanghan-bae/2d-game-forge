@@ -12,6 +12,7 @@ import { ForgeInventoryGrid } from '@/components/ui/forge-inventory-grid';
 import { ForgePanel } from '@/components/ui/forge-panel';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 import { formatNumber } from '../lib/format';
+import { RerollModal } from '../components/RerollModal';
 
 function formatMagnitude(mod: Modifier, value: number): string {
   if (mod.effectType === 'dot') return `${Math.floor(value)}/sec`;
@@ -30,6 +31,7 @@ export function Inventory() {
   const [activeSlot, setActiveSlot] = useState<EquipmentSlot>('weapon');
   const [mainTab, setMainTab] = useState<'inventory' | 'craft' | 'skills'>('inventory');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [rerollFor, setRerollFor] = useState<{ inst: EquipmentInstance; slot: EquipmentSlot } | null>(null);
   const meta = useGameStore((s) => s.meta);
   const setScreen = useGameStore((s) => s.setScreen);
   const sellEquipment = useGameStore((s) => s.sellEquipment);
@@ -191,6 +193,7 @@ export function Inventory() {
                     sellEquipment(item.instanceId, base?.price ?? 0);
                   }}
                   onEnhance={() => enhanceItem(item.instanceId)}
+                  onOpenReroll={() => setRerollFor({ inst: item, slot: activeSlot })}
                   dr={meta.dr}
                   enhanceStones={meta.enhanceStones}
                 />
@@ -246,6 +249,19 @@ export function Inventory() {
         </div>
       )}
 
+      {rerollFor && (() => {
+        const base = getEquipmentBase(rerollFor.inst.baseId);
+        if (!base) return null;
+        return (
+          <RerollModal
+            instance={rerollFor.inst}
+            rarity={base.rarity}
+            slot={rerollFor.slot}
+            onClose={() => setRerollFor(null)}
+          />
+        );
+      })()}
+
       {mainTab === 'skills' && (() => {
         const char = CHARACTERS.find((c) => c.id === run.characterId);
         if (!char) {
@@ -290,7 +306,7 @@ export function Inventory() {
   );
 }
 
-function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, onEquip, onUnequip, onSell, onEnhance, dr, enhanceStones }: {
+function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, onEquip, onUnequip, onSell, onEnhance, onOpenReroll, dr, enhanceStones }: {
   inst: EquipmentInstance;
   isEquipped: boolean;
   canEquip: boolean;
@@ -300,6 +316,7 @@ function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, o
   onUnequip: () => void;
   onSell: () => void;
   onEnhance: () => void;
+  onOpenReroll: () => void;
   dr: number;
   enhanceStones: number;
 }) {
@@ -407,6 +424,20 @@ function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, o
                   </div>
                 );
               })}
+              <button
+                data-testid="open-reroll"
+                onClick={onOpenReroll}
+                style={{
+                  minHeight: 44, width: '100%', marginTop: 8,
+                  background: 'var(--forge-accent-dim)',
+                  border: '1px solid var(--forge-accent)',
+                  borderRadius: 4, padding: '4px 8px',
+                  color: 'var(--forge-accent)',
+                  cursor: 'pointer', fontSize: 12,
+                }}
+              >
+                재굴림
+              </button>
             </div>
           )}
         </div>
