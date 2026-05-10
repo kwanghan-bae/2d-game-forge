@@ -873,3 +873,33 @@ describe('GameStore — Phase F-3 levelUpSkill + pickUltSlot', () => {
     expect(m.skillLevels.hwarang?.['hwarang_ult_ilseom']).toBe(7);
   });
 });
+
+describe('GameStore — Phase Balance-Patch TODO-a: F30 final boss stone reward', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('final boss drops at least 50 enhanceStones (spec §2 TODO-a)', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'hwarang' } }));
+    const before = useGameStore.getState().meta.enhanceStones;
+    useGameStore.getState().bossDrop('final-boss-id', 5, 'final');
+    const after = useGameStore.getState().meta.enhanceStones;
+    expect(after - before).toBeGreaterThanOrEqual(50);
+  });
+
+  it('final boss drops exactly 50 enhanceStones (deterministic)', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'hwarang' } }));
+    const before = useGameStore.getState().meta.enhanceStones;
+    useGameStore.getState().bossDrop('final-boss-id', 5, 'final');
+    const after = useGameStore.getState().meta.enhanceStones;
+    expect(after - before).toBe(50);
+  });
+
+  it('non-final boss (mini) still uses bpReward for stones', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, characterId: 'hwarang' } }));
+    const before = useGameStore.getState().meta.enhanceStones;
+    useGameStore.getState().bossDrop('mini-boss-id', 5, 'mini');
+    const after = useGameStore.getState().meta.enhanceStones;
+    expect(after - before).toBe(5); // bpReward unchanged for non-final
+  });
+});

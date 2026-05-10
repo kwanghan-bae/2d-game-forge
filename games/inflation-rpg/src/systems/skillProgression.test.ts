@@ -78,3 +78,44 @@ describe('ultSlotsUnlocked', () => {
     expect(ultSlotsUnlocked(99999)).toBe(4);
   });
 });
+
+// ── TODO-b magnitude monotonicity guard ───────────────────────────────────────
+// jobskills.ts 의 ULT 에는 per-lv magnitude 테이블이 없다.
+// lv 별 스케일링은 skillProgression.ts 의 함수로 수행되므로 guard 는 여기에 둔다.
+
+describe('magnitude monotonicity guard (TODO-b)', () => {
+  const MAX_LV = 100; // 운영 cap 과 충분한 headroom
+
+  it('skillDmgMul(base): monotone non-decreasing, no cliff (ratio < 1.5)', () => {
+    for (let lv = 0; lv < MAX_LV; lv++) {
+      const a = skillDmgMul('base', lv);
+      const b = skillDmgMul('base', lv + 1);
+      expect(b).toBeGreaterThanOrEqual(a);
+      if (a > 0) expect(b / a).toBeLessThan(1.5);
+    }
+  });
+
+  it('skillDmgMul(ult): monotone non-decreasing, no cliff (ratio < 1.5)', () => {
+    for (let lv = 0; lv < MAX_LV; lv++) {
+      const a = skillDmgMul('ult', lv);
+      const b = skillDmgMul('ult', lv + 1);
+      expect(b).toBeGreaterThanOrEqual(a);
+      if (a > 0) expect(b / a).toBeLessThan(1.5);
+    }
+  });
+
+  it('skillCooldownMul(base): constant 1.0 across all levels', () => {
+    for (let lv = 0; lv <= MAX_LV; lv++) {
+      expect(skillCooldownMul('base', lv)).toBe(1.0);
+    }
+  });
+
+  it('skillCooldownMul(ult): monotone non-increasing, no cliff (inverse ratio < 1.5)', () => {
+    for (let lv = 0; lv < MAX_LV; lv++) {
+      const a = skillCooldownMul('ult', lv);
+      const b = skillCooldownMul('ult', lv + 1);
+      expect(b).toBeLessThanOrEqual(a); // cd 는 감소 방향
+      if (b > 0) expect(a / b).toBeLessThan(1.5); // 역방향 절벽 금지
+    }
+  });
+});
