@@ -176,6 +176,24 @@ applySkillTick(input: SkillTickInput): SkillTickOutput;
 Tier B 진입 시 본 spec 의 §8.2 에 진입 사유 + 변경 magnitude 를 추가
 커밋한다 (별도 결정 문서 없음).
 
+### 8.2 Tier B (실제 진입 — 2026-05-10)
+
+진입 사유: Tier A magnitude 조정만으로 500h milestone 의 measuredFloor 가
+F1500 도달 불가능 (실측 F1000 한계). 통과 기준 (i) 의 under-tuning
+case — 광고 SDK 없이 player power 부족.
+
+근본 원인: enhance.ts 의 mythic per-lv multiplier (0.32) 가 lv 5000 에서
+×1601 만 줘서, F1500 (ML = 10^7) 의 monster HP 와 player atk
+~676000 의 갭을 못 메움.
+
+시도 이력:
+- mythic 1.0 → measuredFloor 1000 (❌ 여전히 부족)
+- mythic 2.0 → measuredFloor 1500 (✅ 기준 충족)
+
+변경: `PER_LV_MULT.mythic` 0.32 → **2.0**. 변경 후 sweep 재실행 결과:
+500h ✅ (measuredFloor=1500), 200h/300h 영향 없음 (mythic 만 바뀜) 확인.
+절벽 0 유지.
+
 ### 8.3 코드 로직 변경 (out of scope)
 
 `battle/` 의 데미지 식, SkillSystem 의 효과 적용 순서 등은 본 phase 미변경.

@@ -20,8 +20,8 @@ describe('enhanceMultiplier', () => {
   it('legendary: 1+0.22·N', () => {
     expect(enhanceMultiplier('legendary', 100)).toBeCloseTo(23, 5);
   });
-  it('mythic: 1+0.32·N', () => {
-    expect(enhanceMultiplier('mythic', 100)).toBeCloseTo(33, 5);
+  it('mythic: 1+2.0·N', () => {
+    expect(enhanceMultiplier('mythic', 100)).toBeCloseTo(201, 5);
   });
 });
 

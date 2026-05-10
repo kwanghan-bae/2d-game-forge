@@ -7,7 +7,7 @@ const PER_LV_MULT: Record<EquipmentRarity, number> = {
   rare: 0.10,
   epic: 0.15,
   legendary: 0.22,
-  mythic: 0.32,
+  mythic: 2.0,
 };
 
 const RARITY_COST_MULT: Record<EquipmentRarity, number> = {
