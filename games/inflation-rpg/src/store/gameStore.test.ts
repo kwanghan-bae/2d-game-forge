@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useGameStore, INITIAL_RUN, INITIAL_META } from './gameStore';
+import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9 } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
 import type { EquipmentInstance } from '../types';
 
@@ -901,5 +901,57 @@ describe('GameStore — Phase Balance-Patch TODO-a: F30 final boss stone reward'
     useGameStore.getState().bossDrop('mini-boss-id', 5, 'mini');
     const after = useGameStore.getState().meta.enhanceStones;
     expect(after - before).toBe(5); // bpReward unchanged for non-final
+  });
+});
+
+describe('persist v8 → v9 migration', () => {
+  it('attaches modifiers to existing equipment instances (rarity slots count)', () => {
+    const v8State = {
+      meta: {
+        inventory: {
+          weapons: [{ instanceId: 'w1', baseId: 'w-knife', enhanceLv: 5, modifiers: [] }],
+          armors: [],
+          accessories: [],
+        },
+      },
+    };
+
+    const result = migrateV8ToV9(v8State) as typeof v8State;
+    const weapon = result.meta.inventory.weapons[0];
+    expect(weapon).toBeDefined();
+    expect(weapon!.modifiers).toBeDefined();
+    expect(Array.isArray(weapon!.modifiers)).toBe(true);
+    // w-knife 는 common rarity → SLOTS_PER_RARITY[common] = 1
+    expect((weapon!.modifiers as unknown[]).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('preserves existing modifier-bearing items (idempotent)', () => {
+    const existingMod = {
+      id: 'mod_crit_damage',
+      nameKR: '크리데미지',
+      category: 'attack',
+      baseValue: 0.5,
+      effectType: 'stat_mod',
+      validSlots: ['weapon'],
+      rarityWeight: { common: 1, uncommon: 1, rare: 1, epic: 1, legendary: 1, mythic: 1 },
+    };
+    const v8State = {
+      meta: {
+        inventory: {
+          weapons: [{ instanceId: 'w1', baseId: 'w-knife', enhanceLv: 5, modifiers: [existingMod] }],
+          armors: [],
+          accessories: [],
+        },
+      },
+    };
+
+    const result = migrateV8ToV9(v8State) as typeof v8State;
+    expect(result.meta.inventory.weapons[0]?.modifiers).toEqual([existingMod]);
+  });
+
+  it('adds adsWatched: 0 if missing', () => {
+    const v8State = { meta: { inventory: { weapons: [], armors: [], accessories: [] } } };
+    const result = migrateV8ToV9(v8State) as { meta: { adsWatched: number } };
+    expect(result.meta.adsWatched).toBe(0);
   });
 });
