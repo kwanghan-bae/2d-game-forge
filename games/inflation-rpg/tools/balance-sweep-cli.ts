@@ -1,6 +1,8 @@
 // games/inflation-rpg/tools/balance-sweep-cli.ts
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { runSweep } from './balance-sweep';
+
+const SENTINEL = '<!-- AUTO-GENERATED ABOVE / MANUAL ANALYSIS BELOW — preserved across re-runs -->';
 
 const rows = runSweep();
 const md: string[] = [];
@@ -22,7 +24,22 @@ md.push('- **(i)** 모든 row 의 `±20% 통과` 가 ✅.');
 md.push('- **(ii)** 모든 row 의 `절벽` 이 0.');
 md.push('- **(iii)** TODO-a~d 처리 (별도 검증).');
 md.push('');
+md.push(SENTINEL);
+md.push('');
 
 const out = process.argv[2] ?? 'balance-sweep-out.md';
-writeFileSync(out, md.join('\n'));
+
+// Preserve any manual analysis section below the sentinel from a previous run.
+let manualSection = '';
+try {
+  const existing = readFileSync(out, 'utf-8');
+  const idx = existing.indexOf(SENTINEL);
+  if (idx !== -1) {
+    manualSection = existing.slice(idx + SENTINEL.length);
+  }
+} catch {
+  // 신규 파일 — manual section 없음.
+}
+
+writeFileSync(out, md.join('\n') + manualSection);
 console.log(`wrote ${out} (${rows.length} rows)`);

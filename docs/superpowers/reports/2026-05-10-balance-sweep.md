@@ -17,12 +17,15 @@
 - **(ii)** 모든 row 의 `절벽` 이 0.
 - **(iii)** TODO-a~d 처리 (별도 검증).
 
+<!-- AUTO-GENERATED ABOVE / MANUAL ANALYSIS BELOW — preserved across re-runs -->
+
+
 ## 1차 측정 분석 (수동)
 
 ### 발견 사항
 
 - **5h**: measuredFloor=60, expectedFloor=8. 기대 대비 **7.5배 over-tuned**. clearTime=0.0s — combo+crit 즉사. buildSimPlayer 의 baseAbilityMul(1+0.5×2=2.0) + charLvMul(1+0.02×5=1.1) 가 F8 몬스터 HP 를 한 틱에 녹임. 초반 곡선이 너무 평탄.
-- **30h**: measuredFloor=100 (probe 상한), expectedFloor=25. **4배 over-tuned**. 클리어 시간 0.5s 로 거의 즉사 수준. cliff F23, F24 감지 — 절벽 2개. HP 스케일 링크가 F20~F30 구간에서 불연속.
+- **30h**: measuredFloor=100 (probe 상한). expectedFloor=25. **≥4배 over-tuned** (실제 최대 미확인 — probe 상한이 잘렸음). Task 7 hpMult 조정 시 ≥4배 폭으로 시작. 클리어 시간 0.5s 로 거의 즉사 수준. cliff F23, F24 감지 — 절벽 2개. HP 스케일 링크가 F20~F30 구간에서 불연속.
 - **80h**: measuredFloor=100 (probe 상한 100 까지만 확인), expectedFloor=60. **~1.67배 over-tuned** (실제 max 는 100 초과일 가능성). clearTime=0.5s.
 - **200h**: measuredFloor=200, expectedFloor=200. ✅ tolerance 내. clearTime=3.9s.
 - **300h**: measuredFloor=500, expectedFloor=500. ✅ tolerance 내. clearTime=5.8s.
@@ -57,7 +60,10 @@ F23/F24 는 getMonsterLevel 의 구간 경계와 일치할 가능성 높음 (flo
 
 ### 다음 작업 (Task 7~10)
 
-1. Task 7 (TODO-d) — Curve 2 옵션 C 적용 (monsters.ts hpMult lv 구간별 조정) + Curve 1 anchor 미세 조정. 목표: 5h/30h/80h over-tuning 수정 + 500h 발산 해소.
+1. Task 7 (TODO-d) — Curve 2 옵션 C 적용 (monsters.ts hpMult lv 구간별 조정) + Curve 1 anchor 미세 조정.
+   목표: **5h/30h/80h over-tuning 수정**. F23/F24 절벽 보정.
+   (500h 발산은 hpMult 가 아닌 **player power 부족** 이므로 Task 11 Tier B — `enhance.ts` / `experience.ts` 영역.
+   F1500 구간 hpMult 를 낮추면 이미 ✅ 인 200h/300h tolerance 가 흔들림.)
 2. Task 8 (TODO-a) — F30 보상 격상 (cliff 보상 보정).
 3. Task 9 (TODO-b) — ULT magnitude 절벽 보정 (F23/F24 cliff 추가 원인 점검).
 4. Task 10 (TODO-c) — 강화 cap 페이싱 검증.
