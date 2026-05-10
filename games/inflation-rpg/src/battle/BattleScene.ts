@@ -22,7 +22,7 @@ import {
 import type { ActiveSkill } from '../types';
 import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
 import {
-  createEffectsState, tickEffects, processIncomingDamage,
+  createEffectsState, tickEffects, processIncomingDamage, addEffect, getDebuffStatMultiplier,
   type CombatStateForEffects,
 } from '../systems/effects';
 import type { EffectsState } from '../types';
@@ -292,10 +292,11 @@ export class BattleScene extends Phaser.Scene {
     }
 
     const monsterLevelForAtk = this.cachedMonsterLevel;
-    const enemyATK = resolveEnemyAtk({
+    const debuffMult = getDebuffStatMultiplier(this.effectsState, 'enemy');
+    const enemyATK = Math.floor(resolveEnemyAtk({
       monsterLevel: monsterLevelForAtk,
       isBoss: this.isBoss,
-    });
+    }) * debuffMult);
     const reduction = calcDamageReduction(playerDEF);
     const rawDmgTaken = resolveDamageTaken({ enemyATK, reduction });
     const incomingResult = processIncomingDamage(this.effectsState, rawDmgTaken);
@@ -356,18 +357,41 @@ export class BattleScene extends Phaser.Scene {
           this.enemyHP,
           this.enemyMaxHP,
         );
-        this.applySkillResult(result);
+        this.applySkillResult(result, skill.id);
         fireSkill(this.skillState, skill, time);
       }
     }
   }
 
-  private applySkillResult(result: SkillEffectResult) {
+  private applySkillResult(result: SkillEffectResult, skillId: string) {
     if (result.damage !== undefined) {
       this.enemyHP = Math.max(0, this.enemyHP - result.damage);
-      // HP 바 갱신
       const ratio = this.enemyHP / this.enemyMaxHP;
       this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    }
+    if (result.debuff !== undefined) {
+      addEffect(this.effectsState, {
+        id: `debuff_${skillId}`,
+        effectType: 'debuff',
+        source: 'ult',
+        target: 'enemy',
+        durationMs: result.debuff.durationMs,
+        remainingMs: result.debuff.durationMs,
+        magnitude: result.debuff.statPercent,
+        stack: 1,
+      });
+    }
+    if (result.reflect !== undefined) {
+      addEffect(this.effectsState, {
+        id: `reflect_${skillId}`,
+        effectType: 'reflect',
+        source: 'ult',
+        target: 'self',
+        durationMs: result.reflect.durationMs,
+        remainingMs: result.reflect.durationMs,
+        magnitude: result.reflect.reflectPercent,
+        stack: 1,
+      });
     }
     // heal: 플레이어 HP 는 doRound 에서 추정치 사용 — 스킬 힐은 캐시값 조정
     // buff: 현재 구현에서는 no-op (고급 구현 시 stat 버프 레이어 추가)

@@ -34,7 +34,9 @@ export interface PassiveSkill {
   value: number;
 }
 
-export type ActiveSkillType = 'multi_hit' | 'aoe' | 'heal' | 'buff' | 'execute';
+export type ActiveSkillType =
+  | 'multi_hit' | 'aoe' | 'heal' | 'buff' | 'execute'
+  | 'debuff' | 'reflect';  // Phase D
 
 export interface ActiveSkill {
   id: string;
@@ -50,6 +52,10 @@ export interface ActiveSkill {
     buffPercent?: number;
     buffDurationSec?: number;
     executeThreshold?: number;
+    debuffStatPercent?: number;     // Phase D
+    debuffDurationSec?: number;
+    reflectPercent?: number;
+    reflectDurationSec?: number;
   };
   vfxEmoji: string;
 }

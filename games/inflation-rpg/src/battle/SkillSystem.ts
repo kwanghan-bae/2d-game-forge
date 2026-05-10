@@ -25,6 +25,8 @@ export interface SkillEffectResult {
   damage?: number;
   heal?: number;
   buff?: { stat: string; percent: number; durationMs: number };
+  debuff?: { statPercent: number; durationMs: number };       // Phase D
+  reflect?: { reflectPercent: number; durationMs: number };   // Phase D
   execute?: boolean;
   vfxEmoji: string;
 }
@@ -65,6 +67,16 @@ export function computeSkillEffect(
     } else {
       result.damage = Math.floor(playerAtk * 1.5 * dmgMul);
     }
+  } else if (eff.type === 'debuff') {
+    result.debuff = {
+      statPercent: (eff.debuffStatPercent ?? 0) / 100 * dmgMul,
+      durationMs: (eff.debuffDurationSec ?? 0) * 1000,
+    };
+  } else if (eff.type === 'reflect') {
+    result.reflect = {
+      reflectPercent: (eff.reflectPercent ?? 0) / 100 * dmgMul,
+      durationMs: (eff.reflectDurationSec ?? 0) * 1000,
+    };
   }
 
   return result;
