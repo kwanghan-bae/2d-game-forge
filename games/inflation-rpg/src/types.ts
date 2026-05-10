@@ -23,6 +23,7 @@ export interface EquipmentInstance {
   instanceId: string;
   baseId: string;
   enhanceLv: number;
+  modifiers: Modifier[];
 }
 
 export interface PassiveSkill {
@@ -280,4 +281,58 @@ export interface FloorInfo {
   floorNumber: number;       // 1-indexed
   monsterLevel: number;      // computed from floor depth
   bossType: BossType | null; // null = 일반 floor
+}
+
+// ─── Effect-pipeline (Phase D §6.1) ───
+
+export type EffectType =
+  | 'stat_mod'  // effect-pipeline 외 — stat 식 직접 적용 (크리/관통/원소피해 등)
+  | 'dot'       // 도트 (중독·출혈)
+  | 'cc'        // 기절·동결·공포
+  | 'debuff'    // 약화·둔화 (stat % 감소, stack)
+  | 'shield'    // 보호막 (flat absorption)
+  | 'reflect'   // 받은 dmg → 적
+  | 'trigger';  // 처치/HP/stack 조건 발동
+
+export type EffectId = string;  // 예: 'dot_poison', 'cc_stun', 'debuff_weaken' 등
+
+export type EffectTarget = 'self' | 'enemy';
+
+export type TriggerCondition =
+  | { kind: 'on_kill' }
+  | { kind: 'on_hp_below'; thresholdRatio: number }
+  | { kind: 'on_stack_reach'; stackTarget: number }
+  | { kind: 'on_hit' };
+
+export interface ActiveEffect {
+  id: EffectId;
+  effectType: EffectType;
+  source: 'modifier' | 'ult' | 'skill';
+  target: EffectTarget;
+  durationMs: number;
+  remainingMs: number;
+  magnitude: number;
+  stack: number;
+  triggerCondition?: TriggerCondition;
+}
+
+export interface EffectsState {
+  active: Map<EffectId, ActiveEffect>;
+}
+
+// ─── Modifier (Phase D §6.2) ───
+
+export type ModifierCategory = 'attack' | 'status' | 'utility' | 'defense' | 'special';
+
+export type SlotKind = 'weapon' | 'armor' | 'accessory';
+
+export interface Modifier {
+  id: string;
+  nameKR: string;
+  category: ModifierCategory;
+  baseValue: number;
+  effectType: EffectType;
+  validSlots: SlotKind[];
+  rarityWeight: Record<EquipmentRarity, number>;
+  triggerCondition?: TriggerCondition;
 }

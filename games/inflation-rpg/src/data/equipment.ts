@@ -80,6 +80,7 @@ export function createInstance(baseId: string): EquipmentInstance {
     instanceId: crypto.randomUUID(),
     baseId,
     enhanceLv: 0,
+    modifiers: [],
   };
 }
 

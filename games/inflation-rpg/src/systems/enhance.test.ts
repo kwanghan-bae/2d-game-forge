@@ -63,23 +63,23 @@ describe('enhanceCost', () => {
 describe('getInstanceStats', () => {
   it('lv 0: returns base stats (multiplier ×1, floor)', () => {
     // 'w-knife' is common with baseStats.flat.atk = 30
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 0, modifiers: [] };
     const stats = getInstanceStats(inst);
     expect(stats.flat?.atk).toBe(30);
   });
   it('lv 10: common ×1.5 → atk floor(30 × 1.5) = 45', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 10 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-knife', enhanceLv: 10, modifiers: [] };
     const stats = getInstanceStats(inst);
     expect(stats.flat?.atk).toBe(45);
   });
   it('unknown baseId: returns empty stats', () => {
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'nonexistent', enhanceLv: 5 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'nonexistent', enhanceLv: 5, modifiers: [] };
     const stats = getInstanceStats(inst);
     expect(stats).toEqual({});
   });
   it('rare with percent: lv 100 → percent ×11 → 20 × 11 = 220', () => {
     // 'w-bow' is rare with baseStats.percent.atk = 20 + flat.atk = 200 (after T2 baseStats rename)
-    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 100 };
+    const inst: EquipmentInstance = { instanceId: 'i1', baseId: 'w-bow', enhanceLv: 100, modifiers: [] };
     const stats = getInstanceStats(inst);
     expect(stats.percent?.atk).toBe(Math.floor(20 * 11));
   });
