@@ -9,6 +9,10 @@ describe('balance sweep harness', () => {
     for (const row of rows) {
       expect(row.hours).toBeGreaterThan(0);
       expect(row.expectedFloor).toBeGreaterThan(0);
+      expect(typeof row.clearTimeAtExpected).toBe('number');
+      expect(row.measuredFloor).toBeGreaterThanOrEqual(1);
+      expect(Array.isArray(row.cliffsDetected)).toBe(true);
+      expect(typeof row.withinTolerance).toBe('boolean');
     }
   }, 60_000);
 });
