@@ -19,6 +19,9 @@ const RARITY_COST_MULT: Record<EquipmentRarity, number> = {
   mythic: 16,
 };
 
+// Phase 3 (E): 광고 SDK 통합 시 평생 cap 식 추가 예정 (spec §3, §5).
+// 설계: lifetimeEnhanceCap(adsWatched) = Math.min(100, 50 + Math.max(0, adsWatched))
+// 현재는 lv 무제한 — cap 미구현 (TODO-c 검증 결과).
 export function enhanceMultiplier(rarity: EquipmentRarity, lv: number): number {
   return 1 + PER_LV_MULT[rarity] * lv;
 }
