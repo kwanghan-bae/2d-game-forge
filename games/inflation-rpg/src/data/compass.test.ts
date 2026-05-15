@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { COMPASS_ITEMS, ALL_COMPASS_IDS, EMPTY_COMPASS_OWNED, getCompassByDungeon } from './compass';
+import { DUNGEONS } from './dungeons';
 
 describe('COMPASS_ITEMS data integrity', () => {
   it('contains exactly 7 entries (3 dungeons × 2 + omni)', () => {
@@ -26,6 +27,23 @@ describe('COMPASS_ITEMS data integrity', () => {
       expect(entry.descriptionKR.length).toBeGreaterThan(0);
       expect(entry.emoji.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('DUNGEONS ↔ COMPASS_ITEMS coverage', () => {
+  // 새 dungeon 이 추가됐을 때 compass 엔트리 (first + second) 누락을 catch.
+  // omni 트리거 (newCleared.length >= DUNGEONS.length) 의 silent 미스매치 방어.
+  it('every dungeon has both first-tier and second-tier compass entries', () => {
+    for (const d of DUNGEONS) {
+      const firstId = `${d.id}_first`;
+      const secondId = `${d.id}_second`;
+      expect(ALL_COMPASS_IDS).toContain(firstId);
+      expect(ALL_COMPASS_IDS).toContain(secondId);
+      expect(COMPASS_ITEMS[firstId as keyof typeof COMPASS_ITEMS].dungeonId).toBe(d.id);
+      expect(COMPASS_ITEMS[secondId as keyof typeof COMPASS_ITEMS].dungeonId).toBe(d.id);
+    }
+    // first + second + omni 합이 ALL_COMPASS_IDS 와 일치
+    expect(ALL_COMPASS_IDS.length).toBe(DUNGEONS.length * 2 + 1);
   });
 });
 
