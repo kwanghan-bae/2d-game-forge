@@ -220,6 +220,7 @@ export interface MetaState {
   mythicSlotCap: number;                 // 0..5, derived from ascTier
   adsToday: number;
   adsLastResetTs: number;
+  adsWatched: number;        // lifetime ad-watch count (v9 migration default 0)
 }
 
 // Phase G — Ascension Tree (성좌)

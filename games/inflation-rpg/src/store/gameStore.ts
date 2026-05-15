@@ -106,6 +106,7 @@ export const INITIAL_META: MetaState = {
   mythicSlotCap: 0,
   adsToday: 0,
   adsLastResetTs: 0,
+  adsWatched: 0,
 };
 
 interface GameStore {
