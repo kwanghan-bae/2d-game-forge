@@ -26,6 +26,8 @@ import {
   createEffectsState, tickEffects, processIncomingDamage, addEffect, getDebuffStatMultiplier,
   type CombatStateForEffects,
 } from '../systems/effects';
+import { getMythicFlatMult } from '../systems/mythics';
+import { getRelicFlatMult } from '../systems/relics';
 import type { EffectsState } from '../types';
 
 function pickBossIdByType(
@@ -164,8 +166,10 @@ export class BattleScene extends Phaser.Scene {
       const ascTree = meta.ascTree;
       const ascTreeAtkMult = 1 + 0.05 * ascTree.atk_pct;
       const ascTreeHpMult = 1 + 0.05 * ascTree.hp_pct;
-      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult);
-      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult);
+      const atkMetaMult = getMythicFlatMult(meta, 'atk') * getRelicFlatMult(meta, 'atk');
+      const hpMetaMult = getMythicFlatMult(meta, 'hp') * getRelicFlatMult(meta, 'hp');
+      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult);
+      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult, hpMetaMult);
     }
   }
 
@@ -183,12 +187,17 @@ export class BattleScene extends Phaser.Scene {
     const ascTree = meta.ascTree;
     const ascTreeAtkMult = 1 + 0.05 * ascTree.atk_pct;
     const ascTreeHpMult = 1 + 0.05 * ascTree.hp_pct;
+    const atkMetaMult = getMythicFlatMult(meta, 'atk') * getRelicFlatMult(meta, 'atk');
+    const hpMetaMult  = getMythicFlatMult(meta, 'hp')  * getRelicFlatMult(meta, 'hp');
+    const defMetaMult = getMythicFlatMult(meta, 'def') * getRelicFlatMult(meta, 'def');
+    const agiMetaMult = getMythicFlatMult(meta, 'agi') * getRelicFlatMult(meta, 'agi');
+    const lucMetaMult = getMythicFlatMult(meta, 'luc') * getRelicFlatMult(meta, 'luc');
 
-    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult);
-    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult, 1);
-    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult);
-    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1);
-    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1);
+    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult);
+    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, defMetaMult);
+    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult, hpMetaMult);
+    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, agiMetaMult);
+    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, lucMetaMult);
 
     const crit = Math.random() < calcCritChance(playerAGI, playerLUC);
     const combo = Math.random() < 0.05 + playerAGI * 0.0005;
