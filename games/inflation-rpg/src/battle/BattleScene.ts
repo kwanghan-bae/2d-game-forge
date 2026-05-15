@@ -27,8 +27,8 @@ import {
   registerMythicProcs, evaluateMythicProcs,
   type CombatStateForEffects,
 } from '../systems/effects';
-import { getMythicFlatMult, getMythicXpMult, getMythicProcs } from '../systems/mythics';
-import { getRelicFlatMult, getRelicXpMult } from '../systems/relics';
+import { getMythicFlatMult, getMythicXpMult, getMythicProcs, getMythicReviveCount } from '../systems/mythics';
+import { getRelicFlatMult, getRelicXpMult, relicNoDeathLoss, relicReviveCount } from '../systems/relics';
 import type { EffectsState } from '../types';
 
 function pickBossIdByType(
@@ -351,10 +351,30 @@ export class BattleScene extends Phaser.Scene {
     const currentHPEstimate = playerHP - (run.monstersDefeated * finalDmgTaken * 0.1);
 
     if (currentHPEstimate <= 0) {
+      // Phase E — Revive check (feather_of_fate relic + phoenix_feather mythic).
+      // HP model is estimate-based (playerHP - monstersDefeated × dmgTaken × 0.1),
+      // so "restore ~50% HP" maps to halving monstersDefeated.
+      // NOTE: do NOT remove combatTimer here — revive keeps the loop running.
+      const totalRevives = relicReviveCount(meta) + getMythicReviveCount(meta);
+      if (run.featherUsed < totalRevives) {
+        useGameStore.setState((s) => ({
+          run: {
+            ...s.run,
+            featherUsed: s.run.featherUsed + 1,
+            monstersDefeated: Math.floor(s.run.monstersDefeated * 0.5),
+          },
+        }));
+        playSfx('levelup');
+        return; // don't trigger defeat path — combat continues on next tick
+      }
+
       this.combatTimer?.remove();
       playSfx('defeat');
       const monsterLevel = this.cachedMonsterLevel;
-      const newBP = onDefeat(run.bp, monsterLevel, run.isHardMode);
+      // Phase E — undead_coin (no_death_loss): skip BP loss but defeat still ends the run.
+      const newBP = relicNoDeathLoss(meta)
+        ? run.bp
+        : onDefeat(run.bp, monsterLevel, run.isHardMode);
       useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
       useGameStore.getState().resetDungeon();
       if (isRunOver(newBP)) {
