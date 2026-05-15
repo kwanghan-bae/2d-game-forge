@@ -111,3 +111,17 @@ describe('calcFinalStat — ascTreeMult', () => {
     expect(boosted).toBe(15);   // floor(10 × 1.5)
   });
 });
+
+describe('calcFinalStat — 9th param metaMult', () => {
+  const baseEquip: EquipmentInstance[] = [];
+  it('defaults to 1.0 (backwards compat)', () => {
+    expect(calcFinalStat('atk', 0, 1, baseEquip, 1, 1, 1, 1)).toBe(
+      calcFinalStat('atk', 0, 1, baseEquip, 1, 1, 1, 1, 1),
+    );
+  });
+  it('multiplies final by metaMult', () => {
+    const a = calcFinalStat('atk', 0, 1, baseEquip, 1, 1, 1, 1, 1);
+    const b = calcFinalStat('atk', 0, 1, baseEquip, 1, 1, 1, 1, 2);
+    expect(b).toBe(a * 2);
+  });
+});

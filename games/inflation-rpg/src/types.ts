@@ -168,6 +168,7 @@ export interface RunState {
   goldThisRun: number;
   currentStage: number;
   dungeonRunMonstersDefeated: number;
+  featherUsed: number;               // Phase E — revive count used this run (feather_of_fate + phoenix_feather)
 }
 
 export interface MetaState {
@@ -212,6 +213,14 @@ export interface MetaState {
   ultSlotPicks: Record<string, [string | null, string | null, string | null, string | null]>;
   // Phase D — Modifiers reroll count
   rerollCount?: number;
+  // Phase E — Relics + Mythic + Ads
+  relicStacks: Record<RelicId, number>;
+  mythicOwned: MythicId[];
+  mythicEquipped: (MythicId | null)[];   // length 5, index = slot
+  mythicSlotCap: number;                 // 0..5, derived from ascTier
+  adsToday: number;
+  adsLastResetTs: number;
+  adsWatched: number;        // lifetime ad-watch count (v9 migration default 0)
 }
 
 // Phase G — Ascension Tree (성좌)
@@ -228,6 +237,18 @@ export type AscTreeNodeId =
   | 'effect_proc';
 
 export type AscTree = Record<AscTreeNodeId, number>;
+
+// Phase E — Relics + Mythic
+
+export type RelicId =
+  | 'warrior_banner' | 'dokkaebi_charm' | 'gold_coin' | 'soul_pearl'
+  | 'sands_of_time'  | 'fate_dice'      | 'moonlight_amulet' | 'eagle_arrow'
+  | 'undead_coin'    | 'feather_of_fate';
+
+export type MythicId = string;
+
+export type MythicEffectType =
+  | 'flat_mult' | 'cooldown_mult' | 'drop_mult' | 'xp_mult' | 'proc' | 'passive';
 
 export interface TutorialStep {
   id: string;
@@ -248,7 +269,8 @@ export type Screen =
   | 'game-over'
   | 'quests'
   | 'ascension'
-  | 'skill-progression';
+  | 'skill-progression'
+  | 'relics';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
@@ -342,6 +364,15 @@ export interface ActiveEffect {
 
 export interface EffectsState {
   active: Map<EffectId, ActiveEffect>;
+  permanentTriggers?: MythicProc[];     // Phase E — mythic procs
+}
+
+// ─── Mythic Proc (Phase E §T14) ───
+
+export interface MythicProc {
+  trigger: 'on_player_hit_received' | 'on_player_attack';
+  effect: 'lifesteal' | 'thorns' | 'sp_steal' | 'magic_burst';
+  value: number;
 }
 
 // ─── Modifier (Phase D §6.2) ───

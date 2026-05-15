@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createEffectsState, addEffect, tickEffects, evaluateTriggers,
   processIncomingDamage, getDebuffStatMultiplier, applyProcMult,
+  registerMythicProcs, evaluateMythicProcs,
   type CombatStateForEffects,
 } from './effects';
 import type { ActiveEffect } from '../types';
@@ -176,5 +177,76 @@ describe('applyProcMult (Phase G effect_proc hook)', () => {
 
   it('negative chance treated as 0', () => {
     expect(applyProcMult(-0.1, 5)).toBe(0);
+  });
+});
+
+describe('mythic proc triggers (Phase E)', () => {
+  it('registerMythicProcs sets permanentTriggers', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 },
+    ]);
+    expect(state.permanentTriggers).toHaveLength(1);
+  });
+
+  it('lifesteal: 20% of damage dealt converted to heal', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 },
+    ]);
+    const result = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100 });
+    expect(result.lifestealHeal).toBeCloseTo(20);
+    expect(result.thornsReflect).toBe(0);
+  });
+
+  it('thorns: 50% of received damage reflected', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_player_hit_received', effect: 'thorns', value: 0.5 },
+    ]);
+    const result = evaluateMythicProcs(state, 'on_player_hit_received', { damageReceived: 200 });
+    expect(result.thornsReflect).toBeCloseTo(100);
+  });
+
+  it('sp_steal: 30% of damage dealt as SP', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_player_attack', effect: 'sp_steal', value: 0.3 },
+    ]);
+    const result = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100 });
+    expect(result.spStealAmount).toBeCloseTo(30);
+  });
+
+  it('magic_burst: deterministic 50% bonus damage when proc rng < chance', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_player_attack', effect: 'magic_burst', value: 0.15 },
+    ]);
+    // rng = 0.05 < 0.15 → proc fires
+    const fired = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 200, rng: () => 0.05 });
+    expect(fired.magicBurstDamage).toBeCloseTo(100);  // 200 × 0.5
+    // rng = 0.5 > 0.15 → no proc
+    const missed = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 200, rng: () => 0.5 });
+    expect(missed.magicBurstDamage).toBe(0);
+  });
+
+  it('only matching trigger fires', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 },
+    ]);
+    const result = evaluateMythicProcs(state, 'on_player_hit_received', { damageReceived: 100 });
+    expect(result.lifestealHeal).toBe(0);
+  });
+
+  it('multiple procs aggregate', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 },
+      { trigger: 'on_player_attack', effect: 'sp_steal', value: 0.3 },
+    ]);
+    const result = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100 });
+    expect(result.lifestealHeal).toBeCloseTo(20);
+    expect(result.spStealAmount).toBeCloseTo(30);
   });
 });
