@@ -49,6 +49,7 @@ export const INITIAL_RUN: RunState = {
   goldThisRun: 0,
   currentStage: 1,
   dungeonRunMonstersDefeated: 0,
+  featherUsed: 0,
 };
 
 export const INITIAL_META: MetaState = {
@@ -232,11 +233,13 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     };
   }
   // Inject defaults for dungeon stage fields added in content-layer2
+  // Phase E — featherUsed default for revive counter
   const run = s.run ?? {};
   s.run = {
     ...run,
     currentStage: run.currentStage ?? 1,
     dungeonRunMonstersDefeated: run.dungeonRunMonstersDefeated ?? 0,
+    featherUsed: run.featherUsed ?? 0,
   } as RunState;
   // Inject defaults for quest fields added in content-layer3
   const meta = s.meta ?? {};

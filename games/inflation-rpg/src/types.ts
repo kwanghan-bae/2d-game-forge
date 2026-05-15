@@ -168,6 +168,7 @@ export interface RunState {
   goldThisRun: number;
   currentStage: number;
   dungeonRunMonstersDefeated: number;
+  featherUsed: number;               // Phase E — revive count used this run (feather_of_fate + phoenix_feather)
 }
 
 export interface MetaState {

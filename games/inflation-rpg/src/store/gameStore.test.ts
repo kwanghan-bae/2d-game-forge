@@ -1312,3 +1312,36 @@ describe('ascend() preserves Phase E meta fields', () => {
     expect(meta.mythicSlotCap).toBe(1);                       // ascTier 0 → 1 (nextTier)
   });
 });
+
+describe('Phase E — defeat passives (featherUsed + no_death_loss)', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('INITIAL_RUN.featherUsed === 0', () => {
+    expect(INITIAL_RUN.featherUsed).toBe(0);
+  });
+
+  it('startRun resets featherUsed to 0', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, featherUsed: 3 } }));
+    expect(useGameStore.getState().run.featherUsed).toBe(3);
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().run.featherUsed).toBe(0);
+  });
+
+  it('abandonRun resets featherUsed to 0', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, featherUsed: 4 } }));
+    useGameStore.getState().abandonRun();
+    expect(useGameStore.getState().run.featherUsed).toBe(0);
+  });
+
+  it('migration injects featherUsed default for legacy run state', () => {
+    // Legacy save without featherUsed (e.g., v10 or earlier).
+    const legacy: any = {
+      meta: { ascTier: 0, ascTree: {} },
+      run: { characterId: 'hwarang', level: 5, bp: 20 },
+    };
+    const result = runStoreMigration(legacy, 10) as any;
+    expect(result.run.featherUsed).toBe(0);
+  });
+});
