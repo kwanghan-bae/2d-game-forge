@@ -248,12 +248,6 @@ export type MythicId = string;
 export type MythicEffectType =
   | 'flat_mult' | 'cooldown_mult' | 'drop_mult' | 'xp_mult' | 'proc' | 'passive';
 
-export const EMPTY_RELIC_STACKS: Record<RelicId, number> = {
-  warrior_banner: 0, dokkaebi_charm: 0, gold_coin: 0, soul_pearl: 0,
-  sands_of_time: 0, fate_dice: 0, moonlight_amulet: 0, eagle_arrow: 0,
-  undead_coin: 0, feather_of_fate: 0,
-};
-
 export interface TutorialStep {
   id: string;
   screen: Screen;

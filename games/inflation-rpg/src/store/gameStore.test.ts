@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, runStoreMigration } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
-import { EMPTY_RELIC_STACKS, type EquipmentInstance } from '../types';
+import { type EquipmentInstance } from '../types';
+import { EMPTY_RELIC_STACKS } from '../data/relics';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
