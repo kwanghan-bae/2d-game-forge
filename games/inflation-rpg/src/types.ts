@@ -269,7 +269,8 @@ export type Screen =
   | 'game-over'
   | 'quests'
   | 'ascension'
-  | 'skill-progression';
+  | 'skill-progression'
+  | 'relics';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 

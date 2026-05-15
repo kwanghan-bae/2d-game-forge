@@ -40,4 +40,10 @@ describe('Town screen', () => {
     fireEvent.click(screen.getByTestId('town-skill-progression'));
     expect(useGameStore.getState().screen).toBe('skill-progression');
   });
+
+  it('보물고 button navigates to relics screen', () => {
+    render(<Town />);
+    fireEvent.click(screen.getByTestId('town-relics'));
+    expect(useGameStore.getState().screen).toBe('relics');
+  });
 });

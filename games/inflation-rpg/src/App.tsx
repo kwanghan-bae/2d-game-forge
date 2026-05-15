@@ -11,6 +11,7 @@ import { GameOver } from './screens/GameOver';
 import { Quests } from './screens/Quests';
 import { Ascension } from './screens/Ascension';
 import { SkillProgression } from './screens/SkillProgression';
+import Relics from './screens/Relics';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
@@ -55,6 +56,7 @@ export function App({ config }: AppProps) {
       {screen === 'quests'       && <Quests />}
       {screen === 'ascension'    && <Ascension />}
       {screen === 'skill-progression' && <SkillProgression />}
+      {screen === 'relics'       && <Relics />}
       <TutorialOverlay />
       <DungeonFinalClearedModal />
     </div>
