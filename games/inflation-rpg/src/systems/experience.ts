@@ -10,8 +10,9 @@ export function applyExpGain(
   gainedExp: number,
   isHard: boolean,
   bonusSpPerLevel = 0,
+  metaXpMult = 1,
 ): { newLevel: number; newExp: number; spGained: number } {
-  let exp = currentExp + gainedExp * (isHard ? 10 : 1);
+  let exp = currentExp + gainedExp * (isHard ? 10 : 1) * metaXpMult;
   let level = currentLevel;
   let spGained = 0;
 
