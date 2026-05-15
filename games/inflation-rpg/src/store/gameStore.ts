@@ -21,6 +21,14 @@ import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
 import { applyDropMult, applyMetaDropMult } from '../systems/economy';
 import { rollMythicDrop, awardMilestoneMythic, equipMythic, unequipMythic } from '../systems/mythics';
 import { MILESTONE_TIERS } from '../data/mythics';
+import { EMPTY_COMPASS_OWNED } from '../data/compass';
+import { DUNGEONS } from '../data/dungeons';
+import {
+  awardMiniBossCompass as awardMiniBossCompassSystem,
+  awardMajorBossCompass as awardMajorBossCompassSystem,
+  canFreeSelect,
+  pickRandomDungeon,
+} from '../systems/compass';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -108,6 +116,10 @@ export const INITIAL_META: MetaState = {
   adsToday: 0,
   adsLastResetTs: 0,
   adsWatched: 0,
+  // Phase Compass — 차원 나침반
+  compassOwned: { ...EMPTY_COMPASS_OWNED },
+  dungeonMiniBossesCleared: [],
+  dungeonMajorBossesCleared: [],
 };
 
 interface GameStore {
@@ -188,6 +200,11 @@ interface GameStore {
     reason?: 'max' | 'ap';
   };
   buyAscTreeNode: (id: AscTreeNodeId) => boolean;
+  // Phase Compass — store actions
+  awardMiniBossCompass: (dungeonId: string) => void;
+  awardMajorBossCompass: (dungeonId: string) => void;
+  pickAndSelectDungeon: () => string;
+  selectDungeonFree: (dungeonId: string) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -361,6 +378,13 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     m.mythicSlotCap  = m.mythicSlotCap  ?? computeMythicSlotCap(m.ascTier ?? 0);
     m.adsToday       = m.adsToday       ?? 0;
     m.adsLastResetTs = m.adsLastResetTs ?? Date.now();
+  }
+  // v11 → v12: Phase Compass — compass owned + dungeon clear tracking
+  if (fromVersion <= 11 && s.meta) {
+    const m = s.meta as MetaState;
+    m.compassOwned                = m.compassOwned                ?? { ...EMPTY_COMPASS_OWNED };
+    m.dungeonMiniBossesCleared    = m.dungeonMiniBossesCleared    ?? [];
+    m.dungeonMajorBossesCleared   = m.dungeonMajorBossesCleared   ?? [];
   }
   return s;
 }
@@ -1042,10 +1066,37 @@ export const useGameStore = create<GameStore>()(
           },
         }));
       },
+
+      // Phase Compass — store actions
+      awardMiniBossCompass: (dungeonId) =>
+        set((s) => {
+          const patch = awardMiniBossCompassSystem(s.meta, dungeonId);
+          return patch ? { meta: { ...s.meta, ...patch } } : {};
+        }),
+
+      awardMajorBossCompass: (dungeonId) =>
+        set((s) => {
+          const patch = awardMajorBossCompassSystem(s.meta, dungeonId);
+          return patch ? { meta: { ...s.meta, ...patch } } : {};
+        }),
+
+      pickAndSelectDungeon: () => {
+        const id = pickRandomDungeon(get().meta, DUNGEONS);
+        get().selectDungeon(id);
+        return id;
+      },
+
+      selectDungeonFree: (dungeonId) => {
+        if (!canFreeSelect(get().meta, dungeonId)) {
+          console.warn('selectDungeonFree denied: no compass for', dungeonId);
+          return;
+        }
+        get().selectDungeon(dungeonId);
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 11,
+      version: 12,
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

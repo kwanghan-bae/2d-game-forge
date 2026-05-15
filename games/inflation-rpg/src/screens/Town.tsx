@@ -1,21 +1,12 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
-import { getStartDungeons } from '../data/dungeons';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 import { ForgeButton } from '@/components/ui/forge-button';
-import { ForgePanel } from '@/components/ui/forge-panel';
-import type { Dungeon } from '../types';
+import { DungeonPickModal } from './DungeonPickModal';
 
 export function Town() {
   const setScreen = useGameStore((s) => s.setScreen);
-  const selectDungeon = useGameStore((s) => s.selectDungeon);
-
-  const dungeons = getStartDungeons();
-
-  const enterDungeon = (d: Dungeon) => {
-    selectDungeon(d.id);
-    setScreen('class-select');
-  };
+  const [pickModalOpen, setPickModalOpen] = React.useState(false);
 
   return (
     <ForgeScreen>
@@ -35,38 +26,17 @@ export function Town() {
           marginBottom: 'var(--forge-space-6)',
         }}
       >
-        던전을 선택하여 모험을 시작한다
+        차원 너머 던전으로 떠나라
       </p>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 'var(--forge-space-4)',
-          padding: 'var(--forge-space-4)',
-        }}
-      >
-        {dungeons.map((d) => (
-          <ForgePanel
-            key={d.id}
-            data-testid={`town-dungeon-${d.id}`}
-            style={{
-              borderLeft: `4px solid ${d.themeColor}`,
-              padding: 'var(--forge-space-4)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--forge-space-2)',
-              alignItems: 'center',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: '3rem' }}>{d.emoji}</div>
-            <div style={{ fontSize: 'var(--forge-font-lg)', fontWeight: 600 }}>
-              {d.nameKR}
-            </div>
-            <ForgeButton variant="primary" onClick={() => enterDungeon(d)}>입장</ForgeButton>
-          </ForgePanel>
-        ))}
+      <div style={{ textAlign: 'center', marginBottom: 'var(--forge-space-6)' }}>
+        <ForgeButton
+          variant="primary"
+          onClick={() => setPickModalOpen(true)}
+          data-testid="town-enter-dungeon"
+        >
+          🚪 던전 입장
+        </ForgeButton>
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 'var(--forge-space-4)' }}>
@@ -104,6 +74,10 @@ export function Town() {
           돌아가기
         </ForgeButton>
       </div>
+
+      {pickModalOpen && (
+        <DungeonPickModal onClose={() => setPickModalOpen(false)} />
+      )}
     </ForgeScreen>
   );
 }
