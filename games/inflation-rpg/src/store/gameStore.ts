@@ -367,6 +367,13 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     m.adsToday       = m.adsToday       ?? 0;
     m.adsLastResetTs = m.adsLastResetTs ?? Date.now();
   }
+  // v11 → v12: Phase Compass — compass owned + dungeon clear tracking
+  if (fromVersion <= 11 && s.meta) {
+    const m = s.meta as MetaState;
+    m.compassOwned                = m.compassOwned                ?? { ...EMPTY_COMPASS_OWNED };
+    m.dungeonMiniBossesCleared    = m.dungeonMiniBossesCleared    ?? [];
+    m.dungeonMajorBossesCleared   = m.dungeonMajorBossesCleared   ?? [];
+  }
   return s;
 }
 
@@ -1050,7 +1057,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 11,
+      version: 12,
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

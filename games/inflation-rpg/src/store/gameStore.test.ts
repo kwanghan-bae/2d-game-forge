@@ -1497,3 +1497,33 @@ describe('watchAdForRelic — store action', () => {
     expect(meta.adsWatched).toBe(1);
   });
 });
+
+describe('Phase Compass — v12 migration', () => {
+  it('runStoreMigration injects compassOwned + cleared lists from v8 envelope', () => {
+    const v8Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+      },
+    };
+    const migrated = runStoreMigration(v8Persisted, 8) as { meta: any };
+    expect(migrated.meta.compassOwned).toBeDefined();
+    expect(migrated.meta.compassOwned.plains_first).toBe(false);
+    expect(migrated.meta.compassOwned.omni).toBe(false);
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual([]);
+    expect(migrated.meta.dungeonMajorBossesCleared).toEqual([]);
+  });
+
+  it('runStoreMigration preserves existing compass data from v12 envelope', () => {
+    const v12Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        compassOwned: { plains_first: true, plains_second: false, forest_first: false, forest_second: false, mountains_first: false, mountains_second: false, omni: false },
+        dungeonMiniBossesCleared: ['plains'],
+        dungeonMajorBossesCleared: [],
+      },
+    };
+    const migrated = runStoreMigration(v12Persisted, 12) as { meta: any };
+    expect(migrated.meta.compassOwned.plains_first).toBe(true);
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual(['plains']);
+  });
+});
