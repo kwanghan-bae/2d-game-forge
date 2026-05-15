@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId } from '../types';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
 import {
   onBossKill as progressionOnBossKill,
@@ -15,7 +15,7 @@ import { getEquipmentBase } from '../data/equipment';
 import { rollModifiers, rerollCost, rerollOneSlot as rerollOneSlotFn, rerollAllSlots as rerollAllSlotsFn } from '../systems/modifiers';
 import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
 import { getUltById } from '../data/jobskills';
-import { EMPTY_ASC_TREE } from '../data/ascTree';
+import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -161,6 +161,14 @@ interface GameStore {
   awardJpOnCharLvMilestone: (charId: string) => void;
   levelUpSkill: (charId: string, skillId: string) => void;
   pickUltSlot: (charId: string, slotIndex: 0 | 1 | 2 | 3, ultSkillId: string | null) => void;
+  // Phase G — Ascension Tree
+  canBuyAscTreeNode: (id: AscTreeNodeId) => {
+    ok: boolean;
+    cost: number;
+    currentLv: number;
+    reason?: 'max' | 'ap';
+  };
+  buyAscTreeNode: (id: AscTreeNodeId) => boolean;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -573,6 +581,36 @@ export const useGameStore = create<GameStore>()(
             },
           };
         });
+        return true;
+      },
+
+      canBuyAscTreeNode: (id) => {
+        const s = get();
+        const currentLv = s.meta.ascTree[id];
+        const def = ASC_TREE_NODES[id];
+        if (currentLv >= def.maxLevel) {
+          return { ok: false, cost: 0, currentLv, reason: 'max' };
+        }
+        const cost = nodeCost(currentLv);
+        if (s.meta.ascPoints < cost) {
+          return { ok: false, cost, currentLv, reason: 'ap' };
+        }
+        return { ok: true, cost, currentLv };
+      },
+
+      buyAscTreeNode: (id) => {
+        const check = get().canBuyAscTreeNode(id);
+        if (!check.ok) return false;
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            ascPoints: s.meta.ascPoints - check.cost,
+            ascTree: {
+              ...s.meta.ascTree,
+              [id]: s.meta.ascTree[id] + 1,
+            },
+          },
+        }));
         return true;
       },
 

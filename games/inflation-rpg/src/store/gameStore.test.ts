@@ -1092,3 +1092,64 @@ describe('GameStore — Phase D rerollOneSlot / rerollAllSlots', () => {
     expect(meta.crackStones).toBe(3000 - 1000 - 1500);
   });
 });
+
+describe('AscTree actions (Phase G)', () => {
+  beforeEach(() => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascPoints: 10,
+        ascTree: {
+          hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+          dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+          mod_magnitude: 0, effect_proc: 0,
+        },
+      },
+    }));
+  });
+
+  it('canBuyAscTreeNode: ok with sufficient AP', () => {
+    const r = useGameStore.getState().canBuyAscTreeNode('hp_pct');
+    expect(r.ok).toBe(true);
+    expect(r.cost).toBe(1);
+    expect(r.currentLv).toBe(0);
+  });
+
+  it('canBuyAscTreeNode: rejects when AP insufficient', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascPoints: 0 } }));
+    const r = useGameStore.getState().canBuyAscTreeNode('hp_pct');
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('ap');
+  });
+
+  it('canBuyAscTreeNode: rejects when at max lv', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, gold_drop: 5 } },
+    }));
+    const r = useGameStore.getState().canBuyAscTreeNode('gold_drop');
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('max');
+  });
+
+  it('buyAscTreeNode: success deducts AP + bumps lv', () => {
+    const ok = useGameStore.getState().buyAscTreeNode('hp_pct');
+    expect(ok).toBe(true);
+    expect(useGameStore.getState().meta.ascPoints).toBe(9);
+    expect(useGameStore.getState().meta.ascTree.hp_pct).toBe(1);
+  });
+
+  it('buyAscTreeNode: returns false when blocked', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascPoints: 0 } }));
+    const ok = useGameStore.getState().buyAscTreeNode('hp_pct');
+    expect(ok).toBe(false);
+  });
+
+  it('buyAscTreeNode: cost grows with lv (lv 3 → 4 = 4 AP)', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascPoints: 100, ascTree: { ...s.meta.ascTree, hp_pct: 3 } },
+    }));
+    useGameStore.getState().buyAscTreeNode('hp_pct');
+    expect(useGameStore.getState().meta.ascPoints).toBe(96);
+    expect(useGameStore.getState().meta.ascTree.hp_pct).toBe(4);
+  });
+});
