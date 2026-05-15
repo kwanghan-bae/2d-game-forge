@@ -230,7 +230,7 @@ export class BattleScene extends Phaser.Scene {
       const expGain = Math.floor(run.level * 10);
       const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1));
       const goldGain = applyDropMult(rawGoldGain, 0.10, meta.ascTree.gold_drop);
-      const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode);
+      const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode, meta.ascTree.sp_per_lvl);
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));

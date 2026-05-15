@@ -217,6 +217,7 @@ export const useGameStore = create<GameStore>()(
             characterId,
             isHardMode,
             currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
+            bp: STARTING_BP + s.meta.ascTree.bp_start,   // Phase G — bp_start node
           },
           screen: 'dungeon-floors',
         })),
