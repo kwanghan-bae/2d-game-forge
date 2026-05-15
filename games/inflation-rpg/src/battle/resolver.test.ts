@@ -61,3 +61,27 @@ describe('pure resolver matches inline expectations', () => {
     expect(fromResolver).toBe(Math.floor(enemyATK * (1 - f.reduction)));
   });
 });
+
+describe('resolvePlayerHit — critMultBonus (Phase G crit_damage)', () => {
+  it('default critMultBonus 0 = baseline crit damage', () => {
+    const baseline = resolvePlayerHit({ playerATK: 100, crit: true, rngRoll: 0.5 });
+    const same = resolvePlayerHit({ playerATK: 100, crit: true, rngRoll: 0.5, critMultBonus: 0 });
+    expect(same).toBe(baseline);
+  });
+
+  it('critMultBonus 1.0 increases crit damage', () => {
+    const baseline = resolvePlayerHit({ playerATK: 100, crit: true, rngRoll: 0.5 });
+    const boosted = resolvePlayerHit({ playerATK: 100, crit: true, rngRoll: 0.5, critMultBonus: 1.0 });
+    // rngRoll=0.5 → rngMul = 0.9 + 0.5 × 0.2 = 1.0
+    // baseline = floor(100 × 2.4 × 1.0) = 240
+    // boosted  = floor(100 × (2.4 + 1.0) × 1.0) = floor(100 × 3.4 × 1.0) = 340
+    expect(baseline).toBe(240);
+    expect(boosted).toBe(340);
+  });
+
+  it('critMultBonus ignored when not crit', () => {
+    const noCrit = resolvePlayerHit({ playerATK: 100, crit: false, rngRoll: 0.5 });
+    const ignored = resolvePlayerHit({ playerATK: 100, crit: false, rngRoll: 0.5, critMultBonus: 5 });
+    expect(ignored).toBe(noCrit);
+  });
+});
