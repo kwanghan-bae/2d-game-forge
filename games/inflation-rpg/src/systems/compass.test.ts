@@ -40,7 +40,7 @@ describe('awardMiniBossCompass', () => {
   it('does not set omni when only 2/3 cleared', () => {
     const m = baseMeta();
     const patch = awardMiniBossCompass(m, 'plains');
-    expect(patch!.compassOwned!.omni).toBeUndefined();
+    expect(patch!.compassOwned!.omni).toBe(false);
   });
 });
 
@@ -64,6 +64,6 @@ describe('awardMajorBossCompass', () => {
     m.dungeonMajorBossesCleared = ['plains', 'forest'];
     m.compassOwned = { ...EMPTY_COMPASS_OWNED, plains_second: true, forest_second: true };
     const patch = awardMajorBossCompass(m, 'mountains');
-    expect(patch!.compassOwned!.omni).toBeUndefined();
+    expect(patch!.compassOwned!.omni).toBe(false);
   });
 });

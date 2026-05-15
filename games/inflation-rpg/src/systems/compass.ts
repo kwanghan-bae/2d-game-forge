@@ -1,10 +1,10 @@
 import { DUNGEONS } from '../data/dungeons';
 import { getCompassByDungeon } from '../data/compass';
-import type { MetaState, CompassId } from '../types';
+import type { MetaState } from '../types';
 
 /**
- * Returns a partial-state patch (delta only).
- * `compassOwned` contains only the newly-set keys; the caller merges with existing state.
+ * Returns a partial-state patch with the FULL new compassOwned object (spec §3.2).
+ * Full spread ensures Task 5 store's shallow merge does not lose existing compass data.
  * Returns null if the dungeon was already cleared (idempotent guard).
  */
 export function awardMiniBossCompass(
@@ -15,16 +15,18 @@ export function awardMiniBossCompass(
   const compassId = getCompassByDungeon(dungeonId, 1);
   const newCleared = [...meta.dungeonMiniBossesCleared, dungeonId];
   const allClear = newCleared.length >= DUNGEONS.length;
-  const compassDelta: Partial<Record<CompassId, boolean>> = { [compassId]: true };
-  if (allClear) compassDelta.omni = true;
   return {
-    compassOwned: compassDelta as Record<CompassId, boolean>,
+    compassOwned: {
+      ...meta.compassOwned,
+      [compassId]: true,
+      ...(allClear ? { omni: true } : {}),
+    },
     dungeonMiniBossesCleared: newCleared,
   };
 }
 
 /**
- * Returns a partial-state patch (delta only).
+ * Returns a partial-state patch with the FULL new compassOwned object (spec §3.2).
  * Major-boss compasses never trigger the omni bonus.
  * Returns null if the dungeon was already cleared (idempotent guard).
  */
@@ -35,7 +37,10 @@ export function awardMajorBossCompass(
   if (meta.dungeonMajorBossesCleared.includes(dungeonId)) return null;
   const compassId = getCompassByDungeon(dungeonId, 2);
   return {
-    compassOwned: { [compassId]: true } as Record<CompassId, boolean>,
+    compassOwned: {
+      ...meta.compassOwned,
+      [compassId]: true,
+    },
     dungeonMajorBossesCleared: [...meta.dungeonMajorBossesCleared, dungeonId],
   };
 }
