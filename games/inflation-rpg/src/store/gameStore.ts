@@ -79,6 +79,19 @@ export const INITIAL_META: MetaState = {
   crackStones: 0,
   ascTier: 0,
   ascPoints: 0,
+  // Phase G — Ascension Tree
+  ascTree: {
+    hp_pct: 0,
+    atk_pct: 0,
+    gold_drop: 0,
+    bp_start: 0,
+    sp_per_lvl: 0,
+    dungeon_currency: 0,
+    crit_damage: 0,
+    asc_accel: 0,
+    mod_magnitude: 0,
+    effect_proc: 0,
+  },
   // Phase F-2+3 — JP / Skill Progression
   jp: {},
   jpEarnedTotal: {},
