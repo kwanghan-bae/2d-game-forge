@@ -196,6 +196,7 @@ export function Inventory() {
                   onOpenReroll={() => setRerollFor({ inst: item, slot: activeSlot })}
                   dr={meta.dr}
                   enhanceStones={meta.enhanceStones}
+                  modMagnitudeLv={meta.ascTree.mod_magnitude}
                 />
               );
             })}
@@ -301,7 +302,7 @@ export function Inventory() {
   );
 }
 
-function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, onEquip, onUnequip, onSell, onEnhance, onOpenReroll, dr, enhanceStones }: {
+function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, onEquip, onUnequip, onSell, onEnhance, onOpenReroll, dr, enhanceStones, modMagnitudeLv }: {
   inst: EquipmentInstance;
   isEquipped: boolean;
   canEquip: boolean;
@@ -314,6 +315,7 @@ function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, o
   onOpenReroll: () => void;
   dr: number;
   enhanceStones: number;
+  modMagnitudeLv: number;
 }) {
   const base = getEquipmentBase(inst.baseId);
   if (!base) return null;
@@ -407,7 +409,7 @@ function EquipmentCard({ inst, isEquipped, canEquip, expanded, onToggleExpand, o
             <div data-testid="modifier-list" style={{ marginTop: 8, borderTop: '1px solid var(--forge-border)', paddingTop: 6 }}>
               <div style={{ fontSize: 11, color: 'var(--forge-text-muted)', marginBottom: 4 }}>수식어</div>
               {inst.modifiers.map((mod) => {
-                const magnitude = getModifierMagnitude(mod, inst, base.rarity);
+                const magnitude = getModifierMagnitude(mod, inst, base.rarity, modMagnitudeLv);
                 return (
                   <div
                     key={mod.id}

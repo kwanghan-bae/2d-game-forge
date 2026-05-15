@@ -40,8 +40,14 @@ export function rollModifiers(
   return result;
 }
 
-export function getModifierMagnitude(modifier: Modifier, instance: EquipmentInstance, rarity: EquipmentRarity): number {
-  return modifier.baseValue * enhanceMultiplier(rarity, instance.enhanceLv);
+export function getModifierMagnitude(
+  modifier: Modifier,
+  instance: EquipmentInstance,
+  rarity: EquipmentRarity,
+  modMagnitudeLv = 0,
+): number {
+  const base = modifier.baseValue * enhanceMultiplier(rarity, instance.enhanceLv);
+  return base * (1 + 0.05 * modMagnitudeLv);
 }
 
 export function rerollCost(rerollCountSoFar: number, mode: 'one' | 'all'): { dr: number; stones: number } {
