@@ -956,6 +956,47 @@ describe('persist v8 → v9 migration', () => {
   });
 });
 
+describe('persist v9 → v10 migration (Phase G)', () => {
+  it('legacy meta without ascTree gets EMPTY_ASC_TREE injected', () => {
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const legacy = {
+      meta: {
+        ascTier: 2,
+        ascPoints: 3,
+        // ascTree missing — pre v10
+      },
+      run: null,
+      screen: 'main',
+    };
+    const migrated = migrate(legacy, 9) as any;
+    expect(migrated.meta.ascTree).toEqual({
+      hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+      dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+      mod_magnitude: 0, effect_proc: 0,
+    });
+    expect(migrated.meta.ascPoints).toBe(3);
+    expect(migrated.meta.ascTier).toBe(2);
+  });
+
+  it('preserves existing ascTree when present', () => {
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const v10State = {
+      meta: {
+        ascTier: 0, ascPoints: 0,
+        ascTree: {
+          hp_pct: 3, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+          dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+          mod_magnitude: 0, effect_proc: 0,
+        },
+      },
+      run: null,
+      screen: 'main',
+    };
+    const migrated = migrate(v10State, 10) as any;
+    expect(migrated.meta.ascTree.hp_pct).toBe(3);
+  });
+});
+
 describe('GameStore — Phase D rerollOneSlot / rerollAllSlots', () => {
   const MOCK_MODIFIER = {
     id: 'mod_crit_damage',
