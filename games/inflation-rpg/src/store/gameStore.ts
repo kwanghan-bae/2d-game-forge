@@ -21,6 +21,7 @@ import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
 import { applyDropMult, applyMetaDropMult } from '../systems/economy';
 import { rollMythicDrop, awardMilestoneMythic, equipMythic, unequipMythic } from '../systems/mythics';
 import { MILESTONE_TIERS } from '../data/mythics';
+import { EMPTY_COMPASS_OWNED } from '../data/compass';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -108,6 +109,10 @@ export const INITIAL_META: MetaState = {
   adsToday: 0,
   adsLastResetTs: 0,
   adsWatched: 0,
+  // Phase Compass — 차원 나침반
+  compassOwned: { ...EMPTY_COMPASS_OWNED },
+  dungeonMiniBossesCleared: [],
+  dungeonMajorBossesCleared: [],
 };
 
 interface GameStore {
