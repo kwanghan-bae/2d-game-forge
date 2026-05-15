@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { RELICS, ALL_RELIC_IDS, getEffectiveStack } from '../data/relics';
+import { MYTHICS } from '../data/mythics';
 import { isAtCap } from '../systems/relics';
 import { canWatchAd, AD_COOLDOWN_MS, AD_DAILY_CAP } from '../systems/ads';
 import type { RelicId } from '../types';
@@ -61,9 +62,73 @@ export default function Relics() {
           </div>
         </>
       )}
-      {tab === 'mythic' && <div data-testid="mythic-tab-placeholder">Mythic (Task 21)</div>}
+      {tab === 'mythic' && <MythicTab />}
       {adRunning && <AdWatchModal relicId={adRunning} />}
     </div>
+  );
+}
+
+function MythicTab() {
+  const meta = useGameStore((s) => s.meta);
+  const equipMythicAction = useGameStore((s) => s.equipMythicAction);
+  const unequipMythicAction = useGameStore((s) => s.unequipMythicAction);
+
+  return (
+    <>
+      <div data-testid="mythic-slot-info">슬롯 ({meta.mythicSlotCap}/5)</div>
+      <div data-testid="mythic-slot-grid" style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const id = meta.mythicEquipped[i];
+          const locked = i >= meta.mythicSlotCap;
+          if (locked) {
+            return (
+              <div key={i} data-testid={`mythic-slot-${i}-locked`}
+                style={{ width: 58, height: 58, border: '1px dashed', display: 'grid', placeItems: 'center' }}>
+                🔒
+              </div>
+            );
+          }
+          if (id) {
+            const def = MYTHICS[id];
+            return (
+              <div key={i} data-testid={`mythic-slot-${i}-equipped`}
+                onClick={() => unequipMythicAction(i)}
+                style={{ width: 58, height: 58, border: '1px solid var(--forge-accent)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
+                {def.emoji}
+              </div>
+            );
+          }
+          return (
+            <div key={i} data-testid={`mythic-slot-${i}-empty`}
+              style={{ width: 58, height: 58, border: '1px dashed' }} />
+          );
+        })}
+      </div>
+      <div data-testid="mythic-owned-count">보유 ({meta.mythicOwned.length}/30)</div>
+      <div data-testid="mythic-owned-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+        {meta.mythicOwned.map((id) => {
+          const def = MYTHICS[id];
+          const equipped = meta.mythicEquipped.includes(id);
+          return (
+            <div key={id} data-testid={`mythic-card-${id}`}
+              style={{ padding: 8, border: '1px solid', opacity: equipped ? 0.5 : 1 }}>
+              <div>{def.emoji} {def.nameKR}</div>
+              <div style={{ fontSize: 11 }}>{def.descriptionKR}</div>
+              {!equipped && (
+                <button
+                  data-testid={`mythic-equip-btn-${id}`}
+                  onClick={() => {
+                    const firstEmpty = meta.mythicEquipped.findIndex((slot, i) => slot === null && i < meta.mythicSlotCap);
+                    if (firstEmpty >= 0) equipMythicAction(firstEmpty, id);
+                  }}>
+                  장착
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
