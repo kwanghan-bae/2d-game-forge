@@ -38,9 +38,8 @@ export interface SweepRow {
 
 // milestone 마다 typical modifier 추정 — deterministic seed (s.hours 기반).
 // weapon / armor / accessory 각 1개 롤 (3 슬롯 단순화; 실제 장비는 최대 4 슬롯).
-// NOTE: 현재 shield/reflect/trigger 는 simulateFloor 가 processIncomingDamage /
-// evaluateTriggers 를 호출하지 않아 실제 전투 수치에 영향 없음 (의도적 한계).
-// Task 14 에서 적 공격 경로에 processIncomingDamage 를 연결해야 실질 반영된다.
+// RESOLVED Task 12 — simulateFloor 가 processIncomingDamage 를 호출하므로
+// shield/reflect modifier 가 실제 전투 수치에 반영된다.
 function sampleMilestoneModifiers(s: MilestoneState): Modifier[] {
   const seed = s.hours * 1000;
   const seededRng = createSeededRng(seed);
