@@ -94,3 +94,20 @@ describe('Stats System', () => {
     expect(calcFinalStat('atk', 0, 1.0, noEquip, 1, 1)).toBe(10);
   });
 });
+
+describe('calcFinalStat — ascTreeMult', () => {
+  it('ascTreeMult = 1 (default) yields baseline result', () => {
+    const baseline = calcFinalStat('atk', 0, 1, [], 1, 1, 1);
+    const explicit = calcFinalStat('atk', 0, 1, [], 1, 1, 1, 1);
+    expect(explicit).toBe(baseline);
+  });
+
+  it('ascTreeMult 1.5 scales final result', () => {
+    // base ATK 10, no SP / equipment / charMult / baseAbility / charLevel / ascTier
+    // → baseline = floor(10) = 10
+    const baseline = calcFinalStat('atk', 0, 1, [], 1, 1, 1, 1);
+    const boosted = calcFinalStat('atk', 0, 1, [], 1, 1, 1, 1.5);
+    expect(baseline).toBe(10);
+    expect(boosted).toBe(15);   // floor(10 × 1.5)
+  });
+});
