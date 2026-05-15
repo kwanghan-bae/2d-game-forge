@@ -1614,3 +1614,42 @@ describe('Phase Compass — store actions', () => {
     expect(useGameStore.getState().run.currentDungeonId).toBe('mountains');
   });
 });
+
+describe('Phase Compass — ascend preserves compass + cleared lists', () => {
+  it('keeps compassOwned / dungeonMini/MajorBossesCleared after ascend', () => {
+    // Seed: meet ascend prereqs + own compass
+    useGameStore.setState((s) => ({
+      run: { ...INITIAL_RUN },
+      meta: {
+        ...s.meta,
+        crackStones: 99999,
+        ascTier: 0,
+        ascPoints: 0,
+        dungeonFinalsCleared: ['plains', 'forest', 'mountains'],   // ≥3 finals for tier 1
+        compassOwned: {
+          plains_first: true,
+          plains_second: false,
+          forest_first: true,
+          forest_second: true,
+          mountains_first: false,
+          mountains_second: false,
+          omni: false,
+        },
+        dungeonMiniBossesCleared: ['plains', 'forest'],
+        dungeonMajorBossesCleared: ['forest'],
+      },
+    }));
+
+    const ok = useGameStore.getState().ascend();
+    expect(ok).toBe(true);
+
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(1);
+    // Compass + clear lists preserved
+    expect(meta.compassOwned.plains_first).toBe(true);
+    expect(meta.compassOwned.forest_first).toBe(true);
+    expect(meta.compassOwned.forest_second).toBe(true);
+    expect(meta.dungeonMiniBossesCleared).toEqual(['plains', 'forest']);
+    expect(meta.dungeonMajorBossesCleared).toEqual(['forest']);
+  });
+});
