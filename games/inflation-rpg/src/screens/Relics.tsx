@@ -2,6 +2,8 @@ import * as React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { RELICS, ALL_RELIC_IDS, getEffectiveStack } from '../data/relics';
 import { MYTHICS } from '../data/mythics';
+import { COMPASS_ITEMS, ALL_COMPASS_IDS } from '../data/compass';
+import { getDungeonById } from '../data/dungeons';
 import { isAtCap } from '../systems/relics';
 import { canWatchAd, AD_COOLDOWN_MS, AD_DAILY_CAP } from '../systems/ads';
 import type { RelicId } from '../types';
@@ -9,7 +11,7 @@ import type { RelicId } from '../types';
 export default function Relics() {
   const meta = useGameStore((s) => s.meta);
   const watchAdForRelic = useGameStore((s) => s.watchAdForRelic);
-  const [tab, setTab] = React.useState<'stack' | 'mythic'>('stack');
+  const [tab, setTab] = React.useState<'stack' | 'mythic' | 'compass'>('stack');
   const [adRunning, setAdRunning] = React.useState<RelicId | null>(null);
 
   const onWatchAd = (relicId: RelicId) => {
@@ -35,6 +37,13 @@ export default function Relics() {
           onClick={() => setTab('mythic')}
           style={{ background: tab === 'mythic' ? 'var(--forge-accent)' : 'var(--forge-panel)' }}>
           Mythic
+        </button>
+        <button
+          onClick={() => setTab('compass')}
+          data-testid="relics-tab-compass"
+          style={{ background: tab === 'compass' ? 'var(--forge-accent)' : 'var(--forge-panel)' }}
+        >
+          🧭 나침반
         </button>
       </div>
       {tab === 'stack' && (
@@ -63,7 +72,61 @@ export default function Relics() {
         </>
       )}
       {tab === 'mythic' && <MythicTab />}
+      {tab === 'compass' && <CompassTab />}
       {adRunning && <AdWatchModal relicId={adRunning} />}
+    </div>
+  );
+}
+
+function CompassTab() {
+  const meta = useGameStore((s) => s.meta);
+  return (
+    <div data-testid="compass-tab">
+      <p style={{ fontSize: 'var(--forge-font-sm)', marginBottom: 12, color: 'var(--forge-text-secondary)' }}>
+        mini-boss / major-boss 첫 처치 시 획득. 던전 추첨 가중치 ×3 또는 자유 선택 부여.
+      </p>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {ALL_COMPASS_IDS.map((id) => {
+          const def = COMPASS_ITEMS[id];
+          const owned = meta.compassOwned[id];
+          const hint =
+            id === 'omni'
+              ? '모든 던전 mini-boss 첫 처치 시 자동 부여'
+              : def.tier === 1
+                ? `${getDungeonById(def.dungeonId!)?.nameKR ?? def.dungeonId} 던전 floor 5 mini-boss 첫 처치`
+                : `${getDungeonById(def.dungeonId!)?.nameKR ?? def.dungeonId} 던전 floor 10 major-boss 첫 처치`;
+          return (
+            <div
+              key={id}
+              data-testid={`compass-row-${id}`}
+              style={{
+                padding: 12,
+                border: '1px solid var(--forge-border)',
+                borderRadius: 8,
+                opacity: owned ? 1 : 0.55,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1.5rem' }}>{def.emoji}</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{def.nameKR}</div>
+                  <div style={{ fontSize: 'var(--forge-font-sm)', color: 'var(--forge-text-secondary)' }}>
+                    {def.descriptionKR}
+                  </div>
+                </div>
+                <div style={{ marginLeft: 'auto', fontSize: 'var(--forge-font-sm)' }}>
+                  {owned ? '✓ 보유' : '미보유'}
+                </div>
+              </div>
+              {!owned && (
+                <div style={{ fontSize: 'var(--forge-font-xs)', marginTop: 6, color: 'var(--forge-text-secondary)' }}>
+                  {hint}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
