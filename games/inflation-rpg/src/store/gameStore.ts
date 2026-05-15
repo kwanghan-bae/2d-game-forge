@@ -16,6 +16,7 @@ import { rollModifiers, rerollCost, rerollOneSlot as rerollOneSlotFn, rerollAllS
 import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
 import { getUltById } from '../data/jobskills';
 import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
+import { applyDropMult } from '../systems/economy';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -275,9 +276,10 @@ export const useGameStore = create<GameStore>()(
           const hardKilled = s.run.isHardMode
             ? progressionOnBossKill(bossId, s.meta.hardBossesKilled, 9)
             : s.meta.hardBossesKilled;
-          const drGained = bpReward * 100;
+          const dungLv = s.meta.ascTree.dungeon_currency;
+          const drGained = applyDropMult(bpReward * 100, 0.10, dungLv);
           // Spec §2 TODO-a: final boss drops 50 enhanceStones (격상 5 → 50)
-          const stonesGained = bossType === 'final' ? 50 : bpReward;
+          const stonesGained = applyDropMult(bossType === 'final' ? 50 : bpReward, 0.10, dungLv);
           return {
             run: {
               ...s.run,
@@ -353,7 +355,8 @@ export const useGameStore = create<GameStore>()(
       })),
 
       incrementDungeonKill: (monsterLevel) => set((s) => {
-        const drGained = Math.max(1, Math.round(monsterLevel * 0.5));
+        const dungLv = s.meta.ascTree.dungeon_currency;
+        const drGained = applyDropMult(Math.max(1, Math.round(monsterLevel * 0.5)), 0.10, dungLv);
         return {
           run: {
             ...s.run,

@@ -1194,3 +1194,44 @@ describe('canAscend — asc_accel discount (Phase G)', () => {
     expect(r.cost).toBe(3);   // ceil(25 × 0.1) = 3
   });
 });
+
+describe('Economy multipliers (Phase G)', () => {
+  beforeEach(() => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        dr: 0, enhanceStones: 0,
+        ascTree: {
+          hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+          dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+          mod_magnitude: 0, effect_proc: 0,
+        },
+      },
+      run: { ...useGameStore.getState().run, isHardMode: false },
+    }));
+  });
+
+  it('incrementDungeonKill: dungeon_currency 0 = baseline DR', () => {
+    useGameStore.getState().incrementDungeonKill(10);   // monsterLevel 10 → round(0.5×10) = 5
+    expect(useGameStore.getState().meta.dr).toBe(5);
+  });
+
+  it('incrementDungeonKill: dungeon_currency 5 = +50% DR', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, dungeon_currency: 5 } },
+    }));
+    useGameStore.getState().incrementDungeonKill(10);   // floor(5 × 1.5) = 7
+    expect(useGameStore.getState().meta.dr).toBe(7);
+  });
+
+  it('bossDrop: dungeon_currency scales DR + stones', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, dungeon_currency: 5 } },
+    }));
+    // bossType='mini', bpReward=5 → drGained = 5*100 = 500, stones = 5
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
+    // ×1.5 → DR 750, stones floor(5×1.5)=7
+    expect(useGameStore.getState().meta.dr).toBe(750);
+    expect(useGameStore.getState().meta.enhanceStones).toBe(7);
+  });
+});
