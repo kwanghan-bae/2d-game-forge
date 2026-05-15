@@ -17,7 +17,7 @@ import { rollModifiers, rerollCost, rerollOneSlot as rerollOneSlotFn, rerollAllS
 import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
 import { getUltById } from '../data/jobskills';
 import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
-import { applyDropMult } from '../systems/economy';
+import { applyDropMult, applyMetaDropMult } from '../systems/economy';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -430,9 +430,12 @@ export const useGameStore = create<GameStore>()(
             ? progressionOnBossKill(bossId, s.meta.hardBossesKilled, 9)
             : s.meta.hardBossesKilled;
           const dungLv = s.meta.ascTree.dungeon_currency;
-          const drGained = applyDropMult(bpReward * 100, 0.10, dungLv);
+          // DR has no ascTree drop node; applyMetaDropMult adds mythic+relic on top of dungLv scaling.
+          const drGained = applyMetaDropMult(applyDropMult(bpReward * 100, 0.10, dungLv), 'dr', s.meta);
           // Spec §2 TODO-a: final boss drops 50 enhanceStones (격상 5 → 50)
-          const stonesGained = applyDropMult(bossType === 'final' ? 50 : bpReward, 0.10, dungLv);
+          // Stones use 'dungeon_currency' kind — applyMetaDropMult already applies ascTree.dungeon_currency,
+          // so call it directly (no chain) to avoid double-counting.
+          const stonesGained = applyMetaDropMult(bossType === 'final' ? 50 : bpReward, 'dungeon_currency', s.meta);
           return {
             run: {
               ...s.run,
@@ -509,7 +512,12 @@ export const useGameStore = create<GameStore>()(
 
       incrementDungeonKill: (monsterLevel) => set((s) => {
         const dungLv = s.meta.ascTree.dungeon_currency;
-        const drGained = applyDropMult(Math.max(1, Math.round(monsterLevel * 0.5)), 0.10, dungLv);
+        // DR has no ascTree drop node; applyMetaDropMult adds mythic+relic on top of dungLv scaling.
+        const drGained = applyMetaDropMult(
+          applyDropMult(Math.max(1, Math.round(monsterLevel * 0.5)), 0.10, dungLv),
+          'dr',
+          s.meta,
+        );
         return {
           run: {
             ...s.run,
