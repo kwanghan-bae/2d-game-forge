@@ -58,7 +58,7 @@ export function getDungeonWeight(meta: MetaState, dungeonId: string): number {
  * Requires either the omni compass or the second-tier compass for this specific dungeon.
  */
 export function canFreeSelect(meta: MetaState, dungeonId: string): boolean {
-  return !!(meta.compassOwned.omni || meta.compassOwned[getCompassByDungeon(dungeonId, 2)]);
+  return meta.compassOwned.omni || meta.compassOwned[getCompassByDungeon(dungeonId, 2)];
 }
 
 /**
