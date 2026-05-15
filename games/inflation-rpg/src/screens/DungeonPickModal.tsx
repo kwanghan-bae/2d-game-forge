@@ -20,8 +20,7 @@ export function DungeonPickModal({ onClose }: Props) {
 
   React.useEffect(() => {
     setPickedId(pickAndSelect());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pickAndSelect]);
 
   const picked = pickedId ? getDungeonById(pickedId) : null;
   const canAnyFree = hasAnyFreeSelect(meta);
