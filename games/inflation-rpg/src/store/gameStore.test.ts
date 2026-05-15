@@ -3,6 +3,7 @@ import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, runStoreMigrati
 import { STARTING_BP } from '../systems/bp';
 import { type EquipmentInstance } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
+import { AD_DAILY_CAP } from '../systems/ads';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
@@ -1462,5 +1463,37 @@ describe('bossDrop — Phase E mythic drop (final only)', () => {
     useGameStore.getState().bossDrop('test-boss', 5, 'mini');
     // tier 7 (>=5, <10) → 3 slots per computeMythicSlotCap
     expect(useGameStore.getState().meta.mythicSlotCap).toBe(3);
+  });
+});
+
+describe('watchAdForRelic — store action', () => {
+  beforeEach(() => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, adsToday: 0, adsWatched: 0, relicStacks: { ...EMPTY_RELIC_STACKS }, adsLastResetTs: Date.now() },
+    }));
+  });
+  it('increments relic stack + ad counters when ok', () => {
+    useGameStore.getState().watchAdForRelic('warrior_banner');
+    const meta = useGameStore.getState().meta;
+    expect(meta.relicStacks.warrior_banner).toBe(1);
+    expect(meta.adsToday).toBe(1);
+    expect(meta.adsWatched).toBe(1);
+  });
+  it('respects daily cap', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, adsToday: AD_DAILY_CAP } }));
+    useGameStore.getState().watchAdForRelic('warrior_banner');
+    const meta = useGameStore.getState().meta;
+    expect(meta.adsToday).toBe(AD_DAILY_CAP);   // unchanged
+    expect(meta.relicStacks.warrior_banner).toBe(0);   // unchanged
+  });
+  it('cap-reached relic: stack stays but counter increments', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, relicStacks: { ...EMPTY_RELIC_STACKS, undead_coin: 1 } },
+    }));
+    useGameStore.getState().watchAdForRelic('undead_coin');
+    const meta = useGameStore.getState().meta;
+    expect(meta.relicStacks.undead_coin).toBe(1);   // binary cap
+    expect(meta.adsToday).toBe(1);
+    expect(meta.adsWatched).toBe(1);
   });
 });
