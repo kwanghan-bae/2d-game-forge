@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9 } from './gameStore';
+import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, runStoreMigration } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
-import type { EquipmentInstance } from '../types';
+import { EMPTY_RELIC_STACKS, type EquipmentInstance } from '../types';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
@@ -1251,5 +1251,63 @@ describe('Run start BP — bp_start node (Phase G)', () => {
     }));
     useGameStore.getState().startRun('hwarang', false);
     expect(useGameStore.getState().run.bp).toBe(33);
+  });
+});
+
+describe('v10 → v11 migration (Phase E)', () => {
+  it('injects relicStacks / mythicOwned / mythicEquipped / mythicSlotCap / adsToday / adsLastResetTs defaults', () => {
+    const v10State: any = {
+      meta: {
+        ascTier: 7,
+        ascTree: { hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+                   dungeon_currency: 0, crit_damage: 0, asc_accel: 0, mod_magnitude: 0, effect_proc: 0 },
+      },
+    };
+    const result = runStoreMigration(v10State, 10) as any;
+    expect(result.meta.relicStacks).toEqual(EMPTY_RELIC_STACKS);
+    expect(result.meta.mythicOwned).toEqual([]);
+    expect(result.meta.mythicEquipped).toEqual([null, null, null, null, null]);
+    expect(result.meta.mythicSlotCap).toBe(3);                  // tier 7 → cap 3
+    expect(result.meta.adsToday).toBe(0);
+    expect(typeof result.meta.adsLastResetTs).toBe('number');
+  });
+
+  it('computes slotCap correctly for tier boundaries', () => {
+    const cases: [number, number][] = [
+      [0, 0], [1, 1], [4, 1], [5, 3], [9, 3], [10, 5], [25, 5],
+    ];
+    for (const [tier, expected] of cases) {
+      const state: any = { meta: { ascTier: tier, ascTree: {} } };
+      const result = runStoreMigration(state, 10) as any;
+      expect(result.meta.mythicSlotCap).toBe(expected);
+    }
+  });
+});
+
+describe('ascend() preserves Phase E meta fields', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('keeps relicStacks / mythicOwned / mythicEquipped through ascension', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 0,
+        crackStones: 1000,
+        dungeonFinalsCleared: ['final-realm', 'r2', 'r3'],     // ≥ nextTier + 2
+        relicStacks: { ...EMPTY_RELIC_STACKS, warrior_banner: 5, gold_coin: 12 },
+        mythicOwned: ['fire_throne', 'time_hourglass'],
+        mythicEquipped: ['fire_throne', null, null, null, null],
+      },
+    }));
+    const ok = useGameStore.getState().ascend();
+    expect(ok).toBe(true);
+    const meta = useGameStore.getState().meta;
+    expect(meta.relicStacks.warrior_banner).toBe(5);
+    expect(meta.relicStacks.gold_coin).toBe(12);
+    expect(meta.mythicOwned).toEqual(['fire_throne', 'time_hourglass']);
+    expect(meta.mythicEquipped).toEqual(['fire_throne', null, null, null, null]);
+    expect(meta.mythicSlotCap).toBe(1);                       // ascTier 0 → 1 (nextTier)
   });
 });

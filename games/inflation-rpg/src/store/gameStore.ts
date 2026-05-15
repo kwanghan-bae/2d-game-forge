@@ -209,6 +209,150 @@ export function migrateV8ToV9(persisted: unknown): unknown {
   return s;
 }
 
+// Phase E — Mythic slot cap derived from ascension tier
+//   tier 0 → 0 슬롯, tier 1-4 → 1 슬롯, tier 5-9 → 3 슬롯, tier 10+ → 5 슬롯
+export function computeMythicSlotCap(tier: number): number {
+  if (tier >= 10) return 5;
+  if (tier >= 5) return 3;
+  if (tier >= 1) return 1;
+  return 0;
+}
+
+// Persist migration chain — exported for direct unit testing.
+// IMPORTANT: 절대 early return 추가 금지. 모든 적용 가능한 `if (fromVersion <= N)` 블록을
+// 순차 실행해야 v8 → v11 같은 다단계 체인이 깨지지 않는다. 함수 끝에서 단일 `return s` 만.
+export function runStoreMigration(persisted: unknown, fromVersion: number): unknown {
+  const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
+  if (fromVersion < 1) {
+    s.meta = {
+      equippedItemIds: [],
+      equipSlotCount: 1,
+      lastPlayedCharId: '',
+      ...s.meta,
+    };
+  }
+  // Inject defaults for dungeon stage fields added in content-layer2
+  const run = s.run ?? {};
+  s.run = {
+    ...run,
+    currentStage: run.currentStage ?? 1,
+    dungeonRunMonstersDefeated: run.dungeonRunMonstersDefeated ?? 0,
+  } as RunState;
+  // Inject defaults for quest fields added in content-layer3
+  const meta = s.meta ?? {};
+  s.meta = {
+    ...meta,
+    questProgress: meta.questProgress ?? {},
+    questsCompleted: meta.questsCompleted ?? [],
+    regionsVisited: meta.regionsVisited ?? [],
+    tutorialDone: meta.tutorialDone ?? false,
+    tutorialStep: meta.tutorialStep ?? -1,
+    musicVolume: meta.musicVolume ?? 0.5,
+    sfxVolume: meta.sfxVolume ?? 0.7,
+    muted: meta.muted ?? false,
+  } as MetaState;
+  // Inject defaults for DR + enhanceStones added in phase-a-foundation
+  if (fromVersion < 2 && s.meta) {
+    s.meta.dr = s.meta.dr ?? 0;
+    s.meta.enhanceStones = s.meta.enhanceStones ?? 0;
+  }
+  // Phase B-2 — currentDungeonId 추가
+  if (fromVersion < 3 && s.run) {
+    s.run.currentDungeonId = s.run.currentDungeonId ?? null;
+  }
+  // Phase B-3α — currentFloor 추가
+  if (fromVersion < 4 && s.run) {
+    s.run.currentFloor = s.run.currentFloor ?? 1;
+  }
+  // Phase B-3β1 — dungeonProgress / dungeonFinalsCleared / pendingFinalClearedId 추가
+  if (fromVersion < 5 && s.meta) {
+    s.meta.dungeonProgress = s.meta.dungeonProgress ?? {};
+    s.meta.dungeonFinalsCleared = s.meta.dungeonFinalsCleared ?? [];
+    s.meta.pendingFinalClearedId = s.meta.pendingFinalClearedId ?? null;
+  }
+  // Phase B-3β2 — currentAreaId 제거 (legacy world-map flow)
+  if (fromVersion < 6 && s.run) {
+    delete s.run.currentAreaId;
+  }
+  // Phase F-1 — Ascension fields
+  if (fromVersion < 7 && s.meta) {
+    s.meta.crackStones = s.meta.crackStones ?? 0;
+    s.meta.ascTier = s.meta.ascTier ?? 0;
+    s.meta.ascPoints = s.meta.ascPoints ?? 0;
+  }
+  // Phase F-2+3 — Equipment instance refactor + JP system (v8)
+  if (fromVersion < 8 && s.meta) {
+    const m = s.meta as any;
+
+    // 1. inventory: Equipment[] → EquipmentInstance[]
+    const migrateSlot = (items: any[]): any[] =>
+      items.map((it: any) => ({
+        instanceId: crypto.randomUUID(),
+        baseId: it.id,
+        enhanceLv: 0,
+        modifiers: [],
+      }));
+    if (m.inventory) {
+      m.inventory.weapons = migrateSlot(m.inventory.weapons ?? []);
+      m.inventory.armors = migrateSlot(m.inventory.armors ?? []);
+      m.inventory.accessories = migrateSlot(m.inventory.accessories ?? []);
+    }
+
+    // 2. equippedItemIds: baseId[] → instanceId[]
+    const oldEquipped: string[] = m.equippedItemIds ?? [];
+    const allInstances = [
+      ...(m.inventory?.weapons ?? []),
+      ...(m.inventory?.armors ?? []),
+      ...(m.inventory?.accessories ?? []),
+    ];
+    const claimed = new Set<string>();
+    const newEquipped: string[] = [];
+    for (const oldBaseId of oldEquipped) {
+      const found = allInstances.find(
+        (inst: any) => inst.baseId === oldBaseId && !claimed.has(inst.instanceId)
+      );
+      if (found) {
+        claimed.add(found.instanceId);
+        newEquipped.push(found.instanceId);
+      }
+      // not found = orphan equipped — silently drop
+    }
+    m.equippedItemIds = newEquipped;
+
+    // 3. JP / Skill 신규 필드 (CP3 T15 에서 INITIAL_META 도 갱신될 예정. 본 마이그레이션은 v8 진입을 위해 default 셋업)
+    m.jp = m.jp ?? {};
+    m.jpEarnedTotal = m.jpEarnedTotal ?? {};
+    m.jpCap = m.jpCap ?? { hwarang: 50, mudang: 50, choeui: 50 };
+    m.jpFirstKillAwarded = m.jpFirstKillAwarded ?? {};
+    m.jpCharLvAwarded = m.jpCharLvAwarded ?? {};
+    m.skillLevels = m.skillLevels ?? {};
+    m.ultSlotPicks = m.ultSlotPicks ?? {
+      hwarang: [null, null, null, null],
+      mudang:  [null, null, null, null],
+      choeui:  [null, null, null, null],
+    };
+  }
+  // v8 → v9: EquipmentInstance 에 modifiers 자동 굴림
+  if (fromVersion <= 8) {
+    migrateV8ToV9(s);
+  }
+  // v9 → v10: Phase G — ascTree 초기 0 주입
+  if (fromVersion <= 9 && s.meta) {
+    s.meta.ascTree = s.meta.ascTree ?? { ...EMPTY_ASC_TREE };
+  }
+  // v10 → v11: Phase E — Relics + Mythic + Ads
+  if (fromVersion <= 10 && s.meta) {
+    const m = s.meta as MetaState;
+    m.relicStacks    = m.relicStacks    ?? { ...EMPTY_RELIC_STACKS };
+    m.mythicOwned    = m.mythicOwned    ?? [];
+    m.mythicEquipped = m.mythicEquipped ?? [null, null, null, null, null];
+    m.mythicSlotCap  = m.mythicSlotCap  ?? computeMythicSlotCap(m.ascTier ?? 0);
+    m.adsToday       = m.adsToday       ?? 0;
+    m.adsLastResetTs = m.adsLastResetTs ?? Date.now();
+  }
+  return s;
+}
+
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
@@ -591,6 +735,8 @@ export const useGameStore = create<GameStore>()(
               crackStones: s.meta.crackStones - cost,
               ascTier: nextTier,
               ascPoints: s.meta.ascPoints + nextTier,
+              // Phase E — mythic slot cap derived from new tier (invariant: cap === computeMythicSlotCap(ascTier))
+              mythicSlotCap: computeMythicSlotCap(nextTier),
             },
           };
         });
@@ -841,128 +987,8 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 10,
-      migrate: (persisted: unknown, fromVersion: number) => {
-        const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
-        if (fromVersion < 1) {
-          s.meta = {
-            equippedItemIds: [],
-            equipSlotCount: 1,
-            lastPlayedCharId: '',
-            ...s.meta,
-          };
-        }
-        // Inject defaults for dungeon stage fields added in content-layer2
-        const run = s.run ?? {};
-        s.run = {
-          ...run,
-          currentStage: run.currentStage ?? 1,
-          dungeonRunMonstersDefeated: run.dungeonRunMonstersDefeated ?? 0,
-        } as RunState;
-        // Inject defaults for quest fields added in content-layer3
-        const meta = s.meta ?? {};
-        s.meta = {
-          ...meta,
-          questProgress: meta.questProgress ?? {},
-          questsCompleted: meta.questsCompleted ?? [],
-          regionsVisited: meta.regionsVisited ?? [],
-          tutorialDone: meta.tutorialDone ?? false,
-          tutorialStep: meta.tutorialStep ?? -1,
-          musicVolume: meta.musicVolume ?? 0.5,
-          sfxVolume: meta.sfxVolume ?? 0.7,
-          muted: meta.muted ?? false,
-        } as MetaState;
-        // Inject defaults for DR + enhanceStones added in phase-a-foundation
-        if (fromVersion < 2 && s.meta) {
-          s.meta.dr = s.meta.dr ?? 0;
-          s.meta.enhanceStones = s.meta.enhanceStones ?? 0;
-        }
-        // Phase B-2 — currentDungeonId 추가
-        if (fromVersion < 3 && s.run) {
-          s.run.currentDungeonId = s.run.currentDungeonId ?? null;
-        }
-        // Phase B-3α — currentFloor 추가
-        if (fromVersion < 4 && s.run) {
-          s.run.currentFloor = s.run.currentFloor ?? 1;
-        }
-        // Phase B-3β1 — dungeonProgress / dungeonFinalsCleared / pendingFinalClearedId 추가
-        if (fromVersion < 5 && s.meta) {
-          s.meta.dungeonProgress = s.meta.dungeonProgress ?? {};
-          s.meta.dungeonFinalsCleared = s.meta.dungeonFinalsCleared ?? [];
-          s.meta.pendingFinalClearedId = s.meta.pendingFinalClearedId ?? null;
-        }
-        // Phase B-3β2 — currentAreaId 제거 (legacy world-map flow)
-        if (fromVersion < 6 && s.run) {
-          delete s.run.currentAreaId;
-        }
-        // Phase F-1 — Ascension fields
-        if (fromVersion < 7 && s.meta) {
-          s.meta.crackStones = s.meta.crackStones ?? 0;
-          s.meta.ascTier = s.meta.ascTier ?? 0;
-          s.meta.ascPoints = s.meta.ascPoints ?? 0;
-        }
-        // Phase F-2+3 — Equipment instance refactor + JP system (v8)
-        if (fromVersion < 8 && s.meta) {
-          const m = s.meta as any;
-
-          // 1. inventory: Equipment[] → EquipmentInstance[]
-          const migrateSlot = (items: any[]): any[] =>
-            items.map((it: any) => ({
-              instanceId: crypto.randomUUID(),
-              baseId: it.id,
-              enhanceLv: 0,
-              modifiers: [],
-            }));
-          if (m.inventory) {
-            m.inventory.weapons = migrateSlot(m.inventory.weapons ?? []);
-            m.inventory.armors = migrateSlot(m.inventory.armors ?? []);
-            m.inventory.accessories = migrateSlot(m.inventory.accessories ?? []);
-          }
-
-          // 2. equippedItemIds: baseId[] → instanceId[]
-          const oldEquipped: string[] = m.equippedItemIds ?? [];
-          const allInstances = [
-            ...(m.inventory?.weapons ?? []),
-            ...(m.inventory?.armors ?? []),
-            ...(m.inventory?.accessories ?? []),
-          ];
-          const claimed = new Set<string>();
-          const newEquipped: string[] = [];
-          for (const oldBaseId of oldEquipped) {
-            const found = allInstances.find(
-              (inst: any) => inst.baseId === oldBaseId && !claimed.has(inst.instanceId)
-            );
-            if (found) {
-              claimed.add(found.instanceId);
-              newEquipped.push(found.instanceId);
-            }
-            // not found = orphan equipped — silently drop
-          }
-          m.equippedItemIds = newEquipped;
-
-          // 3. JP / Skill 신규 필드 (CP3 T15 에서 INITIAL_META 도 갱신될 예정. 본 마이그레이션은 v8 진입을 위해 default 셋업)
-          m.jp = m.jp ?? {};
-          m.jpEarnedTotal = m.jpEarnedTotal ?? {};
-          m.jpCap = m.jpCap ?? { hwarang: 50, mudang: 50, choeui: 50 };
-          m.jpFirstKillAwarded = m.jpFirstKillAwarded ?? {};
-          m.jpCharLvAwarded = m.jpCharLvAwarded ?? {};
-          m.skillLevels = m.skillLevels ?? {};
-          m.ultSlotPicks = m.ultSlotPicks ?? {
-            hwarang: [null, null, null, null],
-            mudang:  [null, null, null, null],
-            choeui:  [null, null, null, null],
-          };
-        }
-        // v8 → v9: EquipmentInstance 에 modifiers 자동 굴림
-        if (fromVersion <= 8) {
-          migrateV8ToV9(s);
-        }
-        // v9 → v10: Phase G — ascTree 초기 0 주입
-        if (fromVersion <= 9 && s.meta) {
-          s.meta.ascTree = s.meta.ascTree ?? { ...EMPTY_ASC_TREE };
-        }
-        return s;
-      },
+      version: 11,
+      migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
   )
