@@ -6,6 +6,8 @@ import {
   getMythicDropBonus,
   getMythicXpMult,
   getMythicReviveCount,
+  equipMythic,
+  unequipMythic,
 } from './mythics';
 
 function makeMeta(
@@ -86,5 +88,36 @@ describe('passives', () => {
   it('phoenix_feather passive revive: 1 if equipped', () => {
     expect(getMythicReviveCount(makeMeta(['phoenix_feather']))).toBe(1);
     expect(getMythicReviveCount(makeMeta([]))).toBe(0);
+  });
+});
+
+describe('equipMythic', () => {
+  function meta(over: Partial<MetaState> = {}): MetaState {
+    return {
+      mythicOwned: ['tier1_charm', 'fire_throne', 'time_hourglass'],
+      mythicEquipped: [null, null, null, null, null],
+      mythicSlotCap: 3,
+      ...over,
+    } as MetaState;
+  }
+  it('equips an owned mythic into specified slot', () => {
+    const r = equipMythic(meta(), 0, 'tier1_charm');
+    expect(r.mythicEquipped[0]).toBe('tier1_charm');
+  });
+  it('rejects equipping into slot beyond slotCap', () => {
+    expect(() => equipMythic(meta({ mythicSlotCap: 1 }), 2, 'tier1_charm'))
+      .toThrow(/slot/i);
+  });
+  it('rejects equipping a non-owned mythic', () => {
+    expect(() => equipMythic(meta(), 0, 'world_tree_root')).toThrow(/owned/i);
+  });
+  it('rejects equipping the same mythic into two slots (swap instead)', () => {
+    const after = equipMythic(meta(), 0, 'tier1_charm');
+    expect(() => equipMythic(after, 1, 'tier1_charm')).toThrow(/already equipped/i);
+  });
+  it('unequipMythic clears the slot', () => {
+    const after = equipMythic(meta(), 0, 'tier1_charm');
+    const cleared = unequipMythic(after, 0);
+    expect(cleared.mythicEquipped[0]).toBeNull();
   });
 });
