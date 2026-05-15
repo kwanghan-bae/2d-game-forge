@@ -26,8 +26,8 @@ import {
   createEffectsState, tickEffects, processIncomingDamage, addEffect, getDebuffStatMultiplier,
   type CombatStateForEffects,
 } from '../systems/effects';
-import { getMythicFlatMult } from '../systems/mythics';
-import { getRelicFlatMult } from '../systems/relics';
+import { getMythicFlatMult, getMythicXpMult } from '../systems/mythics';
+import { getRelicFlatMult, getRelicXpMult } from '../systems/relics';
 import type { EffectsState } from '../types';
 
 function pickBossIdByType(
@@ -239,7 +239,8 @@ export class BattleScene extends Phaser.Scene {
       const expGain = Math.floor(run.level * 10);
       const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1));
       const goldGain = applyMetaDropMult(rawGoldGain, 'gold', meta);
-      const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode, meta.ascTree.sp_per_lvl);
+      const xpMetaMult = getMythicXpMult(meta) * getRelicXpMult(meta);
+      const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode, meta.ascTree.sp_per_lvl, xpMetaMult);
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));
