@@ -76,6 +76,10 @@ export function simulateFloor(
   const critDamageLv = player.ascTree?.crit_damage ?? 0;
   const critMultBonus = 0.20 * critDamageLv;
 
+  // Phase Compass — compass items affect no stat/drop multiplier.
+  // Invariant: enabling all compass owned == baseline milestones (unchanged).
+  // 따라서 sim 에 compass-on/off 별 분기 불필요. balance-milestones 회귀 0.
+  //
   // Phase E — synthesize MetaState-shaped object for aggregator helpers.
   // null branch = mythic-off / relic-empty baseline → skips all Phase E paths
   // and preserves pre-Phase-E sim numbers (balance-milestones.test.ts guard).
