@@ -23,22 +23,20 @@ test.describe('Phase B-3α — dungeon flow smoke', () => {
     await expect(page.getByRole('button', { name: '게임 시작' })).toHaveCount(0);
   });
 
-  test('town → 평야 던전 → ClassSelect → DungeonFloors → floor 1 entry', async ({ page }) => {
+  test('town → 던전 추첨 → ClassSelect → DungeonFloors → floor 1 entry', async ({ page }) => {
     // Main menu → Town
     await page.getByRole('button', { name: /마을로/ }).click();
 
-    // Town: 평야 던전 입장
-    await page
-      .getByTestId('town-dungeon-plains')
-      .getByRole('button', { name: '입장' })
-      .click();
+    // Town: 던전 입장 → modal → 입장
+    await page.getByTestId('town-enter-dungeon').click();
+    await expect(page.getByTestId('pick-result')).toBeVisible();
+    await page.getByTestId('pick-enter').click();
 
     // ClassSelect: 화랑 (always unlocked) + 모험 시작
     await page.getByRole('button', { name: '화랑' }).first().click();
     await page.getByRole('button', { name: '모험 시작' }).click();
 
-    // DungeonFloors: floor 1 active, 평야 nameKR shown
-    await expect(page.getByText(/평야/)).toBeVisible();
+    // DungeonFloors: floor 1 active
     await expect(page.getByTestId('floor-card-1')).toBeVisible();
     await expect(page.getByTestId('floor-card-1')).not.toBeDisabled();
     await expect(page.getByTestId('floor-card-2')).toBeDisabled();
@@ -50,10 +48,10 @@ test.describe('Phase B-3α — dungeon flow smoke', () => {
 
   test('back to town clears currentDungeonId', async ({ page }) => {
     await page.getByRole('button', { name: /마을로/ }).click();
-    await page
-      .getByTestId('town-dungeon-plains')
-      .getByRole('button', { name: '입장' })
-      .click();
+    // Town: 던전 입장 → modal → 입장
+    await page.getByTestId('town-enter-dungeon').click();
+    await expect(page.getByTestId('pick-result')).toBeVisible();
+    await page.getByTestId('pick-enter').click();
     await page.getByRole('button', { name: '화랑' }).first().click();
     await page.getByRole('button', { name: '모험 시작' }).click();
 
@@ -61,18 +59,17 @@ test.describe('Phase B-3α — dungeon flow smoke', () => {
     await page.getByTestId('dungeon-floors-back').click();
     // Town renders again
     await expect(page.getByText(/마을$/)).toBeVisible();
-    await expect(page.getByTestId('town-dungeon-plains')).toBeVisible();
+    await expect(page.getByTestId('town-enter-dungeon')).toBeVisible();
   });
 
   test('Phase B-3β1 — boss floor cards visually differentiated (locked state)', async ({ page }) => {
     // Main menu → Town
     await page.getByRole('button', { name: /마을로/ }).click();
 
-    // Town: 평야 던전 입장
-    await page
-      .getByTestId('town-dungeon-plains')
-      .getByRole('button', { name: '입장' })
-      .click();
+    // Town: 던전 입장 → modal → 입장
+    await page.getByTestId('town-enter-dungeon').click();
+    await expect(page.getByTestId('pick-result')).toBeVisible();
+    await page.getByTestId('pick-enter').click();
 
     // ClassSelect: 화랑 (always unlocked) + 모험 시작
     await page.getByRole('button', { name: '화랑' }).first().click();

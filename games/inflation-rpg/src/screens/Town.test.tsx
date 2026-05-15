@@ -1,49 +1,24 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { Town } from './Town';
-import { useGameStore, INITIAL_RUN, INITIAL_META } from '../store/gameStore';
 
-describe('Town screen', () => {
-  beforeEach(() => {
-    useGameStore.setState({
-      screen: 'town',
-      run: INITIAL_RUN,
-      meta: INITIAL_META,
-    });
+describe('Town — Phase Compass UI', () => {
+  it('shows single 던전 입장 button', () => {
+    render(<Town />);
+    expect(screen.getByTestId('town-enter-dungeon')).toBeInTheDocument();
   });
 
-  it('renders town title and 3 starter dungeons', () => {
+  it('does not render town-dungeon-<id> grid testids (legacy removed)', () => {
     render(<Town />);
-    expect(screen.getByText('마을')).toBeInTheDocument();
-    expect(screen.getByTestId('town-dungeon-plains')).toBeInTheDocument();
-    expect(screen.getByTestId('town-dungeon-forest')).toBeInTheDocument();
-    expect(screen.getByTestId('town-dungeon-mountains')).toBeInTheDocument();
+    expect(screen.queryByTestId('town-dungeon-plains')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('town-dungeon-forest')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('town-dungeon-mountains')).not.toBeInTheDocument();
   });
 
-  it('selecting a dungeon sets currentDungeonId and navigates to class-select', () => {
+  it('still shows town facility buttons (보물고 / 차원 제단 / 직업소)', () => {
     render(<Town />);
-    const enterButtons = screen.getAllByText('입장');
-    fireEvent.click(enterButtons[0]!);
-    // First button = plains (DUNGEONS array order)
-    expect(useGameStore.getState().run.currentDungeonId).toBe('plains');
-    expect(useGameStore.getState().screen).toBe('class-select');
-  });
-
-  it('back button returns to main-menu', () => {
-    render(<Town />);
-    fireEvent.click(screen.getByText('돌아가기'));
-    expect(useGameStore.getState().screen).toBe('main-menu');
-  });
-
-  it('Town: 직업소 버튼 → setScreen("skill-progression")', () => {
-    render(<Town />);
-    fireEvent.click(screen.getByTestId('town-skill-progression'));
-    expect(useGameStore.getState().screen).toBe('skill-progression');
-  });
-
-  it('보물고 button navigates to relics screen', () => {
-    render(<Town />);
-    fireEvent.click(screen.getByTestId('town-relics'));
-    expect(useGameStore.getState().screen).toBe('relics');
+    expect(screen.getByTestId('town-relics')).toBeInTheDocument();
+    expect(screen.getByTestId('town-ascension-altar')).toBeInTheDocument();
+    expect(screen.getByTestId('town-skill-progression')).toBeInTheDocument();
   });
 });

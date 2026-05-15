@@ -3,6 +3,7 @@ import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, runStoreMigrati
 import { STARTING_BP } from '../systems/bp';
 import { type EquipmentInstance } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
+import { EMPTY_COMPASS_OWNED } from '../data/compass';
 import { AD_DAILY_CAP } from '../systems/ads';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
@@ -1495,5 +1496,160 @@ describe('watchAdForRelic — store action', () => {
     expect(meta.relicStacks.undead_coin).toBe(1);   // binary cap
     expect(meta.adsToday).toBe(1);
     expect(meta.adsWatched).toBe(1);
+  });
+});
+
+describe('Phase Compass — v12 migration', () => {
+  it('runStoreMigration injects compassOwned + cleared lists from v8 envelope', () => {
+    const v8Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+      },
+    };
+    const migrated = runStoreMigration(v8Persisted, 8) as { meta: any };
+    expect(migrated.meta.compassOwned).toBeDefined();
+    expect(migrated.meta.compassOwned.plains_first).toBe(false);
+    expect(migrated.meta.compassOwned.omni).toBe(false);
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual([]);
+    expect(migrated.meta.dungeonMajorBossesCleared).toEqual([]);
+  });
+
+  it('v11 envelope injects compass defaults without clobbering Phase E fields', () => {
+    // Pre-Phase-Compass save with Phase E data populated — exercise v11→v12 step directly
+    const v11Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        relicStacks: { ...EMPTY_RELIC_STACKS, warrior_banner: 3 },
+        mythicOwned: ['tier1_charm'],
+        adsToday: 5,
+      },
+    };
+    const migrated = runStoreMigration(v11Persisted, 11) as { meta: any };
+    // Phase E fields preserved
+    expect(migrated.meta.relicStacks.warrior_banner).toBe(3);
+    expect(migrated.meta.mythicOwned).toEqual(['tier1_charm']);
+    expect(migrated.meta.adsToday).toBe(5);
+    // Phase Compass defaults injected
+    expect(migrated.meta.compassOwned).toEqual(EMPTY_COMPASS_OWNED);
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual([]);
+    expect(migrated.meta.dungeonMajorBossesCleared).toEqual([]);
+  });
+
+  it('preserves existing compass data when fromVersion = 12 (passthrough)', () => {
+    const v12Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        compassOwned: { ...EMPTY_COMPASS_OWNED, plains_first: true },
+        dungeonMiniBossesCleared: ['plains'],
+        dungeonMajorBossesCleared: [],
+      },
+    };
+    const migrated = runStoreMigration(v12Persisted, 12) as { meta: any };
+    expect(migrated.meta.compassOwned.plains_first).toBe(true);
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual(['plains']);
+  });
+});
+
+describe('Phase Compass — store actions', () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      run: { ...INITIAL_RUN },
+      meta: { ...INITIAL_META },
+    });
+  });
+
+  it('awardMiniBossCompass adds compass and updates cleared list', () => {
+    useGameStore.getState().awardMiniBossCompass('plains');
+    const meta = useGameStore.getState().meta;
+    expect(meta.compassOwned.plains_first).toBe(true);
+    expect(meta.dungeonMiniBossesCleared).toEqual(['plains']);
+  });
+
+  it('awardMiniBossCompass is idempotent', () => {
+    useGameStore.getState().awardMiniBossCompass('plains');
+    useGameStore.getState().awardMiniBossCompass('plains');
+    expect(useGameStore.getState().meta.dungeonMiniBossesCleared).toEqual(['plains']);
+  });
+
+  it('awardMiniBossCompass triggers omni on full mini-boss clear', () => {
+    const s = useGameStore.getState();
+    s.awardMiniBossCompass('plains');
+    s.awardMiniBossCompass('forest');
+    s.awardMiniBossCompass('mountains');
+    expect(useGameStore.getState().meta.compassOwned.omni).toBe(true);
+  });
+
+  it('awardMajorBossCompass adds compass and updates cleared list', () => {
+    useGameStore.getState().awardMajorBossCompass('forest');
+    const meta = useGameStore.getState().meta;
+    expect(meta.compassOwned.forest_second).toBe(true);
+    expect(meta.dungeonMajorBossesCleared).toEqual(['forest']);
+  });
+
+  it('pickAndSelectDungeon sets run.currentDungeonId', () => {
+    const id = useGameStore.getState().pickAndSelectDungeon();
+    expect(['plains', 'forest', 'mountains']).toContain(id);
+    expect(useGameStore.getState().run.currentDungeonId).toBe(id);
+  });
+
+  it('selectDungeonFree sets dungeonId when compass owned', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, compassOwned: { ...s.meta.compassOwned, forest_second: true } },
+    }));
+    useGameStore.getState().selectDungeonFree('forest');
+    expect(useGameStore.getState().run.currentDungeonId).toBe('forest');
+  });
+
+  it('selectDungeonFree is noop when no compass for that dungeon', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, currentDungeonId: null } }));
+    useGameStore.getState().selectDungeonFree('plains');
+    expect(useGameStore.getState().run.currentDungeonId).toBe(null);
+  });
+
+  it('selectDungeonFree allows any dungeon when omni owned', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, compassOwned: { ...s.meta.compassOwned, omni: true } },
+    }));
+    useGameStore.getState().selectDungeonFree('mountains');
+    expect(useGameStore.getState().run.currentDungeonId).toBe('mountains');
+  });
+});
+
+describe('Phase Compass — ascend preserves compass + cleared lists', () => {
+  it('keeps compassOwned / dungeonMini/MajorBossesCleared after ascend', () => {
+    // Seed: meet ascend prereqs + own compass
+    useGameStore.setState((s) => ({
+      run: { ...INITIAL_RUN },
+      meta: {
+        ...s.meta,
+        crackStones: 99999,
+        ascTier: 0,
+        ascPoints: 0,
+        dungeonFinalsCleared: ['plains', 'forest', 'mountains'],   // ≥3 finals for tier 1
+        compassOwned: {
+          plains_first: true,
+          plains_second: false,
+          forest_first: true,
+          forest_second: true,
+          mountains_first: false,
+          mountains_second: false,
+          omni: false,
+        },
+        dungeonMiniBossesCleared: ['plains', 'forest'],
+        dungeonMajorBossesCleared: ['forest'],
+      },
+    }));
+
+    const ok = useGameStore.getState().ascend();
+    expect(ok).toBe(true);
+
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(1);
+    // Compass + clear lists preserved
+    expect(meta.compassOwned.plains_first).toBe(true);
+    expect(meta.compassOwned.forest_first).toBe(true);
+    expect(meta.compassOwned.forest_second).toBe(true);
+    expect(meta.dungeonMiniBossesCleared).toEqual(['plains', 'forest']);
+    expect(meta.dungeonMajorBossesCleared).toEqual(['forest']);
   });
 });
