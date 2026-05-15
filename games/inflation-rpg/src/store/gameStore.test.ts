@@ -995,6 +995,29 @@ describe('persist v9 → v10 migration (Phase G)', () => {
     const migrated = migrate(v10State, 10) as any;
     expect(migrated.meta.ascTree.hp_pct).toBe(3);
   });
+
+  it('v8 → v10 chain: v8 save gets ascTree injected', () => {
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const legacyV8 = {
+      meta: {
+        ascTier: 0,
+        ascPoints: 0,
+        crackStones: 0,
+        dungeonFinalsCleared: [],
+        // v8-shape: no ascTree, no v9 fields like adsWatched
+        inventory: { weapons: [], armors: [], accessories: [] },
+        equippedItemIds: [],
+      },
+      run: null,
+      screen: 'main',
+    };
+    const migrated = migrate(legacyV8, 8) as any;
+    expect(migrated.meta.ascTree).toEqual({
+      hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+      dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+      mod_magnitude: 0, effect_proc: 0,
+    });
+  });
 });
 
 describe('GameStore — Phase D rerollOneSlot / rerollAllSlots', () => {
