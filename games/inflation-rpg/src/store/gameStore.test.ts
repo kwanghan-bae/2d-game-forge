@@ -1235,3 +1235,21 @@ describe('Economy multipliers (Phase G)', () => {
     expect(useGameStore.getState().meta.enhanceStones).toBe(7);
   });
 });
+
+describe('Run start BP — bp_start node (Phase G)', () => {
+  it('default BP = STARTING_BP (30)', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, bp_start: 0 } },
+    }));
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().run.bp).toBe(30);
+  });
+
+  it('bp_start lv 3 = STARTING_BP + 3 = 33', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, bp_start: 3 } },
+    }));
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().run.bp).toBe(33);
+  });
+});
