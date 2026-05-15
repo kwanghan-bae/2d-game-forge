@@ -198,6 +198,7 @@ export class BattleScene extends Phaser.Scene {
         playerATK,
         crit,
         rngRoll: Math.random(),
+        critMultBonus: 0.20 * ascTree.crit_damage,
       });
     }
 

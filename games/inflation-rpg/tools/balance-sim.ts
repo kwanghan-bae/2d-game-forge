@@ -135,6 +135,7 @@ export function simulateFloor(
         playerATK: player.atk,
         crit,
         rngRoll: rng.next(),
+        critMultBonus: 0, // Task 13 에서 SimPlayer.ascTreeCritDamageLv 로 교체 예정
       });
     }
     enemyHp = Math.max(0, enemyHp - totalDmg);

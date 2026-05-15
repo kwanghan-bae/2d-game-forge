@@ -22,10 +22,11 @@ export interface PlayerHitInput {
   playerATK: number;
   crit: boolean;
   rngRoll: number; // [0, 1) — BattleScene 은 Math.random(), sim 은 seeded RNG
+  critMultBonus?: number; // Phase G — ascTree.crit_damage 적용 (+0.20 per level)
 }
 
 export function resolvePlayerHit(input: PlayerHitInput): number {
-  const critMul = input.crit ? 2.4 : 1;
+  const critMul = input.crit ? 2.4 + (input.critMultBonus ?? 0) : 1;
   const rngMul = 0.9 + input.rngRoll * 0.2; // [0.9, 1.1)
   return Math.floor(input.playerATK * critMul * rngMul);
 }
