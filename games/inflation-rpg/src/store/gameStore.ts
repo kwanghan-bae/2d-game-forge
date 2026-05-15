@@ -18,6 +18,7 @@ import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillP
 import { getUltById } from '../data/jobskills';
 import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
 import { applyDropMult, applyMetaDropMult } from '../systems/economy';
+import { rollMythicDrop } from '../systems/mythics';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -439,6 +440,17 @@ export const useGameStore = create<GameStore>()(
           // Stones use 'dungeon_currency' kind — applyMetaDropMult already applies ascTree.dungeon_currency,
           // so call it directly (no chain) to avoid double-counting.
           const stonesGained = applyMetaDropMult(bossType === 'final' ? 50 : bpReward, 'dungeon_currency', s.meta);
+          // Phase E T16 — final boss rolls a random mythic drop (30% base chance, unowned random_drop pool).
+          // Non-final bosses do not roll. slotCap recomputed defensively for all bossTypes
+          // (invariant: cap === computeMythicSlotCap(ascTier)).
+          let newOwned = s.meta.mythicOwned;
+          if (bossType === 'final') {
+            const droppedId = rollMythicDrop(s.meta, Math.random);
+            if (droppedId) {
+              newOwned = [...newOwned, droppedId];
+            }
+          }
+          const newSlotCap = computeMythicSlotCap(s.meta.ascTier);
           return {
             run: {
               ...s.run,
@@ -453,6 +465,8 @@ export const useGameStore = create<GameStore>()(
               baseAbilityLevel: getBaseAbilityLevel(normalKilled, hardKilled),
               dr: s.meta.dr + drGained,
               enhanceStones: s.meta.enhanceStones + stonesGained,
+              mythicOwned: newOwned,
+              mythicSlotCap: newSlotCap,
             },
           };
         });

@@ -1345,3 +1345,58 @@ describe('Phase E — defeat passives (featherUsed + no_death_loss)', () => {
     expect(result.run.featherUsed).toBe(0);
   });
 });
+
+describe('bossDrop — Phase E mythic drop (final only)', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('non-final boss does not roll mythic drop', () => {
+    const initialOwned = useGameStore.getState().meta.mythicOwned;
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
+    expect(useGameStore.getState().meta.mythicOwned).toEqual(initialOwned);
+  });
+
+  it('final boss kill with deterministic rng = drop', () => {
+    // Force RNG to roll under 0.30 (drop) by stubbing Math.random.
+    // Sequence: 0.05 < 0.30 → drop; 0 → index 0 of unowned pool.
+    const originalRandom = Math.random;
+    let i = 0;
+    const seq = [0.05, 0];
+    Math.random = () => seq[i++] ?? 0;
+    try {
+      useGameStore.setState((s) => ({
+        meta: { ...s.meta, mythicOwned: [] },
+      }));
+      useGameStore.getState().bossDrop('final-boss', 8, 'final');
+    } finally {
+      Math.random = originalRandom;
+    }
+    const meta = useGameStore.getState().meta;
+    expect(meta.mythicOwned.length).toBe(1);
+  });
+
+  it('final boss kill with rng above threshold = no drop', () => {
+    const originalRandom = Math.random;
+    Math.random = () => 0.99;
+    try {
+      useGameStore.setState((s) => ({
+        meta: { ...s.meta, mythicOwned: [] },
+      }));
+      useGameStore.getState().bossDrop('final-boss', 8, 'final');
+    } finally {
+      Math.random = originalRandom;
+    }
+    expect(useGameStore.getState().meta.mythicOwned).toEqual([]);
+  });
+
+  it('mythicSlotCap stays consistent with current ascTier after bossDrop', () => {
+    // Simulate a drift between ascTier and slotCap (e.g., legacy save) — recompute should fix it.
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTier: 7, mythicSlotCap: 0 },
+    }));
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
+    // tier 7 (>=5, <10) → 3 slots per computeMythicSlotCap
+    expect(useGameStore.getState().meta.mythicSlotCap).toBe(3);
+  });
+});
