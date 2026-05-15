@@ -904,7 +904,7 @@ export const useGameStore = create<GameStore>()(
         }
         // v8 → v9: EquipmentInstance 에 modifiers 자동 굴림
         if (fromVersion <= 8) {
-          return migrateV8ToV9(s);
+          migrateV8ToV9(s);
         }
         // v9 → v10: Phase G — ascTree 초기 0 주입
         if (fromVersion <= 9 && s.meta) {
