@@ -1549,3 +1549,68 @@ describe('Phase Compass — v12 migration', () => {
     expect(migrated.meta.dungeonMiniBossesCleared).toEqual(['plains']);
   });
 });
+
+describe('Phase Compass — store actions', () => {
+  beforeEach(() => {
+    useGameStore.setState({
+      run: { ...INITIAL_RUN },
+      meta: { ...INITIAL_META },
+    });
+  });
+
+  it('awardMiniBossCompass adds compass and updates cleared list', () => {
+    useGameStore.getState().awardMiniBossCompass('plains');
+    const meta = useGameStore.getState().meta;
+    expect(meta.compassOwned.plains_first).toBe(true);
+    expect(meta.dungeonMiniBossesCleared).toEqual(['plains']);
+  });
+
+  it('awardMiniBossCompass is idempotent', () => {
+    useGameStore.getState().awardMiniBossCompass('plains');
+    useGameStore.getState().awardMiniBossCompass('plains');
+    expect(useGameStore.getState().meta.dungeonMiniBossesCleared).toEqual(['plains']);
+  });
+
+  it('awardMiniBossCompass triggers omni on full mini-boss clear', () => {
+    const s = useGameStore.getState();
+    s.awardMiniBossCompass('plains');
+    s.awardMiniBossCompass('forest');
+    s.awardMiniBossCompass('mountains');
+    expect(useGameStore.getState().meta.compassOwned.omni).toBe(true);
+  });
+
+  it('awardMajorBossCompass adds compass and updates cleared list', () => {
+    useGameStore.getState().awardMajorBossCompass('forest');
+    const meta = useGameStore.getState().meta;
+    expect(meta.compassOwned.forest_second).toBe(true);
+    expect(meta.dungeonMajorBossesCleared).toEqual(['forest']);
+  });
+
+  it('pickAndSelectDungeon sets run.currentDungeonId', () => {
+    const id = useGameStore.getState().pickAndSelectDungeon();
+    expect(['plains', 'forest', 'mountains']).toContain(id);
+    expect(useGameStore.getState().run.currentDungeonId).toBe(id);
+  });
+
+  it('selectDungeonFree sets dungeonId when compass owned', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, compassOwned: { ...s.meta.compassOwned, forest_second: true } },
+    }));
+    useGameStore.getState().selectDungeonFree('forest');
+    expect(useGameStore.getState().run.currentDungeonId).toBe('forest');
+  });
+
+  it('selectDungeonFree is noop when no compass for that dungeon', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, currentDungeonId: null } }));
+    useGameStore.getState().selectDungeonFree('plains');
+    expect(useGameStore.getState().run.currentDungeonId).toBe(null);
+  });
+
+  it('selectDungeonFree allows any dungeon when omni owned', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, compassOwned: { ...s.meta.compassOwned, omni: true } },
+    }));
+    useGameStore.getState().selectDungeonFree('mountains');
+    expect(useGameStore.getState().run.currentDungeonId).toBe('mountains');
+  });
+});

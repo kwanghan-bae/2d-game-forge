@@ -22,6 +22,13 @@ import { applyDropMult, applyMetaDropMult } from '../systems/economy';
 import { rollMythicDrop, awardMilestoneMythic, equipMythic, unequipMythic } from '../systems/mythics';
 import { MILESTONE_TIERS } from '../data/mythics';
 import { EMPTY_COMPASS_OWNED } from '../data/compass';
+import { DUNGEONS } from '../data/dungeons';
+import {
+  awardMiniBossCompass as awardMiniBossCompassSystem,
+  awardMajorBossCompass as awardMajorBossCompassSystem,
+  canFreeSelect,
+  pickRandomDungeon,
+} from '../systems/compass';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -193,6 +200,11 @@ interface GameStore {
     reason?: 'max' | 'ap';
   };
   buyAscTreeNode: (id: AscTreeNodeId) => boolean;
+  // Phase Compass — store actions
+  awardMiniBossCompass: (dungeonId: string) => void;
+  awardMajorBossCompass: (dungeonId: string) => void;
+  pickAndSelectDungeon: () => string;
+  selectDungeonFree: (dungeonId: string) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1053,6 +1065,33 @@ export const useGameStore = create<GameStore>()(
             },
           },
         }));
+      },
+
+      // Phase Compass — store actions
+      awardMiniBossCompass: (dungeonId) =>
+        set((s) => {
+          const patch = awardMiniBossCompassSystem(s.meta, dungeonId);
+          return patch ? { meta: { ...s.meta, ...patch } } : {};
+        }),
+
+      awardMajorBossCompass: (dungeonId) =>
+        set((s) => {
+          const patch = awardMajorBossCompassSystem(s.meta, dungeonId);
+          return patch ? { meta: { ...s.meta, ...patch } } : {};
+        }),
+
+      pickAndSelectDungeon: () => {
+        const id = pickRandomDungeon(get().meta, DUNGEONS);
+        get().selectDungeon(id);
+        return id;
+      },
+
+      selectDungeonFree: (dungeonId) => {
+        if (!canFreeSelect(get().meta, dungeonId)) {
+          console.warn('selectDungeonFree denied: no compass for', dungeonId);
+          return;
+        }
+        get().selectDungeon(dungeonId);
       },
     }),
     {
