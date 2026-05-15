@@ -15,6 +15,7 @@ import { getEquipmentBase } from '../data/equipment';
 import { rollModifiers, rerollCost, rerollOneSlot as rerollOneSlotFn, rerollAllSlots as rerollAllSlotsFn } from '../systems/modifiers';
 import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
 import { getUltById } from '../data/jobskills';
+import { EMPTY_ASC_TREE } from '../data/ascTree';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -80,18 +81,7 @@ export const INITIAL_META: MetaState = {
   ascTier: 0,
   ascPoints: 0,
   // Phase G — Ascension Tree
-  ascTree: {
-    hp_pct: 0,
-    atk_pct: 0,
-    gold_drop: 0,
-    bp_start: 0,
-    sp_per_lvl: 0,
-    dungeon_currency: 0,
-    crit_damage: 0,
-    asc_accel: 0,
-    mod_magnitude: 0,
-    effect_proc: 0,
-  },
+  ascTree: { ...EMPTY_ASC_TREE },
   // Phase F-2+3 — JP / Skill Progression
   jp: {},
   jpEarnedTotal: {},
@@ -800,7 +790,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 9,
+      version: 10,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
         if (fromVersion < 1) {
@@ -915,6 +905,10 @@ export const useGameStore = create<GameStore>()(
         // v8 → v9: EquipmentInstance 에 modifiers 자동 굴림
         if (fromVersion <= 8) {
           return migrateV8ToV9(s);
+        }
+        // v9 → v10: Phase G — ascTree 초기 0 주입
+        if (fromVersion <= 9 && s.meta) {
+          s.meta.ascTree = s.meta.ascTree ?? { ...EMPTY_ASC_TREE };
         }
         return s;
       },
