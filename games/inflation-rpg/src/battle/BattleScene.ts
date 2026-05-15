@@ -21,7 +21,7 @@ import {
 } from './SkillSystem';
 import type { ActiveSkill } from '../types';
 import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
-import { applyDropMult } from '../systems/economy';
+import { applyMetaDropMult } from '../systems/economy';
 import {
   createEffectsState, tickEffects, processIncomingDamage, addEffect, getDebuffStatMultiplier,
   type CombatStateForEffects,
@@ -238,7 +238,7 @@ export class BattleScene extends Phaser.Scene {
 
       const expGain = Math.floor(run.level * 10);
       const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1));
-      const goldGain = applyDropMult(rawGoldGain, 0.10, meta.ascTree.gold_drop);
+      const goldGain = applyMetaDropMult(rawGoldGain, 'gold', meta);
       const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode, meta.ascTree.sp_per_lvl);
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
