@@ -82,6 +82,33 @@ describe('getModifierMagnitude', () => {
   });
 });
 
+describe('getModifierMagnitude — modMagnitudeLv (Phase G mod_magnitude)', () => {
+  const dummyMod2: Modifier = {
+    id: 'm_test', nameKR: 'X', category: 'attack', baseValue: 0.5, effectType: 'stat_mod', validSlots: ['weapon'],
+    rarityWeight: { common: 1, uncommon: 1, rare: 1, epic: 1, legendary: 1, mythic: 1 },
+  };
+  const inst2: EquipmentInstance = { instanceId: 'i_test', baseId: 'b_test', enhanceLv: 0, modifiers: [] };
+
+  it('default modMagnitudeLv 0 = baseline (enhance lv 0)', () => {
+    const baseline = getModifierMagnitude(dummyMod2, inst2, 'common');
+    const explicit = getModifierMagnitude(dummyMod2, inst2, 'common', 0);
+    expect(explicit).toBeCloseTo(baseline, 5);
+  });
+
+  it('modMagnitudeLv 10 = +50%', () => {
+    const baseline = getModifierMagnitude(dummyMod2, inst2, 'common', 0);
+    const boosted = getModifierMagnitude(dummyMod2, inst2, 'common', 10);
+    expect(boosted).toBeCloseTo(baseline * 1.5, 5);
+  });
+
+  it('compose with enhance lv: enhance 1, magLv 5 = ×(enhance) × 1.25', () => {
+    const inst1 = { ...inst2, enhanceLv: 1 };
+    const baseline = getModifierMagnitude(dummyMod2, inst1, 'common', 0);
+    const boosted = getModifierMagnitude(dummyMod2, inst1, 'common', 5);
+    expect(boosted).toBeCloseTo(baseline * 1.25, 5);
+  });
+});
+
 describe('rerollCost', () => {
   it('first reroll one slot: DR 25M, stones 250', () => {
     const c = rerollCost(0, 'one');

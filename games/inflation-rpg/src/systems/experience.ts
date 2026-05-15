@@ -8,7 +8,8 @@ export function applyExpGain(
   currentExp: number,
   currentLevel: number,
   gainedExp: number,
-  isHard: boolean
+  isHard: boolean,
+  bonusSpPerLevel = 0,
 ): { newLevel: number; newExp: number; spGained: number } {
   let exp = currentExp + gainedExp * (isHard ? 10 : 1);
   let level = currentLevel;
@@ -17,7 +18,7 @@ export function applyExpGain(
   while (exp >= expRequired(level)) {
     exp -= expRequired(level);
     level++;
-    spGained += SP_PER_LEVEL;
+    spGained += SP_PER_LEVEL + bonusSpPerLevel;
   }
 
   return { newLevel: level, newExp: exp, spGained };

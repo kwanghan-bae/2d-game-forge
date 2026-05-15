@@ -69,3 +69,22 @@ describe('Ascension screen', () => {
     expect(useGameStore.getState().screen).toBe('town');
   });
 });
+
+describe('Ascension — tabs (Phase G)', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'ascension', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('초월 탭이 기본 active', () => {
+    render(<Ascension />);
+    expect(screen.getByTestId('asctree-tab-tier').getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByTestId('ascension-status')).toBeInTheDocument();
+  });
+
+  it('성좌 탭 클릭 시 노드 그리드 노출', () => {
+    render(<Ascension />);
+    fireEvent.click(screen.getByTestId('asctree-tab-tree'));
+    expect(screen.getByTestId('asctree-ap')).toBeInTheDocument();
+    expect(screen.getByTestId('asctree-node-hp_pct')).toBeInTheDocument();
+  });
+});

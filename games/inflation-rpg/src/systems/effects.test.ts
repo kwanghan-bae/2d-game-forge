@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createEffectsState, addEffect, tickEffects, evaluateTriggers,
-  processIncomingDamage, getDebuffStatMultiplier,
+  processIncomingDamage, getDebuffStatMultiplier, applyProcMult,
   type CombatStateForEffects,
 } from './effects';
 import type { ActiveEffect } from '../types';
@@ -152,5 +152,29 @@ describe('getDebuffStatMultiplier', () => {
       durationMs: 3000, remainingMs: 3000, magnitude: 0.5, stack: 2,
     });
     expect(getDebuffStatMultiplier(s, 'enemy')).toBeCloseTo(0, 2);
+  });
+});
+
+describe('applyProcMult (Phase G effect_proc hook)', () => {
+  it('lv 0 = baseline chance', () => {
+    expect(applyProcMult(0.1, 0)).toBeCloseTo(0.1, 6);
+  });
+
+  it('lv 5 = +25% (×1.25)', () => {
+    expect(applyProcMult(0.1, 5)).toBeCloseTo(0.125, 6);
+  });
+
+  it('clamps to 1.0 max', () => {
+    expect(applyProcMult(0.9, 5)).toBe(1.0);    // 0.9 × 1.25 = 1.125 → cap 1.0
+    expect(applyProcMult(1.0, 0)).toBe(1.0);
+    expect(applyProcMult(1.5, 0)).toBe(1.0);   // input > 1 also capped
+  });
+
+  it('0 chance stays 0', () => {
+    expect(applyProcMult(0, 5)).toBe(0);
+  });
+
+  it('negative chance treated as 0', () => {
+    expect(applyProcMult(-0.1, 5)).toBe(0);
   });
 });

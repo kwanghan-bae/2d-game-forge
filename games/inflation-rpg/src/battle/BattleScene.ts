@@ -21,6 +21,7 @@ import {
 } from './SkillSystem';
 import type { ActiveSkill } from '../types';
 import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
+import { applyDropMult } from '../systems/economy';
 import {
   createEffectsState, tickEffects, processIncomingDamage, addEffect, getDebuffStatMultiplier,
   type CombatStateForEffects,
@@ -160,8 +161,11 @@ export class BattleScene extends Phaser.Scene {
       const charLv = meta.characterLevels[run.characterId] ?? 0;
       const charLevelMult = 1 + charLv * 0.1;
       const ascTierMult = 1 + 0.1 * meta.ascTier;
-      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult);
-      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult, ascTierMult);
+      const ascTree = meta.ascTree;
+      const ascTreeAtkMult = 1 + 0.05 * ascTree.atk_pct;
+      const ascTreeHpMult = 1 + 0.05 * ascTree.hp_pct;
+      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult);
+      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult);
     }
   }
 
@@ -176,12 +180,15 @@ export class BattleScene extends Phaser.Scene {
     const charLv = meta.characterLevels[run.characterId] ?? 0;
     const charLevelMult = 1 + charLv * 0.1;
     const ascTierMult = 1 + 0.1 * meta.ascTier;
+    const ascTree = meta.ascTree;
+    const ascTreeAtkMult = 1 + 0.05 * ascTree.atk_pct;
+    const ascTreeHpMult = 1 + 0.05 * ascTree.hp_pct;
 
-    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult);
-    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult);
-    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult, ascTierMult);
-    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult);
-    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult);
+    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult);
+    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult, 1);
+    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult);
+    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1);
+    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1);
 
     const crit = Math.random() < calcCritChance(playerAGI, playerLUC);
     const combo = Math.random() < 0.05 + playerAGI * 0.0005;
@@ -192,6 +199,7 @@ export class BattleScene extends Phaser.Scene {
         playerATK,
         crit,
         rngRoll: Math.random(),
+        critMultBonus: 0.20 * ascTree.crit_damage,
       });
     }
 
@@ -220,8 +228,9 @@ export class BattleScene extends Phaser.Scene {
       }
 
       const expGain = Math.floor(run.level * 10);
-      const goldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1));
-      const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode);
+      const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1));
+      const goldGain = applyDropMult(rawGoldGain, 0.10, meta.ascTree.gold_drop);
+      const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode, meta.ascTree.sp_per_lvl);
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));

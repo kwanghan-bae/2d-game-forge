@@ -956,6 +956,70 @@ describe('persist v8 → v9 migration', () => {
   });
 });
 
+describe('persist v9 → v10 migration (Phase G)', () => {
+  it('legacy meta without ascTree gets EMPTY_ASC_TREE injected', () => {
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const legacy = {
+      meta: {
+        ascTier: 2,
+        ascPoints: 3,
+        // ascTree missing — pre v10
+      },
+      run: null,
+      screen: 'main',
+    };
+    const migrated = migrate(legacy, 9) as any;
+    expect(migrated.meta.ascTree).toEqual({
+      hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+      dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+      mod_magnitude: 0, effect_proc: 0,
+    });
+    expect(migrated.meta.ascPoints).toBe(3);
+    expect(migrated.meta.ascTier).toBe(2);
+  });
+
+  it('preserves existing ascTree when present', () => {
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const v10State = {
+      meta: {
+        ascTier: 0, ascPoints: 0,
+        ascTree: {
+          hp_pct: 3, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+          dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+          mod_magnitude: 0, effect_proc: 0,
+        },
+      },
+      run: null,
+      screen: 'main',
+    };
+    const migrated = migrate(v10State, 10) as any;
+    expect(migrated.meta.ascTree.hp_pct).toBe(3);
+  });
+
+  it('v8 → v10 chain: v8 save gets ascTree injected', () => {
+    const migrate = (useGameStore.persist as any).getOptions().migrate;
+    const legacyV8 = {
+      meta: {
+        ascTier: 0,
+        ascPoints: 0,
+        crackStones: 0,
+        dungeonFinalsCleared: [],
+        // v8-shape: no ascTree, no v9 fields like adsWatched
+        inventory: { weapons: [], armors: [], accessories: [] },
+        equippedItemIds: [],
+      },
+      run: null,
+      screen: 'main',
+    };
+    const migrated = migrate(legacyV8, 8) as any;
+    expect(migrated.meta.ascTree).toEqual({
+      hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+      dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+      mod_magnitude: 0, effect_proc: 0,
+    });
+  });
+});
+
 describe('GameStore — Phase D rerollOneSlot / rerollAllSlots', () => {
   const MOCK_MODIFIER = {
     id: 'mod_crit_damage',
@@ -1026,5 +1090,166 @@ describe('GameStore — Phase D rerollOneSlot / rerollAllSlots', () => {
     expect(meta.rerollCount).toBe(2);
     expect(meta.dr).toBe(300_000_000 - 100_000_000 - 150_000_000);
     expect(meta.crackStones).toBe(3000 - 1000 - 1500);
+  });
+});
+
+describe('AscTree actions (Phase G)', () => {
+  beforeEach(() => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascPoints: 10,
+        ascTree: {
+          hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+          dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+          mod_magnitude: 0, effect_proc: 0,
+        },
+      },
+    }));
+  });
+
+  it('canBuyAscTreeNode: ok with sufficient AP', () => {
+    const r = useGameStore.getState().canBuyAscTreeNode('hp_pct');
+    expect(r.ok).toBe(true);
+    expect(r.cost).toBe(1);
+    expect(r.currentLv).toBe(0);
+  });
+
+  it('canBuyAscTreeNode: rejects when AP insufficient', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascPoints: 0 } }));
+    const r = useGameStore.getState().canBuyAscTreeNode('hp_pct');
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('ap');
+  });
+
+  it('canBuyAscTreeNode: rejects when at max lv', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, gold_drop: 5 } },
+    }));
+    const r = useGameStore.getState().canBuyAscTreeNode('gold_drop');
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('max');
+  });
+
+  it('buyAscTreeNode: success deducts AP + bumps lv', () => {
+    const ok = useGameStore.getState().buyAscTreeNode('hp_pct');
+    expect(ok).toBe(true);
+    expect(useGameStore.getState().meta.ascPoints).toBe(9);
+    expect(useGameStore.getState().meta.ascTree.hp_pct).toBe(1);
+  });
+
+  it('buyAscTreeNode: returns false when blocked', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascPoints: 0 } }));
+    const ok = useGameStore.getState().buyAscTreeNode('hp_pct');
+    expect(ok).toBe(false);
+  });
+
+  it('buyAscTreeNode: cost grows with lv (lv 3 → 4 = 4 AP)', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascPoints: 100, ascTree: { ...s.meta.ascTree, hp_pct: 3 } },
+    }));
+    useGameStore.getState().buyAscTreeNode('hp_pct');
+    expect(useGameStore.getState().meta.ascPoints).toBe(96);
+    expect(useGameStore.getState().meta.ascTree.hp_pct).toBe(4);
+  });
+});
+
+describe('canAscend — asc_accel discount (Phase G)', () => {
+  it('asc_accel 0 = baseline cost (N²)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 4,
+        dungeonFinalsCleared: ['a','b','c','d','e','f','g'],
+        ascTree: { ...s.meta.ascTree, asc_accel: 0 },
+      },
+    }));
+    const r = useGameStore.getState().canAscend();
+    expect(r.cost).toBe(25);  // (4+1)² = 25
+  });
+
+  it('asc_accel 5 = -50%', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 4,
+        dungeonFinalsCleared: ['a','b','c','d','e','f','g'],
+        ascTree: { ...s.meta.ascTree, asc_accel: 5 },
+      },
+    }));
+    const r = useGameStore.getState().canAscend();
+    expect(r.cost).toBe(13);  // ceil(25 × 0.5) = 13
+  });
+
+  it('asc_accel 9 = -90% (floor)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 4,
+        dungeonFinalsCleared: ['a','b','c','d','e','f','g'],
+        ascTree: { ...s.meta.ascTree, asc_accel: 9 },
+      },
+    }));
+    const r = useGameStore.getState().canAscend();
+    expect(r.cost).toBe(3);   // ceil(25 × 0.1) = 3
+  });
+});
+
+describe('Economy multipliers (Phase G)', () => {
+  beforeEach(() => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        dr: 0, enhanceStones: 0,
+        ascTree: {
+          hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+          dungeon_currency: 0, crit_damage: 0, asc_accel: 0,
+          mod_magnitude: 0, effect_proc: 0,
+        },
+      },
+      run: { ...useGameStore.getState().run, isHardMode: false },
+    }));
+  });
+
+  it('incrementDungeonKill: dungeon_currency 0 = baseline DR', () => {
+    useGameStore.getState().incrementDungeonKill(10);   // monsterLevel 10 → round(0.5×10) = 5
+    expect(useGameStore.getState().meta.dr).toBe(5);
+  });
+
+  it('incrementDungeonKill: dungeon_currency 5 = +50% DR', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, dungeon_currency: 5 } },
+    }));
+    useGameStore.getState().incrementDungeonKill(10);   // floor(5 × 1.5) = 7
+    expect(useGameStore.getState().meta.dr).toBe(7);
+  });
+
+  it('bossDrop: dungeon_currency scales DR + stones', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, dungeon_currency: 5 } },
+    }));
+    // bossType='mini', bpReward=5 → drGained = 5*100 = 500, stones = 5
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
+    // ×1.5 → DR 750, stones floor(5×1.5)=7
+    expect(useGameStore.getState().meta.dr).toBe(750);
+    expect(useGameStore.getState().meta.enhanceStones).toBe(7);
+  });
+});
+
+describe('Run start BP — bp_start node (Phase G)', () => {
+  it('default BP = STARTING_BP (30)', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, bp_start: 0 } },
+    }));
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().run.bp).toBe(30);
+  });
+
+  it('bp_start lv 3 = STARTING_BP + 3 = 33', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTree: { ...s.meta.ascTree, bp_start: 3 } },
+    }));
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().run.bp).toBe(33);
   });
 });

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId } from '../types';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
 import {
   onBossKill as progressionOnBossKill,
@@ -15,6 +15,8 @@ import { getEquipmentBase } from '../data/equipment';
 import { rollModifiers, rerollCost, rerollOneSlot as rerollOneSlotFn, rerollAllSlots as rerollAllSlotsFn } from '../systems/modifiers';
 import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillProgression';
 import { getUltById } from '../data/jobskills';
+import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
+import { applyDropMult } from '../systems/economy';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -79,6 +81,8 @@ export const INITIAL_META: MetaState = {
   crackStones: 0,
   ascTier: 0,
   ascPoints: 0,
+  // Phase G — Ascension Tree
+  ascTree: { ...EMPTY_ASC_TREE },
   // Phase F-2+3 — JP / Skill Progression
   jp: {},
   jpEarnedTotal: {},
@@ -158,6 +162,14 @@ interface GameStore {
   awardJpOnCharLvMilestone: (charId: string) => void;
   levelUpSkill: (charId: string, skillId: string) => void;
   pickUltSlot: (charId: string, slotIndex: 0 | 1 | 2 | 3, ultSkillId: string | null) => void;
+  // Phase G — Ascension Tree
+  canBuyAscTreeNode: (id: AscTreeNodeId) => {
+    ok: boolean;
+    cost: number;
+    currentLv: number;
+    reason?: 'max' | 'ap';
+  };
+  buyAscTreeNode: (id: AscTreeNodeId) => boolean;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -205,6 +217,7 @@ export const useGameStore = create<GameStore>()(
             characterId,
             isHardMode,
             currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
+            bp: STARTING_BP + s.meta.ascTree.bp_start,   // Phase G — bp_start node
           },
           screen: 'dungeon-floors',
         })),
@@ -264,9 +277,10 @@ export const useGameStore = create<GameStore>()(
           const hardKilled = s.run.isHardMode
             ? progressionOnBossKill(bossId, s.meta.hardBossesKilled, 9)
             : s.meta.hardBossesKilled;
-          const drGained = bpReward * 100;
+          const dungLv = s.meta.ascTree.dungeon_currency;
+          const drGained = applyDropMult(bpReward * 100, 0.10, dungLv);
           // Spec §2 TODO-a: final boss drops 50 enhanceStones (격상 5 → 50)
-          const stonesGained = bossType === 'final' ? 50 : bpReward;
+          const stonesGained = applyDropMult(bossType === 'final' ? 50 : bpReward, 0.10, dungLv);
           return {
             run: {
               ...s.run,
@@ -342,7 +356,8 @@ export const useGameStore = create<GameStore>()(
       })),
 
       incrementDungeonKill: (monsterLevel) => set((s) => {
-        const drGained = Math.max(1, Math.round(monsterLevel * 0.5));
+        const dungLv = s.meta.ascTree.dungeon_currency;
+        const drGained = applyDropMult(Math.max(1, Math.round(monsterLevel * 0.5)), 0.10, dungLv);
         return {
           run: {
             ...s.run,
@@ -524,7 +539,8 @@ export const useGameStore = create<GameStore>()(
         const nextTier = s.meta.ascTier + 1;
         const finalsRequired = nextTier + 2;
         const finalsCleared = s.meta.dungeonFinalsCleared.length;
-        const cost = nextTier * nextTier;
+        const ascAccelLv = s.meta.ascTree?.asc_accel ?? 0;
+        const cost = Math.ceil((nextTier * nextTier) * (1 - 0.10 * ascAccelLv));
         if (finalsCleared < finalsRequired) {
           return { ok: false, nextTier, cost, finalsRequired, finalsCleared, reason: 'finals' };
         }
@@ -570,6 +586,36 @@ export const useGameStore = create<GameStore>()(
             },
           };
         });
+        return true;
+      },
+
+      canBuyAscTreeNode: (id) => {
+        const s = get();
+        const currentLv = s.meta.ascTree[id];
+        const def = ASC_TREE_NODES[id];
+        if (currentLv >= def.maxLevel) {
+          return { ok: false, cost: 0, currentLv, reason: 'max' };
+        }
+        const cost = nodeCost(currentLv);
+        if (s.meta.ascPoints < cost) {
+          return { ok: false, cost, currentLv, reason: 'ap' };
+        }
+        return { ok: true, cost, currentLv };
+      },
+
+      buyAscTreeNode: (id) => {
+        const check = get().canBuyAscTreeNode(id);
+        if (!check.ok) return false;
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            ascPoints: s.meta.ascPoints - check.cost,
+            ascTree: {
+              ...s.meta.ascTree,
+              [id]: s.meta.ascTree[id] + 1,
+            },
+          },
+        }));
         return true;
       },
 
@@ -787,7 +833,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 9,
+      version: 10,
       migrate: (persisted: unknown, fromVersion: number) => {
         const s = persisted as { meta?: Partial<MetaState>; run?: (Partial<RunState> & { currentAreaId?: string }) };
         if (fromVersion < 1) {
@@ -901,7 +947,11 @@ export const useGameStore = create<GameStore>()(
         }
         // v8 → v9: EquipmentInstance 에 modifiers 자동 굴림
         if (fromVersion <= 8) {
-          return migrateV8ToV9(s);
+          migrateV8ToV9(s);
+        }
+        // v9 → v10: Phase G — ascTree 초기 0 주입
+        if (fromVersion <= 9 && s.meta) {
+          s.meta.ascTree = s.meta.ascTree ?? { ...EMPTY_ASC_TREE };
         }
         return s;
       },
