@@ -13,10 +13,12 @@ export function DungeonPickModal({ onClose }: Props) {
   const meta = useGameStore((s) => s.meta);
   const pickAndSelect = useGameStore((s) => s.pickAndSelectDungeon);
   const selectFree = useGameStore((s) => s.selectDungeonFree);
+  const selectDungeon = useGameStore((s) => s.selectDungeon);
   const setScreen = useGameStore((s) => s.setScreen);
 
   const [pickedId, setPickedId] = React.useState<string | null>(null);
   const [freeMode, setFreeMode] = React.useState(false);
+  const [freelyPicked, setFreelyPicked] = React.useState(false);
 
   React.useEffect(() => {
     setPickedId(pickAndSelect());
@@ -30,9 +32,16 @@ export function DungeonPickModal({ onClose }: Props) {
     setScreen('class-select');
   };
 
+  // 취소 / 모달 dismiss 시 추첨된 currentDungeonId 잔존 방지.
+  const cancel = () => {
+    selectDungeon(null);
+    onClose();
+  };
+
   const onPickFree = (id: string) => {
     selectFree(id);
     setPickedId(id);
+    setFreelyPicked(true);
     setFreeMode(false);
   };
 
@@ -51,14 +60,16 @@ export function DungeonPickModal({ onClose }: Props) {
         {!freeMode && picked && (
           <>
             <h2 style={{ textAlign: 'center', marginBottom: 'var(--forge-space-4)' }}>
-              차원 추첨
+              {freelyPicked ? '자유 선택 완료' : '차원 추첨'}
             </h2>
             <div data-testid="pick-result" style={{ textAlign: 'center', marginBottom: 'var(--forge-space-4)' }}>
               <div style={{ fontSize: '3rem' }}>{picked.emoji}</div>
               <div style={{ fontSize: 'var(--forge-font-lg)', fontWeight: 600 }}>{picked.nameKR}</div>
-              <div style={{ fontSize: 'var(--forge-font-sm)', color: 'var(--forge-text-secondary)' }}>
-                가중치 {getDungeonWeight(meta, picked.id)} 적용됨
-              </div>
+              {!freelyPicked && (
+                <div data-testid="pick-weight" style={{ fontSize: 'var(--forge-font-sm)', color: 'var(--forge-text-secondary)' }}>
+                  가중치 {getDungeonWeight(meta, picked.id)} 적용됨
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--forge-space-2)' }}>
               <ForgeButton variant="primary" onClick={enter} data-testid="pick-enter">
@@ -73,7 +84,7 @@ export function DungeonPickModal({ onClose }: Props) {
                   🗺️ 자유 선택 (나침반)
                 </ForgeButton>
               )}
-              <ForgeButton variant="secondary" onClick={onClose} data-testid="pick-cancel">
+              <ForgeButton variant="secondary" onClick={cancel} data-testid="pick-cancel">
                 취소
               </ForgeButton>
             </div>
