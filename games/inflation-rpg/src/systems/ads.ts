@@ -21,14 +21,15 @@ export function finishAdWatch(
   meta: MetaState,
   _adRunId: string,
   relicId: RelicId,
-  _nowTs: number,
+  nowTs: number,
 ): { ok: boolean; relicId: RelicId; capReached: boolean; nextMeta: MetaState } {
-  const capReached = isAtCap(meta, relicId);
-  const nextStacks = capReached ? meta.relicStacks : applyStackIncrement(meta, relicId);
+  const refreshed = checkDailyReset(meta, nowTs);
+  const capReached = isAtCap(refreshed, relicId);
+  const nextStacks = capReached ? refreshed.relicStacks : applyStackIncrement(refreshed, relicId);
   const nextMeta: MetaState = {
-    ...meta,
-    adsWatched: (meta.adsWatched ?? 0) + 1,
-    adsToday: meta.adsToday + 1,
+    ...refreshed,
+    adsWatched: refreshed.adsWatched + 1,
+    adsToday: refreshed.adsToday + 1,
     relicStacks: nextStacks,
   };
   return { ok: true, relicId, capReached, nextMeta };

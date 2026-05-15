@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
+import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
 import {
   onBossKill as progressionOnBossKill,
@@ -171,6 +172,8 @@ interface GameStore {
   // Phase F-3 — JP actions
   awardJpOnBossKill: (bossId: string, bossType: 'mini' | 'major' | 'sub' | 'final') => void;
   watchAdForJpCap: (charId: string) => void;
+  // Phase E — Ad-watch relic stack
+  watchAdForRelic: (relicId: RelicId) => void;
   awardJpOnCharLvMilestone: (charId: string) => void;
   levelUpSkill: (charId: string, skillId: string) => void;
   pickUltSlot: (charId: string, slotIndex: 0 | 1 | 2 | 3, ultSkillId: string | null) => void;
@@ -914,6 +917,20 @@ export const useGameStore = create<GameStore>()(
       watchAdForJpCap: (charId) => set((s) => ({
         meta: { ...s.meta, jpCap: { ...s.meta.jpCap, [charId]: (s.meta.jpCap[charId] ?? 0) + 50 } },
       })),
+
+      // Phase E — Ad-watch relic stack: canWatchAd → startAdWatch → finishAdWatch.
+      // 8s UI cooldown 은 UI 레벨에서 처리; 본 액션은 cooldown 종료 후 호출된다.
+      watchAdForRelic: (relicId: RelicId) => {
+        set((state) => {
+          const now = Date.now();
+          const refreshed = checkDailyReset(state.meta, now);
+          const check = canWatchAd(refreshed, now);
+          if (!check.ok) return { meta: refreshed };
+          const { adRunId } = startAdWatch(refreshed, now);
+          const { nextMeta } = finishAdWatch(refreshed, adRunId, relicId, now);
+          return { meta: nextMeta };
+        });
+      },
 
       levelUpSkill: (charId, skillId) => set((s) => {
         const isUlt = !!getUltById(skillId);

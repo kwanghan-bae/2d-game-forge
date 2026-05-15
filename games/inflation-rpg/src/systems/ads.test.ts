@@ -50,6 +50,17 @@ describe('startAdWatch → finishAdWatch flow', () => {
   });
 });
 
+describe('finishAdWatch daily-reset integration', () => {
+  it('finishAdWatch on next day starts adsToday from 1 (not 21)', () => {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const meta = { ...makeMeta(20, yesterday.getTime()), relicStacks: { ...EMPTY_RELIC_STACKS } };
+    const { adRunId } = startAdWatch(meta, Date.now());
+    const result = finishAdWatch(meta, adRunId, 'warrior_banner', Date.now());
+    expect(result.nextMeta.adsToday).toBe(1);   // reset + this watch = 1, NOT 21
+    expect(result.nextMeta.relicStacks.warrior_banner).toBe(1);
+  });
+});
+
 describe('checkDailyReset', () => {
   it('resets adsToday when nowTs date > lastReset date (local)', () => {
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
