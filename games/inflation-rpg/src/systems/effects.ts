@@ -1,6 +1,6 @@
 // games/inflation-rpg/src/systems/effects.ts
 import type {
-  ActiveEffect, EffectsState, EffectId,
+  ActiveEffect, EffectsState, EffectId, MythicProc,
 } from '../types';
 
 export function createEffectsState(): EffectsState {
@@ -126,6 +126,49 @@ export function getDebuffStatMultiplier(state: EffectsState, target: 'enemy' | '
 export function applyProcMult(baseChance: number, effectProcLv: number): number {
   if (baseChance <= 0) return 0;
   return Math.min(1, baseChance * (1 + 0.05 * effectProcLv));
+}
+
+// ─── Phase E — Mythic proc triggers ───
+// Permanent (run-scoped) trigger list registered from meta.mythicEquipped.
+// Stored on EffectsState.permanentTriggers (separate from `active` map which
+// is for time-based ActiveEffect entries).
+
+export function registerMythicProcs(state: EffectsState, procs: MythicProc[]): void {
+  state.permanentTriggers = procs;
+}
+
+export interface MythicProcResult {
+  lifestealHeal: number;
+  thornsReflect: number;
+  spStealAmount: number;
+  magicBurstDamage: number;
+}
+
+export function evaluateMythicProcs(
+  state: EffectsState,
+  trigger: 'on_player_hit_received' | 'on_player_attack',
+  ctx: { damageDealt?: number; damageReceived?: number; rng?: () => number },
+): MythicProcResult {
+  let lifestealHeal = 0;
+  let thornsReflect = 0;
+  let spStealAmount = 0;
+  let magicBurstDamage = 0;
+  const procs = state.permanentTriggers ?? [];
+  for (const p of procs) {
+    if (p.trigger !== trigger) continue;
+    if (p.effect === 'lifesteal' && ctx.damageDealt) {
+      lifestealHeal += ctx.damageDealt * p.value;
+    } else if (p.effect === 'thorns' && ctx.damageReceived) {
+      thornsReflect += ctx.damageReceived * p.value;
+    } else if (p.effect === 'sp_steal' && ctx.damageDealt) {
+      spStealAmount += ctx.damageDealt * p.value;
+    } else if (p.effect === 'magic_burst' && ctx.damageDealt) {
+      // value = proc chance; deterministic 50% bonus damage when proc'd
+      const r = ctx.rng ? ctx.rng() : Math.random();
+      if (r < p.value) magicBurstDamage += ctx.damageDealt * 0.5;
+    }
+  }
+  return { lifestealHeal, thornsReflect, spStealAmount, magicBurstDamage };
 }
 
 export function evaluateTriggers(

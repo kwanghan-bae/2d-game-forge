@@ -4,9 +4,13 @@ import { computeSkillEffect, createSkillState, isSkillReady, fireSkill } from '.
 import { calcDamageReduction, calcCritChance } from '../src/systems/stats';
 import {
   createEffectsState, addEffect, tickEffects, processIncomingDamage,
+  registerMythicProcs,
   type CombatStateForEffects,
 } from '../src/systems/effects';
-import type { ActiveSkill, Modifier, AscTree } from '../src/types';
+import { EMPTY_RELIC_STACKS } from '../src/data/relics';
+import { getMythicFlatMult, getMythicProcs } from '../src/systems/mythics';
+import { getRelicFlatMult } from '../src/systems/relics';
+import type { ActiveSkill, Modifier, AscTree, MythicId, RelicId, MetaState } from '../src/types';
 
 export interface SimRng {
   next(): number; // [0, 1)
@@ -41,6 +45,10 @@ export interface SimPlayer {
   skills: Array<ActiveSkill & { dmgMul?: number }>;
   modifiers?: Modifier[];  // Phase D — 장비 modifier 효과
   ascTree?: Partial<AscTree>;  // Phase G — Ascension Tree 노드 레벨
+  // Phase E — mythic + relic aggregators
+  mythicEquipped?: (MythicId | null)[];
+  mythicOwned?: MythicId[];
+  relicStacks?: Partial<Record<RelicId, number>>;
 }
 
 export interface SimResult {
@@ -60,18 +68,48 @@ export function simulateFloor(
 ): SimResult {
   let enemyHp = resolveEnemyMaxHp(enemy);
   const enemyMaxHp = enemyHp;
-  let playerHpTracker = player.hpMax;
   const skillState = createSkillState();
   const effectsState = createEffectsState();
-  const enemyAtk = resolveEnemyAtk(enemy);
-  const reduction = calcDamageReduction(player.def);
-  const damageTaken = resolveDamageTaken({ enemyATK: enemyAtk, reduction });
-  let monstersDefeated = 0;
 
   // Phase G — ascTree 노드 레벨 추출
   const modMagnitudeLv = player.ascTree?.mod_magnitude ?? 0;
   const critDamageLv = player.ascTree?.crit_damage ?? 0;
   const critMultBonus = 0.20 * critDamageLv;
+
+  // Phase E — synthesize MetaState-shaped object for aggregator helpers.
+  // null branch = mythic-off / relic-empty baseline → skips all Phase E paths
+  // and preserves pre-Phase-E sim numbers (balance-milestones.test.ts guard).
+  const phaseE_meta = (() => {
+    if (!player.mythicEquipped && !player.mythicOwned && !player.relicStacks) {
+      return null;
+    }
+    return {
+      mythicEquipped: player.mythicEquipped ?? [null, null, null, null, null],
+      mythicOwned: player.mythicOwned ?? [],
+      relicStacks: { ...EMPTY_RELIC_STACKS, ...(player.relicStacks ?? {}) },
+      ascTree: player.ascTree ?? {},
+    } as MetaState;
+  })();
+
+  // Phase E — apply mythic + relic flat_mult multipliers to base stats.
+  // Mirrors calcFinalStat's Math.floor behavior.
+  let simAtk = player.atk;
+  let simDef = player.def;
+  let simHpMax = player.hpMax;
+  if (phaseE_meta) {
+    const atkMetaMult = getMythicFlatMult(phaseE_meta, 'atk') * getRelicFlatMult(phaseE_meta, 'atk');
+    const defMetaMult = getMythicFlatMult(phaseE_meta, 'def') * getRelicFlatMult(phaseE_meta, 'def');
+    const hpMetaMult  = getMythicFlatMult(phaseE_meta, 'hp')  * getRelicFlatMult(phaseE_meta, 'hp');
+    simAtk = Math.floor(simAtk * atkMetaMult);
+    simDef = Math.floor(simDef * defMetaMult);
+    simHpMax = Math.floor(simHpMax * hpMetaMult);
+  }
+
+  let playerHpTracker = simHpMax;
+  const enemyAtk = resolveEnemyAtk(enemy);
+  const reduction = calcDamageReduction(simDef);
+  const damageTaken = resolveDamageTaken({ enemyATK: enemyAtk, reduction });
+  let monstersDefeated = 0;
 
   // Phase D — modifier effects → effectsState 등록.
   // RESOLVED in Task 12 — processIncomingDamage 가 적 공격 경로에 연결되어
@@ -106,6 +144,15 @@ export function simulateFloor(
     }
   }
 
+  // Phase E — register mythic procs into effectsState.permanentTriggers.
+  // processIncomingDamage / evaluateMythicProcs paths consume them.
+  // Full proc-result application would require deeper integration (out of T23
+  // scope); registration is sufficient to keep sim flow intact + baseline parity.
+  if (phaseE_meta) {
+    const procs = getMythicProcs(phaseE_meta);
+    registerMythicProcs(effectsState, procs);
+  }
+
   // Tick rate = 600ms (matches BattleScene combatTimer.delay).
   // Caveat: BattleScene.update runs at Phaser frame rate (~16ms), so a skill
   // with cd < 600ms can fire multiple times between basic attacks in production
@@ -119,7 +166,7 @@ export function simulateFloor(
     for (const skill of player.skills) {
       const nowMs = tick * TICK_MS;
       if (isSkillReady(skillState, skill, nowMs)) {
-        const result = computeSkillEffect(skill, player.atk, player.hpMax, enemyHp, enemyMaxHp);
+        const result = computeSkillEffect(skill, simAtk, simHpMax, enemyHp, enemyMaxHp);
         if (result.damage !== undefined) {
           enemyHp = Math.max(0, enemyHp - result.damage);
         }
@@ -137,7 +184,7 @@ export function simulateFloor(
     let totalDmg = 0;
     for (let i = 0; i < hits; i++) {
       totalDmg += resolvePlayerHit({
-        playerATK: player.atk,
+        playerATK: simAtk,
         crit,
         rngRoll: rng.next(),
         critMultBonus, // Phase G — ascTree.crit_damage (+0.20 per level)
@@ -168,9 +215,9 @@ export function simulateFloor(
 
     // effects tick (BattleScene.update mirror)
     const combat: CombatStateForEffects = {
-      selfHp: playerHpTracker, selfMaxHp: player.hpMax,
+      selfHp: playerHpTracker, selfMaxHp: simHpMax,
       enemyHp, enemyMaxHp,
-      selfAtk: player.atk, selfDef: player.def,
+      selfAtk: simAtk, selfDef: simDef,
     };
     const tickResult = tickEffects(effectsState, combat, TICK_MS);
     if (tickResult.stateDelta.enemyHpDelta) {

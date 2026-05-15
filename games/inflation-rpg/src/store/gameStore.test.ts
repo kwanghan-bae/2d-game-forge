@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9 } from './gameStore';
+import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, runStoreMigration } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
-import type { EquipmentInstance } from '../types';
+import { type EquipmentInstance } from '../types';
+import { EMPTY_RELIC_STACKS } from '../data/relics';
+import { AD_DAILY_CAP } from '../systems/ads';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
 beforeEach(() => {
@@ -1251,5 +1253,247 @@ describe('Run start BP — bp_start node (Phase G)', () => {
     }));
     useGameStore.getState().startRun('hwarang', false);
     expect(useGameStore.getState().run.bp).toBe(33);
+  });
+});
+
+describe('v10 → v11 migration (Phase E)', () => {
+  it('injects relicStacks / mythicOwned / mythicEquipped / mythicSlotCap / adsToday / adsLastResetTs defaults', () => {
+    const v10State: any = {
+      meta: {
+        ascTier: 7,
+        ascTree: { hp_pct: 0, atk_pct: 0, gold_drop: 0, bp_start: 0, sp_per_lvl: 0,
+                   dungeon_currency: 0, crit_damage: 0, asc_accel: 0, mod_magnitude: 0, effect_proc: 0 },
+      },
+    };
+    const result = runStoreMigration(v10State, 10) as any;
+    expect(result.meta.relicStacks).toEqual(EMPTY_RELIC_STACKS);
+    expect(result.meta.mythicOwned).toEqual([]);
+    expect(result.meta.mythicEquipped).toEqual([null, null, null, null, null]);
+    expect(result.meta.mythicSlotCap).toBe(3);                  // tier 7 → cap 3
+    expect(result.meta.adsToday).toBe(0);
+    expect(typeof result.meta.adsLastResetTs).toBe('number');
+  });
+
+  it('computes slotCap correctly for tier boundaries', () => {
+    const cases: [number, number][] = [
+      [0, 0], [1, 1], [4, 1], [5, 3], [9, 3], [10, 5], [25, 5],
+    ];
+    for (const [tier, expected] of cases) {
+      const state: any = { meta: { ascTier: tier, ascTree: {} } };
+      const result = runStoreMigration(state, 10) as any;
+      expect(result.meta.mythicSlotCap).toBe(expected);
+    }
+  });
+});
+
+describe('ascend() preserves Phase E meta fields', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('keeps relicStacks / mythicOwned / mythicEquipped through ascension', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 0,
+        crackStones: 1000,
+        dungeonFinalsCleared: ['final-realm', 'r2', 'r3'],     // ≥ nextTier + 2
+        relicStacks: { ...EMPTY_RELIC_STACKS, warrior_banner: 5, gold_coin: 12 },
+        mythicOwned: ['fire_throne', 'time_hourglass'],
+        mythicEquipped: ['fire_throne', null, null, null, null],
+      },
+    }));
+    const ok = useGameStore.getState().ascend();
+    expect(ok).toBe(true);
+    const meta = useGameStore.getState().meta;
+    expect(meta.relicStacks.warrior_banner).toBe(5);
+    expect(meta.relicStacks.gold_coin).toBe(12);
+    // Phase E cp5 — Tier 0 → 1 is a milestone tier; tier1_charm gets appended.
+    expect(meta.mythicOwned).toEqual(['fire_throne', 'time_hourglass', 'tier1_charm']);
+    expect(meta.mythicEquipped).toEqual(['fire_throne', null, null, null, null]);
+    expect(meta.mythicSlotCap).toBe(1);                       // ascTier 0 → 1 (nextTier)
+  });
+});
+
+describe('ascend() — Phase E milestone award', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 0,
+        crackStones: 99999,
+        dungeonFinalsCleared: ['final-realm', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10',
+                                'r11', 'r12', 'r13', 'r14', 'r15', 'r16', 'r17', 'r18', 'r19', 'r20',
+                                'r21', 'r22'],   // enough finals for tier 20
+        mythicOwned: [],
+        mythicEquipped: [null, null, null, null, null],
+        mythicSlotCap: 0,
+      },
+    }));
+  });
+
+  it('first ascend (tier 0→1): awards tier1_charm + slotCap 1', () => {
+    const ok = useGameStore.getState().ascend();
+    expect(ok).toBe(true);
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(1);
+    expect(meta.mythicSlotCap).toBe(1);
+    expect(meta.mythicOwned).toContain('tier1_charm');
+  });
+
+  it('non-milestone tier ascend: no mythic awarded', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascTier: 1 } }));
+    useGameStore.getState().ascend();   // 1 → 2
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(2);
+    expect(meta.mythicOwned).toEqual([]);
+  });
+
+  it('tier 4 → 5: awards tier5_seal + slotCap 3', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascTier: 4 } }));
+    useGameStore.getState().ascend();
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(5);
+    expect(meta.mythicSlotCap).toBe(3);
+    expect(meta.mythicOwned).toContain('tier5_seal');
+  });
+
+  it('tier 9 → 10: awards infinity_seal + slotCap 5', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascTier: 9 } }));
+    useGameStore.getState().ascend();
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(10);
+    expect(meta.mythicSlotCap).toBe(5);
+    expect(meta.mythicOwned).toContain('infinity_seal');
+  });
+
+  it('milestone re-ascend (after manual rollback): no duplicate mythic', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTier: 0, mythicOwned: ['tier1_charm'] },
+    }));
+    useGameStore.getState().ascend();   // 0 → 1, tier1_charm already owned
+    const meta = useGameStore.getState().meta;
+    expect(meta.mythicOwned.filter((id) => id === 'tier1_charm')).toHaveLength(1);
+  });
+});
+
+describe('Phase E — defeat passives (featherUsed + no_death_loss)', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('INITIAL_RUN.featherUsed === 0', () => {
+    expect(INITIAL_RUN.featherUsed).toBe(0);
+  });
+
+  it('startRun resets featherUsed to 0', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, featherUsed: 3 } }));
+    expect(useGameStore.getState().run.featherUsed).toBe(3);
+    useGameStore.getState().startRun('hwarang', false);
+    expect(useGameStore.getState().run.featherUsed).toBe(0);
+  });
+
+  it('abandonRun resets featherUsed to 0', () => {
+    useGameStore.setState((s) => ({ run: { ...s.run, featherUsed: 4 } }));
+    useGameStore.getState().abandonRun();
+    expect(useGameStore.getState().run.featherUsed).toBe(0);
+  });
+
+  it('migration injects featherUsed default for legacy run state', () => {
+    // Legacy save without featherUsed (e.g., v10 or earlier).
+    const legacy: any = {
+      meta: { ascTier: 0, ascTree: {} },
+      run: { characterId: 'hwarang', level: 5, bp: 20 },
+    };
+    const result = runStoreMigration(legacy, 10) as any;
+    expect(result.run.featherUsed).toBe(0);
+  });
+});
+
+describe('bossDrop — Phase E mythic drop (final only)', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('non-final boss does not roll mythic drop', () => {
+    const initialOwned = useGameStore.getState().meta.mythicOwned;
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
+    expect(useGameStore.getState().meta.mythicOwned).toEqual(initialOwned);
+  });
+
+  it('final boss kill with deterministic rng = drop', () => {
+    // Force RNG to roll under 0.30 (drop) by stubbing Math.random.
+    // Sequence: 0.05 < 0.30 → drop; 0 → index 0 of unowned pool.
+    const originalRandom = Math.random;
+    let i = 0;
+    const seq = [0.05, 0];
+    Math.random = () => seq[i++] ?? 0;
+    try {
+      useGameStore.setState((s) => ({
+        meta: { ...s.meta, mythicOwned: [] },
+      }));
+      useGameStore.getState().bossDrop('final-boss', 8, 'final');
+    } finally {
+      Math.random = originalRandom;
+    }
+    const meta = useGameStore.getState().meta;
+    expect(meta.mythicOwned.length).toBe(1);
+  });
+
+  it('final boss kill with rng above threshold = no drop', () => {
+    const originalRandom = Math.random;
+    Math.random = () => 0.99;
+    try {
+      useGameStore.setState((s) => ({
+        meta: { ...s.meta, mythicOwned: [] },
+      }));
+      useGameStore.getState().bossDrop('final-boss', 8, 'final');
+    } finally {
+      Math.random = originalRandom;
+    }
+    expect(useGameStore.getState().meta.mythicOwned).toEqual([]);
+  });
+
+  it('mythicSlotCap stays consistent with current ascTier after bossDrop', () => {
+    // Simulate a drift between ascTier and slotCap (e.g., legacy save) — recompute should fix it.
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTier: 7, mythicSlotCap: 0 },
+    }));
+    useGameStore.getState().bossDrop('test-boss', 5, 'mini');
+    // tier 7 (>=5, <10) → 3 slots per computeMythicSlotCap
+    expect(useGameStore.getState().meta.mythicSlotCap).toBe(3);
+  });
+});
+
+describe('watchAdForRelic — store action', () => {
+  beforeEach(() => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, adsToday: 0, adsWatched: 0, relicStacks: { ...EMPTY_RELIC_STACKS }, adsLastResetTs: Date.now() },
+    }));
+  });
+  it('increments relic stack + ad counters when ok', () => {
+    useGameStore.getState().watchAdForRelic('warrior_banner');
+    const meta = useGameStore.getState().meta;
+    expect(meta.relicStacks.warrior_banner).toBe(1);
+    expect(meta.adsToday).toBe(1);
+    expect(meta.adsWatched).toBe(1);
+  });
+  it('respects daily cap', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, adsToday: AD_DAILY_CAP } }));
+    useGameStore.getState().watchAdForRelic('warrior_banner');
+    const meta = useGameStore.getState().meta;
+    expect(meta.adsToday).toBe(AD_DAILY_CAP);   // unchanged
+    expect(meta.relicStacks.warrior_banner).toBe(0);   // unchanged
+  });
+  it('cap-reached relic: stack stays but counter increments', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, relicStacks: { ...EMPTY_RELIC_STACKS, undead_coin: 1 } },
+    }));
+    useGameStore.getState().watchAdForRelic('undead_coin');
+    const meta = useGameStore.getState().meta;
+    expect(meta.relicStacks.undead_coin).toBe(1);   // binary cap
+    expect(meta.adsToday).toBe(1);
+    expect(meta.adsWatched).toBe(1);
   });
 });

@@ -89,6 +89,16 @@ export function Town() {
         </ForgeButton>
       </div>
 
+      <div style={{ textAlign: 'center', marginTop: 'var(--forge-space-4)' }}>
+        <ForgeButton
+          variant="secondary"
+          onClick={() => setScreen('relics')}
+          data-testid="town-relics"
+        >
+          💎 보물고
+        </ForgeButton>
+      </div>
+
       <div style={{ textAlign: 'center', marginTop: 'var(--forge-space-6)' }}>
         <ForgeButton variant="secondary" onClick={() => setScreen('main-menu')}>
           돌아가기

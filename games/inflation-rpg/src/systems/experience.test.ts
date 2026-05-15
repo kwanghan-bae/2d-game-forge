@@ -65,3 +65,30 @@ describe('applyExpGain — bonusSpPerLevel (Phase G sp_per_lvl)', () => {
     expect(r.spGained).toBe(2 * (SP_PER_LEVEL + 1));   // 2 × 5 = 10
   });
 });
+
+describe('applyExpGain — 6th param metaXpMult (Phase E)', () => {
+  it('defaults to 1.0 (backwards compat)', () => {
+    const a = applyExpGain(0, 1, 100, false);
+    const b = applyExpGain(0, 1, 100, false, 0, 1);
+    expect(a).toEqual(b);
+  });
+
+  it('multiplies gained exp by metaXpMult', () => {
+    // 40 * 2 = 80 < expRequired(1) = 100, so no level-up; newExp = gained * mult
+    const small = applyExpGain(0, 1, 40, false, 0, 1);
+    const doubled = applyExpGain(0, 1, 40, false, 0, 2);
+    expect(small.newExp).toBe(40);
+    expect(doubled.newExp).toBe(80);
+    expect(doubled.newExp).toBe(small.newExp * 2);
+  });
+
+  it('stacks multiplicatively with hard mode (10x * 2x = 20x)', () => {
+    // gainedExp = 4, hard = 10x → exp = 40 (no level up, expRequired(1) = 100)
+    const baseline = applyExpGain(0, 1, 4, true, 0, 1);
+    // gainedExp = 4, hard = 10x, metaXpMult = 2x → exp = 80 (still no level up)
+    const stacked = applyExpGain(0, 1, 4, true, 0, 2);
+    expect(baseline.newExp).toBe(40);
+    expect(stacked.newExp).toBe(80);
+    expect(stacked.newExp).toBe(baseline.newExp * 2);
+  });
+});
