@@ -85,3 +85,24 @@ export function getMythicProcs(meta: MetaState): MythicProc[] {
   }
   return procs;
 }
+
+export function equipMythic(meta: MetaState, slotIndex: number, mythicId: MythicId): MetaState {
+  if (slotIndex < 0 || slotIndex >= meta.mythicSlotCap) {
+    throw new Error(`slot ${slotIndex} out of range (cap ${meta.mythicSlotCap})`);
+  }
+  if (!meta.mythicOwned.includes(mythicId)) {
+    throw new Error(`mythic ${mythicId} not owned`);
+  }
+  if (meta.mythicEquipped.includes(mythicId)) {
+    throw new Error(`${mythicId} already equipped in another slot`);
+  }
+  const next = [...meta.mythicEquipped];
+  next[slotIndex] = mythicId;
+  return { ...meta, mythicEquipped: next };
+}
+
+export function unequipMythic(meta: MetaState, slotIndex: number): MetaState {
+  const next = [...meta.mythicEquipped];
+  next[slotIndex] = null;
+  return { ...meta, mythicEquipped: next };
+}
