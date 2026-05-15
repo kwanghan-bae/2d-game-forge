@@ -8,7 +8,10 @@ import {
   getMythicReviveCount,
   equipMythic,
   unequipMythic,
+  rollMythicDrop,
+  awardMilestoneMythic,
 } from './mythics';
+import { MYTHICS, ALL_MYTHIC_IDS as DATA_ALL } from '../data/mythics';
 
 function makeMeta(
   equipped: (MythicId | null)[] = [],
@@ -119,5 +122,51 @@ describe('equipMythic', () => {
     const after = equipMythic(meta(), 0, 'tier1_charm');
     const cleared = unequipMythic(after, 0);
     expect(cleared.mythicEquipped[0]).toBeNull();
+  });
+});
+
+describe('rollMythicDrop (base 30% chance, weighted from unowned random_drop pool)', () => {
+  function meta(owned: MythicId[] = []): MetaState {
+    return { mythicOwned: owned } as MetaState;
+  }
+  it('returns null when rng >= 0.30 (no drop)', () => {
+    expect(rollMythicDrop(meta(), () => 0.31)).toBeNull();
+    expect(rollMythicDrop(meta(), () => 0.99)).toBeNull();
+  });
+  it('returns a random_drop mythic when rng < 0.30', () => {
+    const seq = [0.05, 0]; let i = 0;
+    const id = rollMythicDrop(meta(), () => seq[i++]);
+    expect(id).not.toBeNull();
+    expect(MYTHICS[id!].acquisition.kind).toBe('random_drop');
+  });
+  it('excludes owned mythics from pool', () => {
+    const allRandom = DATA_ALL.filter(id => MYTHICS[id].acquisition.kind === 'random_drop');
+    const ownedAll = meta(allRandom);
+    const seq = [0.0, 0.0]; let i = 0;
+    expect(rollMythicDrop(ownedAll, () => seq[i++])).toBeNull();
+  });
+  it('excludes milestone mythics from random pool', () => {
+    const seq = [0.05, 0.999]; let i = 0;
+    const id = rollMythicDrop(meta(), () => seq[i++]);
+    expect(['tier1_charm', 'tier5_seal', 'infinity_seal', 'dimension_navigator', 'light_of_truth'])
+      .not.toContain(id!);
+  });
+});
+
+describe('awardMilestoneMythic', () => {
+  it('awards correct mythic for tier 1/5/10/15/20', () => {
+    expect(awardMilestoneMythic({ mythicOwned: [] } as unknown as MetaState, 1).mythicOwned).toEqual(['tier1_charm']);
+    expect(awardMilestoneMythic({ mythicOwned: [] } as unknown as MetaState, 5).mythicOwned).toEqual(['tier5_seal']);
+    expect(awardMilestoneMythic({ mythicOwned: [] } as unknown as MetaState, 10).mythicOwned).toEqual(['infinity_seal']);
+    expect(awardMilestoneMythic({ mythicOwned: [] } as unknown as MetaState, 15).mythicOwned).toEqual(['dimension_navigator']);
+    expect(awardMilestoneMythic({ mythicOwned: [] } as unknown as MetaState, 20).mythicOwned).toEqual(['light_of_truth']);
+  });
+  it('no-op for non-milestone tier', () => {
+    const before = { mythicOwned: ['fire_throne'] } as unknown as MetaState;
+    expect(awardMilestoneMythic(before, 7).mythicOwned).toEqual(['fire_throne']);
+  });
+  it('no double-award if already owned', () => {
+    const before = { mythicOwned: ['tier1_charm'] } as unknown as MetaState;
+    expect(awardMilestoneMythic(before, 1).mythicOwned).toEqual(['tier1_charm']);
   });
 });

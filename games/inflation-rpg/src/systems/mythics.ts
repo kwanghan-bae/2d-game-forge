@@ -1,6 +1,8 @@
 import type { MetaState, MythicId } from '../types';
-import { MYTHICS } from '../data/mythics';
+import { MYTHICS, ALL_MYTHIC_IDS as DATA_ALL, MILESTONE_MYTHIC_BY_TIER } from '../data/mythics';
 import type { FlatMultTarget, DropKind } from './relics';
+
+export { ALL_MYTHIC_IDS } from '../data/mythics';
 
 export type SkillKind = 'base' | 'ult';
 
@@ -105,4 +107,25 @@ export function unequipMythic(meta: MetaState, slotIndex: number): MetaState {
   const next = [...meta.mythicEquipped];
   next[slotIndex] = null;
   return { ...meta, mythicEquipped: next };
+}
+
+const BASE_DROP_CHANCE = 0.30;
+
+export function rollMythicDrop(meta: MetaState, rng: () => number): MythicId | null {
+  if (rng() >= BASE_DROP_CHANCE) return null;
+  const pool = DATA_ALL.filter(id => {
+    const def = MYTHICS[id];
+    if (def.acquisition.kind !== 'random_drop') return false;
+    return !meta.mythicOwned.includes(id);
+  });
+  if (pool.length === 0) return null;
+  const idx = Math.floor(rng() * pool.length);
+  return pool[idx];
+}
+
+export function awardMilestoneMythic(meta: MetaState, tier: number): MetaState {
+  const id = MILESTONE_MYTHIC_BY_TIER[tier];
+  if (!id) return meta;
+  if (meta.mythicOwned.includes(id)) return meta;
+  return { ...meta, mythicOwned: [...meta.mythicOwned, id] };
 }
