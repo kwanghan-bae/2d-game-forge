@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
 import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
@@ -19,7 +19,7 @@ import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillP
 import { getUltById } from '../data/jobskills';
 import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
 import { applyDropMult, applyMetaDropMult } from '../systems/economy';
-import { rollMythicDrop, awardMilestoneMythic } from '../systems/mythics';
+import { rollMythicDrop, awardMilestoneMythic, equipMythic, unequipMythic } from '../systems/mythics';
 import { MILESTONE_TIERS } from '../data/mythics';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
@@ -174,6 +174,9 @@ interface GameStore {
   watchAdForJpCap: (charId: string) => void;
   // Phase E — Ad-watch relic stack
   watchAdForRelic: (relicId: RelicId) => void;
+  // Phase E — Mythic equip/unequip
+  equipMythicAction: (slotIdx: number, id: MythicId) => void;
+  unequipMythicAction: (slotIdx: number) => void;
   awardJpOnCharLvMilestone: (charId: string) => void;
   levelUpSkill: (charId: string, skillId: string) => void;
   pickUltSlot: (charId: string, slotIndex: 0 | 1 | 2 | 3, ultSkillId: string | null) => void;
@@ -931,6 +934,12 @@ export const useGameStore = create<GameStore>()(
           return { meta: nextMeta };
         });
       },
+
+      // Phase E — Mythic equip/unequip
+      equipMythicAction: (slotIdx, id) =>
+        set((state) => ({ meta: equipMythic(state.meta, slotIdx, id) })),
+      unequipMythicAction: (slotIdx) =>
+        set((state) => ({ meta: unequipMythic(state.meta, slotIdx) })),
 
       levelUpSkill: (charId, skillId) => set((s) => {
         const isUlt = !!getUltById(skillId);
