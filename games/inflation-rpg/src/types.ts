@@ -221,6 +221,10 @@ export interface MetaState {
   adsToday: number;
   adsLastResetTs: number;
   adsWatched: number;        // lifetime ad-watch count (v9 migration default 0)
+  // Phase Compass — 차원 나침반
+  compassOwned: Record<CompassId, boolean>;
+  dungeonMiniBossesCleared: string[];   // mini-boss 첫 처치 누적
+  dungeonMajorBossesCleared: string[];  // major-boss 첫 처치 누적
 }
 
 // Phase G — Ascension Tree (성좌)
@@ -249,6 +253,22 @@ export type MythicId = string;
 
 export type MythicEffectType =
   | 'flat_mult' | 'cooldown_mult' | 'drop_mult' | 'xp_mult' | 'proc' | 'passive';
+
+// Phase Compass — 차원 나침반
+export type CompassId =
+  | 'plains_first'    | 'plains_second'
+  | 'forest_first'    | 'forest_second'
+  | 'mountains_first' | 'mountains_second'
+  | 'omni';
+
+export interface CompassEntry {
+  id: CompassId;
+  dungeonId: string | null;     // null = omni (모든 던전)
+  tier: 0 | 1 | 2;              // 0 = omni, 1 = mini-boss, 2 = major-boss
+  emoji: string;
+  nameKR: string;
+  descriptionKR: string;
+}
 
 export interface TutorialStep {
   id: string;
