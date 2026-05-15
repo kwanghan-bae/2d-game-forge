@@ -212,6 +212,13 @@ export interface MetaState {
   ultSlotPicks: Record<string, [string | null, string | null, string | null, string | null]>;
   // Phase D — Modifiers reroll count
   rerollCount?: number;
+  // Phase E — Relics + Mythic + Ads
+  relicStacks: Record<RelicId, number>;
+  mythicOwned: MythicId[];
+  mythicEquipped: (MythicId | null)[];   // length 5, index = slot
+  mythicSlotCap: number;                 // 0..5, derived from ascTier
+  adsToday: number;
+  adsLastResetTs: number;
 }
 
 // Phase G — Ascension Tree (성좌)
@@ -228,6 +235,24 @@ export type AscTreeNodeId =
   | 'effect_proc';
 
 export type AscTree = Record<AscTreeNodeId, number>;
+
+// Phase E — Relics + Mythic
+
+export type RelicId =
+  | 'warrior_banner' | 'dokkaebi_charm' | 'gold_coin' | 'soul_pearl'
+  | 'sands_of_time'  | 'fate_dice'      | 'moonlight_amulet' | 'eagle_arrow'
+  | 'undead_coin'    | 'feather_of_fate';
+
+export type MythicId = string;
+
+export type MythicEffectType =
+  | 'flat_mult' | 'cooldown_mult' | 'drop_mult' | 'xp_mult' | 'proc' | 'passive';
+
+export const EMPTY_RELIC_STACKS: Record<RelicId, number> = {
+  warrior_banner: 0, dokkaebi_charm: 0, gold_coin: 0, soul_pearl: 0,
+  sands_of_time: 0, fate_dice: 0, moonlight_amulet: 0, eagle_arrow: 0,
+  undead_coin: 0, feather_of_fate: 0,
+};
 
 export interface TutorialStep {
   id: string;

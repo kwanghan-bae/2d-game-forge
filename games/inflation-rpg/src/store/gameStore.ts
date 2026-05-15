@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId } from '../types';
+import { EMPTY_RELIC_STACKS } from '../types';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
 import {
   onBossKill as progressionOnBossKill,
@@ -95,6 +96,13 @@ export const INITIAL_META: MetaState = {
     mudang:  [null, null, null, null],
     choeui:  [null, null, null, null],
   },
+  // Phase E
+  relicStacks: { ...EMPTY_RELIC_STACKS },
+  mythicOwned: [],
+  mythicEquipped: [null, null, null, null, null],
+  mythicSlotCap: 0,
+  adsToday: 0,
+  adsLastResetTs: 0,
 };
 
 interface GameStore {
