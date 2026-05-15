@@ -1153,3 +1153,44 @@ describe('AscTree actions (Phase G)', () => {
     expect(useGameStore.getState().meta.ascTree.hp_pct).toBe(4);
   });
 });
+
+describe('canAscend — asc_accel discount (Phase G)', () => {
+  it('asc_accel 0 = baseline cost (N²)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 4,
+        dungeonFinalsCleared: ['a','b','c','d','e','f','g'],
+        ascTree: { ...s.meta.ascTree, asc_accel: 0 },
+      },
+    }));
+    const r = useGameStore.getState().canAscend();
+    expect(r.cost).toBe(25);  // (4+1)² = 25
+  });
+
+  it('asc_accel 5 = -50%', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 4,
+        dungeonFinalsCleared: ['a','b','c','d','e','f','g'],
+        ascTree: { ...s.meta.ascTree, asc_accel: 5 },
+      },
+    }));
+    const r = useGameStore.getState().canAscend();
+    expect(r.cost).toBe(13);  // ceil(25 × 0.5) = 13
+  });
+
+  it('asc_accel 9 = -90% (floor)', () => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 4,
+        dungeonFinalsCleared: ['a','b','c','d','e','f','g'],
+        ascTree: { ...s.meta.ascTree, asc_accel: 9 },
+      },
+    }));
+    const r = useGameStore.getState().canAscend();
+    expect(r.cost).toBe(3);   // ceil(25 × 0.1) = 3
+  });
+});

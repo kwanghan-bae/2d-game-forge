@@ -535,7 +535,8 @@ export const useGameStore = create<GameStore>()(
         const nextTier = s.meta.ascTier + 1;
         const finalsRequired = nextTier + 2;
         const finalsCleared = s.meta.dungeonFinalsCleared.length;
-        const cost = nextTier * nextTier;
+        const ascAccelLv = s.meta.ascTree?.asc_accel ?? 0;
+        const cost = Math.ceil((nextTier * nextTier) * (1 - 0.10 * ascAccelLv));
         if (finalsCleared < finalsRequired) {
           return { ok: false, nextTier, cost, finalsRequired, finalsCleared, reason: 'finals' };
         }
