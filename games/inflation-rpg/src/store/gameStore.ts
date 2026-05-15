@@ -18,7 +18,8 @@ import { jpCostToLevel, totalSkillLv, ultSlotsUnlocked } from '../systems/skillP
 import { getUltById } from '../data/jobskills';
 import { ASC_TREE_NODES, EMPTY_ASC_TREE, nodeCost } from '../data/ascTree';
 import { applyDropMult, applyMetaDropMult } from '../systems/economy';
-import { rollMythicDrop } from '../systems/mythics';
+import { rollMythicDrop, awardMilestoneMythic } from '../systems/mythics';
+import { MILESTONE_TIERS } from '../data/mythics';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -735,34 +736,39 @@ export const useGameStore = create<GameStore>()(
           const equippedSet = new Set(s.meta.equippedItemIds);
           const keepEquipped = (list: EquipmentInstance[]) =>
             list.filter((inst) => equippedSet.has(inst.instanceId));
+          let newMeta: MetaState = {
+            ...s.meta,
+            soulGrade: 0,
+            dr: 0,
+            enhanceStones: 0,
+            characterLevels: {},
+            normalBossesKilled: [],
+            hardBossesKilled: [],
+            baseAbilityLevel: 0,
+            questProgress: {},
+            questsCompleted: [],
+            regionsVisited: [],
+            dungeonProgress: {},
+            pendingFinalClearedId: null,
+            inventory: {
+              weapons: keepEquipped(s.meta.inventory.weapons),
+              armors: keepEquipped(s.meta.inventory.armors),
+              accessories: keepEquipped(s.meta.inventory.accessories),
+            },
+            crackStones: s.meta.crackStones - cost,
+            ascTier: nextTier,
+            ascPoints: s.meta.ascPoints + nextTier,
+            // Phase E — mythic slot cap derived from new tier (invariant: cap === computeMythicSlotCap(ascTier))
+            mythicSlotCap: computeMythicSlotCap(nextTier),
+          };
+          // Phase E — milestone award (Tier 1/5/10/15/20)
+          if (MILESTONE_TIERS.includes(nextTier)) {
+            newMeta = awardMilestoneMythic(newMeta, nextTier);
+          }
           return {
             run: INITIAL_RUN,
             screen: 'main-menu',
-            meta: {
-              ...s.meta,
-              soulGrade: 0,
-              dr: 0,
-              enhanceStones: 0,
-              characterLevels: {},
-              normalBossesKilled: [],
-              hardBossesKilled: [],
-              baseAbilityLevel: 0,
-              questProgress: {},
-              questsCompleted: [],
-              regionsVisited: [],
-              dungeonProgress: {},
-              pendingFinalClearedId: null,
-              inventory: {
-                weapons: keepEquipped(s.meta.inventory.weapons),
-                armors: keepEquipped(s.meta.inventory.armors),
-                accessories: keepEquipped(s.meta.inventory.accessories),
-              },
-              crackStones: s.meta.crackStones - cost,
-              ascTier: nextTier,
-              ascPoints: s.meta.ascPoints + nextTier,
-              // Phase E — mythic slot cap derived from new tier (invariant: cap === computeMythicSlotCap(ascTier))
-              mythicSlotCap: computeMythicSlotCap(nextTier),
-            },
+            meta: newMeta,
           };
         });
         return true;

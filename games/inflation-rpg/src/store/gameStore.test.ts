@@ -1307,9 +1307,73 @@ describe('ascend() preserves Phase E meta fields', () => {
     const meta = useGameStore.getState().meta;
     expect(meta.relicStacks.warrior_banner).toBe(5);
     expect(meta.relicStacks.gold_coin).toBe(12);
-    expect(meta.mythicOwned).toEqual(['fire_throne', 'time_hourglass']);
+    // Phase E cp5 — Tier 0 → 1 is a milestone tier; tier1_charm gets appended.
+    expect(meta.mythicOwned).toEqual(['fire_throne', 'time_hourglass', 'tier1_charm']);
     expect(meta.mythicEquipped).toEqual(['fire_throne', null, null, null, null]);
     expect(meta.mythicSlotCap).toBe(1);                       // ascTier 0 → 1 (nextTier)
+  });
+});
+
+describe('ascend() — Phase E milestone award', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 0,
+        crackStones: 99999,
+        dungeonFinalsCleared: ['final-realm', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 'r10',
+                                'r11', 'r12', 'r13', 'r14', 'r15', 'r16', 'r17', 'r18', 'r19', 'r20',
+                                'r21', 'r22'],   // enough finals for tier 20
+        mythicOwned: [],
+        mythicEquipped: [null, null, null, null, null],
+        mythicSlotCap: 0,
+      },
+    }));
+  });
+
+  it('first ascend (tier 0→1): awards tier1_charm + slotCap 1', () => {
+    const ok = useGameStore.getState().ascend();
+    expect(ok).toBe(true);
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(1);
+    expect(meta.mythicSlotCap).toBe(1);
+    expect(meta.mythicOwned).toContain('tier1_charm');
+  });
+
+  it('non-milestone tier ascend: no mythic awarded', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascTier: 1 } }));
+    useGameStore.getState().ascend();   // 1 → 2
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(2);
+    expect(meta.mythicOwned).toEqual([]);
+  });
+
+  it('tier 4 → 5: awards tier5_seal + slotCap 3', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascTier: 4 } }));
+    useGameStore.getState().ascend();
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(5);
+    expect(meta.mythicSlotCap).toBe(3);
+    expect(meta.mythicOwned).toContain('tier5_seal');
+  });
+
+  it('tier 9 → 10: awards infinity_seal + slotCap 5', () => {
+    useGameStore.setState((s) => ({ meta: { ...s.meta, ascTier: 9 } }));
+    useGameStore.getState().ascend();
+    const meta = useGameStore.getState().meta;
+    expect(meta.ascTier).toBe(10);
+    expect(meta.mythicSlotCap).toBe(5);
+    expect(meta.mythicOwned).toContain('infinity_seal');
+  });
+
+  it('milestone re-ascend (after manual rollback): no duplicate mythic', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, ascTier: 0, mythicOwned: ['tier1_charm'] },
+    }));
+    useGameStore.getState().ascend();   // 0 → 1, tier1_charm already owned
+    const meta = useGameStore.getState().meta;
+    expect(meta.mythicOwned.filter((id) => id === 'tier1_charm')).toHaveLength(1);
   });
 });
 
