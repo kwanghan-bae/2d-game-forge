@@ -46,4 +46,29 @@ describe('DungeonPickModal', () => {
     expect(screen.getByTestId('free-card-forest')).not.toBeDisabled();
     expect(screen.getByTestId('free-card-mountains')).toBeDisabled();
   });
+
+  it('clicking 취소 resets run.currentDungeonId + onClose', () => {
+    let closed = false;
+    render(<DungeonPickModal onClose={() => { closed = true; }} />);
+    expect(useGameStore.getState().run.currentDungeonId).not.toBeNull();
+    act(() => { fireEvent.click(screen.getByTestId('pick-cancel')); });
+    expect(closed).toBe(true);
+    expect(useGameStore.getState().run.currentDungeonId).toBeNull();
+  });
+
+  it('weight badge shown for random pick', () => {
+    render(<DungeonPickModal onClose={() => {}} />);
+    expect(screen.getByTestId('pick-weight')).toBeInTheDocument();
+  });
+
+  it('weight badge hidden after free pick', () => {
+    useGameStore.setState((s) => ({
+      meta: { ...s.meta, compassOwned: { ...EMPTY_COMPASS_OWNED, omni: true } },
+    }));
+    render(<DungeonPickModal onClose={() => {}} />);
+    act(() => { fireEvent.click(screen.getByTestId('pick-free-mode')); });
+    act(() => { fireEvent.click(screen.getByTestId('free-card-mountains')); });
+    expect(screen.queryByTestId('pick-weight')).not.toBeInTheDocument();
+    expect(screen.getByText(/자유 선택 완료/)).toBeInTheDocument();
+  });
 });
