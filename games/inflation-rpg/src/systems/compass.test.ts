@@ -34,6 +34,8 @@ describe('awardMiniBossCompass', () => {
     expect(patch).not.toBeNull();
     expect(patch!.compassOwned!.omni).toBe(true);
     expect(patch!.compassOwned!.mountains_first).toBe(true);
+    expect(patch!.compassOwned!.plains_first).toBe(true);
+    expect(patch!.compassOwned!.forest_first).toBe(true);
     expect(patch!.dungeonMiniBossesCleared).toEqual(['plains', 'forest', 'mountains']);
   });
 
