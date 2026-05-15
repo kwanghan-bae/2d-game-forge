@@ -6,7 +6,7 @@ import {
   createEffectsState, addEffect, tickEffects, processIncomingDamage,
   type CombatStateForEffects,
 } from '../src/systems/effects';
-import type { ActiveSkill, Modifier } from '../src/types';
+import type { ActiveSkill, Modifier, AscTree } from '../src/types';
 
 export interface SimRng {
   next(): number; // [0, 1)
@@ -40,6 +40,7 @@ export interface SimPlayer {
   luc: number;
   skills: Array<ActiveSkill & { dmgMul?: number }>;
   modifiers?: Modifier[];  // Phase D — 장비 modifier 효과
+  ascTree?: Partial<AscTree>;  // Phase G — Ascension Tree 노드 레벨
 }
 
 export interface SimResult {
@@ -67,29 +68,36 @@ export function simulateFloor(
   const damageTaken = resolveDamageTaken({ enemyATK: enemyAtk, reduction });
   let monstersDefeated = 0;
 
+  // Phase G — ascTree 노드 레벨 추출
+  const modMagnitudeLv = player.ascTree?.mod_magnitude ?? 0;
+  const critDamageLv = player.ascTree?.crit_damage ?? 0;
+  const critMultBonus = 0.20 * critDamageLv;
+
   // Phase D — modifier effects → effectsState 등록.
   // RESOLVED in Task 12 — processIncomingDamage 가 적 공격 경로에 연결되어
   // shield/reflect 가 실제 전투 수치에 영향을 준다. dot 는 tickEffects →
   // enemyHpDelta 경로로 이미 처리됨.
   if (player.modifiers) {
     for (const mod of player.modifiers) {
+      // Phase G — mod_magnitude 노드가 shield/reflect/trigger magnitude 를 증폭
+      const scaledMagnitude = mod.baseValue * (1 + 0.05 * modMagnitudeLv);
       if (mod.effectType === 'shield') {
         addEffect(effectsState, {
           id: `shield_${mod.id}`,
           effectType: 'shield', source: 'modifier', target: 'self',
-          durationMs: 999999, remainingMs: 999999, magnitude: mod.baseValue, stack: 1,
+          durationMs: 999999, remainingMs: 999999, magnitude: scaledMagnitude, stack: 1,
         });
       } else if (mod.effectType === 'reflect') {
         addEffect(effectsState, {
           id: `reflect_${mod.id}`,
           effectType: 'reflect', source: 'modifier', target: 'self',
-          durationMs: 999999, remainingMs: 999999, magnitude: mod.baseValue, stack: 1,
+          durationMs: 999999, remainingMs: 999999, magnitude: scaledMagnitude, stack: 1,
         });
       } else if (mod.effectType === 'trigger') {
         addEffect(effectsState, {
           id: `trigger_${mod.id}`,
           effectType: 'trigger', source: 'modifier', target: 'self',
-          durationMs: 999999, remainingMs: 999999, magnitude: mod.baseValue, stack: 1,
+          durationMs: 999999, remainingMs: 999999, magnitude: scaledMagnitude, stack: 1,
           triggerCondition: mod.triggerCondition,
         });
       }
@@ -132,7 +140,7 @@ export function simulateFloor(
         playerATK: player.atk,
         crit,
         rngRoll: rng.next(),
-        critMultBonus: 0, // Task 13 에서 SimPlayer.ascTreeCritDamageLv 로 교체 예정
+        critMultBonus, // Phase G — ascTree.crit_damage (+0.20 per level)
       });
     }
     enemyHp = Math.max(0, enemyHp - totalDmg);

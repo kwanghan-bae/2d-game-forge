@@ -1,6 +1,6 @@
 // games/inflation-rpg/tools/balance-sim.test.ts
 import { describe, it, expect } from 'vitest';
-import { simulateFloor, createSeededRng, type SimPlayer } from './balance-sim';
+import { simulateFloor, createSeededRng, type SimPlayer, type SimEnemy } from './balance-sim';
 import type { Modifier } from '../src/types';
 
 describe('balance-sim — determinism', () => {
@@ -72,5 +72,31 @@ describe('simulateFloor — shield modifier fidelity (Phase G Task 12)', () => {
       r1.ticksTaken === r2.ticksTaken &&
       Math.abs(r1.remainingHpRatio - r2.remainingHpRatio) < 1e-9;
     expect(sameOutcome).toBe(false);
+  });
+});
+
+describe('simulateFloor — ascTree.crit_damage in sim (Phase G Task 13)', () => {
+  it('crit_damage 5 produces higher DPS than lv 0', () => {
+    // High agi/luc → crits frequently. Many ticks needed to accumulate crit effects.
+    const baseATK = 50;
+    const enemy: SimEnemy = { monsterLevel: 1, isBoss: true, hpMult: 100 };  // tanky boss
+    const base: SimPlayer = { atk: baseATK, def: 0, hpMax: 1000, agi: 100, luc: 100, skills: [] };
+    const boosted: SimPlayer = { ...base, ascTree: { crit_damage: 5 } };
+    const r0 = simulateFloor(base, enemy, createSeededRng(7), 200);
+    const r5 = simulateFloor(boosted, enemy, createSeededRng(7), 200);
+    // If both win, boosted should finish faster (or same+with less wasted hp).
+    // If both lose, boosted should reduce enemy HP more (lower remainingHpRatio).
+    if (r0.victory && r5.victory) {
+      expect(r5.ticksTaken).toBeLessThanOrEqual(r0.ticksTaken);
+      // Some boost expected within tick — but rounding may make equal occasionally
+    } else if (!r0.victory && !r5.victory) {
+      expect(r5.remainingHpRatio).toBeLessThan(r0.remainingHpRatio);
+    } else if (!r0.victory && r5.victory) {
+      // boosted converted loss → win
+      expect(true).toBe(true);
+    } else {
+      // base wins but boosted loses — impossible with positive crit_damage
+      throw new Error('crit_damage bonus made player worse');
+    }
   });
 });
