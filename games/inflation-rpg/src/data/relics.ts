@@ -86,6 +86,12 @@ export const RELICS: Record<RelicId, RelicDef> = {
 
 export const ALL_RELIC_IDS: RelicId[] = Object.keys(RELICS) as RelicId[];
 
+export const EMPTY_RELIC_STACKS: Record<RelicId, number> = {
+  warrior_banner: 0, dokkaebi_charm: 0, gold_coin: 0, soul_pearl: 0,
+  sands_of_time: 0, fate_dice: 0, moonlight_amulet: 0, eagle_arrow: 0,
+  undead_coin: 0, feather_of_fate: 0,
+};
+
 export function getEffectiveStack(relicId: RelicId, rawStack: number): number {
   const def = RELICS[relicId];
   if (def.cap.kind === 'infinite') return rawStack;
