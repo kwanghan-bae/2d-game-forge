@@ -1,8 +1,9 @@
-import type { MetaState, MythicId } from '../types';
+import type { MetaState, MythicId, MythicProc } from '../types';
 import { MYTHICS, ALL_MYTHIC_IDS as DATA_ALL, MILESTONE_MYTHIC_BY_TIER } from '../data/mythics';
 import type { FlatMultTarget, DropKind } from './relics';
 
 export { ALL_MYTHIC_IDS } from '../data/mythics';
+export type { MythicProc } from '../types';
 
 export type SkillKind = 'base' | 'ult';
 
@@ -69,12 +70,6 @@ export function hasMythicPassive(meta: MetaState, key: 'revive'): boolean {
 
 export function getMythicReviveCount(meta: MetaState): number {
   return hasMythicPassive(meta, 'revive') ? 1 : 0;
-}
-
-export interface MythicProc {
-  trigger: 'on_player_hit_received' | 'on_player_attack';
-  effect: 'lifesteal' | 'thorns' | 'sp_steal' | 'magic_burst';
-  value: number;
 }
 
 export function getMythicProcs(meta: MetaState): MythicProc[] {

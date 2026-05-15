@@ -361,6 +361,15 @@ export interface ActiveEffect {
 
 export interface EffectsState {
   active: Map<EffectId, ActiveEffect>;
+  permanentTriggers?: MythicProc[];     // Phase E — mythic procs
+}
+
+// ─── Mythic Proc (Phase E §T14) ───
+
+export interface MythicProc {
+  trigger: 'on_player_hit_received' | 'on_player_attack';
+  effect: 'lifesteal' | 'thorns' | 'sp_steal' | 'magic_burst';
+  value: number;
 }
 
 // ─── Modifier (Phase D §6.2) ───

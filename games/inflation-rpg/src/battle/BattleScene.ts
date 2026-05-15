@@ -24,9 +24,10 @@ import { buildActiveSkillsForCombat } from '../systems/buildActiveSkills';
 import { applyMetaDropMult } from '../systems/economy';
 import {
   createEffectsState, tickEffects, processIncomingDamage, addEffect, getDebuffStatMultiplier,
+  registerMythicProcs, evaluateMythicProcs,
   type CombatStateForEffects,
 } from '../systems/effects';
-import { getMythicFlatMult, getMythicXpMult } from '../systems/mythics';
+import { getMythicFlatMult, getMythicXpMult, getMythicProcs } from '../systems/mythics';
 import { getRelicFlatMult, getRelicXpMult } from '../systems/relics';
 import type { EffectsState } from '../types';
 
@@ -153,6 +154,12 @@ export class BattleScene extends Phaser.Scene {
 
     this.effectsState = createEffectsState();
 
+    // Phase E — register mythic proc triggers from meta (independent of `active` map).
+    {
+      const { meta } = useGameStore.getState();
+      registerMythicProcs(this.effectsState, getMythicProcs(meta));
+    }
+
     // Cache player stats and active skills for skill system
     const char = getCharacterById(run.characterId);
     if (char) {
@@ -212,12 +219,25 @@ export class BattleScene extends Phaser.Scene {
       });
     }
 
-    this.enemyHP = Math.max(0, this.enemyHP - totalDmg);
+    // Phase E — mythic on_player_attack procs (lifesteal / sp_steal / magic_burst).
+    // damageDealt feeds all three; magic_burst adds bonus damage to enemy.
+    const attackProcs = evaluateMythicProcs(this.effectsState, 'on_player_attack', { damageDealt: totalDmg });
+    const totalEnemyDmg = totalDmg + attackProcs.magicBurstDamage;
+    this.enemyHP = Math.max(0, this.enemyHP - totalEnemyDmg);
+
+    // lifestealHeal / spStealAmount: BattleScene currently uses an estimate-based
+    // HP model (currentHPEstimate = playerHP - run.monstersDefeated × finalDmgTaken × 0.1)
+    // and SP here = stat points awarded on level-up, not a per-round resource. There
+    // is no persistent player-HP or per-round-SP state to apply these to, so we
+    // currently evaluate the procs (so RNG seeds advance consistently) but skip
+    // the damage-absorption / SP-credit application. Follow-up will require
+    // adding `run.playerHp` / `run.skillSp` state to the store.
 
     const logParts: string[] = [];
     if (combo) logParts.push(`${hits}연타! `);
     if (crit) logParts.push('치명타! ');
-    logParts.push(`${totalDmg.toLocaleString()} 데미지`);
+    logParts.push(`${totalEnemyDmg.toLocaleString()} 데미지`);
+    if (attackProcs.magicBurstDamage > 0) logParts.push(' (마법 폭발!)');
     this.logText?.setText(logParts.join(''));
 
     const ratio = this.enemyHP / this.enemyMaxHP;
@@ -320,8 +340,11 @@ export class BattleScene extends Phaser.Scene {
     const rawDmgTaken = resolveDamageTaken({ enemyATK, reduction });
     const incomingResult = processIncomingDamage(this.effectsState, rawDmgTaken);
     const finalDmgTaken = incomingResult.damageAfterShield;
-    if (incomingResult.reflectDamage > 0) {
-      this.enemyHP = Math.max(0, this.enemyHP - incomingResult.reflectDamage);
+    // Phase E — mythic on_player_hit_received procs (thorns).
+    const hitProcs = evaluateMythicProcs(this.effectsState, 'on_player_hit_received', { damageReceived: finalDmgTaken });
+    const totalReflect = incomingResult.reflectDamage + hitProcs.thornsReflect;
+    if (totalReflect > 0) {
+      this.enemyHP = Math.max(0, this.enemyHP - totalReflect);
       const ratio = this.enemyHP / this.enemyMaxHP;
       this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
     }
