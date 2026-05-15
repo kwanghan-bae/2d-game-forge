@@ -1,6 +1,6 @@
 import { DUNGEONS } from '../data/dungeons';
-import { getCompassByDungeon } from '../data/compass';
-import type { MetaState } from '../types';
+import { COMPASS_ITEMS, ALL_COMPASS_IDS, getCompassByDungeon } from '../data/compass';
+import type { MetaState, Dungeon } from '../types';
 
 /**
  * Returns a partial-state patch with the FULL new compassOwned object (spec §3.2).
@@ -43,4 +43,50 @@ export function awardMajorBossCompass(
     },
     dungeonMajorBossesCleared: [...meta.dungeonMajorBossesCleared, dungeonId],
   };
+}
+
+/**
+ * Returns the weighted draw multiplier for a dungeon.
+ * Owning the first-tier compass for that dungeon triples its weight; otherwise 1.
+ */
+export function getDungeonWeight(meta: MetaState, dungeonId: string): number {
+  return meta.compassOwned[getCompassByDungeon(dungeonId, 1)] ? 3 : 1;
+}
+
+/**
+ * Returns true if the player can freely select this dungeon without a random draw.
+ * Requires either the omni compass or the second-tier compass for this specific dungeon.
+ */
+export function canFreeSelect(meta: MetaState, dungeonId: string): boolean {
+  return !!(meta.compassOwned.omni || meta.compassOwned[getCompassByDungeon(dungeonId, 2)]);
+}
+
+/**
+ * Returns true if the player has free-select rights for at least one dungeon.
+ */
+export function hasAnyFreeSelect(meta: MetaState): boolean {
+  if (meta.compassOwned.omni) return true;
+  return ALL_COMPASS_IDS.some(
+    (id) => COMPASS_ITEMS[id].tier === 2 && meta.compassOwned[id]
+  );
+}
+
+/**
+ * Picks a random dungeon from the provided list using weighted random selection.
+ * Dungeons with the first-tier compass have 3× weight; others have 1× weight.
+ * Accepts an injectable rng function (default: Math.random) for deterministic testing.
+ */
+export function pickRandomDungeon(
+  meta: MetaState,
+  dungeons: readonly Dungeon[],
+  rng: () => number = Math.random
+): string {
+  const weights = dungeons.map((d) => getDungeonWeight(meta, d.id));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = rng() * total;
+  for (let i = 0; i < dungeons.length; i++) {
+    r -= weights[i]!;
+    if (r <= 0) return dungeons[i]!.id;
+  }
+  return dungeons[dungeons.length - 1]!.id;
 }
