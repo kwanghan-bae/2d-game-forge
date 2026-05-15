@@ -117,6 +117,17 @@ export function getDebuffStatMultiplier(state: EffectsState, target: 'enemy' | '
   return Math.max(0, mult);
 }
 
+/**
+ * Phase G — `effect_proc` 노드 hook.
+ * baseChance 를 (1 + 0.05 × lv) 로 스케일 후 [0, 1] 클램프.
+ * 현재 코드에는 proc-chance 사용처가 없어 production callsite 가 없다.
+ * 향후 modifier 에 chance 필드가 추가되면 이 helper 를 거쳐가도록 wrap 한다.
+ */
+export function applyProcMult(baseChance: number, effectProcLv: number): number {
+  if (baseChance <= 0) return 0;
+  return Math.min(1, baseChance * (1 + 0.05 * effectProcLv));
+}
+
 export function evaluateTriggers(
   state: EffectsState,
   event: 'on_kill' | 'on_hit' | 'on_hp_change' | 'on_stack',

@@ -42,3 +42,26 @@ describe('Experience System', () => {
     expect(result.spGained).toBe(0);
   });
 });
+
+describe('applyExpGain — bonusSpPerLevel (Phase G sp_per_lvl)', () => {
+  it('default 0 = baseline SP_PER_LEVEL', () => {
+    const baseline = applyExpGain(0, 1, expRequired(1) * 1, false);
+    const same = applyExpGain(0, 1, expRequired(1) * 1, false, 0);
+    expect(same.spGained).toBe(baseline.spGained);
+  });
+
+  it('bonus +2: each level-up grants SP_PER_LEVEL+2 = 6', () => {
+    // 1 level worth of exp triggers 1 level-up
+    const needed = expRequired(1);
+    const r = applyExpGain(0, 1, needed, false, 2);
+    expect(r.newLevel).toBe(2);
+    expect(r.spGained).toBe(SP_PER_LEVEL + 2);   // 4 + 2 = 6
+  });
+
+  it('two-level jump grants 2*(SP_PER_LEVEL+bonus)', () => {
+    const needed = expRequired(1) + expRequired(2);
+    const r = applyExpGain(0, 1, needed, false, 1);
+    expect(r.newLevel).toBe(3);
+    expect(r.spGained).toBe(2 * (SP_PER_LEVEL + 1));   // 2 × 5 = 10
+  });
+});

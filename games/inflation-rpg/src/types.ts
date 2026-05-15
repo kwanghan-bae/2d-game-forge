@@ -196,6 +196,7 @@ export interface MetaState {
   crackStones: number;       // 차원 균열석 — Asc 비용 화폐
   ascTier: number;           // 현재 Asc Tier (시작 0)
   ascPoints: number;         // Tier 진입 시 N 누적 — F-5 Asc Tree 소비처
+  ascTree: AscTree;          // F-5 노드별 lv (Phase G)
   tutorialDone: boolean;
   tutorialStep: number;
   musicVolume: number;
@@ -212,6 +213,21 @@ export interface MetaState {
   // Phase D — Modifiers reroll count
   rerollCount?: number;
 }
+
+// Phase G — Ascension Tree (성좌)
+export type AscTreeNodeId =
+  | 'hp_pct'
+  | 'atk_pct'
+  | 'gold_drop'
+  | 'bp_start'
+  | 'sp_per_lvl'
+  | 'dungeon_currency'
+  | 'crit_damage'
+  | 'asc_accel'
+  | 'mod_magnitude'
+  | 'effect_proc';
+
+export type AscTree = Record<AscTreeNodeId, number>;
 
 export interface TutorialStep {
   id: string;

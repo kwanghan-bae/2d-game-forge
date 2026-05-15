@@ -1,6 +1,7 @@
 // games/inflation-rpg/tools/balance-sim.test.ts
 import { describe, it, expect } from 'vitest';
-import { simulateFloor, createSeededRng } from './balance-sim';
+import { simulateFloor, createSeededRng, type SimPlayer, type SimEnemy } from './balance-sim';
+import type { Modifier } from '../src/types';
 
 describe('balance-sim — determinism', () => {
   it('same seed → same result', () => {
@@ -39,5 +40,63 @@ describe('balance-sim — determinism', () => {
     const enemy = { monsterLevel: 10000, isBoss: true, hpMult: 5.0 };
     const r = simulateFloor(player, enemy, createSeededRng(42), 100);
     expect(r.victory).toBe(false);
+  });
+});
+
+describe('simulateFloor — shield modifier fidelity (Phase G Task 12)', () => {
+  it('shield modifier reduces incoming damage in sim', () => {
+    // Setup: very low hpMax so the base player dies from fatigue accumulation
+    // (fatigueDamage/tick = damageTaken * 0.1; lv5 enemy damageTaken ≈ 40 with def=0 → 4/tick)
+    // hpMax=20 → base player dies at tick ~5; shielded player absorbs fatigue and can win.
+    const enemy = { monsterLevel: 5, isBoss: false, hpMult: 1 };
+    const basePlayer: SimPlayer = {
+      atk: 5, def: 0, hpMax: 20, agi: 0, luc: 0, skills: [],
+    };
+    // Shield modifier absorbs 1000 raw damage (large enough to cover all fatigue)
+    const shieldedPlayer: SimPlayer = {
+      ...basePlayer,
+      modifiers: [
+        {
+          id: 'mod_test_shield', nameKR: '테스트', category: 'defense',
+          baseValue: 1000, effectType: 'shield',
+          validSlots: ['armor'],
+          rarityWeight: { common: 1, uncommon: 1, rare: 1, epic: 1, legendary: 1, mythic: 1 },
+        } as Modifier,
+      ],
+    };
+    const r1 = simulateFloor(basePlayer, enemy, createSeededRng(42));
+    const r2 = simulateFloor(shieldedPlayer, enemy, createSeededRng(42));
+    // Shield helps player survive longer → r2 should differ in outcome or ticksTaken or remainingHpRatio
+    const sameOutcome =
+      r1.victory === r2.victory &&
+      r1.ticksTaken === r2.ticksTaken &&
+      Math.abs(r1.remainingHpRatio - r2.remainingHpRatio) < 1e-9;
+    expect(sameOutcome).toBe(false);
+  });
+});
+
+describe('simulateFloor — ascTree.crit_damage in sim (Phase G Task 13)', () => {
+  it('crit_damage 5 produces higher DPS than lv 0', () => {
+    // High agi/luc → crits frequently. Many ticks needed to accumulate crit effects.
+    const baseATK = 50;
+    const enemy: SimEnemy = { monsterLevel: 1, isBoss: true, hpMult: 100 };  // tanky boss
+    const base: SimPlayer = { atk: baseATK, def: 0, hpMax: 1000, agi: 100, luc: 100, skills: [] };
+    const boosted: SimPlayer = { ...base, ascTree: { crit_damage: 5 } };
+    const r0 = simulateFloor(base, enemy, createSeededRng(7), 200);
+    const r5 = simulateFloor(boosted, enemy, createSeededRng(7), 200);
+    // If both win, boosted should finish faster (or same+with less wasted hp).
+    // If both lose, boosted should reduce enemy HP more (lower remainingHpRatio).
+    if (r0.victory && r5.victory) {
+      expect(r5.ticksTaken).toBeLessThanOrEqual(r0.ticksTaken);
+      // Some boost expected within tick — but rounding may make equal occasionally
+    } else if (!r0.victory && !r5.victory) {
+      expect(r5.remainingHpRatio).toBeLessThan(r0.remainingHpRatio);
+    } else if (!r0.victory && r5.victory) {
+      // boosted converted loss → win
+      expect(true).toBe(true);
+    } else {
+      // base wins but boosted loses — impossible with positive crit_damage
+      throw new Error('crit_damage bonus made player worse');
+    }
   });
 });

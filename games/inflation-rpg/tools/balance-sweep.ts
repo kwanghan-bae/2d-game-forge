@@ -4,7 +4,7 @@ import { getMonsterLevel } from '../src/data/floors';
 import { getMonstersForLevel } from '../src/data/monsters';
 import { enhanceMultiplier } from '../src/systems/enhance';
 import { rollModifiers } from '../src/systems/modifiers';
-import type { Modifier } from '../src/types';
+import type { Modifier, AscTree } from '../src/types';
 
 export interface MilestoneState {
   hours: number;
@@ -15,6 +15,7 @@ export interface MilestoneState {
   equipRarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
   baseAbilityLv: number;       // max 18
   spAtkRatio: number;          // SP 분배 비율 (atk 에 몰빵 0..1)
+  ascTree?: Partial<AscTree>;  // Phase G — 노드별 lv (defaults to all 0)
 }
 
 // Spec Section 10.1 + Section 5 + Section 11.2 으로부터 추정.
@@ -38,9 +39,8 @@ export interface SweepRow {
 
 // milestone 마다 typical modifier 추정 — deterministic seed (s.hours 기반).
 // weapon / armor / accessory 각 1개 롤 (3 슬롯 단순화; 실제 장비는 최대 4 슬롯).
-// NOTE: 현재 shield/reflect/trigger 는 simulateFloor 가 processIncomingDamage /
-// evaluateTriggers 를 호출하지 않아 실제 전투 수치에 영향 없음 (의도적 한계).
-// Task 14 에서 적 공격 경로에 processIncomingDamage 를 연결해야 실질 반영된다.
+// RESOLVED Task 12 — simulateFloor 가 processIncomingDamage 를 호출하므로
+// shield/reflect modifier 가 실제 전투 수치에 반영된다.
 function sampleMilestoneModifiers(s: MilestoneState): Modifier[] {
   const seed = s.hours * 1000;
   const seededRng = createSeededRng(seed);
@@ -63,10 +63,15 @@ function buildSimPlayer(s: MilestoneState): SimPlayer {
   // 4 슬롯 가정, 각 슬롯 base 30 atk
   const equipATKBase = 30 * 4;
   const equipATK = Math.floor(equipATKBase * enhanceMul);
-  const atk = Math.floor(baseATK * (1 + spAtk * 0.03) * charLvMul * ascMul * baseAbilityMul) + equipATK;
-  const def = Math.floor(atk * 0.1);
-  const hpMax = Math.floor(atk * 5);
-  return { atk, def, hpMax, agi: 30, luc: 30, skills: [], modifiers: sampleMilestoneModifiers(s) };
+  // Phase G — ascTree atk_pct / hp_pct 노드 곱셈 (+5% per level)
+  const ascTree = s.ascTree ?? {};
+  const ascAtkMul = 1 + 0.05 * (ascTree.atk_pct ?? 0);
+  const ascHpMul  = 1 + 0.05 * (ascTree.hp_pct ?? 0);
+  const atkRaw = Math.floor(baseATK * (1 + spAtk * 0.03) * charLvMul * ascMul * baseAbilityMul) + equipATK;
+  const atk = Math.floor(atkRaw * ascAtkMul);
+  const def = Math.floor(atkRaw * 0.1);   // DEF 은 pre-ascTree atk 기준 (이중 증폭 방지)
+  const hpMax = Math.floor(atkRaw * 5 * ascHpMul);
+  return { atk, def, hpMax, agi: 30, luc: 30, skills: [], modifiers: sampleMilestoneModifiers(s), ascTree: s.ascTree };
 }
 
 const N_FULL = 100; // spec §7.2: full sweep N=100
