@@ -3,6 +3,7 @@ import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, runStoreMigrati
 import { STARTING_BP } from '../systems/bp';
 import { type EquipmentInstance } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
+import { EMPTY_COMPASS_OWNED } from '../data/compass';
 import { AD_DAILY_CAP } from '../systems/ads';
 
 // Zustand store는 모듈 레벨 싱글턴 — 매 테스트 전 리셋
@@ -1513,11 +1514,32 @@ describe('Phase Compass — v12 migration', () => {
     expect(migrated.meta.dungeonMajorBossesCleared).toEqual([]);
   });
 
-  it('runStoreMigration preserves existing compass data from v12 envelope', () => {
+  it('v11 envelope injects compass defaults without clobbering Phase E fields', () => {
+    // Pre-Phase-Compass save with Phase E data populated — exercise v11→v12 step directly
+    const v11Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        relicStacks: { ...EMPTY_RELIC_STACKS, warrior_banner: 3 },
+        mythicOwned: ['tier1_charm'],
+        adsToday: 5,
+      },
+    };
+    const migrated = runStoreMigration(v11Persisted, 11) as { meta: any };
+    // Phase E fields preserved
+    expect(migrated.meta.relicStacks.warrior_banner).toBe(3);
+    expect(migrated.meta.mythicOwned).toEqual(['tier1_charm']);
+    expect(migrated.meta.adsToday).toBe(5);
+    // Phase Compass defaults injected
+    expect(migrated.meta.compassOwned).toEqual(EMPTY_COMPASS_OWNED);
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual([]);
+    expect(migrated.meta.dungeonMajorBossesCleared).toEqual([]);
+  });
+
+  it('preserves existing compass data when fromVersion = 12 (passthrough)', () => {
     const v12Persisted = {
       meta: {
         inventory: { weapons: [], armors: [], accessories: [] },
-        compassOwned: { plains_first: true, plains_second: false, forest_first: false, forest_second: false, mountains_first: false, mountains_second: false, omni: false },
+        compassOwned: { ...EMPTY_COMPASS_OWNED, plains_first: true },
         dungeonMiniBossesCleared: ['plains'],
         dungeonMajorBossesCleared: [],
       },
