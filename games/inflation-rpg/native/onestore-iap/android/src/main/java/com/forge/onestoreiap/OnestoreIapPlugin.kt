@@ -157,6 +157,28 @@ class OnestoreIapPlugin : Plugin() {
         }
     }
 
+    @PluginMethod
+    fun restorePurchases(call: PluginCall) {
+        val client = requireClient(call) ?: return
+
+        client.queryPurchasesAsync(PurchaseClient.ProductType.IN_APP) { result, purchases ->
+            if (result.isSuccess) {
+                val arr = com.getcapacitor.JSArray()
+                purchases?.forEach { p ->
+                    val obj = JSObject()
+                        .put("productId", p.productId)
+                        .put("purchaseToken", p.purchaseToken)
+                        .put("purchaseTime", p.purchaseTime)
+                        .put("acknowledged", p.acknowledged)
+                    arr.put(obj)
+                }
+                call.resolve(JSObject().put("purchases", arr))
+            } else {
+                call.reject("restorePurchases failed: ${result.message}")
+            }
+        }
+    }
+
     internal fun emitPurchaseUpdated(data: JSObject) {
         notifyListeners("purchaseUpdated", data)
     }
