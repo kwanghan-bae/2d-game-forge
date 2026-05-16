@@ -2,6 +2,7 @@ import type { SeededRng } from '../cycle/SeededRng';
 import type { HeroEntity } from '../hero/HeroEntity';
 import type { LandmarkKind } from '../data/landmarks';
 import type { OverworldEvent } from './OverworldEvents';
+import { ENEMY_DROPS, BOSS_DROPS } from './dropTable';
 
 const ENEMY_BASE_HP = 30;
 const ENEMY_BASE_ATK = 8;
@@ -57,9 +58,7 @@ export class EncounterEngine {
   }
 
   private rollDrop(isBoss: boolean): string {
-    const pool = isBoss
-      ? ['steel_sword', 'magic_shield', 'enchanted_ring']
-      : ['rusty_sword', 'cloth_armor', 'small_potion', 'leather_boots'];
-    return pool[this.rng.int(pool.length)];
+    const pool = isBoss ? BOSS_DROPS : ENEMY_DROPS;
+    return pool[this.rng.int(pool.length)].id;
   }
 }
