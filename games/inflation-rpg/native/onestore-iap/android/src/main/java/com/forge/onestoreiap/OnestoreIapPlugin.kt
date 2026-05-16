@@ -97,6 +97,48 @@ class OnestoreIapPlugin : Plugin() {
         }
     }
 
+    @PluginMethod
+    fun purchase(call: PluginCall) {
+        val client = requireClient(call) ?: return
+        val productId = call.getString("productId")
+        if (productId.isNullOrEmpty()) {
+            call.reject("productId is required")
+            return
+        }
+        val act = activity ?: run {
+            call.reject("activity unavailable")
+            return
+        }
+
+        client.launchPurchaseFlowAsync(
+            act,
+            productId,
+            PurchaseClient.ProductType.IN_APP,
+            "developer-payload",
+        ) { result, purchaseData ->
+            if (result.isSuccess && purchaseData != null) {
+                val purchaseObj = JSObject()
+                    .put("productId", purchaseData.productId)
+                    .put("purchaseToken", purchaseData.purchaseToken)
+                    .put("purchaseTime", purchaseData.purchaseTime)
+                    .put("acknowledged", purchaseData.acknowledged)
+
+                emitPurchaseUpdated(purchaseObj)
+
+                call.resolve(JSObject().put("status", "success").put("purchase", purchaseObj))
+            } else if (result.responseCode == IapResult.RESULT_USER_CANCELED) {
+                call.resolve(JSObject().put("status", "canceled"))
+            } else {
+                call.resolve(
+                    JSObject()
+                        .put("status", "failed")
+                        .put("errorCode", result.responseCode)
+                        .put("errorMessage", result.message ?: "unknown"),
+                )
+            }
+        }
+    }
+
     internal fun emitPurchaseUpdated(data: JSObject) {
         notifyListeners("purchaseUpdated", data)
     }
