@@ -3,11 +3,14 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { AutoBattleController, type ControllerLoadout } from '../src/cycle/AutoBattleController';
 import type { CycleResult, CycleEvent } from '../src/cycle/cycleEvents';
+import type { TraitId } from '../src/cycle/traits';
 
 export interface SimOptions {
   count: number;
   seedStart: number;
   loadout: ControllerLoadout;
+  /** Trait IDs applied to every cycle in this sim run. */
+  traits?: TraitId[];
   /** Hard cap to avoid infinite loops if BP never drops. */
   maxTickMs: number;
   /** Optional JSONL output path. If omitted, no file is written. */
@@ -34,7 +37,7 @@ export function runSim(opts: SimOptions): SimOutput {
 
   for (let i = 0; i < opts.count; i++) {
     const seed = opts.seedStart + i;
-    const ctrl = new AutoBattleController({ loadout: opts.loadout, seed });
+    const ctrl = new AutoBattleController({ loadout: opts.loadout, seed, traits: opts.traits });
     let t = 0;
     while (t < opts.maxTickMs && !ctrl.getState().ended) {
       ctrl.tick(TICK_MS);
@@ -110,6 +113,8 @@ if (process.argv[1]?.endsWith('sim-cycle.ts')) {
   const charId = parseArg('char', 'K01');
   const bpMax = parseInt(parseArg('bp', '30'), 10);
   const out = parseArg('out', `runs/${new Date().toISOString().slice(0, 10)}-sim.jsonl`);
+  const traitsRaw = parseArg('traits', '');
+  const traits = traitsRaw ? (traitsRaw.split(',').map(s => s.trim()) as TraitId[]) : undefined;
 
   const result = runSim({
     count,
@@ -120,6 +125,7 @@ if (process.argv[1]?.endsWith('sim-cycle.ts')) {
       heroHpMax: 100,
       heroAtkBase: 50,
     },
+    traits,
     maxTickMs: 5 * 60 * 1000, // 5-min cap per cycle
     out,
   });
