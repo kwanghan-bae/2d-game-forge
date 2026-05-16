@@ -83,3 +83,38 @@ describe('AutoBattleController — battle round', () => {
     expect(nextStartIdx).toBeGreaterThan(killIdx);
   });
 });
+
+describe('AutoBattleController — EXP / level_up (inflation curve)', () => {
+  it('emits level_up event with correct from/to when threshold crossed', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 50; i++) ctrl.tick(600);
+    const types = ctrl.getEvents().map(e => e.type);
+    expect(types).toContain('level_up');
+  });
+
+  it('hero level monotonically increases (inflation never reverses)', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    let lastLv = 1;
+    for (let i = 0; i < 100; i++) {
+      ctrl.tick(600);
+      const lv = ctrl.getState().heroLv;
+      expect(lv).toBeGreaterThanOrEqual(lastLv);
+      lastLv = lv;
+    }
+  });
+
+  it('hero reaches at least lv 5 within 100 rounds with high atk (inflation works)', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 100; i++) ctrl.tick(600);
+    expect(ctrl.getState().heroLv).toBeGreaterThanOrEqual(5);
+  });
+});

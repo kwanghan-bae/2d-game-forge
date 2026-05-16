@@ -172,8 +172,34 @@ export class AutoBattleController {
     this.state.cumKills += 1;
     this.state.cumGold += gold;
     this.state.heroExp += exp;
+    this.tryLevelUp();
     this.currentEnemyId = null;
-    // level_up + bp_change handled in Tasks 5 and 6.
+    // bp_change handled in Task 6.
+  }
+
+  private tryLevelUp(): void {
+    while (this.state.heroExp >= this.expRequiredForLevel(this.state.heroLv)) {
+      const cost = this.expRequiredForLevel(this.state.heroLv);
+      this.state.heroExp -= cost;
+      const from = this.state.heroLv;
+      this.state.heroLv = from + 1;
+      // Sim-A stat curve placeholder. Tuning to inflation §11.5 happens in Phase Sim-G.
+      const hpDelta = Math.floor(this.state.heroHpMax * 0.05);
+      this.state.heroHpMax += hpDelta;
+      this.state.heroHp = this.state.heroHpMax; // full heal on level
+      this.emit({
+        t: this.state.tNowMs,
+        type: 'level_up',
+        from,
+        to: this.state.heroLv,
+        statDelta: { hp: hpDelta },
+      });
+    }
+  }
+
+  private expRequiredForLevel(lv: number): number {
+    // Polynomial curve placeholder. Inflation curve fine-tune in Phase Sim-G.
+    return Math.floor(10 * Math.pow(lv, 1.3));
   }
 }
 
