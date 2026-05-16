@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { awardMiniBossCompass, awardMajorBossCompass, getDungeonWeight, canFreeSelect, hasAnyFreeSelect, pickRandomDungeon } from './compass';
 import { EMPTY_COMPASS_OWNED } from '../data/compass';
 import { DUNGEONS } from '../data/dungeons';
-import type { MetaState } from '../types';
+import type { CompassId, MetaState } from '../types';
 
 function baseMeta(): MetaState {
   return {
@@ -148,8 +148,10 @@ describe('pickRandomDungeon', () => {
     expect(pickRandomDungeon(m, DUNGEONS, () => 0)).toBe(DUNGEONS[0]!.id);
   });
 
-  it('seeded rng=0.99 picks last dungeon (uniform weights)', () => {
+  it('seeded rng=0.99 picks last unlocked dungeon (uniform weights, all unlocked)', () => {
+    // Phase Realms: filter applies; need ascTier=12 so all 8 dungeons are in the pool.
     const m = baseMeta();
+    (m as unknown as Record<string, unknown>).ascTier = 12;
     expect(pickRandomDungeon(m, DUNGEONS, () => 0.99)).toBe(DUNGEONS[DUNGEONS.length - 1]!.id);
   });
 
@@ -172,5 +174,44 @@ describe('pickRandomDungeon', () => {
     expect(counts.plains! / 10000).toBeLessThan(0.65);
     expect(counts.forest! / 10000).toBeGreaterThan(0.15);
     expect(counts.mountains! / 10000).toBeGreaterThan(0.15);
+  });
+});
+
+describe('pickRandomDungeon — unlock filter (Phase Realms)', () => {
+  function metaWithTier(ascTier: number, compassOwned: Partial<Record<CompassId, boolean>> = {}): MetaState {
+    return {
+      ascTier,
+      compassOwned: { ...EMPTY_COMPASS_OWNED, ...compassOwned },
+      dungeonMiniBossesCleared: [],
+      dungeonMajorBossesCleared: [],
+    } as unknown as MetaState;
+  }
+
+  it('at ascTier=0, only starter dungeons (plains/forest/mountains) are reachable', () => {
+    const m = metaWithTier(0);
+    for (let i = 0; i < 100; i++) {
+      const picked = pickRandomDungeon(m, DUNGEONS, () => Math.random());
+      expect(['plains', 'forest', 'mountains']).toContain(picked);
+    }
+  });
+
+  it('at ascTier=1, sea becomes reachable but volcano/underworld/heaven/chaos remain locked', () => {
+    const m = metaWithTier(1);
+    const seen = new Set<string>();
+    for (let i = 0; i < 2000; i++) {
+      seen.add(pickRandomDungeon(m, DUNGEONS, () => Math.random()));
+    }
+    expect(seen.has('sea')).toBe(true);
+    expect(seen.has('volcano')).toBe(false);
+    expect(seen.has('chaos')).toBe(false);
+  });
+
+  it('at ascTier=12, all 8 dungeons are reachable', () => {
+    const m = metaWithTier(12);
+    const seen = new Set<string>();
+    for (let i = 0; i < 2000; i++) {
+      seen.add(pickRandomDungeon(m, DUNGEONS, () => Math.random()));
+    }
+    expect(seen.size).toBe(8);
   });
 });

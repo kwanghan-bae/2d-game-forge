@@ -2,6 +2,7 @@ import React from 'react';
 import { useGameStore } from '../store/gameStore';
 import { DUNGEONS, getDungeonById } from '../data/dungeons';
 import { canFreeSelect, hasAnyFreeSelect, getDungeonWeight } from '../systems/compass';
+import { isDungeonUnlocked } from '../systems/dungeons';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgePanel } from '@/components/ui/forge-panel';
 
@@ -96,16 +97,29 @@ export function DungeonPickModal({ onClose }: Props) {
             <h2 style={{ textAlign: 'center', marginBottom: 'var(--forge-space-4)' }}>자유 선택</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--forge-space-2)', marginBottom: 'var(--forge-space-4)' }}>
               {DUNGEONS.map((d) => {
-                const free = canFreeSelect(meta, d.id);
+                const unlocked = isDungeonUnlocked(meta, d);
+                const canFree = unlocked && canFreeSelect(meta, d.id);
+                const hint = !unlocked && d.unlockGate.type === 'asc-tier'
+                  ? `🔒 Tier ${d.unlockGate.tier} 도달 시 해제`
+                  : null;
                 return (
                   <ForgeButton
                     key={d.id}
-                    variant={free ? 'primary' : 'secondary'}
-                    disabled={!free}
-                    onClick={() => onPickFree(d.id)}
+                    variant={canFree ? 'primary' : 'secondary'}
+                    disabled={!canFree}
+                    onClick={() => canFree && onPickFree(d.id)}
                     data-testid={`free-card-${d.id}`}
+                    style={{ opacity: !unlocked ? 0.35 : (canFree ? 1 : 0.6) }}
                   >
-                    {d.emoji} {d.nameKR}
+                    <span>{d.emoji} {d.nameKR}</span>
+                    {hint && (
+                      <span
+                        data-testid={`free-card-hint-${d.id}`}
+                        style={{ display: 'block', fontSize: 11, color: '#888' }}
+                      >
+                        {hint}
+                      </span>
+                    )}
                   </ForgeButton>
                 );
               })}

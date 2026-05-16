@@ -23,7 +23,6 @@ import { rollMythicDrop, awardMilestoneMythic, equipMythic, unequipMythic } from
 import { MILESTONE_TIERS } from '../data/mythics';
 import { EMPTY_COMPASS_OWNED } from '../data/compass';
 import { DUNGEONS } from '../data/dungeons';
-import { isDungeonUnlocked } from '../systems/dungeons';
 import {
   awardMiniBossCompass as awardMiniBossCompassSystem,
   awardMajorBossCompass as awardMajorBossCompassSystem,
@@ -1082,9 +1081,7 @@ export const useGameStore = create<GameStore>()(
         }),
 
       pickAndSelectDungeon: () => {
-        const meta = get().meta;
-        const unlocked = DUNGEONS.filter(d => isDungeonUnlocked(meta, d));
-        const id = pickRandomDungeon(meta, unlocked);
+        const id = pickRandomDungeon(get().meta, DUNGEONS);
         get().selectDungeon(id);
         return id;
       },
