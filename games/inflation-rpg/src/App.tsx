@@ -17,6 +17,7 @@ import Relics from './screens/Relics';
 import { Settings } from './screens/Settings';
 import { IapShopScreen } from './screens/IapShopScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
+import { CyclePrep } from './screens/CyclePrep';
 import { CycleRunner } from './screens/CycleRunner';
 import { CycleResult } from './screens/CycleResult';
 import { TutorialOverlay } from './components/TutorialOverlay';
@@ -102,6 +103,12 @@ export function App({ config }: AppProps) {
       )}
       {screen === 'privacy'     && (
         <PrivacyScreen onBack={() => useGameStore.getState().setScreen('settings')} />
+      )}
+      {screen === 'cycle-prep' && (
+        <CyclePrep
+          onStart={() => useGameStore.getState().setScreen('cycle-runner')}
+          onCancel={() => useGameStore.getState().setScreen('main-menu')}
+        />
       )}
       {screen === 'cycle-runner' && (
         <CycleRunner onCycleEnd={() => useGameStore.getState().setScreen('cycle-result')} />

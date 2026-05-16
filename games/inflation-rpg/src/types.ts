@@ -331,7 +331,8 @@ export type Screen =
   | 'iap-shop'
   | 'privacy'
   | 'cycle-runner'
-  | 'cycle-result';
+  | 'cycle-result'
+  | 'cycle-prep';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
