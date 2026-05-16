@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
-test('v8 persist save migrates through v9→v10→v11→v12→v13 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion', async ({ page }) => {
+test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory', async ({ page }) => {
   // 1. 빈 localStorage 로 시작
   await page.goto(GAME_URL);
 
@@ -26,25 +26,25 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13 with auto-roll
     localStorage.setItem(key, JSON.stringify(v8Save));
   }, SAVE_KEY);
 
-  // 3. 게임 reload — zustand persist 가 v8 → v9 → v10 → v11 → v12 → v13 체인 마이그레이션 실행
+  // 3. 게임 reload — zustand persist 가 v8 → v9 → v10 → v11 → v12 → v13 → v14 → v15 체인 마이그레이션 실행
   await page.reload();
   await page.waitForFunction(
     (key) => {
       const raw = localStorage.getItem(key);
-      return !!raw && JSON.parse(raw).version === 13;
+      return !!raw && JSON.parse(raw).version === 15;
     },
     SAVE_KEY,
     { timeout: 10000 }
   );
 
-  // 4. localStorage 검증 — version 13 + v9 modifiers + v10 ascTree + v11 Phase E + v12 Phase Compass + v13 Phase Realms
+  // 4. localStorage 검증 — version 15 + v9 modifiers + v10 ascTree + v11 Phase E + v12 Phase Compass + v13 Phase Realms + v14 Phase 5 IAP + v15 Phase Sim-A
   const migratedState = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   }, SAVE_KEY);
 
   expect(migratedState).toBeTruthy();
-  expect(migratedState.version).toBe(13);
+  expect(migratedState.version).toBe(15);
   // v9 — auto-rolled modifiers
   expect(migratedState.state.meta.inventory.weapons[0].modifiers).toBeDefined();
   expect(Array.isArray(migratedState.state.meta.inventory.weapons[0].modifiers)).toBe(true);
@@ -93,4 +93,11 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13 with auto-roll
   expect(cleared!.major).toEqual([]);
 
   // v13 Phase Realms — run.playerHp default null (run is null in this envelope, so no assertion)
+
+  // v14 Phase 5 — adFreeOwned + lastIapTx[]
+  expect(migratedState.state.meta.adFreeOwned).toBe(false);
+  expect(migratedState.state.meta.lastIapTx).toEqual([]);
+
+  // v15 Phase Sim-A — cycleHistory[]
+  expect(migratedState.state.meta.cycleHistory).toEqual([]);
 });

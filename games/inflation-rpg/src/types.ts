@@ -1,3 +1,5 @@
+import type { CycleHistoryEntry } from './cycle/cycleEvents';
+
 export type StatKey = 'hp' | 'atk' | 'def' | 'agi' | 'luc';
 
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
@@ -229,6 +231,8 @@ export interface MetaState {
   // Phase 5 — Monetization
   adFreeOwned: boolean;
   lastIapTx: IapTransaction[];
+  // Phase Sim-A — 사이클 히스토리 (최근 N 항목 영구 저장)
+  cycleHistory: CycleHistoryEntry[];
 }
 
 // Phase G — Ascension Tree (성좌)
@@ -322,7 +326,9 @@ export type Screen =
   | 'relics'
   | 'settings'
   | 'iap-shop'
-  | 'privacy';
+  | 'privacy'
+  | 'cycle-runner'
+  | 'cycle-result';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
