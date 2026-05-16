@@ -271,6 +271,16 @@ describe('AutoBattleController — trait modifiers', () => {
     expect(aGenius.getState().heroLv).toBeGreaterThanOrEqual(aNo.getState().heroLv);
   });
 
+  it('getDecisionAI() exposes HeroDecisionAI seeded with constructor traits', () => {
+    const ctrl = new AutoBattleController({
+      loadout: minimalLoadout(),
+      seed: 42,
+      traits: ['t_genius', 't_fragile'],
+    });
+    const ai = ctrl.getDecisionAI();
+    expect(ai.getTraits()).toEqual(['t_genius', 't_fragile']);
+  });
+
   it('t_terminal_genius (bpCostMul 2) consumes BP twice as fast', () => {
     const aNo = new AutoBattleController({
       loadout: { ...minimalLoadout(), bpMax: 8, heroAtkBase: 100000 },
