@@ -254,11 +254,16 @@ export type MythicId = string;
 export type MythicEffectType =
   | 'flat_mult' | 'cooldown_mult' | 'drop_mult' | 'xp_mult' | 'proc' | 'passive';
 
-// Phase Compass — 차원 나침반
+// Phase Compass / Phase Realms — 차원 나침반
 export type CompassId =
-  | 'plains_first'    | 'plains_second'
-  | 'forest_first'    | 'forest_second'
-  | 'mountains_first' | 'mountains_second'
+  | 'plains_first'     | 'plains_second'
+  | 'forest_first'     | 'forest_second'
+  | 'mountains_first'  | 'mountains_second'
+  | 'sea_first'        | 'sea_second'
+  | 'volcano_first'    | 'volcano_second'
+  | 'underworld_first' | 'underworld_second'
+  | 'heaven_first'     | 'heaven_second'
+  | 'chaos_first'      | 'chaos_second'
   | 'omni';
 
 export interface CompassEntry {
