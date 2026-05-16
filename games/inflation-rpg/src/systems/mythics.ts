@@ -78,6 +78,13 @@ export function getMythicReviveCount(meta: MetaState): number {
   return hasMythicPassive(meta, 'revive') ? 1 : 0;
 }
 
+/**
+ * Collect MythicProc descriptors from equipped mythics for BattleScene to register.
+ *
+ * After registration via registerMythicProcs(state, procs), evaluateMythicProcs(state, trigger, ctx)
+ * scans these for matching triggers. The 4 proc effects (lifesteal/thorns/sp_steal/magic_burst)
+ * see the MythicProc JSDoc in types.ts for semantics.
+ */
 export function getMythicProcs(meta: MetaState): MythicProc[] {
   const procs: MythicProc[] = [];
   for (const id of getEquippedMythics(meta)) {
