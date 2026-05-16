@@ -4,6 +4,7 @@ import { SeededRng } from './SeededRng';
 import { applyTraitMods, type TraitId, type ResolvedLoadout } from './traits';
 import { TRAIT_CATALOG } from '../data/traits';
 import { type ControllerLoadout } from './loadoutTypes';
+import { HeroDecisionAI } from './HeroDecisionAI';
 
 // Re-export so existing consumers (tests, etc.) can import from AutoBattleController.
 export type { ControllerLoadout };
@@ -33,6 +34,7 @@ export class AutoBattleController {
   private goldMul: number;
   private bpCostMul: number;
   private fractionalBp: number = 0;
+  private ai: HeroDecisionAI;
 
   constructor(opts: ControllerOptions) {
     const traitIds = opts.traits ?? [];
@@ -41,6 +43,8 @@ export class AutoBattleController {
     this.expMul = resolved.expMul;
     this.goldMul = resolved.goldMul;
     this.bpCostMul = resolved.bpCostMul;
+    // AI is single source of truth for trait list — no duplicate this.traitIds.
+    this.ai = new HeroDecisionAI(traitIds);
     this.rng = new SeededRng(opts.seed);
     this.roundMs = opts.roundMs ?? DEFAULT_ROUND_MS;
     this.nextRoundAtMs = this.roundMs;
@@ -68,6 +72,11 @@ export class AutoBattleController {
       characterId: opts.loadout.characterId,
       traitIds,
     });
+  }
+
+  /** Exposes the HeroDecisionAI for Sim-C decision wiring + testability. */
+  getDecisionAI(): HeroDecisionAI {
+    return this.ai;
   }
 
   tick(deltaMs: number): void {
