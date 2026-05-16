@@ -251,11 +251,11 @@ git commit -m "feat(game-inflation-rpg): Phase 5 — onestore-iap TS contract (I
 ## Task 3: TS bridge — `index.ts`
 
 **Files:**
-- Create: `games/inflation-rpg/native/onestore-iap/src/index.ts`
+- Overwrite: `games/inflation-rpg/native/onestore-iap/src/index.ts` (T1 created a placeholder `export {};` so that `tsc --noEmit` had inputs at scaffold time; T3 replaces it with the real bridge)
 
 - [ ] **Step 1: Register the plugin with Capacitor**
 
-Write `games/inflation-rpg/native/onestore-iap/src/index.ts`:
+Overwrite `games/inflation-rpg/native/onestore-iap/src/index.ts`:
 
 ```ts
 import { registerPlugin } from '@capacitor/core';
