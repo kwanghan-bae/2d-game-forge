@@ -28,7 +28,6 @@ export class AutoBattleController {
   private roundMs: number;
   private nextRoundAtMs: number;
   private currentEnemyHp: number = 0;
-  private currentEnemyMaxHp: number = 0;
   private currentEnemyId: string | null = null;
   private enemySpawnCounter: number = 0;
 
@@ -155,7 +154,6 @@ export class AutoBattleController {
     const enemyMaxHp = Math.max(10, enemyLevel * 20);
     this.currentEnemyId = `sim_enemy_lv${enemyLevel}_#${this.enemySpawnCounter}`;
     this.currentEnemyHp = enemyMaxHp;
-    this.currentEnemyMaxHp = enemyMaxHp;
     this.emit({
       t: this.state.tNowMs,
       type: 'battle_start',
@@ -192,7 +190,7 @@ export class AutoBattleController {
       remaining: this.state.heroHp,
     });
     if (this.state.heroHp <= 0) {
-      // Hero defeat: restore to full and consume extra BP — placeholder until Task 6.
+      // Hero defeat: restore to full and consume extra BP — placeholder until Phase Sim-G balance tuning.
       this.state.heroHp = this.state.heroHpMax;
     }
   }

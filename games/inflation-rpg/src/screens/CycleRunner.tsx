@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function CycleRunner({ onCycleEnd }: Props) {
-  const { status, controller, endOnBpExhausted } = useCycleStore();
+  const { status, controller, markEnded } = useCycleStore();
   const [tick, setTick] = useState(0);
   const rafIdRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -29,7 +29,7 @@ export function CycleRunner({ onCycleEnd }: Props) {
         setTick(t => t + 1);
         if (controller.getState().ended && !endedRef.current) {
           endedRef.current = true;
-          endOnBpExhausted();
+          markEnded();
           onCycleEnd();
           return;
         }
@@ -40,7 +40,7 @@ export function CycleRunner({ onCycleEnd }: Props) {
     return () => {
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
     };
-  }, [status, controller, onCycleEnd, endOnBpExhausted]);
+  }, [status, controller, onCycleEnd, markEnded]);
 
   if (status === 'idle' || !controller) {
     return <div>사이클이 시작되지 않았습니다.</div>;
