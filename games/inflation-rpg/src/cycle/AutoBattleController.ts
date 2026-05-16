@@ -26,6 +26,9 @@ export class AutoBattleController {
   private loadout: ControllerLoadout;
   private roundMs: number;
   private nextRoundAtMs: number;
+  private currentEnemyHp: number = 0;
+  private currentEnemyMaxHp: number = 0;
+  private currentEnemyId: string | null = null;
 
   constructor(opts: ControllerOptions) {
     this.loadout = opts.loadout;
@@ -60,7 +63,10 @@ export class AutoBattleController {
   tick(deltaMs: number): void {
     if (this.state.ended || deltaMs <= 0) return;
     this.state.tNowMs += deltaMs;
-    // Battle round trigger logic arrives in Task 4.
+    while (!this.state.ended && this.state.tNowMs >= this.nextRoundAtMs) {
+      this.runRound();
+      this.nextRoundAtMs += this.roundMs;
+    }
   }
 
   getEvents(): readonly CycleEvent[] {
@@ -88,6 +94,86 @@ export class AutoBattleController {
 
   protected emit(e: CycleEvent): void {
     this.events.push(e);
+  }
+
+  private runRound(): void {
+    if (!this.currentEnemyId) {
+      this.spawnEnemy();
+    }
+    this.heroAttack();
+    if (this.currentEnemyHp <= 0) {
+      this.killEnemy();
+      return;
+    }
+    this.enemyAttack();
+  }
+
+  private spawnEnemy(): void {
+    // Sim-A uses a minimal placeholder enemy stat curve. Real monster data
+    // integration arrives in Task 5 where we connect to data/monsters.ts.
+    const enemyLevel = this.state.heroLv;
+    const enemyMaxHp = Math.max(10, enemyLevel * 20);
+    this.currentEnemyId = `sim_enemy_lv${enemyLevel}_t${this.state.tNowMs}`;
+    this.currentEnemyHp = enemyMaxHp;
+    this.currentEnemyMaxHp = enemyMaxHp;
+    this.emit({
+      t: this.state.tNowMs,
+      type: 'battle_start',
+      enemyId: this.currentEnemyId,
+      isBoss: false,
+      heroLv: this.state.heroLv,
+      heroHp: this.state.heroHp,
+      enemyHp: enemyMaxHp,
+    });
+  }
+
+  private heroAttack(): void {
+    if (!this.currentEnemyId) return;
+    const dmg = Math.max(1, this.loadout.heroAtkBase + this.state.heroLv * 2);
+    this.currentEnemyHp = Math.max(0, this.currentEnemyHp - dmg);
+    this.emit({
+      t: this.state.tNowMs,
+      type: 'hero_hit',
+      enemyId: this.currentEnemyId,
+      damage: dmg,
+      remaining: this.currentEnemyHp,
+    });
+  }
+
+  private enemyAttack(): void {
+    if (!this.currentEnemyId) return;
+    const dmg = Math.max(1, this.state.heroLv * 3);
+    this.state.heroHp = Math.max(0, this.state.heroHp - dmg);
+    this.emit({
+      t: this.state.tNowMs,
+      type: 'enemy_hit',
+      enemyId: this.currentEnemyId,
+      damage: dmg,
+      remaining: this.state.heroHp,
+    });
+    if (this.state.heroHp <= 0) {
+      // Hero defeat: restore to full and consume extra BP — placeholder until Task 6.
+      this.state.heroHp = this.state.heroHpMax;
+    }
+  }
+
+  private killEnemy(): void {
+    if (!this.currentEnemyId) return;
+    const exp = Math.max(1, this.state.heroLv * 10);
+    const gold = Math.max(1, this.state.heroLv * 2);
+    this.emit({
+      t: this.state.tNowMs,
+      type: 'enemy_kill',
+      enemyId: this.currentEnemyId,
+      expGain: exp,
+      goldGain: gold,
+      dropIds: [],
+    });
+    this.state.cumKills += 1;
+    this.state.cumGold += gold;
+    this.state.heroExp += exp;
+    this.currentEnemyId = null;
+    // level_up + bp_change handled in Tasks 5 and 6.
   }
 }
 
