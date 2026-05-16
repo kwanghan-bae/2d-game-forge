@@ -245,6 +245,18 @@ export function migrateV8ToV9(persisted: unknown): unknown {
   return s;
 }
 
+// v13 → v14: Phase 5 — adFreeOwned + lastIapTx[] 추가
+export function migrateV13ToV14(persisted: unknown): unknown {
+  const s = persisted as { meta?: Record<string, unknown> };
+  if (!s.meta) return persisted;
+
+  const m = s.meta;
+  if (typeof m['adFreeOwned'] !== 'boolean') m['adFreeOwned'] = false;
+  if (!Array.isArray(m['lastIapTx'])) m['lastIapTx'] = [];
+
+  return s;
+}
+
 // Phase E — Mythic slot cap derived from ascension tier
 //   tier 0 → 0 슬롯, tier 1-4 → 1 슬롯, tier 5-9 → 3 슬롯, tier 10+ → 5 슬롯
 export function computeMythicSlotCap(tier: number): number {
@@ -406,6 +418,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   if (fromVersion <= 12 && s.run) {
     const r = s.run as RunState;
     if (r.playerHp === undefined) r.playerHp = null;
+  }
+  // v13 → v14: Phase 5 — adFreeOwned + lastIapTx[]
+  if (fromVersion <= 13) {
+    migrateV13ToV14(s);
   }
   return s;
 }
@@ -1138,7 +1154,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 13,  // 12 → 13 (Phase Realms — compassOwned + RunState.playerHp)
+      version: 14,  // 13 → 14 (Phase 5 — adFreeOwned + lastIapTx[])
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
