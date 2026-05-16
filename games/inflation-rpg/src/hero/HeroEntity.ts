@@ -58,6 +58,7 @@ export class HeroEntity {
     h.atk = opts.heroAtkBase;
     h.bp = opts.bpMax;
     h.bpMax = opts.bpMax;
+    h.personality = PersonalityState.fromTraitPriors(spawned.personalityPriors);
     return h;
   }
 

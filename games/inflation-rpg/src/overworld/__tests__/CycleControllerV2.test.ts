@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CycleControllerV2 } from '../CycleControllerV2';
+import { PERSONALITY_DIMS } from '../../hero/PersonalityState';
 
 describe('CycleControllerV2', () => {
   it('constructs without crashing', () => {
@@ -12,6 +13,18 @@ describe('CycleControllerV2', () => {
     });
     expect(ctrl.getHero().name.length).toBeGreaterThan(0);
     expect(ctrl.getHero().dead).toBe(false);
+  });
+
+  it('same seed produces same personality (determinism)', () => {
+    const makeCtrl = (seed: number) => new CycleControllerV2({ seed, traits: [], bpMax: 30, heroHpMax: 100, heroAtkBase: 100000 });
+    const a = makeCtrl(77);
+    const b = makeCtrl(77);
+    const snapA = a.getHero().personality.snapshot();
+    const snapB = b.getHero().personality.snapshot();
+    expect(snapA).toEqual(snapB);
+    // At least 2 dims must be non-zero (personality engaged)
+    const nonZero = PERSONALITY_DIMS.filter(d => snapA[d] !== 0);
+    expect(nonZero.length).toBeGreaterThanOrEqual(2);
   });
 
   it('handleArrival on enemy → at least one event emitted', () => {

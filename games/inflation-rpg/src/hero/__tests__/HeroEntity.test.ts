@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { HeroEntity } from '../HeroEntity';
 import { SeededRng } from '../../cycle/SeededRng';
+import { PERSONALITY_DIMS } from '../PersonalityState';
 
 describe('HeroEntity', () => {
   function makeHero() {
@@ -66,8 +67,9 @@ describe('HeroEntity', () => {
     expect(h.equipment).toEqual(['rusty_sword', 'leather_armor']);
   });
 
-  it('personality is exposed', () => {
+  it('personality has at least 2 non-zero dims after spawn', () => {
     const h = makeHero();
-    expect(h.personality.get('moral')).toBe(0);
+    const nonZero = PERSONALITY_DIMS.filter(d => h.personality.get(d) !== 0);
+    expect(nonZero.length).toBeGreaterThanOrEqual(2);
   });
 });
