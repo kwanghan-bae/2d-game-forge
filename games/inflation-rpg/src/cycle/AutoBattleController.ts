@@ -80,16 +80,45 @@ export class AutoBattleController {
 
   getResult(): CycleResult | null {
     if (!this.state.ended) return null;
-    // Full aggregation arrives in Task 7. Stub returns minimal shape.
+    const levelCurve: Array<{ t: number; lv: number }> = [{ t: 0, lv: 1 }];
+    const expCurve: Array<{ t: number; cumExp: number }> = [{ t: 0, cumExp: 0 }];
+    const bpCurve: Array<{ t: number; bp: number }> = [{ t: 0, bp: this.state.bpMax }];
+    const byEnemyId: Record<string, number> = {};
+    let bossKills = 0;
+    let cumExp = 0;
+    let endEv: CycleEvent | undefined;
+
+    for (const ev of this.events) {
+      if (ev.type === 'level_up') {
+        levelCurve.push({ t: ev.t, lv: ev.to });
+      }
+      if (ev.type === 'enemy_kill') {
+        cumExp += ev.expGain;
+        expCurve.push({ t: ev.t, cumExp });
+        byEnemyId[ev.enemyId] = (byEnemyId[ev.enemyId] ?? 0) + 1;
+      }
+      if (ev.type === 'enemy_kill' && ev.enemyId.startsWith('sim_boss_')) {
+        bossKills += 1;
+      }
+      if (ev.type === 'bp_change') {
+        bpCurve.push({ t: ev.t, bp: ev.remaining });
+      }
+      if (ev.type === 'cycle_end') {
+        endEv = ev;
+      }
+    }
+
+    const reason = endEv?.type === 'cycle_end' ? endEv.reason : 'forced';
+
     return {
       durationMs: this.state.tNowMs,
       maxLevel: this.state.heroLv,
-      levelCurve: [],
-      expCurve: [],
-      bpCurve: [],
-      kills: { total: this.state.cumKills, byEnemyId: {}, bossKills: 0 },
+      levelCurve,
+      expCurve,
+      bpCurve,
+      kills: { total: this.state.cumKills, byEnemyId, bossKills },
       drops: { byItemId: { ...this.state.drops }, rarityHistogram: {} },
-      reason: 'bp_exhausted',
+      reason,
     };
   }
 

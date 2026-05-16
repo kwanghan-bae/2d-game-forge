@@ -168,3 +168,43 @@ describe('AutoBattleController — BP / cycle_end', () => {
     }
   });
 });
+
+describe('AutoBattleController — getResult curves', () => {
+  it('returns null while cycle is still running', () => {
+    const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });
+    expect(ctrl.getResult()).toBeNull();
+  });
+
+  it('levelCurve has at least one entry per level_up event', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 5, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 100; i++) ctrl.tick(600);
+    const result = ctrl.getResult();
+    expect(result).not.toBeNull();
+    const levelUpCount = ctrl.getEvents().filter(e => e.type === 'level_up').length;
+    expect(result!.levelCurve.length).toBe(levelUpCount + 1); // +1 for initial lv 1 entry
+  });
+
+  it('kills.total matches enemy_kill event count', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 5, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 100; i++) ctrl.tick(600);
+    const killEvents = ctrl.getEvents().filter(e => e.type === 'enemy_kill').length;
+    expect(ctrl.getResult()!.kills.total).toBe(killEvents);
+  });
+
+  it('bpCurve last entry is 0 on bp_exhausted', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 3, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 100; i++) ctrl.tick(600);
+    const result = ctrl.getResult();
+    expect(result).not.toBeNull();
+    expect(result!.bpCurve[result!.bpCurve.length - 1].bp).toBe(0);
+  });
+});
