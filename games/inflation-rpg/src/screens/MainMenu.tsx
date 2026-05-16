@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
-  const bestRunLevel = useGameStore(s => s.meta.bestRunLevel ?? 0);
+  const sagaCount = useGameStore(s => s.meta.sagaHistory?.length ?? 0);
 
   return (
     <div data-testid="main-menu" style={{ padding: 24, color: '#eee', textAlign: 'center' }}>
@@ -39,8 +39,8 @@ export function MainMenu() {
         </button>
       </div>
 
-      <div data-testid="best-record" style={{ marginTop: 24, fontSize: 12, opacity: 0.6 }}>
-        최고 기록: Lv {bestRunLevel}
+      <div data-testid="saga-count" style={{ marginTop: 24, fontSize: 12, opacity: 0.6 }}>
+        누적 사가: {sagaCount}
       </div>
     </div>
   );

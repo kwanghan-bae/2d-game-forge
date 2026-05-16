@@ -21,10 +21,16 @@ describe('MainMenu (V1a)', () => {
     expect(useGameStore.getState().screen).toBe('cycle-prep-v2');
   });
 
-  it('shows best-record indicator', () => {
-    useGameStore.setState((s) => ({ meta: { ...s.meta, bestRunLevel: 42 } }));
+  it('shows saga count indicator (default 0)', () => {
     render(<MainMenu />);
-    expect(screen.getByTestId('best-record').textContent).toMatch(/42/);
+    expect(screen.getByTestId('saga-count').textContent).toMatch(/0/);
+  });
+
+  it('saga count reflects sagaHistory length', () => {
+    // Use minimal saga-shaped objects — component only reads .length
+    useGameStore.setState((s) => ({ meta: { ...s.meta, sagaHistory: [{} as never, {} as never] } }));
+    render(<MainMenu />);
+    expect(screen.getByTestId('saga-count').textContent).toMatch(/2/);
   });
 
   it('용사 갤러리 button is disabled', () => {
