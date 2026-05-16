@@ -122,6 +122,9 @@ export const INITIAL_META: MetaState = {
   compassOwned: { ...EMPTY_COMPASS_OWNED },
   dungeonMiniBossesCleared: [],
   dungeonMajorBossesCleared: [],
+  // Phase 5 — Monetization
+  adFreeOwned: false,
+  lastIapTx: [],
 };
 
 interface GameStore {
