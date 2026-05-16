@@ -23,6 +23,7 @@
     "balance:sweep": "tsx tools/balance-sweep-cli.ts"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "@capacitor/ios": "^8.0.2",
