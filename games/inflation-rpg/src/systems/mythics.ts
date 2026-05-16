@@ -26,11 +26,13 @@ export function getMythicFlatMult(
   return mult;
 }
 
-export function getMythicCooldownMult(meta: MetaState, _kind: SkillKind): number {
+export function getMythicCooldownMult(meta: MetaState, kind: SkillKind): number {
   let mult = 1;
   for (const id of getEquippedMythics(meta)) {
     const def = MYTHICS[id];
     if (def.effectType !== 'cooldown_mult') continue;
+    // Phase Realms — target filter: 'base' / 'ult' / undefined (= both)
+    if (def.target && def.target !== kind) continue;
     // value is negative (-0.3 = -30%); apply as (1 + value)
     mult *= 1 + def.value;
   }
