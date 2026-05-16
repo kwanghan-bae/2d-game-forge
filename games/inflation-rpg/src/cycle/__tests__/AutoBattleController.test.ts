@@ -169,6 +169,27 @@ describe('AutoBattleController — BP / cycle_end', () => {
   });
 });
 
+describe('AutoBattleController — tick batch / timestamp', () => {
+  it('large delta tick produces unique enemyIds + distinct timestamps per kill event', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 10, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    ctrl.tick(3600); // 6 rounds in one batch (3600 / 600)
+    const killEvents = ctrl.getEvents().filter(e => e.type === 'enemy_kill');
+    // Must have at least several kills to validate uniqueness.
+    expect(killEvents.length).toBeGreaterThanOrEqual(3);
+    // Each kill should have a distinct enemyId (no collisions from batch).
+    const enemyIds = new Set(
+      killEvents.map(e => (e.type === 'enemy_kill' ? e.enemyId : ''))
+    );
+    expect(enemyIds.size).toBe(killEvents.length);
+    // Each round's kill event should have a distinct timestamp.
+    const timestamps = new Set(killEvents.map(e => e.t));
+    expect(timestamps.size).toBe(killEvents.length);
+  });
+});
+
 describe('AutoBattleController — RNG witness', () => {
   it('different seeds produce different gold totals (RNG determinism witness)', () => {
     const a = new AutoBattleController({
