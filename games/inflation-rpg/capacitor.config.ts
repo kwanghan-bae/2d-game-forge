@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
     OnestoreIap: {
       // licenseKey is passed via initialize() at runtime, not config.
     },
+    AdMob: {
+      appId: { android: 'ca-app-pub-3940256099942544~3347511713' },
+    },
   },
 };
 
