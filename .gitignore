@@ -43,3 +43,6 @@ android/app/build/
 npm-debug.log*
 pnpm-debug.log*
 .worktrees/
+
+# inflation-rpg telemetry / sim outputs
+games/inflation-rpg/balance-sweep-out.md
