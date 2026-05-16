@@ -34,7 +34,7 @@ export const MYTHICS: Record<MythicId, MythicDef> = {
     effectType: 'flat_mult', target: 'hp', value: 0.5,
     acquisition: { kind: 'milestone', tier: 5 } },
   infinity_seal: { id: 'infinity_seal', nameKR: '무한 인장', emoji: '♾️',
-    descriptionKR: '모든 drop ×2',
+    descriptionKR: '모든 drop + XP ×2',  // Phase Realms: target='all_kinds' covers gold/dr/dungeon_currency + XP
     effectType: 'drop_mult', target: 'all_kinds', value: 1,
     acquisition: { kind: 'milestone', tier: 10 } },
   dimension_navigator: { id: 'dimension_navigator', nameKR: '차원 항해사', emoji: '🧭',
