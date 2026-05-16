@@ -1063,22 +1063,37 @@ Run: `pnpm install`
 
 Expected: 0 error. `games/inflation-rpg/node_modules/@forge/inflation-rpg-native-onestore-iap` symlinks to `../../native/onestore-iap`.
 
-- [ ] **Step 3: Verify `capacitor.config.ts` includes the plugin (Capacitor 7 auto-discovers via package.json; no manual entry needed unless plugin config required)**
+- [ ] **Step 3: Add `plugins:` block to `capacitor.config.ts` (currently absent — verified at plan time)**
 
-Read `games/inflation-rpg/capacitor.config.ts`. If there is a `plugins:` block, add a stub config there (helps debugging):
+Read `games/inflation-rpg/capacitor.config.ts` first to confirm structure. As of plan-time the file is:
 
 ```ts
-plugins: {
-  // ... existing entries ...
-  OnestoreIap: {
-    // licenseKey is passed via initialize() at runtime, not config.
-  },
-},
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.korea.inflationrpg',
+  appName: 'KoreaInflationRPG',
+  webDir: 'out',
+  ios: { backgroundColor: '#0f0f14' },
+  android: { backgroundColor: '#0f0f14' },
+};
+
+export default config;
 ```
 
-If no `plugins:` block exists, skip this step — auto-discovery is sufficient.
+There is NO `plugins:` block. Add one alongside `android:`:
 
-- [ ] **Step 4: Sync Capacitor to Android**
+```ts
+  plugins: {
+    OnestoreIap: {
+      // licenseKey is passed via initialize() at runtime, not config.
+    },
+  },
+```
+
+(T12 will extend this block with `AdMob`.)
+
+- [ ] **Step 4: Sync Capacitor to Android (`@capacitor/cli` already installed — verified at plan time)**
 
 Run: `pnpm --filter @forge/game-inflation-rpg exec cap sync android`
 
@@ -1160,13 +1175,20 @@ export const ADMOB_CONFIG = {
 
 - [ ] **Step 3: Add AdMob app ID to `capacitor.config.ts`**
 
-Edit `games/inflation-rpg/capacitor.config.ts` to add (inside `plugins:` block, alongside the OnestoreIap entry from T11):
+T11 Step 3 already created the `plugins:` block with `OnestoreIap`. Extend it with `AdMob`:
 
 ```ts
-AdMob: {
-  appId: { android: 'ca-app-pub-3940256099942544~3347511713' },
-},
+  plugins: {
+    OnestoreIap: { /* ... */ },
+    AdMob: {
+      appId: { android: 'ca-app-pub-3940256099942544~3347511713' },
+    },
+  },
 ```
+
+If T11 Step 3 was skipped (e.g. someone added the block elsewhere), ensure the
+`plugins:` block exists at the same indentation level as `android:` before
+adding `AdMob`.
 
 - [ ] **Step 4: Commit**
 
@@ -1544,10 +1566,16 @@ Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
+Use `git status` to enumerate files actually modified in this task, then commit them explicitly. Do NOT use `git add games/inflation-rpg/src/` which sweeps unrelated dirty files. Expected files:
+
+- `games/inflation-rpg/src/types.ts`
+- `games/inflation-rpg/src/store/gameStore.ts`
+- Plus any test fixtures that needed the two new fields (Step 4)
+
 ```bash
-git add games/inflation-rpg/src/types.ts \
-        games/inflation-rpg/src/store/gameStore.ts \
-        games/inflation-rpg/src/  # for the MetaState fixture updates
+git status --short  # review the dirty list first
+git add games/inflation-rpg/src/types.ts games/inflation-rpg/src/store/gameStore.ts
+# Then `git add` each specific fixture file flagged in Step 4 individually.
 git commit -m "feat(game-inflation-rpg): Phase 5 — MetaState.adFreeOwned + lastIapTx[] + IapTransaction"
 ```
 
@@ -1612,63 +1640,91 @@ git commit -m "feat(game-inflation-rpg): Phase 5 — STORE_VERSION = 14, v13→v
 ## Task 18: Persist test coverage — v13 → v14 migration unit test
 
 **Files:**
-- Modify: `games/inflation-rpg/src/store/gameStore.test.ts` (or wherever migrations are tested)
+- Modify: `games/inflation-rpg/src/store/gameStore.test.ts`
+- Modify: `games/inflation-rpg/src/store/gameStore.ts` (export `migrateV13ToV14` for testability — match the existing `migrateV8ToV9` export pattern verified at plan time)
 
-- [ ] **Step 1: Locate where prior version migrations are tested**
+**Plan-time discovery**: `gameStore.test.ts:2` already imports `runStoreMigration` AND `migrateV8ToV9`. The migration test pattern in this repo is to **export individual `migrateV(N-1)ToV(N)` functions** and call them directly in tests. `runStoreMigration` is the chain orchestrator; individual `migrateV*` are unit-testable.
 
-Run: `grep -rn "migrateV1[0-9]\|version.*13\|version.*12" games/inflation-rpg/src/store --include="*.test.ts"`
+- [ ] **Step 1: Refactor T17's inline `if (version < 14) { ... }` block into a named exported function**
 
-Note the pattern — typically a test that seeds a v(N-1) persisted state and asserts the result has v(N) fields populated.
-
-- [ ] **Step 2: Add a v13 → v14 migration test following the same pattern**
-
-In the appropriate test file, append:
+Modify `gameStore.ts` — extract the v13→v14 migration body added in T17 into a top-level exported function (placed near other `migrateV*` exports if any):
 
 ```ts
-describe('persist v13 → v14', () => {
+export function migrateV13ToV14(persisted: unknown): unknown {
+  if (persisted && typeof persisted === 'object' && persisted !== null) {
+    const s = persisted as { meta?: Record<string, unknown> };
+    if (s.meta) {
+      if (typeof s.meta['adFreeOwned'] !== 'boolean') s.meta['adFreeOwned'] = false;
+      if (!Array.isArray(s.meta['lastIapTx'])) s.meta['lastIapTx'] = [];
+    }
+  }
+  return persisted;
+}
+```
+
+Then in `runStoreMigration` (or wherever T17's inline block went), replace the inline body with a call:
+
+```ts
+if (version < 14) {
+  persisted = migrateV13ToV14(persisted);
+}
+```
+
+- [ ] **Step 2: Add the import in `gameStore.test.ts`**
+
+Edit `gameStore.test.ts:2` to append `migrateV13ToV14`:
+
+```ts
+import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, migrateV13ToV14, runStoreMigration } from './gameStore';
+```
+
+- [ ] **Step 3: Append a `describe('migrateV13ToV14')` block (mirror existing `migrateV8ToV9` test shape)**
+
+Append to `gameStore.test.ts`:
+
+```ts
+describe('migrateV13ToV14', () => {
   it('adds adFreeOwned=false and lastIapTx=[] when missing', () => {
     const v13State = {
-      meta: {
-        ...INITIAL_META,  // assume INITIAL_META is in scope; if not, import from gameStore
-      },
+      meta: { ...INITIAL_META } as Record<string, unknown>,
       run: null,
     };
-    // Strip the fields we are testing migration for, mimicking pre-v14 state.
-    delete (v13State.meta as Record<string, unknown>)['adFreeOwned'];
-    delete (v13State.meta as Record<string, unknown>)['lastIapTx'];
+    delete v13State.meta['adFreeOwned'];
+    delete v13State.meta['lastIapTx'];
 
-    // The migration runs inside Zustand persist's `migrate` option.
-    // Manually invoke whatever migrator function the existing tests use.
-    // If migrations are private, simulate via creating a store with v13 storage.
-    // Match the existing test file's pattern exactly.
+    const result = migrateV13ToV14(v13State) as { meta: { adFreeOwned: boolean; lastIapTx: unknown[] } };
+    expect(result.meta.adFreeOwned).toBe(false);
+    expect(result.meta.lastIapTx).toEqual([]);
+  });
 
-    // Example shape if the migrator is exposed:
-    // const migrated = migrate(v13State, 13);
-    // expect(migrated.meta.adFreeOwned).toBe(false);
-    // expect(migrated.meta.lastIapTx).toEqual([]);
+  it('preserves existing adFreeOwned=true', () => {
+    const v13State = {
+      meta: { ...INITIAL_META, adFreeOwned: true, lastIapTx: [{ productId: 'ad_free', ts: 1, purchaseToken: 't' }] },
+      run: null,
+    };
+    const result = migrateV13ToV14(v13State) as { meta: { adFreeOwned: boolean; lastIapTx: unknown[] } };
+    expect(result.meta.adFreeOwned).toBe(true);
+    expect(result.meta.lastIapTx).toHaveLength(1);
+  });
+
+  it('handles null persisted', () => {
+    expect(migrateV13ToV14(null)).toBeNull();
   });
 });
 ```
 
-> **Implementation note:** the exact shape depends on whether the existing test invokes `migrate` directly or relies on Zustand-internal call. Match what's already there for v12 → v13. If no such test exists, the simplest fallback is to assert via the Zustand store creation API:
-
-```ts
-import { create } from 'zustand';
-// ... reconstruct the persist config call from gameStore, point storage at a mock
-// holding v13 state, and assert the resulting store has the v14 fields.
-```
-
-- [ ] **Step 3: Run — should PASS**
+- [ ] **Step 4: Run — should PASS**
 
 Run: `pnpm --filter @forge/game-inflation-rpg exec vitest run src/store/gameStore.test.ts`
 
-Expected: PASS.
+Expected: PASS (existing tests + 3 new).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add games/inflation-rpg/src/store/gameStore.test.ts
-git commit -m "test(game-inflation-rpg): Phase 5 — v13→v14 migration unit test"
+git add games/inflation-rpg/src/store/gameStore.test.ts \
+        games/inflation-rpg/src/store/gameStore.ts
+git commit -m "test(game-inflation-rpg): Phase 5 — v13→v14 migration unit test + export migrateV13ToV14"
 ```
 
 ---
@@ -1816,7 +1872,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { IapManager } from './IapManager';
 
-const mockPlugin = {
+import type { OnestoreIapPlugin } from '@forge/inflation-rpg-native-onestore-iap';
+
+const mockPlugin: Pick<
+  OnestoreIapPlugin,
+  'initialize' | 'queryProducts' | 'purchase' | 'acknowledge' | 'restorePurchases' | 'addListener'
+> = {
   initialize: vi.fn().mockResolvedValue(undefined),
   queryProducts: vi.fn().mockResolvedValue({
     products: [
@@ -1828,7 +1889,7 @@ const mockPlugin = {
   acknowledge: vi.fn().mockResolvedValue(undefined),
   restorePurchases: vi.fn().mockResolvedValue({ purchases: [] }),
   addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
-};
+} as never;  // `as never` works around vi.fn typing — adjust if Vitest provides better helper
 
 describe('IapManager', () => {
   let mgr: IapManager;
@@ -2719,17 +2780,29 @@ Write `docs/privacy-policy/index.html`:
 
 Write `docs/privacy-policy/ko/index.html` — copy the content of `games/inflation-rpg/public/privacy-policy.html` verbatim. This ensures the bundled fallback and the hosted version stay in sync.
 
-- [ ] **Step 2: Enable GitHub Pages on the repo (one-time, user action)**
+- [ ] **Step 2: Enable GitHub Pages on the repo — REQUIRES USER APPROVAL**
 
-Run (will likely require user to approve since this changes repo settings):
+This step changes repository settings and is irreversible-ish (can be re-disabled but cleanup is manual). The executing agent MUST pause and ask the user before running the API call.
 
-```bash
-gh api -X POST repos/kwanghan-bae/2d-game-forge/pages \
-  -f source.branch=main \
-  -f source.path=/docs
-```
+Output to the user:
 
-Expected: 201 Created, or "409 Conflict" if already enabled. If 404, check whether the repo is public (Pages requires public repo on free tier).
+> "Phase 5 needs GitHub Pages enabled on this repo so the privacy policy is publicly hostable. This will run:
+>
+> ```
+> gh api -X POST repos/kwanghan-bae/2d-game-forge/pages \
+>   -f source.branch=main \
+>   -f source.path=/docs
+> ```
+>
+> This creates a public URL at `https://kwanghan-bae.github.io/2d-game-forge/`. The repo must be public for the free tier; verify before approving. Proceed? (yes / no / I'll enable it myself in repo settings)"
+
+If user says **yes**, run the command. Expected: 201 Created.
+
+If user says **I'll enable it myself**, mark this step complete after the user confirms they've enabled it via Settings → Pages in the GitHub web UI.
+
+If user says **no**, skip Step 2 and Step 3; document in T31 README that the bundled fallback (`public/privacy-policy.html`) is the only privacy policy delivery path. The `REMOTE_URL` in `PrivacyScreen.tsx` will 404, the fetch HEAD probe will fail, and the iframe will load the bundled file — still functional, less SEO/discoverable.
+
+Expected on success: 201 Created. If 409 Conflict, Pages already enabled — proceed. If 404, repo is private — Pages free tier requires public; pause and ask user.
 
 - [ ] **Step 3: Wait for Pages build (1-2 minutes)**
 
@@ -2834,7 +2907,22 @@ Run: `pnpm --filter @forge/game-inflation-rpg exec vitest run src/battle/skillEf
 
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Replace L486 TODO in `applySkillResult` with the heal call**
+- [ ] **Step 5: Replace L486 TODO in `applySkillResult` with the heal call (plan-time discovery: reuse existing `applyLifestealHeal` action)**
+
+**Plan-time discovery:** Phase Realms added these run.playerHp actions to gameStore.ts (around L210-228):
+
+```ts
+hydratePlayerHpIfNull: () => set((s) => { ... }),
+applyDamageToPlayer: (amount: number) => set((s) => { ... }),
+applyLifestealHeal: (amount: number) => set((s) => {
+  if (!s.run || s.run.playerHp === null) return {};
+  const maxHp = computeMaxHp(s.run, s.meta);
+  const next = Math.min(maxHp, s.run.playerHp + amount);
+  return { run: { ...s.run, playerHp: next } };
+}),
+```
+
+`applyLifestealHeal` already does exactly what skill heal needs (clamp to maxHp). Reuse it directly — no new action needed.
 
 Edit `BattleScene.ts:456-489`. Replace the lines:
 
@@ -2849,26 +2937,25 @@ with:
     if (result.heal !== undefined) {
       const store = useGameStore.getState();
       const run = store.run;
-      if (run !== null) {
-        const newHp = computeSkillHeal(
-          result,
-          run.playerHp,
-          run.playerMaxHp,
-        );
-        store.setPlayerHp(newHp);
+      if (run !== null && run.playerHp !== null) {
+        const maxHp = computeMaxHp(run, store.meta);
+        const newHp = computeSkillHeal(result, run.playerHp, maxHp);
+        const delta = newHp - run.playerHp;
+        if (delta > 0) store.applyLifestealHeal(delta);
       }
     }
     // buff: 현재 구현에서는 no-op (고급 구현 시 stat 버프 레이어 추가)
 ```
 
-Add the import at the top of `BattleScene.ts`:
+Add imports at the top of `BattleScene.ts` (verify existing imports first to avoid duplicates):
 
 ```ts
 import { computeSkillHeal } from './skillEffects';
-import { useGameStore } from '../store/gameStore';  // if not already imported
+import { computeMaxHp } from '../systems/playerHp';  // verify path — gameStore.ts:32 confirms this path
+import { useGameStore } from '../store/gameStore';  // likely already imported
 ```
 
-> If `setPlayerHp` doesn't exist as a store action, add it analogously to `gainCrackStones`. Phase Realms added `run.playerHp` permanence — there is likely an existing action.
+> The `delta > 0` guard prevents calling `applyLifestealHeal` with a non-positive delta (which the action would no-op anyway, but explicit is safer).
 
 - [ ] **Step 6: Run full test suite**
 
