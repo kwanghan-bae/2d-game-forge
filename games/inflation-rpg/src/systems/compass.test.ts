@@ -150,8 +150,7 @@ describe('pickRandomDungeon', () => {
 
   it('seeded rng=0.99 picks last unlocked dungeon (uniform weights, all unlocked)', () => {
     // Phase Realms: filter applies; need ascTier=12 so all 8 dungeons are in the pool.
-    const m = baseMeta();
-    (m as unknown as Record<string, unknown>).ascTier = 12;
+    const m = { ...baseMeta(), ascTier: 12 } as unknown as MetaState;
     expect(pickRandomDungeon(m, DUNGEONS, () => 0.99)).toBe(DUNGEONS[DUNGEONS.length - 1]!.id);
   });
 
