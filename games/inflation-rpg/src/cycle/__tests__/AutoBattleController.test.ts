@@ -225,6 +225,70 @@ describe('AutoBattleController — RNG witness', () => {
   });
 });
 
+describe('AutoBattleController — trait modifiers', () => {
+  it('cycle_start event carries traitIds (was deferred from Sim-A)', () => {
+    const ctrl = new AutoBattleController({
+      loadout: minimalLoadout(),
+      seed: 42,
+      traits: ['t_genius', 't_fragile'],
+    });
+    const ev = ctrl.getEvents()[0];
+    expect(ev.type).toBe('cycle_start');
+    if (ev.type === 'cycle_start') {
+      expect(ev.traitIds).toEqual(['t_genius', 't_fragile']);
+    }
+  });
+
+  it('empty traits yields legacy behavior (cycle_start has traitIds: [])', () => {
+    const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });
+    const ev = ctrl.getEvents()[0];
+    if (ev.type === 'cycle_start') {
+      expect(ev.traitIds).toEqual([]);
+    }
+  });
+
+  it('t_fragile (hpMul 0.7) reduces starting heroHpMax', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroHpMax: 100 },
+      seed: 42,
+      traits: ['t_fragile'],
+    });
+    expect(ctrl.getState().heroHpMax).toBe(70);
+    expect(ctrl.getState().heroHp).toBe(70);
+  });
+
+  it('t_genius (expMul 1.2) accelerates level-ups', () => {
+    const aNo = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 5, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    const aGenius = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 5, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_genius'],
+    });
+    for (let i = 0; i < 100; i++) { aNo.tick(600); aGenius.tick(600); }
+    expect(aGenius.getState().heroLv).toBeGreaterThanOrEqual(aNo.getState().heroLv);
+  });
+
+  it('t_terminal_genius (bpCostMul 2) consumes BP twice as fast', () => {
+    const aNo = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 8, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    const aBoom = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 8, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_terminal_genius'],
+    });
+    for (let i = 0; i < 50; i++) { aNo.tick(600); aBoom.tick(600); }
+    // 시한부 천재 should end in roughly half the kills (per encounter BP cost doubled).
+    const noKills = aNo.getEvents().filter(e => e.type === 'enemy_kill').length;
+    const boomKills = aBoom.getEvents().filter(e => e.type === 'enemy_kill').length;
+    expect(boomKills).toBeLessThan(noKills);
+  });
+});
+
 describe('AutoBattleController — getResult curves', () => {
   it('returns null while cycle is still running', () => {
     const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });
