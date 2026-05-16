@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useGameStore } from './store/gameStore';
+import { ADMOB_CONFIG } from './config/monetization.config';
+import { MonetizationService } from './services/MonetizationService';
 import { MainMenu } from './screens/MainMenu';
 import { Town } from './screens/Town';
 import { DungeonFloors } from './screens/DungeonFloors';
@@ -34,6 +36,28 @@ interface AppProps {
 export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
   const meta = useGameStore((s) => s.meta);
+
+  const setAdFreeOwned = useGameStore((s) => s.setAdFreeOwned);  // T22 will add this action
+  const gainCrackStones = useGameStore((s) => s.gainCrackStones);
+  const monetizationRef = useRef<MonetizationService | null>(null);
+
+  useEffect(() => {
+    if (monetizationRef.current) return;
+    const svc = new MonetizationService({
+      adFreeOwned: useGameStore.getState().meta.adFreeOwned,
+      onAdFreeChanged: setAdFreeOwned,
+      onCrackStonesAwarded: gainCrackStones,
+      licenseKey: ADMOB_CONFIG.iapLicenseKey,
+      rewardedUnitId: ADMOB_CONFIG.rewarded.android,
+      bannerUnitId: ADMOB_CONFIG.banner.android,
+    });
+    monetizationRef.current = svc;
+    void svc.initialize();
+    // dev-only window hook for Playwright meta inspection (T29 needs this)
+    if (process.env.NODE_ENV !== 'production') {
+      (window as unknown as { __forge_monetization?: MonetizationService }).__forge_monetization = svc;
+    }
+  }, [setAdFreeOwned, gainCrackStones]);
 
   React.useEffect(() => {
     setVolumes(meta.musicVolume, meta.sfxVolume, meta.muted);
