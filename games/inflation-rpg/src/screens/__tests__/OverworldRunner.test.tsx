@@ -3,15 +3,14 @@ import { render, screen } from '@testing-library/react';
 
 // Phaser cannot run in test environments (no canvas/WebGL).
 // Mock it so the dynamic import inside bootPhaser never touches real Phaser.
+// Phaser 3 ESM has no default export — export named members directly.
 vi.mock('phaser', () => ({
-  default: {
-    AUTO: 0,
-    Game: class {
-      scene = { start: vi.fn() };
-      destroy = vi.fn();
-    },
-    Scene: class { constructor(_key: string) {} },
+  AUTO: 0,
+  Game: class {
+    scene = { start: vi.fn() };
+    destroy = vi.fn();
   },
+  Scene: class { constructor(_key: string) {} },
 }));
 
 // Also mock OverworldScene to avoid transitive Phaser requires.
