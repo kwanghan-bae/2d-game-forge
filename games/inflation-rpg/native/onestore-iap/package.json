@@ -16,6 +16,14 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
+  "capacitor": {
+    "android": {
+      "src": "android"
+    },
+    "ios": {
+      "src": "ios"
+    }
+  },
   "peerDependencies": {
     "@capacitor/core": "^8.0.0"
   },

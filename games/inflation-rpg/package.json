@@ -27,6 +27,7 @@
     "@capacitor/core": "^8.0.0",
     "@capacitor/ios": "^8.0.2",
     "@forge/core": "workspace:^",
+    "@forge/inflation-rpg-native-onestore-iap": "workspace:*",
     "@preact/signals-react": "^3.10.0",
     "bignumber.js": "^9.3.1",
     "clsx": "^2.1.1",
