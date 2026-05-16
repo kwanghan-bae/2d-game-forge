@@ -4,6 +4,11 @@
 
 export type CycleEventBase = { t: number };
 
+export type CycleEndReason = 'bp_exhausted' | 'abandoned' | 'forced';
+
+// `cycle_start` deliberately omits spec §6.5's `traitIds` and adds `characterId`
+// for the Sim-A single-hero vertical slice (no Trait system yet). Sim-B will
+// add `traitIds: string[]` alongside `characterId` — do NOT replace.
 export type CycleEvent =
   | (CycleEventBase & { type: 'cycle_start'; loadoutHash: string; seed: number; characterId: string })
   | (CycleEventBase & { type: 'battle_start'; enemyId: string; isBoss: boolean; heroLv: number; heroHp: number; enemyHp: number })
@@ -12,7 +17,7 @@ export type CycleEvent =
   | (CycleEventBase & { type: 'enemy_kill'; enemyId: string; expGain: number; goldGain: number; dropIds: string[] })
   | (CycleEventBase & { type: 'level_up'; from: number; to: number; statDelta: Record<string, number> })
   | (CycleEventBase & { type: 'bp_change'; delta: number; remaining: number; cause: string })
-  | (CycleEventBase & { type: 'cycle_end'; reason: 'bp_exhausted' | 'abandoned' | 'forced'; durationMs: number; maxLevel: number; finalState: Record<string, unknown> });
+  | (CycleEventBase & { type: 'cycle_end'; reason: CycleEndReason; durationMs: number; maxLevel: number; finalState: Record<string, unknown> });
 
 export type CycleEventType = CycleEvent['type'];
 
@@ -43,7 +48,7 @@ export interface CycleResult {
   bpCurve: Array<{ t: number; bp: number }>;
   kills: { total: number; byEnemyId: Record<string, number>; bossKills: number };
   drops: { byItemId: Record<string, number>; rarityHistogram: Record<string, number> };
-  reason: 'bp_exhausted' | 'abandoned' | 'forced';
+  reason: CycleEndReason;
 }
 
 // Trimmed shape persisted in MetaState.cycleHistory[]. Capped to last N entries
@@ -52,6 +57,6 @@ export interface CycleHistoryEntry {
   endedAtMs: number;
   durationMs: number;
   maxLevel: number;
-  reason: CycleResult['reason'];
+  reason: CycleEndReason;
   seed: number;
 }
