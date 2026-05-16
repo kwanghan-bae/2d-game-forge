@@ -5,6 +5,7 @@ import { SeededRng } from '../cycle/SeededRng';
 import { SagaRecorder } from '../saga/SagaRecorder';
 import { NarrativeGenerator } from '../saga/NarrativeGenerator';
 import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
+import { lookupDrop } from './dropTable';
 import type { TraitId } from '../cycle/traits';
 import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
@@ -54,10 +55,12 @@ export class CycleControllerV2 {
           payload: { enemyId: landmarkId, expGain: ev.expGain },
         });
         if (ev.dropId) {
+          const dropItem = lookupDrop(ev.dropId);
+          const itemNameKR = dropItem?.nameKR ?? ev.dropId;
           this.saga.record({
             age: this.hero.age,
             type: 'drop',
-            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR: ev.dropId }),
+            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }),
             payload: { itemId: ev.dropId },
           });
         }
