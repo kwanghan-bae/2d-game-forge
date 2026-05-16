@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction } from '../types';
+import type { CycleHistoryEntry } from '../cycle/cycleEvents';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
 import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
@@ -125,6 +126,8 @@ export const INITIAL_META: MetaState = {
   // Phase 5 — Monetization
   adFreeOwned: false,
   lastIapTx: [],
+  // Phase Sim-A — 사이클 히스토리
+  cycleHistory: [],
 };
 
 interface GameStore {
@@ -217,6 +220,8 @@ interface GameStore {
   // Phase 5 — Monetization store actions
   setAdFreeOwned: (owned: boolean) => void;
   recordIapTx: (tx: IapTransaction) => void;
+  // Phase Sim-A — cycle history
+  recordCycleEnd: (entry: CycleHistoryEntry) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -425,6 +430,12 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v13 → v14: Phase 5 — adFreeOwned + lastIapTx[]
   if (fromVersion <= 13) {
     migrateV13ToV14(s);
+  }
+  // v14 → v15: Phase Sim-A — cycleHistory[]
+  if (fromVersion <= 14 && s.meta) {
+    if (!s.meta.cycleHistory) {
+      s.meta.cycleHistory = [];
+    }
   }
   return s;
 }
@@ -1166,10 +1177,19 @@ export const useGameStore = create<GameStore>()(
             lastIapTx: [...s.meta.lastIapTx, tx].slice(-50),
           },
         })),
+
+      // Phase Sim-A — cycle history, capped to last 50 entries
+      recordCycleEnd: (entry: CycleHistoryEntry) =>
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            cycleHistory: [...s.meta.cycleHistory, entry].slice(-50),
+          },
+        })),
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 14,  // 13 → 14 (Phase 5 — adFreeOwned + lastIapTx[])
+      version: 15,  // 14 → 15 (Phase Sim-A — cycleHistory: CycleHistoryEntry[])
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
