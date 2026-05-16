@@ -79,13 +79,10 @@ describe('Phase Realms — getMythicCooldownMult target filter', () => {
     expect(getMythicCooldownMult(makeMeta(['swift_winds', 'time_hourglass']), 'ult')).toBeCloseTo(0.7);
   });
   it('cooldown floor 0.4 still enforced', () => {
-    // Using two copies of time_hourglass via meta with mythicEquipped array (emulates deep stack)
-    // time_hourglass appears twice: 0.7 * 0.7 = 0.49, which is > 0.4, so floor not hit
-    // Instead, use theoretical stacking that would breach 0.4
+    // swift_winds + time_hourglass on base = 0.8 * 0.7 = 0.56 (above floor)
+    // This test asserts Math.max(0.4, mult) floor remains intact regardless of mult value.
     const meta = makeMeta(['swift_winds', 'time_hourglass']);
     const result = getMythicCooldownMult(meta, 'base');
-    // 0.8 * 0.7 = 0.56 > 0.4, still above floor
-    // floor is enforced: Math.max(0.4, mult)
     expect(result).toBeGreaterThanOrEqual(0.4);
   });
 });

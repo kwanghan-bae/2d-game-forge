@@ -483,7 +483,7 @@ export class BattleScene extends Phaser.Scene {
         stack: 1,
       });
     }
-    // heal: 플레이어 HP 는 doRound 에서 추정치 사용 — 스킬 힐은 캐시값 조정
+    // heal: 플레이어 HP 는 run.playerHp (store 필드) 에서 읽음. 스킬 힐은 별도 wiring 필요 (향후 작업).
     // buff: 현재 구현에서는 no-op (고급 구현 시 stat 버프 레이어 추가)
     this.showVfxEmoji(result.vfxEmoji);
   }
