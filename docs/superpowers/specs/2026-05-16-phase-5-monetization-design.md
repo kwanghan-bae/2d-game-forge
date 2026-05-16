@@ -621,6 +621,17 @@ balance patch (D-2 / Phase 1-차기) 로 다음 곡선 정합화. 그 phase 의 
 **Claude 가 확인할 수 없는 항목** — 사용자 (개발자 본인) 가 plugin 1차 cut
 완성 후, 그리고 phase 종료 후 손수 검증.
 
+> **NOTE — Phase 5 종료 시점의 native 상태**: T11 Gradle compile 결과 SDK V21
+> 의 API 패턴이 spec 가정 (V19/V20-era) 과 크게 다름 — `com.gaa.sdk.iap.*`
+> root, Builder + listener interface 패턴. Kotlin 은 compile-only stub 으로
+> 종료 (모든 메서드 `call.reject("Phase 5a-1 pending")`). 실 native wire 는
+> 분리된 [Phase 5a-1 spec](2026-05-16-phase-5a-1-onestore-native-wire-design.md)
+> 에서 진행 — 실 기기 + 원스토어 sandbox 계정 필요한 manual QA 세션에 같이.
+
+- [ ] **0. 원스토어 IAP native wire (Phase 5a-1)** — Kotlin 메서드 5개 (initialize,
+      queryProducts, purchase, acknowledge, restorePurchases) 를 실 V21
+      `PurchaseClient.Builder` + listener 패턴으로 wire. AAR 추출 경로:
+      `~/.gradle/caches/modules-2/files-2.1/com.onestorecorp.sdk/sdk-iap/21.04.00/`
 - [ ] **Rewarded ad** — 실 Android 기기 + AdMob 테스트 ID 로 광고 노출 / 보상
       지급 확인
 - [ ] **Banner ad** — 화면 하단 노출, canvas 영역이 banner 위로 줄어드는지
