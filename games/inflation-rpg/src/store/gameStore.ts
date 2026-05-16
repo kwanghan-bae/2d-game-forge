@@ -29,6 +29,7 @@ import {
   canFreeSelect,
   pickRandomDungeon,
 } from '../systems/compass';
+import { computeMaxHp } from '../systems/playerHp';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -61,6 +62,7 @@ export const INITIAL_RUN: RunState = {
   currentStage: 1,
   dungeonRunMonstersDefeated: 0,
   featherUsed: 0,
+  playerHp: null,
 };
 
 export const INITIAL_META: MetaState = {
@@ -205,6 +207,10 @@ interface GameStore {
   awardMajorBossCompass: (dungeonId: string) => void;
   pickAndSelectDungeon: () => string;
   selectDungeonFree: (dungeonId: string) => void;
+  // Phase Realms — playerHp lifecycle
+  hydratePlayerHpIfNull: () => void;
+  applyDamageToPlayer: (amount: number) => void;
+  applyLifestealHeal: (amount: number) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -385,6 +391,18 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     m.compassOwned                = m.compassOwned                ?? { ...EMPTY_COMPASS_OWNED };
     m.dungeonMiniBossesCleared    = m.dungeonMiniBossesCleared    ?? [];
     m.dungeonMajorBossesCleared   = m.dungeonMajorBossesCleared   ?? [];
+  }
+  // v12 → v13: Phase Realms — expand compassOwned to 17 keys (5 new dungeons × 2)
+  // Spread EMPTY_COMPASS_OWNED first (defaults false), then existing values override.
+  // This preserves any pre-existing true keys (e.g. plains_first was true in v12).
+  if (fromVersion <= 12 && s.meta) {
+    const m = s.meta as MetaState;
+    m.compassOwned = { ...EMPTY_COMPASS_OWNED, ...m.compassOwned };
+  }
+  // Phase Realms — v12 → v13 (run portion): init playerHp = null
+  if (fromVersion <= 12 && s.run) {
+    const r = s.run as RunState;
+    if (r.playerHp === undefined) r.playerHp = null;
   }
   return s;
 }
@@ -1093,10 +1111,31 @@ export const useGameStore = create<GameStore>()(
         }
         get().selectDungeon(dungeonId);
       },
+
+      // Phase Realms — playerHp lifecycle actions
+      hydratePlayerHpIfNull: () => set((s) => {
+        if (!s.run) return {};
+        if (s.run.playerHp !== null) return {};
+        const maxHp = computeMaxHp(s.run, s.meta);
+        return { run: { ...s.run, playerHp: maxHp } };
+      }),
+
+      applyDamageToPlayer: (amount: number) => set((s) => {
+        if (!s.run || s.run.playerHp === null) return {};
+        const next = Math.max(0, s.run.playerHp - amount);
+        return { run: { ...s.run, playerHp: next } };
+      }),
+
+      applyLifestealHeal: (amount: number) => set((s) => {
+        if (!s.run || s.run.playerHp === null) return {};
+        const maxHp = computeMaxHp(s.run, s.meta);
+        const next = Math.min(maxHp, s.run.playerHp + amount);
+        return { run: { ...s.run, playerHp: next } };
+      }),
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 12,
+      version: 13,  // 12 → 13 (Phase Realms — compassOwned + RunState.playerHp)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

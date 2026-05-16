@@ -26,11 +26,13 @@ export function getMythicFlatMult(
   return mult;
 }
 
-export function getMythicCooldownMult(meta: MetaState, _kind: SkillKind): number {
+export function getMythicCooldownMult(meta: MetaState, kind: SkillKind): number {
   let mult = 1;
   for (const id of getEquippedMythics(meta)) {
     const def = MYTHICS[id];
     if (def.effectType !== 'cooldown_mult') continue;
+    // Phase Realms — target filter: 'base' / 'ult' / undefined (= both)
+    if (def.target && def.target !== kind) continue;
     // value is negative (-0.3 = -30%); apply as (1 + value)
     mult *= 1 + def.value;
   }
@@ -53,8 +55,12 @@ export function getMythicXpMult(meta: MetaState): number {
   let mult = 1;
   for (const id of getEquippedMythics(meta)) {
     const def = MYTHICS[id];
-    if (def.effectType !== 'xp_mult') continue;
-    mult *= 1 + def.value;
+    if (def.effectType === 'xp_mult') {
+      mult *= 1 + def.value;
+    } else if (def.effectType === 'drop_mult' && def.target === 'all_kinds') {
+      // Phase Realms — all_kinds drop_mult includes XP gain.
+      mult *= 1 + def.value;
+    }
   }
   return mult;
 }
@@ -72,6 +78,13 @@ export function getMythicReviveCount(meta: MetaState): number {
   return hasMythicPassive(meta, 'revive') ? 1 : 0;
 }
 
+/**
+ * Collect MythicProc descriptors from equipped mythics for BattleScene to register.
+ *
+ * After registration via registerMythicProcs(state, procs), evaluateMythicProcs(state, trigger, ctx)
+ * scans these for matching triggers. The 4 proc effects (lifesteal/thorns/sp_steal/magic_burst)
+ * see the MythicProc JSDoc in types.ts for semantics.
+ */
 export function getMythicProcs(meta: MetaState): MythicProc[] {
   const procs: MythicProc[] = [];
   for (const id of getEquippedMythics(meta)) {

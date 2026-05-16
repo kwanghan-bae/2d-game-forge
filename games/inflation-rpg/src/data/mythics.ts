@@ -10,11 +10,16 @@ export interface MythicDef {
   emoji: string;
   descriptionKR: string;
   effectType: MythicEffectType;
-  target?: string;        // 'atk', 'hp', 'fire_dmg', 'critRate', 'modifier_magnitude', 'gold', 'dr', 'dungeon_currency', 'all_kinds'
+  // target values:
+  //   flat_mult:     'atk', 'hp', 'def', 'agi', 'luc', 'critDmg', 'evasion', 'fire_dmg',
+  //                  'ice_dmg', 'thunder_dmg', 'holy_dmg', 'modifier_magnitude', 'all'
+  //   drop_mult:     'gold', 'dr', 'dungeon_currency', 'all_kinds'
+  //   cooldown_mult: 'base', 'ult', undefined (= 'both')  [Phase Realms]
+  target?: string;
   value: number;          // magnitude (e.g., 0.5 = +50% / 0.3 = -30% / 2 = ×2)
   acquisition: MythicAcquisition;
   // proc-specific
-  procTrigger?: 'on_player_hit_received' | 'on_player_attack';
+  procTrigger?: 'on_player_hit_received' | 'on_player_attack' | 'on_kill';  // [Phase Realms — +'on_kill']
   procEffect?: 'lifesteal' | 'thorns' | 'sp_steal' | 'magic_burst';
 }
 
@@ -29,7 +34,7 @@ export const MYTHICS: Record<MythicId, MythicDef> = {
     effectType: 'flat_mult', target: 'hp', value: 0.5,
     acquisition: { kind: 'milestone', tier: 5 } },
   infinity_seal: { id: 'infinity_seal', nameKR: '무한 인장', emoji: '♾️',
-    descriptionKR: '모든 drop ×2',
+    descriptionKR: '모든 drop + XP ×2',  // Phase Realms: target='all_kinds' covers gold/dr/dungeon_currency + XP
     effectType: 'drop_mult', target: 'all_kinds', value: 1,
     acquisition: { kind: 'milestone', tier: 10 } },
   dimension_navigator: { id: 'dimension_navigator', nameKR: '차원 항해사', emoji: '🧭',
@@ -87,9 +92,9 @@ export const MYTHICS: Record<MythicId, MythicDef> = {
     procTrigger: 'on_player_attack', procEffect: 'lifesteal',
     acquisition: { kind: 'random_drop' } },
   gluttony_chalice: { id: 'gluttony_chalice', nameKR: '탐욕의 성배', emoji: '🍷',
-    descriptionKR: 'SP 흡수 30%',
+    descriptionKR: '처치 시 모든 active skill cooldown -0.3초',
     effectType: 'proc', value: 0.3,
-    procTrigger: 'on_player_attack', procEffect: 'sp_steal',
+    procTrigger: 'on_kill', procEffect: 'sp_steal',
     acquisition: { kind: 'random_drop' } },
   thorned_skin: { id: 'thorned_skin', nameKR: '가시 갑옷', emoji: '🌵',
     descriptionKR: '받은 데미지 50% 반사',
@@ -98,7 +103,7 @@ export const MYTHICS: Record<MythicId, MythicDef> = {
     acquisition: { kind: 'random_drop' } },
   swift_winds: { id: 'swift_winds', nameKR: '신속의 바람', emoji: '🌪️',
     descriptionKR: '기본 스킬 쿨다운 -20%',
-    effectType: 'cooldown_mult', value: -0.2,
+    effectType: 'cooldown_mult', value: -0.2, target: 'base',
     acquisition: { kind: 'random_drop' } },
   eternal_flame: { id: 'eternal_flame', nameKR: '영원의 불꽃', emoji: '🔥',
     descriptionKR: 'ATK +75%',

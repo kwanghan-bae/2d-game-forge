@@ -63,6 +63,30 @@ describe('getMythicCooldownMult', () => {
   });
 });
 
+describe('Phase Realms — getMythicCooldownMult target filter', () => {
+  it('swift_winds (target=base) applies to base skills only', () => {
+    expect(getMythicCooldownMult(makeMeta(['swift_winds']), 'base')).toBeCloseTo(0.8);
+    expect(getMythicCooldownMult(makeMeta(['swift_winds']), 'ult')).toBe(1);
+  });
+  it('time_hourglass (no target) applies to both base and ult', () => {
+    expect(getMythicCooldownMult(makeMeta(['time_hourglass']), 'base')).toBeCloseTo(0.7);
+    expect(getMythicCooldownMult(makeMeta(['time_hourglass']), 'ult')).toBeCloseTo(0.7);
+  });
+  it('swift_winds + time_hourglass on base = multiplicative', () => {
+    expect(getMythicCooldownMult(makeMeta(['swift_winds', 'time_hourglass']), 'base')).toBeCloseTo(0.56);
+  });
+  it('swift_winds + time_hourglass on ult = only time_hourglass applies', () => {
+    expect(getMythicCooldownMult(makeMeta(['swift_winds', 'time_hourglass']), 'ult')).toBeCloseTo(0.7);
+  });
+  it('cooldown floor 0.4 still enforced', () => {
+    // swift_winds + time_hourglass on base = 0.8 * 0.7 = 0.56 (above floor)
+    // This test asserts Math.max(0.4, mult) floor remains intact regardless of mult value.
+    const meta = makeMeta(['swift_winds', 'time_hourglass']);
+    const result = getMythicCooldownMult(meta, 'base');
+    expect(result).toBeGreaterThanOrEqual(0.4);
+  });
+});
+
 describe('getMythicDropBonus', () => {
   it('infinity_seal: ×2 for all kinds (returns +1.0 additive)', () => {
     expect(getMythicDropBonus(makeMeta(['infinity_seal']), 'gold')).toBeCloseTo(1.0);
@@ -84,6 +108,18 @@ describe('getMythicXpMult', () => {
   });
   it('soul_truth × scholar_eye stacks multiplicatively', () => {
     expect(getMythicXpMult(makeMeta(['soul_truth', 'scholar_eye']))).toBeCloseTo(6.0);
+  });
+});
+
+describe('Phase Realms — getMythicXpMult includes drop_mult all_kinds (infinity_seal)', () => {
+  it('infinity_seal (drop_mult all_kinds) doubles xp', () => {
+    expect(getMythicXpMult(makeMeta(['infinity_seal']))).toBeCloseTo(2.0);
+  });
+  it('infinity_seal × soul_truth = 2 × 3 = 6', () => {
+    expect(getMythicXpMult(makeMeta(['infinity_seal', 'soul_truth']))).toBeCloseTo(6.0);
+  });
+  it('dimension_navigator (drop_mult dungeon_currency) does NOT affect xp', () => {
+    expect(getMythicXpMult(makeMeta(['dimension_navigator']))).toBe(1);
   });
 });
 

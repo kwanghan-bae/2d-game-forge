@@ -208,13 +208,13 @@ describe('mythic proc triggers (Phase E)', () => {
     expect(result.thornsReflect).toBeCloseTo(100);
   });
 
-  it('sp_steal: 30% of damage dealt as SP', () => {
+  it('sp_steal on_player_attack is ignored (only on_kill path active)', () => {
     const state = createEffectsState();
     registerMythicProcs(state, [
       { trigger: 'on_player_attack', effect: 'sp_steal', value: 0.3 },
     ]);
     const result = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100 });
-    expect(result.spStealAmount).toBeCloseTo(30);
+    expect(result.cooldownReduce).toBe(0);
   });
 
   it('magic_burst: deterministic 50% bonus damage when proc rng < chance', () => {
@@ -239,7 +239,7 @@ describe('mythic proc triggers (Phase E)', () => {
     expect(result.lifestealHeal).toBe(0);
   });
 
-  it('multiple procs aggregate', () => {
+  it('multiple procs aggregate — lifesteal fires, sp_steal on_player_attack ignored', () => {
     const state = createEffectsState();
     registerMythicProcs(state, [
       { trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 },
@@ -247,6 +247,57 @@ describe('mythic proc triggers (Phase E)', () => {
     ]);
     const result = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100 });
     expect(result.lifestealHeal).toBeCloseTo(20);
-    expect(result.spStealAmount).toBeCloseTo(30);
+    expect(result.cooldownReduce).toBe(0);
+  });
+});
+
+describe('Phase Realms — evaluateMythicProcs on_kill trigger + cooldownReduce', () => {
+  it('on_kill trigger with sp_steal effect emits cooldownReduce = value', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_kill', effect: 'sp_steal', value: 0.3 }]);
+    const result = evaluateMythicProcs(state, 'on_kill', {});
+    expect(result.cooldownReduce).toBeCloseTo(0.3);
+    expect(result.lifestealHeal).toBe(0);
+  });
+  it('on_kill with no procs returns 0 cooldownReduce', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, []);
+    expect(evaluateMythicProcs(state, 'on_kill', {}).cooldownReduce).toBe(0);
+  });
+  it('multiple on_kill sp_steal stack additively', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_kill', effect: 'sp_steal', value: 0.3 },
+      { trigger: 'on_kill', effect: 'sp_steal', value: 0.5 },
+    ]);
+    expect(evaluateMythicProcs(state, 'on_kill', {}).cooldownReduce).toBeCloseTo(0.8);
+  });
+  it('on_kill ignores on_player_attack lifesteal procs', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 }]);
+    expect(evaluateMythicProcs(state, 'on_kill', {}).lifestealHeal).toBe(0);
+  });
+});
+
+describe('Phase Realms — light_of_truth applies to proc magnitudes via magnitudeBuff', () => {
+  it('lifesteal heal is ×1.25 when magnitudeBuff=1.25', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 }]);
+    const baseHeal = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100 }).lifestealHeal;
+    const buffedHeal = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100, magnitudeBuff: 1.25 }).lifestealHeal;
+    expect(baseHeal).toBeCloseTo(20);   // 100 × 0.2
+    expect(buffedHeal).toBeCloseTo(25); // 100 × 0.2 × 1.25
+  });
+  it('thorns reflect is ×1.25 with magnitudeBuff', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_player_hit_received', effect: 'thorns', value: 0.5 }]);
+    const result = evaluateMythicProcs(state, 'on_player_hit_received', { damageReceived: 100, magnitudeBuff: 1.25 });
+    expect(result.thornsReflect).toBeCloseTo(62.5);  // 100 × 0.5 × 1.25
+  });
+  it('cooldownReduce (on_kill) is ×1.25 with magnitudeBuff', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_kill', effect: 'sp_steal', value: 0.4 }]);
+    const result = evaluateMythicProcs(state, 'on_kill', { magnitudeBuff: 1.25 });
+    expect(result.cooldownReduce).toBeCloseTo(0.5);  // 0.4 × 1.25
   });
 });

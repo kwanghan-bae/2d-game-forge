@@ -55,6 +55,94 @@ export const DUNGEONS: Dungeon[] = [
     },
     isHardOnly: false,
   },
+  {
+    id: 'sea',
+    nameKR: '해',
+    emoji: '🌊',
+    themeColor: '#2c3e50',
+    unlockGate: { type: 'asc-tier', tier: 1 },
+    monsterPool: [
+      'coast-eel', 'coast-turtle', 'coast-crab', 'coast-mermaid', 'coast-deepfish',
+    ],
+    // sub[2] reuses the major boss — sea region has 5 distinct bosses (Phase Realms reuse-allowed).
+    bossIds: {
+      mini: 'wave-spirit',
+      major: 'dragon-king-guard',
+      sub: ['ice-sea-dragon', 'abyss-sea-ruler', 'dragon-king-guard'],
+      final: 'true-sea-god',
+    },
+    isHardOnly: false,
+  },
+  {
+    id: 'volcano',
+    nameKR: '화산',
+    emoji: '🌋',
+    themeColor: '#c0392b',
+    unlockGate: { type: 'asc-tier', tier: 3 },
+    monsterPool: [
+      'volcano-sprite', 'volcano-golem', 'volcano-wyrm', 'volcano-phoenix', 'volcano-lord',
+    ],
+    // sub[2] reuses the major boss — volcano region has 5 distinct bosses (Phase Realms reuse-allowed).
+    bossIds: {
+      mini: 'ash-spirit',
+      major: 'fire-warlord',
+      sub: ['magma-king', 'volcano-heart', 'fire-warlord'],
+      final: 'fire-sovereign',
+    },
+    isHardOnly: false,
+  },
+  {
+    id: 'underworld',
+    nameKR: '명계',
+    emoji: '💀',
+    themeColor: '#34495e',
+    unlockGate: { type: 'asc-tier', tier: 5 },
+    monsterPool: [
+      'cave-bat', 'cave-spider', 'cave-miner-ghost', 'under-dead', 'under-reaper',
+    ],
+    bossIds: {
+      mini: 'hell-gate-guard',
+      major: 'yama-king',
+      sub: ['grudge-general', 'ghost-king', 'hell-door-guardian'],
+      final: 'death-reaper',  // Phase Realms spec: shared with original 9-boss roster (narrative-justified reuse)
+    },
+    isHardOnly: false,
+  },
+  {
+    id: 'heaven',
+    nameKR: '천계',
+    emoji: '☁️',
+    themeColor: '#f1c40f',
+    unlockGate: { type: 'asc-tier', tier: 8 },
+    monsterPool: [
+      'heaven-immortal', 'heaven-crane', 'heaven-horse', 'heaven-rabbit', 'heaven-phoenix',
+    ],
+    bossIds: {
+      mini: 'cloud-guardian',
+      major: 'celestial-garden-spirit',
+      sub: ['thunder-celestial', 'celestial-lord', 'heaven-ruler'],
+      final: 'jade-emperor',  // Phase Realms spec: shared with mountains.final (deliberate narrative reuse — Heaven's apex matches the Jade Emperor archetype)
+    },
+    isHardOnly: false,
+  },
+  {
+    id: 'chaos',
+    nameKR: '혼돈',
+    emoji: '🌀',
+    themeColor: '#8e44ad',
+    unlockGate: { type: 'asc-tier', tier: 12 },
+    monsterPool: [
+      'chaos-shard', 'chaos-eroder', 'chaos-mutant', 'chaos-bubble', 'chaos-void',
+    ],
+    // sub[2] reuses the mini boss — chaos region has 5 distinct bosses (Phase Realms reuse-allowed).
+    bossIds: {
+      mini: 'void-boundary-lord',
+      major: 'time-destroyer',
+      sub: ['god-of-gods', 'primordial-chaos', 'void-boundary-lord'],
+      final: 'final-boss',  // Phase Realms spec: chaos is the ultimate dungeon → reuses the meta-final boss
+    },
+    isHardOnly: false,
+  },
 ];
 
 export function getDungeonById(id: string): Dungeon | undefined {
