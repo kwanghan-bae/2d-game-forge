@@ -14,17 +14,16 @@ describe('sim-cycle CLI — runSim()', () => {
     expect(out.results[0].maxLevel).toBeGreaterThanOrEqual(1);
   });
 
-  it('two cycles with different seeds produce different maxLevel distributions', () => {
+  it('10 cycles complete with summary aggregation', () => {
     const out = runSim({
       count: 10,
       seedStart: 1,
       loadout: { characterId: 'K01', bpMax: 3, heroHpMax: 100, heroAtkBase: 10000 },
       maxTickMs: 60_000,
     });
-    const uniqueLevels = new Set(out.results.map(r => r.maxLevel));
-    // 10 cycles should produce some variance.
-    expect(uniqueLevels.size).toBeGreaterThanOrEqual(1);
+    // All 10 cycles should complete and be aggregated into summary.
     expect(out.summary.cycleCount).toBe(10);
+    expect(out.results.length).toBe(10);
   });
 
   it('summary aggregates max/min/avg of maxLevel across cycles', () => {

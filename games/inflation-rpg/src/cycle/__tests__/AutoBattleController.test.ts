@@ -169,6 +169,41 @@ describe('AutoBattleController — BP / cycle_end', () => {
   });
 });
 
+describe('AutoBattleController — RNG witness', () => {
+  it('different seeds produce different gold totals (RNG determinism witness)', () => {
+    const a = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 1,
+    });
+    const b = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 9999,
+    });
+    for (let i = 0; i < 50; i++) {
+      a.tick(600);
+      b.tick(600);
+    }
+    // Gold gain has an RNG component per kill; different seeds should diverge.
+    expect(a.getState().cumGold).not.toBe(b.getState().cumGold);
+  });
+
+  it('same seed produces identical cumGold after N ticks (determinism preserved)', () => {
+    const a = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    const b = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 50; i++) {
+      a.tick(600);
+      b.tick(600);
+    }
+    expect(a.getState().cumGold).toBe(b.getState().cumGold);
+  });
+});
+
 describe('AutoBattleController — getResult curves', () => {
   it('returns null while cycle is still running', () => {
     const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });
