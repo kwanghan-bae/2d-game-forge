@@ -140,9 +140,8 @@ export function registerMythicProcs(state: EffectsState, procs: MythicProc[]): v
 export interface MythicProcResult {
   lifestealHeal: number;
   thornsReflect: number;
-  spStealAmount: number;       // [DEPRECATED — replaced by cooldownReduce on 'on_kill', kept for compat]
   magicBurstDamage: number;
-  cooldownReduce: number;       // [Phase Realms — seconds, from on_kill sp_steal]
+  cooldownReduce: number;       // seconds, from on_kill sp_steal (Phase Realms)
 }
 
 export function evaluateMythicProcs(
@@ -152,7 +151,6 @@ export function evaluateMythicProcs(
 ): MythicProcResult {
   let lifestealHeal = 0;
   let thornsReflect = 0;
-  let spStealAmount = 0;
   let magicBurstDamage = 0;
   let cooldownReduce = 0;
   const procs = state.permanentTriggers ?? [];
@@ -162,14 +160,8 @@ export function evaluateMythicProcs(
       lifestealHeal += ctx.damageDealt * p.value;
     } else if (p.effect === 'thorns' && ctx.damageReceived) {
       thornsReflect += ctx.damageReceived * p.value;
-    } else if (p.effect === 'sp_steal') {
-      // Phase Realms — sp_steal redefined: on_kill emits cooldownReduce (seconds).
-      // Legacy on_player_attack path kept for compat but data no longer uses it.
-      if (trigger === 'on_kill') {
-        cooldownReduce += p.value;
-      } else if (ctx.damageDealt) {
-        spStealAmount += ctx.damageDealt * p.value;
-      }
+    } else if (p.effect === 'sp_steal' && trigger === 'on_kill') {
+      cooldownReduce += p.value;
     } else if (p.effect === 'magic_burst' && ctx.damageDealt) {
       const r = ctx.rng ? ctx.rng() : Math.random();
       if (r < p.value) magicBurstDamage += ctx.damageDealt * 0.5;
@@ -180,7 +172,6 @@ export function evaluateMythicProcs(
   return {
     lifestealHeal: lifestealHeal * buff,
     thornsReflect: thornsReflect * buff,
-    spStealAmount: spStealAmount * buff,
     magicBurstDamage: magicBurstDamage * buff,
     cooldownReduce: cooldownReduce * buff,
   };
