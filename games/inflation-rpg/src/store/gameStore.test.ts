@@ -1571,11 +1571,16 @@ describe('Phase Compass — store actions', () => {
     expect(useGameStore.getState().meta.dungeonMiniBossesCleared).toEqual(['plains']);
   });
 
-  it('awardMiniBossCompass triggers omni on full mini-boss clear', () => {
+  it('awardMiniBossCompass triggers omni on full 8-dungeon mini-boss clear', () => {
     const s = useGameStore.getState();
     s.awardMiniBossCompass('plains');
     s.awardMiniBossCompass('forest');
     s.awardMiniBossCompass('mountains');
+    s.awardMiniBossCompass('sea');
+    s.awardMiniBossCompass('volcano');
+    s.awardMiniBossCompass('underworld');
+    s.awardMiniBossCompass('heaven');
+    s.awardMiniBossCompass('chaos');
     expect(useGameStore.getState().meta.compassOwned.omni).toBe(true);
   });
 
@@ -1586,8 +1591,9 @@ describe('Phase Compass — store actions', () => {
     expect(meta.dungeonMajorBossesCleared).toEqual(['forest']);
   });
 
-  it('pickAndSelectDungeon sets run.currentDungeonId', () => {
+  it('pickAndSelectDungeon sets run.currentDungeonId (starter dungeons only by default)', () => {
     const id = useGameStore.getState().pickAndSelectDungeon();
+    // By default, only starter dungeons are unlocked (asc-tier gates block the others)
     expect(['plains', 'forest', 'mountains']).toContain(id);
     expect(useGameStore.getState().run.currentDungeonId).toBe(id);
   });

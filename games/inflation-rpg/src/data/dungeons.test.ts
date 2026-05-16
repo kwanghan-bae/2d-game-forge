@@ -1,16 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { DUNGEONS, getDungeonById, getStartDungeons } from './dungeons';
 import { BOSSES } from './bosses';
+import { MONSTERS } from './monsters';
 
 describe('DUNGEONS catalog', () => {
-  it('has the 3 starter dungeons', () => {
-    expect(DUNGEONS.length).toBe(3);
+  it('has 8 total dungeons (3 starter + 5 asc-tier)', () => {
+    expect(DUNGEONS.length).toBe(8);
     const ids = DUNGEONS.map(d => d.id).sort();
-    expect(ids).toEqual(['forest', 'mountains', 'plains']);
+    expect(ids).toEqual(['chaos', 'forest', 'heaven', 'mountains', 'plains', 'sea', 'underworld', 'volcano']);
   });
 
-  it('all 3 starters are unlocked from the start', () => {
-    for (const d of DUNGEONS) {
+  it('first 3 dungeons are unlocked from the start', () => {
+    const starters = DUNGEONS.slice(0, 3);
+    for (const d of starters) {
       expect(d.unlockGate.type).toBe('start');
     }
   });
@@ -49,7 +51,7 @@ describe('getDungeonById', () => {
 });
 
 describe('getStartDungeons', () => {
-  it('returns only dungeons unlocked from start', () => {
+  it('returns only 3 dungeons unlocked from start', () => {
     const start = getStartDungeons();
     expect(start.length).toBe(3);
     for (const d of start) {
@@ -96,4 +98,28 @@ describe('Phase B-3β1 — Dungeon.bossIds', () => {
   it('mountains dungeon final = jade-emperor', () => {
     expect(getDungeonById('mountains')!.bossIds.final).toBe('jade-emperor');
   });
+});
+
+describe('Phase Realms — 5 new dungeons integrity', () => {
+  const NEW_IDS = ['sea', 'volcano', 'underworld', 'heaven', 'chaos'];
+  for (const id of NEW_IDS) {
+    it(`dungeon ${id} exists with asc-tier gate`, () => {
+      const d = DUNGEONS.find(x => x.id === id);
+      expect(d).toBeDefined();
+      expect(d?.unlockGate.type).toBe('asc-tier');
+    });
+    it(`dungeon ${id} all referenced boss IDs exist in BOSSES`, () => {
+      const d = DUNGEONS.find(x => x.id === id)!;
+      const bossIdSet = new Set(BOSSES.map(b => b.id));
+      expect(bossIdSet.has(d.bossIds.mini)).toBe(true);
+      expect(bossIdSet.has(d.bossIds.major)).toBe(true);
+      for (const sub of d.bossIds.sub) expect(bossIdSet.has(sub)).toBe(true);
+      expect(bossIdSet.has(d.bossIds.final)).toBe(true);
+    });
+    it(`dungeon ${id} all monster IDs exist in MONSTERS`, () => {
+      const d = DUNGEONS.find(x => x.id === id)!;
+      const monsterIdSet = new Set(MONSTERS.map(m => m.id));
+      for (const m of d.monsterPool) expect(monsterIdSet.has(m)).toBe(true);
+    });
+  }
 });
