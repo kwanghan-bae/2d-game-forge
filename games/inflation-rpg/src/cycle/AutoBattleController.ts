@@ -190,7 +190,7 @@ export class AutoBattleController {
   private killEnemy(): void {
     if (!this.currentEnemyId) return;
     const exp = Math.max(1, this.state.heroLv * 10);
-    const gold = Math.max(1, this.state.heroLv * 2);
+    const gold = Math.max(1, this.state.heroLv * 2 + this.rng.int(this.state.heroLv));
     this.emit({
       t: this.state.tNowMs,
       type: 'enemy_kill',
