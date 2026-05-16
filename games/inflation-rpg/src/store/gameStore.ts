@@ -125,6 +125,8 @@ export const INITIAL_META: MetaState = {
   // Phase 5 — Monetization
   adFreeOwned: false,
   lastIapTx: [],
+  // Phase Sim-A — 사이클 히스토리
+  cycleHistory: [],
 };
 
 interface GameStore {
@@ -425,6 +427,12 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v13 → v14: Phase 5 — adFreeOwned + lastIapTx[]
   if (fromVersion <= 13) {
     migrateV13ToV14(s);
+  }
+  // v14 → v15: Phase Sim-A — cycleHistory[]
+  if (fromVersion <= 14 && s.meta) {
+    if (!s.meta.cycleHistory) {
+      s.meta.cycleHistory = [];
+    }
   }
   return s;
 }
@@ -1169,7 +1177,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 14,  // 13 → 14 (Phase 5 — adFreeOwned + lastIapTx[])
+      version: 15,  // 14 → 15 (Phase Sim-A — cycleHistory: CycleHistoryEntry[])
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
