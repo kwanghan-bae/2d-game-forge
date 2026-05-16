@@ -1,5 +1,6 @@
 import type { CycleHistoryEntry } from './cycle/cycleEvents';
 import type { TraitId } from './cycle/traits';
+import type { CycleSaga } from './saga/SagaTypes';
 
 export type StatKey = 'hp' | 'atk' | 'def' | 'agi' | 'luc';
 
@@ -236,6 +237,8 @@ export interface MetaState {
   cycleHistory: CycleHistoryEntry[];
   // Phase Sim-B — 해금된 trait ID 목록 (기본값 = BASE_TRAIT_IDS, Sim-E 에서 점진적 해금)
   traitsUnlocked: TraitId[];
+  // Phase V1a — 사가 히스토리 (최근 100 항목 FIFO)
+  sagaHistory: CycleSaga[];
 }
 
 // Phase G — Ascension Tree (성좌)

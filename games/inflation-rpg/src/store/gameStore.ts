@@ -131,6 +131,8 @@ export const INITIAL_META: MetaState = {
   cycleHistory: [],
   // Phase Sim-B — 해금된 trait 목록 (기본값 = 모든 base-tier traits)
   traitsUnlocked: [...BASE_TRAIT_IDS],
+  // Phase V1a — 사가 히스토리
+  sagaHistory: [],
 };
 
 interface GameStore {
@@ -445,6 +447,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     if (!s.meta.traitsUnlocked) {
       s.meta.traitsUnlocked = [...BASE_TRAIT_IDS];
     }
+  }
+  // v16 → v17: Phase V1a — sagaHistory: CycleSaga[]
+  if (fromVersion <= 16 && s.meta) {
+    if (!s.meta.sagaHistory) s.meta.sagaHistory = [];
   }
   return s;
 }
@@ -1198,7 +1204,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 16,  // 15 → 16 (Phase Sim-B — traitsUnlocked: TraitId[])
+      version: 17,  // 16 → 17 (Phase V1a — sagaHistory: CycleSaga[])
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
