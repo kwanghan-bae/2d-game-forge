@@ -16,6 +16,7 @@ import { SkillProgression } from './screens/SkillProgression';
 import Relics from './screens/Relics';
 import { Settings } from './screens/Settings';
 import { IapShopScreen } from './screens/IapShopScreen';
+import { PrivacyScreen } from './screens/PrivacyScreen';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
@@ -96,6 +97,9 @@ export function App({ config }: AppProps) {
           onPurchase={async (id) => (await monetizationRef.current?.purchase(id)) ?? false}
           onBack={() => useGameStore.getState().setScreen('settings')}
         />
+      )}
+      {screen === 'privacy'     && (
+        <PrivacyScreen onBack={() => useGameStore.getState().setScreen('settings')} />
       )}
       <TutorialOverlay />
       <DungeonFinalClearedModal />
