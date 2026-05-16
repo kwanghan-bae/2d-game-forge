@@ -278,3 +278,26 @@ describe('Phase Realms — evaluateMythicProcs on_kill trigger + cooldownReduce'
     expect(evaluateMythicProcs(state, 'on_kill', {}).lifestealHeal).toBe(0);
   });
 });
+
+describe('Phase Realms — light_of_truth applies to proc magnitudes via magnitudeBuff', () => {
+  it('lifesteal heal is ×1.25 when magnitudeBuff=1.25', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 }]);
+    const baseHeal = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100 }).lifestealHeal;
+    const buffedHeal = evaluateMythicProcs(state, 'on_player_attack', { damageDealt: 100, magnitudeBuff: 1.25 }).lifestealHeal;
+    expect(baseHeal).toBeCloseTo(20);   // 100 × 0.2
+    expect(buffedHeal).toBeCloseTo(25); // 100 × 0.2 × 1.25
+  });
+  it('thorns reflect is ×1.25 with magnitudeBuff', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_player_hit_received', effect: 'thorns', value: 0.5 }]);
+    const result = evaluateMythicProcs(state, 'on_player_hit_received', { damageReceived: 100, magnitudeBuff: 1.25 });
+    expect(result.thornsReflect).toBeCloseTo(62.5);  // 100 × 0.5 × 1.25
+  });
+  it('cooldownReduce (on_kill) is ×1.25 with magnitudeBuff', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_kill', effect: 'sp_steal', value: 0.4 }]);
+    const result = evaluateMythicProcs(state, 'on_kill', { magnitudeBuff: 1.25 });
+    expect(result.cooldownReduce).toBeCloseTo(0.5);  // 0.4 × 1.25
+  });
+});
