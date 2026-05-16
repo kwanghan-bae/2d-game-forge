@@ -32,7 +32,7 @@ export class AutoBattleController {
   private expMul: number;
   private goldMul: number;
   private bpCostMul: number;
-  private traitIds: TraitId[];
+  private fractionalBp: number = 0;
 
   constructor(opts: ControllerOptions) {
     const traitIds = opts.traits ?? [];
@@ -41,7 +41,6 @@ export class AutoBattleController {
     this.expMul = resolved.expMul;
     this.goldMul = resolved.goldMul;
     this.bpCostMul = resolved.bpCostMul;
-    this.traitIds = traitIds;
     this.rng = new SeededRng(opts.seed);
     this.roundMs = opts.roundMs ?? DEFAULT_ROUND_MS;
     this.nextRoundAtMs = this.roundMs;
@@ -246,12 +245,20 @@ export class AutoBattleController {
   }
 
   private consumeBp(amount: number, cause: string): void {
-    const cost = Math.max(1, Math.floor(amount * this.bpCostMul));
-    this.state.bp = Math.max(0, this.state.bp - cost);
+    // Fractional BP accumulator: avoids floor-clamp swallowing sub-1 costs.
+    // e.g. t_swift (bpCostMul 0.9): 9 encounters cost 0.9 each → 8.1 banked
+    // after 9; on 10th encounter 9.0 is crossed → 9 integer BP consumed total.
+    // t_swift + t_terminal_genius (0.9 × 2.0 = 1.8): correctly averages above
+    // 1 BP per encounter rather than silently cancelling to 1 each time.
+    this.fractionalBp += amount * this.bpCostMul;
+    const intCost = Math.floor(this.fractionalBp);
+    this.fractionalBp -= intCost;
+    if (intCost === 0) return; // fractional cost banked; no integer BP consumed this encounter
+    this.state.bp = Math.max(0, this.state.bp - intCost);
     this.emit({
       t: this.state.tNowMs,
       type: 'bp_change',
-      delta: -cost,
+      delta: -intCost,
       remaining: this.state.bp,
       cause,
     });
