@@ -23,10 +23,15 @@ describe('generateMapLayout', () => {
     expect(villages.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('places at least 5 enemy/boss landmarks', () => {
+  it('places at least 12 enemy/boss landmarks', () => {
     const layout = generateMapLayout(42);
     const combatLandmarks = layout.landmarks.filter(l => l.type.kind === 'enemy' || l.type.kind === 'boss');
-    expect(combatLandmarks.length).toBeGreaterThanOrEqual(5);
+    expect(combatLandmarks.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it('initial map has at least 19 total landmarks', () => {
+    const layout = generateMapLayout(42);
+    expect(layout.landmarks.length).toBeGreaterThanOrEqual(19);
   });
 
   it('landmark coordinates are within grid bounds', () => {

@@ -9,6 +9,13 @@ import type { OverworldEvent } from './OverworldEvents';
 import type { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import type { HeroEntity } from '../hero/HeroEntity';
 
+/** Zones that are eligible for enemy respawn by column range. */
+const ENEMY_ZONE_RANGES: Array<{ zone: ZoneId; xMin: number; xMax: number }> = [
+  { zone: 'forest',    xMin: 3,  xMax: 7  },
+  { zone: 'plains',    xMin: 8,  xMax: 11 },
+  { zone: 'mountains', xMin: 12, xMax: 16 },
+];
+
 export const GRID_W = 20;
 export const GRID_H = 12;
 const TILE_PX = 32;
@@ -54,20 +61,30 @@ export function generateMapLayout(seed: number): MapLayout {
   // Always: a village in village zone
   place('village', 1, Math.floor(GRID_H / 2));
 
-  // 4–6 enemies in forest/plains zones
-  for (let i = 0; i < 5; i++) {
-    const enemyTypeId = ['wolf', 'goblin', 'bandit'][rng.int(3)];
-    const x = 4 + rng.int(8);
+  // 12 enemies spread across forest/plains/mountains zones
+  const ENEMY_TYPES = ['wolf', 'goblin', 'bandit'];
+  const ENEMY_ZONE_COL_RANGES = [
+    { xMin: 4,  xMax: 7  }, // forest
+    { xMin: 8,  xMax: 11 }, // plains
+    { xMin: 12, xMax: 16 }, // mountains
+  ];
+  for (let i = 0; i < 12; i++) {
+    const enemyTypeId = ENEMY_TYPES[rng.int(ENEMY_TYPES.length)];
+    const zoneRange = ENEMY_ZONE_COL_RANGES[rng.int(ENEMY_ZONE_COL_RANGES.length)];
+    const x = zoneRange.xMin + rng.int(zoneRange.xMax - zoneRange.xMin + 1);
     const y = rng.int(GRID_H);
     place(enemyTypeId, x, y, `_e${i}`);
   }
 
-  // 1–2 bosses in mountains/mystic
+  // 3 bosses in mountains/mystic
   place('wolf_lord', 13 + rng.int(3), rng.int(GRID_H));
+  place('wolf_lord', 14 + rng.int(3), rng.int(GRID_H), '_b2');
   place('dragon', 17 + rng.int(2), rng.int(GRID_H));
 
-  // 1 shrine in mystic
+  // 1 shrine + 1 cave + 1 ruin in mystic/mountains
   place('shrine', 18 + rng.int(2), rng.int(GRID_H));
+  place('cave',   15 + rng.int(3), rng.int(GRID_H));
+  place('ruin',   12 + rng.int(4), rng.int(GRID_H));
 
   return { tiles, landmarks };
 }
@@ -90,6 +107,8 @@ export class OverworldScene extends Phaser.Scene {
   private currentTarget: PlacedLandmark | null = null;
   private moveTimer: Phaser.Time.TimerEvent | null = null;
   private pathfinder!: Pathfinder;
+  private sceneRng!: SeededRng;
+  private respawnCounter: number = 0;
 
   constructor() { super('OverworldScene'); }
 
@@ -98,6 +117,9 @@ export class OverworldScene extends Phaser.Scene {
     this.ai = data.ai;
     this.onEvent = data.onEvent;
     this.layout = generateMapLayout(data.seed);
+    // Scene-level RNG for respawn placement (derived from seed to stay deterministic).
+    this.sceneRng = new SeededRng(data.seed ^ 0xabcd1234);
+    this.respawnCounter = 0;
   }
 
   create() {
@@ -207,9 +229,51 @@ export class OverworldScene extends Phaser.Scene {
       target.consumed = true;
       const sprite = this.landmarkSprites.get(target.instanceId);
       sprite?.setAlpha(0.3);
+      // Enemy landmarks respawn immediately after being consumed.
+      // Villages, shrines, caves, ruins do NOT respawn.
+      if (target.type.kind === 'enemy') {
+        this.respawnEnemyNear(target);
+      }
       this.currentTarget = null;
       this.pickNextDestination();
     });
+  }
+
+  /** Spawn a replacement enemy in the same zone as the consumed landmark. */
+  private respawnEnemyNear(consumed: PlacedLandmark): void {
+    // Determine the zone band from the consumed landmark's x position.
+    let range = ENEMY_ZONE_RANGES.find(r => consumed.gridX >= r.xMin && consumed.gridX <= r.xMax);
+    if (!range) {
+      // Fallback: pick any of the 3 enemy zone ranges.
+      range = ENEMY_ZONE_RANGES[this.sceneRng.int(ENEMY_ZONE_RANGES.length)];
+    }
+    const ENEMY_TYPES = ['wolf', 'goblin', 'bandit'];
+    const typeId = ENEMY_TYPES[this.sceneRng.int(ENEMY_TYPES.length)];
+    const landmarkType = LANDMARK_TYPES.find(t => t.id === typeId);
+    if (!landmarkType) return;
+
+    const x = range.xMin + this.sceneRng.int(range.xMax - range.xMin + 1);
+    const y = this.sceneRng.int(GRID_H);
+    this.respawnCounter += 1;
+    const instanceId = `${typeId}_respawn_${this.respawnCounter}`;
+
+    const newLandmark: PlacedLandmark = {
+      instanceId,
+      type: landmarkType,
+      gridX: x,
+      gridY: y,
+      consumed: false,
+    };
+    this.layout.landmarks.push(newLandmark);
+
+    // Render the new landmark sprite.
+    const text = this.add.text(
+      x * TILE_PX + TILE_PX / 2,
+      y * TILE_PX + TILE_PX / 2,
+      landmarkType.emoji,
+      { fontSize: '20px', alpha: 0.8 },
+    ).setOrigin(0.5);
+    this.landmarkSprites.set(instanceId, text);
   }
 
   private heroGridPos(): { x: number; y: number } {
