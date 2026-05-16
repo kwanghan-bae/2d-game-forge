@@ -118,3 +118,53 @@ describe('AutoBattleController — EXP / level_up (inflation curve)', () => {
     expect(ctrl.getState().heroLv).toBeGreaterThanOrEqual(5);
   });
 });
+
+describe('AutoBattleController — BP / cycle_end', () => {
+  it('emits bp_change event after each enemy kill', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 10; i++) ctrl.tick(600);
+    const types = ctrl.getEvents().map(e => e.type);
+    expect(types.filter(t => t === 'bp_change').length).toBeGreaterThan(0);
+  });
+
+  it('emits cycle_end with reason bp_exhausted when BP hits 0', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 3, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 50; i++) ctrl.tick(600);
+    const endEv = ctrl.getEvents().find(e => e.type === 'cycle_end');
+    expect(endEv).toBeDefined();
+    if (endEv && endEv.type === 'cycle_end') {
+      expect(endEv.reason).toBe('bp_exhausted');
+    }
+  });
+
+  it('after cycle_end, further ticks are no-ops', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 3, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 50; i++) ctrl.tick(600);
+    const eventsAtEnd = ctrl.getEvents().length;
+    for (let i = 0; i < 50; i++) ctrl.tick(600);
+    expect(ctrl.getEvents().length).toBe(eventsAtEnd);
+  });
+
+  it('abandon() forces cycle_end with reason abandoned', () => {
+    const ctrl = new AutoBattleController({
+      loadout: minimalLoadout(),
+      seed: 42,
+    });
+    ctrl.tick(600);
+    ctrl.abandon();
+    const endEv = ctrl.getEvents().find(e => e.type === 'cycle_end');
+    expect(endEv).toBeDefined();
+    if (endEv && endEv.type === 'cycle_end') {
+      expect(endEv.reason).toBe('abandoned');
+    }
+  });
+});

@@ -1,4 +1,5 @@
 import type { CycleEvent, CycleState, CycleResult } from './cycleEvents';
+import type { CycleEndReason } from './cycleEvents';
 import { SeededRng } from './SeededRng';
 
 export interface ControllerLoadout {
@@ -173,8 +174,8 @@ export class AutoBattleController {
     this.state.cumGold += gold;
     this.state.heroExp += exp;
     this.tryLevelUp();
+    this.consumeBp(1, 'encounter');
     this.currentEnemyId = null;
-    // bp_change handled in Task 6.
   }
 
   private tryLevelUp(): void {
@@ -195,6 +196,43 @@ export class AutoBattleController {
         statDelta: { hp: hpDelta },
       });
     }
+  }
+
+  private consumeBp(amount: number, cause: string): void {
+    this.state.bp = Math.max(0, this.state.bp - amount);
+    this.emit({
+      t: this.state.tNowMs,
+      type: 'bp_change',
+      delta: -amount,
+      remaining: this.state.bp,
+      cause,
+    });
+    if (this.state.bp <= 0) {
+      this.endCycle('bp_exhausted');
+    }
+  }
+
+  abandon(): void {
+    if (this.state.ended) return;
+    this.endCycle('abandoned');
+  }
+
+  private endCycle(reason: CycleEndReason): void {
+    if (this.state.ended) return;
+    this.state.ended = true;
+    this.emit({
+      t: this.state.tNowMs,
+      type: 'cycle_end',
+      reason,
+      durationMs: this.state.tNowMs,
+      maxLevel: this.state.heroLv,
+      finalState: {
+        heroHp: this.state.heroHp,
+        heroExp: this.state.heroExp,
+        cumKills: this.state.cumKills,
+        cumGold: this.state.cumGold,
+      },
+    });
   }
 
   private expRequiredForLevel(lv: number): number {
