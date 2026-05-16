@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { HeroSpawner } from '../HeroSpawner';
 import { SeededRng } from '../../cycle/SeededRng';
+import { PERSONALITY_DIMS } from '../PersonalityState';
 
 describe('HeroSpawner', () => {
   it('spawns a hero with non-empty name', () => {
@@ -28,5 +29,29 @@ describe('HeroSpawner', () => {
     expect(hero.job).toBe('평민');
     expect(hero.level).toBe(1);
     expect(hero.emoji).toBe('🧒');
+  });
+
+  it('personalityPriors has exactly 2 entries from PERSONALITY_DIMS', () => {
+    const hero = HeroSpawner.spawn(new SeededRng(42));
+    const entries = Object.entries(hero.personalityPriors);
+    expect(entries.length).toBe(2);
+    for (const [dim] of entries) {
+      expect(PERSONALITY_DIMS).toContain(dim);
+    }
+  });
+
+  it('personalityPriors values are non-zero integers in [-5, +5]', () => {
+    const hero = HeroSpawner.spawn(new SeededRng(42));
+    for (const [, val] of Object.entries(hero.personalityPriors)) {
+      expect(val).not.toBe(0);
+      expect(val).toBeGreaterThanOrEqual(-5);
+      expect(val).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it('same seed produces same personalityPriors', () => {
+    const a = HeroSpawner.spawn(new SeededRng(99));
+    const b = HeroSpawner.spawn(new SeededRng(99));
+    expect(a.personalityPriors).toEqual(b.personalityPriors);
   });
 });
