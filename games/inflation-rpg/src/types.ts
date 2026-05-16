@@ -326,7 +326,9 @@ export type Screen =
   | 'relics'
   | 'settings'
   | 'iap-shop'
-  | 'privacy';
+  | 'privacy'
+  | 'cycle-runner'
+  | 'cycle-result';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 

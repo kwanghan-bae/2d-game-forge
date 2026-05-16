@@ -17,6 +17,8 @@ import Relics from './screens/Relics';
 import { Settings } from './screens/Settings';
 import { IapShopScreen } from './screens/IapShopScreen';
 import { PrivacyScreen } from './screens/PrivacyScreen';
+import { CycleRunner } from './screens/CycleRunner';
+import { CycleResult } from './screens/CycleResult';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
@@ -100,6 +102,12 @@ export function App({ config }: AppProps) {
       )}
       {screen === 'privacy'     && (
         <PrivacyScreen onBack={() => useGameStore.getState().setScreen('settings')} />
+      )}
+      {screen === 'cycle-runner' && (
+        <CycleRunner onCycleEnd={() => useGameStore.getState().setScreen('cycle-result')} />
+      )}
+      {screen === 'cycle-result' && (
+        <CycleResult onBackToMenu={() => useGameStore.getState().setScreen('main-menu')} />
       )}
       <TutorialOverlay />
       <DungeonFinalClearedModal />
