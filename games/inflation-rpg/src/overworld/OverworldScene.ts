@@ -271,8 +271,8 @@ export class OverworldScene extends Phaser.Scene {
       x * TILE_PX + TILE_PX / 2,
       y * TILE_PX + TILE_PX / 2,
       landmarkType.emoji,
-      { fontSize: '20px', alpha: 0.8 },
-    ).setOrigin(0.5);
+      { fontSize: '20px' },
+    ).setOrigin(0.5).setAlpha(0.8);
     this.landmarkSprites.set(instanceId, text);
   }
 
