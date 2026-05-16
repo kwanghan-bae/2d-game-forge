@@ -139,6 +139,24 @@ class OnestoreIapPlugin : Plugin() {
         }
     }
 
+    @PluginMethod
+    fun acknowledge(call: PluginCall) {
+        val client = requireClient(call) ?: return
+        val token = call.getString("purchaseToken")
+        if (token.isNullOrEmpty()) {
+            call.reject("purchaseToken is required")
+            return
+        }
+
+        client.consumeAsync(token) { result, _ ->
+            if (result.isSuccess) {
+                call.resolve()
+            } else {
+                call.reject("acknowledge failed: ${result.message}", "${result.responseCode}")
+            }
+        }
+    }
+
     internal fun emitPurchaseUpdated(data: JSObject) {
         notifyListeners("purchaseUpdated", data)
     }
