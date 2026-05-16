@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
+import { useCycleStore } from '../cycle/cycleSlice';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 import { formatNumber } from '../lib/format';
@@ -12,8 +13,23 @@ export function MainMenu() {
   const runCharacterId = useGameStore((s) => s.run.characterId);
   const setTutorialStep = useGameStore((s) => s.setTutorialStep);
   const restartTutorial = useGameStore((s) => s.restartTutorial);
+  const startCycle = useCycleStore((s) => s.start);
 
   const hasActiveRun = runCharacterId !== '';
+
+  const handleStartCycle = () => {
+    const characterId = meta.lastPlayedCharId !== '' ? meta.lastPlayedCharId : 'K01';
+    startCycle({
+      loadout: {
+        characterId,
+        bpMax: 30,
+        heroHpMax: 100,
+        heroAtkBase: 50,
+      },
+      seed: Date.now() & 0xffffffff,
+    });
+    setScreen('cycle-runner');
+  };
 
   React.useEffect(() => {
     if (!meta.tutorialDone && meta.tutorialStep === -1) {
@@ -72,6 +88,11 @@ export function MainMenu() {
         <ForgeButton variant="secondary" onClick={() => setScreen('settings')}>
           설정
         </ForgeButton>
+        <button type="button" onClick={handleStartCycle} data-testid="btn-start-cycle"
+          style={{ padding: '8px 12px', background: 'var(--forge-accent)', color: '#000',
+            border: 'none', borderRadius: 6, fontWeight: 700, cursor: 'pointer' }}>
+          사이클 시작 (NEW)
+        </button>
       </div>
 
       <VolumeControls />
