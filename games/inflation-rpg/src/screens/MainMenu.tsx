@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 import { formatNumber } from '../lib/format';
+import { AdFreeIndicator } from '../components/AdFreeIndicator';
 
 export function MainMenu() {
   const setScreen = useGameStore((s) => s.setScreen);
@@ -22,6 +23,7 @@ export function MainMenu() {
 
   return (
     <ForgeScreen style={{ background: 'linear-gradient(180deg,#1a1030 0%,#0f0f1a 100%)', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <AdFreeIndicator visible={meta.adFreeOwned} />
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
         <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--forge-accent)', letterSpacing: 2 }}>
           INFLATION
@@ -66,6 +68,9 @@ export function MainMenu() {
         </ForgeButton>
         <ForgeButton variant="secondary" onClick={restartTutorial}>
           튜토리얼 다시
+        </ForgeButton>
+        <ForgeButton variant="secondary" onClick={() => setScreen('settings')}>
+          설정
         </ForgeButton>
       </div>
 

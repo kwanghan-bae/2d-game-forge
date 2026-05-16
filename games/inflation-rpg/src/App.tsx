@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useGameStore } from './store/gameStore';
+import { ADMOB_CONFIG } from './config/monetization.config';
+import { MonetizationService } from './services/MonetizationService';
 import { MainMenu } from './screens/MainMenu';
 import { Town } from './screens/Town';
 import { DungeonFloors } from './screens/DungeonFloors';
@@ -12,6 +14,9 @@ import { Quests } from './screens/Quests';
 import { Ascension } from './screens/Ascension';
 import { SkillProgression } from './screens/SkillProgression';
 import Relics from './screens/Relics';
+import { Settings } from './screens/Settings';
+import { IapShopScreen } from './screens/IapShopScreen';
+import { PrivacyScreen } from './screens/PrivacyScreen';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
@@ -35,6 +40,33 @@ export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
   const meta = useGameStore((s) => s.meta);
 
+  const setAdFreeOwned = useGameStore((s) => s.setAdFreeOwned);
+  const gainCrackStones = useGameStore((s) => s.gainCrackStones);
+  const monetizationRef = useRef<MonetizationService | null>(null);
+
+  useEffect(() => {
+    if (monetizationRef.current) return;
+    const svc = new MonetizationService({
+      adFreeOwned: useGameStore.getState().meta.adFreeOwned,
+      onAdFreeChanged: setAdFreeOwned,
+      onCrackStonesAwarded: gainCrackStones,
+      licenseKey: ADMOB_CONFIG.iapLicenseKey,
+      rewardedUnitId: ADMOB_CONFIG.rewarded.android,
+      bannerUnitId: ADMOB_CONFIG.banner.android,
+    });
+    monetizationRef.current = svc;
+    void svc.initialize();
+    // dev-only window hook for Playwright meta inspection (T29 needs this)
+    if (process.env.NODE_ENV !== 'production') {
+      (window as unknown as { __forge_monetization?: MonetizationService }).__forge_monetization = svc;
+    }
+    const handleRestore = () => {
+      void svc.restorePurchasesManually();
+    };
+    window.addEventListener('forge-restore-purchases', handleRestore);
+    return () => window.removeEventListener('forge-restore-purchases', handleRestore);
+  }, [setAdFreeOwned, gainCrackStones]);
+
   React.useEffect(() => {
     setVolumes(meta.musicVolume, meta.sfxVolume, meta.muted);
   }, [meta.musicVolume, meta.sfxVolume, meta.muted]);
@@ -57,6 +89,18 @@ export function App({ config }: AppProps) {
       {screen === 'ascension'    && <Ascension />}
       {screen === 'skill-progression' && <SkillProgression />}
       {screen === 'relics'       && <Relics />}
+      {screen === 'settings'     && <Settings />}
+      {screen === 'iap-shop'    && (
+        <IapShopScreen
+          adFreeOwned={meta.adFreeOwned}
+          getPrice={(id) => monetizationRef.current?.getProductPrice(id)}
+          onPurchase={async (id) => (await monetizationRef.current?.purchase(id)) ?? false}
+          onBack={() => useGameStore.getState().setScreen('settings')}
+        />
+      )}
+      {screen === 'privacy'     && (
+        <PrivacyScreen onBack={() => useGameStore.getState().setScreen('settings')} />
+      )}
       <TutorialOverlay />
       <DungeonFinalClearedModal />
     </div>

@@ -61,8 +61,18 @@ Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 
 - `phase-realms-complete` — Phase Realms: 5 던전 확장 (sea/volcano/underworld/heaven/chaos, Tier-gated)
   + Phase E 부채 청산 (run.playerHp 영구화 + lifesteal/sp_steal redefine/swift_winds target/
   infinity_seal XP/light_of_truth proc magnitude). Persist v13. 705 vitest / 50 e2e.
-- 다음: telemetry 기반 균형 패치 (lifesteal/cooldownReduce 영향), Phase 5 (Monetization),
-  또는 13 비핵심 캐릭터 (별도 spec 필요).
+- `phase-5-complete` — Phase 5 Monetization (원스토어 single-market shell):
+  AdMob Rewarded + Banner (`@capacitor-community/admob` 8.x), 원스토어 IAP 4 품목
+  (광고 제거 non-consumable + 균열석 3 tier consumable) **TS contract + web stub
+  완성**, MonetizationService facade, persist v14 (adFreeOwned + lastIapTx[]),
+  PrivacyScreen + GitHub Pages 호스팅, AdFreeIndicator badge, Phase E debt fold
+  (applySkillResult skill heal wiring). **원스토어 Kotlin native wire 는 분리된
+  Phase 5a-1 으로 미룸** (compile-only stub — `com.gaa.sdk.iap.*` V21 Builder
+  패턴 + real-device + sandbox 계정 필요). 738 vitest / 60 e2e. Local plugin =
+  `games/inflation-rpg/native/onestore-iap/` (3-rule 준수).
+- 다음: **Phase 5a-1** (원스토어 native wire, real-device manual-QA 세션),
+  Phase 5b (Google Play + RevenueCat), Phase 5c (iOS + StoreKit + ATT),
+  또는 telemetry 기반 균형 패치, 13 비핵심 캐릭터.
 
 ## 명령 치트시트
 

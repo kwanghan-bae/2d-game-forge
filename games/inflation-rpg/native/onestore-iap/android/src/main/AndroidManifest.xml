@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="com.onestore.iap.permission.BILLING" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <queries>
+        <intent>
+            <action android:name="com.onestore.android.iap" />
+        </intent>
+        <package android:name="com.skt.skaf.A000Z00040" />
+        <package android:name="com.onestore.protocol.proxy" />
+    </queries>
+
+</manifest>
