@@ -7,7 +7,14 @@ import { getDungeonById, DUNGEONS } from '../data/dungeons';
 import { isAtCap } from '../systems/relics';
 import { isDungeonUnlocked } from '../systems/dungeons';
 import { canWatchAd, AD_COOLDOWN_MS, AD_DAILY_CAP } from '../systems/ads';
+import { ADMOB_CONFIG } from '../config/monetization.config';
+import { AdManager } from '../services/AdManager';
 import type { RelicId } from '../types';
+
+const adManager = new AdManager({
+  rewardedUnitId: ADMOB_CONFIG.rewarded.android,
+  bannerUnitId: ADMOB_CONFIG.banner.android,
+});
 
 export default function Relics() {
   const meta = useGameStore((s) => s.meta);
@@ -15,14 +22,19 @@ export default function Relics() {
   const [tab, setTab] = React.useState<'stack' | 'mythic' | 'compass'>('stack');
   const [adRunning, setAdRunning] = React.useState<RelicId | null>(null);
 
-  const onWatchAd = (relicId: RelicId) => {
+  const onWatchAd = async (relicId: RelicId) => {
     const now = Date.now();
     if (!canWatchAd(meta, now).ok) return;
     setAdRunning(relicId);
-    setTimeout(() => {
-      watchAdForRelic(relicId);
+    try {
+      await adManager.initialize();
+      const adShown = await adManager.showRewardedAd();
+      if (adShown) {
+        watchAdForRelic(relicId);
+      }
+    } finally {
       setAdRunning(null);
-    }, AD_COOLDOWN_MS);
+    }
   };
 
   return (
