@@ -4,11 +4,12 @@ import { computeSkillEffect, createSkillState, isSkillReady, fireSkill } from '.
 import { calcDamageReduction, calcCritChance } from '../src/systems/stats';
 import {
   createEffectsState, addEffect, tickEffects, processIncomingDamage,
-  registerMythicProcs,
+  registerMythicProcs, evaluateMythicProcs,
   type CombatStateForEffects,
 } from '../src/systems/effects';
 import { EMPTY_RELIC_STACKS } from '../src/data/relics';
-import { getMythicFlatMult, getMythicProcs } from '../src/systems/mythics';
+import { getMythicFlatMult, getMythicProcs, getMythicCooldownMult } from '../src/systems/mythics';
+import type { SkillKind } from '../src/systems/mythics';
 import { getRelicFlatMult } from '../src/systems/relics';
 import type { ActiveSkill, Modifier, AscTree, MythicId, RelicId, MetaState } from '../src/types';
 
@@ -43,7 +44,8 @@ export interface SimPlayer {
   agi: number;
   luc: number;
   skills: Array<ActiveSkill & { dmgMul?: number }>;
-  modifiers?: Modifier[];  // Phase D — 장비 modifier 효과
+  skillKinds?: SkillKind[];  // Phase Realms — per-skill 'base'|'ult', default 'base'
+  modifiers?: Modifier[];    // Phase D — 장비 modifier 효과
   ascTree?: Partial<AscTree>;  // Phase G — Ascension Tree 노드 레벨
   // Phase E — mythic + relic aggregators
   mythicEquipped?: (MythicId | null)[];
@@ -94,6 +96,22 @@ export function simulateFloor(
       ascTree: player.ascTree ?? {},
     } as MetaState;
   })();
+
+  // Phase Realms — light_of_truth magnitudeBuff (mirrors BattleScene line ~224).
+  // Gated behind phaseE_meta — mythic-OFF runs always get 1.0.
+  const lightBuff = phaseE_meta?.mythicEquipped.includes('light_of_truth') ? 1.25 : 1.0;
+
+  // Phase Realms — per-skill cooldown mult for base/ult separation (swift_winds).
+  // ActiveSkill has no 'kind' field; caller provides optional skillKinds[]. Falls
+  // back to 'base' so the vast majority of base-skill builds are handled correctly.
+  // getMythicCooldownMult is a no-op when phaseE_meta is null (returns 1).
+  const skillCdMults: number[] = player.skills.map((_, i) => {
+    if (!phaseE_meta) return 1;
+    // Default skill kind to 'base' — most build configurations are all-base.
+    // Callers (balance-sweep) can populate skillKinds[] explicitly for ult skills.
+    const kind: SkillKind = player.skillKinds?.[i] ?? 'base';
+    return getMythicCooldownMult(phaseE_meta, kind);
+  });
 
   // Phase E — apply mythic + relic flat_mult multipliers to base stats.
   // Mirrors calcFinalStat's Math.floor behavior.
@@ -167,14 +185,20 @@ export function simulateFloor(
     // Note: only `result.damage` is applied here — heal / buff effects are no-op
     // in the sim. Damage-type ULTs only. Phase 2 (D — effect-pipeline) will add
     // proper effect application; until then milestone players pass `skills: []`.
-    for (const skill of player.skills) {
+    // Phase Realms — skillCdMults[i] applies getMythicCooldownMult per skill kind,
+    // respecting swift_winds 'base'-only filter vs time_hourglass 'both'.
+    for (let si = 0; si < player.skills.length; si++) {
+      const skill = player.skills[si]!;
+      const cdMult = skillCdMults[si] ?? 1;
+      // Effective cooldown reduced by cdMult — shorter cooldown means skill passes isSkillReady() sooner.
+      const scaledSkill = cdMult !== 1 ? { ...skill, cooldownSec: skill.cooldownSec * cdMult } : skill;
       const nowMs = tick * TICK_MS;
-      if (isSkillReady(skillState, skill, nowMs)) {
-        const result = computeSkillEffect(skill, simAtk, simHpMax, enemyHp, enemyMaxHp);
+      if (isSkillReady(skillState, scaledSkill, nowMs)) {
+        const result = computeSkillEffect(scaledSkill, simAtk, simHpMax, enemyHp, enemyMaxHp);
         if (result.damage !== undefined) {
           enemyHp = Math.max(0, enemyHp - result.damage);
         }
-        fireSkill(skillState, skill, nowMs);
+        fireSkill(skillState, scaledSkill, nowMs);
       }
     }
     if (enemyHp <= 0) {
@@ -195,6 +219,27 @@ export function simulateFloor(
       });
     }
     enemyHp = Math.max(0, enemyHp - totalDmg);
+
+    // Phase Realms (a) — lifesteal (serpent_fang, on_player_attack).
+    // Evaluate proc for each basic-attack volley; heal is clamped to simHpMax.
+    // magnitudeBuff reflects light_of_truth (+25% proc magnitude).
+    // Gated behind phaseE_meta — mythic-OFF runs skip this block.
+    // Note: cooldownReduce (gluttony_chalice on_kill) is NOT modeled here — simulateFloor returns
+    // on first kill, so there's no cross-kill window in which the cooldown reduction could
+    // provide measurable value. Documented deferral.
+    // Phase Realms (d) — infinity_seal XP: not modeled in sim; balance-sweep
+    // hardcodes charLv / ascTier as inputs so XP path does not exist in sim.
+    // Skip proc evaluation if no damage was dealt this volley (lifesteal needs damage to scale from).
+    if (phaseE_meta && totalDmg > 0) {
+      const attackProcs = evaluateMythicProcs(effectsState, 'on_player_attack', {
+        damageDealt: totalDmg,
+        magnitudeBuff: lightBuff,
+      });
+      if (attackProcs.lifestealHeal > 0) {
+        playerHpTracker = Math.min(simHpMax, playerHpTracker + attackProcs.lifestealHeal);
+      }
+    }
+
     if (enemyHp <= 0) {
       return { victory: true, ticksTaken: tick, secondsTaken: tick * 0.6, remainingHpRatio: 0 };
     }

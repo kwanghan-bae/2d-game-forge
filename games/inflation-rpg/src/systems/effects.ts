@@ -140,19 +140,19 @@ export function registerMythicProcs(state: EffectsState, procs: MythicProc[]): v
 export interface MythicProcResult {
   lifestealHeal: number;
   thornsReflect: number;
-  spStealAmount: number;
   magicBurstDamage: number;
+  cooldownReduce: number;       // seconds, from on_kill sp_steal (Phase Realms)
 }
 
 export function evaluateMythicProcs(
   state: EffectsState,
-  trigger: 'on_player_hit_received' | 'on_player_attack',
-  ctx: { damageDealt?: number; damageReceived?: number; rng?: () => number },
+  trigger: 'on_player_hit_received' | 'on_player_attack' | 'on_kill',
+  ctx: { damageDealt?: number; damageReceived?: number; rng?: () => number; magnitudeBuff?: number },
 ): MythicProcResult {
   let lifestealHeal = 0;
   let thornsReflect = 0;
-  let spStealAmount = 0;
   let magicBurstDamage = 0;
+  let cooldownReduce = 0;
   const procs = state.permanentTriggers ?? [];
   for (const p of procs) {
     if (p.trigger !== trigger) continue;
@@ -160,15 +160,21 @@ export function evaluateMythicProcs(
       lifestealHeal += ctx.damageDealt * p.value;
     } else if (p.effect === 'thorns' && ctx.damageReceived) {
       thornsReflect += ctx.damageReceived * p.value;
-    } else if (p.effect === 'sp_steal' && ctx.damageDealt) {
-      spStealAmount += ctx.damageDealt * p.value;
+    } else if (p.effect === 'sp_steal' && trigger === 'on_kill') {
+      cooldownReduce += p.value;
     } else if (p.effect === 'magic_burst' && ctx.damageDealt) {
-      // value = proc chance; deterministic 50% bonus damage when proc'd
       const r = ctx.rng ? ctx.rng() : Math.random();
       if (r < p.value) magicBurstDamage += ctx.damageDealt * 0.5;
     }
   }
-  return { lifestealHeal, thornsReflect, spStealAmount, magicBurstDamage };
+  // Phase Realms — light_of_truth magnitude buff applies to proc results.
+  const buff = ctx.magnitudeBuff ?? 1;
+  return {
+    lifestealHeal: lifestealHeal * buff,
+    thornsReflect: thornsReflect * buff,
+    magicBurstDamage: magicBurstDamage * buff,
+    cooldownReduce: cooldownReduce * buff,
+  };
 }
 
 export function evaluateTriggers(

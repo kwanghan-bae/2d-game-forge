@@ -1,5 +1,6 @@
 import { DUNGEONS } from '../data/dungeons';
 import { COMPASS_ITEMS, ALL_COMPASS_IDS, getCompassByDungeon } from '../data/compass';
+import { isDungeonUnlocked } from './dungeons';
 import type { MetaState, Dungeon } from '../types';
 
 /**
@@ -73,6 +74,7 @@ export function hasAnyFreeSelect(meta: MetaState): boolean {
 
 /**
  * Picks a random dungeon from the provided list using weighted random selection.
+ * Phase Realms — filters to only unlocked dungeons before weighting.
  * Dungeons with the first-tier compass have 3× weight; others have 1× weight.
  * Accepts an injectable rng function (default: Math.random) for deterministic testing.
  */
@@ -81,12 +83,19 @@ export function pickRandomDungeon(
   dungeons: readonly Dungeon[],
   rng: () => number = Math.random
 ): string {
-  const weights = dungeons.map((d) => getDungeonWeight(meta, d.id));
+  // Phase Realms — exclude locked dungeons from weight pool.
+  const available = dungeons.filter(d => isDungeonUnlocked(meta, d));
+  if (available.length === 0) {
+    // Defensive: should never happen since plains/forest/mountains are start.
+    console.warn('pickRandomDungeon: no unlocked dungeons — falling back to dungeons[0]');
+    return dungeons[0]!.id;
+  }
+  const weights = available.map(d => getDungeonWeight(meta, d.id));
   const total = weights.reduce((a, b) => a + b, 0);
   let r = rng() * total;
-  for (let i = 0; i < dungeons.length; i++) {
+  for (let i = 0; i < available.length; i++) {
     r -= weights[i]!;
-    if (r <= 0) return dungeons[i]!.id;
+    if (r <= 0) return available[i]!.id;
   }
-  return dungeons[dungeons.length - 1]!.id;
+  return available[available.length - 1]!.id;
 }

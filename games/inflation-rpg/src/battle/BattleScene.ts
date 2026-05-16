@@ -30,6 +30,7 @@ import {
 import { getMythicFlatMult, getMythicXpMult, getMythicProcs, getMythicReviveCount } from '../systems/mythics';
 import { getRelicFlatMult, getRelicXpMult, relicNoDeathLoss, relicReviveCount } from '../systems/relics';
 import type { EffectsState } from '../types';
+import { computeMaxHp } from '../systems/playerHp';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -154,6 +155,9 @@ export class BattleScene extends Phaser.Scene {
 
     this.effectsState = createEffectsState();
 
+    // Phase Realms — ensure run.playerHp is hydrated to maxHp at entry if null.
+    useGameStore.getState().hydratePlayerHpIfNull();
+
     // Phase E — register mythic proc triggers from meta (independent of `active` map).
     {
       const { meta } = useGameStore.getState();
@@ -193,16 +197,13 @@ export class BattleScene extends Phaser.Scene {
     const ascTierMult = 1 + 0.1 * meta.ascTier;
     const ascTree = meta.ascTree;
     const ascTreeAtkMult = 1 + 0.05 * ascTree.atk_pct;
-    const ascTreeHpMult = 1 + 0.05 * ascTree.hp_pct;
     const atkMetaMult = getMythicFlatMult(meta, 'atk') * getRelicFlatMult(meta, 'atk');
-    const hpMetaMult  = getMythicFlatMult(meta, 'hp')  * getRelicFlatMult(meta, 'hp');
     const defMetaMult = getMythicFlatMult(meta, 'def') * getRelicFlatMult(meta, 'def');
     const agiMetaMult = getMythicFlatMult(meta, 'agi') * getRelicFlatMult(meta, 'agi');
     const lucMetaMult = getMythicFlatMult(meta, 'luc') * getRelicFlatMult(meta, 'luc');
 
     const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult);
     const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, defMetaMult);
-    const playerHP  = calcFinalStat('hp',  run.allocated.hp,  char.statMultipliers.hp,  allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult, hpMetaMult);
     const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, agiMetaMult);
     const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, lucMetaMult);
 
@@ -219,19 +220,22 @@ export class BattleScene extends Phaser.Scene {
       });
     }
 
-    // Phase E — mythic on_player_attack procs (lifesteal / sp_steal / magic_burst).
-    // damageDealt feeds all three; magic_burst adds bonus damage to enemy.
-    const attackProcs = evaluateMythicProcs(this.effectsState, 'on_player_attack', { damageDealt: totalDmg });
+    // Phase Realms — magnitudeBuff for light_of_truth mythic.
+    const lightBuff = meta.mythicEquipped.includes('light_of_truth') ? 1.25 : 1.0;
+
+    // Phase E — mythic on_player_attack procs (lifesteal / magic_burst).
+    // damageDealt feeds all; magic_burst adds bonus damage to enemy.
+    const attackProcs = evaluateMythicProcs(this.effectsState, 'on_player_attack', {
+      damageDealt: totalDmg,
+      magnitudeBuff: lightBuff,
+    });
     const totalEnemyDmg = totalDmg + attackProcs.magicBurstDamage;
     this.enemyHP = Math.max(0, this.enemyHP - totalEnemyDmg);
 
-    // lifestealHeal / spStealAmount: BattleScene currently uses an estimate-based
-    // HP model (currentHPEstimate = playerHP - run.monstersDefeated × finalDmgTaken × 0.1)
-    // and SP here = stat points awarded on level-up, not a per-round resource. There
-    // is no persistent player-HP or per-round-SP state to apply these to, so we
-    // currently evaluate the procs (so RNG seeds advance consistently) but skip
-    // the damage-absorption / SP-credit application. Follow-up will require
-    // adding `run.playerHp` / `run.skillSp` state to the store.
+    // Phase Realms — apply lifesteal heal to run.playerHp.
+    if (attackProcs.lifestealHeal > 0) {
+      useGameStore.getState().applyLifestealHeal(attackProcs.lifestealHeal);
+    }
 
     const logParts: string[] = [];
     if (combo) logParts.push(`${hits}연타! `);
@@ -244,6 +248,16 @@ export class BattleScene extends Phaser.Scene {
     this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
 
     if (this.enemyHP <= 0) {
+      // Phase Realms — on_kill procs (sp_steal → cooldownReduce).
+      const killProcs = evaluateMythicProcs(this.effectsState, 'on_kill', { magnitudeBuff: lightBuff });
+      if (killProcs.cooldownReduce > 0) {
+        const reduceMs = killProcs.cooldownReduce * 1000;
+        for (const skill of this.activeSkills) {
+          const nextFireMs = this.skillState.cooldownsMs.get(skill.id) ?? 0;
+          this.skillState.cooldownsMs.set(skill.id, Math.max(0, nextFireMs - reduceMs));
+        }
+      }
+
       this.combatTimer?.remove();
 
       if (this.isBoss && this.bossId) {
@@ -355,22 +369,28 @@ export class BattleScene extends Phaser.Scene {
       const ratio = this.enemyHP / this.enemyMaxHP;
       this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
     }
-    const currentHPEstimate = playerHP - (run.monstersDefeated * finalDmgTaken * 0.1);
+    // Phase Realms — apply damage to run.playerHp and check defeat.
+    useGameStore.getState().applyDamageToPlayer(finalDmgTaken);
+    const runAfterHit = useGameStore.getState().run;
+    const currentPlayerHp = runAfterHit?.playerHp ?? 0;
 
-    if (currentHPEstimate <= 0) {
+    if (currentPlayerHp <= 0) {
       // Phase E — Revive check (feather_of_fate relic + phoenix_feather mythic).
-      // HP model is estimate-based (playerHP - monstersDefeated × dmgTaken × 0.1),
-      // so "restore ~50% HP" maps to halving monstersDefeated.
       // NOTE: do NOT remove combatTimer here — revive keeps the loop running.
       const totalRevives = relicReviveCount(meta) + getMythicReviveCount(meta);
-      if (run.featherUsed < totalRevives) {
-        useGameStore.setState((s) => ({
-          run: {
-            ...s.run,
-            featherUsed: s.run.featherUsed + 1,
-            monstersDefeated: Math.floor(s.run.monstersDefeated * 0.5),
-          },
-        }));
+      if ((runAfterHit?.featherUsed ?? 0) < totalRevives) {
+        // Revive: full HP + featherUsed++.
+        useGameStore.setState((s) => {
+          if (!s.run) return {};
+          const maxHp = computeMaxHp(s.run, s.meta);
+          return {
+            run: {
+              ...s.run,
+              featherUsed: s.run.featherUsed + 1,
+              playerHp: maxHp,
+            },
+          };
+        });
         playSfx('levelup');
         return; // don't trigger defeat path — combat continues on next tick
       }
@@ -382,7 +402,8 @@ export class BattleScene extends Phaser.Scene {
       const newBP = relicNoDeathLoss(meta)
         ? run.bp
         : onDefeat(run.bp, monsterLevel, run.isHardMode);
-      useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP } }));
+      // Phase Realms — set playerHp=null on defeat so next run re-hydrates.
+      useGameStore.setState((s) => ({ run: { ...s.run, bp: newBP, playerHp: null } }));
       useGameStore.getState().resetDungeon();
       if (isRunOver(newBP)) {
         useGameStore.getState().endRun();
@@ -462,7 +483,7 @@ export class BattleScene extends Phaser.Scene {
         stack: 1,
       });
     }
-    // heal: 플레이어 HP 는 doRound 에서 추정치 사용 — 스킬 힐은 캐시값 조정
+    // heal: 플레이어 HP 는 run.playerHp (store 필드) 에서 읽음. 스킬 힐은 별도 wiring 필요 (향후 작업).
     // buff: 현재 구현에서는 no-op (고급 구현 시 stat 버프 레이어 추가)
     this.showVfxEmoji(result.vfxEmoji);
   }

@@ -169,6 +169,7 @@ export interface RunState {
   currentStage: number;
   dungeonRunMonstersDefeated: number;
   featherUsed: number;               // Phase E — revive count used this run (feather_of_fate + phoenix_feather)
+  playerHp: number | null;           // [Phase Realms] null = hydrate to maxHp on next battle entry
 }
 
 export interface MetaState {
@@ -254,17 +255,29 @@ export type MythicId = string;
 export type MythicEffectType =
   | 'flat_mult' | 'cooldown_mult' | 'drop_mult' | 'xp_mult' | 'proc' | 'passive';
 
-// Phase Compass — 차원 나침반
+// Phase Compass / Phase Realms — 차원 나침반
 export type CompassId =
-  | 'plains_first'    | 'plains_second'
-  | 'forest_first'    | 'forest_second'
-  | 'mountains_first' | 'mountains_second'
+  | 'plains_first'     | 'plains_second'
+  | 'forest_first'     | 'forest_second'
+  | 'mountains_first'  | 'mountains_second'
+  | 'sea_first'        | 'sea_second'
+  | 'volcano_first'    | 'volcano_second'
+  | 'underworld_first' | 'underworld_second'
+  | 'heaven_first'     | 'heaven_second'
+  | 'chaos_first'      | 'chaos_second'
   | 'omni';
 
 export interface CompassEntry {
   id: CompassId;
-  dungeonId: string | null;     // null = omni (모든 던전)
-  tier: 0 | 1 | 2;              // 0 = omni, 1 = mini-boss, 2 = major-boss
+  /** null = omni (모든 dungeon 자유 선택), otherwise the specific dungeon id. */
+  dungeonId: string | null;
+  /**
+   * Compass tier — semantics:
+   * - 0 = omni (all-dungeon free-select)
+   * - 1 = first-tier (mini-boss 첫 처치 보상) — dungeon picker weight ×3 for owned dungeon
+   * - 2 = second-tier (major-boss 첫 처치 보상) — enables free-select for that dungeon
+   */
+  tier: 0 | 1 | 2;
   emoji: string;
   nameKR: string;
   descriptionKR: string;
@@ -389,8 +402,24 @@ export interface EffectsState {
 
 // ─── Mythic Proc (Phase E §T14) ───
 
+/**
+ * Phase E + Phase Realms — Mythic proc descriptor.
+ *
+ * `effect` semantics:
+ * - `lifesteal` (trigger: on_player_attack): heals damageDealt × value to run.playerHp.
+ * - `thorns` (trigger: on_player_hit_received): reflects damageReceived × value to enemy.
+ * - `sp_steal` (trigger: on_kill, Phase Realms redefine): reduces all active skill
+ *   cooldowns by `value` seconds. Pre-Phase-Realms semantics (on_player_attack +
+ *   damage-scaled SP drain) is preserved in evaluateMythicProcs for backward compat
+ *   but no equipped mythic uses that path after Task 10.
+ * - `magic_burst` (trigger: on_player_attack): with probability=value, adds 50%
+ *   bonus damage to the current hit.
+ *
+ * All result magnitudes are multiplied by `ctx.magnitudeBuff` in evaluateMythicProcs
+ * (Phase Realms — supports light_of_truth's ×1.25 amplification).
+ */
 export interface MythicProc {
-  trigger: 'on_player_hit_received' | 'on_player_attack';
+  trigger: 'on_player_hit_received' | 'on_player_attack' | 'on_kill';  // [Phase Realms — +'on_kill']
   effect: 'lifesteal' | 'thorns' | 'sp_steal' | 'magic_burst';
   value: number;
 }

@@ -72,3 +72,62 @@ describe('DungeonPickModal', () => {
     expect(screen.getByText(/자유 선택 완료/)).toBeInTheDocument();
   });
 });
+
+describe('Phase Realms — locked dungeons in free-select mode', () => {
+  beforeEach(() => {
+    useGameStore.setState({ run: { ...INITIAL_RUN }, meta: { ...INITIAL_META } });
+  });
+
+  it('shows locked dungeons grayed with tier hint at ascTier=0', async () => {
+    // ascTier=0: only plains/forest/mountains are unlocked; sea/volcano/underworld/heaven/chaos locked
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 0,
+        compassOwned: { ...EMPTY_COMPASS_OWNED, omni: true },
+      },
+    }));
+    render(<DungeonPickModal onClose={() => {}} />);
+    act(() => { fireEvent.click(screen.getByTestId('pick-free-mode')); });
+
+    // Starter dungeons should be enabled (omni owned + unlocked)
+    expect(screen.getByTestId('free-card-plains')).not.toBeDisabled();
+    expect(screen.getByTestId('free-card-forest')).not.toBeDisabled();
+    expect(screen.getByTestId('free-card-mountains')).not.toBeDisabled();
+
+    // Locked dungeons should be disabled
+    expect(screen.getByTestId('free-card-sea')).toBeDisabled();
+    expect(screen.getByTestId('free-card-volcano')).toBeDisabled();
+    expect(screen.getByTestId('free-card-chaos')).toBeDisabled();
+
+    // Tier hints should appear for locked asc-tier dungeons
+    expect(screen.getByTestId('free-card-hint-sea')).toBeInTheDocument();
+    expect(screen.getByTestId('free-card-hint-volcano')).toBeInTheDocument();
+    expect(screen.getByTestId('free-card-hint-chaos')).toBeInTheDocument();
+    expect(screen.getByText(/Tier 1 도달 시 해제/)).toBeInTheDocument();
+    expect(screen.getByText(/Tier 12 도달 시 해제/)).toBeInTheDocument();
+  });
+
+  it('shows all 8 dungeons enabled at ascTier=12', async () => {
+    // ascTier=12: all 8 dungeons unlocked; omni gives free-select to all
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 12,
+        compassOwned: { ...EMPTY_COMPASS_OWNED, omni: true },
+      },
+    }));
+    render(<DungeonPickModal onClose={() => {}} />);
+    act(() => { fireEvent.click(screen.getByTestId('pick-free-mode')); });
+
+    // All 8 dungeon buttons should be enabled
+    const dungeonIds = ['plains', 'forest', 'mountains', 'sea', 'volcano', 'underworld', 'heaven', 'chaos'];
+    for (const id of dungeonIds) {
+      expect(screen.getByTestId(`free-card-${id}`)).not.toBeDisabled();
+    }
+
+    // No tier hints since all are unlocked
+    expect(screen.queryByTestId('free-card-hint-sea')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('free-card-hint-chaos')).not.toBeInTheDocument();
+  });
+});

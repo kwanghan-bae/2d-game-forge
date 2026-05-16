@@ -3,8 +3,9 @@ import { useGameStore } from '../store/gameStore';
 import { RELICS, ALL_RELIC_IDS, getEffectiveStack } from '../data/relics';
 import { MYTHICS } from '../data/mythics';
 import { COMPASS_ITEMS, ALL_COMPASS_IDS } from '../data/compass';
-import { getDungeonById } from '../data/dungeons';
+import { getDungeonById, DUNGEONS } from '../data/dungeons';
 import { isAtCap } from '../systems/relics';
+import { isDungeonUnlocked } from '../systems/dungeons';
 import { canWatchAd, AD_COOLDOWN_MS, AD_DAILY_CAP } from '../systems/ads';
 import type { RelicId } from '../types';
 
@@ -89,6 +90,8 @@ function CompassTab() {
         {ALL_COMPASS_IDS.map((id) => {
           const def = COMPASS_ITEMS[id];
           const owned = meta.compassOwned[id];
+          const dungeon = def.dungeonId ? DUNGEONS.find(d => d.id === def.dungeonId) : null;
+          const tierLocked = dungeon && !isDungeonUnlocked(meta, dungeon);
           const hint =
             id === 'omni'
               ? '모든 던전 mini-boss 첫 처치 시 자동 부여'
@@ -121,6 +124,11 @@ function CompassTab() {
               {!owned && (
                 <div style={{ fontSize: 'var(--forge-font-xs)', marginTop: 6, color: 'var(--forge-text-secondary)' }}>
                   {hint}
+                </div>
+              )}
+              {tierLocked && dungeon!.unlockGate.type === 'asc-tier' && (
+                <div style={{ fontSize: 'var(--forge-font-xs)', marginTop: 6, color: 'var(--forge-text-secondary)' }}>
+                  🔒 Tier {dungeon!.unlockGate.tier} 도달 시 해제
                 </div>
               )}
             </div>
