@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
 import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
@@ -214,6 +214,9 @@ interface GameStore {
   hydratePlayerHpIfNull: () => void;
   applyDamageToPlayer: (amount: number) => void;
   applyLifestealHeal: (amount: number) => void;
+  // Phase 5 — Monetization store actions
+  setAdFreeOwned: (owned: boolean) => void;
+  recordIapTx: (tx: IapTransaction) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1151,6 +1154,18 @@ export const useGameStore = create<GameStore>()(
         const next = Math.min(maxHp, s.run.playerHp + amount);
         return { run: { ...s.run, playerHp: next } };
       }),
+
+      // Phase 5 — Monetization store actions
+      setAdFreeOwned: (owned: boolean) =>
+        set((s) => ({ meta: { ...s.meta, adFreeOwned: owned } })),
+
+      recordIapTx: (tx: IapTransaction) =>
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            lastIapTx: [...s.meta.lastIapTx, tx].slice(-50),
+          },
+        })),
     }),
     {
       name: 'korea_inflation_rpg_save',

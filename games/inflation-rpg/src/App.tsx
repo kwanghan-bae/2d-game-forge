@@ -14,6 +14,7 @@ import { Quests } from './screens/Quests';
 import { Ascension } from './screens/Ascension';
 import { SkillProgression } from './screens/SkillProgression';
 import Relics from './screens/Relics';
+import { Settings } from './screens/Settings';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
@@ -37,7 +38,7 @@ export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
   const meta = useGameStore((s) => s.meta);
 
-  const setAdFreeOwned = useGameStore((s) => s.setAdFreeOwned);  // T22 will add this action
+  const setAdFreeOwned = useGameStore((s) => s.setAdFreeOwned);
   const gainCrackStones = useGameStore((s) => s.gainCrackStones);
   const monetizationRef = useRef<MonetizationService | null>(null);
 
@@ -57,6 +58,11 @@ export function App({ config }: AppProps) {
     if (process.env.NODE_ENV !== 'production') {
       (window as unknown as { __forge_monetization?: MonetizationService }).__forge_monetization = svc;
     }
+    const handleRestore = () => {
+      void svc.restorePurchasesManually();
+    };
+    window.addEventListener('forge-restore-purchases', handleRestore);
+    return () => window.removeEventListener('forge-restore-purchases', handleRestore);
   }, [setAdFreeOwned, gainCrackStones]);
 
   React.useEffect(() => {
@@ -81,6 +87,7 @@ export function App({ config }: AppProps) {
       {screen === 'ascension'    && <Ascension />}
       {screen === 'skill-progression' && <SkillProgression />}
       {screen === 'relics'       && <Relics />}
+      {screen === 'settings'     && <Settings />}
       <TutorialOverlay />
       <DungeonFinalClearedModal />
     </div>
