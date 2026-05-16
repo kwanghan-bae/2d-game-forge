@@ -225,6 +225,162 @@ describe('AutoBattleController — RNG witness', () => {
   });
 });
 
+describe('AutoBattleController — trait modifiers', () => {
+  it('cycle_start event carries traitIds (was deferred from Sim-A)', () => {
+    const ctrl = new AutoBattleController({
+      loadout: minimalLoadout(),
+      seed: 42,
+      traits: ['t_genius', 't_fragile'],
+    });
+    const ev = ctrl.getEvents()[0];
+    expect(ev.type).toBe('cycle_start');
+    if (ev.type === 'cycle_start') {
+      expect(ev.traitIds).toEqual(['t_genius', 't_fragile']);
+    }
+  });
+
+  it('empty traits yields legacy behavior (cycle_start has traitIds: [])', () => {
+    const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });
+    const ev = ctrl.getEvents()[0];
+    if (ev.type === 'cycle_start') {
+      expect(ev.traitIds).toEqual([]);
+    }
+  });
+
+  it('t_fragile (hpMul 0.7) reduces starting heroHpMax', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroHpMax: 100 },
+      seed: 42,
+      traits: ['t_fragile'],
+    });
+    expect(ctrl.getState().heroHpMax).toBe(70);
+    expect(ctrl.getState().heroHp).toBe(70);
+  });
+
+  it('t_genius (expMul 1.2) accelerates level-ups', () => {
+    const aNo = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 5, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    const aGenius = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 5, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_genius'],
+    });
+    for (let i = 0; i < 100; i++) { aNo.tick(600); aGenius.tick(600); }
+    expect(aGenius.getState().heroLv).toBeGreaterThanOrEqual(aNo.getState().heroLv);
+  });
+
+  it('getDecisionAI() exposes HeroDecisionAI seeded with constructor traits', () => {
+    const ctrl = new AutoBattleController({
+      loadout: minimalLoadout(),
+      seed: 42,
+      traits: ['t_genius', 't_fragile'],
+    });
+    const ai = ctrl.getDecisionAI();
+    expect(ai.getTraits()).toEqual(['t_genius', 't_fragile']);
+  });
+
+  it('t_terminal_genius (bpCostMul 2) consumes BP twice as fast', () => {
+    const aNo = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 8, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    const aBoom = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 8, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_terminal_genius'],
+    });
+    for (let i = 0; i < 50; i++) { aNo.tick(600); aBoom.tick(600); }
+    // 시한부 천재 should end in roughly half the kills (per encounter BP cost doubled).
+    const noKills = aNo.getEvents().filter(e => e.type === 'enemy_kill').length;
+    const boomKills = aBoom.getEvents().filter(e => e.type === 'enemy_kill').length;
+    expect(boomKills).toBeLessThan(noKills);
+  });
+});
+
+describe('AutoBattleController — t_swift fractional BP accumulator', () => {
+  it('t_swift (bpCostMul 0.9) — cycle lasts longer than no-trait (more kills per BP)', () => {
+    // With fractional accumulator, t_swift consumes ~0.9 BP per encounter instead
+    // of the old floor-clamped 1 BP. More encounters survive before bp_exhausted.
+    const aNo = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 10, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    const aSwift = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 10, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_swift'],
+    });
+    for (let i = 0; i < 200; i++) { aNo.tick(600); aSwift.tick(600); }
+    const noKills = aNo.getEvents().filter(e => e.type === 'enemy_kill').length;
+    const swiftKills = aSwift.getEvents().filter(e => e.type === 'enemy_kill').length;
+    // t_swift should survive longer (more kills) before BP is exhausted.
+    expect(swiftKills).toBeGreaterThan(noKills);
+  });
+
+  it('t_swift (bpCostMul 0.9) — total BP consumed over full cycle < bpMax (at least 1 free encounter)', () => {
+    // Use bpMax=10. Without t_swift: exactly 10 BP consumed for 10 kills.
+    // With t_swift (0.9/enc): fractional accumulator means at least 1 encounter is free.
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 10, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_swift'],
+    });
+    for (let i = 0; i < 200; i++) ctrl.tick(600);
+    const totalBpConsumed = ctrl.getEvents()
+      .filter(e => e.type === 'bp_change')
+      .reduce((acc, e) => {
+        if (e.type === 'bp_change') return acc + Math.abs(e.delta);
+        return acc;
+      }, 0);
+    const kills = ctrl.getEvents().filter(e => e.type === 'enemy_kill').length;
+    // BP consumed should be less than kills (at least 1 free encounter per ~10).
+    expect(totalBpConsumed).toBeLessThan(kills);
+  });
+
+  it('t_swift + t_terminal_genius (bpCostMul 0.9×2.0=1.8) — total cost > 1 per encounter on average', () => {
+    // combined mul = 1.8. Fractional accumulator correctly averages >1 BP per encounter.
+    // Previously (floor-clamp): floor(1 × 1.8) = 1, silently cancelling t_terminal_genius.
+    // Now: 10 encounters accumulate 18 BP integer cost.
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 30, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_swift', 't_terminal_genius'],
+    });
+    for (let i = 0; i < 30; i++) ctrl.tick(600);
+    const kills = ctrl.getEvents().filter(e => e.type === 'enemy_kill').length;
+    const totalBpConsumed = ctrl.getEvents()
+      .filter(e => e.type === 'bp_change')
+      .reduce((acc, e) => {
+        if (e.type === 'bp_change') return acc + Math.abs(e.delta);
+        return acc;
+      }, 0);
+    // Average BP per kill should be close to 1.8 (not 1 as old floor-clamp produced).
+    // With 10+ kills, the average should be distinctly > 1.
+    expect(kills).toBeGreaterThan(0);
+    const avgBpPerKill = totalBpConsumed / kills;
+    expect(avgBpPerKill).toBeGreaterThan(1.5); // 1.8 expected; 1.5 is conservative bound
+  });
+
+  it('t_terminal_genius alone (bpCostMul 2) still consumes BP twice as fast', () => {
+    // Regression guard: verify the existing behavior is preserved.
+    const aNo = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 8, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    const aBoom = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 8, heroAtkBase: 100000 },
+      seed: 42,
+      traits: ['t_terminal_genius'],
+    });
+    for (let i = 0; i < 50; i++) { aNo.tick(600); aBoom.tick(600); }
+    const noKills = aNo.getEvents().filter(e => e.type === 'enemy_kill').length;
+    const boomKills = aBoom.getEvents().filter(e => e.type === 'enemy_kill').length;
+    expect(boomKills).toBeLessThan(noKills);
+  });
+});
+
 describe('AutoBattleController — getResult curves', () => {
   it('returns null while cycle is still running', () => {
     const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });

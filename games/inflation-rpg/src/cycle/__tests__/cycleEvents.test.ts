@@ -4,7 +4,7 @@ import type { CycleEvent, CycleState, CycleResult, CycleHistoryEntry } from '../
 describe('cycleEvents — type shape', () => {
   it('CycleEvent discriminated union covers all Sim-A event types', () => {
     const events: CycleEvent[] = [
-      { t: 0, type: 'cycle_start', loadoutHash: 'h', seed: 42, characterId: 'K01' },
+      { t: 0, type: 'cycle_start', loadoutHash: 'h', seed: 42, characterId: 'K01', traitIds: [] },
       { t: 1, type: 'battle_start', enemyId: 'm1', isBoss: false, heroLv: 1, heroHp: 100, enemyHp: 50 },
       { t: 2, type: 'hero_hit', enemyId: 'm1', damage: 10, remaining: 40 },
       { t: 3, type: 'enemy_hit', enemyId: 'm1', damage: 5, remaining: 95 },

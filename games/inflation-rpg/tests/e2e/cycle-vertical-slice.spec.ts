@@ -27,6 +27,11 @@ test.describe('Phase Sim-A vertical slice', () => {
     // Click the "사이클 시작 (NEW)" button on MainMenu.
     await page.getByTestId('btn-start-cycle').click();
 
+    // CyclePrep screen now sits between MainMenu and CycleRunner.
+    await expect(page.getByTestId('cycle-prep')).toBeVisible({ timeout: 5_000 });
+    // Start with zero traits selected
+    await page.getByTestId('btn-prep-start').click();
+
     // CycleRunner should mount.
     await expect(page.getByTestId('cycle-runner')).toBeVisible({ timeout: 5_000 });
 
