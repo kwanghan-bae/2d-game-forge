@@ -395,7 +395,7 @@ export interface EffectsState {
 // ─── Mythic Proc (Phase E §T14) ───
 
 export interface MythicProc {
-  trigger: 'on_player_hit_received' | 'on_player_attack';
+  trigger: 'on_player_hit_received' | 'on_player_attack' | 'on_kill';  // [Phase Realms — +'on_kill']
   effect: 'lifesteal' | 'thorns' | 'sp_steal' | 'magic_burst';
   value: number;
 }
