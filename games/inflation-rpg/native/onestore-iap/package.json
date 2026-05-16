@@ -5,7 +5,7 @@
   "description": "Local Capacitor plugin wrapping 원스토어 IAP SDK V21 — inflation-rpg internal only. Do NOT publish or promote to packages/*.",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "dist/definitions.d.ts",
+  "types": "dist/index.d.ts",
   "files": [
     "dist/",
     "android/",
