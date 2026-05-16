@@ -28,3 +28,25 @@ describe('HeroDecisionAI — Sim-B stub', () => {
     expect(ai.getTraits()).toEqual(['t_challenge', 't_genius']);
   });
 });
+
+describe('HeroDecisionAI — §6.2 사냥터 선택 stubs (Sim-B)', () => {
+  it('chooseEncounterNode picks first when nodes available (Sim-B stub)', () => {
+    const ai = new HeroDecisionAI([]);
+    expect(ai.chooseEncounterNode([{ id: 'n1' }, { id: 'n2' }])).toEqual({ id: 'n1' });
+  });
+
+  it('chooseEncounterNode returns null when no nodes', () => {
+    const ai = new HeroDecisionAI([]);
+    expect(ai.chooseEncounterNode([])).toBeNull();
+  });
+
+  it('chooseDungeon picks first when dungeons available (Sim-B stub)', () => {
+    const ai = new HeroDecisionAI([]);
+    expect(ai.chooseDungeon([{ id: 'd1' }, { id: 'd2' }])).toEqual({ id: 'd1' });
+  });
+
+  it('chooseDungeon returns null when no dungeons', () => {
+    const ai = new HeroDecisionAI([]);
+    expect(ai.chooseDungeon([])).toBeNull();
+  });
+});
