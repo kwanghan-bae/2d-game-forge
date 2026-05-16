@@ -24,8 +24,10 @@ export class CycleControllerV2 {
   private encounter: EncounterEngine;
   private saga: SagaRecorder;
   private endCause: DeathCause | null = null;
+  private readonly seed: number;
 
   constructor(opts: CycleControllerV2Opts) {
+    this.seed = opts.seed;
     this.hero = HeroEntity.create({
       seed: opts.seed,
       bpMax: opts.bpMax,
@@ -39,6 +41,7 @@ export class CycleControllerV2 {
 
   getHero(): HeroEntity { return this.hero; }
   getDecisionAI(): HeroDecisionAI { return this.ai; }
+  getSeed(): number { return this.seed; }
 
   handleArrival(kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     if (this.hero.dead) return [];

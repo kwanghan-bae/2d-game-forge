@@ -51,7 +51,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
           controller.handleArrival(event.landmarkKind, event.landmarkId);
           setHudTick(n => n + 1);
         }
-        if (event.type === 'cycle_ended' || (event.type === 'hero_died' && !endedRef.current)) {
+        if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
           endedRef.current = true;
           endCycle();
           onCycleEnd();
@@ -59,7 +59,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       },
       controller.getHero(),
       controller.getDecisionAI(),
-      Date.now() & 0xffffffff,
+      controller.getSeed(),
     ).then(g => { destroy = g.destroy; });
 
     return () => { destroy?.(); };

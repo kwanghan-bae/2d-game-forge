@@ -15,6 +15,11 @@ describe('CycleControllerV2', () => {
     expect(ctrl.getHero().dead).toBe(false);
   });
 
+  it('getSeed() returns the input seed', () => {
+    const ctrl = new CycleControllerV2({ seed: 12345, traits: [], bpMax: 30, heroHpMax: 100, heroAtkBase: 100000 });
+    expect(ctrl.getSeed()).toBe(12345);
+  });
+
   it('same seed produces same personality (determinism)', () => {
     const makeCtrl = (seed: number) => new CycleControllerV2({ seed, traits: [], bpMax: 30, heroHpMax: 100, heroAtkBase: 100000 });
     const a = makeCtrl(77);
