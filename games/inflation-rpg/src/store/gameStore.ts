@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction } from '../types';
+import type { CycleHistoryEntry } from '../cycle/cycleEvents';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
 import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
@@ -219,6 +220,8 @@ interface GameStore {
   // Phase 5 — Monetization store actions
   setAdFreeOwned: (owned: boolean) => void;
   recordIapTx: (tx: IapTransaction) => void;
+  // Phase Sim-A — cycle history
+  recordCycleEnd: (entry: CycleHistoryEntry) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1172,6 +1175,15 @@ export const useGameStore = create<GameStore>()(
           meta: {
             ...s.meta,
             lastIapTx: [...s.meta.lastIapTx, tx].slice(-50),
+          },
+        })),
+
+      // Phase Sim-A — cycle history, capped to last 50 entries
+      recordCycleEnd: (entry: CycleHistoryEntry) =>
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            cycleHistory: [...s.meta.cycleHistory, entry].slice(-50),
           },
         })),
     }),
