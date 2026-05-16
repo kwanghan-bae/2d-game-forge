@@ -22,7 +22,17 @@
   확장(goldThisRun 소비), 장비 계승(런 간 유지), 상점·인벤토리 재설계.
 - **Phase 4a** 완료. MobileUX Layer — safe area CSS, 44px 터치 타겟, overscroll
   잠금, Phaser Scale.FIT 반응형 캔버스, Playwright iPhone 14 E2E 테스트.
-- 다음: **Phase 4b** — SoundManager (BGM 3트랙 + SFX 12개 + 전투 파티클).
+- **Phase 4b/4c, content-expansion, forge-ui-opus** 완료. SoundManager + 튜토리얼
+  + 콘텐츠 5 Layer 확장 (몬스터 61 / 장비 41 / 보스 109 / 던전 / 스킬 32 / 퀘스트
+  28 / 스토리 26) + Forge-UI shadcn registry.
+- **Phase B-3/F-1/F-2-3/Balance/D/G/E/Compass/Realms** 완료. 던전 floor 진행 +
+  Ascension + Enhance + skill progression + 균형 패치 + 수식어/effect-pipeline +
+  성좌 (10 노드) + 유물/Mythic + 차원 나침반 + 5 던전 확장 + Phase E 부채 청산.
+- **Phase 5** 완료 (`phase-5-complete`). Monetization 원스토어 single-market shell:
+  AdMob (rewarded + banner), 원스토어 IAP 4 품목 (TS contract + web stub),
+  MonetizationService facade, persist v14, 개인정보처리방침 GitHub Pages, AdFreeIndicator.
+  Kotlin native wire 는 분리된 Phase 5a-1 (real-device manual-QA 세션 필요).
+- 다음: **Phase 5a-1** (원스토어 native wire), Phase 5b (Google Play), 5c (App Store).
 
 ## Quick start
 

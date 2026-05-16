@@ -87,6 +87,9 @@ importers:
 
   games/inflation-rpg:
     dependencies:
+      '@capacitor-community/admob':
+        specifier: ^8.0.0
+        version: 8.0.0
       '@capacitor/android':
         specifier: ^8.0.0
         version: 8.3.1(@capacitor/core@8.3.1)
@@ -99,6 +102,9 @@ importers:
       '@forge/core':
         specifier: workspace:^
         version: link:../../packages/2d-core
+      '@forge/inflation-rpg-native-onestore-iap':
+        specifier: workspace:*
+        version: link:native/onestore-iap
       '@preact/signals-react':
         specifier: ^3.10.0
         version: 3.10.0(react@19.2.3)
@@ -180,6 +186,18 @@ importers:
         version: 4.21.0
       typescript:
         specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.16
+        version: 4.1.4(@types/node@20.19.39)(@vitest/coverage-v8@4.1.4)(happy-dom@20.9.0)(jsdom@27.4.0)(vite@8.0.8(@types/node@20.19.39)(esbuild@0.27.7)(jiti@2.6.1)(tsx@4.21.0))
+
+  games/inflation-rpg/native/onestore-iap:
+    devDependencies:
+      '@capacitor/core':
+        specifier: ^8.0.0
+        version: 8.3.1
+      typescript:
+        specifier: ^5.4.0
         version: 5.9.3
       vitest:
         specifier: ^4.0.16
@@ -347,6 +365,10 @@ packages:
   '@boundaries/elements@1.2.0':
     resolution: {integrity: sha512-W65Gum02liMd3hmNrLmDBX1u5BmRMcunouFjLXyhxHnNY4YlK1kTxsgfflZ5XBGSnPnO0MkiUzAcoGzYrlx0RQ==}
     engines: {node: '>=18.18'}
+
+  '@capacitor-community/admob@8.0.0':
+    resolution: {integrity: sha512-+ZIq+UtcNvTMFwjvuhOuGvCjwK2Wu36lTIl9o1/CEjfp2Aj3m4b9zQGx0vXrERYqQmJp/Ven7ee3gGuh2Ym8nA==}
+    engines: {node: '>=22.0.0'}
 
   '@capacitor/android@8.3.1':
     resolution: {integrity: sha512-hjskIG8YcBEh3X4yaTXvE9gcqpdcxunTgFruSKnuPxtMxAUzEK4Oq25x0Z1g3cz+MQPc+lRG09R7Ovc+ydKsNw==}
@@ -917,6 +939,11 @@ packages:
     resolution: {integrity: sha512-Uxu6lidNVr9z27b/6DbCin86ekzHiJDrLXZii82aXSzvyMXYMr7l0Bab1cKbfWdbkxq13e7kS7paix3pjKBTLA==}
     peerDependencies:
       react: ^16.14.0 || 17.x || 18.x || 19.x
+
+  '@rdlabo/capacitor-docgen@0.4.1':
+    resolution: {integrity: sha512-zUB0lwha4Omqyr5URy/QaFjP6Gh2xxTKAFI0MClqrmUxQwmV8c84+wGvqAoWPCzg4jk1MsU6oiRVuTkUV7xseA==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
 
   '@rolldown/binding-android-arm64@1.0.0-rc.15':
     resolution: {integrity: sha512-YYe6aWruPZDtHNpwu7+qAHEMbQ/yRl6atqb/AhznLTnD3UY99Q1jE7ihLSahNWkF4EqRPVC4SiR4O0UkLK02tA==}
@@ -1694,6 +1721,9 @@ packages:
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
 
+  colorette@2.0.20:
+    resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
+
   commander@12.1.0:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
@@ -2224,6 +2254,9 @@ packages:
 
   get-tsconfig@4.14.0:
     resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
+
+  github-slugger@1.5.0:
+    resolution: {integrity: sha512-wIh+gKBI9Nshz2o46B0B3f5k/W+WI9ZAv6y5Dn5WJ5SK1t0TnDimB4WE5rmTD05ZAIn8HALCZVmCsvj0w0v0lw==}
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -3422,6 +3455,11 @@ packages:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
       typescript: '>=4.8.4 <6.1.0'
 
+  typescript@4.2.4:
+    resolution: {integrity: sha512-V+evlYHZnQkaz8TRBuxTA92yZBPotr5H+WhQ7bD3hZUndx5tGOa1fuCgeSjxAzM1RiN5IzvadIXTVefuuwZCRg==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
@@ -3846,6 +3884,11 @@ snapshots:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
       - supports-color
+
+  '@capacitor-community/admob@8.0.0':
+    dependencies:
+      '@capacitor/core': 8.3.1
+      '@rdlabo/capacitor-docgen': 0.4.1
 
   '@capacitor/android@8.3.1(@capacitor/core@8.3.1)':
     dependencies:
@@ -4330,6 +4373,13 @@ snapshots:
       '@preact/signals-core': 1.14.1
       react: 19.2.3
       use-sync-external-store: 1.6.0(react@19.2.3)
+
+  '@rdlabo/capacitor-docgen@0.4.1':
+    dependencies:
+      colorette: 2.0.20
+      github-slugger: 1.5.0
+      minimist: 1.2.8
+      typescript: 4.2.4
 
   '@rolldown/binding-android-arm64@1.0.0-rc.15':
     optional: true
@@ -5080,6 +5130,8 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
+
+  colorette@2.0.20: {}
 
   commander@12.1.0: {}
 
@@ -5864,6 +5916,8 @@ snapshots:
   get-tsconfig@4.14.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  github-slugger@1.5.0: {}
 
   glob-parent@5.1.2:
     dependencies:
@@ -7184,6 +7238,8 @@ snapshots:
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
+
+  typescript@4.2.4: {}
 
   typescript@5.9.3: {}
 

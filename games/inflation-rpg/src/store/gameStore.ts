@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
 import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
 import { STARTING_BP, onEncounter, onDefeat, onBossKill as bpOnBossKill } from '../systems/bp';
@@ -122,6 +122,9 @@ export const INITIAL_META: MetaState = {
   compassOwned: { ...EMPTY_COMPASS_OWNED },
   dungeonMiniBossesCleared: [],
   dungeonMajorBossesCleared: [],
+  // Phase 5 — Monetization
+  adFreeOwned: false,
+  lastIapTx: [],
 };
 
 interface GameStore {
@@ -211,6 +214,9 @@ interface GameStore {
   hydratePlayerHpIfNull: () => void;
   applyDamageToPlayer: (amount: number) => void;
   applyLifestealHeal: (amount: number) => void;
+  // Phase 5 — Monetization store actions
+  setAdFreeOwned: (owned: boolean) => void;
+  recordIapTx: (tx: IapTransaction) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -238,6 +244,18 @@ export function migrateV8ToV9(persisted: unknown): unknown {
 
   // adsWatched 추가 (Phase E 대비)
   if (m.adsWatched === undefined) m.adsWatched = 0;
+
+  return s;
+}
+
+// v13 → v14: Phase 5 — adFreeOwned + lastIapTx[] 추가
+export function migrateV13ToV14(persisted: unknown): unknown {
+  const s = persisted as { meta?: Record<string, unknown> };
+  if (!s.meta) return persisted;
+
+  const m = s.meta;
+  if (typeof m['adFreeOwned'] !== 'boolean') m['adFreeOwned'] = false;
+  if (!Array.isArray(m['lastIapTx'])) m['lastIapTx'] = [];
 
   return s;
 }
@@ -403,6 +421,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   if (fromVersion <= 12 && s.run) {
     const r = s.run as RunState;
     if (r.playerHp === undefined) r.playerHp = null;
+  }
+  // v13 → v14: Phase 5 — adFreeOwned + lastIapTx[]
+  if (fromVersion <= 13) {
+    migrateV13ToV14(s);
   }
   return s;
 }
@@ -1132,10 +1154,22 @@ export const useGameStore = create<GameStore>()(
         const next = Math.min(maxHp, s.run.playerHp + amount);
         return { run: { ...s.run, playerHp: next } };
       }),
+
+      // Phase 5 — Monetization store actions
+      setAdFreeOwned: (owned: boolean) =>
+        set((s) => ({ meta: { ...s.meta, adFreeOwned: owned } })),
+
+      recordIapTx: (tx: IapTransaction) =>
+        set((s) => ({
+          meta: {
+            ...s.meta,
+            lastIapTx: [...s.meta.lastIapTx, tx].slice(-50),
+          },
+        })),
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 13,  // 12 → 13 (Phase Realms — compassOwned + RunState.playerHp)
+      version: 14,  // 13 → 14 (Phase 5 — adFreeOwned + lastIapTx[])
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

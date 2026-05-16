@@ -1,0 +1,35 @@
+{
+  "name": "@forge/inflation-rpg-native-onestore-iap",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Local Capacitor plugin wrapping 원스토어 IAP SDK V21 — inflation-rpg internal only. Do NOT publish or promote to packages/*.",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "android/",
+    "ios/",
+    "capacitor-plugin.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "capacitor": {
+    "android": {
+      "src": "android"
+    },
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "peerDependencies": {
+    "@capacitor/core": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/core": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.0.16"
+  }
+}

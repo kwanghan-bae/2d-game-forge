@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KoreaInflationRPG</string>
+    <string name="title_activity_main">KoreaInflationRPG</string>
+    <string name="package_name">com.korea.inflationrpg</string>
+    <string name="custom_url_scheme">com.korea.inflationrpg</string>
+</resources>

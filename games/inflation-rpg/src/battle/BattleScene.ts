@@ -483,7 +483,10 @@ export class BattleScene extends Phaser.Scene {
         stack: 1,
       });
     }
-    // heal: 플레이어 HP 는 run.playerHp (store 필드) 에서 읽음. 스킬 힐은 별도 wiring 필요 (향후 작업).
+    // Phase 5 — heal wiring: applyLifestealHeal 가 max 까지 clamp + null 처리 자체 수행.
+    if (result.heal !== undefined && result.heal > 0) {
+      useGameStore.getState().applyLifestealHeal(result.heal);
+    }
     // buff: 현재 구현에서는 no-op (고급 구현 시 stat 버프 레이어 추가)
     this.showVfxEmoji(result.vfxEmoji);
   }

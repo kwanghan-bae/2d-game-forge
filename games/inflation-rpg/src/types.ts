@@ -226,6 +226,9 @@ export interface MetaState {
   compassOwned: Record<CompassId, boolean>;
   dungeonMiniBossesCleared: string[];   // mini-boss 첫 처치 누적
   dungeonMajorBossesCleared: string[];  // major-boss 첫 처치 누적
+  // Phase 5 — Monetization
+  adFreeOwned: boolean;
+  lastIapTx: IapTransaction[];
 }
 
 // Phase G — Ascension Tree (성좌)
@@ -283,6 +286,19 @@ export interface CompassEntry {
   descriptionKR: string;
 }
 
+// Phase 5 — Monetization
+export type IapProductId =
+  | 'ad_free'
+  | 'crack_stone_pack_small'
+  | 'crack_stone_pack_mid'
+  | 'crack_stone_pack_large';
+
+export interface IapTransaction {
+  productId: IapProductId;
+  ts: number;
+  purchaseToken: string;
+}
+
 export interface TutorialStep {
   id: string;
   screen: Screen;
@@ -303,7 +319,10 @@ export type Screen =
   | 'quests'
   | 'ascension'
   | 'skill-progression'
-  | 'relics';
+  | 'relics'
+  | 'settings'
+  | 'iap-shop'
+  | 'privacy';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
