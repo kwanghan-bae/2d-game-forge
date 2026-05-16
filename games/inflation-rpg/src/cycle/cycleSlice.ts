@@ -23,7 +23,7 @@ interface CycleStoreState {
   result: CycleResult | null;
   start: (opts: ControllerOptions) => void;
   abandon: () => void;
-  endOnBpExhausted: () => void;
+  markEnded: () => void;
   reset: () => void;
 }
 
@@ -43,7 +43,7 @@ export const useCycleStore = create<CycleStoreState>((set, get) => ({
     set({ status: 'ended', result });
     persistCycleResult(result, ctrl.getState().seed);
   },
-  endOnBpExhausted() {
+  markEnded() {
     // Called by the rAF driver in CycleRunner when controller emits cycle_end.
     const ctrl = get().controller;
     if (!ctrl) return;
