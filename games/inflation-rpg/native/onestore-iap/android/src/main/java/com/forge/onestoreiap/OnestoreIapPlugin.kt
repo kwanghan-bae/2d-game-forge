@@ -62,6 +62,41 @@ class OnestoreIapPlugin : Plugin() {
         return c
     }
 
+    @PluginMethod
+    fun queryProducts(call: PluginCall) {
+        val client = requireClient(call) ?: return
+        val productIdsArr = call.getArray("productIds")
+        if (productIdsArr == null || productIdsArr.length() == 0) {
+            call.reject("productIds is required")
+            return
+        }
+        val ids = mutableListOf<String>()
+        for (i in 0 until productIdsArr.length()) ids.add(productIdsArr.getString(i))
+
+        client.queryProductsAsync(
+            PurchaseClient.ProductType.IN_APP,
+            ids,
+        ) { result, products ->
+            if (result.isSuccess && products != null) {
+                val arr = com.getcapacitor.JSArray()
+                for (p in products) {
+                    val obj = JSObject()
+                        .put("productId", p.productId)
+                        .put("type", if (p.type == "inapp") "consumable" else "non-consumable")
+                        .put("title", p.title)
+                        .put("description", p.description ?: "")
+                        .put("price", p.price)
+                        .put("priceAmountMicros", p.priceAmountMicros)
+                        .put("priceCurrencyCode", p.priceCurrencyCode)
+                    arr.put(obj)
+                }
+                call.resolve(JSObject().put("products", arr))
+            } else {
+                call.reject("queryProducts failed: ${result.message}")
+            }
+        }
+    }
+
     internal fun emitPurchaseUpdated(data: JSObject) {
         notifyListeners("purchaseUpdated", data)
     }
