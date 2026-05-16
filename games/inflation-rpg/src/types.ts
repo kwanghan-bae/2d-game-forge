@@ -169,6 +169,7 @@ export interface RunState {
   currentStage: number;
   dungeonRunMonstersDefeated: number;
   featherUsed: number;               // Phase E — revive count used this run (feather_of_fate + phoenix_feather)
+  playerHp: number | null;           // [Phase Realms] null = hydrate to maxHp on next battle entry
 }
 
 export interface MetaState {

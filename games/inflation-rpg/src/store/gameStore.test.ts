@@ -1739,3 +1739,69 @@ describe('Phase Compass — ascend preserves compass + cleared lists', () => {
     expect(meta.dungeonMajorBossesCleared).toEqual(['forest']);
   });
 });
+
+describe('Phase Realms — run.playerHp store actions', () => {
+  beforeEach(() => {
+    useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
+  });
+
+  it('migration v13 → v14 sets run.playerHp = null when run exists and has no playerHp', () => {
+    const v13State: any = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        compassOwned: { ...EMPTY_COMPASS_OWNED },
+        dungeonMiniBossesCleared: [],
+        dungeonMajorBossesCleared: [],
+      },
+      run: {
+        characterId: 'hwarang',
+        level: 5,
+        bp: 20,
+        featherUsed: 0,
+        // no playerHp — v13 envelope
+      },
+    };
+    const migrated = runStoreMigration(v13State, 13) as any;
+    expect(migrated.run.playerHp).toBeNull();
+  });
+
+  it('hydratePlayerHpIfNull sets playerHp to maxHp when null', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    // After startRun, playerHp is null (INITIAL_RUN has playerHp: null)
+    expect(useGameStore.getState().run.playerHp).toBeNull();
+    useGameStore.getState().hydratePlayerHpIfNull();
+    const hp = useGameStore.getState().run.playerHp;
+    expect(hp).not.toBeNull();
+    expect(hp).toBeGreaterThan(0);
+  });
+
+  it('hydratePlayerHpIfNull is no-op when playerHp already set', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.setState((s) => ({ run: { ...s.run, playerHp: 50 } }));
+    useGameStore.getState().hydratePlayerHpIfNull();
+    expect(useGameStore.getState().run.playerHp).toBe(50);
+  });
+
+  it('applyDamageToPlayer reduces playerHp, clamped to 0', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    useGameStore.setState((s) => ({ run: { ...s.run, playerHp: 100 } }));
+    useGameStore.getState().applyDamageToPlayer(30);
+    expect(useGameStore.getState().run.playerHp).toBe(70);
+    useGameStore.getState().applyDamageToPlayer(100);
+    expect(useGameStore.getState().run.playerHp).toBe(0);
+  });
+
+  it('applyLifestealHeal heals, capped at maxHp', () => {
+    useGameStore.getState().startRun('hwarang', false);
+    // Hydrate to get maxHp first
+    useGameStore.getState().hydratePlayerHpIfNull();
+    const maxHp = useGameStore.getState().run.playerHp!;
+    // Set to 50 and heal
+    useGameStore.setState((s) => ({ run: { ...s.run, playerHp: 50 } }));
+    useGameStore.getState().applyLifestealHeal(30);
+    expect(useGameStore.getState().run.playerHp).toBe(80);
+    // Heal beyond max — should be capped at maxHp
+    useGameStore.getState().applyLifestealHeal(1_000_000);
+    expect(useGameStore.getState().run.playerHp).toBe(maxHp);
+  });
+});
