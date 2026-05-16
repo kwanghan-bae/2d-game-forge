@@ -27,22 +27,22 @@ describe('awardMiniBossCompass', () => {
     expect(awardMiniBossCompass(m, 'plains')).toBeNull();
   });
 
-  it('triggers omni when all 3 dungeons cleared', () => {
+  it('triggers omni when all 8 dungeons mini-boss cleared', () => {
+    const m = baseMeta();
+    m.dungeonMiniBossesCleared = ['plains', 'forest', 'mountains', 'sea', 'volcano', 'underworld', 'heaven'];
+    m.compassOwned = { ...EMPTY_COMPASS_OWNED, plains_first: true, forest_first: true, mountains_first: true, sea_first: true, volcano_first: true, underworld_first: true, heaven_first: true };
+    const patch = awardMiniBossCompass(m, 'chaos');
+    expect(patch).not.toBeNull();
+    expect(patch!.compassOwned!.omni).toBe(true);
+    expect(patch!.compassOwned!.chaos_first).toBe(true);
+    expect(patch!.dungeonMiniBossesCleared).toEqual(['plains', 'forest', 'mountains', 'sea', 'volcano', 'underworld', 'heaven', 'chaos']);
+  });
+
+  it('does not set omni when fewer than 8 dungeons cleared', () => {
     const m = baseMeta();
     m.dungeonMiniBossesCleared = ['plains', 'forest'];
     m.compassOwned = { ...EMPTY_COMPASS_OWNED, plains_first: true, forest_first: true };
     const patch = awardMiniBossCompass(m, 'mountains');
-    expect(patch).not.toBeNull();
-    expect(patch!.compassOwned!.omni).toBe(true);
-    expect(patch!.compassOwned!.mountains_first).toBe(true);
-    expect(patch!.compassOwned!.plains_first).toBe(true);
-    expect(patch!.compassOwned!.forest_first).toBe(true);
-    expect(patch!.dungeonMiniBossesCleared).toEqual(['plains', 'forest', 'mountains']);
-  });
-
-  it('does not set omni when only 2/3 cleared', () => {
-    const m = baseMeta();
-    const patch = awardMiniBossCompass(m, 'plains');
     expect(patch!.compassOwned!.omni).toBe(false);
   });
 });
@@ -150,13 +150,14 @@ describe('pickRandomDungeon', () => {
 
   it('seeded rng=0.99 picks last dungeon (uniform weights)', () => {
     const m = baseMeta();
-    expect(pickRandomDungeon(m, DUNGEONS, () => 0.99)).toBe(DUNGEONS[2]!.id);
+    expect(pickRandomDungeon(m, DUNGEONS, () => 0.99)).toBe(DUNGEONS[DUNGEONS.length - 1]!.id);
   });
 
-  it('weight=3 dungeon dominates distribution over 10000 samples', () => {
+  it('weight=3 dungeon dominates distribution over 10000 samples (starters only)', () => {
     const m = baseMeta();
     m.compassOwned = { ...EMPTY_COMPASS_OWNED, plains_first: true };
-    // weights: plains=3, forest=1, mountains=1 → plains expected ~3/5 = 60%
+    // Distribute only among starters: weights: plains=3, forest=1, mountains=1 → plains ~3/5 = 60%
+    const starters = DUNGEONS.slice(0, 3);
     const counts: Record<string, number> = { plains: 0, forest: 0, mountains: 0 };
     let seed = 1;
     const rng = () => {
@@ -164,7 +165,7 @@ describe('pickRandomDungeon', () => {
       return seed / 233280;
     };
     for (let i = 0; i < 10000; i++) {
-      const id = pickRandomDungeon(m, DUNGEONS, rng);
+      const id = pickRandomDungeon(m, starters, rng);
       counts[id]!++;
     }
     expect(counts.plains! / 10000).toBeGreaterThan(0.55);
