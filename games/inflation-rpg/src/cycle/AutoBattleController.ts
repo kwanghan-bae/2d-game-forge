@@ -30,6 +30,7 @@ export class AutoBattleController {
   private currentEnemyHp: number = 0;
   private currentEnemyMaxHp: number = 0;
   private currentEnemyId: string | null = null;
+  private enemySpawnCounter: number = 0;
 
   constructor(opts: ControllerOptions) {
     this.loadout = opts.loadout;
@@ -63,10 +64,14 @@ export class AutoBattleController {
 
   tick(deltaMs: number): void {
     if (this.state.ended || deltaMs <= 0) return;
-    this.state.tNowMs += deltaMs;
-    while (!this.state.ended && this.state.tNowMs >= this.nextRoundAtMs) {
+    const targetMs = this.state.tNowMs + deltaMs;
+    while (!this.state.ended && this.nextRoundAtMs <= targetMs) {
+      this.state.tNowMs = this.nextRoundAtMs;
       this.runRound();
       this.nextRoundAtMs += this.roundMs;
+    }
+    if (!this.state.ended) {
+      this.state.tNowMs = targetMs;
     }
   }
 
@@ -141,9 +146,10 @@ export class AutoBattleController {
   private spawnEnemy(): void {
     // Sim-A uses a minimal placeholder enemy stat curve. Real monster data
     // integration arrives in Task 5 where we connect to data/monsters.ts.
+    this.enemySpawnCounter += 1;
     const enemyLevel = this.state.heroLv;
     const enemyMaxHp = Math.max(10, enemyLevel * 20);
-    this.currentEnemyId = `sim_enemy_lv${enemyLevel}_t${this.state.tNowMs}`;
+    this.currentEnemyId = `sim_enemy_lv${enemyLevel}_#${this.enemySpawnCounter}`;
     this.currentEnemyHp = enemyMaxHp;
     this.currentEnemyMaxHp = enemyMaxHp;
     this.emit({
