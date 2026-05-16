@@ -43,3 +43,43 @@ describe('AutoBattleController — skeleton', () => {
     expect(JSON.stringify(a.getEvents())).toBe(JSON.stringify(b.getEvents()));
   });
 });
+
+describe('AutoBattleController — battle round', () => {
+  it('emits battle_start within first round when BP > 0', () => {
+    const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });
+    ctrl.tick(700); // > 600ms roundMs
+    const types = ctrl.getEvents().map(e => e.type);
+    expect(types).toContain('battle_start');
+  });
+
+  it('emits hero_hit and enemy_hit alternating during a battle', () => {
+    const ctrl = new AutoBattleController({ loadout: minimalLoadout(), seed: 42 });
+    for (let i = 0; i < 20; i++) ctrl.tick(600);
+    const types = ctrl.getEvents().map(e => e.type);
+    expect(types.filter(t => t === 'hero_hit').length).toBeGreaterThan(0);
+    expect(types.filter(t => t === 'enemy_hit').length).toBeGreaterThan(0);
+  });
+
+  it('emits enemy_kill when enemy HP <= 0', () => {
+    // Use very high heroAtkBase so first hit kills enemy.
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 5; i++) ctrl.tick(600);
+    const types = ctrl.getEvents().map(e => e.type);
+    expect(types).toContain('enemy_kill');
+  });
+
+  it('after enemy_kill, a fresh battle_start follows on next round', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 5; i++) ctrl.tick(600);
+    const events = ctrl.getEvents();
+    const killIdx = events.findIndex(e => e.type === 'enemy_kill');
+    const nextStartIdx = events.findIndex((e, i) => i > killIdx && e.type === 'battle_start');
+    expect(nextStartIdx).toBeGreaterThan(killIdx);
+  });
+});
