@@ -2,5 +2,8 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../../../node_modules/.pnpm/@capacitor+android@8.3.1_@capacitor+core@8.3.1/node_modules/@capacitor/android/capacitor')
 
+include ':capacitor-community-admob'
+project(':capacitor-community-admob').projectDir = new File('../../../node_modules/.pnpm/@capacitor-community+admob@8.0.0/node_modules/@capacitor-community/admob/android')
+
 include ':forge-inflation-rpg-native-onestore-iap'
 project(':forge-inflation-rpg-native-onestore-iap').projectDir = new File('../native/onestore-iap/android')
