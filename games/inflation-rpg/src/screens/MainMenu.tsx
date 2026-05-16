@@ -67,6 +67,9 @@ export function MainMenu() {
         <ForgeButton variant="secondary" onClick={restartTutorial}>
           튜토리얼 다시
         </ForgeButton>
+        <ForgeButton variant="secondary" onClick={() => setScreen('settings')}>
+          설정
+        </ForgeButton>
       </div>
 
       <VolumeControls />

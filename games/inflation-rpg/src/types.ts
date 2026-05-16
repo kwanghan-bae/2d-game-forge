@@ -319,7 +319,10 @@ export type Screen =
   | 'quests'
   | 'ascension'
   | 'skill-progression'
-  | 'relics';
+  | 'relics'
+  | 'settings'
+  | 'iap-shop'
+  | 'privacy';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
