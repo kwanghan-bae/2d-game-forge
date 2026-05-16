@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 import { SeededRng } from '../cycle/SeededRng';
 import { ZONES, type ZoneId } from '../data/zones';
 import { LANDMARK_TYPES } from '../data/landmarks';
