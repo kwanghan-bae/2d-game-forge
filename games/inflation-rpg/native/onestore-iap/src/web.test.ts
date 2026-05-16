@@ -45,3 +45,12 @@ describe('OnestoreIapWeb.purchase', () => {
     expect(purchases[0]!.productId).toBe('ad_free');
   });
 });
+
+describe('OnestoreIapWeb.acknowledge', () => {
+  it('resolves successfully (no-op in web stub)', async () => {
+    const plugin = new OnestoreIapWeb();
+    await expect(
+      plugin.acknowledge({ purchaseToken: 'web_stub_token' }),
+    ).resolves.toBeUndefined();
+  });
+});
