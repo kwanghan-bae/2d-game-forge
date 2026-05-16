@@ -3,14 +3,10 @@ import type { CycleEndReason } from './cycleEvents';
 import { SeededRng } from './SeededRng';
 import { applyTraitMods, type TraitId, type ResolvedLoadout } from './traits';
 import { TRAIT_CATALOG } from '../data/traits';
+import { type ControllerLoadout } from './loadoutTypes';
 
-export interface ControllerLoadout {
-  characterId: string;
-  bpMax: number;
-  heroHpMax: number;
-  heroAtkBase: number;
-  // Later phases extend: equipped / ascension / relics / mythics / traits / unlockedSkills
-}
+// Re-export so existing consumers (tests, etc.) can import from AutoBattleController.
+export type { ControllerLoadout };
 
 export interface ControllerOptions {
   loadout: ControllerLoadout;

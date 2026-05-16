@@ -1,4 +1,4 @@
-import type { ControllerLoadout } from './AutoBattleController';
+import type { ControllerLoadout } from './loadoutTypes';
 
 // Trait ID literal union — extended in src/data/traits.ts catalog (Task 2).
 // New traits add their ID here as a string literal, then a TRAIT_CATALOG entry.
