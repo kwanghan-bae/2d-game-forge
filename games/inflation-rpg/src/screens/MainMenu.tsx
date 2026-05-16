@@ -1,6 +1,5 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
-import { useCycleStore } from '../cycle/cycleSlice';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgeScreen } from '@/components/ui/forge-screen';
 import { formatNumber } from '../lib/format';
@@ -13,22 +12,11 @@ export function MainMenu() {
   const runCharacterId = useGameStore((s) => s.run.characterId);
   const setTutorialStep = useGameStore((s) => s.setTutorialStep);
   const restartTutorial = useGameStore((s) => s.restartTutorial);
-  const startCycle = useCycleStore((s) => s.start);
 
   const hasActiveRun = runCharacterId !== '';
 
   const handleStartCycle = () => {
-    const characterId = meta.lastPlayedCharId !== '' ? meta.lastPlayedCharId : 'K01';
-    startCycle({
-      loadout: {
-        characterId,
-        bpMax: 30,
-        heroHpMax: 100,
-        heroAtkBase: 50,
-      },
-      seed: Date.now() & 0xffffffff,
-    });
-    setScreen('cycle-runner');
+    setScreen('cycle-prep');
   };
 
   React.useEffect(() => {
