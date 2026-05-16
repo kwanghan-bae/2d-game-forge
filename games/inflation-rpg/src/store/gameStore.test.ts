@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, runStoreMigration } from './gameStore';
+import { useGameStore, INITIAL_RUN, INITIAL_META, migrateV8ToV9, migrateV13ToV14, runStoreMigration } from './gameStore';
 import { STARTING_BP } from '../systems/bp';
 import { type EquipmentInstance } from '../types';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
@@ -1803,5 +1803,40 @@ describe('Phase Realms — run.playerHp store actions', () => {
     // Heal beyond max — should be capped at maxHp
     useGameStore.getState().applyLifestealHeal(1_000_000);
     expect(useGameStore.getState().run.playerHp).toBe(maxHp);
+  });
+});
+
+describe('migrateV13ToV14', () => {
+  it('adds adFreeOwned=false and lastIapTx=[] when missing', () => {
+    const v13State = {
+      meta: { ...INITIAL_META } as Record<string, unknown>,
+      run: null,
+    };
+    delete v13State.meta['adFreeOwned'];
+    delete v13State.meta['lastIapTx'];
+
+    const result = migrateV13ToV14(v13State) as { meta: { adFreeOwned: boolean; lastIapTx: unknown[] } };
+    expect(result.meta.adFreeOwned).toBe(false);
+    expect(result.meta.lastIapTx).toEqual([]);
+  });
+
+  it('preserves existing adFreeOwned=true and prior transactions', () => {
+    const v13State = {
+      meta: {
+        ...INITIAL_META,
+        adFreeOwned: true,
+        lastIapTx: [{ productId: 'ad_free', ts: 1, purchaseToken: 't' }],
+      },
+      run: null,
+    };
+    const result = migrateV13ToV14(v13State) as { meta: { adFreeOwned: boolean; lastIapTx: unknown[] } };
+    expect(result.meta.adFreeOwned).toBe(true);
+    expect(result.meta.lastIapTx).toHaveLength(1);
+  });
+
+  it('returns persisted unchanged when meta missing', () => {
+    const stateWithoutMeta = { run: null };
+    const result = migrateV13ToV14(stateWithoutMeta);
+    expect(result).toEqual(stateWithoutMeta);
   });
 });
