@@ -1,6 +1,8 @@
 import type { CycleEvent, CycleState, CycleResult } from './cycleEvents';
 import type { CycleEndReason } from './cycleEvents';
 import { SeededRng } from './SeededRng';
+import { applyTraitMods, type TraitId, type ResolvedLoadout } from './traits';
+import { TRAIT_CATALOG } from '../data/traits';
 
 export interface ControllerLoadout {
   characterId: string;
@@ -13,6 +15,7 @@ export interface ControllerLoadout {
 export interface ControllerOptions {
   loadout: ControllerLoadout;
   seed: number;
+  traits?: TraitId[];
   // 600ms = existing BattleScene combatTimer. Sim-A reuses to keep economy
   // consistent with manual mode.
   roundMs?: number;
@@ -24,15 +27,25 @@ export class AutoBattleController {
   private rng: SeededRng;
   private state: CycleState;
   private events: CycleEvent[] = [];
-  private loadout: ControllerLoadout;
+  private loadout: ResolvedLoadout;
   private roundMs: number;
   private nextRoundAtMs: number;
   private currentEnemyHp: number = 0;
   private currentEnemyId: string | null = null;
   private enemySpawnCounter: number = 0;
+  private expMul: number;
+  private goldMul: number;
+  private bpCostMul: number;
+  private traitIds: TraitId[];
 
   constructor(opts: ControllerOptions) {
-    this.loadout = opts.loadout;
+    const traitIds = opts.traits ?? [];
+    const resolved: ResolvedLoadout = applyTraitMods(opts.loadout, traitIds, TRAIT_CATALOG);
+    this.loadout = resolved;
+    this.expMul = resolved.expMul;
+    this.goldMul = resolved.goldMul;
+    this.bpCostMul = resolved.bpCostMul;
+    this.traitIds = traitIds;
     this.rng = new SeededRng(opts.seed);
     this.roundMs = opts.roundMs ?? DEFAULT_ROUND_MS;
     this.nextRoundAtMs = this.roundMs;
@@ -42,8 +55,8 @@ export class AutoBattleController {
       seed: opts.seed,
       heroLv: 1,
       heroExp: 0,
-      heroHp: opts.loadout.heroHpMax,
-      heroHpMax: opts.loadout.heroHpMax,
+      heroHp: resolved.heroHpMax,
+      heroHpMax: resolved.heroHpMax,
       bp: opts.loadout.bpMax,
       bpMax: opts.loadout.bpMax,
       currentFloor: 1,
@@ -58,6 +71,7 @@ export class AutoBattleController {
       loadoutHash: hashLoadout(opts.loadout),
       seed: opts.seed,
       characterId: opts.loadout.characterId,
+      traitIds,
     });
   }
 
@@ -197,8 +211,8 @@ export class AutoBattleController {
 
   private killEnemy(): void {
     if (!this.currentEnemyId) return;
-    const exp = Math.max(1, this.state.heroLv * 10);
-    const gold = Math.max(1, this.state.heroLv * 2 + this.rng.int(this.state.heroLv));
+    const exp = Math.max(1, Math.floor(this.state.heroLv * 10 * this.expMul));
+    const gold = Math.max(1, Math.floor((this.state.heroLv * 2) * this.goldMul) + this.rng.int(this.state.heroLv));
     this.emit({
       t: this.state.tNowMs,
       type: 'enemy_kill',
@@ -236,11 +250,12 @@ export class AutoBattleController {
   }
 
   private consumeBp(amount: number, cause: string): void {
-    this.state.bp = Math.max(0, this.state.bp - amount);
+    const cost = Math.max(1, Math.floor(amount * this.bpCostMul));
+    this.state.bp = Math.max(0, this.state.bp - cost);
     this.emit({
       t: this.state.tNowMs,
       type: 'bp_change',
-      delta: -amount,
+      delta: -cost,
       remaining: this.state.bp,
       cause,
     });
