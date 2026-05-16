@@ -15,6 +15,7 @@ import { Ascension } from './screens/Ascension';
 import { SkillProgression } from './screens/SkillProgression';
 import Relics from './screens/Relics';
 import { Settings } from './screens/Settings';
+import { IapShopScreen } from './screens/IapShopScreen';
 import { TutorialOverlay } from './components/TutorialOverlay';
 import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
 import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
@@ -88,6 +89,14 @@ export function App({ config }: AppProps) {
       {screen === 'skill-progression' && <SkillProgression />}
       {screen === 'relics'       && <Relics />}
       {screen === 'settings'     && <Settings />}
+      {screen === 'iap-shop'    && (
+        <IapShopScreen
+          adFreeOwned={meta.adFreeOwned}
+          getPrice={(id) => monetizationRef.current?.getProductPrice(id)}
+          onPurchase={async (id) => (await monetizationRef.current?.purchase(id)) ?? false}
+          onBack={() => useGameStore.getState().setScreen('settings')}
+        />
+      )}
       <TutorialOverlay />
       <DungeonFinalClearedModal />
     </div>
