@@ -1,4 +1,5 @@
 import type { CycleHistoryEntry } from './cycle/cycleEvents';
+import type { TraitId } from './cycle/traits';
 
 export type StatKey = 'hp' | 'atk' | 'def' | 'agi' | 'luc';
 
@@ -233,6 +234,8 @@ export interface MetaState {
   lastIapTx: IapTransaction[];
   // Phase Sim-A — 사이클 히스토리 (최근 N 항목 영구 저장)
   cycleHistory: CycleHistoryEntry[];
+  // Phase Sim-B — 해금된 trait ID 목록 (기본값 = BASE_TRAIT_IDS, Sim-E 에서 점진적 해금)
+  traitsUnlocked: TraitId[];
 }
 
 // Phase G — Ascension Tree (성좌)
@@ -328,7 +331,8 @@ export type Screen =
   | 'iap-shop'
   | 'privacy'
   | 'cycle-runner'
-  | 'cycle-result';
+  | 'cycle-result'
+  | 'cycle-prep';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
