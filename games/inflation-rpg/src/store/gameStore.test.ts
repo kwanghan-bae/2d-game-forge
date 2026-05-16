@@ -1627,13 +1627,10 @@ describe('Phase Compass — ascend preserves compass + cleared lists', () => {
         ascPoints: 0,
         dungeonFinalsCleared: ['plains', 'forest', 'mountains'],   // ≥3 finals for tier 1
         compassOwned: {
+          ...EMPTY_COMPASS_OWNED,
           plains_first: true,
-          plains_second: false,
           forest_first: true,
           forest_second: true,
-          mountains_first: false,
-          mountains_second: false,
-          omni: false,
         },
         dungeonMiniBossesCleared: ['plains', 'forest'],
         dungeonMajorBossesCleared: ['forest'],
