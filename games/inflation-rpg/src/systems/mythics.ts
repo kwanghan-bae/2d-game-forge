@@ -55,8 +55,12 @@ export function getMythicXpMult(meta: MetaState): number {
   let mult = 1;
   for (const id of getEquippedMythics(meta)) {
     const def = MYTHICS[id];
-    if (def.effectType !== 'xp_mult') continue;
-    mult *= 1 + def.value;
+    if (def.effectType === 'xp_mult') {
+      mult *= 1 + def.value;
+    } else if (def.effectType === 'drop_mult' && def.target === 'all_kinds') {
+      // Phase Realms — all_kinds drop_mult includes XP gain.
+      mult *= 1 + def.value;
+    }
   }
   return mult;
 }

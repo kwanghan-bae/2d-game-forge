@@ -114,6 +114,18 @@ describe('getMythicXpMult', () => {
   });
 });
 
+describe('Phase Realms — getMythicXpMult includes drop_mult all_kinds (infinity_seal)', () => {
+  it('infinity_seal (drop_mult all_kinds) doubles xp', () => {
+    expect(getMythicXpMult(makeMeta(['infinity_seal']))).toBeCloseTo(2.0);
+  });
+  it('infinity_seal × soul_truth = 2 × 3 = 6', () => {
+    expect(getMythicXpMult(makeMeta(['infinity_seal', 'soul_truth']))).toBeCloseTo(6.0);
+  });
+  it('dimension_navigator (drop_mult dungeon_currency) does NOT affect xp', () => {
+    expect(getMythicXpMult(makeMeta(['dimension_navigator']))).toBe(1);
+  });
+});
+
 describe('passives', () => {
   it('phoenix_feather passive revive: 1 if equipped', () => {
     expect(getMythicReviveCount(makeMeta(['phoenix_feather']))).toBe(1);
