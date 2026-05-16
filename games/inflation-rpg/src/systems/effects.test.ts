@@ -250,3 +250,31 @@ describe('mythic proc triggers (Phase E)', () => {
     expect(result.spStealAmount).toBeCloseTo(30);
   });
 });
+
+describe('Phase Realms — evaluateMythicProcs on_kill trigger + cooldownReduce', () => {
+  it('on_kill trigger with sp_steal effect emits cooldownReduce = value', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_kill', effect: 'sp_steal', value: 0.3 }]);
+    const result = evaluateMythicProcs(state, 'on_kill', {});
+    expect(result.cooldownReduce).toBeCloseTo(0.3);
+    expect(result.lifestealHeal).toBe(0);
+  });
+  it('on_kill with no procs returns 0 cooldownReduce', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, []);
+    expect(evaluateMythicProcs(state, 'on_kill', {}).cooldownReduce).toBe(0);
+  });
+  it('multiple on_kill sp_steal stack additively', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [
+      { trigger: 'on_kill', effect: 'sp_steal', value: 0.3 },
+      { trigger: 'on_kill', effect: 'sp_steal', value: 0.5 },
+    ]);
+    expect(evaluateMythicProcs(state, 'on_kill', {}).cooldownReduce).toBeCloseTo(0.8);
+  });
+  it('on_kill ignores on_player_attack lifesteal procs', () => {
+    const state = createEffectsState();
+    registerMythicProcs(state, [{ trigger: 'on_player_attack', effect: 'lifesteal', value: 0.2 }]);
+    expect(evaluateMythicProcs(state, 'on_kill', {}).lifestealHeal).toBe(0);
+  });
+});
