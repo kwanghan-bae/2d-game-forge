@@ -58,7 +58,11 @@ Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 
 - `phase-4b-sound-complete` — SoundManager + CC0 audio 인프라
   (Kenney/OpenGameArt 출처. SFX 12 + BGM 3 path 정의, screen 별 BGM 자동 전환,
   볼륨 슬라이더, 사운드 파일 누락 시 silent fallback)
-- 다음: 콘텐츠 균형 패치 (스킬/보스 데미지 배수 조정) → Phase 5 (Monetization)
+- `phase-realms-complete` — Phase Realms: 5 던전 확장 (sea/volcano/underworld/heaven/chaos, Tier-gated)
+  + Phase E 부채 청산 (run.playerHp 영구화 + lifesteal/sp_steal redefine/swift_winds target/
+  infinity_seal XP/light_of_truth proc magnitude). Persist v13. 705 vitest / 50 e2e.
+- 다음: telemetry 기반 균형 패치 (lifesteal/cooldownReduce 영향), Phase 5 (Monetization),
+  또는 13 비핵심 캐릭터 (별도 spec 필요).
 
 ## 명령 치트시트
 
