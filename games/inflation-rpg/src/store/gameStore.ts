@@ -467,7 +467,7 @@ export const useGameStore = create<GameStore>()(
             currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
             bp: STARTING_BP + s.meta.ascTree.bp_start,   // Phase G — bp_start node
           },
-          screen: 'dungeon-floors',
+          screen: 'main-menu',
         })),
 
       endRun: () => {
@@ -484,7 +484,7 @@ export const useGameStore = create<GameStore>()(
             characterLevels: { ...meta.characterLevels, [charId]: prevCharLv + 1 },
             lastPlayedCharId: charId,
           },
-          screen: 'game-over',
+          screen: 'main-menu',
         });
         if (charId) get().awardJpOnCharLvMilestone(charId);
       },

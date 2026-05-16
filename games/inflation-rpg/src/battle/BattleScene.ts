@@ -325,7 +325,7 @@ export class BattleScene extends Phaser.Scene {
             stateAfterKill.markDungeonProgress(dungeonId, 31); // unlock 심층
             stateAfterKill.setPendingFinalCleared(dungeonId);
             stateAfterKill.selectDungeon(null);
-            stateAfterKill.setScreen('town');
+            stateAfterKill.setScreen('main-menu');
             return;
           }
           // 두 번째 이후 final — 일반 procedural 진행 (모달 X, run 계속).
@@ -336,7 +336,7 @@ export class BattleScene extends Phaser.Scene {
         const nextFloor = finishedFloor + 1;
         stateAfterKill.markDungeonProgress(dungeonId, nextFloor);
         stateAfterKill.setCurrentFloor(nextFloor);
-        stateAfterKill.setScreen('dungeon-floors');
+        stateAfterKill.setScreen('main-menu');
         return;
       }
 
