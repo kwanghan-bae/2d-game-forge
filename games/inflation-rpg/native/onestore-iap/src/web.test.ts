@@ -54,3 +54,19 @@ describe('OnestoreIapWeb.acknowledge', () => {
     ).resolves.toBeUndefined();
   });
 });
+
+describe('OnestoreIapWeb.restorePurchases', () => {
+  it('returns empty when nothing purchased', async () => {
+    const plugin = new OnestoreIapWeb();
+    const { purchases } = await plugin.restorePurchases();
+    expect(purchases).toEqual([]);
+  });
+
+  it('returns ad_free after a prior purchase in the same instance', async () => {
+    const plugin = new OnestoreIapWeb();
+    await plugin.purchase({ productId: 'ad_free' });
+    const { purchases } = await plugin.restorePurchases();
+    expect(purchases).toHaveLength(1);
+    expect(purchases[0]).toMatchObject({ productId: 'ad_free', acknowledged: true });
+  });
+});
