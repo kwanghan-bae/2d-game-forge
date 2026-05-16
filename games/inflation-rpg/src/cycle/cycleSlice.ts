@@ -1,8 +1,21 @@
 import { create } from 'zustand';
 import { AutoBattleController, type ControllerOptions } from './AutoBattleController';
-import type { CycleResult } from './cycleEvents';
+import type { CycleResult, CycleHistoryEntry } from './cycleEvents';
+import { useGameStore } from '../store/gameStore';
 
 type CycleStatus = 'idle' | 'running' | 'ended';
+
+function persistCycleResult(result: CycleResult | null, seed: number): void {
+  if (!result) return;
+  const entry: CycleHistoryEntry = {
+    endedAtMs: Date.now(),
+    durationMs: result.durationMs,
+    maxLevel: result.maxLevel,
+    reason: result.reason,
+    seed,
+  };
+  useGameStore.getState().recordCycleEnd(entry);
+}
 
 interface CycleStoreState {
   status: CycleStatus;
@@ -26,13 +39,17 @@ export const useCycleStore = create<CycleStoreState>((set, get) => ({
     const ctrl = get().controller;
     if (!ctrl) return;
     ctrl.abandon();
-    set({ status: 'ended', result: ctrl.getResult() });
+    const result = ctrl.getResult();
+    set({ status: 'ended', result });
+    persistCycleResult(result, ctrl.getState().seed);
   },
   endOnBpExhausted() {
     // Called by the rAF driver in CycleRunner when controller emits cycle_end.
     const ctrl = get().controller;
     if (!ctrl) return;
-    set({ status: 'ended', result: ctrl.getResult() });
+    const result = ctrl.getResult();
+    set({ status: 'ended', result });
+    persistCycleResult(result, ctrl.getState().seed);
   },
   reset() {
     set({ status: 'idle', controller: null, result: null });
