@@ -10,6 +10,11 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: '#0f0f14',
   },
+  plugins: {
+    OnestoreIap: {
+      // licenseKey is passed via initialize() at runtime, not config.
+    },
+  },
 };
 
 export default config;
