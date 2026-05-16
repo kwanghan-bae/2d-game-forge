@@ -1,39 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import React from 'react';
 import { useGameStore } from './store/gameStore';
-import { ADMOB_CONFIG } from './config/monetization.config';
-import { MonetizationService } from './services/MonetizationService';
 import { MainMenu } from './screens/MainMenu';
-import { Town } from './screens/Town';
-import { DungeonFloors } from './screens/DungeonFloors';
-import { ClassSelect } from './screens/ClassSelect';
-import { Inventory } from './screens/Inventory';
-import { Shop } from './screens/Shop';
-import { GameOver } from './screens/GameOver';
-import { Quests } from './screens/Quests';
-import { Ascension } from './screens/Ascension';
-import { SkillProgression } from './screens/SkillProgression';
-import Relics from './screens/Relics';
-import { Settings } from './screens/Settings';
-import { IapShopScreen } from './screens/IapShopScreen';
-import { PrivacyScreen } from './screens/PrivacyScreen';
-import { CyclePrep } from './screens/CyclePrep';
-import { CycleRunner } from './screens/CycleRunner';
-import { CycleResult } from './screens/CycleResult';
-import { TutorialOverlay } from './components/TutorialOverlay';
-import { DungeonFinalClearedModal } from './screens/DungeonFinalClearedModal';
-import { playBgm, bgmIdForScreen, setVolumes } from './systems/sound';
 import type { StartGameConfig } from './types';
-
-// ssr: false prevents Phaser (imported by Battle) from being bundled into the server-side render.
-// IMPORTANT: Battle MUST NOT be imported statically from anywhere else in the tree —
-// any static path bypasses this dynamic boundary and pulls Phaser into the SSR bundle,
-// which fails next build with "Export default doesn't exist in target module phaser.esm.js".
-// (Pre-β2 Dungeon.tsx had `import { Battle } from './Battle'` which broke build for weeks.)
-const Battle = dynamic(() => import('./screens/Battle').then((m) => ({ default: m.Battle })), {
-  ssr: false,
-  loading: () => null,
-});
 
 interface AppProps {
   config: StartGameConfig;
@@ -41,83 +9,19 @@ interface AppProps {
 
 export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
-  const meta = useGameStore((s) => s.meta);
-
-  const setAdFreeOwned = useGameStore((s) => s.setAdFreeOwned);
-  const gainCrackStones = useGameStore((s) => s.gainCrackStones);
-  const monetizationRef = useRef<MonetizationService | null>(null);
-
-  useEffect(() => {
-    if (monetizationRef.current) return;
-    const svc = new MonetizationService({
-      adFreeOwned: useGameStore.getState().meta.adFreeOwned,
-      onAdFreeChanged: setAdFreeOwned,
-      onCrackStonesAwarded: gainCrackStones,
-      licenseKey: ADMOB_CONFIG.iapLicenseKey,
-      rewardedUnitId: ADMOB_CONFIG.rewarded.android,
-      bannerUnitId: ADMOB_CONFIG.banner.android,
-    });
-    monetizationRef.current = svc;
-    void svc.initialize();
-    // dev-only window hook for Playwright meta inspection (T29 needs this)
-    if (process.env.NODE_ENV !== 'production') {
-      (window as unknown as { __forge_monetization?: MonetizationService }).__forge_monetization = svc;
-    }
-    const handleRestore = () => {
-      void svc.restorePurchasesManually();
-    };
-    window.addEventListener('forge-restore-purchases', handleRestore);
-    return () => window.removeEventListener('forge-restore-purchases', handleRestore);
-  }, [setAdFreeOwned, gainCrackStones]);
-
-  React.useEffect(() => {
-    setVolumes(meta.musicVolume, meta.sfxVolume, meta.muted);
-  }, [meta.musicVolume, meta.sfxVolume, meta.muted]);
-
-  React.useEffect(() => {
-    playBgm(bgmIdForScreen(screen));
-  }, [screen]);
 
   return (
     <div className="forge-ui-root" data-assets-base={config.assetsBasePath}>
-      {screen === 'main-menu'      && <MainMenu />}
-      {screen === 'town'           && <Town />}
-      {screen === 'dungeon-floors' && <DungeonFloors />}
-      {screen === 'class-select'   && <ClassSelect />}
-      {screen === 'battle'       && <Battle />}
-      {screen === 'inventory'    && <Inventory />}
-      {screen === 'shop'         && <Shop />}
-      {screen === 'game-over'    && <GameOver />}
-      {screen === 'quests'       && <Quests />}
-      {screen === 'ascension'    && <Ascension />}
-      {screen === 'skill-progression' && <SkillProgression />}
-      {screen === 'relics'       && <Relics />}
-      {screen === 'settings'     && <Settings />}
-      {screen === 'iap-shop'    && (
-        <IapShopScreen
-          adFreeOwned={meta.adFreeOwned}
-          getPrice={(id) => monetizationRef.current?.getProductPrice(id)}
-          onPurchase={async (id) => (await monetizationRef.current?.purchase(id)) ?? false}
-          onBack={() => useGameStore.getState().setScreen('settings')}
-        />
+      {screen === 'main-menu' && <MainMenu />}
+      {screen === 'cycle-prep-v2' && <div data-testid="screen-cycle-prep-v2">CyclePrepV2 — T19 에서 구현</div>}
+      {screen === 'overworld' && <div data-testid="screen-overworld">OverworldRunner — T20 에서 구현</div>}
+      {screen === 'cycle-result-v2' && <div data-testid="screen-cycle-result-v2">CycleResultV2 — T21 에서 구현</div>}
+      {(screen === 'saga-gallery' || screen === 'settings') && (
+        <div style={{ padding: 24, color: '#eee' }}>
+          <p>이 화면은 V1b 에서 구현됩니다.</p>
+          <button type="button" onClick={() => useGameStore.getState().setScreen('main-menu')}>돌아가기</button>
+        </div>
       )}
-      {screen === 'privacy'     && (
-        <PrivacyScreen onBack={() => useGameStore.getState().setScreen('settings')} />
-      )}
-      {screen === 'cycle-prep' && (
-        <CyclePrep
-          onStart={() => useGameStore.getState().setScreen('cycle-runner')}
-          onCancel={() => useGameStore.getState().setScreen('main-menu')}
-        />
-      )}
-      {screen === 'cycle-runner' && (
-        <CycleRunner onCycleEnd={() => useGameStore.getState().setScreen('cycle-result')} />
-      )}
-      {screen === 'cycle-result' && (
-        <CycleResult onBackToMenu={() => useGameStore.getState().setScreen('main-menu')} />
-      )}
-      <TutorialOverlay />
-      <DungeonFinalClearedModal />
     </div>
   );
 }

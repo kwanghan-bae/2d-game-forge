@@ -315,24 +315,11 @@ export interface TutorialStep {
 
 export type Screen =
   | 'main-menu'
-  | 'town'
-  | 'dungeon-floors'
-  | 'class-select'
-  | 'battle'
-  | 'stat-alloc'
-  | 'inventory'
-  | 'shop'
-  | 'game-over'
-  | 'quests'
-  | 'ascension'
-  | 'skill-progression'
-  | 'relics'
+  | 'cycle-prep-v2'
+  | 'overworld'
+  | 'cycle-result-v2'
   | 'settings'
-  | 'iap-shop'
-  | 'privacy'
-  | 'cycle-runner'
-  | 'cycle-result'
-  | 'cycle-prep';
+  | 'saga-gallery';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
