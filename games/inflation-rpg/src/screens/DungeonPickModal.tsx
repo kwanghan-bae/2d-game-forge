@@ -6,6 +6,12 @@ import { isDungeonUnlocked } from '../systems/dungeons';
 import { ForgeButton } from '@/components/ui/forge-button';
 import { ForgePanel } from '@/components/ui/forge-panel';
 
+const OPACITY_LEVELS = {
+  locked: 0.35,
+  unlockedNoCompass: 0.6,
+  unlockedWithCompass: 1.0,
+} as const;
+
 interface Props {
   onClose: () => void;
 }
@@ -109,13 +115,13 @@ export function DungeonPickModal({ onClose }: Props) {
                     disabled={!canFree}
                     onClick={() => canFree && onPickFree(d.id)}
                     data-testid={`free-card-${d.id}`}
-                    style={{ opacity: !unlocked ? 0.35 : (canFree ? 1 : 0.6) }}
+                    style={{ opacity: !unlocked ? OPACITY_LEVELS.locked : (canFree ? OPACITY_LEVELS.unlockedWithCompass : OPACITY_LEVELS.unlockedNoCompass) }}
                   >
                     <span>{d.emoji} {d.nameKR}</span>
                     {hint && (
                       <span
                         data-testid={`free-card-hint-${d.id}`}
-                        style={{ display: 'block', fontSize: 11, color: '#888' }}
+                        style={{ display: 'block', fontSize: 11, color: 'var(--forge-text-secondary)' }}
                       >
                         {hint}
                       </span>
