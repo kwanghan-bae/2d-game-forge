@@ -89,11 +89,15 @@ export class AutoBattleController {
     const expCurve: Array<{ t: number; cumExp: number }> = [{ t: 0, cumExp: 0 }];
     const bpCurve: Array<{ t: number; bp: number }> = [{ t: 0, bp: this.state.bpMax }];
     const byEnemyId: Record<string, number> = {};
+    const enemyIsBoss = new Map<string, boolean>();
     let bossKills = 0;
     let cumExp = 0;
     let endEv: CycleEvent | undefined;
 
     for (const ev of this.events) {
+      if (ev.type === 'battle_start') {
+        enemyIsBoss.set(ev.enemyId, ev.isBoss);
+      }
       if (ev.type === 'level_up') {
         levelCurve.push({ t: ev.t, lv: ev.to });
       }
@@ -101,9 +105,9 @@ export class AutoBattleController {
         cumExp += ev.expGain;
         expCurve.push({ t: ev.t, cumExp });
         byEnemyId[ev.enemyId] = (byEnemyId[ev.enemyId] ?? 0) + 1;
-      }
-      if (ev.type === 'enemy_kill' && ev.enemyId.startsWith('sim_boss_')) {
-        bossKills += 1;
+        if (enemyIsBoss.get(ev.enemyId)) {
+          bossKills += 1;
+        }
       }
       if (ev.type === 'bp_change') {
         bpCurve.push({ t: ev.t, bp: ev.remaining });

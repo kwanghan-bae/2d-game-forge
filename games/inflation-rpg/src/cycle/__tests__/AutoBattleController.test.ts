@@ -253,6 +253,19 @@ describe('AutoBattleController — getResult curves', () => {
     expect(ctrl.getResult()!.kills.total).toBe(killEvents);
   });
 
+  it('bossKills is 0 in Sim-A (no boss spawn yet)', () => {
+    const ctrl = new AutoBattleController({
+      loadout: { ...minimalLoadout(), bpMax: 3, heroAtkBase: 100000 },
+      seed: 42,
+    });
+    for (let i = 0; i < 100; i++) ctrl.tick(600);
+    const result = ctrl.getResult();
+    expect(result).not.toBeNull();
+    // Sim-A only spawns non-boss enemies (isBoss: false). bossKills aggregation
+    // now reads battle_start.isBoss rather than enemyId prefix convention.
+    expect(result!.kills.bossKills).toBe(0);
+  });
+
   it('bpCurve last entry is 0 on bp_exhausted', () => {
     const ctrl = new AutoBattleController({
       loadout: { ...minimalLoadout(), bpMax: 3, heroAtkBase: 100000 },
