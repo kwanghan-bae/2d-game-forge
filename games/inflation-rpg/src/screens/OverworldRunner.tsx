@@ -14,7 +14,7 @@ async function bootPhaser(
   ai: import('../decisionAI/HeroDecisionAI').HeroDecisionAI,
   seed: number,
 ): Promise<{ destroy: () => void }> {
-  const [{ default: Phaser }, { OverworldScene, GRID_W, GRID_H }] = await Promise.all([
+  const [Phaser, { OverworldScene, GRID_W, GRID_H }] = await Promise.all([
     import('phaser'),
     import('../overworld/OverworldScene'),
   ]);
