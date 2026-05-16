@@ -31,6 +31,7 @@ import {
   pickRandomDungeon,
 } from '../systems/compass';
 import { computeMaxHp } from '../systems/playerHp';
+import { BASE_TRAIT_IDS } from '../data/traits';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -128,6 +129,8 @@ export const INITIAL_META: MetaState = {
   lastIapTx: [],
   // Phase Sim-A — 사이클 히스토리
   cycleHistory: [],
+  // Phase Sim-B — 해금된 trait 목록 (기본값 = 모든 base-tier traits)
+  traitsUnlocked: [...BASE_TRAIT_IDS],
 };
 
 interface GameStore {
@@ -435,6 +438,12 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   if (fromVersion <= 14 && s.meta) {
     if (!s.meta.cycleHistory) {
       s.meta.cycleHistory = [];
+    }
+  }
+  // v15 → v16: Phase Sim-B — traitsUnlocked: TraitId[]
+  if (fromVersion <= 15 && s.meta) {
+    if (!s.meta.traitsUnlocked) {
+      s.meta.traitsUnlocked = [...BASE_TRAIT_IDS];
     }
   }
   return s;
@@ -1189,7 +1198,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 15,  // 14 → 15 (Phase Sim-A — cycleHistory: CycleHistoryEntry[])
+      version: 16,  // 15 → 16 (Phase Sim-B — traitsUnlocked: TraitId[])
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
