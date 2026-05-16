@@ -543,3 +543,30 @@ dev-shell 의 `tsconfig.json` 과 `next.config.ts` 에 새 게임의 `@/componen
 
 새 게임은 `eslint.config.mjs` 의 `games/*/**` 패턴에 의해 자동으로 `game` element 로 분류된다.
 별도 설정 불필요.
+
+## §15 Monetization (Phase 5+)
+
+inflation-rpg uses three monetization channels:
+
+- **AdMob** (광고): `@capacitor-community/admob` — Rewarded + Banner.
+  Test IDs in `games/inflation-rpg/src/config/monetization.config.ts` are safe
+  to commit. Real IDs swap at release time via env var. (TODO: wire env-var
+  injection — currently config is hardcoded; replace before submission.)
+
+- **원스토어 IAP** (한국 마켓): **local Capacitor plugin** at
+  `games/inflation-rpg/native/onestore-iap/` (3-rule: never promoted to
+  `packages/*` until a 2nd game uses 원스토어). Kotlin currently ships as a
+  **compile-only stub** — real V21 PurchaseClient wire deferred to Phase 5a-1
+  (`docs/superpowers/specs/2026-05-16-phase-5a-1-onestore-native-wire-design.md`).
+
+- **개인정보처리방침**: GitHub Pages at `docs/privacy-policy/` (host:
+  `https://kwanghan-bae.github.io/2d-game-forge/privacy-policy/ko/`). Edit
+  `ko/index.html` and the bundled fallback
+  `games/inflation-rpg/public/privacy-policy.html` in lockstep.
+
+For new games using monetization, **copy the plugin scaffolding pattern locally
+to the game's `native/` dir** — do NOT promote `onestore-iap/` to a shared
+package. The 3-rule applies.
+
+For Google Play / App Store cuts (Phase 5b/5c), see future specs at
+`docs/superpowers/specs/2026-*-phase-5b-*.md` / `phase-5c-*.md`.
