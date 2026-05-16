@@ -79,7 +79,7 @@ describe('cooldown — mythic wrap (Phase E)', () => {
     expect(withMythic[0]!.cooldownSec).toBeCloseTo(without[0]!.cooldownSec * 0.7, 5);
   });
 
-  it('stacks time_hourglass × swift_winds multiplicatively on ult cooldown', () => {
+  it('Phase Realms: swift_winds (target=base) does not apply to ult, only time_hourglass', () => {
     const meta = {
       skillLevels: { hwarang: {} },
       ultSlotPicks: { hwarang: ['hwarang_ult_ilseom', null, null, null] as (string | null)[] },
@@ -93,10 +93,28 @@ describe('cooldown — mythic wrap (Phase E)', () => {
     const ultBaseline = baseline.find(s => s.id === 'hwarang_ult_ilseom');
     expect(ult).toBeTruthy();
     expect(ultBaseline).toBeTruthy();
-    // 0.7 × 0.8 = 0.56 (above 0.4 floor)
-    expect(ult!.cooldownSec).toBeCloseTo(ultBaseline!.cooldownSec * 0.56, 5);
+    // swift_winds (target='base') does not apply to ult; only time_hourglass applies (-30%)
+    expect(ult!.cooldownSec).toBeCloseTo(ultBaseline!.cooldownSec * 0.7, 5);
     // Sanity: floor of 0.4 means actual cd never drops below 0.4× the unwrapped value
     expect(ult!.cooldownSec).toBeGreaterThanOrEqual(0.4 * ultBaseline!.cooldownSec);
+  });
+
+  it('Phase Realms: swift_winds + time_hourglass stack on base skills only', () => {
+    const meta = {
+      skillLevels: {},
+      ultSlotPicks: { hwarang: [null, null, null, null] as (string | null)[] },
+      mythicEquipped: ['time_hourglass', 'swift_winds', null, null, null],
+      mythicOwned: ['time_hourglass', 'swift_winds'],
+    } as any;
+    const metaWithout = { ...meta, mythicEquipped: [null, null, null, null, null] } as any;
+    const skills = buildActiveSkillsForCombat('hwarang', meta);
+    const baseline = buildActiveSkillsForCombat('hwarang', metaWithout);
+    const base = skills[0]; // hwarang-strike
+    const baseBaseline = baseline[0];
+    expect(base).toBeTruthy();
+    expect(baseBaseline).toBeTruthy();
+    // Both apply to base: 0.7 × 0.8 = 0.56 (above 0.4 floor)
+    expect(base!.cooldownSec).toBeCloseTo(baseBaseline!.cooldownSec * 0.56, 5);
   });
 
   it('no mythic equipped → no cooldown change', () => {
