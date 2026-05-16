@@ -3,8 +3,9 @@ import { describe, it, expect, vi } from 'vitest';
 // Phaser cannot run in a test environment (no canvas/WebGL).
 // The only exports we test here are pure helpers that don't touch Phaser at runtime.
 // Mock the module so that Phaser's static initialisation does not execute.
+// Phaser 3 ESM has no default export — export named members directly.
 vi.mock('phaser', () => ({
-  default: { Scene: class Scene { constructor(_key: string) {} } },
+  Scene: class Scene { constructor(_key: string) {} },
 }));
 
 import { generateMapLayout, GRID_W, GRID_H } from '../OverworldScene';
