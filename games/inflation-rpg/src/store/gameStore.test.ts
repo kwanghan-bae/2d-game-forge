@@ -1550,6 +1550,89 @@ describe('Phase Compass — v12 migration', () => {
   });
 });
 
+describe('Phase Realms — persist v12 → v13 migration', () => {
+  it('expands compassOwned to 17 keys with defaults false for new dungeons', () => {
+    // v12 envelope: only 7 keys (3 dungeons × 2 + omni, as of Phase Compass)
+    const v12Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        compassOwned: {
+          plains_first: true, plains_second: false,
+          forest_first: false, forest_second: false,
+          mountains_first: false, mountains_second: false,
+          omni: false,
+        },
+        dungeonMiniBossesCleared: ['plains'],
+        dungeonMajorBossesCleared: [],
+      },
+    };
+    const migrated = runStoreMigration(v12Persisted, 12) as { meta: any };
+    // Should now have all 17 keys (8 dungeons × 2 + omni)
+    expect(Object.keys(migrated.meta.compassOwned).length).toBe(17);
+    // Pre-existing value preserved
+    expect(migrated.meta.compassOwned.plains_first).toBe(true);
+    // Old keys default preserved (already false, stays false)
+    expect(migrated.meta.compassOwned.omni).toBe(false);
+    // New 5 dungeons (sea/volcano/underworld/heaven/chaos) default to false
+    expect(migrated.meta.compassOwned.sea_first).toBe(false);
+    expect(migrated.meta.compassOwned.sea_second).toBe(false);
+    expect(migrated.meta.compassOwned.volcano_first).toBe(false);
+    expect(migrated.meta.compassOwned.underworld_second).toBe(false);
+    expect(migrated.meta.compassOwned.heaven_first).toBe(false);
+    expect(migrated.meta.compassOwned.chaos_second).toBe(false);
+  });
+
+  it('v12 envelope preserves truthy compass flags while filling new keys', () => {
+    const v12Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        compassOwned: {
+          plains_first: true, plains_second: true,
+          forest_first: true, forest_second: false,
+          mountains_first: false, mountains_second: false,
+          omni: false,
+        },
+        dungeonMiniBossesCleared: ['plains', 'forest'],
+        dungeonMajorBossesCleared: ['plains'],
+      },
+    };
+    const migrated = runStoreMigration(v12Persisted, 12) as { meta: any };
+    expect(Object.keys(migrated.meta.compassOwned).length).toBe(17);
+    // All original truthy values preserved
+    expect(migrated.meta.compassOwned.plains_first).toBe(true);
+    expect(migrated.meta.compassOwned.plains_second).toBe(true);
+    expect(migrated.meta.compassOwned.forest_first).toBe(true);
+    expect(migrated.meta.compassOwned.forest_second).toBe(false);
+    // Cleared lists untouched
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual(['plains', 'forest']);
+    expect(migrated.meta.dungeonMajorBossesCleared).toEqual(['plains']);
+  });
+
+  it('full chain v8 → v13 expands compass and preserves Phase E fields', () => {
+    // v8 envelope (pre-Phase-Compass, pre-Phase-E)
+    const v8Persisted = {
+      meta: {
+        inventory: { weapons: [], armors: [], accessories: [] },
+        relicStacks: { ...EMPTY_RELIC_STACKS, warrior_banner: 2 },
+        mythicOwned: ['tier1_charm'],
+        adsToday: 3,
+      },
+    };
+    const migrated = runStoreMigration(v8Persisted, 8) as { meta: any };
+    // compassOwned fully expanded to 17 keys
+    expect(Object.keys(migrated.meta.compassOwned).length).toBe(17);
+    expect(migrated.meta.compassOwned.sea_first).toBe(false);
+    expect(migrated.meta.compassOwned.chaos_second).toBe(false);
+    // Phase E fields preserved through chain
+    expect(migrated.meta.relicStacks.warrior_banner).toBe(2);
+    expect(migrated.meta.mythicOwned).toEqual(['tier1_charm']);
+    expect(migrated.meta.adsToday).toBe(3);
+    // Phase Compass cleared lists present
+    expect(migrated.meta.dungeonMiniBossesCleared).toEqual([]);
+    expect(migrated.meta.dungeonMajorBossesCleared).toEqual([]);
+  });
+});
+
 describe('Phase Compass — store actions', () => {
   beforeEach(() => {
     useGameStore.setState({

@@ -386,6 +386,13 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     m.dungeonMiniBossesCleared    = m.dungeonMiniBossesCleared    ?? [];
     m.dungeonMajorBossesCleared   = m.dungeonMajorBossesCleared   ?? [];
   }
+  // v12 → v13: Phase Realms — expand compassOwned to 17 keys (5 new dungeons × 2)
+  // Spread EMPTY_COMPASS_OWNED first (defaults false), then existing values override.
+  // This preserves any pre-existing true keys (e.g. plains_first was true in v12).
+  if (fromVersion <= 12 && s.meta) {
+    const m = s.meta as MetaState;
+    m.compassOwned = { ...EMPTY_COMPASS_OWNED, ...m.compassOwned };
+  }
   return s;
 }
 
@@ -1096,7 +1103,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 12,
+      version: 13,  // 12 → 13 (Phase Realms)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
