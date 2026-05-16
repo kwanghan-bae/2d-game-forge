@@ -399,8 +399,8 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     const m = s.meta as MetaState;
     m.compassOwned = { ...EMPTY_COMPASS_OWNED, ...m.compassOwned };
   }
-  // v13 → v14: Phase Realms — run portion: init playerHp = null
-  if (fromVersion <= 13 && s.run) {
+  // Phase Realms — v12 → v13 (run portion): init playerHp = null
+  if (fromVersion <= 12 && s.run) {
     const r = s.run as RunState;
     if (r.playerHp === undefined) r.playerHp = null;
   }
@@ -1135,7 +1135,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 14,  // 13 → 14 (Phase Realms — RunState.playerHp)
+      version: 13,  // 12 → 13 (Phase Realms — compassOwned + RunState.playerHp)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

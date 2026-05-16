@@ -1745,8 +1745,8 @@ describe('Phase Realms — run.playerHp store actions', () => {
     useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
   });
 
-  it('migration v13 → v14 sets run.playerHp = null when run exists and has no playerHp', () => {
-    const v13State: any = {
+  it('migration v12 → v13 sets run.playerHp = null when run exists and has no playerHp', () => {
+    const v12State: any = {
       meta: {
         inventory: { weapons: [], armors: [], accessories: [] },
         compassOwned: { ...EMPTY_COMPASS_OWNED },
@@ -1758,10 +1758,10 @@ describe('Phase Realms — run.playerHp store actions', () => {
         level: 5,
         bp: 20,
         featherUsed: 0,
-        // no playerHp — v13 envelope
+        // no playerHp — v12 envelope
       },
     };
-    const migrated = runStoreMigration(v13State, 13) as any;
+    const migrated = runStoreMigration(v12State, 12) as any;
     expect(migrated.run.playerHp).toBeNull();
   });
 
