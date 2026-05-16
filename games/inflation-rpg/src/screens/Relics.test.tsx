@@ -52,6 +52,51 @@ describe('Relics — 스택 유물 tab', () => {
   });
 });
 
+describe('Phase Realms — Compass tab 17 entries + locked hint', () => {
+  beforeEach(() => {
+    useGameStore.setState((s) => ({
+      meta: {
+        ...s.meta,
+        ascTier: 0,
+        compassOwned: {
+          plains_first: false,      plains_second: false,
+          forest_first: false,      forest_second: false,
+          mountains_first: false,   mountains_second: false,
+          sea_first: false,         sea_second: false,
+          volcano_first: false,     volcano_second: false,
+          underworld_first: false,  underworld_second: false,
+          heaven_first: false,      heaven_second: false,
+          chaos_first: false,       chaos_second: false,
+          omni: false,
+        },
+      },
+    }));
+  });
+
+  it('renders 17 entries (8 dungeons × 2 + omni) at ascTier=0', () => {
+    render(<Relics />);
+    fireEvent.click(screen.getByTestId('relics-tab-compass'));
+    const rows = screen.getAllByTestId(/^compass-row-/);
+    expect(rows).toHaveLength(17);
+  });
+
+  it('asc-tier-gated dungeon entries show "Tier N 도달 시 해제" hint at ascTier=0', () => {
+    render(<Relics />);
+    fireEvent.click(screen.getByTestId('relics-tab-compass'));
+    // sea_first is gated by tier 1, so at ascTier=0 it should be locked
+    const seaRow = screen.getByTestId('compass-row-sea_first');
+    expect(seaRow.textContent).toMatch(/Tier 1 도달 시 해제/);
+  });
+
+  it('omni entry never shows tier hint', () => {
+    render(<Relics />);
+    fireEvent.click(screen.getByTestId('relics-tab-compass'));
+    const omniRow = screen.getByTestId('compass-row-omni');
+    // omni has dungeonId null, so no tier hint should render
+    expect(omniRow.textContent).not.toMatch(/Tier \d+ 도달 시 해제/);
+  });
+});
+
 describe('Relics — Mythic tab', () => {
   beforeEach(() => {
     useGameStore.setState((s) => ({
