@@ -64,6 +64,7 @@ export const DUNGEONS: Dungeon[] = [
     monsterPool: [
       'coast-eel', 'coast-turtle', 'coast-crab', 'coast-mermaid', 'coast-deepfish',
     ],
+    // sub[2] reuses the major boss — sea region has 5 distinct bosses (Phase Realms reuse-allowed).
     bossIds: {
       mini: 'wave-spirit',
       major: 'dragon-king-guard',
@@ -81,6 +82,7 @@ export const DUNGEONS: Dungeon[] = [
     monsterPool: [
       'volcano-sprite', 'volcano-golem', 'volcano-wyrm', 'volcano-phoenix', 'volcano-lord',
     ],
+    // sub[2] reuses the major boss — volcano region has 5 distinct bosses (Phase Realms reuse-allowed).
     bossIds: {
       mini: 'ash-spirit',
       major: 'fire-warlord',
@@ -102,7 +104,7 @@ export const DUNGEONS: Dungeon[] = [
       mini: 'hell-gate-guard',
       major: 'yama-king',
       sub: ['grudge-general', 'ghost-king', 'hell-door-guardian'],
-      final: 'death-reaper',
+      final: 'death-reaper',  // Phase Realms spec: shared with original 9-boss roster (narrative-justified reuse)
     },
     isHardOnly: false,
   },
@@ -119,7 +121,7 @@ export const DUNGEONS: Dungeon[] = [
       mini: 'cloud-guardian',
       major: 'celestial-garden-spirit',
       sub: ['thunder-celestial', 'celestial-lord', 'heaven-ruler'],
-      final: 'jade-emperor',
+      final: 'jade-emperor',  // Phase Realms spec: shared with mountains.final (deliberate narrative reuse — Heaven's apex matches the Jade Emperor archetype)
     },
     isHardOnly: false,
   },
@@ -132,11 +134,12 @@ export const DUNGEONS: Dungeon[] = [
     monsterPool: [
       'chaos-shard', 'chaos-eroder', 'chaos-mutant', 'chaos-bubble', 'chaos-void',
     ],
+    // sub[2] reuses the mini boss — chaos region has 5 distinct bosses (Phase Realms reuse-allowed).
     bossIds: {
       mini: 'void-boundary-lord',
       major: 'time-destroyer',
       sub: ['god-of-gods', 'primordial-chaos', 'void-boundary-lord'],
-      final: 'final-boss',
+      final: 'final-boss',  // Phase Realms spec: chaos is the ultimate dungeon → reuses the meta-final boss
     },
     isHardOnly: false,
   },

@@ -107,7 +107,9 @@ export function simulateFloor(
   // getMythicCooldownMult is a no-op when phaseE_meta is null (returns 1).
   const skillCdMults: number[] = player.skills.map((_, i) => {
     if (!phaseE_meta) return 1;
-    const kind: SkillKind = (player.skillKinds?.[i]) ?? 'base';
+    // Default skill kind to 'base' — most build configurations are all-base.
+    // Callers (balance-sweep) can populate skillKinds[] explicitly for ult skills.
+    const kind: SkillKind = player.skillKinds?.[i] ?? 'base';
     return getMythicCooldownMult(phaseE_meta, kind);
   });
 
@@ -188,7 +190,7 @@ export function simulateFloor(
     for (let si = 0; si < player.skills.length; si++) {
       const skill = player.skills[si]!;
       const cdMult = skillCdMults[si] ?? 1;
-      // Scale effective cooldown: shorter cooldown → passes isSkillReady sooner.
+      // Effective cooldown reduced by cdMult — shorter cooldown means skill passes isSkillReady() sooner.
       const scaledSkill = cdMult !== 1 ? { ...skill, cooldownSec: skill.cooldownSec * cdMult } : skill;
       const nowMs = tick * TICK_MS;
       if (isSkillReady(skillState, scaledSkill, nowMs)) {
@@ -222,11 +224,12 @@ export function simulateFloor(
     // Evaluate proc for each basic-attack volley; heal is clamped to simHpMax.
     // magnitudeBuff reflects light_of_truth (+25% proc magnitude).
     // Gated behind phaseE_meta — mythic-OFF runs skip this block.
-    // Note: cooldownReduce (gluttony_chalice, on_kill) is NOT modeled here:
-    // simulateFloor covers a single floor (one kill event ends the function),
-    // so there is no cross-kill window in which a reduced cooldown provides value.
+    // Note: cooldownReduce (gluttony_chalice on_kill) is NOT modeled here — simulateFloor returns
+    // on first kill, so there's no cross-kill window in which the cooldown reduction could
+    // provide measurable value. Documented deferral.
     // Phase Realms (d) — infinity_seal XP: not modeled in sim; balance-sweep
     // hardcodes charLv / ascTier as inputs so XP path does not exist in sim.
+    // Skip proc evaluation if no damage was dealt this volley (lifesteal needs damage to scale from).
     if (phaseE_meta && totalDmg > 0) {
       const attackProcs = evaluateMythicProcs(effectsState, 'on_player_attack', {
         damageDealt: totalDmg,
