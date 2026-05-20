@@ -2,6 +2,13 @@ import { SeededRng } from '../cycle/SeededRng';
 import { HeroSpawner } from './HeroSpawner';
 import { HeroLifecycle, type Chapter } from './HeroLifecycle';
 import { PersonalityState } from './PersonalityState';
+import {
+  heroAtkAtLevel,
+  heroHpMaxAtLevel,
+  expRequiredForLevel,
+} from '../cycle/inflationCurve';
+
+const EXP_REQ_BASE = 10;
 
 export interface HeroCreateOpts {
   seed: number;
@@ -21,6 +28,8 @@ export class HeroEntity {
   hp: number;
   hpMax: number;
   atk: number;
+  atkBase: number;
+  hpBase: number;
   bp: number;
   bpMax: number;
   equipment: string[] = [];
@@ -38,6 +47,8 @@ export class HeroEntity {
     this.hp = 0;
     this.hpMax = 0;
     this.atk = 0;
+    this.atkBase = 0;
+    this.hpBase = 0;
     this.bp = 0;
     this.bpMax = 0;
     this.personality = new PersonalityState();
@@ -53,9 +64,11 @@ export class HeroEntity {
     h.job = spawned.job;
     h.level = spawned.level;
     h.exp = 0;
-    h.hp = opts.heroHpMax;
-    h.hpMax = opts.heroHpMax;
-    h.atk = opts.heroAtkBase;
+    h.atkBase = opts.heroAtkBase;
+    h.hpBase = opts.heroHpMax;
+    h.atk = heroAtkAtLevel(h.atkBase, h.level);
+    h.hpMax = heroHpMaxAtLevel(h.hpBase, h.level);
+    h.hp = h.hpMax;
     h.bp = opts.bpMax;
     h.bpMax = opts.bpMax;
     h.personality = PersonalityState.fromTraitPriors(spawned.personalityPriors);
@@ -69,16 +82,19 @@ export class HeroEntity {
       this.exp -= this.expRequired();
       this.level += 1;
       leveled.push(this.level);
-      const hpDelta = Math.floor(this.hpMax * 0.05);
-      this.hpMax += hpDelta;
+      this.recomputeStats();
       this.hp = this.hpMax;
     }
     return { leveled };
   }
 
+  private recomputeStats(): void {
+    this.atk = heroAtkAtLevel(this.atkBase, this.level);
+    this.hpMax = heroHpMaxAtLevel(this.hpBase, this.level);
+  }
+
   private expRequired(): number {
-    // Placeholder curve (Sim-A heritage). Sim-G tunes for inflation.
-    return Math.max(1, Math.floor(10 * Math.pow(this.level, 1.3)));
+    return expRequiredForLevel(EXP_REQ_BASE, this.level);
   }
 
   takeDamage(amount: number): void {
