@@ -3,11 +3,18 @@ import type { HeroEntity } from '../hero/HeroEntity';
 import type { LandmarkKind } from '../data/landmarks';
 import type { OverworldEvent } from './OverworldEvents';
 import { ENEMY_DROPS, BOSS_DROPS } from './dropTable';
+import {
+  enemyHpAtLevel,
+  enemyAtkAtLevel,
+  expGainForKill,
+} from '../cycle/inflationCurve';
 
 const ENEMY_BASE_HP = 30;
 const ENEMY_BASE_ATK = 8;
 const BOSS_HP_MUL = 4;
 const BOSS_ATK_MUL = 2;
+const ENEMY_EXP_BASE = 12;
+const BOSS_EXP_BASE = 60;
 const DROP_RATE = 0.3;
 
 export class EncounterEngine {
@@ -17,8 +24,8 @@ export class EncounterEngine {
     const events: OverworldEvent[] = [];
     if (kind === 'enemy' || kind === 'boss') {
       const isBoss = kind === 'boss';
-      const enemyHp = Math.floor(ENEMY_BASE_HP * (1 + hero.level * 0.4) * (isBoss ? BOSS_HP_MUL : 1));
-      const enemyAtk = Math.floor(ENEMY_BASE_ATK * (1 + hero.level * 0.3) * (isBoss ? BOSS_ATK_MUL : 1));
+      const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : 1);
+      const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : 1);
 
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
@@ -33,7 +40,7 @@ export class EncounterEngine {
         return events;
       }
       // Hero wins
-      const expGain = Math.floor((isBoss ? 60 : 12) * (1 + hero.level * 0.2));
+      const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
       const dropOdds = isBoss ? 0.8 : DROP_RATE;
       const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss) : null;
       if (dropId) hero.addEquipment(dropId);

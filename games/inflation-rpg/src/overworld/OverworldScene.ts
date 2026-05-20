@@ -8,6 +8,10 @@ import { landmarkToCandidate } from './Landmark';
 import type { OverworldEvent } from './OverworldEvents';
 import type { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import type { HeroEntity } from '../hero/HeroEntity';
+import { generateMapLayout, GRID_H, GRID_W, TILE_PX, type MapLayout } from './mapLayout';
+
+export { generateMapLayout, GRID_H, GRID_W };
+export type { MapLayout };
 
 /** Zones that are eligible for enemy respawn by column range. */
 const ENEMY_ZONE_RANGES: Array<{ zone: ZoneId; xMin: number; xMax: number }> = [
@@ -15,79 +19,6 @@ const ENEMY_ZONE_RANGES: Array<{ zone: ZoneId; xMin: number; xMax: number }> = [
   { zone: 'plains',    xMin: 8,  xMax: 11 },
   { zone: 'mountains', xMin: 12, xMax: 16 },
 ];
-
-export const GRID_W = 20;
-export const GRID_H = 12;
-const TILE_PX = 32;
-
-export interface MapLayout {
-  tiles: ZoneId[][]; // [y][x]
-  landmarks: PlacedLandmark[];
-}
-
-/** Pure helper, testable without Phaser. */
-export function generateMapLayout(seed: number): MapLayout {
-  const rng = new SeededRng(seed);
-
-  // Tile layout — vertical bands of biomes for simplicity
-  const tiles: ZoneId[][] = [];
-  for (let y = 0; y < GRID_H; y++) {
-    const row: ZoneId[] = [];
-    for (let x = 0; x < GRID_W; x++) {
-      let zone: ZoneId;
-      if (x < 3)      zone = 'village';
-      else if (x < 8) zone = 'forest';
-      else if (x < 12) zone = 'plains';
-      else if (x < 17) zone = 'mountains';
-      else             zone = 'mystic';
-      row.push(zone);
-    }
-    tiles.push(row);
-  }
-
-  const landmarks: PlacedLandmark[] = [];
-  const place = (typeId: string, gridX: number, gridY: number, instanceSuffix = '') => {
-    const type = LANDMARK_TYPES.find(t => t.id === typeId);
-    if (!type) return;
-    landmarks.push({
-      instanceId: `${typeId}_${gridX}_${gridY}${instanceSuffix}`,
-      type,
-      gridX,
-      gridY,
-      consumed: false,
-    });
-  };
-
-  // Always: a village in village zone
-  place('village', 1, Math.floor(GRID_H / 2));
-
-  // 12 enemies spread across forest/plains/mountains zones
-  const ENEMY_TYPES = ['wolf', 'goblin', 'bandit'];
-  const ENEMY_ZONE_COL_RANGES = [
-    { xMin: 4,  xMax: 7  }, // forest
-    { xMin: 8,  xMax: 11 }, // plains
-    { xMin: 12, xMax: 16 }, // mountains
-  ];
-  for (let i = 0; i < 12; i++) {
-    const enemyTypeId = ENEMY_TYPES[rng.int(ENEMY_TYPES.length)];
-    const zoneRange = ENEMY_ZONE_COL_RANGES[rng.int(ENEMY_ZONE_COL_RANGES.length)];
-    const x = zoneRange.xMin + rng.int(zoneRange.xMax - zoneRange.xMin + 1);
-    const y = rng.int(GRID_H);
-    place(enemyTypeId, x, y, `_e${i}`);
-  }
-
-  // 3 bosses in mountains/mystic
-  place('wolf_lord', 13 + rng.int(3), rng.int(GRID_H));
-  place('wolf_lord', 14 + rng.int(3), rng.int(GRID_H), '_b2');
-  place('dragon', 17 + rng.int(2), rng.int(GRID_H));
-
-  // 1 shrine + 1 cave + 1 ruin in mystic/mountains
-  place('shrine', 18 + rng.int(2), rng.int(GRID_H));
-  place('cave',   15 + rng.int(3), rng.int(GRID_H));
-  place('ruin',   12 + rng.int(4), rng.int(GRID_H));
-
-  return { tiles, landmarks };
-}
 
 interface OverworldSceneData {
   seed: number;

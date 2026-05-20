@@ -19,7 +19,7 @@ export function CyclePrepV2({ onStart, onCancel }: Props) {
     startCycle({
       seed: previewSeed,
       traits: [],
-      bpMax: 30,
+      bpMax: 100,
       heroHpMax: 100,
       heroAtkBase: 50,
     });
