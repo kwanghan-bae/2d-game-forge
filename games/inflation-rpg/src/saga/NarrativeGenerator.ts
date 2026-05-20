@@ -13,6 +13,22 @@ export class NarrativeGenerator {
     return `${opts.age}세에 ${opts.itemNameKR}을(를) 손에 넣었다.`;
   }
 
+  static forJobUnlock(opts: { age: number; jobNameKR: string; tier: number }): string {
+    return `${opts.age}세에 ${opts.jobNameKR}이(가) 되었다. (Tier ${opts.tier})`;
+  }
+
+  static forSkillLearned(opts: { age: number; skillNameKR: string }): string {
+    return `${opts.age}세에 ${opts.skillNameKR}을(를) 익혔다.`;
+  }
+
+  static forShrine(opts: { age: number; healed: number }): string {
+    return `${opts.age}세에 사당에서 기도하여 ${opts.healed.toLocaleString()} 회복했다.`;
+  }
+
+  static forMoralChoice(opts: { age: number; choiceNameKR: string }): string {
+    return `${opts.age}세에 ${opts.choiceNameKR}.`;
+  }
+
   static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string }): string {
     switch (opts.cause) {
       case '전사':

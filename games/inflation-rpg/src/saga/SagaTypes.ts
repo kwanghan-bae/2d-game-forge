@@ -6,6 +6,10 @@ export type SagaEventType =
   | 'battle'
   | 'levelUp'
   | 'drop'
+  | 'jobUnlock'
+  | 'skillLearned'
+  | 'shrine'
+  | 'moralChoice'
   | 'death';
 
 export type DeathCause = '전사' | '자연사' | '영광스러운죽음' | '비극';
