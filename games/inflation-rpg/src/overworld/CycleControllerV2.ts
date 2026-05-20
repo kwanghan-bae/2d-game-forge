@@ -25,6 +25,9 @@ export class CycleControllerV2 {
   private saga: SagaRecorder;
   private endCause: DeathCause | null = null;
   private readonly seed: number;
+  private kills: number = 0;
+  private bossKills: number = 0;
+  private drops: number = 0;
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
@@ -42,6 +45,9 @@ export class CycleControllerV2 {
   getHero(): HeroEntity { return this.hero; }
   getDecisionAI(): HeroDecisionAI { return this.ai; }
   getSeed(): number { return this.seed; }
+  getStats(): { kills: number; bossKills: number; drops: number } {
+    return { kills: this.kills, bossKills: this.bossKills, drops: this.drops };
+  }
 
   handleArrival(kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     if (this.hero.dead) return [];
@@ -49,6 +55,7 @@ export class CycleControllerV2 {
 
     for (const ev of events) {
       if (ev.type === 'battle_won') {
+        if (kind === 'boss') this.bossKills += 1; else this.kills += 1;
         const enemyType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id)) ?? null;
         const enemyNameKR = enemyType?.nameKR ?? '적';
         this.saga.record({
@@ -58,6 +65,7 @@ export class CycleControllerV2 {
           payload: { enemyId: landmarkId, expGain: ev.expGain },
         });
         if (ev.dropId) {
+          this.drops += 1;
           const dropItem = lookupDrop(ev.dropId);
           const itemNameKR = dropItem?.nameKR ?? ev.dropId;
           this.saga.record({
@@ -76,14 +84,8 @@ export class CycleControllerV2 {
           payload: { from: ev.from, to: ev.to },
         });
       }
-      if (ev.type === 'job_unlocked') {
-        this.saga.record({
-          age: this.hero.age,
-          type: 'jobUnlock',
-          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: ev.jobNameKR, tier: ev.tier }),
-          payload: { jobId: ev.jobId, tier: ev.tier },
-        });
-      }
+      // job_unlocked events come only from the post-arrival maybeUnlockJobForAge
+      // hook below — never from resolveEncounter — so no branch here.
       if (ev.type === 'skill_learned') {
         this.saga.record({
           age: this.hero.age,

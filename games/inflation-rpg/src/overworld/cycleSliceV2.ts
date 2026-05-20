@@ -32,13 +32,15 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     if (!ctrl) return;
     const saga = ctrl.finalize();
     SagaStorage.append(saga);
-    // Award sponsorGold based on cycle performance.
+    // Award sponsorGold based on cycle performance. Counters come from the
+    // controller's running tally, not an equipment.length approximation.
     const hero = ctrl.getHero();
+    const stats = ctrl.getStats();
     const gold = goldFromCycle({
       maxLevel: hero.level,
-      kills: hero.equipment.length, // approximation; sim-cycle-v2 has precise counters
-      bossKills: 0,
-      drops: hero.equipment.length,
+      kills: stats.kills,
+      bossKills: stats.bossKills,
+      drops: stats.drops,
     });
     useGameStore.setState(s => ({
       ...s,
