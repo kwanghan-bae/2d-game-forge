@@ -76,6 +76,38 @@ export class CycleControllerV2 {
           payload: { from: ev.from, to: ev.to },
         });
       }
+      if (ev.type === 'job_unlocked') {
+        this.saga.record({
+          age: this.hero.age,
+          type: 'jobUnlock',
+          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: ev.jobNameKR, tier: ev.tier }),
+          payload: { jobId: ev.jobId, tier: ev.tier },
+        });
+      }
+      if (ev.type === 'skill_learned') {
+        this.saga.record({
+          age: this.hero.age,
+          type: 'skillLearned',
+          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }),
+          payload: { skillId: ev.skillId, atkBefore: ev.atkBefore, atkAfter: ev.atkAfter },
+        });
+      }
+      if (ev.type === 'shrine_visited') {
+        this.saga.record({
+          age: this.hero.age,
+          type: 'shrine',
+          narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }),
+          payload: { landmarkId: ev.landmarkId },
+        });
+      }
+      if (ev.type === 'moral_choice') {
+        this.saga.record({
+          age: this.hero.age,
+          type: 'moralChoice',
+          narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }),
+          payload: { choice: ev.choice, dim: ev.dim, delta: ev.delta },
+        });
+      }
       if (ev.type === 'hero_died') {
         this.endCause = ev.cause;
         const enemyType = ev.enemyId ? LANDMARK_TYPES.find(t => ev.enemyId!.startsWith(t.id)) : null;
@@ -88,6 +120,22 @@ export class CycleControllerV2 {
             enemyNameKR: enemyType?.nameKR,
           }),
           payload: {},
+        });
+      }
+    }
+
+    // After resolving the encounter, the hero's age may have advanced via BP
+    // drain. Check for job-unlock milestones.
+    if (!this.hero.dead) {
+      const jobs = this.hero.maybeUnlockJobForAge(this.hero.age);
+      for (const j of jobs) {
+        const jobEv = { type: 'job_unlocked' as const, jobId: j.jobId, jobNameKR: j.jobNameKR, tier: j.tier };
+        events.push(jobEv);
+        this.saga.record({
+          age: this.hero.age,
+          type: 'jobUnlock',
+          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }),
+          payload: { jobId: j.jobId, tier: j.tier },
         });
       }
     }

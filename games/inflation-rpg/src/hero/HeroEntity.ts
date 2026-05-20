@@ -7,8 +7,17 @@ import {
   heroHpMaxAtLevel,
   expRequiredForLevel,
 } from '../cycle/inflationCurve';
+import { JobSystem } from './JobSystem';
+import type { JobMilestone } from '../data/jobs';
+import { lookupDrop } from '../overworld/dropTable';
 
 const EXP_REQ_BASE = 10;
+
+export interface JobUnlockResult {
+  jobId: string;
+  jobNameKR: string;
+  tier: 1 | 2 | 3;
+}
 
 export interface HeroCreateOpts {
   seed: number;
@@ -35,6 +44,9 @@ export class HeroEntity {
   equipment: string[] = [];
   dead: boolean = false;
   personality: PersonalityState;
+  unlockedJobId: string | null = null;
+  unlockedMilestones: Set<JobMilestone> = new Set();
+  learnedSkillIds: Set<string> = new Set();
 
   private constructor() {
     this.name = '';
@@ -88,9 +100,40 @@ export class HeroEntity {
     return { leveled };
   }
 
-  private recomputeStats(): void {
+  /** Public so that JobSystem / SkillLearningSystem / equipment can mutate base
+   *  stats and have the level-scaled values re-derived. */
+  recomputeStats(): void {
     this.atk = heroAtkAtLevel(this.atkBase, this.level);
     this.hpMax = heroHpMaxAtLevel(this.hpBase, this.level);
+  }
+
+  /** Called by CycleControllerV2 after each arrival. Checks for age milestones
+   *  and unlocks a job if one matches the current personality. Returns the
+   *  list of newly unlocked jobs (typically 0 or 1, but technically possible
+   *  to skip multiple if age jumps via large BP step). */
+  maybeUnlockJobForAge(currentAge: number): JobUnlockResult[] {
+    const milestones: Array<{ age: number; m: JobMilestone }> = [
+      { age: 10, m: 'age10' },
+      { age: 30, m: 'age30' },
+      { age: 50, m: 'age50' },
+    ];
+    const out: JobUnlockResult[] = [];
+    for (const ms of milestones) {
+      if (currentAge < ms.age) continue;
+      if (this.unlockedMilestones.has(ms.m)) continue;
+      this.unlockedMilestones.add(ms.m);
+      const job = JobSystem.evaluate(this, ms.m);
+      if (!job) continue;
+      this.unlockedJobId = job.id;
+      this.job = job.nameKR;
+      this.emoji = job.emoji;
+      this.atkBase = Math.floor(this.atkBase * job.atkMul);
+      this.hpBase = Math.floor(this.hpBase * job.hpMul);
+      this.recomputeStats();
+      this.hp = this.hpMax;
+      out.push({ jobId: job.id, jobNameKR: job.nameKR, tier: job.tier });
+    }
+    return out;
   }
 
   private expRequired(): number {
@@ -120,5 +163,13 @@ export class HeroEntity {
 
   addEquipment(itemId: string): void {
     this.equipment.push(itemId);
+    // Additive flat bonuses. Multiplicative would compound across N drops and
+    // break the Sim-G curve — see 2026-05-21-sim-g-v1a-report.md §V1b.
+    const item = lookupDrop(itemId);
+    if (item) {
+      this.atkBase += item.atkFlat;
+      this.hpBase += item.hpFlat;
+      this.recomputeStats();
+    }
   }
 }
