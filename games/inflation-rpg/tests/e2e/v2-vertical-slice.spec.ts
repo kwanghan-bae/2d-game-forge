@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Phase V1a vertical slice', () => {
   test('Start cycle → overworld → BP exhausted → result screen → back to menu', async ({ page }) => {
-    test.setTimeout(120_000);
+    // bpMax = 100 (Sim-G) means a live cycle runs ~5-10 minutes. Tween + arrival
+    // delay = ~3-5s per arrival × ~98 arrivals → up to ~9 min wall clock.
+    test.setTimeout(720_000);
 
     await page.goto('/games/inflation-rpg');
     await page.evaluate(() => localStorage.removeItem('korea_inflation_rpg_save'));
@@ -21,8 +23,8 @@ test.describe('Phase V1a vertical slice', () => {
     await expect(page.getByTestId('overworld-runner')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('overworld-hud')).toBeVisible();
 
-    // Wait for cycle-result (up to 90s for the auto cycle to drain BP)
-    await expect(page.getByTestId('cycle-result-v2')).toBeVisible({ timeout: 90_000 });
+    // Wait for cycle-result (bpMax=100 ⇒ ~5-10 min live)
+    await expect(page.getByTestId('cycle-result-v2')).toBeVisible({ timeout: 600_000 });
     await expect(page.getByTestId('result-hero-name')).toBeVisible();
     await expect(page.getByTestId('result-narrative-list')).toBeVisible();
 
