@@ -239,6 +239,13 @@ export interface MetaState {
   traitsUnlocked: TraitId[];
   // Phase V1a — 사가 히스토리 (최근 100 항목 FIFO)
   sagaHistory: CycleSaga[];
+  // Phase Sim-M (meta progression) — cycle 간 영구 자원
+  /** 신의 후원금. 사이클 종료 시 누적. atkBaseBonus / hpBaseBonus 구매에 사용. */
+  sponsorGold: number;
+  /** 다음 cycle 시작 시 hero.atkBase 에 더해질 영구 보너스. */
+  atkBaseBonus: number;
+  /** 다음 cycle 시작 시 hero.hpBase 에 더해질 영구 보너스. */
+  hpBaseBonus: number;
 }
 
 // Phase G — Ascension Tree (성좌)

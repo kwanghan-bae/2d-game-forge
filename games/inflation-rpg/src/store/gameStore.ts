@@ -133,6 +133,10 @@ export const INITIAL_META: MetaState = {
   traitsUnlocked: [...BASE_TRAIT_IDS],
   // Phase V1a — 사가 히스토리
   sagaHistory: [],
+  // Phase Sim-M (meta progression)
+  sponsorGold: 0,
+  atkBaseBonus: 0,
+  hpBaseBonus: 0,
 };
 
 interface GameStore {
@@ -451,6 +455,12 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v16 → v17: Phase V1a — sagaHistory: CycleSaga[]
   if (fromVersion <= 16 && s.meta) {
     if (!s.meta.sagaHistory) s.meta.sagaHistory = [];
+  }
+  // v17 → v18: Phase Sim-M — sponsorGold / atkBaseBonus / hpBaseBonus
+  if (fromVersion <= 17 && s.meta) {
+    if (s.meta.sponsorGold == null) s.meta.sponsorGold = 0;
+    if (s.meta.atkBaseBonus == null) s.meta.atkBaseBonus = 0;
+    if (s.meta.hpBaseBonus == null) s.meta.hpBaseBonus = 0;
   }
   return s;
 }
@@ -1204,7 +1214,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 17,  // 16 → 17 (Phase V1a — sagaHistory: CycleSaga[])
+      version: 18,  // 17 → 18 (Phase Sim-M — sponsorGold / atkBaseBonus / hpBaseBonus)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

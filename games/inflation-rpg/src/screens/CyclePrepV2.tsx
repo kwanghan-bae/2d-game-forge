@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { HeroSpawner } from '../hero/HeroSpawner';
 import { SeededRng } from '../cycle/SeededRng';
+import { useGameStore } from '../store/gameStore';
 
 interface Props {
   onStart: () => void;
@@ -10,6 +11,9 @@ interface Props {
 
 export function CyclePrepV2({ onStart, onCancel }: Props) {
   const startCycle = useCycleStoreV2(s => s.start);
+  const atkBaseBonus = useGameStore(s => s.meta.atkBaseBonus ?? 0);
+  const hpBaseBonus = useGameStore(s => s.meta.hpBaseBonus ?? 0);
+  const sponsorGold = useGameStore(s => s.meta.sponsorGold ?? 0);
 
   // Preview today's hero with deterministic seed-of-the-moment
   const previewSeed = useMemo(() => Date.now() & 0xffffffff, []);
@@ -20,8 +24,8 @@ export function CyclePrepV2({ onStart, onCancel }: Props) {
       seed: previewSeed,
       traits: [],
       bpMax: 100,
-      heroHpMax: 100,
-      heroAtkBase: 50,
+      heroHpMax: 100 + hpBaseBonus,
+      heroAtkBase: 50 + atkBaseBonus,
     });
     onStart();
   };
@@ -52,8 +56,13 @@ export function CyclePrepV2({ onStart, onCancel }: Props) {
         </button>
       </div>
 
+      <div style={{ marginTop: 20, fontSize: 12, opacity: 0.7 }}>
+        <div>신의 후원금: {sponsorGold.toLocaleString()}</div>
+        <div>영구 보너스: ATK +{atkBaseBonus} / HP +{hpBaseBonus}</div>
+      </div>
+
       <p style={{ marginTop: 24, fontSize: 11, opacity: 0.5 }}>
-        trait 선택 / 가호 / 자원 후원 = V1b 에서 구현
+        trait 선택 / 가호 / 후원금 사용 UI = V1c 에서 구현
       </p>
     </div>
   );
