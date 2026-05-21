@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
-test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked', async ({ page }) => {
+test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression', async ({ page }) => {
   // 1. 빈 localStorage 로 시작
   await page.goto(GAME_URL);
 
@@ -26,25 +26,25 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
     localStorage.setItem(key, JSON.stringify(v8Save));
   }, SAVE_KEY);
 
-  // 3. 게임 reload — zustand persist 가 v8 → v9 → v10 → v11 → v12 → v13 → v14 → v15 → v16 체인 마이그레이션 실행
+  // 3. 게임 reload — zustand persist 가 v8 → v9 → v10 → v11 → v12 → v13 → v14 → v15 → v16 → v17 체인 마이그레이션 실행
   await page.reload();
   await page.waitForFunction(
     (key) => {
       const raw = localStorage.getItem(key);
-      return !!raw && JSON.parse(raw).version === 16;
+      return !!raw && JSON.parse(raw).version === 18;
     },
     SAVE_KEY,
     { timeout: 10000 }
   );
 
-  // 4. localStorage 검증 — version 16 + v9 modifiers + v10 ascTree + v11 Phase E + v12 Phase Compass + v13 Phase Realms + v14 Phase 5 IAP + v15 Phase Sim-A + v16 Phase Sim-B
+  // 4. localStorage 검증 — version 17 + v9 modifiers + v10 ascTree + v11 Phase E + v12 Phase Compass + v13 Phase Realms + v14 Phase 5 IAP + v15 Phase Sim-A + v16 Phase Sim-B + v17 Phase V1a
   const migratedState = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   }, SAVE_KEY);
 
   expect(migratedState).toBeTruthy();
-  expect(migratedState.version).toBe(16);
+  expect(migratedState.version).toBe(18);
   // v9 — auto-rolled modifiers
   expect(migratedState.state.meta.inventory.weapons[0].modifiers).toBeDefined();
   expect(Array.isArray(migratedState.state.meta.inventory.weapons[0].modifiers)).toBe(true);
@@ -109,4 +109,12 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   // mid/rare traits NOT in initial unlock pool
   expect(migratedState.state.meta.traitsUnlocked).not.toContain('t_boss_hunter');
   expect(migratedState.state.meta.traitsUnlocked).not.toContain('t_terminal_genius');
+
+  // v17 Phase V1a — sagaHistory[]
+  expect(migratedState.state.meta.sagaHistory).toEqual([]);
+
+  // v18 Phase Sim-M — sponsorGold + atkBaseBonus + hpBaseBonus
+  expect(migratedState.state.meta.sponsorGold).toBe(0);
+  expect(migratedState.state.meta.atkBaseBonus).toBe(0);
+  expect(migratedState.state.meta.hpBaseBonus).toBe(0);
 });
