@@ -131,6 +131,12 @@ export const INITIAL_META: MetaState = {
   cycleHistory: [],
   // Phase Sim-B — 해금된 trait 목록 (기본값 = 모든 base-tier traits)
   traitsUnlocked: [...BASE_TRAIT_IDS],
+  // Phase V1a — 사가 히스토리
+  sagaHistory: [],
+  // Phase Sim-M (meta progression)
+  sponsorGold: 0,
+  atkBaseBonus: 0,
+  hpBaseBonus: 0,
 };
 
 interface GameStore {
@@ -446,6 +452,16 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
       s.meta.traitsUnlocked = [...BASE_TRAIT_IDS];
     }
   }
+  // v16 → v17: Phase V1a — sagaHistory: CycleSaga[]
+  if (fromVersion <= 16 && s.meta) {
+    if (!s.meta.sagaHistory) s.meta.sagaHistory = [];
+  }
+  // v17 → v18: Phase Sim-M — sponsorGold / atkBaseBonus / hpBaseBonus
+  if (fromVersion <= 17 && s.meta) {
+    if (s.meta.sponsorGold == null) s.meta.sponsorGold = 0;
+    if (s.meta.atkBaseBonus == null) s.meta.atkBaseBonus = 0;
+    if (s.meta.hpBaseBonus == null) s.meta.hpBaseBonus = 0;
+  }
   return s;
 }
 
@@ -467,7 +483,7 @@ export const useGameStore = create<GameStore>()(
             currentDungeonId: s.run.currentDungeonId, // preserve dungeon selection from Town
             bp: STARTING_BP + s.meta.ascTree.bp_start,   // Phase G — bp_start node
           },
-          screen: 'dungeon-floors',
+          screen: 'main-menu',
         })),
 
       endRun: () => {
@@ -484,7 +500,7 @@ export const useGameStore = create<GameStore>()(
             characterLevels: { ...meta.characterLevels, [charId]: prevCharLv + 1 },
             lastPlayedCharId: charId,
           },
-          screen: 'game-over',
+          screen: 'main-menu',
         });
         if (charId) get().awardJpOnCharLvMilestone(charId);
       },
@@ -1198,7 +1214,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 16,  // 15 → 16 (Phase Sim-B — traitsUnlocked: TraitId[])
+      version: 18,  // 17 → 18 (Phase Sim-M — sponsorGold / atkBaseBonus / hpBaseBonus)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

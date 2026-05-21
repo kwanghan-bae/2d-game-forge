@@ -16,13 +16,13 @@ describe('GameStore', () => {
     expect(useGameStore.getState().screen).toBe('main-menu');
   });
 
-  it('startRun: sets characterId, resets run, navigates to dungeon-floors', () => {
+  it('startRun: sets characterId, resets run, navigates to main-menu', () => {
     useGameStore.getState().startRun('hwarang', false);
     const state = useGameStore.getState();
     expect(state.run.characterId).toBe('hwarang');
     expect(state.run.bp).toBe(30);
     expect(state.run.level).toBe(1);
-    expect(state.screen).toBe('dungeon-floors');
+    expect(state.screen).toBe('main-menu');
   });
 
   it('encounterMonster: decrements BP by encounterCost(level)', () => {
@@ -71,7 +71,7 @@ describe('GameStore', () => {
     useGameStore.getState().gainLevels(999, 0);
     useGameStore.getState().endRun();
     expect(useGameStore.getState().meta.bestRunLevel).toBe(1000);
-    expect(useGameStore.getState().screen).toBe('game-over');
+    expect(useGameStore.getState().screen).toBe('main-menu');
   });
 
   it('addEquipment: adds to inventory', () => {
@@ -317,10 +317,10 @@ describe('Phase B-3α — currentFloor + dungeon-floors routing', () => {
     expect(useGameStore.getState().run.currentFloor).toBe(7);
   });
 
-  it('startRun routes to dungeon-floors when currentDungeonId is set', () => {
+  it('startRun routes to main-menu when currentDungeonId is set', () => {
     useGameStore.getState().selectDungeon('plains');
     useGameStore.getState().startRun('hwarang', false);
-    expect(useGameStore.getState().screen).toBe('dungeon-floors');
+    expect(useGameStore.getState().screen).toBe('main-menu');
     expect(useGameStore.getState().run.currentDungeonId).toBe('plains');
     expect(useGameStore.getState().run.currentFloor).toBe(1);
   });

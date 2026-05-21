@@ -6,19 +6,16 @@ describe('sound system', () => {
     _resetSoundForTest();
   });
 
-  it('bgmIdForScreen maps known screens', () => {
+  it('bgmIdForScreen maps known v1a screens', () => {
     expect(bgmIdForScreen('main-menu')).toBe('lobby');
-    expect(bgmIdForScreen('class-select')).toBe('lobby');
-    expect(bgmIdForScreen('town')).toBe('lobby');
-    expect(bgmIdForScreen('dungeon-floors')).toBe('lobby');
-    expect(bgmIdForScreen('ascension')).toBe('lobby');
-    expect(bgmIdForScreen('inventory')).toBe('field');
-    expect(bgmIdForScreen('battle')).toBe('battle');
+    expect(bgmIdForScreen('cycle-prep-v2')).toBe('lobby');
+    expect(bgmIdForScreen('overworld')).toBe('field');
+    expect(bgmIdForScreen('cycle-result-v2')).toBe('lobby');
   });
 
   it('bgmIdForScreen returns null for unmapped screens', () => {
-    expect(bgmIdForScreen('stat-alloc')).toBeNull();
-    expect(bgmIdForScreen('game-over')).toBeNull();
+    expect(bgmIdForScreen('settings')).toBeNull();
+    expect(bgmIdForScreen('saga-gallery')).toBeNull();
   });
 
   it('setVolumes clamps to [0, 1]', () => {
