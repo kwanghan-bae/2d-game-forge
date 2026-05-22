@@ -49,9 +49,21 @@ export class CycleControllerV2 {
     return { kills: this.kills, bossKills: this.bossKills, drops: this.drops };
   }
 
+  /** Most recent saga events (already batched + narrative-formatted) for the
+   *  live OverworldRunner log overlay. */
+  getRecentSagaEvents(limit: number): readonly import('../saga/SagaTypes').SagaEvent[] {
+    const all = this.saga.getEvents();
+    return all.slice(Math.max(0, all.length - limit));
+  }
+
   handleArrival(kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     if (this.hero.dead) return [];
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
+
+    // Collect level_ups for end-of-arrival batched record.
+    let levelFrom = -1;
+    let levelTo = -1;
+    let levelCount = 0;
 
     for (const ev of events) {
       if (ev.type === 'battle_won') {
@@ -77,12 +89,9 @@ export class CycleControllerV2 {
         }
       }
       if (ev.type === 'level_up') {
-        this.saga.record({
-          age: this.hero.age,
-          type: 'levelUp',
-          narrativeText: NarrativeGenerator.forLevelUp({ age: this.hero.age, newLevel: ev.to }),
-          payload: { from: ev.from, to: ev.to },
-        });
+        if (levelCount === 0) levelFrom = ev.from;
+        levelTo = ev.to;
+        levelCount += 1;
       }
       // job_unlocked events come only from the post-arrival maybeUnlockJobForAge
       // hook below — never from resolveEncounter — so no branch here.
@@ -124,6 +133,19 @@ export class CycleControllerV2 {
           payload: {},
         });
       }
+    }
+
+    // Flush the collected level_ups as one saga record. Avoids 수십 줄 spam
+    // from late-game `expGain ∝ lv^1.8` (kill 당 70+ level-ups).
+    if (levelCount > 0) {
+      this.saga.record({
+        age: this.hero.age,
+        type: 'levelUp',
+        narrativeText: NarrativeGenerator.forLevelUpBatch({
+          age: this.hero.age, fromLevel: levelFrom, toLevel: levelTo, count: levelCount,
+        }),
+        payload: { from: levelFrom, to: levelTo, count: levelCount },
+      });
     }
 
     // After resolving the encounter, the hero's age may have advanced via BP

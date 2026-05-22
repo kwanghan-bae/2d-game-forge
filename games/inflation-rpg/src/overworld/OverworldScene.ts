@@ -25,6 +25,8 @@ interface OverworldSceneData {
   hero: HeroEntity;
   ai: HeroDecisionAI;
   onEvent: (event: OverworldEvent) => void;
+  /** Initial speed multiplier (1 = normal, 10 = 10x). Mutable later via setSpeed(). */
+  initialSpeed?: number;
 }
 
 export class OverworldScene extends Phaser.Scene {
@@ -36,10 +38,10 @@ export class OverworldScene extends Phaser.Scene {
   private landmarkSprites: Map<string, Phaser.GameObjects.Text> = new Map();
   private currentPath: { x: number; y: number }[] = [];
   private currentTarget: PlacedLandmark | null = null;
-  private moveTimer: Phaser.Time.TimerEvent | null = null;
   private pathfinder!: Pathfinder;
   private sceneRng!: SeededRng;
   private respawnCounter: number = 0;
+  private initialSpeed: number = 1;
 
   constructor() { super('OverworldScene'); }
 
@@ -51,10 +53,21 @@ export class OverworldScene extends Phaser.Scene {
     // Scene-level RNG for respawn placement (derived from seed to stay deterministic).
     this.sceneRng = new SeededRng(data.seed ^ 0xabcd1234);
     this.respawnCounter = 0;
+    this.initialSpeed = data.initialSpeed ?? 1;
+  }
+
+  /** Scale both tween duration (movement) and delayedCall (post-arrival pause)
+   *  by the same factor so the cycle plays uniformly faster. Callable while
+   *  the scene is running — OverworldRunner uses this for the speed buttons. */
+  setSpeed(multiplier: number): void {
+    const clamped = Math.max(0.25, Math.min(20, multiplier));
+    this.tweens.timeScale = clamped;
+    this.time.timeScale = clamped;
   }
 
   create() {
     this.cameras.main.setBackgroundColor('#0a0e1a');
+    this.setSpeed(this.initialSpeed);
 
     // Render tile background
     for (let y = 0; y < GRID_H; y++) {
