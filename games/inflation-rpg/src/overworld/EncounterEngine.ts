@@ -9,6 +9,7 @@ import {
   expGainForKill,
 } from '../cycle/inflationCurve';
 import { SkillLearningSystem, isSkillMilestoneLevel } from '../hero/SkillLearningSystem';
+import { findEncounterForKind, selectBranch } from '../data/personalityEncounters';
 
 const ENEMY_BASE_HP = 30;
 const ENEMY_BASE_ATK = 8;
@@ -19,6 +20,8 @@ const BOSS_EXP_BASE = 60;
 const DROP_RATE = 0.3;
 const SHRINE_SKILL_GRANT_RATE = 0.4;
 const SHRINE_HEAL_FRACTION = 0.4;
+const MERCIFUL_PROC_RATE = 0.15;
+const MERCIFUL_DRIFT = 3;
 
 export class EncounterEngine {
   constructor(private readonly rng: SeededRng) {}
@@ -50,6 +53,26 @@ export class EncounterEngine {
       hero.consumeBp(isBoss ? 3 : 1);
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+
+      // V1c-1 — merciful drift proc on non-boss kills. Sign branches on the
+      // hero's current merciful so a prior=0 hero is nudged toward whichever
+      // tendency surfaces first and subsequent procs compound that direction.
+      if (!isBoss && this.rng.chance(MERCIFUL_PROC_RATE)) {
+        const current = hero.personality.get('merciful');
+        const sparing = current >= 0;
+        const delta = sparing ? MERCIFUL_DRIFT : -MERCIFUL_DRIFT;
+        hero.personality.adjust('merciful', delta);
+        events.push({
+          type: 'moral_choice',
+          choice: sparing ? 'spare_enemy' : 'execute_enemy',
+          dim: 'merciful',
+          delta,
+          nameKR: sparing
+            ? '쓰러진 적을 살려보내며 자비가 깊어졌다'
+            : '쓰러진 적을 처형하여 잔혹함이 굳어졌다',
+        });
+      }
+
       for (const newLv of leveled) {
         events.push({ type: 'level_up', from: newLv - 1, to: newLv });
         if (isSkillMilestoneLevel(newLv)) {
@@ -101,6 +124,25 @@ export class EncounterEngine {
         events.push({ type: 'moral_choice', choice: 'resist_bandits', dim: 'moral', delta: 2, nameKR: '강도단에 맞서 약자를 지켰다' });
       }
       hero.consumeBp(0);
+    } else {
+      // V1c-1 personality drift landmarks (watchtower / treasure_cave /
+      // holy_ruin / crossroads). The catalog lookup is exhaustive for these
+      // kinds; an unknown kind is silently a no-op so the engine stays open
+      // to future LandmarkKind additions.
+      const enc = findEncounterForKind(kind);
+      if (enc) {
+        const current = hero.personality.get(enc.dim);
+        const branch = selectBranch(current, enc);
+        hero.personality.adjust(enc.dim, branch.delta);
+        events.push({
+          type: 'moral_choice',
+          choice: branch.choice,
+          dim: enc.dim,
+          delta: branch.delta,
+          nameKR: branch.nameKR,
+        });
+        hero.consumeBp(0);
+      }
     }
     return events;
   }

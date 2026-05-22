@@ -68,5 +68,18 @@ export function generateMapLayout(seed: number): MapLayout {
   place('cave',   15 + rng.int(3), rng.int(GRID_H));
   place('ruin',   12 + rng.int(4), rng.int(GRID_H));
 
+  // V1c-1 — personality drift landmarks. Two of each so prior=0 dim heroes
+  // get two visits per cycle and can reach the tier-3 threshold (±6) via
+  // ±3 drift × 2. Single-visit per landmark (consumed=true after; no respawn
+  // for non-enemy kinds), so instance count = visit budget for the cycle.
+  place('watchtower',    3 + rng.int(3),  rng.int(GRID_H));
+  place('watchtower',    4 + rng.int(3),  rng.int(GRID_H), '_b');
+  place('treasure_cave', 12 + rng.int(3), rng.int(GRID_H));
+  place('treasure_cave', 13 + rng.int(3), rng.int(GRID_H), '_b');
+  place('holy_ruin',     17 + rng.int(2), rng.int(GRID_H));
+  place('holy_ruin',     18 + rng.int(2), rng.int(GRID_H), '_b');
+  place('crossroads',    8 + rng.int(3),  rng.int(GRID_H));
+  place('crossroads',    9 + rng.int(3),  rng.int(GRID_H), '_b');
+
   return { tiles, landmarks };
 }

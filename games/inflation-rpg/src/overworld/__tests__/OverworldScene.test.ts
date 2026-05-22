@@ -50,4 +50,17 @@ describe('generateMapLayout', () => {
     expect(a.landmarks.map(l => l.instanceId + ':' + l.gridX + ',' + l.gridY))
       .toEqual(b.landmarks.map(l => l.instanceId + ':' + l.gridX + ',' + l.gridY));
   });
+
+  // V1c-1 — each new drift kind gets 2 instances so prior=0 heroes can still
+  // reach the tier-3 personality threshold via ±3 drift × 2 visits.
+  it.each([
+    ['watchtower'],
+    ['treasure_cave'],
+    ['holy_ruin'],
+    ['crossroads'],
+  ] as const)('places at least 2 %s landmarks', (kindId) => {
+    const layout = generateMapLayout(42);
+    const matches = layout.landmarks.filter(l => l.type.kind === kindId);
+    expect(matches.length).toBeGreaterThanOrEqual(2);
+  });
 });
