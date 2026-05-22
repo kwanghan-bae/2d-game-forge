@@ -1,13 +1,17 @@
 export type LandmarkKind =
-  | 'village'   // 마을 (safe / market in future)
-  | 'enemy'     // 일반 적 spawn point
-  | 'boss'      // boss spawn point
-  | 'shrine'    // 사당 (V1b 가 wire)
-  | 'cave'      // 동굴 (V1b 가 wire — special encounter)
-  | 'market'    // 시장 (V1b)
-  | 'ruin'      // 폐허 (V1b)
-  | 'exit'      // exit / 다음 zone 진입
-  | 'rival';    // 라이벌 (V1b)
+  | 'village'       // 마을 (safe / market in future)
+  | 'enemy'         // 일반 적 spawn point
+  | 'boss'          // boss spawn point
+  | 'shrine'        // 사당 (V1b 가 wire)
+  | 'cave'          // 동굴 (V1b 가 wire — special encounter)
+  | 'market'        // 시장 (V1b)
+  | 'ruin'          // 폐허 (V1b)
+  | 'exit'          // exit / 다음 zone 진입
+  | 'rival'         // 라이벌 (V1b)
+  | 'watchtower'    // 망루 — heroic drift 인카운터 (V1c-1)
+  | 'treasure_cave' // 보물동굴 — prudent drift 인카운터 (V1c-1)
+  | 'holy_ruin'     // 신성유적 — pious drift 인카운터 (V1c-1)
+  | 'crossroads';   // 갈림길 — moral drift 인카운터 (V1c-1)
 
 export interface LandmarkType {
   id: string;
@@ -27,5 +31,10 @@ export const LANDMARK_TYPES: readonly LandmarkType[] = [
   { id: 'cave',       nameKR: '동굴',         emoji: '🕳️', kind: 'cave' },
   { id: 'market',     nameKR: '시장',         emoji: '🛒', kind: 'market' },
   { id: 'ruin',       nameKR: '폐허',         emoji: '🏛️', kind: 'ruin' },
-  { id: 'exit',       nameKR: '경계',         emoji: '🚪', kind: 'exit' },
+  { id: 'exit',         nameKR: '경계',         emoji: '🚪', kind: 'exit' },
+  // V1c-1: personality drift 인카운터 랜드마크
+  { id: 'watchtower',   nameKR: '망루',         emoji: '🗼', kind: 'watchtower' },
+  { id: 'treasure_cave', nameKR: '보물동굴',   emoji: '💎', kind: 'treasure_cave' },
+  { id: 'holy_ruin',    nameKR: '신성유적',     emoji: '⛩️', kind: 'holy_ruin' },
+  { id: 'crossroads',   nameKR: '갈림길',       emoji: '🚦', kind: 'crossroads' },
 ];
