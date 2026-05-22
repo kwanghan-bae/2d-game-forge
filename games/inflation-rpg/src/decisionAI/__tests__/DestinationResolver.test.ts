@@ -19,7 +19,6 @@ describe('DestinationResolver', () => {
   });
 
   it('prefers boss when heroic personality is high', () => {
-    const r = new DestinationResolver(new SeededRng(1));
     const p = PersonalityState.fromTraitPriors({ heroic: 8 });
     // Run multiple seeds; >50% boss expected
     let bossPicks = 0;
@@ -43,7 +42,6 @@ describe('DestinationResolver', () => {
   });
 
   it('always returns a candidate from the input list', () => {
-    const r = new DestinationResolver(new SeededRng(42));
     for (let seed = 0; seed < 20; seed++) {
       const r2 = new DestinationResolver(new SeededRng(seed));
       const chosen = r2.choose(candidates(), { traits: [], personality: new PersonalityState() });

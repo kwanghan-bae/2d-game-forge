@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LANDMARK_TYPES, type LandmarkType } from '../landmarks';
+import { LANDMARK_TYPES } from '../landmarks';
 
 describe('LANDMARK_TYPES', () => {
   it('exports at least 8 landmark types', () => {
