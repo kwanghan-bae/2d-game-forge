@@ -9,6 +9,14 @@ export class NarrativeGenerator {
     return `${opts.age}세에 한 단계 더 강해졌다. (LV ${opts.newLevel})`;
   }
 
+  /** Batch form for an arrival that triggered many consecutive level-ups —
+   *  late-game `expGain ∝ lv^1.8` 가 한 kill 마다 수십 level-up 을 fire 하므로,
+   *  saga 가 동일 line 으로 도배되지 않게 압축한다. */
+  static forLevelUpBatch(opts: { age: number; fromLevel: number; toLevel: number; count: number }): string {
+    if (opts.count <= 1) return NarrativeGenerator.forLevelUp({ age: opts.age, newLevel: opts.toLevel });
+    return `${opts.age}세에 LV ${opts.fromLevel} → LV ${opts.toLevel} 까지 ${opts.count}단계 폭풍 성장했다.`;
+  }
+
   static forDrop(opts: { age: number; itemNameKR: string }): string {
     return `${opts.age}세에 ${opts.itemNameKR}을(를) 손에 넣었다.`;
   }
