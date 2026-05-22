@@ -15,15 +15,20 @@ export interface DecisionContext {
 }
 
 const WEIGHT_BASE: Record<LandmarkKind, number> = {
-  enemy:   10,
-  boss:    3,
-  shrine:  4,
-  cave:    3,
-  village: 5,
-  market:  3,
-  ruin:    3,
-  exit:    2,
-  rival:   2,
+  enemy:        10,
+  boss:          3,
+  shrine:        4,
+  cave:          3,
+  village:       5,
+  market:        3,
+  ruin:          3,
+  exit:          2,
+  rival:         2,
+  // V1c-1: personality drift 인카운터 랜드마크
+  watchtower:    3,
+  treasure_cave: 3,
+  holy_ruin:     3,
+  crossroads:    3,
 };
 
 export class DestinationResolver {
@@ -39,11 +44,16 @@ export class DestinationResolver {
 
     const weighted = candidates.map(c => {
       let w = WEIGHT_BASE[c.kind] ?? 1;
-      if (c.kind === 'boss')    w += heroic * 1.5;
-      if (c.kind === 'enemy')   w += heroic * 0.3;
-      if (c.kind === 'shrine')  w += pious * 1.5;
-      if (c.kind === 'village') w += prudent * 0.8;
-      if (c.kind === 'cave')    w += (heroic - prudent) * 0.4;
+      if (c.kind === 'boss')          w += heroic * 1.5;
+      if (c.kind === 'enemy')         w += heroic * 0.3;
+      if (c.kind === 'shrine')        w += pious * 1.5;
+      if (c.kind === 'village')       w += prudent * 0.8;
+      if (c.kind === 'cave')          w += (heroic - prudent) * 0.4;
+      // V1c-1: personality drift 가중치 (base 3 이 floor 역할)
+      if (c.kind === 'watchtower')    w += heroic * 0.8;
+      if (c.kind === 'treasure_cave') w += prudent * 0.8;
+      if (c.kind === 'holy_ruin')     w += pious * 0.8;
+      // crossroads: moral drift → base weight 만 (moral 은 +/- 다 valid)
       return { candidate: c, weight: Math.max(0.1, w) };
     });
 

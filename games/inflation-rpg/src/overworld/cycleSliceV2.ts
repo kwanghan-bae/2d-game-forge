@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { CycleControllerV2, type CycleControllerV2Opts } from './CycleControllerV2';
 import { SagaStorage } from '../saga/SagaStorage';
 import type { CycleSaga } from '../saga/SagaTypes';
-import { goldFromCycle } from '../meta/MetaProgression';
+import { goldFromCycle, spend } from '../meta/MetaProgression';
 import { useGameStore } from '../store/gameStore';
 
 type Status = 'idle' | 'running' | 'ended';
@@ -42,10 +42,29 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       bossKills: stats.bossKills,
       drops: stats.drops,
     });
-    useGameStore.setState(s => ({
-      ...s,
-      meta: { ...s.meta, sponsorGold: (s.meta.sponsorGold ?? 0) + gold },
-    }));
+    // V1c-1 — auto-spend the freshly accrued gold using the 'balanced'
+    // strategy so the live game's meta bonuses actually grow between cycles.
+    // Headless sim drivers bypass this store entirely (they construct
+    // CycleControllerV2 directly), so multi-scenario strategy comparison in
+    // sim-scenarios.ts stays unaffected.
+    useGameStore.setState(s => {
+      const totalGold = (s.meta.sponsorGold ?? 0) + gold;
+      const out = spend({
+        gold: totalGold,
+        atkBaseBonus: s.meta.atkBaseBonus ?? 0,
+        hpBaseBonus: s.meta.hpBaseBonus ?? 0,
+        strategy: 'balanced',
+      });
+      return {
+        ...s,
+        meta: {
+          ...s.meta,
+          sponsorGold: out.goldRemaining,
+          atkBaseBonus: out.atkBaseBonus,
+          hpBaseBonus: out.hpBaseBonus,
+        },
+      };
+    });
     set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold });
   },
   reset() {
