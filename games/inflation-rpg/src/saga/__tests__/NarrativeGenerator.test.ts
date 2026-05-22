@@ -14,6 +14,19 @@ describe('NarrativeGenerator', () => {
     expect(txt).toContain('24');
   });
 
+  it('levelUp batch → "N세에 LV A → LV B 까지 C단계 폭풍 성장" form when count > 1', () => {
+    const txt = NarrativeGenerator.forLevelUpBatch({ age: 35, fromLevel: 1200, toLevel: 1280, count: 80 });
+    expect(txt).toContain('35세');
+    expect(txt).toContain('1200');
+    expect(txt).toContain('1280');
+    expect(txt).toContain('80단계');
+  });
+
+  it('levelUp batch with count 1 → falls back to single-form', () => {
+    const txt = NarrativeGenerator.forLevelUpBatch({ age: 15, fromLevel: 23, toLevel: 24, count: 1 });
+    expect(txt).toBe(NarrativeGenerator.forLevelUp({ age: 15, newLevel: 24 }));
+  });
+
   it('drop event → "N세에 X를 손에 넣었다" style', () => {
     const txt = NarrativeGenerator.forDrop({ age: 20, itemNameKR: '낡은 검' });
     expect(txt).toContain('20세');
