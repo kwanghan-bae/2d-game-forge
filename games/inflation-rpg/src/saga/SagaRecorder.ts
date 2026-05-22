@@ -22,6 +22,13 @@ export class SagaRecorder {
     this.events.push(event);
   }
 
+  /** Read-only accessor for the saga events collected so far. Used by
+   *  OverworldRunner's event log overlay to display the same batched
+   *  narrative the post-cycle SagaBook will show. */
+  getEvents(): readonly SagaEvent[] {
+    return this.events;
+  }
+
   finalize(opts: FinalizeOpts): CycleSaga {
     const chapters: SagaChapter[] = [
       { name: '어린시절', events: [] },
