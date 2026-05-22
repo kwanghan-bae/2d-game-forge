@@ -53,6 +53,11 @@ export class CycleControllerV2 {
     if (this.hero.dead) return [];
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
 
+    // Collect level_ups for end-of-arrival batched record.
+    let levelFrom = -1;
+    let levelTo = -1;
+    let levelCount = 0;
+
     for (const ev of events) {
       if (ev.type === 'battle_won') {
         if (kind === 'boss') this.bossKills += 1; else this.kills += 1;
@@ -77,12 +82,9 @@ export class CycleControllerV2 {
         }
       }
       if (ev.type === 'level_up') {
-        this.saga.record({
-          age: this.hero.age,
-          type: 'levelUp',
-          narrativeText: NarrativeGenerator.forLevelUp({ age: this.hero.age, newLevel: ev.to }),
-          payload: { from: ev.from, to: ev.to },
-        });
+        if (levelCount === 0) levelFrom = ev.from;
+        levelTo = ev.to;
+        levelCount += 1;
       }
       // job_unlocked events come only from the post-arrival maybeUnlockJobForAge
       // hook below — never from resolveEncounter — so no branch here.
@@ -124,6 +126,19 @@ export class CycleControllerV2 {
           payload: {},
         });
       }
+    }
+
+    // Flush the collected level_ups as one saga record. Avoids 수십 줄 spam
+    // from late-game `expGain ∝ lv^1.8` (kill 당 70+ level-ups).
+    if (levelCount > 0) {
+      this.saga.record({
+        age: this.hero.age,
+        type: 'levelUp',
+        narrativeText: NarrativeGenerator.forLevelUpBatch({
+          age: this.hero.age, fromLevel: levelFrom, toLevel: levelTo, count: levelCount,
+        }),
+        payload: { from: levelFrom, to: levelTo, count: levelCount },
+      });
     }
 
     // After resolving the encounter, the hero's age may have advanced via BP
