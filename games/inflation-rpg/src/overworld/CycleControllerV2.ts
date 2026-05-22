@@ -49,6 +49,13 @@ export class CycleControllerV2 {
     return { kills: this.kills, bossKills: this.bossKills, drops: this.drops };
   }
 
+  /** Most recent saga events (already batched + narrative-formatted) for the
+   *  live OverworldRunner log overlay. */
+  getRecentSagaEvents(limit: number): readonly import('../saga/SagaTypes').SagaEvent[] {
+    const all = this.saga.getEvents();
+    return all.slice(Math.max(0, all.length - limit));
+  }
+
   handleArrival(kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     if (this.hero.dead) return [];
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);

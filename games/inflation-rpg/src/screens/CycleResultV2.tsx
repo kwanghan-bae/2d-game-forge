@@ -52,7 +52,7 @@ export function CycleResultV2({ onBackToMenu }: Props) {
       </div>
 
       <p style={{ marginTop: 16, fontSize: 11, opacity:0.5, textAlign:'center' }}>
-        총 사건 수: {allEvents.length} · saga book 책 메타포 = V1b 에서 구현
+        총 사건 수: {allEvents.length}
       </p>
 
       <div style={{ textAlign:'center', marginTop: 20 }}>
