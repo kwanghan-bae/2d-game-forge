@@ -30,6 +30,7 @@ android/app/build/
 # editors / OS
 .idea/
 .vscode/
+.obsidian/
 .DS_Store
 *.swp
 
