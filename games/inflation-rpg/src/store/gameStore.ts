@@ -252,6 +252,9 @@ interface GameStore {
   // Phase V3-D — realm unlock + transition
   unlockRealm: (realmId: import('../types').RealmId) => void;
   setCurrentRealm: (realmId: import('../types').RealmId) => void;
+  // Phase V3-E — NPC spawn
+  addNpc: (npc: import('../types').NpcEntity) => void;
+  updateNpc: (instanceId: string, patch: Partial<import('../types').NpcEntity>) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1320,6 +1323,13 @@ export const useGameStore = create<GameStore>()(
 
       setCurrentRealm(realmId) {
         set(s => ({ ...s, run: { ...s.run, currentRealmId: realmId } }));
+      },
+
+      addNpc(npc) {
+        set(s => ({ ...s, run: { ...s.run, npcs: [...s.run.npcs, npc] } }));
+      },
+      updateNpc(instanceId, patch) {
+        set(s => ({ ...s, run: { ...s.run, npcs: s.run.npcs.map(n => n.instanceId === instanceId ? { ...n, ...patch } : n) } }));
       },
     }),
     {
