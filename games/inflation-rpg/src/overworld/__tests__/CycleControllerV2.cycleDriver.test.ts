@@ -16,14 +16,13 @@ function driveCycle(
   const ctrl = new CycleControllerV2({
     seed,
     traits: [],
-    bpMax: 30,
     heroHpMax: REAL_HP_BASE,
     heroAtkBase: REAL_ATK_BASE,
   });
   let i = 0;
   // Alternate encounter kinds that cover enemy + boss + village patterns
   const kinds: LandmarkKind[] = ['enemy', 'enemy', 'enemy', 'boss', 'enemy', 'village', 'enemy', 'enemy'];
-  while (!ctrl.getHero().dead && i < maxEvents) {
+  while (i < maxEvents) {
     const kind = kinds[i % kinds.length];
     ctrl.handleArrival(kind, `${kind}_${i}`);
     i++;
@@ -32,9 +31,14 @@ function driveCycle(
 }
 
 describe('CycleControllerV2 headless driver', () => {
-  it('cycle ends within 100 iterations (BP exhaustion)', () => {
-    const { iterations } = driveCycle(42);
-    expect(iterations).toBeLessThan(100);
+  it('hero age advances across 200 arrivals (action-time aging)', () => {
+    const ctrl = new CycleControllerV2({
+      seed: 42, traits: [],
+      heroHpMax: REAL_HP_BASE, heroAtkBase: REAL_ATK_BASE,
+    });
+    const startAge = ctrl.getHero().age;
+    for (let i = 0; i < 200; i++) ctrl.handleArrival('enemy', `wolf_${i}`);
+    expect(ctrl.getHero().age).toBeGreaterThan(startAge);
   });
 
   it('saga covers multiple chapters after a full run', () => {
@@ -49,7 +53,7 @@ describe('CycleControllerV2 headless driver', () => {
     expect(a.saga.hero.finalLevel).toBe(b.saga.hero.finalLevel);
   });
 
-  it('hero is dead at end of driven cycle', () => {
+  it('cycle ends with a known cause set in saga', () => {
     const { saga } = driveCycle(123);
     // cause is set — cycle ended with a known cause
     expect(saga.hero.cause).toBeTruthy();
@@ -57,10 +61,10 @@ describe('CycleControllerV2 headless driver', () => {
 
   it('saga has hero name matching controller hero name', () => {
     const ctrl = new CycleControllerV2({
-      seed: 77, traits: [], bpMax: 10,
+      seed: 77, traits: [],
       heroHpMax: REAL_HP_BASE, heroAtkBase: REAL_ATK_BASE,
     });
-    for (let i = 0; i < 20 && !ctrl.getHero().dead; i++) {
+    for (let i = 0; i < 20; i++) {
       ctrl.handleArrival('enemy', `enemy_${i}`);
     }
     const saga = ctrl.finalize();
@@ -76,7 +80,7 @@ describe('CycleControllerV2 headless driver', () => {
     expect(saga.hero.finalLevel).toBeGreaterThanOrEqual(100);
   });
 
-  it('ends via natural death (BP exhaustion), not combat death', () => {
+  it('ends via natural death (old age), not combat death', () => {
     // Sim-G's success bar requires ≥ 80% cycles end in 자연사. If a routine
     // run dies in 전사 with realistic stats, the curve regressed (hero ATK
     // can no longer outpace enemy HP).
