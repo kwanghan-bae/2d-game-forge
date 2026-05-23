@@ -4,6 +4,7 @@ import { SagaStorage } from '../saga/SagaStorage';
 import type { CycleSaga } from '../saga/SagaTypes';
 import { goldFromCycle, spend } from '../meta/MetaProgression';
 import { useGameStore } from '../store/gameStore';
+import { rejuvenationCost } from '../hero/rejuvenation';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -15,6 +16,7 @@ interface CycleStoreV2State {
   lastGoldEarned: number;
   start: (opts: CycleControllerV2Opts) => void;
   endCycle: () => void;
+  rejuvenateHero: (years: number) => void;
   reset: () => void;
 }
 
@@ -66,6 +68,20 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       };
     });
     set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold });
+  },
+  rejuvenateHero(years) {
+    const ctrl = get().controller;
+    if (!ctrl) return;
+    const hero = ctrl.getHero();
+    const cost = rejuvenationCost(hero.age);
+    const light = useGameStore.getState().meta.light ?? 0;
+    if (light < cost) return;
+    useGameStore.setState(s => ({
+      ...s,
+      meta: { ...s.meta, light: (s.meta.light ?? 0) - cost },
+    }));
+    hero.rejuvenate(years);
+    ctrl.recordRejuvenation(years);
   },
   reset() {
     set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0 });

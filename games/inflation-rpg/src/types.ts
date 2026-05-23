@@ -246,6 +246,9 @@ export interface MetaState {
   atkBaseBonus: number;
   /** 다음 cycle 시작 시 hero.hpBase 에 더해질 영구 보너스. */
   hpBaseBonus: number;
+  // Phase V3-B — 빛 (Eternal Hero 회춘 비용 에너지 자원)
+  /** 빛 에너지. 회춘(rejuvenation) 비용으로 소비. v19 migration 에서 0 으로 초기화. */
+  light: number;
 }
 
 // Phase G — Ascension Tree (성좌)

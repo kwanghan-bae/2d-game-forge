@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
-test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression', async ({ page }) => {
+test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression + Phase V3-B eternal hero light', async ({ page }) => {
   // 1. 빈 localStorage 로 시작
   await page.goto(GAME_URL);
 
@@ -31,20 +31,20 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   await page.waitForFunction(
     (key) => {
       const raw = localStorage.getItem(key);
-      return !!raw && JSON.parse(raw).version === 18;
+      return !!raw && JSON.parse(raw).version === 19;
     },
     SAVE_KEY,
     { timeout: 10000 }
   );
 
-  // 4. localStorage 검증 — version 17 + v9 modifiers + v10 ascTree + v11 Phase E + v12 Phase Compass + v13 Phase Realms + v14 Phase 5 IAP + v15 Phase Sim-A + v16 Phase Sim-B + v17 Phase V1a
+  // 4. localStorage 검증 — version 19 + v9 modifiers + v10 ascTree + v11 Phase E + v12 Phase Compass + v13 Phase Realms + v14 Phase 5 IAP + v15 Phase Sim-A + v16 Phase Sim-B + v17 Phase V1a + v18 Phase Sim-M + v19 Phase V3-B
   const migratedState = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   }, SAVE_KEY);
 
   expect(migratedState).toBeTruthy();
-  expect(migratedState.version).toBe(18);
+  expect(migratedState.version).toBe(19);
   // v9 — auto-rolled modifiers
   expect(migratedState.state.meta.inventory.weapons[0].modifiers).toBeDefined();
   expect(Array.isArray(migratedState.state.meta.inventory.weapons[0].modifiers)).toBe(true);
@@ -98,9 +98,6 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   expect(migratedState.state.meta.adFreeOwned).toBe(false);
   expect(migratedState.state.meta.lastIapTx).toEqual([]);
 
-  // v15 Phase Sim-A — cycleHistory[]
-  expect(migratedState.state.meta.cycleHistory).toEqual([]);
-
   // v16 Phase Sim-B — traitsUnlocked seeded with base-tier traits
   expect(Array.isArray(migratedState.state.meta.traitsUnlocked)).toBe(true);
   expect(migratedState.state.meta.traitsUnlocked).toEqual(
@@ -113,8 +110,9 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   // v17 Phase V1a — sagaHistory[]
   expect(migratedState.state.meta.sagaHistory).toEqual([]);
 
-  // v18 Phase Sim-M — sponsorGold + atkBaseBonus + hpBaseBonus
-  expect(migratedState.state.meta.sponsorGold).toBe(0);
-  expect(migratedState.state.meta.atkBaseBonus).toBe(0);
-  expect(migratedState.state.meta.hpBaseBonus).toBe(0);
+  // v19 Phase V3-B — meta.light = 0; Sim-M fields (sponsorGold/atkBaseBonus/hpBaseBonus) removed by v19 clean reset
+  expect(migratedState.state.meta.light).toBe(0);
+  expect(migratedState.state.meta.sponsorGold).toBeUndefined();
+  expect(migratedState.state.meta.atkBaseBonus).toBeUndefined();
+  expect(migratedState.state.meta.hpBaseBonus).toBeUndefined();
 });

@@ -13,7 +13,6 @@ import type { OverworldEvent } from './OverworldEvents';
 export interface CycleControllerV2Opts {
   seed: number;
   traits: readonly TraitId[];
-  bpMax: number;
   heroHpMax: number;
   heroAtkBase: number;
 }
@@ -33,7 +32,6 @@ export class CycleControllerV2 {
     this.seed = opts.seed;
     this.hero = HeroEntity.create({
       seed: opts.seed,
-      bpMax: opts.bpMax,
       heroHpMax: opts.heroHpMax,
       heroAtkBase: opts.heroAtkBase,
     });
@@ -57,7 +55,24 @@ export class CycleControllerV2 {
   }
 
   handleArrival(kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
-    if (this.hero.dead) return [];
+    // V3-B: staggered hero recovers (hp full, staggered=false) without
+    // processing the encounter content. This arrival "costs" the actionCount
+    // tick — recovery itself is the cost.
+    if (this.hero.staggered) {
+      const beforeChapter = this.hero.chapter;
+      this.hero.recoverFromStagger();
+      this.hero.tickAge();
+      const events: OverworldEvent[] = [];
+      if (this.hero.chapter !== beforeChapter) {
+        events.push({
+          type: 'chapter_transition',
+          fromChapter: beforeChapter,
+          toChapter: this.hero.chapter,
+          atAge: this.hero.age,
+        });
+      }
+      return events;
+    }
     const beforeChapter = this.hero.chapter;
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
 
@@ -149,9 +164,9 @@ export class CycleControllerV2 {
       });
     }
 
-    // After resolving the encounter, the hero's age may have advanced via BP
-    // drain. Check for job-unlock milestones.
-    if (!this.hero.dead) {
+    // After resolving the encounter, check for job-unlock milestones.
+    // Skip if the encounter staggered the hero (they'll recover next arrival).
+    if (!this.hero.staggered) {
       const jobs = this.hero.maybeUnlockJobForAge(this.hero.age);
       for (const j of jobs) {
         const jobEv = { type: 'job_unlocked' as const, jobId: j.jobId, jobNameKR: j.jobNameKR, tier: j.tier };
@@ -164,6 +179,7 @@ export class CycleControllerV2 {
         });
       }
     }
+    this.hero.tickAge();
     if (this.hero.chapter !== beforeChapter) {
       events.push({
         type: 'chapter_transition',
@@ -173,6 +189,21 @@ export class CycleControllerV2 {
       });
     }
     return events;
+  }
+
+  /** Called by cycleSliceV2.rejuvenateHero after hero.rejuvenate(). Records the
+   *  saga "재생 #K" marker with the post-rejuvenation age. */
+  recordRejuvenation(years: number): void {
+    this.saga.record({
+      age: this.hero.age,
+      type: 'rejuvenation',
+      narrativeText: NarrativeGenerator.forRejuvenation({
+        age: this.hero.age,
+        yearsBack: years,
+        rejuvenationCount: this.hero.rejuvenationCount,
+      }),
+      payload: { years, rejuvenationCount: this.hero.rejuvenationCount },
+    });
   }
 
   finalize(): CycleSaga {
