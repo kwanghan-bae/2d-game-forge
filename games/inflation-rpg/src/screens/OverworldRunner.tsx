@@ -50,8 +50,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [, setHudTick] = useState(0);
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
   const [speed, setSpeed] = useState<SpeedPreset>(1);
+  const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
+  const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (status !== 'running' || !controller || !containerRef.current) return;
@@ -62,9 +64,18 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       containerRef.current,
       (event) => {
         if (event.type === 'arrived_at') {
-          controller.handleArrival(event.landmarkKind, event.landmarkId);
+          const evs = controller.handleArrival(event.landmarkKind, event.landmarkId);
           setHudTick(n => n + 1);
           setLogEntries(controller.getRecentSagaEvents(LOG_LIMIT));
+          const transition = evs.find(e => e.type === 'chapter_transition');
+          if (transition && transition.type === 'chapter_transition') {
+            setChapterOverlay({ toChapter: transition.toChapter, atAge: transition.atAge, key: Date.now() });
+            if (chapterOverlayTimerRef.current) clearTimeout(chapterOverlayTimerRef.current);
+            chapterOverlayTimerRef.current = setTimeout(() => {
+              setChapterOverlay(null);
+              chapterOverlayTimerRef.current = null;
+            }, 2000);
+          }
         }
         if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
           endedRef.current = true;
@@ -83,6 +94,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
 
     return () => {
       setSceneSpeedRef.current = null;
+      if (chapterOverlayTimerRef.current) {
+        clearTimeout(chapterOverlayTimerRef.current);
+        chapterOverlayTimerRef.current = null;
+      }
       destroy?.();
     };
     // `speed` is intentionally not a dep — mutations are forwarded to the
@@ -100,7 +115,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const hero = controller.getHero();
 
   return (
-    <div data-testid="overworld-runner">
+    <div data-testid="overworld-runner" style={{ position: 'relative' }}>
       <div data-testid="overworld-hud" style={hudStyle}>
         <span data-testid="hud-name">{hero.emoji} {hero.name}</span>
         <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
@@ -123,6 +138,24 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         </span>
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
+
+      <style>{`
+        @keyframes forgeChapterFade {
+          0% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+          20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+        }
+      `}</style>
+      {chapterOverlay && (
+        <div
+          key={chapterOverlay.key}
+          style={chapterOverlayStyle}
+          data-testid="chapter-transition-overlay"
+        >
+          <div style={{ fontSize: 28, fontWeight: 700 }}>📖 {chapterOverlay.toChapter}</div>
+          <div style={{ fontSize: 14, opacity: 0.7, marginTop: 4 }}>{chapterOverlay.atAge}세</div>
+        </div>
+      )}
 
       <div data-testid="event-log" style={logPanelStyle}>
         <div style={logHeaderStyle}>최근 일대기</div>
@@ -203,6 +236,21 @@ const logHeaderStyle: React.CSSProperties = {
   textTransform: 'uppercase',
   opacity: 0.5,
   marginBottom: 6,
+};
+
+const chapterOverlayStyle: React.CSSProperties = {
+  position: 'absolute',
+  top: '20%',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  padding: '16px 24px',
+  background: 'rgba(0,0,0,0.7)',
+  color: '#ffd166',
+  borderRadius: 8,
+  pointerEvents: 'none',
+  zIndex: 100,
+  animation: 'forgeChapterFade 2s ease-in-out forwards',
+  textAlign: 'center',
 };
 
 function logRowStyle(color: string): React.CSSProperties {

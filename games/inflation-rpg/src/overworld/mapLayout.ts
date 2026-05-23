@@ -36,11 +36,13 @@ export function generateMapLayout(seed: number): MapLayout {
   const place = (typeId: string, gridX: number, gridY: number, instanceSuffix = '') => {
     const type = LANDMARK_TYPES.find(t => t.id === typeId);
     if (!type) return;
+    const cx = Math.max(0, Math.min(GRID_W - 1, gridX));
+    const cy = Math.max(0, Math.min(GRID_H - 1, gridY));
     landmarks.push({
-      instanceId: `${typeId}_${gridX}_${gridY}${instanceSuffix}`,
+      instanceId: `${typeId}_${cx}_${cy}${instanceSuffix}`,
       type,
-      gridX,
-      gridY,
+      gridX: cx,
+      gridY: cy,
       consumed: false,
     });
   };

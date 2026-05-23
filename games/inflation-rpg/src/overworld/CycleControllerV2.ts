@@ -58,6 +58,7 @@ export class CycleControllerV2 {
 
   handleArrival(kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     if (this.hero.dead) return [];
+    const beforeChapter = this.hero.chapter;
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
 
     // Collect level_ups for end-of-arrival batched record.
@@ -162,6 +163,14 @@ export class CycleControllerV2 {
           payload: { jobId: j.jobId, tier: j.tier },
         });
       }
+    }
+    if (this.hero.chapter !== beforeChapter) {
+      events.push({
+        type: 'chapter_transition',
+        fromChapter: beforeChapter,
+        toChapter: this.hero.chapter,
+        atAge: this.hero.age,
+      });
     }
     return events;
   }

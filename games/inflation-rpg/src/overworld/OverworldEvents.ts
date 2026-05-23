@@ -1,5 +1,6 @@
 import type { LandmarkKind } from '../data/landmarks';
 import type { PersonalityDim } from '../hero/PersonalityState';
+import type { Chapter } from '../hero/HeroLifecycle';
 
 export type OverworldEvent =
   | { type: 'tick';            t: number }
@@ -11,5 +12,6 @@ export type OverworldEvent =
   | { type: 'skill_learned';   skillId: string; skillNameKR: string; atkBefore: number; atkAfter: number }
   | { type: 'shrine_visited';  landmarkId: string; healed: number }
   | { type: 'moral_choice';    choice: string; dim: PersonalityDim; delta: number; nameKR: string }
+  | { type: 'chapter_transition'; fromChapter: Chapter; toChapter: Chapter; atAge: number }
   | { type: 'hero_died';       cause: '전사' | '자연사'; enemyId?: string }
   | { type: 'cycle_ended' };

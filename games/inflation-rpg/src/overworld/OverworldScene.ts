@@ -69,6 +69,7 @@ export class OverworldScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor('#0a0e1a');
+    this.cameras.main.setBounds(0, 0, GRID_W * TILE_PX, GRID_H * TILE_PX);
     this.setSpeed(this.initialSpeed);
 
     // Render tile background
@@ -170,8 +171,17 @@ export class OverworldScene extends Phaser.Scene {
     const target = this.currentTarget;
     if (!target) return;
     this.onEvent({ type: 'arrived_at', landmarkId: target.instanceId, landmarkKind: target.type.kind });
-    // Wait 400ms (lets React resolve the encounter and update hero state) then continue
-    this.time.delayedCall(400, () => {
+    // V3-A: variable pause (300-800ms) + brief alpha pulse on the hero so the
+    // idle feels like the hero is looking around before deciding next move.
+    const pauseMs = 300 + this.sceneRng.int(500);
+    this.tweens.add({
+      targets: this.heroSprite,
+      alpha: 0.55,
+      duration: Math.floor(pauseMs / 2),
+      yoyo: true,
+      ease: 'Sine.InOut',
+    });
+    this.time.delayedCall(pauseMs, () => {
       target.consumed = true;
       const sprite = this.landmarkSprites.get(target.instanceId);
       sprite?.setAlpha(0.3);
@@ -180,6 +190,7 @@ export class OverworldScene extends Phaser.Scene {
       if (target.type.kind === 'enemy') {
         this.respawnEnemyNear(target);
       }
+      this.heroSprite.setAlpha(1);
       this.currentTarget = null;
       this.pickNextDestination();
     });
