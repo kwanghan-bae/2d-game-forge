@@ -10,6 +10,8 @@ import { findRealm } from '../data/realms';
 import type { TraitId } from '../cycle/traits';
 import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
+import { useGameStore } from '../store/gameStore';
+import { tickNpc } from '../npc/NpcLifecycle';
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -28,6 +30,7 @@ export class CycleControllerV2 {
   private ai: HeroDecisionAI;
   private encounter: EncounterEngine;
   private saga: SagaRecorder;
+  private rng: SeededRng;
   private endCause: DeathCause | null = null;
   private readonly seed: number;
   private kills: number = 0;
@@ -47,6 +50,7 @@ export class CycleControllerV2 {
     });
     this.ai = new HeroDecisionAI(this.hero, { seed: opts.seed, traits: opts.traits });
     this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef));
+    this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
     this.getBuffSnapshot = opts.getBuffSnapshot;
     this.onBossKill = opts.onBossKill;
@@ -239,6 +243,22 @@ export class CycleControllerV2 {
         this.currentRealmId = newRealm;
         events.push({ type: 'realm_entered', realmId: newRealm });
       }
+    }
+
+    // V3-E: NPC encounter + lifecycle
+    const npcState = useGameStore.getState().run.npcs;
+    for (const npc of npcState) {
+      const wasAlive = npc.isAlive;
+      tickNpc(npc);
+      if (wasAlive && !npc.isAlive) {
+        events.push({ type: 'npc_died', npcInstanceId: npc.instanceId });
+      }
+    }
+    // Encounter trigger: 현재 realm 거주 + alive NPC 중 1명 (20% 확률)
+    const candidates = npcState.filter(n => n.isAlive && n.zoneRealmId === this.currentRealmId);
+    if (candidates.length > 0 && this.rng.chance(0.2)) {
+      const picked = candidates[this.rng.int(candidates.length)];
+      events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
     }
 
     return events;
