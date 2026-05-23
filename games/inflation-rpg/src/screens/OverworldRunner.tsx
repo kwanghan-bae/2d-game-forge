@@ -6,6 +6,7 @@ import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import { REALM_CATALOG } from '../data/realms';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { SpendModal } from './SpendModal';
+import { NpcEncounterModal } from './NpcEncounterModal';
 
 interface Props {
   onCycleEnd: () => void;
@@ -63,6 +64,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
+  const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,6 +105,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
               setChapterOverlay(null);
               chapterOverlayTimerRef.current = null;
             }, 2000);
+          }
+          const npcEncounter = evs.find(e => e.type === 'npc_encounter');
+          if (npcEncounter && npcEncounter.type === 'npc_encounter') {
+            setNpcModal({ npcInstanceId: npcEncounter.npcInstanceId });
           }
           const realmEntered = evs.find(e => e.type === 'realm_entered');
           if (realmEntered && realmEntered.type === 'realm_entered') {
@@ -216,6 +222,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
       {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
+      {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
 
       <style>{`
         @keyframes forgeChapterFade {
