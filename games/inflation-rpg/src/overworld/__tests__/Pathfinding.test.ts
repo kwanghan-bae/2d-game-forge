@@ -38,3 +38,32 @@ describe('Pathfinder', () => {
     expect(path).toBeNull();
   });
 });
+
+describe('Pathfinding bounds', () => {
+  it('returns null when start coords out of grid', async () => {
+    const grid: GridCell[][] = Array.from({ length: 5 }, () => Array(5).fill('walkable' as const));
+    const pf = new Pathfinder(grid);
+    expect(await pf.findPath(-1, 0, 2, 2)).toBeNull();
+    expect(await pf.findPath(0, 5, 2, 2)).toBeNull();
+  });
+
+  it('returns null when destination coords out of grid', async () => {
+    const grid: GridCell[][] = Array.from({ length: 5 }, () => Array(5).fill('walkable' as const));
+    const pf = new Pathfinder(grid);
+    expect(await pf.findPath(0, 0, 5, 2)).toBeNull();
+    expect(await pf.findPath(0, 0, 2, -1)).toBeNull();
+  });
+
+  it('returns all nodes inside the grid for a valid path', async () => {
+    const grid: GridCell[][] = Array.from({ length: 5 }, () => Array(5).fill('walkable' as const));
+    const pf = new Pathfinder(grid);
+    const path = await pf.findPath(0, 0, 4, 4);
+    expect(path).not.toBeNull();
+    for (const node of path!) {
+      expect(node.x).toBeGreaterThanOrEqual(0);
+      expect(node.x).toBeLessThan(5);
+      expect(node.y).toBeGreaterThanOrEqual(0);
+      expect(node.y).toBeLessThan(5);
+    }
+  });
+});
