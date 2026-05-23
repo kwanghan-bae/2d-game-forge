@@ -116,12 +116,6 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private async pickNextDestination(): Promise<void> {
-    if (this.hero.staggered) {
-      // V3-B: hero is eternal — staggered hero recovers next arrival via
-      // CycleControllerV2.handleArrival staggered branch. No cycle_ended here.
-      return;
-    }
-
     const heroPos = this.heroGridPos();
     const candidates = this.layout.landmarks
       .filter(l => !l.consumed)
