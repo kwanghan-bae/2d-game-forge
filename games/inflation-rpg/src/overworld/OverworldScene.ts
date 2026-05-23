@@ -173,7 +173,11 @@ export class OverworldScene extends Phaser.Scene {
       x: next.x * TILE_PX + TILE_PX / 2,
       y: next.y * TILE_PX + TILE_PX / 2,
       duration: 180,
-      onComplete: () => this.stepAlongPath(),
+      onComplete: () => {
+        this.hero.gridX = next.x;
+        this.hero.gridY = next.y;
+        this.stepAlongPath();
+      },
     });
   }
 
