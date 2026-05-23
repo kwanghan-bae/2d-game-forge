@@ -65,7 +65,8 @@ export class CycleControllerV2 {
     if (this.hero.staggered) {
       const beforeChapter = this.hero.chapter;
       this.hero.recoverFromStagger();
-      this.hero.tickAge();
+      const agingMul = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+      this.hero.tickAge(agingMul);
       const events: OverworldEvent[] = [];
       if (this.hero.chapter !== beforeChapter) {
         events.push({
@@ -187,7 +188,8 @@ export class CycleControllerV2 {
         });
       }
     }
-    this.hero.tickAge();
+    const agingMul = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+    this.hero.tickAge(agingMul);
     if (this.hero.chapter !== beforeChapter) {
       events.push({
         type: 'chapter_transition',

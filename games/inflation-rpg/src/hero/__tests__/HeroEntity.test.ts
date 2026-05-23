@@ -101,3 +101,35 @@ describe('HeroEntity action-time aging', () => {
     expect(h.actionCount).toBe(0);
   });
 });
+
+describe('tickAge with agingMul (V3-C aging_slow buff)', () => {
+  it('agingMul 1.0 (default) advances actionCount by 1 per tick', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    const start = h.actionCount;
+    h.tickAge();
+    expect(h.actionCount).toBe(start + 1);
+  });
+
+  it('agingMul 0.5 accumulates fractional, advances actionCount on every 2nd tick', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    const start = h.actionCount;
+    h.tickAge(0.5);
+    expect(h.actionCount).toBe(start);
+    h.tickAge(0.5);
+    expect(h.actionCount).toBe(start + 1);
+  });
+
+  it('agingMul 0.5 over 10 ticks advances by 5', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    const start = h.actionCount;
+    for (let i = 0; i < 10; i++) h.tickAge(0.5);
+    expect(h.actionCount).toBe(start + 5);
+  });
+
+  it('agingMul 2.0 advances actionCount by 2 in a single tick', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    const start = h.actionCount;
+    h.tickAge(2.0);
+    expect(h.actionCount).toBe(start + 2);
+  });
+});
