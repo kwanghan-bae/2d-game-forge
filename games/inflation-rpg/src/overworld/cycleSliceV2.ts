@@ -5,6 +5,7 @@ import type { CycleSaga } from '../saga/SagaTypes';
 import { goldFromCycle, spend } from '../meta/MetaProgression';
 import { useGameStore } from '../store/gameStore';
 import { rejuvenationCost } from '../hero/rejuvenation';
+import { getRejuvDiscount, getDropChanceBonus, getAgingSpeedMul } from '../buff/buffEffects';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -26,7 +27,16 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
   lastSaga: null,
   lastGoldEarned: 0,
   start(opts) {
-    const ctrl = new CycleControllerV2(opts);
+    const ctrl = new CycleControllerV2({
+      ...opts,
+      getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
+        const meta = useGameStore.getState().meta;
+        return {
+          dropChanceBonus: getDropChanceBonus(meta),
+          agingSpeedMul: getAgingSpeedMul(meta),
+        };
+      }),
+    });
     set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0 });
   },
   endCycle() {
@@ -73,8 +83,11 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     const ctrl = get().controller;
     if (!ctrl) return;
     const hero = ctrl.getHero();
-    const cost = rejuvenationCost(hero.age);
-    const light = useGameStore.getState().meta.light ?? 0;
+    const meta = useGameStore.getState().meta;
+    const baseCost = rejuvenationCost(hero.age);
+    const discount = getRejuvDiscount(meta);
+    const cost = Math.ceil(baseCost * (1 - discount));
+    const light = meta.light ?? 0;
     if (light < cost) return;
     useGameStore.setState(s => ({
       ...s,

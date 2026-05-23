@@ -106,4 +106,45 @@ describe('cycleSliceV2', () => {
       expect(hero.rejuvenationCount).toBe(0);
     });
   });
+
+  describe('rejuvenateHero with discount (V3-C)', () => {
+    beforeEach(() => {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: { ...s.meta, light: 10000, buffLevels: {} },
+      }));
+      useCycleStoreV2.getState().reset();
+    });
+
+    it('Lv 0 discount → full cost (no change, regression)', () => {
+      useCycleStoreV2.getState().start({
+        seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      const hero = ctrl.getHero();
+      for (let i = 0; i < 200; i++) hero.tickAge();
+      const baseCost = (hero.age - 5) * 10;
+      const lightBefore = useGameStore.getState().meta.light ?? 0;
+      useCycleStoreV2.getState().rejuvenateHero(5);
+      expect(useGameStore.getState().meta.light).toBe(lightBefore - baseCost);
+    });
+
+    it('Lv 5 discount (0.25) → ceil(baseCost × 0.75)', () => {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: { ...s.meta, light: 10000, buffLevels: { rejuv_discount: 5 } },
+      }));
+      useCycleStoreV2.getState().start({
+        seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      const hero = ctrl.getHero();
+      for (let i = 0; i < 200; i++) hero.tickAge();
+      const baseCost = (hero.age - 5) * 10;
+      const expectedCost = Math.ceil(baseCost * 0.75);
+      const lightBefore = useGameStore.getState().meta.light ?? 0;
+      useCycleStoreV2.getState().rejuvenateHero(5);
+      expect(useGameStore.getState().meta.light).toBe(lightBefore - expectedCost);
+    });
+  });
 });

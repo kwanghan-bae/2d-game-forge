@@ -23,8 +23,17 @@ const SHRINE_HEAL_FRACTION = 0.4;
 const MERCIFUL_PROC_RATE = 0.15;
 const MERCIFUL_DRIFT = 3;
 
+export interface EncounterEngineOpts {
+  /** Additive bonus to drop chance from V3-C drop_chance buff. */
+  dropChanceBonus?: number;
+}
+
 export class EncounterEngine {
-  constructor(private readonly rng: SeededRng) {}
+  constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
+
+  setOpts(opts: EncounterEngineOpts): void {
+    this.opts = { ...this.opts, ...opts };
+  }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
@@ -46,7 +55,8 @@ export class EncounterEngine {
         return events;
       }
       const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
-      const dropOdds = isBoss ? 0.8 : DROP_RATE;
+      const baseDropOdds = isBoss ? 0.8 : DROP_RATE;
+      const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0));
       const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss) : null;
       if (dropId) hero.addEquipment(dropId);
 
