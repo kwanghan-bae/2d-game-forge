@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { HeroLifecycle, type Chapter } from '../HeroLifecycle';
 
-describe('HeroLifecycle', () => {
+describe('HeroLifecycle chapterForAge', () => {
   it('age 5–14 = 어린시절', () => {
     expect(HeroLifecycle.chapterForAge(5)).toBe('어린시절');
     expect(HeroLifecycle.chapterForAge(14)).toBe('어린시절');
@@ -31,11 +31,31 @@ describe('HeroLifecycle', () => {
     const chapters: Chapter[] = ['어린시절', '청년기', '장년기', '노년기', '마지막'];
     expect(chapters.length).toBe(5);
   });
+});
 
-  it('ageFromBpProgress maps BP 0% → 5, BP 100% → 70', () => {
-    expect(HeroLifecycle.ageFromBpProgress(0)).toBe(5);
-    expect(HeroLifecycle.ageFromBpProgress(1)).toBe(70);
-    expect(HeroLifecycle.ageFromBpProgress(0.5)).toBeGreaterThanOrEqual(30);
-    expect(HeroLifecycle.ageFromBpProgress(0.5)).toBeLessThanOrEqual(50);
+describe('HeroLifecycle ageFromActions', () => {
+  it('0 actions → age 5', () => {
+    expect(HeroLifecycle.ageFromActions(0)).toBe(5);
+  });
+
+  it('1000 actions → age 70', () => {
+    expect(HeroLifecycle.ageFromActions(1000)).toBeGreaterThanOrEqual(70);
+  });
+
+  it('500 actions → age in 장년기 range (30-49)', () => {
+    const age = HeroLifecycle.ageFromActions(500);
+    expect(age).toBeGreaterThanOrEqual(30);
+    expect(age).toBeLessThanOrEqual(50);
+  });
+
+  it('beyond 1000 actions → age keeps increasing', () => {
+    expect(HeroLifecycle.ageFromActions(2000)).toBeGreaterThan(HeroLifecycle.ageFromActions(1000));
+  });
+
+  it('actionsForAge is inverse of ageFromActions at canonical anchor ages', () => {
+    for (const age of [5, 15, 30, 50, 70]) {
+      const actions = HeroLifecycle.actionsForAge(age);
+      expect(HeroLifecycle.ageFromActions(actions)).toBe(age);
+    }
   });
 });

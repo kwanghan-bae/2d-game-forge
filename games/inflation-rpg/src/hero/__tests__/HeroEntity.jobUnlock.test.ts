@@ -3,7 +3,7 @@ import { HeroEntity } from '../HeroEntity';
 import { PersonalityState } from '../PersonalityState';
 
 function makeHero() {
-  const h = HeroEntity.create({ seed: 1, bpMax: 100, heroHpMax: 100, heroAtkBase: 50 });
+  const h = HeroEntity.create({ seed: 1, heroHpMax: 100, heroAtkBase: 50 });
   h.personality = new PersonalityState();
   return h;
 }
