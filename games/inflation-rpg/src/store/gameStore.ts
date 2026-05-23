@@ -139,6 +139,8 @@ export const INITIAL_META: MetaState = {
   hpBaseBonus: 0,
   // Phase V3-B — 빛 에너지 (회춘 비용)
   light: 0,
+  // Phase V3-C — buff catalog 누적 Lv
+  buffLevels: {},
 };
 
 interface GameStore {
