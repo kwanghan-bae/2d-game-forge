@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
+import { useGameStore } from '../store/gameStore';
+import { rejuvenationCost } from '../hero/rejuvenation';
 import type { SagaEvent } from '../saga/SagaTypes';
 
 interface Props {
@@ -46,6 +48,8 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const status = useCycleStoreV2(s => s.status);
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
+  const rejuvenateHero = useCycleStoreV2(s => s.rejuvenateHero);
+  const meta = useGameStore(s => s.meta);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, setHudTick] = useState(0);
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
@@ -121,7 +125,17 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
         <span>{hero.job} · LV {hero.level}</span>
         <span>HP {hero.hp}/{hero.hpMax}</span>
-        <span data-testid="hud-bp">BP {hero.bp}/{hero.bpMax}</span>
+        <span data-testid="hud-light">빛 {meta.light ?? 0}</span>
+        <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
+        <button
+          type="button"
+          onClick={() => rejuvenateHero(5)}
+          disabled={(meta.light ?? 0) < rejuvenationCost(hero.age)}
+          data-testid="rejuvenate-button"
+          style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}
+        >
+          회춘 5년 ({rejuvenationCost(hero.age)} 빛)
+        </button>
         <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
           {SPEED_PRESETS.map(s => (
             <button
