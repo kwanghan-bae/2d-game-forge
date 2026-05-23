@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
-test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression + Phase V3-B eternal hero light', async ({ page }) => {
+test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression + Phase V3-B eternal hero light + Phase V3-C buffLevels', async ({ page }) => {
   // 1. 빈 localStorage 로 시작
   await page.goto(GAME_URL);
 
@@ -31,7 +31,7 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   await page.waitForFunction(
     (key) => {
       const raw = localStorage.getItem(key);
-      return !!raw && JSON.parse(raw).version === 19;
+      return !!raw && JSON.parse(raw).version === 20;
     },
     SAVE_KEY,
     { timeout: 10000 }
@@ -44,7 +44,7 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   }, SAVE_KEY);
 
   expect(migratedState).toBeTruthy();
-  expect(migratedState.version).toBe(19);
+  expect(migratedState.version).toBe(20);
   // v9 — auto-rolled modifiers
   expect(migratedState.state.meta.inventory.weapons[0].modifiers).toBeDefined();
   expect(Array.isArray(migratedState.state.meta.inventory.weapons[0].modifiers)).toBe(true);
@@ -115,4 +115,7 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   expect(migratedState.state.meta.sponsorGold).toBeUndefined();
   expect(migratedState.state.meta.atkBaseBonus).toBeUndefined();
   expect(migratedState.state.meta.hpBaseBonus).toBeUndefined();
+
+  // v20 — Phase V3-C buffLevels default
+  expect(migratedState.state.meta.buffLevels).toEqual({});
 });
