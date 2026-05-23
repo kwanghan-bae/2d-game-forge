@@ -15,6 +15,8 @@ export interface CycleControllerV2Opts {
   traits: readonly TraitId[];
   heroHpMax: number;
   heroAtkBase: number;
+  /** V3-C — buff snapshot 을 매 arrival 마다 새로 읽어오는 callback. */
+  getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number };
 }
 
 export class CycleControllerV2 {
@@ -27,6 +29,7 @@ export class CycleControllerV2 {
   private kills: number = 0;
   private bossKills: number = 0;
   private drops: number = 0;
+  private getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number };
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
@@ -38,6 +41,7 @@ export class CycleControllerV2 {
     this.ai = new HeroDecisionAI(this.hero, { seed: opts.seed, traits: opts.traits });
     this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef));
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
+    this.getBuffSnapshot = opts.getBuffSnapshot;
   }
 
   getHero(): HeroEntity { return this.hero; }
@@ -74,6 +78,10 @@ export class CycleControllerV2 {
       return events;
     }
     const beforeChapter = this.hero.chapter;
+    if (this.getBuffSnapshot) {
+      const snap = this.getBuffSnapshot();
+      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus });
+    }
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
 
     // Collect level_ups for end-of-arrival batched record.
