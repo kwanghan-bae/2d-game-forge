@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
-import { rejuvenationCost } from '../hero/rejuvenation';
 import { computeLightDelta } from '../overworld/lightEmit';
 import { getLightRateMul } from '../buff/buffEffects';
 import type { SagaEvent } from '../saga/SagaTypes';
+import { SpendModal } from './SpendModal';
 
 interface Props {
   onCycleEnd: () => void;
@@ -50,7 +50,6 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const status = useCycleStoreV2(s => s.status);
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
-  const rejuvenateHero = useCycleStoreV2(s => s.rejuvenateHero);
   const meta = useGameStore(s => s.meta);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, setHudTick] = useState(0);
@@ -58,6 +57,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
   const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
+  const [spendModalOpen, setSpendModalOpen] = useState(false);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -164,12 +164,11 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
         <button
           type="button"
-          onClick={() => rejuvenateHero(5)}
-          disabled={(meta.light ?? 0) < rejuvenationCost(hero.age)}
-          data-testid="rejuvenate-button"
+          onClick={() => setSpendModalOpen(true)}
+          data-testid="open-spend-modal"
           style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}
         >
-          회춘 5년 ({rejuvenationCost(hero.age)} 빛)
+          신의 메뉴
         </button>
         <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
           {SPEED_PRESETS.map(s => (
@@ -187,6 +186,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         </span>
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
+      {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
 
       <style>{`
         @keyframes forgeChapterFade {
