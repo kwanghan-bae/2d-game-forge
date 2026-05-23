@@ -18,6 +18,8 @@ export interface CycleControllerV2Opts {
   /** V3-C — buff snapshot 을 매 arrival 마다 새로 읽어오는 callback.
    *  V3-D — damping 필드 추가 (field level 대비 hero 약화). */
   getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
+  /** V3-D — boss 처치 시 호출. unlockable next realm 의 id 반환. */
+  onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
 }
 
 export class CycleControllerV2 {
@@ -31,6 +33,8 @@ export class CycleControllerV2 {
   private bossKills: number = 0;
   private drops: number = 0;
   private getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
+  private onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
+  private currentRealmId: import('../types').RealmId | null = null;
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
@@ -43,6 +47,11 @@ export class CycleControllerV2 {
     this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef));
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
     this.getBuffSnapshot = opts.getBuffSnapshot;
+    this.onBossKill = opts.onBossKill;
+  }
+
+  setCurrentRealmId(realmId: import('../types').RealmId): void {
+    this.currentRealmId = realmId;
   }
 
   getHero(): HeroEntity { return this.hero; }
@@ -93,7 +102,18 @@ export class CycleControllerV2 {
 
     for (const ev of events) {
       if (ev.type === 'battle_won') {
-        if (kind === 'boss') this.bossKills += 1; else this.kills += 1;
+        if (kind === 'boss') {
+          this.bossKills += 1;
+          // V3-D realm unlock — controller 는 pure 유지, callback 으로 처리
+          if (this.onBossKill && this.currentRealmId) {
+            const unlocked = this.onBossKill(this.currentRealmId);
+            if (unlocked) {
+              events.push({ type: 'realm_unlocked', realmId: unlocked });
+            }
+          }
+        } else {
+          this.kills += 1;
+        }
         const enemyType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id)) ?? null;
         const enemyNameKR = enemyType?.nameKR ?? '적';
         this.saga.record({
