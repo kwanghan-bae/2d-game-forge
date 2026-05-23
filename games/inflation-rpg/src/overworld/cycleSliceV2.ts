@@ -8,6 +8,7 @@ import { rejuvenationCost } from '../hero/rejuvenation';
 import { getRejuvDiscount, getDropChanceBonus, getAgingSpeedMul, getFieldDiffThreshold } from '../buff/buffEffects';
 import { computeFieldDamping } from '../zone/fieldDamping';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
+import { findRealm } from '../data/realms';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -47,7 +48,17 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           damping: computeFieldDamping(heroLv, fieldLv, buff6),
         };
       }),
+      onBossKill: opts.onBossKill ?? ((current) => {
+        const state = useGameStore.getState();
+        const realm = findRealm(current);
+        if (realm.nextRealm && !state.meta.unlockedRealms.includes(realm.nextRealm)) {
+          state.unlockRealm(realm.nextRealm);
+          return realm.nextRealm;
+        }
+        return null;
+      }),
     });
+    ctrl.setCurrentRealmId(useGameStore.getState().run.currentRealmId);
     set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0 });
   },
   endCycle() {
