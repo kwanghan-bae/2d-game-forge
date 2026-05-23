@@ -65,6 +65,16 @@ export function SagaBookModal({ onClose }: Props) {
             if (filteredEvents.length === 0) return null;
             return (
               <div key={era.eraKey} style={{ marginBottom: 16 }}>
+                {era.rejuvCount > 0 && era.chapter === '어린시절' && (
+                  <div data-testid={`saga-rejuv-marker-${era.rejuvCount}`} style={{
+                    fontSize: 16, fontWeight: 700, color: '#ffd54f',
+                    textAlign: 'center', padding: '12px 0',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,213,79,0.2), transparent)',
+                    margin: '16px -16px 8px',
+                  }}>
+                    ✨ 재생 #{era.rejuvCount} ✨
+                  </div>
+                )}
                 <div style={{
                   fontSize: 14, fontWeight: 700,
                   color: era.rejuvCount > 0 ? '#ffd54f' : '#eee',
