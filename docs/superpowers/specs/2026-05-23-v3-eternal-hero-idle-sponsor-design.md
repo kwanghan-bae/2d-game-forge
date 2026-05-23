@@ -108,11 +108,29 @@ Idle 의 의미 = "켜놓고 다른 일 하기". 앱 꺼지면 진행 멈춤 (ac
 - 회춘 시 saga 에 marker: "N세에 빛의 은총으로 M년이 사라졌다 — 재생 #K."
 - 회춘 후 hero 의 emoji / 외형 / chapter 는 새 age 의 것을 따름. 직업 / 스킬 / 장비 / personality / level 은 유지.
 
-### 4.4 Hero 죽음
+### 4.4 Hero 쓰러짐 (사망 폐기, 패배는 살아있음)
 
-- **죽지 않음.** 전투 패배 시 hero hp = 0 → "쓰러짐" 상태. N 초 (또는 N actions) 후 hp 회복 (마을 워프 등). 사망 = 없음.
+- **죽지 않음.** 단 **전투에서 질 수 있음.** 강한 몬스터 (hero level << field level / 다른 zone 의 보스 등) 와 마주치면 hp = 0 가능 → "쓰러짐" 상태.
+- 쓰러짐 = N 초 (또는 N actions) 후 hp 회복 + 마을/safe spot 워프. 영구 페널티 없음 (단 saga 에 패배 기록 + 짧은 cooldown 의 self-confidence 디버프 정도는 V3-E 이후 검토 가능).
+- 강한 몬스터를 만나는 빈도와 결과는 personality (§4.5) 의 영향을 받음.
 - 200세 + 모든 디버프 누적 = 거의 멈춤. 단 살아있음. 신 회춘 시 살아남.
 - saga 의 "마지막" chapter 메타포는 회춘 후 보류 — 회춘 안 하고 player 가 게임 그만두면 "마지막" 으로 책 닫힘 (player choice).
+
+### 4.5 성격 driven 전투 판단 (V1c-1 의 자연 확장)
+
+V1c-1 의 5-dim personality (선/악, 신중/충동, 영웅/회피, 자비/잔혹, 신앙/세속) 는 이미 encounter 분기에만 영향 — V3 에서는 **target 선택 + 전투 결과** 까지 확장. 핵심 idea:
+
+- **다혈질 / 저돌 (충동↑, 영웅↑):** AI 가 자주 자기 level 보다 강한 몬스터를 도전 후보로 선택. 강한적 마주칠 때 분노 buff (atk +5%) 가능. 단 패배 빈도 높아짐 → saga 가 "X 와 결투, 졌다", "Y 에게 끝내 복수" 등 dramatic.
+- **소심 / 신중 (신중↑, 회피↑):** AI 가 자기 level 이하 또는 ±1 tier 만 도전. 강한적 회피. 강한적 forced 면 두려움 디버프 (atk -10%, 회피율 +). 안전한 진행 → saga 가 잔잔.
+- **자비↑:** 패배 한 적을 살려준 분기 가능 (잠재 NPC). 잔혹↑ = 처형 분기.
+- **신앙↑:** 사당 / 폐허 encounter 시 보너스. 세속↑ = 보물 cave 보너스.
+
+구현 상 (단계적):
+- **V3-B**: 패배 가능성 만 enable (수치 작게).
+- **V3-D**: zone navigation AI 가 personality 의 신중/충동 dim 을 반영해 zone 결정.
+- **V3-E** 이후: 전투 시 personality buff/debuff 정식 도입 (Phase V3-H 또는 별 spec 검토).
+
+—> **너무 일찍 정교화 금지.** balance / 재미가 잡힌 후에 단계적으로 enable. Phase V3-B 까지는 "강한적 만나면 진다" 의 raw mechanic 만.
 
 ---
 
@@ -380,6 +398,7 @@ v18 → v19 (Phase V3-B 에서 적용):
 - **R5. 기존 자산 (16 직업 / 32 스킬 / 109 보스 / 41 장비) 의 reframe** — 영원 hero 의 단일 인생에 다 들어가야 함. Mitigation: V2 spec 의 reframe 표 그대로 활용.
 - **R6. Persist 마이그레이션 위험** — 기존 v18 의 saga / cycleHistory 가 무효. Mitigation: archive 처리, v19 가 fresh start.
 - **R7. NPC 죽음 narrative 의 위험** — NPC 죽으면 hero 의 인생 동안 일어남. 너무 자주 죽으면 슬픔만 누적. Mitigation: V3-E 에서 NPC lifespan 조절.
+- **R8. 성격 driven combat 의 over-engineering** — 5 dim × buff/debuff × target 선택 × 패배율 의 곱이 폭발하면 balance 불가. Mitigation: §4.5 의 단계적 enable. V3-B 까지는 raw "강한적 = 패배 가능" 만, 정교화는 V3-E 이후로 미룸.
 
 ---
 
