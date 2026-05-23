@@ -249,6 +249,9 @@ interface GameStore {
     buffId: BuffId,
     count: 1 | 10 | 'max',
   ) => { ok: boolean; reason?: 'invalid' | 'zero' | 'insufficient' | 'oneshot'; count?: number; cost?: number };
+  // Phase V3-D — realm unlock + transition
+  unlockRealm: (realmId: import('../types').RealmId) => void;
+  setCurrentRealm: (realmId: import('../types').RealmId) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1306,6 +1309,17 @@ export const useGameStore = create<GameStore>()(
           },
         }));
         return { ok: true, count: n, cost };
+      },
+
+      unlockRealm(realmId) {
+        set(s => {
+          if (s.meta.unlockedRealms.includes(realmId)) return s;
+          return { ...s, meta: { ...s.meta, unlockedRealms: [...s.meta.unlockedRealms, realmId] } };
+        });
+      },
+
+      setCurrentRealm(realmId) {
+        set(s => ({ ...s, run: { ...s.run, currentRealmId: realmId } }));
       },
     }),
     {
