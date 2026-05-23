@@ -51,8 +51,8 @@ describe('recordRealmTransition', () => {
     expect(next.realmTransitions[0].to).toBe('sea');
   });
   it('stores correct eraKey', () => {
-    const next = recordRealmTransition(empty, 'base', 'volcano', 30, '중년기');
-    expect(next.realmTransitions[0].eraKey).toBe('본래 중년기');
+    const next = recordRealmTransition(empty, 'base', 'volcano', 30, '장년기');
+    expect(next.realmTransitions[0].eraKey).toBe('본래 장년기');
     expect(next.realmTransitions[0].atAge).toBe(30);
   });
 });
