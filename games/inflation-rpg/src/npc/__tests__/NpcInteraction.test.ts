@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NpcEntity } from '../../types';
-import type { PersonalityState } from '../../hero/PersonalityState';
+import type { PersonalitySnapshot } from '../../hero/PersonalityState';
 import { computeNpcOutcome } from '../NpcInteraction';
 
 function npc(kind: NpcEntity['kind']): NpcEntity {
@@ -11,11 +11,11 @@ function npc(kind: NpcEntity['kind']): NpcEntity {
   };
 }
 
-function pers(overrides: Partial<PersonalityState>): PersonalityState {
+function pers(overrides: Partial<PersonalitySnapshot>): PersonalitySnapshot {
   return {
     moral: 0, prudent: 0, heroic: 0, merciful: 0, pious: 0,
     ...overrides,
-  } as PersonalityState;
+  };
 }
 
 describe('computeNpcOutcome', () => {

@@ -1,5 +1,5 @@
 import type { NpcEntity } from '../types';
-import type { PersonalityState } from '../hero/PersonalityState';
+import type { PersonalitySnapshot } from '../hero/PersonalityState';
 
 export type NpcOutcomeKind =
   | 'duel' | 'cooperate' | 'evade'
@@ -13,7 +13,7 @@ export interface NpcOutcome {
   relationshipDelta: number;
 }
 
-export function computeNpcOutcome(npc: NpcEntity, personality: PersonalityState): NpcOutcome {
+export function computeNpcOutcome(npc: NpcEntity, personality: PersonalitySnapshot): NpcOutcome {
   switch (npc.kind) {
     case 'rival': {
       if (personality.heroic >= 3 || personality.moral <= -3) {
