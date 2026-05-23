@@ -16,7 +16,7 @@ vi.mock('phaser', () => ({
 // Also mock OverworldScene to avoid transitive Phaser requires.
 vi.mock('../../overworld/OverworldScene', () => ({
   OverworldScene: class {},
-  GRID_W: 20,
+  GRID_W: 120,
   GRID_H: 12,
 }));
 
