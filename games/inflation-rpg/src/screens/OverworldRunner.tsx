@@ -25,7 +25,7 @@ async function bootPhaser(
   currentRealm?: import('../types').RealmId,
   unlockedRealms?: readonly import('../types').RealmId[],
 ): Promise<{ destroy: () => void; setSpeed: (m: number) => void }> {
-  const [Phaser, { OverworldScene, GRID_W, GRID_H }] = await Promise.all([
+  const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
     import('phaser'),
     import('../overworld/OverworldScene'),
   ]);
@@ -54,6 +54,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
   const meta = useGameStore(s => s.meta);
+  const run = useGameStore(s => s.run);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, setHudTick] = useState(0);
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
@@ -192,6 +193,12 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         >
           신의 메뉴
         </button>
+        <span data-testid="hud-realm" style={{ marginLeft: 8 }}>
+          {(() => {
+            const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
+            return `🌍 ${r?.nameKR ?? '?'} (${meta.unlockedRealms.length}/${REALM_CATALOG.length})`;
+          })()}
+        </span>
         <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
           {SPEED_PRESETS.map(s => (
             <button
