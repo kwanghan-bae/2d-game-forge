@@ -1852,10 +1852,11 @@ describe('persist v19 clean reset migration', () => {
       },
       inventory: { weapons: [{ id: 'sword' }], armors: [], accessories: [] },
     };
-    const out = runStoreMigration(v18State, 18) as { meta: { light: number; sponsorGold?: unknown; atkBaseBonus?: unknown; cycleHistory?: unknown } };
+    const out = runStoreMigration(v18State, 18) as { meta: { light: number; sponsorGold?: unknown; atkBaseBonus?: unknown; hpBaseBonus?: unknown; cycleHistory?: unknown } };
     expect(out.meta.light).toBe(0);
     expect(out.meta.sponsorGold).toBeUndefined();
     expect(out.meta.atkBaseBonus).toBeUndefined();
+    expect(out.meta.hpBaseBonus).toBeUndefined();
     expect(out.meta.cycleHistory).toBeUndefined();
   });
 });
