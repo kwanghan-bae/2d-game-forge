@@ -26,6 +26,8 @@ const MERCIFUL_DRIFT = 3;
 export interface EncounterEngineOpts {
   /** Additive bonus to drop chance from V3-C drop_chance buff. */
   dropChanceBonus?: number;
+  /** V3-D — field level damping multiplier (1.0 = no damping, <1.0 = weaker hero). */
+  damping?: number;
 }
 
 export class EncounterEngine {
@@ -46,9 +48,11 @@ export class EncounterEngine {
 
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
+      const damping = this.opts.damping ?? 1.0;
+      const heroAtk = Math.max(1, Math.floor(hero.atk * damping));
       let eHp = enemyHp;
       while (eHp > 0 && !hero.staggered) {
-        eHp -= hero.atk;
+        eHp -= heroAtk;
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
       if (hero.staggered) {
