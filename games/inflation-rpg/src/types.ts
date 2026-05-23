@@ -174,6 +174,10 @@ export interface RunState {
   dungeonRunMonstersDefeated: number;
   featherUsed: number;               // Phase E — revive count used this run (feather_of_fate + phoenix_feather)
   playerHp: number | null;           // [Phase Realms] null = hydrate to maxHp on next battle entry
+  /** V3-D — 현재 hero 가 있는 realm. 초기 'base'. */
+  currentRealmId: RealmId;
+  /** V3-E — 현재 run 의 NPC roster. */
+  npcs: NpcEntity[];
 }
 
 export type BuffId =
@@ -184,6 +188,29 @@ export type BuffId =
   | 'aging_slow'
   | 'field_diff'
   | 'oneshot_rejuv';
+
+export type RealmId = 'base' | 'sea' | 'volcano' | 'underworld' | 'heaven' | 'chaos';
+
+export interface NpcEntity {
+  instanceId: string;
+  kind: 'rival' | 'mentor' | 'friend' | 'family_parent' | 'family_spouse' | 'family_child';
+  nameKR: string;
+  emoji: string;
+  age: number;
+  ageRate: number;
+  isAlive: boolean;
+  bornChapter: import('./hero/HeroLifecycle').Chapter;
+  relationship: number;
+  zoneRealmId: RealmId;
+  personalityDim?: import('./hero/PersonalityState').PersonalityDim;
+}
+
+export interface EternalSagaState {
+  events: import('./saga/SagaTypes').SagaEvent[];
+  chaptersByEra: Record<string, { eraKey: string; chapter: import('./hero/HeroLifecycle').Chapter; rejuvCount: number; events: import('./saga/SagaTypes').SagaEvent[] }>;
+  rejuvenationCount: number;
+  realmTransitions: Array<{ from: RealmId; to: RealmId; atAge: number; eraKey: string }>;
+}
 
 export interface MetaState {
   inventory: Inventory;
@@ -260,6 +287,10 @@ export interface MetaState {
   light: number;
   /** V3-C — buff catalog 의 누적 Lv. oneshot_rejuv 은 저장 안 함. */
   buffLevels: Partial<Record<BuffId, number>>;
+  /** V3-D — 해금된 realm 목록. 초기 ['base']. */
+  unlockedRealms: RealmId[];
+  /** V3-F — 무한 saga (재생 chapter 누적). */
+  eternalSaga: EternalSagaState;
 }
 
 // Phase G — Ascension Tree (성좌)
