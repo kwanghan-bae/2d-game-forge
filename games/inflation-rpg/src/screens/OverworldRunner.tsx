@@ -7,6 +7,7 @@ import { REALM_CATALOG } from '../data/realms';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { SpendModal } from './SpendModal';
 import { NpcEncounterModal } from './NpcEncounterModal';
+import { SagaBookModal } from './SagaBookModal';
 
 interface Props {
   onCycleEnd: () => void;
@@ -64,6 +65,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
+  const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
@@ -199,6 +201,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         >
           신의 메뉴
         </button>
+        <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
         <span data-testid="hud-realm" style={{ marginLeft: 8 }}>
           {(() => {
             const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
@@ -223,6 +226,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
       {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
       {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
+      {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
 
       <style>{`
         @keyframes forgeChapterFade {
