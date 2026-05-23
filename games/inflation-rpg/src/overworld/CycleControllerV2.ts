@@ -15,8 +15,9 @@ export interface CycleControllerV2Opts {
   traits: readonly TraitId[];
   heroHpMax: number;
   heroAtkBase: number;
-  /** V3-C — buff snapshot 을 매 arrival 마다 새로 읽어오는 callback. */
-  getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number };
+  /** V3-C — buff snapshot 을 매 arrival 마다 새로 읽어오는 callback.
+   *  V3-D — damping 필드 추가 (field level 대비 hero 약화). */
+  getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
 }
 
 export class CycleControllerV2 {
@@ -29,7 +30,7 @@ export class CycleControllerV2 {
   private kills: number = 0;
   private bossKills: number = 0;
   private drops: number = 0;
-  private getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number };
+  private getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
@@ -81,7 +82,7 @@ export class CycleControllerV2 {
     const beforeChapter = this.hero.chapter;
     if (this.getBuffSnapshot) {
       const snap = this.getBuffSnapshot();
-      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus });
+      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
     }
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
 
