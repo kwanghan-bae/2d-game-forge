@@ -15,17 +15,18 @@ import { CycleControllerV2 } from '../src/overworld/CycleControllerV2';
 import { generateMapLayout } from '../src/overworld/mapLayout';
 import { landmarkToCandidate, type PlacedLandmark } from '../src/overworld/Landmark';
 import { LANDMARK_TYPES } from '../src/data/landmarks';
+import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../src/data/enemyTiers';
 import { SeededRng } from '../src/cycle/SeededRng';
 import type { TraitId } from '../src/cycle/traits';
 import type { OverworldEvent } from '../src/overworld/OverworldEvents';
 import type { CycleSaga } from '../src/saga/SagaTypes';
+import type { Chapter } from '../src/hero/HeroLifecycle';
 
-const ENEMY_ZONE_RANGES = [
-  { xMin: 3,  xMax: 7  },
-  { xMin: 8,  xMax: 11 },
-  { xMin: 12, xMax: 16 },
-];
-const ENEMY_TYPE_IDS = ['wolf', 'goblin', 'bandit'];
+const ENEMY_ZONE_COL_RANGES: Record<EnemyZone, { xMin: number; xMax: number }> = {
+  forest:    { xMin: 3,  xMax: 7  },
+  plains:    { xMin: 8,  xMax: 11 },
+  mountains: { xMin: 12, xMax: 16 },
+};
 const GRID_H = 12;
 
 export interface SimV2Options {
@@ -212,7 +213,7 @@ function runOneCycle(
     }
 
     if (target.type.kind === 'enemy' && !hero.dead && hero.bp > 0) {
-      respawnEnemy(layout.landmarks, respawnRng, target, ++respawnCounter);
+      respawnEnemy(layout.landmarks, respawnRng, target, ++respawnCounter, hero.chapter);
     }
   }
 
@@ -246,13 +247,15 @@ function respawnEnemy(
   rng: SeededRng,
   consumed: PlacedLandmark,
   counter: number,
+  heroChapter: Chapter,
 ): void {
-  let range = ENEMY_ZONE_RANGES.find(r => consumed.gridX >= r.xMin && consumed.gridX <= r.xMax);
-  if (!range) range = ENEMY_ZONE_RANGES[rng.int(ENEMY_ZONE_RANGES.length)];
-  const typeId = ENEMY_TYPE_IDS[rng.int(ENEMY_TYPE_IDS.length)];
+  const zone: EnemyZone =
+    zoneForColumn(consumed.gridX) ?? ENEMY_ZONES[rng.int(ENEMY_ZONES.length)]!;
+  const range = ENEMY_ZONE_COL_RANGES[zone];
+  const typeId = selectEnemyTypeId(zone, heroChapter);
   const landmarkType = LANDMARK_TYPES.find(t => t.id === typeId);
   if (!landmarkType) return;
-  const x = range!.xMin + rng.int(range!.xMax - range!.xMin + 1);
+  const x = range.xMin + rng.int(range.xMax - range.xMin + 1);
   const y = rng.int(GRID_H);
   landmarks.push({ instanceId: `${typeId}_respawn_${counter}`, type: landmarkType, gridX: x, gridY: y, consumed: false });
 }
