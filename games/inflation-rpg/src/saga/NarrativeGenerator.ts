@@ -1,8 +1,17 @@
 import type { DeathCause } from './SagaTypes';
 
+/** Object marker (을/를) by trailing jongseong. Falls back to '를' for any
+ *  non-hangul tail so foreign / mixed strings stay readable. */
+function obj(noun: string): string {
+  const last = noun.charCodeAt(noun.length - 1);
+  if (Number.isNaN(last) || last < 0xAC00 || last > 0xD7A3) return `${noun}를`;
+  const jongseong = (last - 0xAC00) % 28;
+  return jongseong === 0 ? `${noun}를` : `${noun}을`;
+}
+
 export class NarrativeGenerator {
   static forBattle(opts: { age: number; enemyNameKR: string }): string {
-    return `${opts.age}세에 ${opts.enemyNameKR}을(를) 처치했다.`;
+    return `${opts.age}세에 ${obj(opts.enemyNameKR)} 처치했다.`;
   }
 
   static forLevelUp(opts: { age: number; newLevel: number }): string {
@@ -18,7 +27,7 @@ export class NarrativeGenerator {
   }
 
   static forDrop(opts: { age: number; itemNameKR: string }): string {
-    return `${opts.age}세에 ${opts.itemNameKR}을(를) 손에 넣었다.`;
+    return `${opts.age}세에 ${obj(opts.itemNameKR)} 손에 넣었다.`;
   }
 
   static forJobUnlock(opts: { age: number; jobNameKR: string; tier: number }): string {
@@ -26,10 +35,13 @@ export class NarrativeGenerator {
   }
 
   static forSkillLearned(opts: { age: number; skillNameKR: string }): string {
-    return `${opts.age}세에 ${opts.skillNameKR}을(를) 익혔다.`;
+    return `${opts.age}세에 ${obj(opts.skillNameKR)} 익혔다.`;
   }
 
   static forShrine(opts: { age: number; healed: number }): string {
+    if (opts.healed <= 0) {
+      return `${opts.age}세에 사당에서 평온한 마음을 얻었다.`;
+    }
     return `${opts.age}세에 사당에서 기도하여 ${opts.healed.toLocaleString()} 회복했다.`;
   }
 

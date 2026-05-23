@@ -8,6 +8,29 @@ describe('NarrativeGenerator', () => {
     expect(txt).toContain('늑대');
   });
 
+  it('battle event picks correct josa — 받침 없음 → 를', () => {
+    expect(NarrativeGenerator.forBattle({ age: 5, enemyNameKR: '늑대' })).toContain('늑대를');
+    expect(NarrativeGenerator.forBattle({ age: 5, enemyNameKR: '치유' })).toContain('치유를');
+  });
+
+  it('battle event picks correct josa — 받침 있음 → 을', () => {
+    expect(NarrativeGenerator.forBattle({ age: 5, enemyNameKR: '고블린' })).toContain('고블린을');
+    expect(NarrativeGenerator.forBattle({ age: 5, enemyNameKR: '도적' })).toContain('도적을');
+  });
+
+  it('shrine with heal=0 uses a "평온" fallback narrative', () => {
+    const zero = NarrativeGenerator.forShrine({ age: 5, healed: 0 });
+    expect(zero).toContain('5세');
+    expect(zero).toMatch(/평온|마음|안식/);
+    expect(zero).not.toContain('0 회복');
+  });
+
+  it('shrine with heal>0 still uses the heal narrative', () => {
+    const txt = NarrativeGenerator.forShrine({ age: 30, healed: 1500 });
+    expect(txt).toContain('30세');
+    expect(txt).toContain('1,500');
+  });
+
   it('levelUp event → "N세에 영웅의 길에 들어섰다 (LV M)" style', () => {
     const txt = NarrativeGenerator.forLevelUp({ age: 15, newLevel: 24 });
     expect(txt).toContain('15세');
