@@ -10,6 +10,7 @@ import type { OverworldEvent } from './OverworldEvents';
 import type { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import type { HeroEntity } from '../hero/HeroEntity';
 import { generateMapLayout, GRID_H, GRID_W, TILE_PX, type MapLayout } from './mapLayout';
+import type { RealmId } from '../types';
 
 export { generateMapLayout, GRID_H, GRID_W };
 export type { MapLayout };
@@ -29,6 +30,9 @@ interface OverworldSceneData {
   onEvent: (event: OverworldEvent) => void;
   /** Initial speed multiplier (1 = normal, 10 = 10x). Mutable later via setSpeed(). */
   initialSpeed?: number;
+  /** T13: current realm and unlocked realms for exit-landmark filter. */
+  currentRealm?: RealmId;
+  unlockedRealms?: readonly RealmId[];
 }
 
 export class OverworldScene extends Phaser.Scene {
@@ -44,6 +48,8 @@ export class OverworldScene extends Phaser.Scene {
   private sceneRng!: SeededRng;
   private respawnCounter: number = 0;
   private initialSpeed: number = 1;
+  private currentRealm: RealmId | undefined;
+  private unlockedRealms: readonly RealmId[] | undefined;
 
   constructor() { super('OverworldScene'); }
 
@@ -56,6 +62,8 @@ export class OverworldScene extends Phaser.Scene {
     this.sceneRng = new SeededRng(data.seed ^ 0xabcd1234);
     this.respawnCounter = 0;
     this.initialSpeed = data.initialSpeed ?? 1;
+    this.currentRealm = data.currentRealm;
+    this.unlockedRealms = data.unlockedRealms;
   }
 
   /** Scale both tween duration (movement) and delayedCall (post-arrival pause)
@@ -131,7 +139,10 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
-    const chosenCandidate = this.ai.chooseDestination(candidates.map(c => c.candidate));
+    const chosenCandidate = this.ai.chooseDestination(candidates.map(c => c.candidate), {
+      currentRealm: this.currentRealm,
+      unlockedRealms: this.unlockedRealms,
+    });
     if (!chosenCandidate) {
       this.onEvent({ type: 'cycle_ended' });
       return;

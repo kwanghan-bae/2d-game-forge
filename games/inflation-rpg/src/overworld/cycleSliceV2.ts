@@ -59,6 +59,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       }),
     });
     ctrl.setCurrentRealmId(useGameStore.getState().run.currentRealmId);
+    ctrl.setUnlockedRealms(useGameStore.getState().meta.unlockedRealms);
     set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0 });
   },
   endCycle() {
