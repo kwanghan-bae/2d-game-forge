@@ -59,9 +59,19 @@ export class CycleControllerV2 {
     // processing the encounter content. This arrival "costs" the actionCount
     // tick — recovery itself is the cost.
     if (this.hero.staggered) {
+      const beforeChapter = this.hero.chapter;
       this.hero.recoverFromStagger();
       this.hero.tickAge();
-      return [];
+      const events: OverworldEvent[] = [];
+      if (this.hero.chapter !== beforeChapter) {
+        events.push({
+          type: 'chapter_transition',
+          fromChapter: beforeChapter,
+          toChapter: this.hero.chapter,
+          atAge: this.hero.age,
+        });
+      }
+      return events;
     }
     const beforeChapter = this.hero.chapter;
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);

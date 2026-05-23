@@ -131,4 +131,24 @@ describe('CycleControllerV2 action-time aging', () => {
     expect(hero.staggered).toBe(false);
     expect(hero.hp).toBeGreaterThan(0);
   });
+
+  it('staggered hero recovery emits chapter_transition if recovery tick crosses chapter boundary', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Bring hero to age 14 (last action before chapter boundary 어린→청년 at action ~154).
+    // ageFromActions(153) = floor(5 + 65*153/1000) = floor(14.945) = 14
+    hero.actionCount = 153;
+    hero.age = 14;
+    hero.chapter = '어린시절';
+    // Now stagger and let recovery tick (154) cross the boundary.
+    hero.staggered = true;
+    hero.hp = 0;
+    const evs = ctrl.handleArrival('enemy', 'wolf_1');
+    const transitions = evs.filter(e => e.type === 'chapter_transition');
+    expect(transitions.length).toBeGreaterThanOrEqual(1);
+    const t = transitions[0]!;
+    if (t.type !== 'chapter_transition') throw new Error('narrowing');
+    expect(t.fromChapter).toBe('어린시절');
+    expect(t.toChapter).toBe('청년기');
+  });
 });
