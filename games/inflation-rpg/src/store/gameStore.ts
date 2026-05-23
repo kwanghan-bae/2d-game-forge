@@ -294,6 +294,18 @@ export function migrateV18ToV19(persisted: unknown): unknown {
   return s;
 }
 
+// v19 → v20: Phase V3-C — meta.buffLevels (BuffId → level) 를 빈 객체로 초기화.
+export function migrateV19ToV20(persisted: unknown): unknown {
+  if (typeof persisted !== 'object' || persisted === null) return persisted;
+  const s = persisted as { meta?: Record<string, unknown> | null };
+  if (!s.meta || typeof s.meta !== 'object') return persisted;
+  const m = s.meta;
+  if (m['buffLevels'] === undefined || typeof m['buffLevels'] !== 'object') {
+    m['buffLevels'] = {};
+  }
+  return s;
+}
+
 // Phase E — Mythic slot cap derived from ascension tier
 //   tier 0 → 0 슬롯, tier 1-4 → 1 슬롯, tier 5-9 → 3 슬롯, tier 10+ → 5 슬롯
 export function computeMythicSlotCap(tier: number): number {
@@ -485,6 +497,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v18 → v19: Phase V3-B — clean reset + meta.light = 0
   if (fromVersion <= 18) {
     migrateV18ToV19(s);
+  }
+  // v19 → v20: Phase V3-C — buffLevels 초기화
+  if (fromVersion <= 19) {
+    migrateV19ToV20(s);
   }
   return s;
 }
@@ -1238,7 +1254,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 19,  // 18 → 19 (Phase V3-B Eternal Hero — clean reset + meta.light)
+      version: 20,  // 19 → 20 (Phase V3-C — buffLevels)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
