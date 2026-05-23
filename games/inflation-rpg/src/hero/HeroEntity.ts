@@ -10,6 +10,7 @@ import {
 import { JobSystem } from './JobSystem';
 import type { JobMilestone } from '../data/jobs';
 import { lookupDrop } from '../overworld/dropTable';
+import { getAgingDebuff } from './agingDebuff';
 
 const EXP_REQ_BASE = 10;
 
@@ -100,8 +101,10 @@ export class HeroEntity {
   /** Public so that JobSystem / SkillLearningSystem / equipment can mutate base
    *  stats and have the level-scaled values re-derived. */
   recomputeStats(): void {
-    this.atk = heroAtkAtLevel(this.atkBase, this.level);
-    this.hpMax = heroHpMaxAtLevel(this.hpBase, this.level);
+    const debuff = getAgingDebuff(this.age);
+    this.atk = Math.floor(heroAtkAtLevel(this.atkBase, this.level) * debuff.atkMul);
+    this.hpMax = Math.floor(heroHpMaxAtLevel(this.hpBase, this.level) * debuff.hpMul);
+    if (this.hp > this.hpMax) this.hp = this.hpMax;
   }
 
   /** V3-B aging mechanic: each arrival counts as one action; age derived from
@@ -110,12 +113,13 @@ export class HeroEntity {
     this.actionCount += 1;
     this.age = HeroLifecycle.ageFromActions(this.actionCount);
     this.chapter = HeroLifecycle.chapterForAge(this.age);
+    this.recomputeStats();
   }
 
   /** Spec §4.3 — invert actionCount via actionsForAge so age decreases by
    *  `years`. Clamps at the minimum age (5). Increments rejuvenationCount as
-   *  the saga marker. T6 will add a recomputeStats() call here once aging
-   *  debuffs depend on age; for V3-B base scope, stats are level-driven only. */
+   *  the saga marker. recomputeStats() applies updated aging debuff after
+   *  age changes. */
   rejuvenate(years: number): void {
     const targetAge = Math.max(5, this.age - years);
     const targetActions = HeroLifecycle.actionsForAge(targetAge);
@@ -123,6 +127,7 @@ export class HeroEntity {
     this.age = HeroLifecycle.ageFromActions(this.actionCount);
     this.chapter = HeroLifecycle.chapterForAge(this.age);
     this.rejuvenationCount += 1;
+    this.recomputeStats();
   }
 
   /** Restore HP to max and clear the staggered flag. Called by controller
