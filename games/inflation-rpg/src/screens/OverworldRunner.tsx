@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
 import { rejuvenationCost } from '../hero/rejuvenation';
+import { computeLightDelta } from '../overworld/lightEmit';
+import { getLightRateMul } from '../buff/buffEffects';
 import type { SagaEvent } from '../saga/SagaTypes';
 
 interface Props {
@@ -69,6 +71,15 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       (event) => {
         if (event.type === 'arrived_at') {
           const evs = controller.handleArrival(event.landmarkKind, event.landmarkId);
+          const { delta: rawDelta } = computeLightDelta(evs, event.landmarkKind);
+          if (rawDelta > 0) {
+            const rateMul = getLightRateMul(useGameStore.getState().meta);
+            const finalDelta = rawDelta * rateMul;
+            useGameStore.setState(s => ({
+              ...s,
+              meta: { ...s.meta, light: (s.meta.light ?? 0) + finalDelta },
+            }));
+          }
           setHudTick(n => n + 1);
           setLogEntries(controller.getRecentSagaEvents(LOG_LIMIT));
           const transition = evs.find(e => e.type === 'chapter_transition');
