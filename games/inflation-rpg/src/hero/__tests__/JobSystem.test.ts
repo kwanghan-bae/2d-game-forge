@@ -4,7 +4,7 @@ import { HeroEntity } from '../HeroEntity';
 import { PersonalityState } from '../PersonalityState';
 
 function makeHero(): HeroEntity {
-  const hero = HeroEntity.create({ seed: 1, bpMax: 100, heroHpMax: 100, heroAtkBase: 50 });
+  const hero = HeroEntity.create({ seed: 1, heroHpMax: 100, heroAtkBase: 50 });
   // Reset HeroSpawner's random priors to a known neutral baseline for tests.
   hero.personality = new PersonalityState();
   return hero;
