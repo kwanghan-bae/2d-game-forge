@@ -4,6 +4,7 @@ import { ZONES } from '../data/zones';
 import { LANDMARK_TYPES } from '../data/landmarks';
 import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../data/enemyTiers';
 import { Pathfinder, type GridCell } from './Pathfinding';
+import { findRealm } from '../data/realms';
 import type { PlacedLandmark } from './Landmark';
 import { landmarkToCandidate } from './Landmark';
 import type { OverworldEvent } from './OverworldEvents';
@@ -149,7 +150,10 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     const target = candidates.find(c => c.candidate.id === chosenCandidate.id)!.landmark;
-    const path = await this.pathfinder.findPath(heroPos.x, heroPos.y, target.gridX, target.gridY);
+    const columnBounds = this.currentRealm
+      ? findRealm(this.currentRealm).columnRange
+      : undefined;
+    const path = await this.pathfinder.findPath(heroPos.x, heroPos.y, target.gridX, target.gridY, columnBounds ? { columnBounds } : undefined);
     if (!path || path.length < 2) {
       // Unreachable; mark consumed to skip
       target.consumed = true;
