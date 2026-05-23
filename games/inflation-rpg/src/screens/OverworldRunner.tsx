@@ -29,7 +29,7 @@ async function bootPhaser(
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: container,
-    width: GRID_W * 32,
+    width: 640,   // V3-D: viewport fixed at 640px regardless of GRID_W
     height: GRID_H * 32,
     backgroundColor: '#0a0e1a',
     scene: OverworldScene,

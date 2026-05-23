@@ -107,6 +107,10 @@ export class OverworldScene extends Phaser.Scene {
       { fontSize: '24px' },
     ).setOrigin(0.5).setDepth(10);
 
+    // V3-D: camera follow hero. viewport = 640x384, world = 3840x384.
+    this.cameras.main.startFollow(this.heroSprite, true, 0.1, 0.1);
+    this.cameras.main.setDeadzone(200, 100);
+
     // Build walkable grid (all walkable for V1a — no obstacles)
     const grid: GridCell[][] = this.layout.tiles.map(row => row.map(() => 'walkable' as const));
     this.pathfinder = new Pathfinder(grid);
