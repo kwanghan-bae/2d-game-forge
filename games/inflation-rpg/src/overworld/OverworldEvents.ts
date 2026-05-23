@@ -14,4 +14,9 @@ export type OverworldEvent =
   | { type: 'moral_choice';    choice: string; dim: PersonalityDim; delta: number; nameKR: string }
   | { type: 'chapter_transition'; fromChapter: Chapter; toChapter: Chapter; atAge: number }
   | { type: 'hero_died';       cause: '전사' | '자연사'; enemyId?: string }
+  | { type: 'realm_unlocked'; realmId: import('../types').RealmId }
+  | { type: 'realm_entered'; realmId: import('../types').RealmId }
+  | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }
+  | { type: 'npc_died'; npcInstanceId: string }
+  | { type: 'family_event'; eventKind: 'marriage' | 'child_birth' | 'parent_death' | 'child_grown'; npcInstanceId?: string }
   | { type: 'cycle_ended' };
