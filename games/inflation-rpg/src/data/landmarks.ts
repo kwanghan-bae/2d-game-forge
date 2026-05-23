@@ -53,4 +53,42 @@ export const LANDMARK_TYPES: readonly LandmarkType[] = [
   { id: 'treasure_cave', nameKR: '보물동굴',     emoji: '💎', kind: 'treasure_cave' },
   { id: 'holy_ruin',     nameKR: '신성유적',     emoji: '⛩️', kind: 'holy_ruin' },
   { id: 'crossroads',    nameKR: '갈림길',       emoji: '🚦', kind: 'crossroads' },
+
+  // V3-D realm 1: sea
+  { id: 'sea_serpent',       nameKR: '바다뱀',       emoji: '🐍', kind: 'enemy' },
+  { id: 'kraken_spawn',      nameKR: '크라켄 새끼',   emoji: '🐙', kind: 'enemy' },
+  { id: 'tide_wraith',       nameKR: '조수 망령',     emoji: '🌊', kind: 'enemy' },
+  { id: 'storm_eel',         nameKR: '폭풍 장어',     emoji: '⚡', kind: 'enemy' },
+  { id: 'sea_boss',          nameKR: '심해의 왕',     emoji: '🦑', kind: 'boss' },
+
+  // V3-D realm 2: volcano
+  { id: 'flame_drake',       nameKR: '용암 드레이크', emoji: '🐉', kind: 'enemy' },
+  { id: 'lava_golem',        nameKR: '용암 골렘',     emoji: '🗿', kind: 'enemy' },
+  { id: 'magma_imp',         nameKR: '마그마 임프',   emoji: '👹', kind: 'enemy' },
+  { id: 'salamander',        nameKR: '불도마뱀',      emoji: '🦎', kind: 'enemy' },
+  { id: 'volcano_boss',      nameKR: '화염의 군주',   emoji: '🔥', kind: 'boss' },
+
+  // V3-D realm 3: underworld
+  { id: 'wraith',            nameKR: '망령',          emoji: '👻', kind: 'enemy' },
+  { id: 'soul_collector',    nameKR: '영혼 수집가',   emoji: '💀', kind: 'enemy' },
+  { id: 'bone_lord',         nameKR: '뼈의 왕',       emoji: '☠️', kind: 'enemy' },
+  { id: 'grim_reaper',       nameKR: '사신',          emoji: '🪦', kind: 'enemy' },
+  { id: 'underworld_boss',   nameKR: '명계의 군주',   emoji: '🕯️', kind: 'boss' },
+
+  // V3-D realm 4: heaven
+  { id: 'celestial_guardian',nameKR: '천계 수호자',   emoji: '⚔️', kind: 'enemy' },
+  { id: 'angel',             nameKR: '천사',          emoji: '😇', kind: 'enemy' },
+  { id: 'seraph',            nameKR: '세라핌',        emoji: '👼', kind: 'enemy' },
+  { id: 'divine_envoy',      nameKR: '신의 사도',     emoji: '✨', kind: 'enemy' },
+  { id: 'heaven_boss',       nameKR: '천계의 대천사', emoji: '🌟', kind: 'boss' },
+
+  // V3-D realm 5: chaos
+  { id: 'void_horror',       nameKR: '공허의 공포',   emoji: '🌌', kind: 'enemy' },
+  { id: 'chaos_lord',        nameKR: '혼돈의 군주',   emoji: '🌀', kind: 'enemy' },
+  { id: 'reality_breaker',   nameKR: '현실 파괴자',   emoji: '⚫', kind: 'enemy' },
+  { id: 'primordial_shade',  nameKR: '태초의 그림자', emoji: '🌑', kind: 'enemy' },
+  { id: 'chaos_boss',        nameKR: '혼돈의 끝',     emoji: '♾️', kind: 'boss' },
+
+  // base realm boss (column 19 end)
+  { id: 'base_boss',         nameKR: '들판의 왕',     emoji: '👑', kind: 'boss' },
 ];
