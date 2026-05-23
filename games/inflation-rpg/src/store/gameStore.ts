@@ -33,6 +33,7 @@ import {
 import { computeMaxHp } from '../systems/playerHp';
 import { BASE_TRAIT_IDS } from '../data/traits';
 import { findBuff, nextStepCost, maxAffordable } from '../buff/catalog';
+import { appendEvent, recordRejuvenation, recordRealmTransition } from '../saga/EternalSaga';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -255,6 +256,10 @@ interface GameStore {
   // Phase V3-E — NPC spawn
   addNpc: (npc: import('../types').NpcEntity) => void;
   updateNpc: (instanceId: string, patch: Partial<import('../types').NpcEntity>) => void;
+  // Phase V3-F — eternal saga
+  recordSagaEvent: (event: import('../saga/SagaTypes').SagaEvent, chapter: import('../hero/HeroLifecycle').Chapter) => void;
+  recordSagaRejuvenation: () => void;
+  recordSagaRealmTransition: (from: import('../types').RealmId, to: import('../types').RealmId, atAge: number, chapter: import('../hero/HeroLifecycle').Chapter) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1330,6 +1335,15 @@ export const useGameStore = create<GameStore>()(
       },
       updateNpc(instanceId, patch) {
         set(s => ({ ...s, run: { ...s.run, npcs: s.run.npcs.map(n => n.instanceId === instanceId ? { ...n, ...patch } : n) } }));
+      },
+      recordSagaEvent(event, chapter) {
+        set(s => ({ ...s, meta: { ...s.meta, eternalSaga: appendEvent(s.meta.eternalSaga, event, chapter) } }));
+      },
+      recordSagaRejuvenation() {
+        set(s => ({ ...s, meta: { ...s.meta, eternalSaga: recordRejuvenation(s.meta.eternalSaga) } }));
+      },
+      recordSagaRealmTransition(from, to, atAge, chapter) {
+        set(s => ({ ...s, meta: { ...s.meta, eternalSaga: recordRealmTransition(s.meta.eternalSaga, from, to, atAge, chapter) } }));
       },
     }),
     {
