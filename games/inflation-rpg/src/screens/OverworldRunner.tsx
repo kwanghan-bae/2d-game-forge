@@ -21,6 +21,8 @@ async function bootPhaser(
   ai: import('../decisionAI/HeroDecisionAI').HeroDecisionAI,
   seed: number,
   initialSpeed: number,
+  currentRealm?: import('../types').RealmId,
+  unlockedRealms?: readonly import('../types').RealmId[],
 ): Promise<{ destroy: () => void; setSpeed: (m: number) => void }> {
   const [Phaser, { OverworldScene, GRID_W, GRID_H }] = await Promise.all([
     import('phaser'),
@@ -35,7 +37,7 @@ async function bootPhaser(
     scene: OverworldScene,
     physics: { default: 'arcade' },
   });
-  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed });
+  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed, currentRealm, unlockedRealms });
   const setSpeed = (m: number) => {
     const scene = game.scene.getScene('OverworldScene') as InstanceType<typeof OverworldScene> | null;
     scene?.setSpeed(m);
@@ -109,6 +111,8 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       controller.getDecisionAI(),
       controller.getSeed(),
       speed * moveMul,
+      controller.getCurrentRealmId() ?? undefined,
+      controller.getUnlockedRealms(),
     ).then(g => {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;

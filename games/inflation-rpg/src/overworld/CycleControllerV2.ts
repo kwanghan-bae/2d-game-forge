@@ -35,6 +35,7 @@ export class CycleControllerV2 {
   private getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
   private onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
   private currentRealmId: import('../types').RealmId | null = null;
+  private unlockedRealms: readonly import('../types').RealmId[] = ['base'];
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
@@ -54,6 +55,12 @@ export class CycleControllerV2 {
     this.currentRealmId = realmId;
   }
 
+  setUnlockedRealms(realms: readonly import('../types').RealmId[]): void {
+    this.unlockedRealms = realms;
+  }
+
+  getUnlockedRealms(): readonly import('../types').RealmId[] { return this.unlockedRealms; }
+  getCurrentRealmId(): import('../types').RealmId | null { return this.currentRealmId; }
   getHero(): HeroEntity { return this.hero; }
   getDecisionAI(): HeroDecisionAI { return this.ai; }
   getSeed(): number { return this.seed; }
@@ -108,6 +115,9 @@ export class CycleControllerV2 {
           if (this.onBossKill && this.currentRealmId) {
             const unlocked = this.onBossKill(this.currentRealmId);
             if (unlocked) {
+              // T13: keep local unlockedRealms in sync so exit filter is
+              // immediately correct in the same cycle.
+              this.unlockedRealms = [...this.unlockedRealms, unlocked];
               events.push({ type: 'realm_unlocked', realmId: unlocked });
             }
           }
