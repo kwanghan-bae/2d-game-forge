@@ -72,3 +72,47 @@ describe('CycleControllerV2', () => {
     expect(saga.chapters.flatMap(c => c.events).length).toBeGreaterThan(0);
   });
 });
+
+describe('CycleControllerV2 chapter_transition', () => {
+  it('emits chapter_transition when hero crosses 어린시절 → 청년기 boundary', () => {
+    const ctrl = new CycleControllerV2({
+      seed: 42,
+      traits: [],
+      bpMax: 30,
+      heroHpMax: 100,
+      heroAtkBase: 100000,
+    });
+    // Hero starts at age 5 (어린시절). With bpMax=30 each enemy arrival drains
+    // some BP and the age advances. Run arrivals until the hero reaches 청년기
+    // (age >= 15) or dies, collecting all events.
+    const collected: Array<ReturnType<typeof ctrl.handleArrival>[number]> = [];
+    for (let i = 0; i < 20; i++) {
+      const evs = ctrl.handleArrival('enemy', `wolf_${i}`);
+      collected.push(...evs);
+      if (ctrl.getHero().dead) break;
+      if (ctrl.getHero().chapter === '청년기' || ctrl.getHero().chapter !== '어린시절') break;
+    }
+    const transitions = collected.filter(e => e.type === 'chapter_transition');
+    expect(transitions.length).toBeGreaterThanOrEqual(1);
+    const first = transitions[0]!;
+    if (first.type !== 'chapter_transition') throw new Error('narrowing'); // type-narrow
+    expect(first.fromChapter).toBe('어린시절');
+    expect(first.toChapter).toBe('청년기');
+    expect(first.atAge).toBeGreaterThanOrEqual(15);
+  });
+
+  it('emits no chapter_transition when hero stays in 어린시절', () => {
+    const ctrl = new CycleControllerV2({
+      seed: 42,
+      traits: [],
+      bpMax: 30,
+      heroHpMax: 100,
+      heroAtkBase: 100000,
+    });
+    // Single arrival — age moves a small amount, chapter unchanged.
+    const events = ctrl.handleArrival('enemy', 'wolf_1');
+    const transitions = events.filter(e => e.type === 'chapter_transition');
+    expect(transitions).toHaveLength(0);
+    expect(ctrl.getHero().chapter).toBe('어린시절');
+  });
+});
