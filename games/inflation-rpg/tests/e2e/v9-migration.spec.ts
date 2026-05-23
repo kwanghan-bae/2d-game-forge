@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
-test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression + Phase V3-B eternal hero light + Phase V3-C buffLevels', async ({ page }) => {
+test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19→v20→v21 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression + Phase V3-B eternal hero light + Phase V3-C buffLevels + Phase V3-DEF unlockedRealms/eternalSaga/currentRealmId/npcs', async ({ page }) => {
   // 1. 빈 localStorage 로 시작
   await page.goto(GAME_URL);
 
@@ -26,25 +26,25 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
     localStorage.setItem(key, JSON.stringify(v8Save));
   }, SAVE_KEY);
 
-  // 3. 게임 reload — zustand persist 가 v8 → v9 → v10 → v11 → v12 → v13 → v14 → v15 → v16 → v17 체인 마이그레이션 실행
+  // 3. 게임 reload — zustand persist 가 v8 → ... → v21 체인 마이그레이션 실행
   await page.reload();
   await page.waitForFunction(
     (key) => {
       const raw = localStorage.getItem(key);
-      return !!raw && JSON.parse(raw).version === 20;
+      return !!raw && JSON.parse(raw).version === 21;
     },
     SAVE_KEY,
     { timeout: 10000 }
   );
 
-  // 4. localStorage 검증 — version 19 + v9 modifiers + v10 ascTree + v11 Phase E + v12 Phase Compass + v13 Phase Realms + v14 Phase 5 IAP + v15 Phase Sim-A + v16 Phase Sim-B + v17 Phase V1a + v18 Phase Sim-M + v19 Phase V3-B
+  // 4. localStorage 검증 — version 21 (V3-DEF) + v9 modifiers + ... + v20 buffLevels + v21 unlockedRealms/eternalSaga
   const migratedState = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   }, SAVE_KEY);
 
   expect(migratedState).toBeTruthy();
-  expect(migratedState.version).toBe(20);
+  expect(migratedState.version).toBe(21);
   // v9 — auto-rolled modifiers
   expect(migratedState.state.meta.inventory.weapons[0].modifiers).toBeDefined();
   expect(Array.isArray(migratedState.state.meta.inventory.weapons[0].modifiers)).toBe(true);
@@ -118,4 +118,15 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
 
   // v20 — Phase V3-C buffLevels default
   expect(migratedState.state.meta.buffLevels).toEqual({});
+
+  // v21 — Phase V3-DEF unlockedRealms + eternalSaga + currentRealmId + npcs
+  expect(migratedState.state.meta.unlockedRealms).toEqual(['base']);
+  expect(migratedState.state.meta.eternalSaga).toEqual({
+    events: [],
+    chaptersByEra: {},
+    rejuvenationCount: 0,
+    realmTransitions: [],
+  });
+  expect(migratedState.state.run.currentRealmId).toBe('base');
+  expect(migratedState.state.run.npcs).toEqual([]);
 });
