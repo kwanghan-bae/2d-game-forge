@@ -69,6 +69,7 @@ export class OverworldScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor('#0a0e1a');
+    this.cameras.main.setBounds(0, 0, GRID_W * TILE_PX, GRID_H * TILE_PX);
     this.setSpeed(this.initialSpeed);
 
     // Render tile background
