@@ -6,6 +6,7 @@ import { SagaRecorder } from '../saga/SagaRecorder';
 import { NarrativeGenerator } from '../saga/NarrativeGenerator';
 import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import { lookupDrop } from './dropTable';
+import { findRealm } from '../data/realms';
 import type { TraitId } from '../cycle/traits';
 import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
@@ -229,6 +230,17 @@ export class CycleControllerV2 {
         atAge: this.hero.age,
       });
     }
+
+    // V3-D: hero 가 exit landmark 도착 시 realm 전환
+    if (kind === 'exit' && this.currentRealmId) {
+      const realm = findRealm(this.currentRealmId);
+      if (realm.nextRealm && this.unlockedRealms.includes(realm.nextRealm)) {
+        const newRealm = realm.nextRealm;
+        this.currentRealmId = newRealm;
+        events.push({ type: 'realm_entered', realmId: newRealm });
+      }
+    }
+
     return events;
   }
 

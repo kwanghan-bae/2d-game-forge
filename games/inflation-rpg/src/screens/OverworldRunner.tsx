@@ -3,6 +3,7 @@ import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
 import { computeLightDelta } from '../overworld/lightEmit';
 import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
+import { REALM_CATALOG } from '../data/realms';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { SpendModal } from './SpendModal';
 
@@ -58,11 +59,13 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
+  const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveMul = getMoveSpeedMul(meta);
 
   useEffect(() => {
@@ -100,6 +103,16 @@ export function OverworldRunner({ onCycleEnd }: Props) {
               chapterOverlayTimerRef.current = null;
             }, 2000);
           }
+          const realmEntered = evs.find(e => e.type === 'realm_entered');
+          if (realmEntered && realmEntered.type === 'realm_entered') {
+            useGameStore.getState().setCurrentRealm(realmEntered.realmId);
+            setRealmOverlay({ realmId: realmEntered.realmId, key: Date.now() });
+            if (realmOverlayTimerRef.current) clearTimeout(realmOverlayTimerRef.current);
+            realmOverlayTimerRef.current = setTimeout(() => {
+              setRealmOverlay(null);
+              realmOverlayTimerRef.current = null;
+            }, 2000);
+          }
         }
         if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
           endedRef.current = true;
@@ -123,6 +136,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
         chapterOverlayTimerRef.current = null;
+      }
+      if (realmOverlayTimerRef.current) {
+        clearTimeout(realmOverlayTimerRef.current);
+        realmOverlayTimerRef.current = null;
       }
       destroy?.();
     };
@@ -212,6 +229,32 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         >
           <div style={{ fontSize: 28, fontWeight: 700 }}>📖 {chapterOverlay.toChapter}</div>
           <div style={{ fontSize: 14, opacity: 0.7, marginTop: 4 }}>{chapterOverlay.atAge}세</div>
+        </div>
+      )}
+      {realmOverlay && (
+        <div
+          key={realmOverlay.key}
+          style={{
+            position: 'absolute',
+            top: '40%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#ffd54f',
+            fontSize: 24,
+            fontWeight: 700,
+            background: 'rgba(0,0,0,0.7)',
+            padding: '12px 24px',
+            borderRadius: 8,
+            animation: 'forgeChapterFade 2s ease-in-out forwards',
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+          data-testid="realm-entered-overlay"
+        >
+          다음 영역: {(() => {
+            const r = REALM_CATALOG.find(rr => rr.id === realmOverlay.realmId);
+            return r?.nameKR ?? realmOverlay.realmId;
+          })()}
         </div>
       )}
 
