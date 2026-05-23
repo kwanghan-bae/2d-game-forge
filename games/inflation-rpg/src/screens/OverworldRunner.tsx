@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
 import { computeLightDelta } from '../overworld/lightEmit';
-import { getLightRateMul } from '../buff/buffEffects';
+import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { SpendModal } from './SpendModal';
 
@@ -61,6 +61,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moveMul = getMoveSpeedMul(meta);
 
   useEffect(() => {
     if (status !== 'running' || !controller || !containerRef.current) return;
@@ -107,7 +108,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       controller.getHero(),
       controller.getDecisionAI(),
       controller.getSeed(),
-      speed,
+      speed * moveMul,
     ).then(g => {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;
@@ -126,8 +127,8 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   }, [status, controller, onCycleEnd, endCycle]);
 
   useEffect(() => {
-    setSceneSpeedRef.current?.(speed);
-  }, [speed]);
+    setSceneSpeedRef.current?.(speed * moveMul);
+  }, [speed, moveMul]);
 
   if (status === 'idle' || !controller) {
     return <div style={{ padding: 24, color: '#eee' }}>사이클이 시작되지 않았습니다.</div>;
