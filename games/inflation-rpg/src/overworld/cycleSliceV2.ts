@@ -118,6 +118,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     }));
     hero.rejuvenate(years);
     ctrl.recordRejuvenation(years);
+    useGameStore.getState().recordSagaRejuvenation();
   },
   reset() {
     set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0 });
