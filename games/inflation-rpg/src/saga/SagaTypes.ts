@@ -10,6 +10,7 @@ export type SagaEventType =
   | 'skillLearned'
   | 'shrine'
   | 'moralChoice'
+  | 'rejuvenation'
   | 'death';
 
 export type DeathCause = '전사' | '자연사' | '영광스러운죽음' | '비극';

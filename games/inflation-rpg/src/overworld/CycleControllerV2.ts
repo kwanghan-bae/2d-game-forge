@@ -181,6 +181,21 @@ export class CycleControllerV2 {
     return events;
   }
 
+  /** Called by cycleSliceV2.rejuvenateHero after hero.rejuvenate(). Records the
+   *  saga "재생 #K" marker with the post-rejuvenation age. */
+  recordRejuvenation(years: number): void {
+    this.saga.record({
+      age: this.hero.age,
+      type: 'rejuvenation',
+      narrativeText: NarrativeGenerator.forRejuvenation({
+        age: this.hero.age,
+        yearsBack: years,
+        rejuvenationCount: this.hero.rejuvenationCount,
+      }),
+      payload: { years, rejuvenationCount: this.hero.rejuvenationCount },
+    });
+  }
+
   finalize(): CycleSaga {
     return this.saga.finalize({
       finalAge: this.hero.age,
