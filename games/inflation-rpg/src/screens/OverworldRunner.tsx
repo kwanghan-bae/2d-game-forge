@@ -57,6 +57,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
+  const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,6 +80,11 @@ export function OverworldRunner({ onCycleEnd }: Props) {
               ...s,
               meta: { ...s.meta, light: (s.meta.light ?? 0) + finalDelta },
             }));
+            const floaterKey = Date.now() + Math.random();
+            setLightFloaters(prev => [...prev, { key: floaterKey, amount: finalDelta }]);
+            setTimeout(() => {
+              setLightFloaters(prev => prev.filter(f => f.key !== floaterKey));
+            }, 1500);
           }
           setHudTick(n => n + 1);
           setLogEntries(controller.getRecentSagaEvents(LOG_LIMIT));
@@ -136,7 +142,25 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
         <span>{hero.job} · LV {hero.level}</span>
         <span>HP {hero.hp}/{hero.hpMax}</span>
-        <span data-testid="hud-light">빛 {meta.light ?? 0}</span>
+        <span data-testid="hud-light" style={{ position: 'relative' }}>
+          빛 {Math.floor(meta.light ?? 0)}
+          <span data-testid="light-floaters" style={{ position: 'absolute', left: '100%', top: 0, marginLeft: 8, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+            {lightFloaters.map(f => (
+              <span
+                key={f.key}
+                style={{
+                  display: 'inline-block',
+                  color: '#ffd54f',
+                  fontWeight: 700,
+                  animation: 'forgeLightFloat 1.5s ease-out forwards',
+                  marginRight: 4,
+                }}
+              >
+                +{f.amount.toFixed(1)}
+              </span>
+            ))}
+          </span>
+        </span>
         <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
         <button
           type="button"
@@ -169,6 +193,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
           0% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
           20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
           100% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+        }
+        @keyframes forgeLightFloat {
+          0% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-12px); }
         }
       `}</style>
       {chapterOverlay && (
