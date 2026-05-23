@@ -32,7 +32,6 @@ const GRID_H = 12;
 export interface SimV2Options {
   count: number;
   seedStart: number;
-  bpMax: number;
   heroHpMax: number;
   heroAtkBase: number;
   traits?: TraitId[];
@@ -52,7 +51,6 @@ export interface StampedEvent {
   heroAge: number;
   heroLevel: number;
   heroHp: number;
-  heroBp: number;
   ev: OverworldEvent;
 }
 
@@ -65,7 +63,6 @@ export interface SimV2CycleResult {
   kills: number;
   bossKills: number;
   drops: number;
-  bpRemaining: number;
   hp: number;
   hpMax: number;
   warnings: string[];
@@ -88,7 +85,6 @@ export interface SimV2Summary {
   maxLevel: Percentiles;
   arrivals: Percentiles;
   kills: Percentiles;
-  bpRemaining: Percentiles;
   jobUnlocks: Percentiles;
   skillsLearned: Percentiles;
   shrineVisits: Percentiles;
@@ -146,7 +142,6 @@ function runOneCycle(
   const ctrl = new CycleControllerV2({
     seed,
     traits: opts.traits ?? [],
-    bpMax: opts.bpMax,
     heroHpMax: startHpBase,
     heroAtkBase: startAtkBase,
   });
@@ -171,7 +166,7 @@ function runOneCycle(
   let sameTypeStreak = 0;
   let endCause = 'unknown';
 
-  while (arrivals < maxArrivals && !hero.dead && hero.bp > 0) {
+  while (arrivals < maxArrivals) {
     const candidates = layout.landmarks.filter(l => !l.consumed);
     if (candidates.length === 0) { endCause = 'no_landmarks'; break; }
     const chosenCandidate = ai.chooseDestination(candidates.map(landmarkToCandidate));
@@ -186,14 +181,14 @@ function runOneCycle(
     } else { sameTypeStreak = 1; lastTypeId = typeId; }
 
     const arrivalEv: OverworldEvent = { type: 'arrived_at', landmarkId: target.instanceId, landmarkKind: target.type.kind };
-    stamped.push({ cycleSeed: seed, arrival: arrivals, heroAge: hero.age, heroLevel: hero.level, heroHp: hero.hp, heroBp: hero.bp, ev: arrivalEv });
+    stamped.push({ cycleSeed: seed, arrival: arrivals, heroAge: hero.age, heroLevel: hero.level, heroHp: hero.hp, ev: arrivalEv });
 
     const events = ctrl.handleArrival(target.type.kind, target.instanceId);
     arrivals += 1;
     target.consumed = true;
 
     for (const ev of events) {
-      stamped.push({ cycleSeed: seed, arrival: arrivals, heroAge: hero.age, heroLevel: hero.level, heroHp: hero.hp, heroBp: hero.bp, ev });
+      stamped.push({ cycleSeed: seed, arrival: arrivals, heroAge: hero.age, heroLevel: hero.level, heroHp: hero.hp, ev });
       if (ev.type === 'battle_won') {
         if (target.type.kind === 'boss') bossKills += 1; else kills += 1;
         if (ev.dropId) drops += 1;
@@ -212,15 +207,13 @@ function runOneCycle(
       }
     }
 
-    if (target.type.kind === 'enemy' && !hero.dead && hero.bp > 0) {
+    if (target.type.kind === 'enemy') {
       respawnEnemy(layout.landmarks, respawnRng, target, ++respawnCounter, hero.chapter);
     }
   }
 
   if (endCause === 'unknown') {
-    if (hero.dead && hero.hp <= 0 && hero.bp > 0) endCause = '전사';
-    else if (hero.bp <= 0) endCause = '자연사';
-    else if (arrivals >= maxArrivals) endCause = 'max_arrivals';
+    if (arrivals >= maxArrivals) endCause = 'max_arrivals';
   }
 
   const saga = ctrl.finalize();
@@ -231,7 +224,7 @@ function runOneCycle(
   const result: SimV2CycleResult = {
     seed, maxLevel, finalAge: hero.age, endCause,
     arrivals, kills, bossKills, drops,
-    bpRemaining: hero.bp, hp: hero.hp, hpMax: hero.hpMax,
+    hp: hero.hp, hpMax: hero.hpMax,
     warnings,
     jobUnlocks, skillsLearned, shrineVisits, moralChoices,
     finalJobId, learnedSkills,
@@ -274,7 +267,6 @@ function buildSummary(results: SimV2CycleResult[]): SimV2Summary {
     maxLevel:        stat(results.map(r => r.maxLevel)),
     arrivals:        stat(results.map(r => r.arrivals)),
     kills:           stat(results.map(r => r.kills + r.bossKills)),
-    bpRemaining:     stat(results.map(r => r.bpRemaining)),
     jobUnlocks:      stat(results.map(r => r.jobUnlocks)),
     skillsLearned:   stat(results.map(r => r.skillsLearned)),
     shrineVisits:    stat(results.map(r => r.shrineVisits)),
@@ -332,7 +324,6 @@ if (process.argv[1]?.endsWith('sim-cycle-v2.ts')) {
   };
   const count = parseInt(parseArg('count', '10'), 10);
   const seedStart = parseInt(parseArg('seed', '42'), 10);
-  const bpMax = parseInt(parseArg('bp', '100'), 10);
   const hp = parseInt(parseArg('hp', '100'), 10);
   const atk = parseInt(parseArg('atk', '50'), 10);
   const atkBonus = parseInt(parseArg('atk-bonus', '0'), 10);
@@ -344,7 +335,7 @@ if (process.argv[1]?.endsWith('sim-cycle-v2.ts')) {
   const mdSampleEvery = parseInt(parseArg('md-every', '25'), 10);
 
   const result = runSimV2({
-    count, seedStart, bpMax,
+    count, seedStart,
     heroHpMax: hp, heroAtkBase: atk,
     atkBonus, hpBonus,
     traits, maxArrivals, outDir, mdSampleEvery,
