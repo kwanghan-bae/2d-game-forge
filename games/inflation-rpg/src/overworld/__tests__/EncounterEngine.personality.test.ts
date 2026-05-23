@@ -4,7 +4,7 @@ import { HeroEntity } from '../../hero/HeroEntity';
 import { SeededRng } from '../../cycle/SeededRng';
 import type { OverworldEvent } from '../OverworldEvents';
 
-const baseOpts = { seed: 1, bpMax: 100, heroHpMax: 100, heroAtkBase: 50 };
+const baseOpts = { seed: 1, heroHpMax: 100, heroAtkBase: 50 };
 
 function makeEngine(seed = 1): EncounterEngine {
   return new EncounterEngine(new SeededRng(seed));
@@ -46,18 +46,16 @@ describe('EncounterEngine — V1c-1 personality drift landmarks', () => {
     expect(negative.delta).toBe(-3);
   });
 
-  it('drift landmarks do not consume BP beyond the consumeBp(0) tick — no death risk', () => {
+  it('drift landmarks do not damage hp and leave hero uninjured', () => {
     const hero = HeroEntity.create(baseOpts);
     const startHp = hero.hp;
-    const startBp = hero.bp;
     const engine = makeEngine();
     engine.resolveEncounter(hero, 'watchtower', 'wt_1');
     engine.resolveEncounter(hero, 'treasure_cave', 'tc_1');
     engine.resolveEncounter(hero, 'holy_ruin', 'hr_1');
     engine.resolveEncounter(hero, 'crossroads', 'cr_1');
     expect(hero.hp).toBe(startHp);
-    expect(hero.bp).toBe(startBp);
-    expect(hero.dead).toBe(false);
+    expect(hero.staggered).toBe(false);
   });
 
   it('mutates the hero personality matching the emitted delta', () => {
