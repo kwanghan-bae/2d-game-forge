@@ -8,7 +8,7 @@ import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import { lookupDrop } from './dropTable';
 import { findRealm } from '../data/realms';
 import type { TraitId } from '../cycle/traits';
-import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
+import type { CycleSaga, DeathCause, SagaEvent } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
 import { useGameStore } from '../store/gameStore';
 import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
@@ -131,7 +131,7 @@ export class CycleControllerV2 {
         }
         const enemyType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id)) ?? null;
         const enemyNameKR = enemyType?.nameKR ?? '적';
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'battle',
           narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR }),
@@ -141,7 +141,7 @@ export class CycleControllerV2 {
           this.drops += 1;
           const dropItem = lookupDrop(ev.dropId);
           const itemNameKR = dropItem?.nameKR ?? ev.dropId;
-          this.saga.record({
+          this.recordToStore({
             age: this.hero.age,
             type: 'drop',
             narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }),
@@ -157,7 +157,7 @@ export class CycleControllerV2 {
       // job_unlocked events come only from the post-arrival maybeUnlockJobForAge
       // hook below — never from resolveEncounter — so no branch here.
       if (ev.type === 'skill_learned') {
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'skillLearned',
           narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }),
@@ -165,7 +165,7 @@ export class CycleControllerV2 {
         });
       }
       if (ev.type === 'shrine_visited') {
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'shrine',
           narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }),
@@ -173,7 +173,7 @@ export class CycleControllerV2 {
         });
       }
       if (ev.type === 'moral_choice') {
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'moralChoice',
           narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }),
@@ -183,7 +183,7 @@ export class CycleControllerV2 {
       if (ev.type === 'hero_died') {
         this.endCause = ev.cause;
         const enemyType = ev.enemyId ? LANDMARK_TYPES.find(t => ev.enemyId!.startsWith(t.id)) : null;
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'death',
           narrativeText: NarrativeGenerator.forDeath({
@@ -199,7 +199,7 @@ export class CycleControllerV2 {
     // Flush the collected level_ups as one saga record. Avoids 수십 줄 spam
     // from late-game `expGain ∝ lv^1.8` (kill 당 70+ level-ups).
     if (levelCount > 0) {
-      this.saga.record({
+      this.recordToStore({
         age: this.hero.age,
         type: 'levelUp',
         narrativeText: NarrativeGenerator.forLevelUpBatch({
@@ -216,7 +216,7 @@ export class CycleControllerV2 {
       for (const j of jobs) {
         const jobEv = { type: 'job_unlocked' as const, jobId: j.jobId, jobNameKR: j.jobNameKR, tier: j.tier };
         events.push(jobEv);
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'jobUnlock',
           narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }),
@@ -279,7 +279,9 @@ export class CycleControllerV2 {
       const realm = findRealm(this.currentRealmId);
       if (realm.nextRealm && this.unlockedRealms.includes(realm.nextRealm)) {
         const newRealm = realm.nextRealm;
+        const oldRealm = this.currentRealmId;
         this.currentRealmId = newRealm;
+        useGameStore.getState().recordSagaRealmTransition(oldRealm, newRealm, this.hero.age, this.hero.chapter);
         events.push({ type: 'realm_entered', realmId: newRealm });
       }
     }
@@ -306,7 +308,7 @@ export class CycleControllerV2 {
   /** Called by cycleSliceV2.rejuvenateHero after hero.rejuvenate(). Records the
    *  saga "재생 #K" marker with the post-rejuvenation age. */
   recordRejuvenation(years: number): void {
-    this.saga.record({
+    this.recordToStore({
       age: this.hero.age,
       type: 'rejuvenation',
       narrativeText: NarrativeGenerator.forRejuvenation({
@@ -316,6 +318,11 @@ export class CycleControllerV2 {
       }),
       payload: { years, rejuvenationCount: this.hero.rejuvenationCount },
     });
+  }
+
+  private recordToStore(event: SagaEvent): void {
+    this.saga.record(event);
+    useGameStore.getState().recordSagaEvent(event, this.hero.chapter);
   }
 
   finalize(): CycleSaga {
