@@ -1,5 +1,6 @@
 import { SeededRng } from '../cycle/SeededRng';
 import { LANDMARK_TYPES } from '../data/landmarks';
+import { ENEMY_ZONES, selectEnemyTypeId, type EnemyZone } from '../data/enemyTiers';
 import type { ZoneId } from '../data/zones';
 import type { PlacedLandmark } from './Landmark';
 
@@ -46,23 +47,29 @@ export function generateMapLayout(seed: number): MapLayout {
 
   place('village', 1, Math.floor(GRID_H / 2));
 
-  const ENEMY_TYPES = ['wolf', 'goblin', 'bandit'];
-  const ENEMY_ZONE_COL_RANGES = [
-    { xMin: 4,  xMax: 7  },
-    { xMin: 8,  xMax: 11 },
-    { xMin: 12, xMax: 16 },
-  ];
+  // V1e — zone-tiered initial enemy placement. Each zone always spawns its
+  // 어린시절 row enemy; respawns walk the chapter axis as the hero ages.
+  const ENEMY_ZONE_COL_RANGES: Record<EnemyZone, { xMin: number; xMax: number }> = {
+    forest:    { xMin: 4,  xMax: 7  },
+    plains:    { xMin: 8,  xMax: 11 },
+    mountains: { xMin: 12, xMax: 16 },
+  };
   for (let i = 0; i < 12; i++) {
-    const enemyTypeId = ENEMY_TYPES[rng.int(ENEMY_TYPES.length)];
-    const zoneRange = ENEMY_ZONE_COL_RANGES[rng.int(ENEMY_ZONE_COL_RANGES.length)];
-    const x = zoneRange.xMin + rng.int(zoneRange.xMax - zoneRange.xMin + 1);
+    const zone = ENEMY_ZONES[rng.int(ENEMY_ZONES.length)]!;
+    const range = ENEMY_ZONE_COL_RANGES[zone];
+    const x = range.xMin + rng.int(range.xMax - range.xMin + 1);
     const y = rng.int(GRID_H);
+    const enemyTypeId = selectEnemyTypeId(zone, '어린시절');
     place(enemyTypeId, x, y, `_e${i}`);
   }
 
-  place('wolf_lord', 13 + rng.int(3), rng.int(GRID_H));
-  place('wolf_lord', 14 + rng.int(3), rng.int(GRID_H), '_b2');
-  place('dragon', 17 + rng.int(2), rng.int(GRID_H));
+  // V1e — 4 distinct boss types so the cycle's boss-fight peaks aren't all
+  // the same emoji. wolf_lord/chimera_lord in mountains, dragon/lich_king
+  // in mystic — placement bands unchanged.
+  place('wolf_lord',    13 + rng.int(3), rng.int(GRID_H));
+  place('chimera_lord', 14 + rng.int(3), rng.int(GRID_H), '_b2');
+  place('dragon',       17 + rng.int(2), rng.int(GRID_H));
+  place('lich_king',    18 + rng.int(2), rng.int(GRID_H), '_b2');
 
   place('shrine', 18 + rng.int(2), rng.int(GRID_H));
   place('cave',   15 + rng.int(3), rng.int(GRID_H));

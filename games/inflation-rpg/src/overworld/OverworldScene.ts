@@ -1,7 +1,8 @@
 import * as Phaser from 'phaser';
 import { SeededRng } from '../cycle/SeededRng';
-import { ZONES, type ZoneId } from '../data/zones';
+import { ZONES } from '../data/zones';
 import { LANDMARK_TYPES } from '../data/landmarks';
+import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../data/enemyTiers';
 import { Pathfinder, type GridCell } from './Pathfinding';
 import type { PlacedLandmark } from './Landmark';
 import { landmarkToCandidate } from './Landmark';
@@ -13,12 +14,13 @@ import { generateMapLayout, GRID_H, GRID_W, TILE_PX, type MapLayout } from './ma
 export { generateMapLayout, GRID_H, GRID_W };
 export type { MapLayout };
 
-/** Zones that are eligible for enemy respawn by column range. */
-const ENEMY_ZONE_RANGES: Array<{ zone: ZoneId; xMin: number; xMax: number }> = [
-  { zone: 'forest',    xMin: 3,  xMax: 7  },
-  { zone: 'plains',    xMin: 8,  xMax: 11 },
-  { zone: 'mountains', xMin: 12, xMax: 16 },
-];
+/** Column bands per enemy zone — used by respawn when the consumed enemy's
+ *  position fell outside any band (extremely rare, just a safety net). */
+const ENEMY_ZONE_COL_RANGES: Record<EnemyZone, { xMin: number; xMax: number }> = {
+  forest:    { xMin: 3,  xMax: 7  },
+  plains:    { xMin: 8,  xMax: 11 },
+  mountains: { xMin: 12, xMax: 16 },
+};
 
 interface OverworldSceneData {
   seed: number;
@@ -183,16 +185,16 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
-  /** Spawn a replacement enemy in the same zone as the consumed landmark. */
+  /** Spawn a replacement enemy in the same zone as the consumed landmark,
+   *  picking the enemy type that matches the hero's current chapter so the
+   *  narrative ages along with him (V1e). */
   private respawnEnemyNear(consumed: PlacedLandmark): void {
     // Determine the zone band from the consumed landmark's x position.
-    let range = ENEMY_ZONE_RANGES.find(r => consumed.gridX >= r.xMin && consumed.gridX <= r.xMax);
-    if (!range) {
-      // Fallback: pick any of the 3 enemy zone ranges.
-      range = ENEMY_ZONE_RANGES[this.sceneRng.int(ENEMY_ZONE_RANGES.length)];
-    }
-    const ENEMY_TYPES = ['wolf', 'goblin', 'bandit'];
-    const typeId = ENEMY_TYPES[this.sceneRng.int(ENEMY_TYPES.length)];
+    const zone: EnemyZone =
+      zoneForColumn(consumed.gridX) ??
+      ENEMY_ZONES[this.sceneRng.int(ENEMY_ZONES.length)]!;
+    const range = ENEMY_ZONE_COL_RANGES[zone];
+    const typeId = selectEnemyTypeId(zone, this.hero.chapter);
     const landmarkType = LANDMARK_TYPES.find(t => t.id === typeId);
     if (!landmarkType) return;
 
