@@ -21,7 +21,6 @@ describe('cycleSliceV2', () => {
     useCycleStoreV2.getState().start({
       seed: 42,
       traits: [],
-      bpMax: 30,
       heroHpMax: 100,
       heroAtkBase: 100,
     });
@@ -31,7 +30,7 @@ describe('cycleSliceV2', () => {
 
   it('endCycle finalizes saga and persists', () => {
     useCycleStoreV2.getState().start({
-      seed: 42, traits: [], bpMax: 3, heroHpMax: 100, heroAtkBase: 100000,
+      seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000,
     });
     // force end by exhausting
     for (let i = 0; i < 10; i++) {
@@ -43,7 +42,7 @@ describe('cycleSliceV2', () => {
   });
 
   it('reset clears everything', () => {
-    useCycleStoreV2.getState().start({ seed: 1, traits: [], bpMax: 30, heroHpMax: 100, heroAtkBase: 100 });
+    useCycleStoreV2.getState().start({ seed: 1, traits: [], heroHpMax: 100, heroAtkBase: 100 });
     useCycleStoreV2.getState().reset();
     expect(useCycleStoreV2.getState().status).toBe('idle');
     expect(useCycleStoreV2.getState().controller).toBeNull();
@@ -55,7 +54,7 @@ describe('cycleSliceV2', () => {
     it('endCycle spends accrued gold via balanced strategy', () => {
       seedMeta(100, 0, 0);
       useCycleStoreV2.getState().start({
-        seed: 1, traits: [], bpMax: 3, heroHpMax: 100, heroAtkBase: 100,
+        seed: 1, traits: [], heroHpMax: 100, heroAtkBase: 100,
       });
       useCycleStoreV2.getState().endCycle();
       const meta = useGameStore.getState().meta;
@@ -69,12 +68,42 @@ describe('cycleSliceV2', () => {
     it('does not regress bonuses when there is not enough gold', () => {
       seedMeta(5, 2, 3);
       useCycleStoreV2.getState().start({
-        seed: 1, traits: [], bpMax: 3, heroHpMax: 100, heroAtkBase: 100,
+        seed: 1, traits: [], heroHpMax: 100, heroAtkBase: 100,
       });
       useCycleStoreV2.getState().endCycle();
       const meta = useGameStore.getState().meta;
       expect(meta.atkBaseBonus).toBeGreaterThanOrEqual(2);
       expect(meta.hpBaseBonus).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe('rejuvenateHero action', () => {
+    it('decreases hero age, spends light, increments rejuvenationCount', () => {
+      useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 1000 } }));
+      const store = useCycleStoreV2.getState();
+      store.start({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100 });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      const hero = ctrl.getHero();
+      for (let i = 0; i < 200; i++) hero.tickAge();
+      const ageBefore = hero.age;
+      const lightBefore = useGameStore.getState().meta.light ?? 0;
+      useCycleStoreV2.getState().rejuvenateHero(5);
+      expect(hero.age).toBeLessThan(ageBefore);
+      expect(hero.rejuvenationCount).toBe(1);
+      expect(useGameStore.getState().meta.light).toBeLessThan(lightBefore);
+    });
+
+    it('no-op when meta.light < cost', () => {
+      useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 0 } }));
+      const store = useCycleStoreV2.getState();
+      store.start({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100 });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      const hero = ctrl.getHero();
+      for (let i = 0; i < 200; i++) hero.tickAge();
+      const ageBefore = hero.age;
+      useCycleStoreV2.getState().rejuvenateHero(5);
+      expect(hero.age).toBe(ageBefore);
+      expect(hero.rejuvenationCount).toBe(0);
     });
   });
 });

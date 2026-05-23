@@ -56,6 +56,13 @@ describe('NarrativeGenerator', () => {
     expect(txt).toContain('낡은 검');
   });
 
+  it('rejuvenation → "N세에 빛의 은총으로 M년이 사라졌다 — 재생 #K"', () => {
+    const txt = NarrativeGenerator.forRejuvenation({ age: 30, yearsBack: 5, rejuvenationCount: 2 });
+    expect(txt).toContain('30세');
+    expect(txt).toContain('5년');
+    expect(txt).toContain('재생 #2');
+  });
+
   it('death event → "N세에 X(으)로 쓰러졌다" or "안식을 맞았다"', () => {
     const txt = NarrativeGenerator.forDeath({ age: 35, cause: '전사', enemyNameKR: '용' });
     expect(txt).toContain('35세');

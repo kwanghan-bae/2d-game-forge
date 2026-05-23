@@ -1840,3 +1840,23 @@ describe('migrateV13ToV14', () => {
     expect(result).toEqual(stateWithoutMeta);
   });
 });
+
+describe('persist v19 clean reset migration', () => {
+  it('drops all v18 state and initializes meta.light = 0', () => {
+    const v18State = {
+      meta: {
+        sponsorGold: 1234,
+        atkBaseBonus: 50,
+        hpBaseBonus: 80,
+        cycleHistory: [{ seed: 1, finalAge: 70 }],
+      },
+      inventory: { weapons: [{ id: 'sword' }], armors: [], accessories: [] },
+    };
+    const out = runStoreMigration(v18State, 18) as { meta: { light: number; sponsorGold?: unknown; atkBaseBonus?: unknown; hpBaseBonus?: unknown; cycleHistory?: unknown } };
+    expect(out.meta.light).toBe(0);
+    expect(out.meta.sponsorGold).toBeUndefined();
+    expect(out.meta.atkBaseBonus).toBeUndefined();
+    expect(out.meta.hpBaseBonus).toBeUndefined();
+    expect(out.meta.cycleHistory).toBeUndefined();
+  });
+});

@@ -1,8 +1,3 @@
-// Chapters map to age ranges. BP consumption progress drives age advance —
-// at BP 0% remaining used, hero is 5 (start). At 100% used, hero is 70+ (death/old age).
-// Trait modifiers (bpCostMul) effectively shorten or lengthen the cycle but the
-// 5-stage chapter structure stays.
-
 export const CHAPTERS = ['어린시절', '청년기', '장년기', '노년기', '마지막'] as const;
 export type Chapter = (typeof CHAPTERS)[number];
 
@@ -16,6 +11,7 @@ const CHAPTER_RANGES: Array<[Chapter, number, number]> = [
 
 const START_AGE = 5;
 const END_AGE = 70;
+const ACTIONS_FOR_END_AGE = 1000;
 
 export class HeroLifecycle {
   static chapterForAge(age: number): Chapter {
@@ -25,9 +21,18 @@ export class HeroLifecycle {
     return '마지막';
   }
 
-  /** Linear mapping: bpProgress 0 → START_AGE (5), 1 → END_AGE (70). */
-  static ageFromBpProgress(bpProgress: number): number {
-    const clamped = Math.max(0, Math.min(1, bpProgress));
-    return Math.floor(START_AGE + (END_AGE - START_AGE) * clamped);
+  /** Linear mapping: 0 actions → age 5, 1000 actions → age 70.
+   *  Beyond 1000 continues linearly (age keeps increasing). */
+  static ageFromActions(actions: number): number {
+    const ratio = actions / ACTIONS_FOR_END_AGE;
+    return Math.floor(START_AGE + (END_AGE - START_AGE) * ratio);
+  }
+
+  /** Inverse of ageFromActions: returns the action count that yields the given age.
+   *  Clamps to 0 for age <= START_AGE. */
+  static actionsForAge(age: number): number {
+    if (age <= START_AGE) return 0;
+    const ratio = (age - START_AGE) / (END_AGE - START_AGE);
+    return Math.ceil(ratio * ACTIONS_FOR_END_AGE);
   }
 }

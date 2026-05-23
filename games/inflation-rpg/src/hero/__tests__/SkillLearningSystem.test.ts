@@ -5,7 +5,7 @@ import { SkillLearningSystem, isSkillMilestoneLevel } from '../SkillLearningSyst
 import { findSkillsForJob } from '../../data/heroSkills';
 
 function makeHero(jobId: string | null = null) {
-  const h = HeroEntity.create({ seed: 1, bpMax: 100, heroHpMax: 100, heroAtkBase: 50 });
+  const h = HeroEntity.create({ seed: 1, heroHpMax: 100, heroAtkBase: 50 });
   h.personality = new PersonalityState();
   h.unlockedJobId = jobId;
   return h;

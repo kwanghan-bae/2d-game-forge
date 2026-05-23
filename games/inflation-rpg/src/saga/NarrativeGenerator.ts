@@ -49,6 +49,10 @@ export class NarrativeGenerator {
     return `${opts.age}세에 ${opts.choiceNameKR}.`;
   }
 
+  static forRejuvenation(opts: { age: number; yearsBack: number; rejuvenationCount: number }): string {
+    return `${opts.age}세에 빛의 은총으로 ${opts.yearsBack}년이 사라졌다 — 재생 #${opts.rejuvenationCount}.`;
+  }
+
   static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string }): string {
     switch (opts.cause) {
       case '전사':

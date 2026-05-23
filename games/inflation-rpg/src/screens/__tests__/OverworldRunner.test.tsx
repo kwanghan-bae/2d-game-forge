@@ -33,12 +33,14 @@ describe('OverworldRunner', () => {
 
   it('renders HUD when status=running', () => {
     useCycleStoreV2.getState().start({
-      seed: 42, traits: [], bpMax: 30, heroHpMax: 100, heroAtkBase: 100,
+      seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
     });
     render(<OverworldRunner onCycleEnd={() => {}} />);
     expect(screen.getByTestId('overworld-hud')).toBeInTheDocument();
     expect(screen.getByTestId('hud-name')).toBeInTheDocument();
     expect(screen.getByTestId('hud-age')).toBeInTheDocument();
-    expect(screen.getByTestId('hud-bp')).toBeInTheDocument();
+    expect(screen.getByTestId('hud-light')).toBeInTheDocument();
+    expect(screen.getByTestId('hud-rejuvenation')).toBeInTheDocument();
+    expect(screen.getByTestId('rejuvenate-button')).toBeInTheDocument();
   });
 });

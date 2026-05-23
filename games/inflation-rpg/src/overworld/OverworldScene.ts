@@ -116,11 +116,6 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private async pickNextDestination(): Promise<void> {
-    if (this.hero.dead) {
-      this.onEvent({ type: 'cycle_ended' });
-      return;
-    }
-
     const heroPos = this.heroGridPos();
     const candidates = this.layout.landmarks
       .filter(l => !l.consumed)

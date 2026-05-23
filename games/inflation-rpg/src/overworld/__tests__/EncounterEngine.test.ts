@@ -4,23 +4,15 @@ import { HeroEntity } from '../../hero/HeroEntity';
 import { SeededRng } from '../../cycle/SeededRng';
 
 function makeHero(seed = 42) {
-  return HeroEntity.create({ seed, bpMax: 30, heroHpMax: 100, heroAtkBase: 100000 });
+  return HeroEntity.create({ seed, heroHpMax: 100, heroAtkBase: 100000 });
 }
 
 describe('EncounterEngine', () => {
-  it('enemy encounter: hero wins → event has battle_won + bp consumed', () => {
+  it('enemy encounter: hero wins → event has battle_won', () => {
     const hero = makeHero();
     const engine = new EncounterEngine(new SeededRng(1));
     const events = engine.resolveEncounter(hero, 'enemy', 'wolf_1');
     expect(events.some(e => e.type === 'battle_won')).toBe(true);
-    expect(hero.bp).toBe(29);
-  });
-
-  it('boss encounter consumes 3 BP', () => {
-    const hero = makeHero();
-    const engine = new EncounterEngine(new SeededRng(1));
-    engine.resolveEncounter(hero, 'boss', 'dragon_1');
-    expect(hero.bp).toBe(27);
   });
 
   it('battle_won includes expGain, drop occasionally', () => {
@@ -43,12 +35,11 @@ describe('EncounterEngine', () => {
     }
   });
 
-  it('hero with extremely low hp dies in enemy encounter', () => {
-    const hero = HeroEntity.create({ seed: 42, bpMax: 30, heroHpMax: 1, heroAtkBase: 1 });
+  it('hero with extremely low hp becomes staggered in enemy encounter', () => {
+    const hero = HeroEntity.create({ seed: 42, heroHpMax: 1, heroAtkBase: 1 });
     const engine = new EncounterEngine(new SeededRng(1));
-    const events = engine.resolveEncounter(hero, 'enemy', 'wolf_1');
-    expect(hero.dead).toBe(true);
-    expect(events.some(e => e.type === 'hero_died')).toBe(true);
+    engine.resolveEncounter(hero, 'enemy', 'wolf_1');
+    expect(hero.staggered).toBe(true);
   });
 
   it('village encounter heals slightly (V1a placeholder)', () => {
@@ -57,5 +48,15 @@ describe('EncounterEngine', () => {
     const engine = new EncounterEngine(new SeededRng(1));
     engine.resolveEncounter(hero, 'village', 'village_1');
     expect(hero.hp).toBeGreaterThan(50);
+  });
+});
+
+describe('EncounterEngine — staggered hero', () => {
+  it('skips battle resolution when hero is staggered', () => {
+    const hero = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    hero.staggered = true;
+    const engine = new EncounterEngine(new SeededRng(42));
+    const events = engine.resolveEncounter(hero, 'enemy', 'wolf_1');
+    expect(events.filter(e => e.type === 'battle_started').length).toBe(0);
   });
 });

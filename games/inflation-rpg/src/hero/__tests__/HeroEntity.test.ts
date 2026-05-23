@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { HeroEntity } from '../HeroEntity';
-import { SeededRng } from '../../cycle/SeededRng';
 import { PERSONALITY_DIMS } from '../PersonalityState';
 
 describe('HeroEntity', () => {
   function makeHero() {
     return HeroEntity.create({
       seed: 42,
-      bpMax: 30,
       heroHpMax: 100,
       heroAtkBase: 50,
     });
@@ -24,10 +22,8 @@ describe('HeroEntity', () => {
     expect(h.hp).toBe(100);
     expect(h.hpMax).toBe(100);
     expect(h.atk).toBe(50);
-    expect(h.bp).toBe(30);
-    expect(h.bpMax).toBe(30);
     expect(h.equipment).toEqual([]);
-    expect(h.dead).toBe(false);
+    expect(h.staggered).toBe(false);
   });
 
   it('gainExp adds and triggers level up at threshold', () => {
@@ -42,22 +38,6 @@ describe('HeroEntity', () => {
     expect(h.hp).toBe(70);
     h.takeDamage(999);
     expect(h.hp).toBe(0);
-    expect(h.dead).toBe(true);
-  });
-
-  it('consumeBp reduces bp + advances age', () => {
-    const h = makeHero();
-    const startAge = h.age;
-    for (let i = 0; i < 10; i++) h.consumeBp(1);
-    expect(h.bp).toBe(20);
-    expect(h.age).toBeGreaterThanOrEqual(startAge);
-  });
-
-  it('bp exhausted → dead', () => {
-    const h = makeHero();
-    for (let i = 0; i < 30; i++) h.consumeBp(1);
-    expect(h.bp).toBe(0);
-    expect(h.dead).toBe(true);
   });
 
   it('addEquipment appends', () => {
@@ -71,5 +51,53 @@ describe('HeroEntity', () => {
     const h = makeHero();
     const nonZero = PERSONALITY_DIMS.filter(d => h.personality.get(d) !== 0);
     expect(nonZero.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('HeroEntity action-time aging', () => {
+  it('starts at age 5 with actionCount 0 and rejuvenationCount 0, staggered false', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    expect(h.age).toBe(5);
+    expect(h.actionCount).toBe(0);
+    expect(h.rejuvenationCount).toBe(0);
+    expect(h.staggered).toBe(false);
+  });
+
+  it('tickAge() increments actionCount and updates age via ageFromActions', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    for (let i = 0; i < 200; i++) h.tickAge();
+    expect(h.actionCount).toBe(200);
+    expect(h.age).toBeGreaterThan(5);
+  });
+
+  it('staggered=true after takeDamage drops hp to 0 (no dead flag)', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    h.takeDamage(99999);
+    expect(h.hp).toBe(0);
+    expect(h.staggered).toBe(true);
+  });
+
+  it('recoverFromStagger restores hp to hpMax and clears staggered', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    h.takeDamage(99999);
+    h.recoverFromStagger();
+    expect(h.staggered).toBe(false);
+    expect(h.hp).toBe(h.hpMax);
+  });
+
+  it('rejuvenate(years) reduces actionCount and increments rejuvenationCount', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    for (let i = 0; i < 500; i++) h.tickAge();
+    const ageBefore = h.age;
+    h.rejuvenate(5);
+    expect(h.age).toBeLessThan(ageBefore);
+    expect(h.rejuvenationCount).toBe(1);
+  });
+
+  it('rejuvenate clamps age at 5 (cannot push below)', () => {
+    const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
+    h.rejuvenate(100);
+    expect(h.age).toBe(5);
+    expect(h.actionCount).toBe(0);
   });
 });

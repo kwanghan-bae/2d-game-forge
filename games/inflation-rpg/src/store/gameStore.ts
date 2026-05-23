@@ -137,6 +137,8 @@ export const INITIAL_META: MetaState = {
   sponsorGold: 0,
   atkBaseBonus: 0,
   hpBaseBonus: 0,
+  // Phase V3-B — 빛 에너지 (회춘 비용)
+  light: 0,
 };
 
 interface GameStore {
@@ -270,6 +272,22 @@ export function migrateV13ToV14(persisted: unknown): unknown {
   const m = s.meta;
   if (typeof m['adFreeOwned'] !== 'boolean') m['adFreeOwned'] = false;
   if (!Array.isArray(m['lastIapTx'])) m['lastIapTx'] = [];
+
+  return s;
+}
+
+// v18 → v19: Phase V3-B Eternal Hero — clean reset. All v18 cycle meta dropped.
+// meta.light (새 에너지 자원) 을 0 으로 초기화.
+export function migrateV18ToV19(persisted: unknown): unknown {
+  const s = persisted as { meta?: Record<string, unknown> };
+  if (!s.meta) return persisted;
+
+  const m = s.meta;
+  delete m['sponsorGold'];
+  delete m['atkBaseBonus'];
+  delete m['hpBaseBonus'];
+  delete m['cycleHistory'];
+  m['light'] = 0;
 
   return s;
 }
@@ -461,6 +479,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
     if (s.meta.sponsorGold == null) s.meta.sponsorGold = 0;
     if (s.meta.atkBaseBonus == null) s.meta.atkBaseBonus = 0;
     if (s.meta.hpBaseBonus == null) s.meta.hpBaseBonus = 0;
+  }
+  // v18 → v19: Phase V3-B — clean reset + meta.light = 0
+  if (fromVersion <= 18) {
+    migrateV18ToV19(s);
   }
   return s;
 }
@@ -1214,7 +1236,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 18,  // 17 → 18 (Phase Sim-M — sponsorGold / atkBaseBonus / hpBaseBonus)
+      version: 19,  // 18 → 19 (Phase V3-B Eternal Hero — clean reset + meta.light)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

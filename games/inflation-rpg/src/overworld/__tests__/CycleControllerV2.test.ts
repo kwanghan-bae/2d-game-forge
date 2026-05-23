@@ -7,21 +7,20 @@ describe('CycleControllerV2', () => {
     const ctrl = new CycleControllerV2({
       seed: 42,
       traits: [],
-      bpMax: 30,
       heroHpMax: 100,
       heroAtkBase: 100000,
     });
     expect(ctrl.getHero().name.length).toBeGreaterThan(0);
-    expect(ctrl.getHero().dead).toBe(false);
+    expect(ctrl.getHero().staggered).toBe(false);
   });
 
   it('getSeed() returns the input seed', () => {
-    const ctrl = new CycleControllerV2({ seed: 12345, traits: [], bpMax: 30, heroHpMax: 100, heroAtkBase: 100000 });
+    const ctrl = new CycleControllerV2({ seed: 12345, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
     expect(ctrl.getSeed()).toBe(12345);
   });
 
   it('same seed produces same personality (determinism)', () => {
-    const makeCtrl = (seed: number) => new CycleControllerV2({ seed, traits: [], bpMax: 30, heroHpMax: 100, heroAtkBase: 100000 });
+    const makeCtrl = (seed: number) => new CycleControllerV2({ seed, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
     const a = makeCtrl(77);
     const b = makeCtrl(77);
     const snapA = a.getHero().personality.snapshot();
@@ -36,7 +35,6 @@ describe('CycleControllerV2', () => {
     const ctrl = new CycleControllerV2({
       seed: 42,
       traits: [],
-      bpMax: 30,
       heroHpMax: 100,
       heroAtkBase: 100000,
     });
@@ -44,27 +42,14 @@ describe('CycleControllerV2', () => {
     expect(events.length).toBeGreaterThan(0);
   });
 
-  it('handleArrival drains BP across many encounters → hero dies → cycle ends', () => {
-    const ctrl = new CycleControllerV2({
-      seed: 42,
-      traits: [],
-      bpMax: 3,
-      heroHpMax: 100,
-      heroAtkBase: 100000,
-    });
-    for (let i = 0; i < 10; i++) ctrl.handleArrival('enemy', `wolf_${i}`);
-    expect(ctrl.getHero().dead).toBe(true);
-  });
-
   it('finalize produces a CycleSaga with events recorded', () => {
     const ctrl = new CycleControllerV2({
       seed: 42,
       traits: [],
-      bpMax: 5,
       heroHpMax: 100,
       heroAtkBase: 100000,
     });
-    for (let i = 0; i < 10 && !ctrl.getHero().dead; i++) {
+    for (let i = 0; i < 10; i++) {
       ctrl.handleArrival('enemy', `wolf_${i}`);
     }
     const saga = ctrl.finalize();
@@ -78,18 +63,16 @@ describe('CycleControllerV2 chapter_transition', () => {
     const ctrl = new CycleControllerV2({
       seed: 42,
       traits: [],
-      bpMax: 30,
       heroHpMax: 100,
       heroAtkBase: 100000,
     });
-    // Hero starts at age 5 (어린시절). With bpMax=30 each enemy arrival drains
-    // some BP and the age advances. Run arrivals until the hero reaches 청년기
-    // (age >= 15) or dies, collecting all events.
+    // Hero starts at age 5 (어린시절). Each enemy arrival ticks actionCount,
+    // advancing age. Run arrivals until the hero reaches 청년기 (age >= 15),
+    // collecting all events.
     const collected: Array<ReturnType<typeof ctrl.handleArrival>[number]> = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 300; i++) {
       const evs = ctrl.handleArrival('enemy', `wolf_${i}`);
       collected.push(...evs);
-      if (ctrl.getHero().dead) break;
       if (ctrl.getHero().chapter === '청년기' || ctrl.getHero().chapter !== '어린시절') break;
     }
     const transitions = collected.filter(e => e.type === 'chapter_transition');
@@ -105,7 +88,6 @@ describe('CycleControllerV2 chapter_transition', () => {
     const ctrl = new CycleControllerV2({
       seed: 42,
       traits: [],
-      bpMax: 30,
       heroHpMax: 100,
       heroAtkBase: 100000,
     });
@@ -114,5 +96,59 @@ describe('CycleControllerV2 chapter_transition', () => {
     const transitions = events.filter(e => e.type === 'chapter_transition');
     expect(transitions).toHaveLength(0);
     expect(ctrl.getHero().chapter).toBe('어린시절');
+  });
+});
+
+describe('CycleControllerV2 action-time aging', () => {
+  it('handleArrival increments hero.actionCount and advances age', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const before = ctrl.getHero().actionCount;
+    ctrl.handleArrival('enemy', 'wolf_1');
+    const after = ctrl.getHero().actionCount;
+    expect(after).toBe(before + 1);
+  });
+
+  it('crosses 어린시절 → 청년기 within 300 arrivals (action-time curve, target ~154)', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    let crossed = false;
+    for (let i = 0; i < 300; i++) {
+      const evs = ctrl.handleArrival('enemy', `wolf_${i}`);
+      if (evs.some(e => e.type === 'chapter_transition')) {
+        crossed = true;
+        break;
+      }
+    }
+    expect(crossed).toBe(true);
+    expect(ctrl.getHero().chapter).toBe('청년기');
+  });
+
+  it('staggered hero recovers next arrival', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    hero.staggered = true;
+    hero.hp = 0;
+    ctrl.handleArrival('enemy', 'wolf_1');
+    expect(hero.staggered).toBe(false);
+    expect(hero.hp).toBeGreaterThan(0);
+  });
+
+  it('staggered hero recovery emits chapter_transition if recovery tick crosses chapter boundary', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Bring hero to age 14 (last action before chapter boundary 어린→청년 at action ~154).
+    // ageFromActions(153) = floor(5 + 65*153/1000) = floor(14.945) = 14
+    hero.actionCount = 153;
+    hero.age = 14;
+    hero.chapter = '어린시절';
+    // Now stagger and let recovery tick (154) cross the boundary.
+    hero.staggered = true;
+    hero.hp = 0;
+    const evs = ctrl.handleArrival('enemy', 'wolf_1');
+    const transitions = evs.filter(e => e.type === 'chapter_transition');
+    expect(transitions.length).toBeGreaterThanOrEqual(1);
+    const t = transitions[0]!;
+    if (t.type !== 'chapter_transition') throw new Error('narrowing');
+    expect(t.fromChapter).toBe('어린시절');
+    expect(t.toChapter).toBe('청년기');
   });
 });

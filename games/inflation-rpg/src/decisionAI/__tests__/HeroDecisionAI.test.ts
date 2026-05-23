@@ -5,7 +5,7 @@ import type { LandmarkCandidate } from '../DestinationResolver';
 
 describe('HeroDecisionAI (v2 / overworld)', () => {
   function makeHero() {
-    return HeroEntity.create({ seed: 42, bpMax: 30, heroHpMax: 100, heroAtkBase: 50 });
+    return HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 50 });
   }
 
   it('chooseDestination returns one of provided candidates', () => {

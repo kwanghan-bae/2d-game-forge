@@ -33,15 +33,16 @@ export class EncounterEngine {
       const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : 1);
       const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : 1);
 
+      if (hero.staggered) return events;
+
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
       let eHp = enemyHp;
-      while (eHp > 0 && !hero.dead) {
+      while (eHp > 0 && !hero.staggered) {
         eHp -= hero.atk;
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
-      if (hero.dead) {
-        events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId });
+      if (hero.staggered) {
         return events;
       }
       const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
@@ -50,7 +51,6 @@ export class EncounterEngine {
       if (dropId) hero.addEquipment(dropId);
 
       const { leveled } = hero.gainExp(expGain);
-      hero.consumeBp(isBoss ? 3 : 1);
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
 
@@ -82,13 +82,9 @@ export class EncounterEngine {
           }
         }
       }
-      if (hero.dead) {
-        events.push({ type: 'hero_died', cause: '자연사' });
-      }
     } else if (kind === 'village') {
       const healAmount = Math.floor(hero.hpMax * 0.25);
       hero.heal(healAmount);
-      hero.consumeBp(0);
     } else if (kind === 'shrine') {
       const before = hero.hp;
       hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
@@ -100,7 +96,6 @@ export class EncounterEngine {
           events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
         }
       }
-      hero.consumeBp(0);
     } else if (kind === 'cave') {
       // 부상자 발견. 도덕적 결정.
       const heroic = hero.personality.get('heroic');
@@ -112,7 +107,6 @@ export class EncounterEngine {
         hero.personality.adjust('moral', -1);
         events.push({ type: 'moral_choice', choice: 'ignore_injured', dim: 'moral', delta: -1, nameKR: '부상자를 외면하여 영혼이 어두워졌다' });
       }
-      hero.consumeBp(0);
     } else if (kind === 'ruin') {
       // 강도 만남. moral 따라 분기.
       const moral = hero.personality.get('moral');
@@ -123,7 +117,6 @@ export class EncounterEngine {
         hero.personality.adjust('moral', 2);
         events.push({ type: 'moral_choice', choice: 'resist_bandits', dim: 'moral', delta: 2, nameKR: '강도단에 맞서 약자를 지켰다' });
       }
-      hero.consumeBp(0);
     } else {
       // V1c-1 personality drift landmarks (watchtower / treasure_cave /
       // holy_ruin / crossroads). The catalog lookup is exhaustive for these
@@ -141,7 +134,6 @@ export class EncounterEngine {
           delta: branch.delta,
           nameKR: branch.nameKR,
         });
-        hero.consumeBp(0);
       }
     }
     return events;
