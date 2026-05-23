@@ -53,6 +53,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
+  const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (status !== 'running' || !controller || !containerRef.current) return;
@@ -69,7 +70,11 @@ export function OverworldRunner({ onCycleEnd }: Props) {
           const transition = evs.find(e => e.type === 'chapter_transition');
           if (transition && transition.type === 'chapter_transition') {
             setChapterOverlay({ toChapter: transition.toChapter, atAge: transition.atAge, key: Date.now() });
-            setTimeout(() => setChapterOverlay(null), 2000);
+            if (chapterOverlayTimerRef.current) clearTimeout(chapterOverlayTimerRef.current);
+            chapterOverlayTimerRef.current = setTimeout(() => {
+              setChapterOverlay(null);
+              chapterOverlayTimerRef.current = null;
+            }, 2000);
           }
         }
         if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
@@ -89,6 +94,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
 
     return () => {
       setSceneSpeedRef.current = null;
+      if (chapterOverlayTimerRef.current) {
+        clearTimeout(chapterOverlayTimerRef.current);
+        chapterOverlayTimerRef.current = null;
+      }
       destroy?.();
     };
     // `speed` is intentionally not a dep — mutations are forwarded to the
