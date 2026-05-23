@@ -12,7 +12,7 @@ describe('CycleResultV2', () => {
   });
 
   it('renders saga summary when result exists', () => {
-    useCycleStoreV2.getState().start({ seed: 42, traits: [], bpMax: 3, heroHpMax: 100, heroAtkBase: 100000 });
+    useCycleStoreV2.getState().start({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
     for (let i = 0; i < 10; i++) useCycleStoreV2.getState().controller!.handleArrival('enemy', `e${i}`);
     useCycleStoreV2.getState().endCycle();
     render(<CycleResultV2 onBackToMenu={() => {}} />);
@@ -23,7 +23,7 @@ describe('CycleResultV2', () => {
 
   it('back to menu button triggers callback', () => {
     const onBack = vi.fn();
-    useCycleStoreV2.getState().start({ seed: 42, traits: [], bpMax: 3, heroHpMax: 100, heroAtkBase: 100000 });
+    useCycleStoreV2.getState().start({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
     for (let i = 0; i < 5; i++) useCycleStoreV2.getState().controller!.handleArrival('enemy', `e${i}`);
     useCycleStoreV2.getState().endCycle();
     render(<CycleResultV2 onBackToMenu={onBack} />);
