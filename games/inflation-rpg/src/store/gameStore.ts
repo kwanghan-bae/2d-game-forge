@@ -66,6 +66,10 @@ export const INITIAL_RUN: RunState = {
   dungeonRunMonstersDefeated: 0,
   featherUsed: 0,
   playerHp: null,
+  // Phase V3-D — 현재 realm
+  currentRealmId: 'base',
+  // Phase V3-E — NPC roster
+  npcs: [],
 };
 
 export const INITIAL_META: MetaState = {
@@ -142,6 +146,10 @@ export const INITIAL_META: MetaState = {
   light: 0,
   // Phase V3-C — buff catalog 누적 Lv
   buffLevels: {},
+  // Phase V3-D — 해금된 realm
+  unlockedRealms: ['base'],
+  // Phase V3-F — 무한 saga
+  eternalSaga: { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] },
 };
 
 interface GameStore {
