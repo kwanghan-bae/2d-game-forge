@@ -11,7 +11,7 @@ import type { TraitId } from '../cycle/traits';
 import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
 import { useGameStore } from '../store/gameStore';
-import { tickNpc } from '../npc/NpcLifecycle';
+import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -233,6 +233,45 @@ export class CycleControllerV2 {
         toChapter: this.hero.chapter,
         atAge: this.hero.age,
       });
+
+      // V3-E: chapter milestone NPC spawn
+      const newChapter = this.hero.chapter;
+      const seed = this.seed ^ Math.floor(this.kills * 7919);
+      const state = useGameStore.getState();
+
+      // 어린시절 시작 시 부모 spawn (이미 있으면 skip)
+      if (newChapter === '어린시절' && !state.run.npcs.some(n => n.kind === 'family_parent')) {
+        const parent = spawnNpc('family_parent', { realmId: this.currentRealmId ?? 'base', seed });
+        if (parent) {
+          state.addNpc(parent);
+        }
+      }
+
+      // 청년기 라이벌 spawn (60%)
+      if (newChapter === '청년기' && !state.run.npcs.some(n => n.kind === 'rival') && this.rng.chance(0.6)) {
+        const rival = spawnNpc('rival', { realmId: this.currentRealmId ?? 'base', seed: seed + 1 });
+        if (rival) state.addNpc(rival);
+      }
+
+      // 청년기 멘토 spawn (30%)
+      if (newChapter === '청년기' && !state.run.npcs.some(n => n.kind === 'mentor') && this.rng.chance(0.3)) {
+        const mentor = spawnNpc('mentor', { realmId: this.currentRealmId ?? 'base', seed: seed + 2 });
+        if (mentor) state.addNpc(mentor);
+      }
+
+      // 장년기 결혼 + 자식 (50%)
+      if (newChapter === '장년기' && !state.run.npcs.some(n => n.kind === 'family_spouse') && this.rng.chance(0.5)) {
+        const spouse = spawnNpc('family_spouse', { realmId: this.currentRealmId ?? 'base', seed: seed + 3 });
+        if (spouse) {
+          state.addNpc(spouse);
+          events.push({ type: 'family_event', eventKind: 'marriage', npcInstanceId: spouse.instanceId });
+        }
+        const child = spawnNpc('family_child', { realmId: this.currentRealmId ?? 'base', seed: seed + 4 });
+        if (child) {
+          state.addNpc(child);
+          events.push({ type: 'family_event', eventKind: 'child_birth', npcInstanceId: child.instanceId });
+        }
+      }
     }
 
     // V3-D: hero 가 exit landmark 도착 시 realm 전환
