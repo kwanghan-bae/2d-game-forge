@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction, BuffId } from '../types';
 import type { CycleHistoryEntry } from '../cycle/cycleEvents';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
 import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
@@ -32,6 +32,7 @@ import {
 } from '../systems/compass';
 import { computeMaxHp } from '../systems/playerHp';
 import { BASE_TRAIT_IDS } from '../data/traits';
+import { findBuff, nextStepCost, maxAffordable } from '../buff/catalog';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -235,6 +236,11 @@ interface GameStore {
   recordIapTx: (tx: IapTransaction) => void;
   // Phase Sim-A — cycle history
   recordCycleEnd: (entry: CycleHistoryEntry) => void;
+  // Phase V3-C — buff catalog spend
+  buyBuff: (
+    buffId: BuffId,
+    count: 1 | 10 | 'max',
+  ) => { ok: boolean; reason?: 'invalid' | 'zero' | 'insufficient' | 'oneshot'; count?: number; cost?: number };
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1251,6 +1257,27 @@ export const useGameStore = create<GameStore>()(
             cycleHistory: [...s.meta.cycleHistory, entry].slice(-50),
           },
         })),
+
+      buyBuff(buffId, count) {
+        const meta = get().meta;
+        const def = findBuff(buffId);
+        if (def.isOneShot) return { ok: false, reason: 'oneshot' };
+        const lv = meta.buffLevels?.[buffId] ?? 0;
+        const light = meta.light ?? 0;
+        const n = count === 'max' ? maxAffordable(def, lv, light) : count;
+        if (typeof n !== 'number' || n <= 0) return { ok: false, reason: 'zero' };
+        const cost = nextStepCost(def, lv, n);
+        if (light < cost) return { ok: false, reason: 'insufficient' };
+        set(s => ({
+          ...s,
+          meta: {
+            ...s.meta,
+            light: (s.meta.light ?? 0) - cost,
+            buffLevels: { ...(s.meta.buffLevels ?? {}), [buffId]: lv + n },
+          },
+        }));
+        return { ok: true, count: n, cost };
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
