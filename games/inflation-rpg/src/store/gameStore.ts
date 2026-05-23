@@ -320,6 +320,23 @@ export function migrateV19ToV20(persisted: unknown): unknown {
   return s;
 }
 
+// v20 → v21: Phase V3-D/E/F — unlockedRealms + eternalSaga + currentRealmId + npcs
+export function migrateV20ToV21(persisted: unknown): unknown {
+  if (typeof persisted !== 'object' || persisted === null) return persisted;
+  const s = persisted as { meta?: Record<string, unknown> | null; run?: Record<string, unknown> | null };
+  if (s.meta && typeof s.meta === 'object') {
+    if (!Array.isArray(s.meta['unlockedRealms'])) s.meta['unlockedRealms'] = ['base'];
+    if (!s.meta['eternalSaga'] || typeof s.meta['eternalSaga'] !== 'object') {
+      s.meta['eternalSaga'] = { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] };
+    }
+  }
+  if (s.run && typeof s.run === 'object') {
+    if (typeof s.run['currentRealmId'] !== 'string') s.run['currentRealmId'] = 'base';
+    if (!Array.isArray(s.run['npcs'])) s.run['npcs'] = [];
+  }
+  return s;
+}
+
 // Phase E — Mythic slot cap derived from ascension tier
 //   tier 0 → 0 슬롯, tier 1-4 → 1 슬롯, tier 5-9 → 3 슬롯, tier 10+ → 5 슬롯
 export function computeMythicSlotCap(tier: number): number {
@@ -515,6 +532,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v19 → v20: Phase V3-C — buffLevels 초기화
   if (fromVersion <= 19) {
     migrateV19ToV20(s);
+  }
+  // v20 → v21: Phase V3-D/E/F — multi-zone + NPC + eternal saga
+  if (fromVersion <= 20) {
+    migrateV20ToV21(s);
   }
   return s;
 }
@@ -1289,7 +1310,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 20,  // 19 → 20 (Phase V3-C — buffLevels)
+      version: 21,  // 20 → 21 (Phase V3-D/E/F — unlockedRealms + eternalSaga + currentRealmId + npcs)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
