@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction } from '../types';
+import type { RunState, MetaState, Screen, EquipmentInstance, AllocatedStats, AscTreeNodeId, RelicId, MythicId, IapTransaction, BuffId } from '../types';
 import type { CycleHistoryEntry } from '../cycle/cycleEvents';
 import { EMPTY_RELIC_STACKS } from '../data/relics';
 import { canWatchAd, startAdWatch, finishAdWatch, checkDailyReset } from '../systems/ads';
@@ -32,6 +32,7 @@ import {
 } from '../systems/compass';
 import { computeMaxHp } from '../systems/playerHp';
 import { BASE_TRAIT_IDS } from '../data/traits';
+import { findBuff, nextStepCost, maxAffordable } from '../buff/catalog';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -139,6 +140,8 @@ export const INITIAL_META: MetaState = {
   hpBaseBonus: 0,
   // Phase V3-B — 빛 에너지 (회춘 비용)
   light: 0,
+  // Phase V3-C — buff catalog 누적 Lv
+  buffLevels: {},
 };
 
 interface GameStore {
@@ -233,6 +236,11 @@ interface GameStore {
   recordIapTx: (tx: IapTransaction) => void;
   // Phase Sim-A — cycle history
   recordCycleEnd: (entry: CycleHistoryEntry) => void;
+  // Phase V3-C — buff catalog spend
+  buyBuff: (
+    buffId: BuffId,
+    count: 1 | 10 | 'max',
+  ) => { ok: boolean; reason?: 'invalid' | 'zero' | 'insufficient' | 'oneshot'; count?: number; cost?: number };
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -289,6 +297,18 @@ export function migrateV18ToV19(persisted: unknown): unknown {
   delete m['cycleHistory'];
   m['light'] = 0;
 
+  return s;
+}
+
+// v19 → v20: Phase V3-C — meta.buffLevels (BuffId → level) 를 빈 객체로 초기화.
+export function migrateV19ToV20(persisted: unknown): unknown {
+  if (typeof persisted !== 'object' || persisted === null) return persisted;
+  const s = persisted as { meta?: Record<string, unknown> | null };
+  if (!s.meta || typeof s.meta !== 'object') return persisted;
+  const m = s.meta;
+  if (m['buffLevels'] === undefined || typeof m['buffLevels'] !== 'object') {
+    m['buffLevels'] = {};
+  }
   return s;
 }
 
@@ -483,6 +503,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v18 → v19: Phase V3-B — clean reset + meta.light = 0
   if (fromVersion <= 18) {
     migrateV18ToV19(s);
+  }
+  // v19 → v20: Phase V3-C — buffLevels 초기화
+  if (fromVersion <= 19) {
+    migrateV19ToV20(s);
   }
   return s;
 }
@@ -1233,10 +1257,31 @@ export const useGameStore = create<GameStore>()(
             cycleHistory: [...s.meta.cycleHistory, entry].slice(-50),
           },
         })),
+
+      buyBuff(buffId, count) {
+        const meta = get().meta;
+        const def = findBuff(buffId);
+        if (def.isOneShot) return { ok: false, reason: 'oneshot' };
+        const lv = meta.buffLevels?.[buffId] ?? 0;
+        const light = meta.light ?? 0;
+        const n = count === 'max' ? maxAffordable(def, lv, light) : count;
+        if (typeof n !== 'number' || n <= 0) return { ok: false, reason: 'zero' };
+        const cost = nextStepCost(def, lv, n);
+        if (light < cost) return { ok: false, reason: 'insufficient' };
+        set(s => ({
+          ...s,
+          meta: {
+            ...s.meta,
+            light: (s.meta.light ?? 0) - cost,
+            buffLevels: { ...(s.meta.buffLevels ?? {}), [buffId]: lv + n },
+          },
+        }));
+        return { ok: true, count: n, cost };
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 19,  // 18 → 19 (Phase V3-B Eternal Hero — clean reset + meta.light)
+      version: 20,  // 19 → 20 (Phase V3-C — buffLevels)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

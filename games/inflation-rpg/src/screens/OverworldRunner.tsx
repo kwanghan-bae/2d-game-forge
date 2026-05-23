@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
-import { rejuvenationCost } from '../hero/rejuvenation';
+import { computeLightDelta } from '../overworld/lightEmit';
+import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import type { SagaEvent } from '../saga/SagaTypes';
+import { SpendModal } from './SpendModal';
 
 interface Props {
   onCycleEnd: () => void;
@@ -48,16 +50,18 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const status = useCycleStoreV2(s => s.status);
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
-  const rejuvenateHero = useCycleStoreV2(s => s.rejuvenateHero);
   const meta = useGameStore(s => s.meta);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, setHudTick] = useState(0);
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
+  const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
+  const [spendModalOpen, setSpendModalOpen] = useState(false);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moveMul = getMoveSpeedMul(meta);
 
   useEffect(() => {
     if (status !== 'running' || !controller || !containerRef.current) return;
@@ -69,6 +73,20 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       (event) => {
         if (event.type === 'arrived_at') {
           const evs = controller.handleArrival(event.landmarkKind, event.landmarkId);
+          const { delta: rawDelta } = computeLightDelta(evs, event.landmarkKind);
+          if (rawDelta > 0) {
+            const rateMul = getLightRateMul(useGameStore.getState().meta);
+            const finalDelta = rawDelta * rateMul;
+            useGameStore.setState(s => ({
+              ...s,
+              meta: { ...s.meta, light: (s.meta.light ?? 0) + finalDelta },
+            }));
+            const floaterKey = Date.now() + Math.random();
+            setLightFloaters(prev => [...prev, { key: floaterKey, amount: finalDelta }]);
+            setTimeout(() => {
+              setLightFloaters(prev => prev.filter(f => f.key !== floaterKey));
+            }, 1500);
+          }
           setHudTick(n => n + 1);
           setLogEntries(controller.getRecentSagaEvents(LOG_LIMIT));
           const transition = evs.find(e => e.type === 'chapter_transition');
@@ -90,7 +108,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       controller.getHero(),
       controller.getDecisionAI(),
       controller.getSeed(),
-      speed,
+      speed * moveMul,
     ).then(g => {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;
@@ -109,8 +127,8 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   }, [status, controller, onCycleEnd, endCycle]);
 
   useEffect(() => {
-    setSceneSpeedRef.current?.(speed);
-  }, [speed]);
+    setSceneSpeedRef.current?.(speed * moveMul);
+  }, [speed, moveMul]);
 
   if (status === 'idle' || !controller) {
     return <div style={{ padding: 24, color: '#eee' }}>사이클이 시작되지 않았습니다.</div>;
@@ -125,16 +143,33 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
         <span>{hero.job} · LV {hero.level}</span>
         <span>HP {hero.hp}/{hero.hpMax}</span>
-        <span data-testid="hud-light">빛 {meta.light ?? 0}</span>
+        <span data-testid="hud-light" style={{ position: 'relative' }}>
+          빛 {Math.floor(meta.light ?? 0)}
+          <span data-testid="light-floaters" style={{ position: 'absolute', left: '100%', top: 0, marginLeft: 8, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+            {lightFloaters.map(f => (
+              <span
+                key={f.key}
+                style={{
+                  display: 'inline-block',
+                  color: '#ffd54f',
+                  fontWeight: 700,
+                  animation: 'forgeLightFloat 1.5s ease-out forwards',
+                  marginRight: 4,
+                }}
+              >
+                +{f.amount.toFixed(1)}
+              </span>
+            ))}
+          </span>
+        </span>
         <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
         <button
           type="button"
-          onClick={() => rejuvenateHero(5)}
-          disabled={(meta.light ?? 0) < rejuvenationCost(hero.age)}
-          data-testid="rejuvenate-button"
+          onClick={() => setSpendModalOpen(true)}
+          data-testid="open-spend-modal"
           style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}
         >
-          회춘 5년 ({rejuvenationCost(hero.age)} 빛)
+          신의 메뉴
         </button>
         <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
           {SPEED_PRESETS.map(s => (
@@ -152,12 +187,17 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         </span>
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
+      {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
 
       <style>{`
         @keyframes forgeChapterFade {
           0% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
           20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
           100% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+        }
+        @keyframes forgeLightFloat {
+          0% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-12px); }
         }
       `}</style>
       {chapterOverlay && (

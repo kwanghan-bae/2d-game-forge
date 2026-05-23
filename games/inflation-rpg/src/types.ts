@@ -176,6 +176,15 @@ export interface RunState {
   playerHp: number | null;           // [Phase Realms] null = hydrate to maxHp on next battle entry
 }
 
+export type BuffId =
+  | 'move_speed'
+  | 'drop_chance'
+  | 'light_rate'
+  | 'rejuv_discount'
+  | 'aging_slow'
+  | 'field_diff'
+  | 'oneshot_rejuv';
+
 export interface MetaState {
   inventory: Inventory;
   baseAbilityLevel: number;
@@ -249,6 +258,8 @@ export interface MetaState {
   // Phase V3-B — 빛 (Eternal Hero 회춘 비용 에너지 자원)
   /** 빛 에너지. 회춘(rejuvenation) 비용으로 소비. v19 migration 에서 0 으로 초기화. */
   light: number;
+  /** V3-C — buff catalog 의 누적 Lv. oneshot_rejuv 은 저장 안 함. */
+  buffLevels: Partial<Record<BuffId, number>>;
 }
 
 // Phase G — Ascension Tree (성좌)

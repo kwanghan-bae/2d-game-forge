@@ -47,6 +47,7 @@ export class HeroEntity {
   unlockedJobId: string | null = null;
   unlockedMilestones: Set<JobMilestone> = new Set();
   learnedSkillIds: Set<string> = new Set();
+  private agingAccum: number = 0;
 
   private constructor() {
     this.name = '';
@@ -107,10 +108,15 @@ export class HeroEntity {
     if (this.hp > this.hpMax) this.hp = this.hpMax;
   }
 
-  /** V3-B aging mechanic: each arrival counts as one action; age derived from
-   *  the cumulative counter so cycle (in V3 sense) is action-driven, not BP. */
-  tickAge(): void {
-    this.actionCount += 1;
+  /** V3-B aging mechanic + V3-C aging_slow buff.
+   *  agingMul (default 1.0) 가 < 1.0 이면 fractional accumulator 로 늦춤.
+   *  >= 1.0 이면 while-loop 으로 다중 tick 처리. */
+  tickAge(agingMul: number = 1.0): void {
+    this.agingAccum += agingMul;
+    while (this.agingAccum >= 1.0) {
+      this.agingAccum -= 1.0;
+      this.actionCount += 1;
+    }
     this.age = HeroLifecycle.ageFromActions(this.actionCount);
     this.chapter = HeroLifecycle.chapterForAge(this.age);
     this.recomputeStats();

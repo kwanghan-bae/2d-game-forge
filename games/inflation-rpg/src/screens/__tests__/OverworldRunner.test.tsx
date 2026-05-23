@@ -41,6 +41,6 @@ describe('OverworldRunner', () => {
     expect(screen.getByTestId('hud-age')).toBeInTheDocument();
     expect(screen.getByTestId('hud-light')).toBeInTheDocument();
     expect(screen.getByTestId('hud-rejuvenation')).toBeInTheDocument();
-    expect(screen.getByTestId('rejuvenate-button')).toBeInTheDocument();
+    expect(screen.getByTestId('open-spend-modal')).toBeInTheDocument();
   });
 });
