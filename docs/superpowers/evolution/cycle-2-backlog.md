@@ -1,3 +1,17 @@
+# Cycle 4 Backlog (Cycle 3 partial 에서 carry-over)
+
+자율진화 cycle 3 가 F1 (이중 prefix bug fix) 만 머지 후 partial 종료. 다음 cycle 4 의 1순위 후보 D1-D7 (cycle 3 level-critic 의 수치 제안 + multi-seed 측정 기반):
+
+- **D1**: priest saturator structural — `MERCIFUL_PROC_RATE 0.10→0.05` + `priest.min 3→5`. 수용: 3-seed maxShare priest ≤ 0.30 (Δ ≥ 0.15).
+- **D2**: prudent dim source famine — `PERSONALITY_ENCOUNTERS` prudent source 1→2 (treasure_cave + 신규 1). 수용: monk+ranger 3-seed ≥ 5%.
+- **D3**: MAX_ARRIVALS + idle 회춘 trigger — `MAX_ARRIVALS 500→1000` + age/arrivals 임계 회춘 emit. 수용: cyclesWithRejuvenation 3-seed ≥ 5.
+- **D4**: NPC first-vs-recurring 필터 — `CycleControllerV2.ts:388` 의 npc id 기반 first/recurring 분기 + `forNpcEncounter` 의 `recurring_rival` kind 추가.
+- **D5**: spare_enemy moral 70.4% saturate — `PERSONALITY_ENCOUNTERS` weighting 조정 or variant 8→24.
+- **D6**: levelUp 자릿수 톤 (≤999 / 1k-999k / 1M+ 분기, variant 6→18) — cycle 1+2+3 carry-over.
+- **D7**: EternalSaga era key chapter title 동적 생성.
+
+---
+
 # Cycle 3 Backlog (Cycle 2 partial 에서 carry-over)
 
 자율진화 cycle 2 가 F1 (multi-seed 룰 persona doc 패치) 만 머지하고 partial 종료. F2/F3 는 cycle 3 1순위 후보.
