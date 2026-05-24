@@ -50,3 +50,6 @@
 - Cycle 45 (2026-05-25): cycle 45-100 plan doc.
 - Cycle 46 (2026-05-25): STATUS for cycle 41-45.
 - Cycle 47 (2026-05-25): sim performance baseline spec (Phase B prep).
+- Cycle 48 (2026-05-25, `57f0216`): INDEX docs.
+- Cycle 49 (2026-05-25): sim perf baseline 측정 (35.7s normal vs cycle 20 spike).
+- Cycle 50 (2026-05-25): 50/100 half-point milestone STATUS.
