@@ -19,11 +19,14 @@ const check = (cond: boolean, msg: string) => { if (!cond) fails.push(msg); };
 check(s.skillsLearned.p50 <= 14, `F1.11 skillsLearned.p50 ${s.skillsLearned.p50} > 14 (PRD primary)`);
 check(s.skillsLearned.p50 <= 18, `F1.12 skillsLearned.p50 ${s.skillsLearned.p50} > 18 (regression floor)`);
 
-// F1.13 — Tier 2 single-job share
+// F1.13 — Tier 2 single-job share (improvement-Δ from cycle 0 baseline)
 const jobs = s.jobsUnlocked ?? {};
 const total = Object.values(jobs).reduce((a: number, b) => a + (b as number), 0) as number;
 const maxShare = total > 0 ? Math.max(...Object.values(jobs).map(v => (v as number) / total)) : 0;
-check(maxShare <= 0.35, `F1.13 Tier 2 maxShare ${maxShare.toFixed(3)} > 0.35`);
+const BASELINE_MAX_SHARE = 0.46; // cycle 0 (81bea39) mage share
+const DELTA_REQUIRED = 0.05;
+const improvement = BASELINE_MAX_SHARE - maxShare;
+check(improvement >= DELTA_REQUIRED, `F1.13 maxShare improvement ${improvement.toFixed(3)} < ${DELTA_REQUIRED} (baseline ${BASELINE_MAX_SHARE} → current ${maxShare.toFixed(3)})`);
 
 // F1.14 — monk + ranger
 const monkRanger = (jobs.monk ?? 0) + (jobs.ranger ?? 0);

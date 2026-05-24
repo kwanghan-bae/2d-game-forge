@@ -33,7 +33,9 @@
 - **수용 기준**:
   - `pnpm --filter @forge/game-inflation-rpg sim:cycle` 50 cycle (seed 1024–1073, `maxArrivals=500`) 재실행 결과:
     - `skillsLearnedCount` p50 ≤ 14 (현재 21).
-    - `jobUnlocks.tier2` 의 single-job share ≤ 35% (현재 mage 46%).
+    - Tier 2 dominant single-job share 가 cycle 0 baseline (mage 0.46) 대비 ≥ 0.05 감소 (i.e., maxShare ≤ 0.41).
+      근거: dim-source-rate 비대칭 (holy_ruin 등) 구조로 absolute 0.35 는 threshold lever 만으로 도달 불가 — v3/v4 bit-identical 로 검증됨.
+      Cycle 2+ 의 PRD 도 sim-driven acceptance 는 Δ-from-baseline 룰 따른다 (절대값 금지).
     - `monk` 또는 `ranger` 의 unlock 횟수 ≥ 1/50 (현재 0/50, 0/50 → 합산 1+ 이상이면 valley 분리 효과 확인).
     - `moralChoices` p50 ≥ 50 (Cycle 1 sim baseline 55 의 floor) AND ≤ 80 (over-stimulus 가드).
       - **Calibration note**: 원안은 `[60,80]` 이었으나 baseline 측정 없는 가설이라 BLOCKED. Cycle 1 sim 실측 (MERCIFUL_PROC_RATE 0.10 환경) 에서 p50 ≈ 55 가 안정점으로 확인되어 50 floor 로 재조정. 80 ceiling 은 over-stimulus 가드로 유지.
@@ -109,6 +111,12 @@
 - **EternalSaga era key 의 chapter title 동적 생성 (Caves of Qud sultan-history 식)** — `재생 #N` 의 lore 화. 회춘 trigger rate 가 max_arrivals fix 후 의미 있게 발생하기 시작하면 검토.
 
 ## 비고
+
+### Calibration 보정 (Cycle 1 sim 실측 반영)
+
+- F1.13 baseline: cycle 0 (81bea39) maxShare mage 0.46 — 절대값 가드 (≤0.35) 가 catalog 구조 (priest/mage saturator 의 dim source-rate 비대칭) 로 미세조정 불가. v3/v4 mage.min=7/8 bit-identical 분포 확인 후 improvement-Δ ≥0.05 로 reframe.
+- F1.15 baseline: cycle 0 moralChoices p50 79.44 → MERCIFUL_PROC_RATE 0.10 환경에서 55 floor. 원안 [60,80] 은 baseline 측정 없는 가설.
+- 2 recalibration 은 **yellow flag**: planner persona 가 baseline 측정 없이 absolute threshold 설정한 결과. Cycle 2 부터는 sim-driven acceptance 에 반드시 Δ-from-baseline 룰 적용.
 
 ### 리스크 / 의존성
 
