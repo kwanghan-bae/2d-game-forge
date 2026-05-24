@@ -42,6 +42,14 @@ export interface SimV2Options {
   /** Optional bonus stats from meta progression (applied to base before curve). */
   atkBonus?: number;
   hpBonus?: number;
+  /** Cycle-15 — starting realm for the cycle. Default 'base'. Hero spawns at
+   *  `realm.columnRange[0] + 1` and pathfinder bounds derive from realm.
+   *  Used for realm-rotation sweep in cycle-15+ batch drivers. */
+  startRealm?: import('../src/types').RealmId;
+  /** Cycle-15 — list of realms the player has unlocked. Defaults to
+   *  `['base']`. Drives `onBossKill` gating + decision AI's realm-aware scoring.
+   *  Must always contain `startRealm`. */
+  unlockedRealms?: import('../src/types').RealmId[];
 }
 
 export interface StampedEvent {
@@ -173,7 +181,10 @@ function runOneCycle(
   useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 0 } }));
 
   // V3-H Bug C: realm tracking state for onBossKill wiring
-  let currentRealmId: RealmId = 'base';
+  // Cycle-15: startRealm param drives rotation sweep — hero spawns at
+  // `realm.columnRange[0] + 1` so pathfinder bounds match.
+  let currentRealmId: RealmId = opts.startRealm ?? 'base';
+  const initialUnlocked: RealmId[] = opts.unlockedRealms ?? ['base'];
 
   const ctrl = new CycleControllerV2({
     seed,
@@ -191,8 +202,14 @@ function runOneCycle(
 
   // V3-H Bug C: set initial realm state on controller
   ctrl.setCurrentRealmId(currentRealmId);
-  ctrl.setUnlockedRealms(['base']);
+  ctrl.setUnlockedRealms(initialUnlocked);
   const hero = ctrl.getHero();
+  // Cycle-15: align hero spawn column with realm — pathfinder bounds derive
+  // from realm.columnRange; mismatched spawn (col 1 in sea realm) triggers
+  // cycle-5 F1's '무위' 5세 즉사. spawnColumnForRealm guarantees the pair.
+  const startCol = findRealm(currentRealmId).columnRange[0] + 1;
+  hero.gridX = startCol;
+  hero.gridY = Math.floor(GRID_H / 2);
   const ai = ctrl.getDecisionAI();
   const layout = generateMapLayout(seed);
   const respawnRng = new SeededRng(seed ^ 0xabcd1234);
@@ -437,12 +454,18 @@ if (process.argv[1]?.endsWith('sim-cycle-v2.ts')) {
   const traits = traitsRaw ? (traitsRaw.split(',').map(s => s.trim()) as TraitId[]) : undefined;
   const maxArrivals = parseInt(parseArg('max-arrivals', '1200'), 10);
   const mdSampleEvery = parseInt(parseArg('md-every', '25'), 10);
+  const startRealm = parseArg('start-realm', 'base') as import('../src/types').RealmId;
+  const unlockedRaw = parseArg('unlocked', '');
+  const unlockedRealms = unlockedRaw
+    ? (unlockedRaw.split(',').map(s => s.trim()) as import('../src/types').RealmId[])
+    : undefined;
 
   const result = runSimV2({
     count, seedStart,
     heroHpMax: hp, heroAtkBase: atk,
     atkBonus, hpBonus,
     traits, maxArrivals, outDir, mdSampleEvery,
+    startRealm, unlockedRealms,
   });
 
   console.log(`Wrote ${result.results.length} cycle results to ${outDir}/`);
