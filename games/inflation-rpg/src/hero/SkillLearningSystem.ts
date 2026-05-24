@@ -26,9 +26,25 @@ export const SkillLearningSystem = {
   },
 };
 
-/** Returns true when the hero just crossed a level milestone (5, 10, 25, 50, then every 100). */
+/**
+ * Returns true when the hero just crossed a level milestone.
+ *
+ * Schedule (cycle 1 F1 sparsening):
+ *   - Early: 5, 10, 25, 50, 100, 200, ..., 900 (every 100, dense for early teaching)
+ *   - High: 1000, 2000, ..., 9000 (every 1000)
+ *   - Deep: 10000, 20000, 30000, ... (every 10000)
+ *
+ * Rationale: at 826k maxLevel the old "every 100" schedule fires ~8200
+ * milestones per cycle, far exceeding the 21-skill catalog. Even with a 0.20
+ * grant rate the milestone channel alone saturates the catalog (p50 ≈ 18).
+ * Sparsening to every 10000 above lv 10k reduces fires to ~80, bringing the
+ * expected unique-skill count back into the [≤14] target band without
+ * touching the shrine channel.
+ */
 export function isSkillMilestoneLevel(level: number): boolean {
   if (level === 5 || level === 10 || level === 25 || level === 50) return true;
-  if (level >= 100 && level % 100 === 0) return true;
+  if (level >= 10_000) return level % 10_000 === 0;
+  if (level >= 1_000) return level % 1_000 === 0;
+  if (level >= 100) return level % 100 === 0;
   return false;
 }

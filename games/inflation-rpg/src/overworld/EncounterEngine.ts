@@ -18,9 +18,9 @@ const BOSS_ATK_MUL = 2;
 const ENEMY_EXP_BASE = 12;
 const BOSS_EXP_BASE = 60;
 const DROP_RATE = 0.36;           // V3-H F2: +20% (was 0.3)
-const SHRINE_SKILL_GRANT_RATE = 0.48; // V3-H F2: +20% (was 0.4)
+export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
-const MERCIFUL_PROC_RATE = 0.15;
+export const MERCIFUL_PROC_RATE = 0.10;       // cycle 1 F1: was 0.15 — personality threshold 의미 회복
 const MERCIFUL_DRIFT = 3;
 
 export interface EncounterEngineOpts {
@@ -92,7 +92,10 @@ export class EncounterEngine {
 
       for (const newLv of leveled) {
         events.push({ type: 'level_up', from: newLv - 1, to: newLv });
-        if (isSkillMilestoneLevel(newLv)) {
+        // cycle 1 F1: milestone channel 도 SHRINE_SKILL_GRANT_RATE 따르게 통합.
+        // 매 100 레벨 마다 deterministic grant 라 826k level 환경에서 ~8200 회
+        // fire → skill saturation. shrine 과 같은 확률 gate 로 두 channel 통일.
+        if (isSkillMilestoneLevel(newLv) && this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
           const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
           if (learn) {
             events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });

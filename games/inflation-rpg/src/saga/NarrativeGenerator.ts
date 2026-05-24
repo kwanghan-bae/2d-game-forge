@@ -1,4 +1,5 @@
 import type { DeathCause } from './SagaTypes';
+import type { RealmId, SeasonId } from '../types';
 import { NarrationVariants } from '../data/narrationVariants';
 
 export class NarrativeGenerator {
@@ -42,6 +43,31 @@ export class NarrativeGenerator {
 
   static forRejuvenation(opts: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return NarrationVariants.rejuvenation(opts, seed);
+  }
+
+  /** F2 — realm 진입 이벤트 나레이션. 6 realm × 5 variant. */
+  static forRealmEnter(opts: { age: number; realm: RealmId }, seed = 0): string {
+    return NarrationVariants.realmEnter(opts, seed);
+  }
+
+  /** F2 — 계절 전환 나레이션. 4 season × realm-flavor prefix. */
+  static forSeasonChange(opts: { age: number; season: SeasonId; realm: RealmId }, seed = 0): string {
+    return NarrationVariants.seasonChange(opts, seed);
+  }
+
+  /** F3 — NPC 첫 조우 나레이션. 3 kind × 3 variant. */
+  static forNpcEncounter(opts: { age: number; kind: 'mentor' | 'rival' | 'passerby' }, seed = 0): string {
+    return NarrationVariants.npcEncounter(opts, seed);
+  }
+
+  /** F3 — NPC 사망 나레이션. 3 variant. */
+  static forNpcDeath(opts: { age: number }, seed = 0): string {
+    return NarrationVariants.npcDeath(opts, seed);
+  }
+
+  /** F3 — 가족 이벤트 나레이션 (결혼/자식 출생/자식 성장). 3 type × 2 variant. */
+  static forFamilyEvent(opts: { age: number; type: 'marriage' | 'child_born' | 'child_grown' }, seed = 0): string {
+    return NarrationVariants.familyEvent(opts, seed);
   }
 
   static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string; oldLevel?: number; newLevel?: number }): string {
