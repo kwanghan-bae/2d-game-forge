@@ -9,7 +9,7 @@
  *   runs/<date>/c<seed>.md      — narrative summary (sampled every Nth cycle)
  *   runs/<date>/summary.json    — aggregate stats across the batch
  */
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, openSync, writeSync, closeSync } from 'node:fs';
 import { join } from 'node:path';
 import { CycleControllerV2 } from '../src/overworld/CycleControllerV2';
 import { generateMapLayout } from '../src/overworld/mapLayout';
@@ -131,8 +131,21 @@ export function runSimV2(opts: SimV2Options): SimV2Output {
     results.push(result);
 
     if (outDir) {
+      // Cycle-12 L2: per-event chunked write. `events.map().join('\n')` built one
+      // contiguous string per cycle — with 1200 arrivals × ~6000 events the
+      // serialized string exceeds V8's `Invalid string length` cap (~512MB) and
+      // the whole sim throws. Writing each line via the same fd keeps memory flat
+      // and matches the shard layout the recon (`/tmp/cycle-10-recon/runX/c*.jsonl`)
+      // already assumed.
       const jsonlPath = join(outDir, `c${seed}.jsonl`);
-      writeFileSync(jsonlPath, events.map(e => JSON.stringify(e)).join('\n') + '\n', 'utf-8');
+      const fd = openSync(jsonlPath, 'w');
+      try {
+        for (const ev of events) {
+          writeSync(fd, JSON.stringify(ev) + '\n');
+        }
+      } finally {
+        closeSync(fd);
+      }
 
       if (mdSampleEvery > 0 && i % mdSampleEvery === 0) {
         const mdPath = join(outDir, `c${seed}.md`);
