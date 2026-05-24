@@ -92,7 +92,10 @@ export class EncounterEngine {
 
       for (const newLv of leveled) {
         events.push({ type: 'level_up', from: newLv - 1, to: newLv });
-        if (isSkillMilestoneLevel(newLv)) {
+        // cycle 1 F1: milestone channel 도 SHRINE_SKILL_GRANT_RATE 따르게 통합.
+        // 매 100 레벨 마다 deterministic grant 라 826k level 환경에서 ~8200 회
+        // fire → skill saturation. shrine 과 같은 확률 gate 로 두 channel 통일.
+        if (isSkillMilestoneLevel(newLv) && this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
           const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
           if (learn) {
             events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
