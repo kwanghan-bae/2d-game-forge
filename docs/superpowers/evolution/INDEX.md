@@ -42,3 +42,6 @@
 - Cycle 36 (2026-05-25): age 5 tone 확장 (drop/jobUnlock/skillLearned/moralChoice/shrineHealed/shrineCalm/levelUpBatch 모두).
 - Cycle 38 (2026-05-25, `7c7e6c3`): V3 identity activation recap docs.
 - Cycle 39 (2026-05-25): age 6-12 young chapter tone variation (D7 자연 확장).
+- Cycle 40 (2026-05-25, `79fe245`): INDEX + 40-cycle milestone STATUS.
+- Cycle 41 (2026-05-25, `58d74c0`): age tone tiers 13-29 / 30-49.
+- Cycle 42 (2026-05-25, `7630665`): age tone tiers 50-69 / 70+. All 6 age tiers covered.
