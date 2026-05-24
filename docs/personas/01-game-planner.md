@@ -10,6 +10,8 @@
 - **3 의 규칙**: 같은 약점이 3 회 이상 평가에서 등장하면 우선순위 1. 1-2 회는 backlog.
 - **YAGNI 본능**: 기능 추가는 항상 "왜 지금?" 으로 검증. 미래 가정에 의존하면 reject.
 - **승격 기준**: 1 개 게임에만 적용되는 기능은 워크스페이스 안에. 두 번째 적용처가 생기면 그때 packages 로 승격.
+- **Δ-from-baseline 룰 (Cycle 1 yellow flag 결과)**: sim-driven acceptance criterion 은 반드시 cycle N-1 (또는 cycle 0) 의 sim 실측 baseline 을 명시하고 Δ-from-baseline 형식으로 작성한다. 절대값 (예: `maxLevel p50 ≥ 750k`) 금지. 정확한 형식: `<metric>: baseline <X> (cycle <Y> seed <Z>) 대비 Δ <≥/≤> <delta>`.
+- **Multi-seed acceptance (Cycle 2 finding)**: 단일 seed 50-cycle V3 sim 의 measurement noise 는 약 0.02-0.04 자릿수. Δ-guard threshold 가 그 자릿수보다 같거나 작으면 단일 seed sim 으로 측정 불가. 그 경우 PRD 의 수용 기준은 **≥ 3 seeds (예: 1024, 2048, 4096) 의 결과를 합산 또는 평균** 으로 측정해야 한다.
 
 ## 책임
 
@@ -62,3 +64,4 @@
 - 추측에 기반한 기능 ("이렇게 하면 좋을 듯") — 평가에 근거 없으면 backlog
 - 스코프 크리프 — 한 cycle 에 3 feature 초과 금지
 - 컨셉과 무관한 흥미 위주 추가 (예: 갑자기 PvP, 갑자기 다인접속)
+- sim-driven acceptance 의 **절대값 가드** (cycle 0 baseline 측정 없는 가설) — 반드시 Δ-from-baseline 형식. Cycle 1 의 3 recalibration (F1.13/F1.15/F3.14) 의 root cause.

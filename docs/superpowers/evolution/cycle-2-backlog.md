@@ -1,3 +1,37 @@
+# Cycle 3 Backlog (Cycle 2 partial 에서 carry-over)
+
+자율진화 cycle 2 가 F1 (multi-seed 룰 persona doc 패치) 만 머지하고 partial 종료. F2/F3 는 cycle 3 1순위 후보.
+
+## Carry-over (Cycle 2 PRD 의 F2/F3)
+
+### C1. Eternal Hero 회춘/사망 비트 회수 (was Cycle 2 F2)
+
+**Context**: Cycle 2 sim 50/50 max_arrivals 종료, hero_died 0/50, 회춘 0/50. V3 정체성 (eternal hero idle sponsor) 의 핵심 비트가 narrative 에 0 회 발화.
+
+**Action**: MAX_ARRIVALS 500 → 1000 (sim 측정 cap raise) + idle-friendly 회춘 trigger (age 임계 or arrivals 임계 시 자연 회춘 emit).
+
+**수용 기준** (Δ-from-baseline + multi-seed):
+- 3 seeds × 50 cycle 평균 cyclesWithRejuvenation ≥ 5 (baseline 0/50)
+- 3 seeds × 50 cycle 평균 hero_died event ≥ 1/50 (baseline 0/50)
+
+### C2. Narrative Variance Pass (was Cycle 2 F3)
+
+**Context**: levelUpBatch 6 variant 가 LV 5→844k 동일 어휘, moralChoice spare_enemy 87.5% saturate, NPC variant cycle 당 10+ 회 반복.
+
+**Action**: levelUp 자릿수 톤 분기 (≤999 / 1k-999k / 1M+) + moralChoice caste frame + NPC variant 24 distinct.
+
+**수용 기준**:
+- 3 seeds × 50 cycle 한 cycle 안 한 줄 반복 ≤ 40 회 (baseline 88 회)
+- levelUp variant unique ≥ 18 (1k-999k 6 + 1M+ 6 + ≤999 6)
+
+## 잔존 carry-over (cycle-2-backlog.md 의 B1/B1.5/B2)
+
+- **B1**: Tier 2 priest saturator (catalog dim source-rate 비대칭) — cycle 2 sim 0.40 → 0.44 regression 신호 (단일 seed noise 인지 진짜 regression 인지는 F1 multi-seed 룰 적용 후 측정)
+- **B1.5**: NPC spawn distribution sparse (50 cycle 중 2 cycle 에 28 events 집중)
+- **B2**: Planner persona baseline-측정 의무화 → **C2 F1 으로 partial 채택** (이 cycle 의 F1)
+
+---
+
 # Cycle 2 Backlog (Cycle 1 에서 carry-over)
 
 자율진화 cycle 1 (`feat/cycle-1-variance-tone-saga`) 의 후행 candidate.
