@@ -72,3 +72,48 @@ describe('NarrativeGenerator', () => {
     expect(natural).toMatch(/안식|잠들|자연/);
   });
 });
+
+describe('Cycle 1 F2 — forRealmEnter', () => {
+  const REALMS = ['base', 'sea', 'volcano', 'underworld', 'heaven', 'chaos'] as const;
+
+  it.each(REALMS)('F2.1-F2.7: forRealmEnter(%s, age) → string + 5+ unique variant', (realm) => {
+    const samples = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      samples.add(NarrativeGenerator.forRealmEnter({ age: 13 + i, realm }, i));
+    }
+    expect(samples.size).toBeGreaterThanOrEqual(5);
+    samples.forEach((s) => {
+      expect(typeof s).toBe('string');
+      expect(s.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('F2.8: forRealmEnter 결과에 "N세" 포함', () => {
+    const result = NarrativeGenerator.forRealmEnter({ age: 13, realm: 'sea' });
+    expect(result).toMatch(/\d+세/);
+  });
+});
+
+describe('Cycle 1 F2 — forSeasonChange', () => {
+  it('F2.9: forSeasonChange("spring", 20, "base") → string', () => {
+    const r = NarrativeGenerator.forSeasonChange({ season: 'spring', age: 20, realm: 'base' });
+    expect(typeof r).toBe('string');
+    expect(r.length).toBeGreaterThan(0);
+  });
+
+  it('F2.10: 4 season 모두 throw 0', () => {
+    for (const s of ['spring', 'summer', 'fall', 'winter'] as const) {
+      expect(() => NarrativeGenerator.forSeasonChange({ season: s, age: 20, realm: 'base' })).not.toThrow();
+    }
+  });
+
+  it('F2.11: realm-flavor prefix — sea/volcano summer 결과 다름', () => {
+    const seaSet = new Set<string>();
+    const volcanoSet = new Set<string>();
+    for (let i = 0; i < 30; i++) {
+      seaSet.add(NarrativeGenerator.forSeasonChange({ season: 'summer', age: 20 + i, realm: 'sea' }, i));
+      volcanoSet.add(NarrativeGenerator.forSeasonChange({ season: 'summer', age: 20 + i, realm: 'volcano' }, i));
+    }
+    expect([...seaSet].some((s) => !volcanoSet.has(s))).toBe(true);
+  });
+});

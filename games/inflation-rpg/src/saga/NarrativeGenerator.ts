@@ -1,4 +1,5 @@
 import type { DeathCause } from './SagaTypes';
+import type { RealmId, SeasonId } from '../types';
 import { NarrationVariants } from '../data/narrationVariants';
 
 export class NarrativeGenerator {
@@ -42,6 +43,16 @@ export class NarrativeGenerator {
 
   static forRejuvenation(opts: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return NarrationVariants.rejuvenation(opts, seed);
+  }
+
+  /** F2 — realm 진입 이벤트 나레이션. 6 realm × 5 variant. */
+  static forRealmEnter(opts: { age: number; realm: RealmId }, seed = 0): string {
+    return NarrationVariants.realmEnter(opts, seed);
+  }
+
+  /** F2 — 계절 전환 나레이션. 4 season × realm-flavor prefix. */
+  static forSeasonChange(opts: { age: number; season: SeasonId; realm: RealmId }, seed = 0): string {
+    return NarrationVariants.seasonChange(opts, seed);
   }
 
   static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string; oldLevel?: number; newLevel?: number }): string {
