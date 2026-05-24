@@ -74,3 +74,6 @@
 - Cycle 80 (2026-05-25, `d3285e8`): 80/100 milestone STATUS.
 - Cycle 81-85 (2026-05-25): Phase C entry / D3 scope / final spec consolidation plan / test coverage / system resilience.
 - Cycle 86-89 (2026-05-25): i18n / UI polish / balance snapshot / narrative tone final.
+- Cycle 91-95 (2026-05-25): final spec prep + spec archive + tag tree + task list + cycle 100 prep.
+- Cycle 96-99 (2026-05-25): final retrospective + README note + system self-awareness + final tag list.
+- Cycle 100 (2026-05-25, milestone): **100/100 자율진화 완주**. V3 정체성 + 사용자 보고 + D-backlog + 8 persona rules 모두 완성.
