@@ -250,3 +250,189 @@ describe('Cycle 1 F3 — handleArrival NPC dead path 회수', () => {
     throw new Error(`F3.9 fail: ${SEEDS.length} seed × ${transitionsObserved} transitions, family chance 모두 miss`);
   });
 });
+
+describe("Cycle-11 C10-A — hero_died('자연사') emit at age cap", () => {
+  // beforeEach 로 store npc 슬레이트 초기화 (다른 테스트 leak 방지).
+  beforeEach(() => {
+    useGameStore.setState(s => ({ ...s, run: { ...s.run, npcs: [] } }));
+  });
+
+  it('emits hero_died(cause=자연사) when hero crosses action 1000 → age 70', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Park hero at action 999 (age 69) so the next tickAge bumps actionCount
+    // to 1000 → age 70 inside handleArrival → C10-A guard fires.
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    const evs = ctrl.handleArrival('enemy', 'wolf_natural_1');
+    const deaths = evs.filter(e => e.type === 'hero_died');
+    expect(deaths.length).toBe(1);
+    const d = deaths[0]!;
+    if (d.type !== 'hero_died') throw new Error('narrowing');
+    expect(d.cause).toBe('자연사');
+    // 자연사 emit 시 oldLevel === newLevel (B3 의 -10% 패널티는 '전사' 전용).
+    expect(d.oldLevel).toBe(d.newLevel);
+    expect(hero.staggered).toBe(true);
+  });
+
+  it("sets endCause = '자연사' on the controller so finalize records it explicitly", () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    ctrl.handleArrival('enemy', 'wolf_natural_2');
+    const saga = ctrl.finalize();
+    expect(saga.hero.cause).toBe('자연사');
+  });
+
+  it("is idempotent — only one hero_died('자연사') fires across subsequent arrivals", () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    const collected: ReturnType<typeof ctrl.handleArrival> = [];
+    for (let i = 0; i < 5; i++) {
+      collected.push(...ctrl.handleArrival('enemy', `wolf_idem_${i}`));
+    }
+    const naturals = collected.filter(e => e.type === 'hero_died' && e.cause === '자연사');
+    expect(naturals.length).toBe(1);
+  });
+
+  it("does not pre-empt a '전사' from EncounterEngine in the same arrival", () => {
+    // Hero entering arrival at age 69 with a fatal encounter (1 HP, huge enemy
+    // atk via 0 atkBase makes hero deal 1 damage → eHp never drops to 0 →
+    // hero takeDamage repeatedly → stagger). '전사' wins; '자연사' must not
+    // double-emit even though tickAge would push to 70 afterward.
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 1, heroAtkBase: 0 });
+    const hero = ctrl.getHero();
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    hero.hp = 1;
+    hero.hpMax = 1;
+    const evs = ctrl.handleArrival('enemy', 'wolf_combat_69');
+    const deaths = evs.filter(e => e.type === 'hero_died');
+    expect(deaths.length).toBe(1);
+    const d = deaths[0]!;
+    if (d.type !== 'hero_died') throw new Error('narrowing');
+    expect(d.cause).toBe('전사');
+  });
+
+  it('does not fire when hero.age < 70 (regression — normal arrivals unaffected)', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    // Hero still under 70 (fresh hero starts at age 5).
+    const evs = ctrl.handleArrival('enemy', 'wolf_young');
+    const naturals = evs.filter(e => e.type === 'hero_died' && e.cause === '자연사');
+    expect(naturals.length).toBe(0);
+  });
+});
+
+describe('Cycle-11 C10-B — auto-rejuv trigger at age threshold', () => {
+  // Each test seeds meta.light + clears npcs + resets buff levels to a clean
+  // baseline so the discount factor stays at 0 (= full cost).
+  beforeEach(() => {
+    useGameStore.setState(s => ({
+      ...s,
+      meta: { ...s.meta, light: 0, buffLevels: {} },
+      run: { ...s.run, npcs: [] },
+    }));
+  });
+
+  it('auto-rejuv fires at age 65 when meta.light >= cost (light spent, age rolls back)', () => {
+    useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 1000, buffLevels: {} } }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Park hero at action 922 (age 64). Next arrival's tickAge → action 923 →
+    // age 65 → auto-rejuv check fires.
+    // Park at action 923 (age 64). Next arrival's tickAge advances actionCount
+    // → 924 → age = floor(5 + 65 × 924/1000) = floor(65.06) = 65 → C10-B fires.
+    hero.actionCount = 923;
+    hero.age = 64;
+    hero.chapter = '노년기';
+    const ageBefore = hero.age;
+    const lightBefore = useGameStore.getState().meta.light ?? 0;
+    ctrl.handleArrival('enemy', 'wolf_rejuv_1');
+    expect(hero.rejuvenationCount).toBe(1);
+    expect(hero.age).toBeLessThan(ageBefore);
+    expect(useGameStore.getState().meta.light).toBeLessThan(lightBefore);
+    // Cost = rejuvenationCost(65) = (65 - 5) * 10 = 600. Discount Lv 0 = no
+    // multiplier so the deducted amount is exactly 600.
+    expect(useGameStore.getState().meta.light).toBe(lightBefore - 600);
+  });
+
+  it('auto-rejuv skips when meta.light < cost (insufficient — no age change)', () => {
+    // Just enough below cost (600) to trigger the early-return branch.
+    useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 100, buffLevels: {} } }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Park at action 923 (age 64). Next arrival's tickAge advances actionCount
+    // → 924 → age = floor(5 + 65 × 924/1000) = floor(65.06) = 65 → C10-B fires.
+    hero.actionCount = 923;
+    hero.age = 64;
+    hero.chapter = '노년기';
+    const lightBefore = useGameStore.getState().meta.light ?? 0;
+    ctrl.handleArrival('enemy', 'wolf_no_light');
+    expect(hero.rejuvenationCount).toBe(0);
+    // Hero ages up normally (no rejuv intervention).
+    expect(hero.age).toBeGreaterThanOrEqual(65);
+    expect(useGameStore.getState().meta.light).toBe(lightBefore);
+  });
+
+  it('auto-rejuv caps at 2/cycle — a third post-threshold arrival is a no-op', () => {
+    useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 100000, buffLevels: {} } }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Force rejuv state pretending the hero already auto-rejuved twice.
+    // Park at action 923 (age 64). Next arrival's tickAge advances actionCount
+    // → 924 → age = floor(5 + 65 × 924/1000) = floor(65.06) = 65 → C10-B fires.
+    hero.actionCount = 923;
+    hero.age = 64;
+    hero.chapter = '노년기';
+    hero.rejuvenationCount = 2;
+    const lightBefore = useGameStore.getState().meta.light ?? 0;
+    ctrl.handleArrival('enemy', 'wolf_rejuv_cap');
+    expect(hero.rejuvenationCount).toBe(2);
+    // Hero ages normally — no rejuv rollback.
+    expect(hero.age).toBeGreaterThanOrEqual(65);
+    expect(useGameStore.getState().meta.light).toBe(lightBefore);
+  });
+
+  it('auto-rejuv emits the saga rejuvenation event (era boundary parity with SpendModal path)', () => {
+    useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 1000, buffLevels: {} } }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Park at action 923 (age 64). Next arrival's tickAge advances actionCount
+    // → 924 → age = floor(5 + 65 × 924/1000) = floor(65.06) = 65 → C10-B fires.
+    hero.actionCount = 923;
+    hero.age = 64;
+    hero.chapter = '노년기';
+    ctrl.handleArrival('enemy', 'wolf_rejuv_saga');
+    expect(hero.rejuvenationCount).toBe(1);
+    const recent = ctrl.getRecentSagaEvents(20);
+    const rejuvEvents = recent.filter(e => e.type === 'rejuvenation');
+    expect(rejuvEvents.length).toBeGreaterThanOrEqual(1);
+    expect(rejuvEvents[0]!.narrativeText).toMatch(/\d+세/);
+  });
+
+  it('auto-rejuv with V3-C discount → ceil(baseCost × (1 - discount)) deducted', () => {
+    // Lv 5 rejuv_discount = 0.25 → cost = ceil(600 × 0.75) = 450.
+    useGameStore.setState(s => ({
+      ...s,
+      meta: { ...s.meta, light: 1000, buffLevels: { rejuv_discount: 5 } },
+    }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Park at action 923 (age 64). Next arrival's tickAge advances actionCount
+    // → 924 → age = floor(5 + 65 × 924/1000) = floor(65.06) = 65 → C10-B fires.
+    hero.actionCount = 923;
+    hero.age = 64;
+    hero.chapter = '노년기';
+    const lightBefore = useGameStore.getState().meta.light ?? 0;
+    ctrl.handleArrival('enemy', 'wolf_rejuv_discount');
+    expect(hero.rejuvenationCount).toBe(1);
+    expect(useGameStore.getState().meta.light).toBe(lightBefore - 450);
+  });
+});

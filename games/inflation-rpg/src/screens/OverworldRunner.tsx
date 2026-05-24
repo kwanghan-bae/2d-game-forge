@@ -203,19 +203,37 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           // V3-H E1 + B3: hero_died comes from handleArrival (EncounterEngine emits it).
           // It is NOT a top-level OverworldScene event — move detection here alongside
           // the other evs.find() checks so the auto-rejuv timer actually fires.
+          //
+          // Cycle-11 C10-A: branch on cause. '전사' = B3 free post-mortem rejuv
+          // (영원한 영웅). '자연사' = age cap reached, cycle ends — no free rejuv
+          // (would otherwise loop hero forever between age 70 → 65 → 70).
           const heroDied = evs.find(e => e.type === 'hero_died');
           if (heroDied && heroDied.type === 'hero_died') {
-            // V3-H B3: 영웅은 불멸 — 사망 후 2초 극적 여운, 자동 5년 회춘.
-            // 회춘은 빛 비용 없이 무료 (영원한 영웅 컨셉).
-            // hero.staggered=true 이므로 다음 arrival 에서 HP 가 자동 회복됨.
-            if (autoRejuvTimerRef.current) clearTimeout(autoRejuvTimerRef.current);
-            autoRejuvTimerRef.current = setTimeout(() => {
-              autoRejuvTimerRef.current = null;
-              const ctrl = useCycleStoreV2.getState().controller;
-              if (!ctrl) return;
-              ctrl.getHero().rejuvenate(5);
-              ctrl.recordRejuvenation(5);
-            }, 2000);
+            if (heroDied.cause === '전사') {
+              // V3-H B3: 영웅은 불멸 — 사망 후 2초 극적 여운, 자동 5년 회춘.
+              // 회춘은 빛 비용 없이 무료 (영원한 영웅 컨셉).
+              // hero.staggered=true 이므로 다음 arrival 에서 HP 가 자동 회복됨.
+              if (autoRejuvTimerRef.current) clearTimeout(autoRejuvTimerRef.current);
+              autoRejuvTimerRef.current = setTimeout(() => {
+                autoRejuvTimerRef.current = null;
+                const ctrl = useCycleStoreV2.getState().controller;
+                if (!ctrl) return;
+                ctrl.getHero().rejuvenate(5);
+                ctrl.recordRejuvenation(5);
+              }, 2000);
+            } else {
+              // Cycle-11 C10-A: '자연사' terminates the cycle. Controller has
+              // already set endCause = '자연사' so endCycle finalizes with the
+              // correct cause. Mirrors the OverworldScene 'cycle_ended' path so
+              // the rest of the cleanup (clearHeroSnapshot, sponsorGold spend,
+              // run reset) runs the same way as a 무위 / abandon termination.
+              if (!endedRef.current) {
+                endedRef.current = true;
+                useGameStore.getState().clearHeroSnapshot();
+                endCycle('자연사');
+                onCycleEnd();
+              }
+            }
           }
           // Cycle-6 P0: 매 arrival 마다 hero snapshot 자동 저장.
           // 기존엔 "메인 메뉴" 버튼 클릭 경로에서만 saveHeroSnapshot 이 호출되어
