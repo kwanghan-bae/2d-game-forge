@@ -4,13 +4,11 @@
  */
 
 import type { RealmId, SeasonId } from '../types';
+import { josa } from '../utils/josa';
 
-/** Object marker (을/를) — NarrativeGenerator 의 동일 로직 복사. */
+/** Object marker (을/를) — Cycle 4 A2: josa() 으로 forward (single source). */
 function obj(noun: string): string {
-  const last = noun.charCodeAt(noun.length - 1);
-  if (Number.isNaN(last) || last < 0xac00 || last > 0xd7a3) return `${noun}를`;
-  const jongseong = (last - 0xac00) % 28;
-  return jongseong === 0 ? `${noun}를` : `${noun}을`;
+  return josa(noun, '을를');
 }
 
 /* ─────────────────────────── battle ─────────────────────────── */
@@ -20,7 +18,7 @@ const BATTLE_VARIANTS: Array<(c: { age: number; enemyNameKR: string }) => string
   (c) => `${c.age}세에 ${obj(c.enemyNameKR)} 단숨에 쓰러뜨렸다.`,
   (c) => `${c.age}세에 ${obj(c.enemyNameKR)} 압도했다.`,
   (c) => `${c.age}세에 ${obj(c.enemyNameKR)} 제압했다.`,
-  (c) => `${c.age}세에 ${c.enemyNameKR}가 쓰러졌다.`,
+  (c) => `${c.age}세에 ${josa(c.enemyNameKR, '이가')} 쓰러졌다.`,
   (c) => `${c.age}세에 간신히 ${obj(c.enemyNameKR)} 물리쳤다.`,
   (c) => `${c.age}세에 ${c.enemyNameKR}의 숨이 끊어졌다.`,
 ];
@@ -51,7 +49,7 @@ const DROP_VARIANTS: Array<(c: { age: number; itemNameKR: string }) => string> =
   (c) => `${c.age}세에 ${obj(c.itemNameKR)} 발견했다.`,
   (c) => `${c.age}세에 바닥에 떨어진 ${obj(c.itemNameKR)} 주웠다.`,
   (c) => `${c.age}세에 ${obj(c.itemNameKR)} 챙겼다.`,
-  (c) => `${c.age}세에 ${c.itemNameKR}이(가) 빛났다.`,
+  (c) => `${c.age}세에 ${josa(c.itemNameKR, '이가')} 빛났다.`,
   (c) => `${c.age}세에 ${obj(c.itemNameKR)} 얻어냈다.`,
 ];
 
@@ -94,11 +92,11 @@ const SKILL_VARIANTS: Array<(c: { age: number; skillNameKR: string }) => string>
 
 /* ─────────────────────── jobUnlock ──────────────────────────── */
 const JOB_VARIANTS: Array<(c: { age: number; jobNameKR: string; tier: number }) => string> = [
-  (c) => `${c.age}세에 ${c.jobNameKR}이(가) 되었다. (Tier ${c.tier})`,
+  (c) => `${c.age}세에 ${josa(c.jobNameKR, '이가')} 되었다. (Tier ${c.tier})`,
   (c) => `${c.age}세에 ${c.jobNameKR}의 길에 들어섰다. (Tier ${c.tier})`,
-  (c) => `${c.age}세에 마침내 ${c.jobNameKR}로 거듭났다. (Tier ${c.tier})`,
+  (c) => `${c.age}세에 마침내 ${josa(c.jobNameKR, '으로로')} 거듭났다. (Tier ${c.tier})`,
   (c) => `${c.age}세에 ${c.jobNameKR}의 칭호를 얻었다. (Tier ${c.tier})`,
-  (c) => `${c.age}세에 영웅은 ${c.jobNameKR}가 되었다. (Tier ${c.tier})`,
+  (c) => `${c.age}세에 영웅은 ${josa(c.jobNameKR, '이가')} 되었다. (Tier ${c.tier})`,
 ];
 
 /* ─────────────────────── rejuvenation ───────────────────────── */

@@ -47,4 +47,26 @@ describe('OverworldRunner', () => {
     expect(screen.getByTestId('hud-rejuvenation')).toBeInTheDocument();
     expect(screen.getByTestId('open-spend-modal')).toBeInTheDocument();
   });
+
+  // Cycle 4 B1: HUD 가 3-row 로 재구성 — 정체성 / 자원 / 액션.
+  it('HUD 가 3-row chunk 로 분리되어 렌더 (B1)', () => {
+    useCycleStoreV2.getState().start({
+      seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+    });
+    render(<OverworldRunner onCycleEnd={() => {}} />);
+    // 3 row 각자 별도 데이터 속성
+    expect(screen.getByTestId('hud-row-identity')).toBeInTheDocument();
+    expect(screen.getByTestId('hud-row-resource')).toBeInTheDocument();
+    expect(screen.getByTestId('hud-row-action')).toBeInTheDocument();
+    // row 별 멤버 검증 — DOM 부모 일치
+    const identity = screen.getByTestId('hud-row-identity');
+    expect(identity.contains(screen.getByTestId('hud-name'))).toBe(true);
+    expect(identity.contains(screen.getByTestId('hud-job-lv'))).toBe(true);
+    const resource = screen.getByTestId('hud-row-resource');
+    expect(resource.contains(screen.getByTestId('hud-light'))).toBe(true);
+    expect(resource.contains(screen.getByTestId('hud-season'))).toBe(true);
+    const action = screen.getByTestId('hud-row-action');
+    expect(action.contains(screen.getByTestId('open-spend-modal'))).toBe(true);
+    expect(action.contains(screen.getByTestId('speed-buttons'))).toBe(true);
+  });
 });

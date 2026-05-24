@@ -263,57 +263,66 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   return (
     <div data-testid="overworld-runner" style={{ position: 'relative' }}>
       <div data-testid="overworld-hud" style={hudStyle}>
-        {/* Row 1: character info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, flexWrap: 'wrap', width: '100%' }}>
-          <span data-testid="hud-name">{hero.emoji} {hero.name}</span>
-          <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
-          <span data-testid="hud-job-lv">{hero.job} · LV {hero.level}</span>
-          <span data-testid="hud-hp">HP {hero.hp}/{hero.hpMax}</span>
+        {/* Cycle 4 B1: 3-row chunk — 정체성 / 자원 / 액션. 모바일 word-break 방지. */}
+        {/* Row 1: 정체성 — 이름 / 나이·시기 / 직업·LV / HP */}
+        <div data-testid="hud-row-identity" style={hudRowStyle(13)}>
+          <span data-testid="hud-name" style={hudChipStyle}>{hero.emoji} {hero.name}</span>
+          <span data-testid="hud-age" style={hudChipStyle}>{hero.age}세 · {hero.chapter}</span>
+          <span data-testid="hud-job-lv" style={hudChipStyle}>{hero.job} · LV {hero.level}</span>
+          <span data-testid="hud-hp" style={hudChipStyle}>HP {hero.hp}/{hero.hpMax}</span>
         </div>
-        {/* Row 2: meta info + buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, flexWrap: 'wrap', width: '100%' }}>
-          <span data-testid="hud-light">빛 {Math.floor(meta.light ?? 0)}</span>
-          <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
-          <span data-testid="hud-season">{seasonEmoji(meta.season.current)} {seasonNameKR(meta.season.current)}</span>
-          <span data-testid="hud-realm">
+        {/* Row 2: 자원 — 빛 / 재생 / 계절 / 지역 */}
+        <div data-testid="hud-row-resource" style={hudRowStyle(12)}>
+          <span data-testid="hud-light" style={hudChipStyle}>빛 {Math.floor(meta.light ?? 0)}</span>
+          <span data-testid="hud-rejuvenation" style={hudChipStyle}>재생 #{hero.rejuvenationCount}</span>
+          <span data-testid="hud-season" style={hudChipStyle}>{seasonEmoji(meta.season.current)} {seasonNameKR(meta.season.current)}</span>
+          <span data-testid="hud-realm" style={hudChipStyle}>
             {(() => {
               const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
               return `🌍 ${r?.nameKR ?? '?'} (${meta.unlockedRealms.length}/${REALM_CATALOG.length})`;
             })()}
           </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button
-              type="button"
-              onClick={() => setSpendModalOpen(true)}
-              data-testid="open-spend-modal"
-              style={{ padding: '4px 8px', fontSize: 12 }}
-            >
-              신의 메뉴
-            </button>
-            <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
-            <button
-              type="button"
-              data-testid="open-status-modal"
-              onClick={() => setStatusModalOpen(true)}
-              style={{ minHeight: 44, padding: '4px 8px', fontSize: 12 }}
-            >
-              📊 상태
-            </button>
-            <span data-testid="speed-buttons" style={{ display: 'inline-flex', gap: 4 }}>
-              {SPEED_PRESETS.map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSpeed(s)}
-                  data-testid={`speed-${s}x`}
-                  data-active={speed === s ? 'true' : undefined}
-                  style={speedBtnStyle(speed === s)}
-                >
-                  {s}×
-                </button>
-              ))}
-            </span>
-          </div>
+        </div>
+        {/* Row 3: 액션 — 3 버튼 + 속도 프리셋. whiteSpace: nowrap 으로 future label 추가 시에도 word-break 방지. */}
+        <div data-testid="hud-row-action" style={{ ...hudRowStyle(12), gap: 6 }}>
+          <button
+            type="button"
+            onClick={() => setSpendModalOpen(true)}
+            data-testid="open-spend-modal"
+            style={hudActionBtnStyle}
+          >
+            신의 메뉴
+          </button>
+          <button
+            type="button"
+            onClick={() => setSagaModalOpen(true)}
+            data-testid="open-saga-modal"
+            style={hudActionBtnStyle}
+          >
+            📖 기록
+          </button>
+          <button
+            type="button"
+            data-testid="open-status-modal"
+            onClick={() => setStatusModalOpen(true)}
+            style={hudActionBtnStyle}
+          >
+            📊 상태
+          </button>
+          <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
+            {SPEED_PRESETS.map(s => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSpeed(s)}
+                data-testid={`speed-${s}x`}
+                data-active={speed === s ? 'true' : undefined}
+                style={speedBtnStyle(speed === s)}
+              >
+                {s}×
+              </button>
+            ))}
+          </span>
         </div>
       </div>
       <div data-testid="light-floaters" style={{ position: 'absolute', right: 0, top: 60, pointerEvents: 'none', zIndex: 5 }}>
@@ -468,8 +477,34 @@ function speedBtnStyle(active: boolean): React.CSSProperties {
     borderRadius: 4,
     cursor: 'pointer',
     fontWeight: active ? 'bold' : 'normal',
+    whiteSpace: 'nowrap',
   };
 }
+
+/** Cycle 4 B1: HUD row 공통 스타일. flex + wrap + gap. fontSize 만 row 별 override. */
+function hudRowStyle(fontSize: number): React.CSSProperties {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    fontSize,
+    flexWrap: 'wrap',
+    width: '100%',
+  };
+}
+
+/** Cycle 4 B1: HUD chip 공통 — word-break 방지. */
+const hudChipStyle: React.CSSProperties = {
+  whiteSpace: 'nowrap',
+};
+
+/** Cycle 4 B1: action 버튼 공통 — 44px 터치 타겟 (4a Mobile UX) + nowrap. */
+const hudActionBtnStyle: React.CSSProperties = {
+  minHeight: 44,
+  padding: '4px 10px',
+  fontSize: 12,
+  whiteSpace: 'nowrap',
+};
 
 const logPanelStyle: React.CSSProperties = {
   maxWidth: 640,
