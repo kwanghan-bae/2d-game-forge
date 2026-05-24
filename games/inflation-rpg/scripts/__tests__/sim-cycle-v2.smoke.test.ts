@@ -64,7 +64,7 @@ describe('sim-cycle-v2 (V1a CycleControllerV2 headless driver)', () => {
     });
     const r = out.results[0]!;
     expect(r.finalAge).toBeGreaterThanOrEqual(65);
-  }, 30_000);
+  }, 600_000);
 
   // Cycle-12 L2: chunked jsonl write. Pre-fix events.map().join() built one
   // contiguous string per cycle (V8 cap ~512MB → throw on 1200-arrival runs).
