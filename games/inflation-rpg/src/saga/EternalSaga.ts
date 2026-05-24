@@ -2,8 +2,14 @@ import type { EternalSagaState, RealmId } from '../types';
 import type { SagaEvent } from './SagaTypes';
 import type { Chapter } from '../hero/HeroLifecycle';
 
+// Cycle 33 (cycle 3 D6 carry-over) — era key dynamic title.
+// 0 회: "본래 어린시절" / "본래 청년기" 등 (시초 영혼).
+// 1-2 회: "재생 #N 어린시절" — 회춘 의식 후 재시작.
+// 3+ 회: "환생 #N 어린시절" — 영원한 영웅의 다회 회춘 변모.
 export function eraKeyFor(chapter: Chapter, rejuvCount: number): string {
-  return rejuvCount === 0 ? `본래 ${chapter}` : `재생 #${rejuvCount} ${chapter}`;
+  if (rejuvCount === 0) return `본래 ${chapter}`;
+  if (rejuvCount < 3) return `재생 #${rejuvCount} ${chapter}`;
+  return `환생 #${rejuvCount} ${chapter}`;
 }
 
 export function appendEvent(
