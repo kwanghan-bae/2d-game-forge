@@ -234,13 +234,9 @@ const FAMILY_EVENT_VARIANTS: Record<'marriage' | 'child_born' | 'child_grown', A
   ],
 };
 
-/* ─────────────────── Cycle 35 D7 (cycle 19 retry) ─────────────────
- * age 5 prefix 다양화. "5세에" 의 단조로움 해소. seed % 4 분기:
- *   0: 원형 (기본 "${age}세에") — 하위 호환 (seed=0 시 기본 catalog 그대로)
- *   1: "어릴 적부터 "
- *   2: "유년의 어느 날 "
- *   3: "동심에 머무는 시기에 "
- * seed=0 일 때 변형 0 만 사용 → 기존 test fixture 영향 없음. */
+/* ─────────────────── Cycle 35-39 D7 (cycle 19 retry) ─────────────────
+ * age prefix 다양화. "Ne에" 의 단조로움 해소. seed % 4 분기.
+ * seed=0 일 때 변형 0 만 → 기존 test fixture 호환. */
 function age5Tone(text: string, seed: number): string {
   if (seed === 0) return text;
   const variant = seed % 4;
@@ -252,43 +248,55 @@ function age5Tone(text: string, seed: number): string {
   return text.replace(/^5세에 /, replacement);
 }
 
+/** Cycle 39: age 6-12 (young chapter). 4 variants. */
+function ageYoungTone(text: string, age: number, seed: number): string {
+  if (seed === 0 || age < 6 || age > 12) return text;
+  const variant = seed % 4;
+  if (variant === 0) return text;
+  const replacement =
+    variant === 1 ? `${age}세 무렵 ` :
+    variant === 2 ? `${age}세의 어느 날 ` :
+    `${age}세 동심으로 `;
+  return text.replace(new RegExp(`^${age}세에 `), replacement);
+}
+
 /* ─────────────────── 공개 API ───────────────────────────────── */
 export const NarrationVariants = {
   battle(ctx: { age: number; enemyNameKR: string }, seed = 0): string {
     const out = pick(BATTLE_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   levelUp(ctx: { age: number; newLevel: number }, seed = 0): string {
     const out = pick(LEVELUP_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   levelUpBatch(ctx: { age: number; fromLevel: number; toLevel: number; count: number }, seed = 0): string {
     const out = pick(LEVELUP_BATCH_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   drop(ctx: { age: number; itemNameKR: string }, seed = 0): string {
     const out = pick(DROP_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   shrineHealed(ctx: { age: number; healed: number }, seed = 0): string {
     const out = pick(SHRINE_HEALED_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   shrineCalm(ctx: { age: number }, seed = 0): string {
     const out = pick(SHRINE_CALM_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   moralChoice(ctx: { age: number; choiceNameKR: string }, seed = 0): string {
     const out = pick(MORAL_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   skillLearned(ctx: { age: number; skillNameKR: string }, seed = 0): string {
     const out = pick(SKILL_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   jobUnlock(ctx: { age: number; jobNameKR: string; tier: number }, seed = 0): string {
     const out = pick(JOB_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : out;
+    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
   },
   rejuvenation(ctx: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return pick(REJUVENATION_VARIANTS, ctx, seed);
