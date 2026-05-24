@@ -26,11 +26,11 @@ export const JOBS: readonly Job[] = [
 
   // Tier 2 — age 30 (청년기 → 장년기)
   { id: 'paladin',     nameKR: '성기사',   emoji: '🛡️', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'heroic',   min:  5 }, atkMul: 1.8, hpMul: 1.6 },
-  { id: 'mage',        nameKR: '마법사',   emoji: '🔮', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'pious',    min:  3 }, atkMul: 2.0, hpMul: 1.2 },
+  { id: 'mage',        nameKR: '마법사',   emoji: '🔮', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'pious',    min:  5 }, atkMul: 2.0, hpMul: 1.2 },
   { id: 'assassin',    nameKR: '암살자',   emoji: '🥷', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'moral',    min: -5 }, atkMul: 2.2, hpMul: 1.1 },
   { id: 'priest',      nameKR: '사제',     emoji: '🙏', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'merciful', min:  3 }, atkMul: 1.5, hpMul: 1.7 },
-  { id: 'ranger',      nameKR: '레인저',   emoji: '🌲', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'prudent',  min:  4 }, atkMul: 1.9, hpMul: 1.4 },
-  { id: 'monk',        nameKR: '수도승',   emoji: '☯️', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'pious',    min:  5 }, atkMul: 1.7, hpMul: 1.5 },
+  { id: 'ranger',      nameKR: '레인저',   emoji: '🌲', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'prudent',  min:  6 }, atkMul: 1.9, hpMul: 1.4 },
+  { id: 'monk',        nameKR: '수도승',   emoji: '☯️', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'prudent',  min:  5 }, atkMul: 1.7, hpMul: 1.5 },
 
   // Tier 3 — age 50 (장년기 → 노년기)
   { id: 'hero',        nameKR: '영웅',     emoji: '🌟', tier: 3, milestone: 'age50', requiredPersonality: { dim: 'heroic',   min:  8 }, atkMul: 3.0, hpMul: 2.5 },
