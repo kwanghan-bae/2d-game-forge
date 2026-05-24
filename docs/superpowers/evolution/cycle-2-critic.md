@@ -1,0 +1,38 @@
+# Cycle 2 비평 (Game Critic)
+
+대상: main HEAD `ac061d1` (Cycle 1 머지 `bd3ff10` 직후 + docs-only 갱신, 코드는 post-F1 과 bit-identical).
+입력: `/tmp/cycle-2-sim/summary.json` (50 cycle aggregate, seed 2048-2097), `c2048.md` + `c2073.md` (각 ~1200 줄 narrative), `CycleControllerV2.ts`, `EncounterEngine.ts`, `cycle-1-result.md`, `cycle-2-backlog.md`.
+
+**평가 컨텍스트 (필독)**: Cycle 1 머지 (`bd3ff10`) 와 현재 HEAD (`ac061d1`) 사이의 변경은 `docs(cycle-1): result + INDEX + STATUS 갱신` **단 1 커밋, 문서만**. 코드는 post-F1 과 bit-identical. **따라서 cycle-1 sim (seed 1024, 50) vs cycle-2 sim (seed 2048, 50) 의 차이는 전부 seed sampling variance 이지 코드 변경 효과가 아니다**. 아래 점수는 (1) post-F1 정체성 충족도 자체에 대한 평가 + (2) seed variance 폭이 정체성 검증의 신뢰 구간으로서 적절한지 의 두 축으로 구분해서 매긴다.
+
+## 점수
+
+| 축 | 점수 | 근거 |
+|---|---|---|
+| 흥행성 | 6/10 | maxLevel p50 816,565 / p90 844,531 / max 865,058 — 50 cycle 모두 5-15세에 LV 1 → 80~150 폭발 (c2048: 5세에 LV 1→87 / c2073 동급). inflation-rpg 정체성의 hook 은 강하게 유지. 다만 `endCauses: max_arrivals 50/50` — **50 cycle 전부**가 인공 타이머 cap 으로 잘림 (cycle 1 의 49/50 보다 1 회 악화, seed variance 영역). "37세에 인생이 끝났다 — 영웅이 사망" 같은 cycle 마무리 비트가 **0 회** 발생. 30 분 후 친구에게 "끝까지 가봐"라 추천할 만한 last beat 없음. |
+| 재미 | 5/10 | F1 효과 살아 있음: skillsLearned p50=9 (post-F1 9 와 동일, cycle 0 의 21 대비 -57% 유지). 그러나 (1) **`jobsUnlocked: monk 0 / ranger 0`** — F1 의 monk dim 분리 (pious→prudent) 와 ranger.min 6 상향 이 **두 seed batch 연속 monk/ranger 0** 으로 나타남. cycle 1 post-F1 의 `ranger 1 / monk 0` 도 통계적 floor 였고, cycle 2 의 0/0 은 진짜 봉인 가능성 ≥ stochastic miss 가능성. (2) `priest 22/50 (0.44)` — **post-F1 baseline 0.40 대비 Δ +0.04**. F1 의 mage→priest pivot 이 priest saturator 를 lock-in 한 수치. Δ-from-baseline 룰 (cycle-1-result yellow flag) 로 yellow zone (Δ ≥ 0.05 가 cycle 1 의 win threshold 였는데 정확히 그 폭만큼 거꾸로). (3) moral choice p50 56 (post-F1 56 동일) 은 유지. decision space 는 build 차원에서 cycle 1 만큼 안 열렸고, cycle 2 가 그걸 측정만 했을 뿐 추가 변화는 0. |
+| 몰입성 | 6/10 | **NPC dead path 회수는 살아 있음**: c2048 grep `라이벌\|멘토\|결혼\|자식\|행인` 27 hit (cycle 1 의 28 events 와 동급). 15-20세 라이벌 9 hit + 멘토 2 + 행인 3 등 — F3 wire 가 두 번째 seed 에서도 작동 확인. **realm 진입 narrative 는 seed variance 폭이 큼**: c2048 = 0 hit (base→sea/volcano/heaven 진입 narrative 한 줄도 안 나옴), c2073 = 4 hit ("발이 구름을 디뎠다 — 천공의 영토에 도달했다" 등 정상 발화). 같은 코드인데 두 cycle 의 narrative coverage 가 0/4 로 갈리는 건 realm_unlocked event 의 trigger 가 hero 진행도 의존이라 일부 cycle 에서 base 만 머물다 종료. season 도 c2048: 2 hit / c2073: 3 hit — 4 계절 중 winter 는 cycle 1 backlog (B4) 그대로 0/50. NPC 동일 문장 ("시야 끝에서 같은 표정의 그림자가 나타났다 — 라이벌이었다") 가 c2048 한 cycle 안에서 **10+ 회 반복** — variant 3~4 개로는 15-20세 라이벌 9 회 발사를 못 채움 (cycle 1 backlog "Moral choice variant 확장" 과 동일 패턴, NPC variant 도 같은 부채 추가). |
+| 플레이 타임 | 6/10 | maxLevel p50 816,565 / p90 844,531 / min 584,551 / max 865,058 — post-F1 (p50 829,894) 대비 **−1.6% drop** (seed variance 범위). p90/p50 ratio = 1.034 (cycle 1 의 1.024 보다 약간 넓어졌지만 여전히 좁음). curve gradient 의 variance 가 cycle 1 과 같이 좁다 — "어떤 cycle 은 폭발하고 어떤 cycle 은 정체된다" 가 없음. shrine visits p50=2 (post-F1 동일) 는 cycle 1 의 1.38 보다 약간 개선 (seed variance). content density 는 충분 (8 적 종류 + 9 장비 + 21 skill catalog 중 9 학습 + 4 season + trial + sightseeing + meditation + NPC 4 종) 이지만 모든 cycle 이 max_arrivals=500 cap 으로 잘려 같은 깊이를 같은 속도로 본다. **plays-the-same problem 이 cycle 2 에서도 sim cap 의 직접 함수로 재확인**. |
+
+## 약점 TOP 3
+
+1. **인공 타이머 종료 50/50 — eternal hero 자연사·회춘 비트 영구 봉인** — `endCauses: { max_arrivals: 50 }`, 전사 0, 자연사 0. cycle 1 의 49/50 → cycle 2 의 50/50 (seed variance, code 동일). V3 spec 의 "eternal hero idle sponsor + 자연사 후 회춘" 정체성이 **두 seed batch 연속 0% 발생**. V3-H 가 추가한 death penalty -10% + auto-rejuv 5년 메커니즘이 100 cycle 동안 단 1 회 발사. EternalSaga 의 `재생 #N` era key 가 차곡차곡 쌓여야 "무한 saga" 정체성이 살지만, 실측은 회춘 marker 0 회. **Δ-from-baseline**: cycle 1 post-F1 의 death rate 0.02 → cycle 2 의 0.00. 0.02 도 통계적 floor 인데 0 으로 떨어진 건 (a) seed variance 또는 (b) hero kill probability 가 사실상 floor. cycle 2 가 측정한 것은 "post-F1 코드의 death rate 95% 신뢰구간이 0~0.04 범위" 라는 점. 해결 방향: **maxArrivals sim cap 500 → 1500~2000 (cycle-2-backlog B1.5/B4 의 권장 (b)) + V3 spec §6 의 chapter 별 사망률 (장년기 ~5% / 노년기 ~25% / 자연사 100% age≥80) curve fit 을 spec 화 후 implement**. cycle 3 PRD 1 순위 후보.
+
+2. **NPC narrative 변동성 0 — 같은 한 줄이 한 cycle 에 10+ 회 반복** — c2048 에서 "시야 끝에서 같은 표정의 그림자가 나타났다 — 라이벌이었다" 가 15-20세 사이 **10 회** + "라이벌의 첫 칼이 자신의 어깨를 스쳤다" **6 회** + "마을 입구에서 한 검객이 시선을 떨구지 않았다" **5 회**. F3 가 dead path 는 회수했지만 variant pool 이 3-4 개라 sparse 1 cycle 안에서 9 회 라이벌 encounter 가 쏟아지면 즉시 고갈. moral choice 의 levelUp 6-variant 즉시 고갈 (cycle 1 backlog) 와 정확히 같은 패턴이 NPC layer 에서 재발생. Δ-from-baseline: cycle 1 backlog 의 "levelUp variant 15+" 가 carry-over 인데, cycle 2 에서 NPC variant 가 동일 문제로 합류 — backlog growth 의 신호. **해결 방향**: `forNpcEncounter` (rival 3 → 8 variant) + `forNpcDeath` (현재 3 → 6) + age-bucket 톤 modifier (15-20세 라이벌 첫 등장 vs 30+세 라이벌 재회 vs 노년 라이벌 추모). cycle 3 PRD 2 순위 후보 (cycle 1 backlog #5 의 levelUp variant 확장과 묶어 narrative variance pass).
+
+3. **monk/ranger 봉인 + priest saturator Δ +0.04 regression** — F1 의 핵심 fix (mage 0.46 → priest 0.40 + monk dim 분리 + ranger.min 상향) 이 두 seed batch 연속으로 `monk 0 / ranger 0` 을 측정. cycle 1 post-F1 의 `ranger 1` 도 50 cycle 의 noise floor 였을 가능성. priest maxShare 는 post-F1 의 0.40 → cycle-2 sim 의 0.44 로 **+0.04 (= cycle 1 의 F1 win threshold Δ 0.05 폭과 같은 자릿수)**. cycle-2-backlog B1 ("Tier 2 catalog asymmetric source-rate") 가 carry-over 한 정확한 자리. Tier 2 의 6 job 중 mage·priest·paladin 3 개에 분포가 집중되고 (cycle-2 의 priest+paladin+mage+assassin = 44+30+14+12 = 100%, monk·ranger = 0+0%), 디자인이 의도한 "6 직업의 fair pivot" 이 사실상 4 직업 게임. Δ-from-baseline: cycle 1 의 F1.13 가 `Δ ≥ 0.05` 로 recalibrate 됐지만, **cycle 2 의 yellow flag 는 "Δ-recalibrate 한 가드 자체가 한 cycle 만에 -0.04 후퇴"**. 카탈로그 데이터 변경 (backlog B1 의 옵션 c, personalityEncounters dim source-rate symmetrization) 이 cycle 3 의 작은 F 단위로 진입 가능. **해결 방향**: dim source-rate balance pass (catalog 데이터만) + Tier 2 catalog 의 monk/ranger 진입 valley 측정 (어떤 personality 분포가 monk/ranger 를 흡수해야 하는지 sim sweep).
+
+## 강점 (다음에도 유지)
+
+- **F1 효과 carry**: skillsLearned p50 9 가 두 seed batch 연속 유지 — gating rate 0.20 의 효과는 sampling noise 위로 robust 함이 확인. 이건 cycle 2 의 강점이라기보다 cycle 1 의 win 이 cycle 2 sim 에서 검증된 것.
+- **F3 NPC wire**: cycle 1 의 dead path 회수가 두 번째 seed 에서도 작동 (c2048 27 NPC hit, c2073 2 hit — distribution sparse 는 backlog B1.5 carry-over).
+- **F2 realm narrative**: c2073 에서 정상 작동 ("발이 구름을 디뎠다 — 천공의 영토에 도달했다") — wire 자체는 살아 있음. coverage 가 hero 진행도 의존이라 cycle 별 0~4 hit 의 분산이 큰 것이지 dead path 아님.
+- **첫 5-15세 hook 자릿수**: LV 1 → 100+ 폭발 자릿수가 두 seed batch 일관. inflation-rpg 정체성이 narrative 의 첫 50 줄 안에 즉시 깔리는 패턴은 robust.
+
+## 표류 경보
+
+- **Cycle 2 의 본질은 "코드 0 변경 + seed 변경 50-cycle 재측정"** — 본 비평의 가장 큰 메타 finding 은 "Cycle 1 의 F1.13 가드가 seed 1024 측정값 (priest 0.40) 위에 reframe 됐고, seed 2048 에서 0.44 로 돌아왔다" 는 것. **단일 seed 50-cycle 의 measurement noise 가 yellow flag 의 threshold 폭 (0.05) 와 비슷한 자릿수**. cycle-2-backlog B2 (planner persona baseline-측정 의무화) 의 더 강한 버전이 필요: **acceptance criterion 의 sim measurement 는 단일 seed 가 아니라 multi-seed (예: 3 seed × 50 cycle = 150 cycle) 의 aggregate 위에 작성**. 단일 seed 위에서 Δ ≥ 0.05 가드를 통과시키면 다음 seed 에서 -0.04 후퇴해도 측정 자체로 잡지 못함. cycle 3 PRD 작성 전 process change 필수 (planner persona §"sim-driven acceptance" 에 multi-seed 룰 추가).
+
+- **eternal hero 정체성의 narrative 비트 0**: 50/50 cycle 이 `max_arrivals` 로 잘려 회춘·노년·자연사 의 narrative 비트가 두 seed batch 연속 0 회. V3 spec 이 정의한 "1만 시간 idle sponsor" 의 핵심 cycle 흐름이 sim 환경에서 측정 불가. 코드가 이 비트를 emit 하긴 하는데, sim cap 이 너무 빨라서 측정 안 됨. **컨셉 표류 아님 (코드는 컨셉대로)** 이지만, **sim infra 가 컨셉의 핵심 비트를 안 본다는 점에서 측정 환경 자체가 표류** — V3 spec 의 정체성이 cycle 마다 측정되지 않으면 evolution loop 가 정체성을 보호할 신호를 잃는다. cycle 3 의 maxArrivals raise 가 컨셉 표류 방지 차원에서도 1 순위.
+
+- **컨셉 자체는 표류 아님**: 1 → 800k 폭발, idle 의 죄책감 없음, eternal hero 의 narrative wire (라이벌·멘토·결혼·자식·realm 진입) 가 코드에 박혀 있다. 위 두 항목은 *측정/관측 infra* 의 표류이지, 게임이 다른 게임이 되어가는 신호는 아직 없다.
