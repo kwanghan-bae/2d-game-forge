@@ -284,13 +284,38 @@ function ageMatureTone(text: string, age: number, seed: number): string {
   return text.replace(new RegExp(`^${age}세에 `), replacement);
 }
 
+/** Cycle 42: age 50-69 (노년기). */
+function ageElderTone(text: string, age: number, seed: number): string {
+  if (seed === 0 || age < 50 || age > 69) return text;
+  const variant = seed % 4;
+  if (variant === 0) return text;
+  const replacement =
+    variant === 1 ? `${age}세 백발의 시기에 ` :
+    variant === 2 ? `${age}세 황혼 무렵 ` :
+    `${age}세 깊은 주름으로 `;
+  return text.replace(new RegExp(`^${age}세에 `), replacement);
+}
+
+/** Cycle 42: age 70+ (마지막 — eternal hero's natural cap). */
+function ageFinalTone(text: string, age: number, seed: number): string {
+  if (seed === 0 || age < 70) return text;
+  const variant = seed % 4;
+  if (variant === 0) return text;
+  const replacement =
+    variant === 1 ? `${age}세 한 생애의 끝에 ` :
+    variant === 2 ? `${age}세 만년의 햇살에 ` :
+    `${age}세 마지막 호흡으로 `;
+  return text.replace(new RegExp(`^${age}세에 `), replacement);
+}
+
 /** Single entrypoint — picks by age tier. */
 function ageTone(text: string, age: number, seed: number): string {
   if (age === 5) return age5Tone(text, seed);
   if (age <= 12) return ageYoungTone(text, age, seed);
   if (age <= 29) return ageYoungAdultTone(text, age, seed);
   if (age <= 49) return ageMatureTone(text, age, seed);
-  return text;
+  if (age <= 69) return ageElderTone(text, age, seed);
+  return ageFinalTone(text, age, seed);
 }
 
 /* ─────────────────── 공개 API ───────────────────────────────── */
