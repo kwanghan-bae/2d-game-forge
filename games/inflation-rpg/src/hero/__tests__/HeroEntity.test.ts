@@ -132,4 +132,39 @@ describe('tickAge with agingMul (V3-C aging_slow buff)', () => {
     h.tickAge(2.0);
     expect(h.actionCount).toBe(start + 2);
   });
+
+});
+
+describe('HeroEntity staggered serialization (cycle 20)', () => {
+  function mk() {
+    return HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 50 });
+  }
+
+  it('serialize/restore preserves staggered=true', () => {
+    const h = mk();
+    h.takeDamage(999);
+    expect(h.staggered).toBe(true);
+    const snap = h.serialize(7);
+    expect(snap.staggered).toBe(true);
+    const restored = HeroEntity.restore(snap);
+    expect(restored.staggered).toBe(true);
+  });
+
+  it('serialize/restore preserves staggered=false default', () => {
+    const h = mk();
+    expect(h.staggered).toBe(false);
+    const snap = h.serialize(7);
+    expect(snap.staggered).toBe(false);
+    const restored = HeroEntity.restore(snap);
+    expect(restored.staggered).toBe(false);
+  });
+
+  it('restore handles legacy snapshot without staggered field', () => {
+    const h = mk();
+    const snap = h.serialize(7);
+    const { staggered: _, ...legacy } = snap;
+    void _;
+    const restored = HeroEntity.restore(legacy as typeof snap);
+    expect(restored.staggered).toBe(false);
+  });
 });

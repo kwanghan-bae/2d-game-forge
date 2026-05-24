@@ -49,6 +49,7 @@ export interface HeroSnapshot {
   unlockedJobId: string | null;
   unlockedMilestones: import('../data/jobs').JobMilestone[];
   learnedSkillIds: string[];
+  staggered?: boolean;
   seed: number;
 }
 
@@ -225,6 +226,7 @@ export class HeroEntity {
       unlockedJobId: this.unlockedJobId,
       unlockedMilestones: [...this.unlockedMilestones],
       learnedSkillIds: [...this.learnedSkillIds],
+      staggered: this.staggered,
       seed,
     };
   }
@@ -251,6 +253,7 @@ export class HeroEntity {
     h.unlockedMilestones = new Set(snap.unlockedMilestones);
     h.learnedSkillIds = new Set(snap.learnedSkillIds);
     h.personality = PersonalityState.fromTraitPriors(snap.personality);
+    h.staggered = snap.staggered ?? false;
     h.recomputeStats();
     // Restore HP within new hpMax bounds
     h.hp = Math.min(snap.hp, h.hpMax);
