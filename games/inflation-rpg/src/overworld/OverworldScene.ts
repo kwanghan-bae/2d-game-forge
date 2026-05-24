@@ -3,7 +3,7 @@ import { SeededRng } from '../cycle/SeededRng';
 import { ZONES } from '../data/zones';
 import { LANDMARK_TYPES } from '../data/landmarks';
 import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../data/enemyTiers';
-import { Pathfinder, type GridCell } from './Pathfinding';
+import { Pathfinder, findPathWithFallback, type GridCell } from './Pathfinding';
 import { findRealm } from '../data/realms';
 import type { PlacedLandmark } from './Landmark';
 import { landmarkToCandidate } from './Landmark';
@@ -55,6 +55,10 @@ export class OverworldScene extends Phaser.Scene {
   private currentRealm: RealmId | undefined;
   private unlockedRealms: readonly RealmId[] | undefined;
   private currentSeason: SeasonId = 'spring';
+  /** Cycle-7 F4: count of times pathfinder columnBounds fallback fired.
+   *  Surfaced to operator via console.warn on first hit + queryable via
+   *  getPathfinderFallbackCount() for future telemetry / e2e assertions. */
+  private pathfinderFallbackCount: number = 0;
 
   constructor() { super('OverworldScene'); }
 
@@ -76,6 +80,15 @@ export class OverworldScene extends Phaser.Scene {
    *  event so DestinationResolver.choose can see the new exit landmark. */
   setUnlockedRealms(realms: readonly RealmId[]): void {
     this.unlockedRealms = realms;
+  }
+
+  /** Cycle-7 F4: telemetry accessor for pathfinder fallback retry count.
+   *  Tests / e2e assertions can check this after a run to confirm the
+   *  fallback did NOT fire in normal gameplay (count = 0). A non-zero
+   *  count signals a stale-realm regression and should also have emitted
+   *  a console.warn at the point of trigger. */
+  getPathfinderFallbackCount(): number {
+    return this.pathfinderFallbackCount;
   }
 
   /** Scale both tween duration (movement) and delayedCall (post-arrival pause)
@@ -176,7 +189,21 @@ export class OverworldScene extends Phaser.Scene {
     const columnBounds = this.currentRealm
       ? findRealm(this.currentRealm).columnRange
       : undefined;
-    const path = await this.pathfinder.findPath(heroPos.x, heroPos.y, target.gridX, target.gridY, columnBounds ? { columnBounds } : undefined);
+    // Cycle-7 F4: columnBounds null fallback retry. If the hero is stuck
+    // outside the currentRealm column range (a stale-realm regression
+    // category that cycle-5 F2 already root-fixed), retry the same target
+    // without bounds so the run never lock-steps into '무위'.
+    const { path, retried } = await findPathWithFallback(
+      this.pathfinder,
+      heroPos.x, heroPos.y, target.gridX, target.gridY,
+      columnBounds,
+    );
+    if (retried) {
+      this.pathfinderFallbackCount += 1;
+      console.warn(
+        `[OverworldScene] Pathfinder columnBounds fallback fired (count=${this.pathfinderFallbackCount}) — hero (${heroPos.x},${heroPos.y}) target (${target.gridX},${target.gridY}) realm=${this.currentRealm ?? 'none'}. Possible stale-realm regression.`
+      );
+    }
     if (!path || path.length < 2) {
       // Unreachable; mark consumed to skip
       target.consumed = true;
