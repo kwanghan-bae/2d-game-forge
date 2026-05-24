@@ -116,6 +116,7 @@ export class CycleControllerV2 {
           atAge: this.hero.age,
         });
       }
+      this.maybeEmitNaturalDeath(events);
       return events;
     }
     const beforeChapter = this.hero.chapter;
@@ -133,6 +134,7 @@ export class CycleControllerV2 {
           atAge: this.hero.age,
         });
       }
+      this.maybeEmitNaturalDeath(trialEvents);
       return trialEvents;
     }
 
@@ -442,7 +444,45 @@ export class CycleControllerV2 {
       events.push({ type: 'season_changed', season: newSeason });
     }
 
+    // Cycle-11 C10-A: emit hero_died('자연사') when hero crosses age 70 in this
+    // arrival. Gated on `!this.endCause` so an in-combat '전사' from
+    // EncounterEngine already this arrival wins. Sets staggered=true (parallels
+    // '전사') so the next arrival's stagger early-return path fires without
+    // re-emitting death — and the natural-death emit itself uses the current
+    // level for oldLevel/newLevel (no -10% penalty; aging isn't a battle loss).
+    this.maybeEmitNaturalDeath(events);
     return events;
+  }
+
+  /** Cycle-11 C10-A: emit `hero_died('자연사')` once when hero reaches the
+   *  age-70 cap during any aging tick. Sets `this.endCause = '자연사'` so the
+   *  saga finalize records the cause explicitly (rather than relying on the
+   *  finalize-time default fallback). Marks the hero staggered so subsequent
+   *  arrivals follow the existing recover-from-stagger pattern instead of
+   *  resolving encounters. Idempotent via the `!this.endCause` guard. */
+  private maybeEmitNaturalDeath(events: OverworldEvent[]): void {
+    if (this.endCause) return;
+    if (this.hero.staggered) return;
+    if (this.hero.age < 70) return;
+    this.endCause = '자연사';
+    this.hero.staggered = true;
+    events.push({
+      type: 'hero_died',
+      cause: '자연사',
+      oldLevel: this.hero.level,
+      newLevel: this.hero.level,
+    });
+    this.recordToStore({
+      age: this.hero.age,
+      type: 'death',
+      narrativeText: NarrativeGenerator.forDeath({
+        age: this.hero.age,
+        cause: '자연사',
+        oldLevel: this.hero.level,
+        newLevel: this.hero.level,
+      }),
+      payload: { oldLevel: this.hero.level, newLevel: this.hero.level },
+    });
   }
 
   /** Called by cycleSliceV2.rejuvenateHero after hero.rejuvenate(). Records the
