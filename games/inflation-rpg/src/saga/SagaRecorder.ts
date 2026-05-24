@@ -11,8 +11,9 @@ interface FinalizeOpts {
   /** Cycle 6 P1: realm hero was in when the cycle ended. Surfaced as flat
    *  `finalRealm` field on CycleSaga for sagaHistory card UI. Caller (=
    *  CycleControllerV2.finalize) passes `controller.getCurrentRealmId() ??
-   *  'base'` so we never produce undefined. */
-  finalRealm: import('../types').RealmId;
+   *  'base'` so we never produce undefined. Typed as `string` to dodge the
+   *  types.ts ↔ SagaTypes.ts cycle (see CycleSaga 정의 주석). */
+  finalRealm: string;
 }
 
 export class SagaRecorder {

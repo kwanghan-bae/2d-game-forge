@@ -62,9 +62,13 @@ export interface CycleSaga {
   // 즉 v23 이하 persist 에서 깨어난 stale item 은 본 field 가 `undefined` 일 수
   // 있다 → `?:` optional 로 type 정직성 유지. UI 소비자는 `??` fallback 처리.
   // 새 finalize() 가 만든 item 은 항상 5 field 모두 채워진다 (PRD 수용 c).
+  //
+  // finalRealm 은 `string` (RealmId 의 string union) — types.ts ↔ SagaTypes.ts
+  // 순환 의존을 피하기 위해 SagaTypes 는 generic string 으로 받는다. 생산자
+  // (CycleControllerV2.finalize) 는 항상 RealmId 를 넘기므로 안전.
   finalLevel?: number;
   finalAge?: number;
-  finalRealm?: import('../types').RealmId;
+  finalRealm?: string;
   deathCause?: DeathCause;
   finishedAt?: number;
 }
