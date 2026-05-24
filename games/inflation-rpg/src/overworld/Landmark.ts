@@ -16,7 +16,8 @@ export function landmarkToCandidate(l: PlacedLandmark): { id: string; kind: Land
   return { id: l.instanceId, kind: l.type.kind, difficulty };
 }
 
-/** Cycle-8 C1: filter target candidates by hero's current realm column range.
+/** Cycle-8 C1 + Cycle-9 R2: filter target candidates by hero's current realm
+ *  column range.
  *
  *  Root cause for cycle 7 finisher's 89-fallback/cycle finding: pickNextDestination
  *  applied `columnBounds = currentRealm.columnRange` to the pathfinder, but
@@ -27,25 +28,53 @@ export function landmarkToCandidate(l: PlacedLandmark): { id: string; kind: Land
  *  cross-realm non-exit targets *before* the AI ever sees them so the
  *  fallback is reserved for genuine stale-realm regressions.
  *
- *  - `exit` landmarks always pass: they are the legitimate cross-realm
- *    transition path (mapLayout places one exit at `colEnd - 1` inside the
- *    current realm AND one at `nextRealm.columnRange[0]` outside it; either
- *    reaching position triggers `realm_entered`, but exit_b sits outside
- *    the bounds, so we keep both as valid candidates).
- *  - `currentRealm === undefined` short-circuits and returns the input
- *    unchanged (parity with the existing `columnBounds = undefined` branch
- *    in OverworldScene).
- *  - Non-exit landmarks must satisfy `colStart <= gridX < colEnd` of the
- *    current realm.
+ *  Cycle-9 R2 follow-up: the original C1 rule allowed every `exit` landmark
+ *  through unconditionally. mapLayout places one exit per realm transition
+ *  on each side (`_FROM_to_TO_a` at `currentRealm.colEnd - 1`, `_TO_from_FROM_b`
+ *  at `nextRealm.columnRange[0]`). With 5 transitions on the map that means
+ *  10 exit landmarks share the candidate pool, and the cycle-8 postsim trace
+ *  shows the AI repeatedly picking exits 2+ realms away (e.g. `hero (9,7)
+ *  realm=base target (79,6)` = `_underworld_to_heaven_a`). Such a pick
+ *  triggers the F4 fallback (hero starts in BLOCKED region under base's
+ *  columnBounds) and on arrival fires `realm_entered base→sea` (one nextRealm
+ *  step), leaving the scene's realm out of sync with the hero's actual
+ *  column for the rest of the cycle (the Mode 1 cascade).
+ *
+ *  R2 rule for exit candidates:
+ *    - exit must sit either *inside* `currentRealm.columnRange`
+ *      (i.e. the `_a` side at `colEnd - 1`), OR
+ *    - exit must sit at `nextRealm.columnRange[0]` (i.e. the `_b` side at
+ *      the start of the immediately-adjacent next realm).
+ *  Any exit at `nextRealm.columnRange[0] + 1` or further (= 2+ realm jump)
+ *  is rejected. nextRealm doesn't need to be unlocked: the rule is purely
+ *  geometric to keep filter behavior deterministic in tests; the controller
+ *  already gates the actual realm flip on `unlockedRealms.includes(next)`.
+ *
+ *  Non-exit landmarks: must satisfy `colStart <= gridX < colEnd` of the
+ *  current realm (unchanged from C1).
+ *
+ *  `currentRealm === undefined` short-circuits and returns the input
+ *  unchanged (parity with the existing `columnBounds = undefined` branch
+ *  in OverworldScene).
  */
 export function filterCandidatesByRealm(
   candidates: readonly PlacedLandmark[],
   currentRealm: RealmId | undefined,
 ): PlacedLandmark[] {
   if (!currentRealm) return [...candidates];
-  const [colStart, colEnd] = findRealm(currentRealm).columnRange;
+  const realm = findRealm(currentRealm);
+  const [colStart, colEnd] = realm.columnRange;
+  const nextEntryCol = realm.nextRealm
+    ? findRealm(realm.nextRealm).columnRange[0]
+    : null;
   return candidates.filter(l => {
-    if (l.type.kind === 'exit') return true;
+    if (l.type.kind === 'exit') {
+      // exit on current-realm side: inside [colStart, colEnd)
+      if (l.gridX >= colStart && l.gridX < colEnd) return true;
+      // exit on adjacent-next-realm entry tile
+      if (nextEntryCol !== null && l.gridX === nextEntryCol) return true;
+      return false;
+    }
     return l.gridX >= colStart && l.gridX < colEnd;
   });
 }
