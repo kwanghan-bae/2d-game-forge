@@ -1,12 +1,12 @@
 # Cycle 1 결과
 
-> 상태: pre-merge (Phase F gate 통과 후 머지 SHA + INDEX 갱신)
+> 상태: merged
 > 생성: 2026-05-24
 
 ## 머지 정보
 
-- **branch**: `feat/cycle-1-variance-tone-saga`
-- **머지 SHA**: (머지 직후 갱신)
+- **머지 SHA**: `bd3ff10` (tag `cycle-1-complete`)
+- **branch (deleted)**: `feat/cycle-1-variance-tone-saga`
 - **시작 commit**: `81bea39` (V3-H 머지 직후, Phase A 시작 시 main)
 - **commits ahead of main**: 12
 - **diff**: 23 files changed, 2387 insertions(+), 31 deletions(-)
