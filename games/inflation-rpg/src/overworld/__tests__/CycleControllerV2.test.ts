@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { CycleControllerV2 } from '../CycleControllerV2';
 import { PERSONALITY_DIMS } from '../../hero/PersonalityState';
+import { useGameStore } from '../../store/gameStore';
+import type { NpcEntity } from '../../types';
 
 describe('CycleControllerV2', () => {
   it('constructs without crashing', () => {
@@ -150,5 +152,101 @@ describe('CycleControllerV2 action-time aging', () => {
     if (t.type !== 'chapter_transition') throw new Error('narrowing');
     expect(t.fromChapter).toBe('어린시절');
     expect(t.toChapter).toBe('청년기');
+  });
+});
+
+describe('Cycle 1 F3 — handleArrival NPC dead path 회수', () => {
+  // 각 test 전 store npc 슬레이트 초기화 (다른 테스트의 NPC leak 방지).
+  beforeEach(() => {
+    useGameStore.setState(s => ({ ...s, run: { ...s.run, npcs: [] } }));
+  });
+
+  function makeNpc(overrides: Partial<NpcEntity> = {}): NpcEntity {
+    return {
+      instanceId: 'npc_test_1',
+      kind: 'mentor',
+      nameKR: '테스트 멘토',
+      emoji: '🧙',
+      age: 50,
+      ageRate: 1,
+      isAlive: true,
+      bornChapter: '어린시절',
+      relationship: 50,
+      zoneRealmId: 'base',
+      personalityDim: 'pious',
+      ...overrides,
+    };
+  }
+
+  it('F3.7: npc_encounter 발화 시 recordToStore("npcEncounter") 호출됨', () => {
+    // alive NPC 1 명 (mentor) 을 base realm 에 위치시킴.
+    useGameStore.setState(s => ({
+      ...s,
+      run: { ...s.run, npcs: [makeNpc({ kind: 'mentor', zoneRealmId: 'base' })] },
+    }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    ctrl.setCurrentRealmId('base');
+    // chance(0.2) — 충분히 많은 arrival 을 시도해 거의 확실히 hit.
+    let encounters = 0;
+    for (let i = 0; i < 80; i++) {
+      const evs = ctrl.handleArrival('enemy', `wolf_${i}`);
+      if (evs.some(e => e.type === 'npc_encounter')) encounters += 1;
+    }
+    expect(encounters).toBeGreaterThanOrEqual(1);
+    const recent = ctrl.getRecentSagaEvents(200);
+    const enc = recent.filter(e => e.type === 'npcEncounter');
+    expect(enc.length).toBeGreaterThanOrEqual(1);
+    // generator narrativeText 가 "N세" 패턴 포함
+    expect(enc[0]!.narrativeText).toMatch(/\d+세/);
+  });
+
+  it('F3.8: npc_died 발화 시 recordToStore("npcDeath") 호출됨', () => {
+    // mentor max age = 100. age 99 + ageRate 2 → 다음 tick 에 죽음.
+    useGameStore.setState(s => ({
+      ...s,
+      run: { ...s.run, npcs: [makeNpc({ kind: 'mentor', age: 99, ageRate: 2, zoneRealmId: 'base' })] },
+    }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    ctrl.setCurrentRealmId('base');
+    const evs = ctrl.handleArrival('enemy', 'wolf_1');
+    expect(evs.some(e => e.type === 'npc_died')).toBe(true);
+    const recent = ctrl.getRecentSagaEvents(50);
+    const deaths = recent.filter(e => e.type === 'npcDeath');
+    expect(deaths.length).toBeGreaterThanOrEqual(1);
+    expect(deaths[0]!.narrativeText).toMatch(/\d+세/);
+  });
+
+  it('F3.9: family_event (marriage / child_birth) 발화 시 recordToStore("familyEvent") 호출됨', () => {
+    // 장년기 진입 시 50% chance 로 family spouse/child 가 spawn.
+    // 여러 seed 시도 → 최소 한 번은 chance(0.5) hit.
+    let familyHit = 0;
+    let transitionsObserved = 0;
+    const SEEDS = [42, 123, 777, 99, 256, 1024, 31337, 8192, 11, 13, 17, 23, 100, 200, 300, 400];
+    for (const seed of SEEDS) {
+      useGameStore.setState(s => ({ ...s, run: { ...s.run, npcs: [] } }));
+      const ctrl = new CycleControllerV2({ seed, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+      ctrl.setCurrentRealmId('base');
+      const hero = ctrl.getHero();
+      // 청년기 → 장년기 boundary 직전. actionsForAge(30) ≈ 385.
+      hero.chapter = '청년기';
+      hero.age = 29;
+      hero.actionCount = 380;
+      for (let i = 0; i < 50; i++) {
+        const evs = ctrl.handleArrival('enemy', `wolf_${i}`);
+        if (evs.some(e => e.type === 'chapter_transition')) transitionsObserved += 1;
+        if (evs.some(e => e.type === 'family_event')) familyHit += 1;
+        if (familyHit >= 1) break;
+      }
+      if (familyHit >= 1) {
+        const recent = ctrl.getRecentSagaEvents(200);
+        const fam = recent.filter(e => e.type === 'familyEvent');
+        expect(fam.length).toBeGreaterThanOrEqual(1);
+        expect(fam[0]!.narrativeText).toMatch(/\d+세/);
+        return;
+      }
+      // family 분기 진입 못한 경우 — chance(0.5) miss 였거나 transition 못 일어남.
+      // 다음 seed 시도.
+    }
+    throw new Error(`F3.9 fail: ${SEEDS.length} seed × ${transitionsObserved} transitions, family chance 모두 miss`);
   });
 });

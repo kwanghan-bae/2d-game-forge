@@ -78,3 +78,23 @@ describe('Cycle 1 F2 — SagaEventType 등록', () => {
     expect(next.chaptersByEra['본래 청년기'].events[0].type).toBe('realmEnter');
   });
 });
+
+describe('Cycle 1 F3 — EternalSaga appendEvent NPC', () => {
+  it('F3.10: SagaEventType 에 NPC 3 종 등록됨 (camelCase 컨벤션 유지)', () => {
+    const a: SagaEventType = 'npcEncounter';
+    const b: SagaEventType = 'npcDeath';
+    const c: SagaEventType = 'familyEvent';
+    expect([a, b, c]).toEqual(['npcEncounter', 'npcDeath', 'familyEvent']);
+  });
+  it('F3.11: appendEvent npcEncounter → era chapter events 에 들어감', () => {
+    const ev = {
+      age: 22,
+      type: 'npcEncounter' as const,
+      narrativeText: '(22세) 멘토를 만났다.',
+      payload: { npcInstanceId: 'npc_1', kind: 'mentor' } as Record<string, unknown>,
+    };
+    const next = appendEvent(empty, ev, '청년기');
+    expect(next.events).toHaveLength(1);
+    expect(next.chaptersByEra['본래 청년기'].events[0].type).toBe('npcEncounter');
+  });
+});
