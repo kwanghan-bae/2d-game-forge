@@ -11,7 +11,10 @@ export type LandmarkKind =
   | 'watchtower'    // 망루 — heroic drift 인카운터 (V1c-1)
   | 'treasure_cave' // 보물동굴 — prudent drift 인카운터 (V1c-1)
   | 'holy_ruin'     // 신성유적 — pious drift 인카운터 (V1c-1)
-  | 'crossroads';   // 갈림길 — moral drift 인카운터 (V1c-1)
+  | 'crossroads'    // 갈림길 — moral drift 인카운터 (V1c-1)
+  // V3-H F3/F5: 절경 + 시련
+  | 'sightseeing'   // 절경 랜드마크 (personality +1 랜덤)
+  | 'trial';        // 시련의 제단 (고위험 고보상)
 
 export interface LandmarkType {
   id: string;
@@ -91,4 +94,14 @@ export const LANDMARK_TYPES: readonly LandmarkType[] = [
 
   // base realm boss (column 19 end)
   { id: 'base_boss',         nameKR: '들판의 왕',     emoji: '👑', kind: 'boss' },
+
+  // V3-H F3: 절경 sightseeing landmark (personality dim +1 랜덤)
+  { id: 'mountain_peak',  nameKR: '산정',        emoji: '⛰️', kind: 'sightseeing' },
+  { id: 'ancient_tree',   nameKR: '고대의 나무', emoji: '🌳', kind: 'sightseeing' },
+  { id: 'waterfall',      nameKR: '폭포',        emoji: '💧', kind: 'sightseeing' },
+  { id: 'starry_field',   nameKR: '별빛 들판',   emoji: '✨', kind: 'sightseeing' },
+  { id: 'sacred_grove',   nameKR: '신성한 숲',   emoji: '🌲', kind: 'sightseeing' },
+
+  // V3-H F5: 시련의 제단 (trial)
+  { id: 'trial_altar',    nameKR: '시련의 제단', emoji: '🗿', kind: 'trial' },
 ];
