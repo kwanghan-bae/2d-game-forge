@@ -20,7 +20,8 @@ export interface DecisionContext {
 
 const WEIGHT_BASE: Record<LandmarkKind, number> = {
   enemy:        10,
-  boss:          3,
+  // Cycle 23 (cycle 10 P1 carry-over) — boss 3 → 5: short-timeframe UX. dev 2-4분 idle 시 sea+ 도달률 ↑.
+  boss:          5,
   shrine:        4,
   cave:          3,
   village:       5,
