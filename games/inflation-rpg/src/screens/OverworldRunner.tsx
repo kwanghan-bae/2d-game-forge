@@ -60,6 +60,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const status = useCycleStoreV2(s => s.status);
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
+  const startCycle = useCycleStoreV2(s => s.start);
   const meta = useGameStore(s => s.meta);
   const run = useGameStore(s => s.run);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,6 +79,25 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveMul = getMoveSpeedMul(meta);
+
+  // V3-H B2: auto-start cycle on mount if no cycle is active.
+  // If run.heroSnapshot exists the cycle controller will restore the hero from it
+  // (same age/level/saga context). Otherwise a fresh hero is created as usual.
+  useEffect(() => {
+    const cycleState = useCycleStoreV2.getState();
+    if (cycleState.status === 'idle' || cycleState.controller === null) {
+      const atkBaseBonus = useGameStore.getState().meta.atkBaseBonus ?? 0;
+      const hpBaseBonus = useGameStore.getState().meta.hpBaseBonus ?? 0;
+      startCycle({
+        seed: Date.now() & 0xffffffff,
+        traits: [],
+        heroHpMax: 100 + hpBaseBonus,
+        heroAtkBase: 50 + atkBaseBonus,
+        // heroSnapshot is picked up automatically from run.heroSnapshot inside cycleSliceV2.start
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (status !== 'running' || !controller || !containerRef.current) return;
@@ -137,6 +157,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         }
         if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
           endedRef.current = true;
+          // V3-H B2: cycle ends naturally → clear hero snapshot so next visit spawns fresh hero.
+          useGameStore.getState().clearHeroSnapshot();
           endCycle();
           onCycleEnd();
         }
@@ -308,7 +330,12 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         type="button"
         data-testid="open-main-menu"
         onClick={() => {
-          // V3-H: 자동 저장 후 메인 메뉴로. cycle 종료 호출 안 함.
+          // V3-H B2: 자동 저장 — controller 의 현재 hero snapshot 을 run 에 persist.
+          const ctrl = useCycleStoreV2.getState().controller;
+          if (ctrl) {
+            const heroSnap = ctrl.getHero().serialize(ctrl.getSeed());
+            useGameStore.getState().saveHeroSnapshot(heroSnap);
+          }
           if (onExitToMenu) {
             onExitToMenu();
           } else {

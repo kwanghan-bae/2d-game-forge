@@ -21,6 +21,7 @@ export function App({ config }: AppProps) {
         <CyclePrepV2
           onStart={() => setScreen('overworld')}
           onCancel={() => setScreen('main-menu')}
+          onClearSnapshot={() => useGameStore.getState().clearHeroSnapshot()}
         />
       )}
       {screen === 'overworld' && (

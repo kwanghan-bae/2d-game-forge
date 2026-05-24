@@ -26,6 +26,32 @@ export interface HeroCreateOpts {
   heroAtkBase: number;
 }
 
+/** V3-H B2 — 직렬화 가능한 hero state snapshot. persist v22 의 run.heroSnapshot 에 저장됨. */
+export interface HeroSnapshot {
+  name: string;
+  emoji: string;
+  age: number;
+  chapter: import('./HeroLifecycle').Chapter;
+  job: string;
+  level: number;
+  exp: number;
+  hp: number;
+  hpMax: number;
+  atk: number;
+  atkBase: number;
+  hpBase: number;
+  actionCount: number;
+  rejuvenationCount: number;
+  gridX: number;
+  gridY: number;
+  equipment: string[];
+  personality: import('./PersonalityState').PersonalitySnapshot;
+  unlockedJobId: string | null;
+  unlockedMilestones: import('../data/jobs').JobMilestone[];
+  learnedSkillIds: string[];
+  seed: number;
+}
+
 export class HeroEntity {
   name: string;
   emoji: string;
@@ -173,6 +199,62 @@ export class HeroEntity {
       out.push({ jobId: job.id, jobNameKR: job.nameKR, tier: job.tier });
     }
     return out;
+  }
+
+  /** V3-H B2 — Snapshot for persist. Serialize all mutable hero state to a plain object. */
+  serialize(seed: number): HeroSnapshot {
+    return {
+      name: this.name,
+      emoji: this.emoji,
+      age: this.age,
+      chapter: this.chapter,
+      job: this.job,
+      level: this.level,
+      exp: this.exp,
+      hp: this.hp,
+      hpMax: this.hpMax,
+      atk: this.atk,
+      atkBase: this.atkBase,
+      hpBase: this.hpBase,
+      actionCount: this.actionCount,
+      rejuvenationCount: this.rejuvenationCount,
+      gridX: this.gridX,
+      gridY: this.gridY,
+      equipment: [...this.equipment],
+      personality: this.personality.snapshot(),
+      unlockedJobId: this.unlockedJobId,
+      unlockedMilestones: [...this.unlockedMilestones],
+      learnedSkillIds: [...this.learnedSkillIds],
+      seed,
+    };
+  }
+
+  /** V3-H B2 — Restore a HeroEntity from a snapshot. Derived stats are
+   *  re-computed via recomputeStats() so aging debuff is applied correctly. */
+  static restore(snap: HeroSnapshot): HeroEntity {
+    const h = new HeroEntity();
+    h.name = snap.name;
+    h.emoji = snap.emoji;
+    h.actionCount = snap.actionCount;
+    h.age = snap.age;
+    h.chapter = snap.chapter;
+    h.job = snap.job;
+    h.level = snap.level;
+    h.exp = snap.exp;
+    h.atkBase = snap.atkBase;
+    h.hpBase = snap.hpBase;
+    h.rejuvenationCount = snap.rejuvenationCount;
+    h.gridX = snap.gridX;
+    h.gridY = snap.gridY;
+    h.equipment = [...snap.equipment];
+    h.unlockedJobId = snap.unlockedJobId;
+    h.unlockedMilestones = new Set(snap.unlockedMilestones);
+    h.learnedSkillIds = new Set(snap.learnedSkillIds);
+    h.personality = PersonalityState.fromTraitPriors(snap.personality);
+    h.recomputeStats();
+    // Restore HP within new hpMax bounds
+    h.hp = Math.min(snap.hp, h.hpMax);
+    return h;
   }
 
   private expRequired(): number {

@@ -4,6 +4,7 @@ import { useGameStore } from '../store/gameStore';
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
   const sagaCount = useGameStore(s => s.meta.sagaHistory?.length ?? 0);
+  const heroSnapshot = useGameStore(s => s.run.heroSnapshot);
 
   return (
     <div data-testid="main-menu" style={{ padding: 24, color: '#eee', textAlign: 'center' }}>
@@ -11,13 +12,23 @@ export function MainMenu() {
       <p style={{ opacity: 0.7, marginBottom: 32 }}>신이 되어 용사의 일대기를 후원하라</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 280, margin: '0 auto' }}>
+        {heroSnapshot && (
+          <button
+            type="button"
+            data-testid="btn-resume-cycle"
+            onClick={() => setScreen('overworld')}
+            style={menuBtnStyle}
+          >
+            이어하기 ({heroSnapshot.name} · {heroSnapshot.age}세)
+          </button>
+        )}
         <button
           type="button"
           data-testid="btn-start-cycle"
           onClick={() => setScreen('cycle-prep-v2')}
-          style={menuBtnStyle}
+          style={heroSnapshot ? { ...menuBtnStyle, opacity: 0.7 } : menuBtnStyle}
         >
-          사이클 시작
+          새 사이클 시작
         </button>
         <button
           type="button"
