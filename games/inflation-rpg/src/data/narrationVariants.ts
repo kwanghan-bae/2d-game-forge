@@ -191,6 +191,48 @@ const SEASON_CHANGE_VARIANTS: Record<SeasonId, Array<(c: { age: number; prefix: 
   ],
 };
 
+/* ─────────────────────── npcEncounter (F3) ──────────────────── */
+const NPC_ENCOUNTER_VARIANTS: Record<'mentor' | 'rival' | 'passerby', Array<(c: { age: number }) => string>> = {
+  mentor: [
+    (c) => `(${c.age}세) 한 늙은 자가 길을 막았다 — 그의 눈은 자신의 미래를 보고 있었다. 멘토를 만났다.`,
+    (c) => `(${c.age}세) 사원 앞에서 길잡이가 손을 내밀었다. 멘토가 되겠다 했다.`,
+    (c) => `(${c.age}세) 멘토가 처음 가르친 것은 칼이 아니라 침묵이었다.`,
+  ],
+  rival: [
+    (c) => `(${c.age}세) 시야 끝에서 같은 표정의 그림자가 나타났다 — 라이벌이었다.`,
+    (c) => `(${c.age}세) 마을 입구에서 한 검객이 시선을 떨구지 않았다. 라이벌이다.`,
+    (c) => `(${c.age}세) 라이벌의 첫 칼이 자신의 어깨를 스쳤다 — 그가 더 빨랐다.`,
+  ],
+  passerby: [
+    (c) => `(${c.age}세) 한 행인이 지나쳤다, 그러나 그의 얼굴은 오래 남았다.`,
+    (c) => `(${c.age}세) 짧은 인사가 길의 끝까지 따라왔다.`,
+    (c) => `(${c.age}세) 행인은 자신의 이름을 말하지 않았고, 자신도 묻지 않았다.`,
+  ],
+};
+
+/* ─────────────────────── npcDeath (F3) ──────────────────────── */
+const NPC_DEATH_VARIANTS: Array<(c: { age: number }) => string> = [
+  (c) => `(${c.age}세) 멘토가 침대에서 일어나지 못했다 — 한 시대가 끝났다.`,
+  (c) => `(${c.age}세) 라이벌의 마지막 칼은 자신의 것이었다 — 둘 다 살아남지 못했다.`,
+  (c) => `(${c.age}세) 행인의 부고를 멀리서 들었다 — 이름은 끝내 몰랐다.`,
+];
+
+/* ─────────────────────── familyEvent (F3) ───────────────────── */
+const FAMILY_EVENT_VARIANTS: Record<'marriage' | 'child_born' | 'child_grown', Array<(c: { age: number }) => string>> = {
+  marriage: [
+    (c) => `(${c.age}세) 종소리 아래 결혼식을 올렸다.`,
+    (c) => `(${c.age}세) 서로의 손을 잡았다 — 이제 둘이다.`,
+  ],
+  child_born: [
+    (c) => `(${c.age}세) 첫 자식의 울음소리가 새벽을 깨웠다.`,
+    (c) => `(${c.age}세) 자식이 태어났다 — 작은 손이 자신의 손을 쥐었다.`,
+  ],
+  child_grown: [
+    (c) => `(${c.age}세) 자식이 처음으로 자신보다 큰 칼을 들었다.`,
+    (c) => `(${c.age}세) 자식이 떠났다 — 자신의 길로.`,
+  ],
+};
+
 /* ─────────────────── 공개 API ───────────────────────────────── */
 export const NarrationVariants = {
   battle(ctx: { age: number; enemyNameKR: string }, seed = 0): string {
@@ -231,5 +273,16 @@ export const NarrationVariants = {
     const variants = SEASON_CHANGE_VARIANTS[ctx.season];
     const prefix = SEASON_REALM_PREFIX[ctx.realm];
     return pick(variants, { age: ctx.age, prefix }, seed);
+  },
+  npcEncounter(ctx: { age: number; kind: 'mentor' | 'rival' | 'passerby' }, seed = 0): string {
+    const variants = NPC_ENCOUNTER_VARIANTS[ctx.kind];
+    return pick(variants, { age: ctx.age }, seed);
+  },
+  npcDeath(ctx: { age: number }, seed = 0): string {
+    return pick(NPC_DEATH_VARIANTS, { age: ctx.age }, seed);
+  },
+  familyEvent(ctx: { age: number; type: 'marriage' | 'child_born' | 'child_grown' }, seed = 0): string {
+    const variants = FAMILY_EVENT_VARIANTS[ctx.type];
+    return pick(variants, { age: ctx.age }, seed);
   },
 };

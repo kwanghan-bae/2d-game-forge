@@ -120,6 +120,54 @@ describe('Cycle 1 F2 — forSeasonChange', () => {
   });
 });
 
+describe('Cycle 1 F3 — NPC narrative generators', () => {
+  it('F3.1: forNpcEncounter(mentor, 22) → string', () => {
+    const r = NarrativeGenerator.forNpcEncounter({ age: 22, kind: 'mentor' });
+    expect(typeof r).toBe('string');
+    expect(r.length).toBeGreaterThan(0);
+  });
+
+  it('F3.2: forNpcEncounter 3 kind 각 3+ variant', () => {
+    for (const kind of ['mentor', 'rival', 'passerby'] as const) {
+      const s = new Set<string>();
+      for (let i = 0; i < 100; i++) {
+        s.add(NarrativeGenerator.forNpcEncounter({ age: 22 + i, kind }, i));
+      }
+      expect(s.size).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('F3.3: forNpcDeath → string + 3+ variant', () => {
+    const s = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      s.add(NarrativeGenerator.forNpcDeath({ age: 50 + i }, i));
+    }
+    expect(s.size).toBeGreaterThanOrEqual(3);
+    expect(typeof [...s][0]).toBe('string');
+  });
+
+  it('F3.4: forFamilyEvent(marriage, 30) → string', () => {
+    const r = NarrativeGenerator.forFamilyEvent({ age: 30, type: 'marriage' });
+    expect(typeof r).toBe('string');
+    expect(r.length).toBeGreaterThan(0);
+  });
+
+  it('F3.5: forFamilyEvent 3 type 각 2+ variant', () => {
+    for (const type of ['marriage', 'child_born', 'child_grown'] as const) {
+      const s = new Set<string>();
+      for (let i = 0; i < 50; i++) {
+        s.add(NarrativeGenerator.forFamilyEvent({ age: 30 + i, type }, i));
+      }
+      expect(s.size).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('F3.6: forNpcEncounter 반환에 "N세" 포함', () => {
+    const r = NarrativeGenerator.forNpcEncounter({ age: 22, kind: 'mentor' });
+    expect(r).toMatch(/\d+세/);
+  });
+});
+
 describe('Cycle 1 F2.12 — hard-coded season literal 제거 가드', () => {
   // plan 의 위치는 OverworldRunner.tsx 였으나 코드 정황상 실제 hard-coded
   // interpolation 은 CycleControllerV2.ts:371 에 있었다. 그 라인을

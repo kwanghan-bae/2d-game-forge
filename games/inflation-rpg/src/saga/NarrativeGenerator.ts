@@ -55,6 +55,21 @@ export class NarrativeGenerator {
     return NarrationVariants.seasonChange(opts, seed);
   }
 
+  /** F3 — NPC 첫 조우 나레이션. 3 kind × 3 variant. */
+  static forNpcEncounter(opts: { age: number; kind: 'mentor' | 'rival' | 'passerby' }, seed = 0): string {
+    return NarrationVariants.npcEncounter(opts, seed);
+  }
+
+  /** F3 — NPC 사망 나레이션. 3 variant. */
+  static forNpcDeath(opts: { age: number }, seed = 0): string {
+    return NarrationVariants.npcDeath(opts, seed);
+  }
+
+  /** F3 — 가족 이벤트 나레이션 (결혼/자식 출생/자식 성장). 3 type × 2 variant. */
+  static forFamilyEvent(opts: { age: number; type: 'marriage' | 'child_born' | 'child_grown' }, seed = 0): string {
+    return NarrationVariants.familyEvent(opts, seed);
+  }
+
   static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string; oldLevel?: number; newLevel?: number }): string {
     switch (opts.cause) {
       case '전사': {
