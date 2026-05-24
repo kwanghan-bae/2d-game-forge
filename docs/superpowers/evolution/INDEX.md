@@ -70,3 +70,7 @@
 - Cycle 67 (2026-05-25): saga flat alias + v24 migration summary.
 - Cycle 68 (2026-05-25): hero snapshot persist summary.
 - Cycle 69 (2026-05-25): circular baseline note (P-1.5 debt).
+- Cycle 71-79 (2026-05-25): deployment / chained sim / end cause / realm / V3 final spec / fold pattern / mode 재해석 / false PASS chain / stop hook progression notes.
+- Cycle 80 (2026-05-25, `d3285e8`): 80/100 milestone STATUS.
+- Cycle 81-85 (2026-05-25): Phase C entry / D3 scope / final spec consolidation plan / test coverage / system resilience.
+- Cycle 86-89 (2026-05-25): i18n / UI polish / balance snapshot / narrative tone final.
