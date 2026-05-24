@@ -323,6 +323,12 @@ function runOneCycle(
     ? useGameStore.getState().meta.unlockedRealms
     : opts.unlockedRealms ?? ['base'];
 
+  // Cycle 24: dedup realm_unlocked emits. live cycleSliceV2.unlockRealm has a
+  // `!unlockedRealms.includes` guard, sim's inline callback historically did not
+  // — same realm could emit realm_unlocked multiple times per cycle when boss
+  // respawns. Track unlocks already announced in this run.
+  const announcedUnlocks = new Set<RealmId>(initialUnlocked);
+
   const ctrl = new CycleControllerV2({
     seed,
     traits: opts.traits ?? [],
@@ -330,7 +336,8 @@ function runOneCycle(
     heroAtkBase: startAtkBase,
     onBossKill: (current: RealmId) => {
       const realm = findRealm(current);
-      if (realm.nextRealm) {
+      if (realm.nextRealm && !announcedUnlocks.has(realm.nextRealm)) {
+        announcedUnlocks.add(realm.nextRealm);
         // Cycle-16 chained: also mutate the live store so subsequent chained
         // iterations see the new unlock + rotation picker uses the wider pool.
         if (chained) {
