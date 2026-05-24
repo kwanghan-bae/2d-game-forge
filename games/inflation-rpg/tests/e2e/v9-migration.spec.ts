@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
-test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19→v20→v21 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression + Phase V3-B eternal hero light + Phase V3-C buffLevels + Phase V3-DEF unlockedRealms/eternalSaga/currentRealmId/npcs', async ({ page }) => {
+test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→v16→v17→v18→v19→v20→v21→v22 with auto-rolled modifiers + ascTree + Phase E defaults + Phase Compass defaults + Phase Realms expansion + Phase 5 IAP + Phase Sim-A cycleHistory + Phase Sim-B traitsUnlocked + Phase V1a sagaHistory + Phase Sim-M meta progression + Phase V3-B eternal hero light + Phase V3-C buffLevels + Phase V3-DEF unlockedRealms/eternalSaga/currentRealmId/npcs + Phase V3-H season', async ({ page }) => {
   // 1. 빈 localStorage 로 시작
   await page.goto(GAME_URL);
 
@@ -26,25 +26,25 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
     localStorage.setItem(key, JSON.stringify(v8Save));
   }, SAVE_KEY);
 
-  // 3. 게임 reload — zustand persist 가 v8 → ... → v21 체인 마이그레이션 실행
+  // 3. 게임 reload — zustand persist 가 v8 → ... → v22 체인 마이그레이션 실행
   await page.reload();
   await page.waitForFunction(
     (key) => {
       const raw = localStorage.getItem(key);
-      return !!raw && JSON.parse(raw).version === 21;
+      return !!raw && JSON.parse(raw).version === 22;
     },
     SAVE_KEY,
     { timeout: 10000 }
   );
 
-  // 4. localStorage 검증 — version 21 (V3-DEF) + v9 modifiers + ... + v20 buffLevels + v21 unlockedRealms/eternalSaga
+  // 4. localStorage 검증 — version 22 (V3-H) + v9 modifiers + ... + v20 buffLevels + v21 unlockedRealms/eternalSaga + v22 season
   const migratedState = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   }, SAVE_KEY);
 
   expect(migratedState).toBeTruthy();
-  expect(migratedState.version).toBe(21);
+  expect(migratedState.version).toBe(22);
   // v9 — auto-rolled modifiers
   expect(migratedState.state.meta.inventory.weapons[0].modifiers).toBeDefined();
   expect(Array.isArray(migratedState.state.meta.inventory.weapons[0].modifiers)).toBe(true);
@@ -129,4 +129,7 @@ test('v8 persist save migrates through v9→v10→v11→v12→v13→v14→v15→
   });
   expect(migratedState.state.run.currentRealmId).toBe('base');
   expect(migratedState.state.run.npcs).toEqual([]);
+
+  // v22 — Phase V3-H season default
+  expect(migratedState.state.meta.season).toEqual({ current: 'spring', startedAtAge: 0 });
 });
