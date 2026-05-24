@@ -11,6 +11,9 @@
 - **몰입성** = narrative cohesion (서사 일관성) + feedback loop (action ↔ progress) 의 즉각성
 - **플레이 타임** = curve gradient (수확 체감 곡선) × content density (시간당 새 자극)
 - **inflation-rpg 정체성 보존**: 1 → 수십만 레벨 폭발의 경이감, idle 의 죄책감 없음, eternal hero 의 연속성
+- **확정 grep query 룰**: 보고에 포함된 모든 "X 가 빈/없음/잘못됨" 주장은, 보고서에 *확정 grep query 1 개* (또는 동등 빌드/실행 명령) 를 첨부한다. grep 결과 첨부 없는 "X 가 빈" 주장은 보고 금지.
+  - **Why**: Cycle 4 정찰의 "console 계속 오류" 가 실제로는 favicon 404 1 건. Cycle 6 정찰의 "saga book 빈 4 카드" 가 실제로는 SagaBookModal 의 eternalSaga 읽음 (sagaHistory 와 별개). 정찰 보고를 신뢰할 수 없으면 implementer 의 분석 시간 추가 소요.
+  - **How to apply**: 본 룰은 보고서 작성 시점 자가 검증. 첨부 query 의 결과까지 보고서에 인용. query 실행 결과가 주장과 모순되면 보고 재작성.
 
 ## 책임
 
