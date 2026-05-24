@@ -76,7 +76,7 @@ export function runScenario(opts: ScenarioOpts): ScenarioResult {
       heroAtkBase: opts.heroAtkBase,
       atkBonus,
       hpBonus,
-      maxArrivals: 500,
+      maxArrivals: 1000,
       // Per-strategy logs land under outDir/<strategy>/cN.jsonl if outDir set.
       outDir: opts.outDir ? join(opts.outDir, opts.strategy, `c${i}`) : undefined,
       mdSampleEvery: 0,

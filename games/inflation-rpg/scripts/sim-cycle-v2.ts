@@ -103,7 +103,7 @@ export interface SimV2Output { results: SimV2CycleResult[]; summary: SimV2Summar
 
 export function runSimV2(opts: SimV2Options): SimV2Output {
   const results: SimV2CycleResult[] = [];
-  const maxArrivals = opts.maxArrivals ?? 500;
+  const maxArrivals = opts.maxArrivals ?? 1000;
   const outDir = opts.outDir;
   const mdSampleEvery = opts.mdSampleEvery ?? 0;
 
@@ -351,7 +351,7 @@ if (process.argv[1]?.endsWith('sim-cycle-v2.ts')) {
   const outDir = parseArg('out-dir', `runs/${new Date().toISOString().slice(0, 10)}`);
   const traitsRaw = parseArg('traits', '');
   const traits = traitsRaw ? (traitsRaw.split(',').map(s => s.trim()) as TraitId[]) : undefined;
-  const maxArrivals = parseInt(parseArg('max-arrivals', '500'), 10);
+  const maxArrivals = parseInt(parseArg('max-arrivals', '1000'), 10);
   const mdSampleEvery = parseInt(parseArg('md-every', '25'), 10);
 
   const result = runSimV2({
