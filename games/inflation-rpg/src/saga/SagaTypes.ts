@@ -18,7 +18,11 @@ export type SagaEventType =
   | 'trial'
   | 'seasonChange'
   // Cycle-1 F2: realm transition saga record (forRealmEnter wire)
-  | 'realmEnter';
+  | 'realmEnter'
+  // Cycle-1 F3: NPC dead-path 회수 (handleArrival recordToStore wire)
+  | 'npcEncounter'
+  | 'npcDeath'
+  | 'familyEvent';
 
 export type DeathCause = '전사' | '자연사' | '영광스러운죽음' | '비극';
 
