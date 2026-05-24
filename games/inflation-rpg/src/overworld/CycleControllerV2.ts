@@ -177,6 +177,15 @@ export class CycleControllerV2 {
           payload: { landmarkId: ev.landmarkId },
         });
       }
+      if (ev.type === 'meditation_done') {
+        // V3-H F4: shrine 20% 변형 — pious +3 (이미 EncounterEngine 에서 조정됨), saga 기록
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'meditation',
+          narrativeText: `${this.hero.age}세에 사당에서 깊은 명상에 잠겼다 — 신앙이 깊어졌다`,
+          payload: { landmarkId: ev.landmarkId },
+        });
+      }
       if (ev.type === 'sightseeing_arrived') {
         // V3-H F3: 절경 랜드마크 — personality dim +1 (랜덤)
         const DIMS = ['heroic', 'pious', 'merciful'] as const;

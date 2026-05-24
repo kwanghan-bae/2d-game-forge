@@ -103,14 +103,22 @@ export class EncounterEngine {
       const healAmount = Math.floor(hero.hpMax * 0.25);
       hero.heal(healAmount);
     } else if (kind === 'shrine') {
-      const before = hero.hp;
-      hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
-      const healed = hero.hp - before;
-      events.push({ type: 'shrine_visited', landmarkId, healed });
-      if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
-        const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
-        if (learn) {
-          events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
+      if (this.rng.chance(0.2)) {
+        // V3-H F4: meditation 변형 (20%) — pious +3, 완전 회복, 추가 aging 0.5 tick
+        hero.personality.adjust('pious', 3);
+        hero.heal(hero.hpMax); // 완전 회복
+        hero.tickAge(0.5);     // 명상에 소요되는 시간
+        events.push({ type: 'meditation_done', landmarkId });
+      } else {
+        const before = hero.hp;
+        hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
+        const healed = hero.hp - before;
+        events.push({ type: 'shrine_visited', landmarkId, healed });
+        if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
+          const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
+          if (learn) {
+            events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
+          }
         }
       }
     } else if (kind === 'cave') {
