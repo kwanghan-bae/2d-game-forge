@@ -1,6 +1,6 @@
 # STATUS 2026-05-24 — Cycle 14 (Complete — Dev-server 자연사 emit 활성화)
 
-> 최신 머지 (main): TBD (tag `cycle-14-complete`)
+> 최신 머지 (main): 77196a1 (tag `cycle-14-complete`)
 > 자율진화 spec: `docs/superpowers/specs/2026-05-24-autonomous-evolution-design.md`
 
 ## 한 줄
@@ -26,7 +26,7 @@ sim-real parity 룰 dogfood 두 번째 통과** — cycle 11 false-PASS pattern 
 | 10+11 fold | `dbb5ce5` | `cycle-10/11-complete` | MAX_ARRIVALS + 자연사 emit + auto-rejuv | full PASS (2-fold) |
 | 12 | `08eab5e` | `cycle-12-complete` | respawn-in-realm + sim filter parity + sim shard | full PASS (false PASS 해소) |
 | 13 | `b8d50bb` | `cycle-13-complete` | Persona Patch + sim-real parity 룰 dogfood | full PASS (메타-cycle) |
-| **14** | **TBD** | **`cycle-14-complete`** | **Dev-server 자연사 emit (`clearEndCause` fix)** | **full PASS** |
+| **14** | **77196a1** | **`cycle-14-complete`** | **Dev-server 자연사 emit (`clearEndCause` fix)** | **full PASS** |
 
 ### 자율 머지 cycle 카운트
 
