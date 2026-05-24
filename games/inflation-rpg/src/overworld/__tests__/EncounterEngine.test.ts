@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { EncounterEngine } from '../EncounterEngine';
+import {
+  EncounterEngine,
+  SHRINE_SKILL_GRANT_RATE,
+  MERCIFUL_PROC_RATE,
+} from '../EncounterEngine';
 import { HeroEntity } from '../../hero/HeroEntity';
 import { SeededRng } from '../../cycle/SeededRng';
 
@@ -58,5 +62,27 @@ describe('EncounterEngine — staggered hero', () => {
     const engine = new EncounterEngine(new SeededRng(42));
     const events = engine.resolveEncounter(hero, 'enemy', 'wolf_1');
     expect(events.filter(e => e.type === 'battle_started').length).toBe(0);
+  });
+});
+
+describe('Cycle 1 F1 — variance pass 상수', () => {
+  it('F1.1: SHRINE_SKILL_GRANT_RATE = 0.20', () => {
+    expect(SHRINE_SKILL_GRANT_RATE).toBe(0.20);
+  });
+  it('F1.2: MERCIFUL_PROC_RATE = 0.10', () => {
+    expect(MERCIFUL_PROC_RATE).toBe(0.10);
+  });
+  it('F1.3: SHRINE_SKILL_GRANT_RATE 1000회 chance → 평균 200 ± 15% (170-230)', () => {
+    // adapt: plan 은 `runShrineEncounter` helper 를 가정했으나 실제 코드에는 없다.
+    // resolveEncounter('shrine', ...) 호출은 명상 분기(0.2) 와 SkillLearningSystem
+    // pool 고갈로 인해 순수 상수 통계 신호를 흐린다. 대신 SeededRng.chance(rate)
+    // 의 통계를 직접 측정 — 상수의 의도된 평균 비율 검증.
+    const rng = new SeededRng(42);
+    let fires = 0;
+    for (let i = 0; i < 1000; i++) {
+      if (rng.chance(SHRINE_SKILL_GRANT_RATE)) fires += 1;
+    }
+    expect(fires).toBeGreaterThanOrEqual(170);
+    expect(fires).toBeLessThanOrEqual(230);
   });
 });
