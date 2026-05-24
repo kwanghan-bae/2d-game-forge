@@ -82,6 +82,18 @@ export class OverworldScene extends Phaser.Scene {
     this.unlockedRealms = realms;
   }
 
+  /** Cycle-8 C1: sync the scene's currentRealm copy after a realm_entered
+   *  event. Without this, the C1 candidate filter (and the existing
+   *  columnBounds binding on line 200ish) keep applying the previous realm's
+   *  column range after a mid-cycle transition — every sea/volcano/... pick
+   *  is filtered out or null-pathed, and either '무위' triggers or the F4
+   *  fallback re-takes the hot path. Mirrors V3-H Bug A's pattern (a 3-line
+   *  setter wired in OverworldRunner.tsx alongside setCurrentRealm store
+   *  mutation). */
+  setCurrentRealm(realm: RealmId): void {
+    this.currentRealm = realm;
+  }
+
   /** Cycle-7 F4: telemetry accessor for pathfinder fallback retry count.
    *  Tests / e2e assertions can check this after a run to confirm the
    *  fallback did NOT fire in normal gameplay (count = 0). A non-zero
