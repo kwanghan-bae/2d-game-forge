@@ -15,7 +15,7 @@ import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { computeFieldDamping } from '../zone/fieldDamping';
 import { getFieldDiffThreshold } from '../buff/buffEffects';
-import { seasonForAge, seasonNameKR } from '../season/SeasonState';
+import { seasonForAge } from '../season/SeasonState';
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -331,6 +331,16 @@ export class CycleControllerV2 {
         const oldRealm = this.currentRealmId;
         this.currentRealmId = newRealm;
         useGameStore.getState().recordSagaRealmTransition(oldRealm, newRealm, this.hero.age, this.hero.chapter);
+        // Cycle-1 F2: realm 진입 saga 이벤트 emit (NarrativeGenerator.forRealmEnter wire)
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'realmEnter',
+          narrativeText: NarrativeGenerator.forRealmEnter(
+            { age: this.hero.age, realm: newRealm },
+            this.rng.int(100000),
+          ),
+          payload: { from: oldRealm, to: newRealm },
+        });
         events.push({ type: 'realm_entered', realmId: newRealm });
       }
     }
@@ -365,10 +375,14 @@ export class CycleControllerV2 {
           season: { current: newSeason, startedAtAge: Math.floor(this.hero.age) },
         },
       }));
+      // Cycle-1 F2: hard-coded literal 제거 → NarrativeGenerator.forSeasonChange wire
       this.recordToStore({
         age: this.hero.age,
         type: 'seasonChange',
-        narrativeText: `계절이 바뀌었다 — ${seasonNameKR(newSeason)}`,
+        narrativeText: NarrativeGenerator.forSeasonChange(
+          { age: this.hero.age, season: newSeason, realm: this.currentRealmId ?? 'base' },
+          this.rng.int(100000),
+        ),
         payload: { season: newSeason },
       });
       events.push({ type: 'season_changed', season: newSeason });
