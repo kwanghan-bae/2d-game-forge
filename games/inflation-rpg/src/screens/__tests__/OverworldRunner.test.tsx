@@ -26,12 +26,16 @@ import { useCycleStoreV2 } from '../../overworld/cycleSliceV2';
 describe('OverworldRunner', () => {
   beforeEach(() => useCycleStoreV2.getState().reset());
 
-  it('renders "no cycle" hint when idle', () => {
+  // V3-H B2: OverworldRunner now auto-starts a cycle on mount (idle state is
+  // no longer a user-visible state). When mounted with no pre-existing cycle
+  // the component calls start() and renders the HUD.
+  it('auto-starts cycle and renders HUD on mount when idle', () => {
     render(<OverworldRunner onCycleEnd={() => {}} />);
-    expect(screen.getByText(/사이클이 시작되지 않았습니다/)).toBeInTheDocument();
+    expect(screen.getByTestId('overworld-hud')).toBeInTheDocument();
+    expect(screen.getByTestId('hud-name')).toBeInTheDocument();
   });
 
-  it('renders HUD when status=running', () => {
+  it('renders HUD when status=running (pre-started)', () => {
     useCycleStoreV2.getState().start({
       seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
     });

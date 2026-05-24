@@ -30,8 +30,16 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
   lastSaga: null,
   lastGoldEarned: 0,
   start(opts) {
+    // V3-H B2: resolve which hero snapshot to use.
+    //  - opts.heroSnapshot === undefined → check run.heroSnapshot (auto-resume from save).
+    //  - opts.heroSnapshot === null → explicitly start fresh (clear override from CyclePrepV2).
+    //  - opts.heroSnapshot is a HeroSnapshot object → use it directly.
+    const savedSnapshot = opts.heroSnapshot === undefined
+      ? (useGameStore.getState().run.heroSnapshot ?? null)
+      : opts.heroSnapshot;
     const ctrl = new CycleControllerV2({
       ...opts,
+      heroSnapshot: savedSnapshot,
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
         const state = useGameStore.getState();
         const meta = state.meta;

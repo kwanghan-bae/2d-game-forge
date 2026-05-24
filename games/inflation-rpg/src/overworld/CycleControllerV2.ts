@@ -1,4 +1,4 @@
-import { HeroEntity } from '../hero/HeroEntity';
+import { HeroEntity, type HeroSnapshot } from '../hero/HeroEntity';
 import { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import { EncounterEngine } from './EncounterEngine';
 import { SeededRng } from '../cycle/SeededRng';
@@ -23,6 +23,8 @@ export interface CycleControllerV2Opts {
   getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
   /** V3-D — boss 처치 시 호출. unlockable next realm 의 id 반환. */
   onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
+  /** V3-H B2 — 이어하기 시 기존 hero state 복원. null/undefined 면 새 hero 생성. */
+  heroSnapshot?: HeroSnapshot | null;
 }
 
 export class CycleControllerV2 {
@@ -43,11 +45,14 @@ export class CycleControllerV2 {
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
-    this.hero = HeroEntity.create({
-      seed: opts.seed,
-      heroHpMax: opts.heroHpMax,
-      heroAtkBase: opts.heroAtkBase,
-    });
+    // V3-H B2: restore from snapshot if present, otherwise create fresh hero.
+    this.hero = opts.heroSnapshot
+      ? HeroEntity.restore(opts.heroSnapshot)
+      : HeroEntity.create({
+          seed: opts.seed,
+          heroHpMax: opts.heroHpMax,
+          heroAtkBase: opts.heroAtkBase,
+        });
     this.ai = new HeroDecisionAI(this.hero, { seed: opts.seed, traits: opts.traits });
     this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef));
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);

@@ -178,6 +178,8 @@ export interface RunState {
   currentRealmId: RealmId;
   /** V3-E — 현재 run 의 NPC roster. */
   npcs: NpcEntity[];
+  /** V3-H B2 — 마지막 저장 시점의 hero snapshot. null = 새 cycle 시작 필요. */
+  heroSnapshot: import('./hero/HeroEntity').HeroSnapshot | null;
 }
 
 export type BuffId =

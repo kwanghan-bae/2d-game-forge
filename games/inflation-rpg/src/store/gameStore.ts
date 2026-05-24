@@ -71,6 +71,8 @@ export const INITIAL_RUN: RunState = {
   currentRealmId: 'base',
   // Phase V3-E — NPC roster
   npcs: [],
+  // Phase V3-H B2 — hero snapshot (null = 새 cycle 시작)
+  heroSnapshot: null,
 };
 
 export const INITIAL_META: MetaState = {
@@ -262,6 +264,9 @@ interface GameStore {
   recordSagaEvent: (event: import('../saga/SagaTypes').SagaEvent, chapter: import('../hero/HeroLifecycle').Chapter) => void;
   recordSagaRejuvenation: () => void;
   recordSagaRealmTransition: (from: import('../types').RealmId, to: import('../types').RealmId, atAge: number, chapter: import('../hero/HeroLifecycle').Chapter) => void;
+  // Phase V3-H B2 — hero snapshot persist
+  saveHeroSnapshot: (snapshot: import('../hero/HeroEntity').HeroSnapshot) => void;
+  clearHeroSnapshot: () => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -350,14 +355,18 @@ export function migrateV20ToV21(persisted: unknown): unknown {
   return s;
 }
 
-// v21 → v22: Phase V3-H — season state default
+// v21 → v22: Phase V3-H — season state default + heroSnapshot field
 export function migrateV21ToV22(persisted: unknown): unknown {
   if (typeof persisted !== 'object' || persisted === null) return persisted;
-  const s = persisted as { meta?: Record<string, unknown> | null };
+  const s = persisted as { meta?: Record<string, unknown> | null; run?: Record<string, unknown> | null };
   if (s.meta && typeof s.meta === 'object') {
     if (!s.meta['season'] || typeof s.meta['season'] !== 'object') {
       s.meta['season'] = { current: 'spring', startedAtAge: 0 };
     }
+  }
+  // B2: normalize heroSnapshot to null on old saves that don't have it
+  if (s.run && typeof s.run === 'object' && s.run['heroSnapshot'] === undefined) {
+    s.run['heroSnapshot'] = null;
   }
   return s;
 }
@@ -1362,6 +1371,13 @@ export const useGameStore = create<GameStore>()(
       },
       recordSagaRealmTransition(from, to, atAge, chapter) {
         set(s => ({ ...s, meta: { ...s.meta, eternalSaga: recordRealmTransition(s.meta.eternalSaga, from, to, atAge, chapter) } }));
+      },
+      // Phase V3-H B2 — hero snapshot persist/clear
+      saveHeroSnapshot(snapshot) {
+        set(s => ({ ...s, run: { ...s.run, heroSnapshot: snapshot } }));
+      },
+      clearHeroSnapshot() {
+        set(s => ({ ...s, run: { ...s.run, heroSnapshot: null } }));
       },
     }),
     {
