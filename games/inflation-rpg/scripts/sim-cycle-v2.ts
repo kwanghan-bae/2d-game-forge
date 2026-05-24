@@ -18,6 +18,8 @@ import { LANDMARK_TYPES } from '../src/data/landmarks';
 import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../src/data/enemyTiers';
 import { SeededRng } from '../src/cycle/SeededRng';
 import { findRealm } from '../src/data/realms';
+import { computeLightDelta } from '../src/overworld/lightEmit';
+import { useGameStore } from '../src/store/gameStore';
 import type { TraitId } from '../src/cycle/traits';
 import type { RealmId } from '../src/types';
 import type { OverworldEvent } from '../src/overworld/OverworldEvents';
@@ -80,6 +82,9 @@ export interface SimV2CycleResult {
   // Lineage support
   startAtkBase: number;
   startHpBase: number;
+  // Cycle-11 C10-B counters — light emitted + auto-rejuv count this cycle.
+  lightEmitted: number;
+  rejuvCount: number;
 }
 
 export interface SimV2Summary {
@@ -95,6 +100,10 @@ export interface SimV2Summary {
   endCauses: Record<string, number>;
   jobsUnlocked: Record<string, number>;
   skillsLearnedCount: Record<string, number>;
+  // Cycle-11 C10-A/B aggregate diagnostics.
+  rejuvCount: Percentiles;
+  cyclesWithAnyRejuv: number;
+  lightEmitted: Percentiles;
 }
 
 export interface Percentiles { min: number; max: number; avg: number; p50: number; p90: number; }
@@ -103,7 +112,14 @@ export interface SimV2Output { results: SimV2CycleResult[]; summary: SimV2Summar
 
 export function runSimV2(opts: SimV2Options): SimV2Output {
   const results: SimV2CycleResult[] = [];
-  const maxArrivals = opts.maxArrivals ?? 1000;
+  // Cycle-11 C10-B: default raised 1000 → 1200 to give 2-rejuv cycles
+  // (max cap) enough arrival headroom to still reach age 70 → '자연사'. Without
+  // this, every rejuv-active cycle terminated via max_arrivals at finalAge ≈
+  // 60-64 and the PRD '자연사 ≥ 30%' criterion is unreachable: rejuvs
+  // *prevent* reaching age 70 inside a 1000-arrival window because each rejuv
+  // adds ~77 actions of headroom. 2 × 77 = 154 → 1154 arrivals to hit age 70
+  // after 2 rejuvs. 1200 is the round number safely above that.
+  const maxArrivals = opts.maxArrivals ?? 1200;
   const outDir = opts.outDir;
   const mdSampleEvery = opts.mdSampleEvery ?? 0;
 
@@ -142,6 +158,12 @@ function runOneCycle(
   const startAtkBase = opts.heroAtkBase + (opts.atkBonus ?? 0);
   const startHpBase = opts.heroHpMax + (opts.hpBonus ?? 0);
 
+  // Cycle-11 C10-B: each cycle's light pool starts at 0. Without this, light
+  // accumulated across the sim batch would leak between cycles — the live UI
+  // game has a continuous light pool, but per-cycle sim aggregates need clean
+  // separation to measure rejuv triggers per cycle in isolation.
+  useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 0 } }));
+
   // V3-H Bug C: realm tracking state for onBossKill wiring
   let currentRealmId: RealmId = 'base';
 
@@ -177,6 +199,7 @@ function runOneCycle(
   let shrineVisits = 0;
   let moralChoices = 0;
   let maxLevel = hero.level;
+  let lightEmitted = 0;
   const warnings: string[] = [];
   const stamped: StampedEvent[] = [];
   let lastTypeId: string | null = null;
@@ -227,6 +250,26 @@ function runOneCycle(
       }
     }
 
+    // Cycle-11 C10-B: mirror OverworldRunner light accumulation so the
+    // controller's `meta.light` read sees realistic values on the next
+    // arrival's auto-rejuv check. Headless sim otherwise leaves light at 0
+    // forever and the rejuv gate never opens. Discount/season multipliers
+    // (live UI applies these) are omitted for sim purity — base rate only.
+    const { delta: lightDelta } = computeLightDelta(events, target.type.kind);
+    if (lightDelta > 0) {
+      lightEmitted += lightDelta;
+      useGameStore.setState(s => ({
+        ...s,
+        meta: { ...s.meta, light: (s.meta.light ?? 0) + lightDelta },
+      }));
+    }
+
+    // Break out the moment a natural-death emit lands so we don't keep
+    // ticking the dead hero through stagger-recover loops until max_arrivals.
+    // The hero_died('자연사') event sets `endCause = '자연사'` above; the loop
+    // would otherwise burn ~50 more arrivals here on '자연사' cycles.
+    if (endCause === '자연사') break;
+
     if (target.type.kind === 'enemy') {
       respawnEnemy(layout.landmarks, respawnRng, target, ++respawnCounter, hero.chapter);
     }
@@ -250,6 +293,9 @@ function runOneCycle(
     finalJobId, learnedSkills,
     personality: hero.personality.snapshot(),
     startAtkBase, startHpBase,
+    // Cycle-11 C10-B — final rejuvenationCount on the hero captures auto-rejuv
+    // fires this cycle (HeroEntity resets it per cycle via `create`).
+    lightEmitted, rejuvCount: hero.rejuvenationCount,
   };
 
   return { result, events: stamped, saga };
@@ -277,10 +323,12 @@ function buildSummary(results: SimV2CycleResult[]): SimV2Summary {
   const endCauses: Record<string, number> = {};
   const jobsUnlocked: Record<string, number> = {};
   const skillsLearnedCount: Record<string, number> = {};
+  let cyclesWithAnyRejuv = 0;
   for (const r of results) {
     endCauses[r.endCause] = (endCauses[r.endCause] ?? 0) + 1;
     if (r.finalJobId) jobsUnlocked[r.finalJobId] = (jobsUnlocked[r.finalJobId] ?? 0) + 1;
     for (const s of r.learnedSkills) skillsLearnedCount[s] = (skillsLearnedCount[s] ?? 0) + 1;
+    if (r.rejuvCount >= 1) cyclesWithAnyRejuv += 1;
   }
   return {
     cycleCount: results.length,
@@ -293,6 +341,9 @@ function buildSummary(results: SimV2CycleResult[]): SimV2Summary {
     moralChoices:    stat(results.map(r => r.moralChoices)),
     drops:           stat(results.map(r => r.drops)),
     endCauses, jobsUnlocked, skillsLearnedCount,
+    rejuvCount:      stat(results.map(r => r.rejuvCount)),
+    cyclesWithAnyRejuv,
+    lightEmitted:    stat(results.map(r => r.lightEmitted)),
   };
 }
 
@@ -351,7 +402,7 @@ if (process.argv[1]?.endsWith('sim-cycle-v2.ts')) {
   const outDir = parseArg('out-dir', `runs/${new Date().toISOString().slice(0, 10)}`);
   const traitsRaw = parseArg('traits', '');
   const traits = traitsRaw ? (traitsRaw.split(',').map(s => s.trim()) as TraitId[]) : undefined;
-  const maxArrivals = parseInt(parseArg('max-arrivals', '1000'), 10);
+  const maxArrivals = parseInt(parseArg('max-arrivals', '1200'), 10);
   const mdSampleEvery = parseInt(parseArg('md-every', '25'), 10);
 
   const result = runSimV2({

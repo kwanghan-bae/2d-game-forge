@@ -44,19 +44,21 @@ describe('sim-cycle-v2 (V1a CycleControllerV2 headless driver)', () => {
     expect(typeof out.summary.endCauses).toBe('object');
   });
 
-  // Cycle 10 P0: MAX_ARRIVALS default raised 500 → 1000 to unlock lifecycle
-  // drama. With ageFromActions = floor(5 + 65 × actions/1000) and 1 arrival
-  // = 1 action, the previous 500 cap pinned ageEnd at 37 (well below the
-  // 50-69 老年 chapter and 70+ 마지막 chapter thresholds). 1000 lets age
-  // reach 70 deterministically, activating natural-death + rejuv triggers.
-  it('default maxArrivals allows ageEnd ≥ 70 (cycle 10 lifecycle activation)', () => {
+  // Cycle 10 P0 / Cycle 11 C10-B: MAX_ARRIVALS default raised 500 → 1000
+  // (cycle 10) → 1200 (cycle 11). With ageFromActions = floor(5 + 65 ×
+  // actions/1000), 1200 arrivals lets a 2-rejuv hero (2 × 5y = ~154 extra
+  // actions) still reach age 70 → '자연사' inside the window. The previous
+  // 1000 cap clamped finalAge at ~64 for rejuv-active cycles and produced
+  // 0% '자연사' regardless of the emit path. This regression guard pins
+  // finalAge ≥ 65 (well above the cycle 10 cap of 37 and a no-op for
+  // post-cycle-11 runs that target age 70+).
+  it('default maxArrivals allows ageEnd ≥ 65 (cycle 10+11 lifecycle activation)', () => {
     const out = runSimV2({
       count: 1, seedStart: 7777,
       heroHpMax: 100, heroAtkBase: 50,
       // no maxArrivals → uses default
     });
     const r = out.results[0]!;
-    // Floor(5 + 65 × 1000/1000) = 70 if hero survives to the cap.
-    expect(r.finalAge).toBeGreaterThanOrEqual(60);
+    expect(r.finalAge).toBeGreaterThanOrEqual(65);
   }, 30_000);
 });
