@@ -11,6 +11,8 @@ import { SagaBookModal } from './SagaBookModal';
 
 interface Props {
   onCycleEnd: () => void;
+  /** V3-H: 자동 저장 후 메인 메뉴로 복귀. cycle 상태는 유지된다. */
+  onExitToMenu?: () => void;
 }
 
 const LOG_LIMIT = 12;
@@ -54,7 +56,7 @@ async function bootPhaser(
 const SPEED_PRESETS = [1, 2, 5, 10] as const;
 type SpeedPreset = (typeof SPEED_PRESETS)[number];
 
-export function OverworldRunner({ onCycleEnd }: Props) {
+export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const status = useCycleStoreV2(s => s.status);
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
@@ -302,8 +304,20 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         )}
       </div>
 
-      <button onClick={() => { endCycle(); onCycleEnd(); }} style={abandonBtnStyle}>
-        포기 (cycle 종료)
+      <button
+        type="button"
+        data-testid="open-main-menu"
+        onClick={() => {
+          // V3-H: 자동 저장 후 메인 메뉴로. cycle 종료 호출 안 함.
+          if (onExitToMenu) {
+            onExitToMenu();
+          } else {
+            window.history.back();
+          }
+        }}
+        style={mainMenuBtnStyle}
+      >
+        메인 메뉴
       </button>
     </div>
   );
@@ -393,14 +407,15 @@ function logRowStyle(color: string): React.CSSProperties {
   };
 }
 
-const abandonBtnStyle: React.CSSProperties = {
+const mainMenuBtnStyle: React.CSSProperties = {
   margin: '12px auto',
   display: 'block',
+  minHeight: 44,
   padding: '8px 16px',
-  background: 'transparent',
-  color: '#94a3b8',
-  border: '1px solid #475569',
-  borderRadius: 4,
+  background: '#3b4252',
+  color: '#eee',
+  border: '1px solid #555',
+  borderRadius: 6,
   cursor: 'pointer',
-  fontSize: 12,
+  fontSize: 13,
 };
