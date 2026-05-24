@@ -151,6 +151,8 @@ export const INITIAL_META: MetaState = {
   unlockedRealms: ['base'],
   // Phase V3-F — 무한 saga
   eternalSaga: { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] },
+  // Phase V3-H — 계절
+  season: { current: 'spring', startedAtAge: 0 },
 };
 
 interface GameStore {
