@@ -20,6 +20,9 @@
 - **PRD 산술 충돌 사전 검증 룰 (Cycle 11 부분 partial 결과)**: PRD 의 다항 수용 기준 (예: "자연사 ≥ 30% AND rejuv ≥ 20%") 작성 시 산술 시뮬레이션 의무. 두 기준이 동시 충족 가능한지 back-of-envelope 검증.
   - **Why**: Cycle 11 의 PRD 가 `maxArrivals=1000` 에서 "자연사 ≥ 30% AND rejuv ≥ 20%" 을 둘 다 PASS 기준으로 설정했지만, 2 rejuv = ~154 추가 actions 필요 → max_arrivals 가 자연사 (age 70) 도달 전 먼저 fire → 산술 동시 충족 불가능. Implementer 가 maxArrivals 1000→1200 design 변경으로 해소 (PRD §"반대 기준" partial fail).
   - **How to apply**: PRD 작성 시점 자가 검증. 다항 결합 수용 기준은 각 항목의 baseline + 변화량 산술 합산 시 다른 기준과 충돌 안 하는지 검증. 충돌 시 design 변경 (cap 조정 등) 을 PRD 본문에 명시.
+- **Sim smoke 누적 slow-down 룰 (Cycle 18-20 finding)**: sim smoke test (`pnpm test` 의 vitest 안에 포함) 가 누적 변경으로 felt slow 발생 시, sim smoke 의 `testTimeout` 을 늘리는 미봉책 대신 root cause 분석 carry-over 로 격상.
+  - **Why**: Cycle 14-18 의 누적 변경 (controller helper extract / realm rotation / chained sim / endCycle helper / staggered) 후 cycle 20 smoke (default maxArrivals ageEnd ≥ 65) 가 30s timeout 부족 → 600s 로 증가. Subagent watchdog 600s timeout 과 가까워 mega-cycle subagent stall 패턴 (cycle 18-20 3 회 발생) 의 직접 원인.
+  - **How to apply**: sim smoke testTimeout 늘리기 commit 은 carry-over 명시 의무 (`cycle-N-result.md` 의 carry-over 에 "sim smoke 누적 slow root cause 분석" 항목). Subagent dispatch 의 prompt 에 sim 측정 skip 또는 매우 작은 N (예: cycle 30 cycle quick) 만 권장.
 
 ## 책임
 
