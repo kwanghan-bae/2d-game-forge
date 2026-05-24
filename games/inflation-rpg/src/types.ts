@@ -212,6 +212,14 @@ export interface EternalSagaState {
   realmTransitions: Array<{ from: RealmId; to: RealmId; atAge: number; eraKey: string }>;
 }
 
+export type SeasonId = 'spring' | 'summer' | 'fall' | 'winter';
+
+export interface SeasonState {
+  current: SeasonId;
+  /** 마지막 transition 시점의 hero age. */
+  startedAtAge: number;
+}
+
 export interface MetaState {
   inventory: Inventory;
   baseAbilityLevel: number;
@@ -291,6 +299,8 @@ export interface MetaState {
   unlockedRealms: RealmId[];
   /** V3-F — 무한 saga (재생 chapter 누적). */
   eternalSaga: EternalSagaState;
+  /** V3-H — 현재 계절 (cycle 기반, hero age 0/15/30/45 마다 전환). */
+  season: SeasonState;
 }
 
 // Phase G — Ascension Tree (성좌)
