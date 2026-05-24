@@ -18,7 +18,7 @@ export const BUFF_CATALOG: BuffDef[] = [
   { id: 'light_rate',     nameKR: '빛의 풍요',   descKR: '빛 누적 +1%',                          baseCost: 500,  costMul: 1.25, perLevel:  0.01  },
   { id: 'rejuv_discount', nameKR: '자비의 손길', descKR: '회춘 cost -5%',                        baseCost: 800,  costMul: 1.30, perLevel:  0.05, cap: 0.80 },
   { id: 'aging_slow',     nameKR: '시간의 늪',   descKR: '자연 aging 속도 -1%',                  baseCost: 1000, costMul: 1.30, perLevel: -0.01, cap: 0.50 },
-  { id: 'field_diff',     nameKR: '격차의 칼날', descKR: '필드 디버프 한도 +1 (V3-D 도착 시 활성)', baseCost: 300,  costMul: 1.20, perLevel:  1 },
+  { id: 'field_diff',     nameKR: '격차의 칼날', descKR: '필드 디버프 한도 +1 (추후 활성)', baseCost: 300,  costMul: 1.20, perLevel:  1 },
   { id: 'oneshot_rejuv',  nameKR: '빛의 은총',   descKR: '즉시 5년 회춘',                        baseCost: 0,    costMul: 1.0,  perLevel: 0, isOneShot: true },
 ];
 

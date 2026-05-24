@@ -64,10 +64,6 @@ export function CyclePrepV2({ onStart, onCancel, onClearSnapshot }: Props) {
         <div>신의 후원금: {sponsorGold.toLocaleString()} (사이클 종료 시 자동 후원)</div>
         <div>영구 보너스: ATK +{atkBaseBonus} / HP +{hpBaseBonus}</div>
       </div>
-
-      <p style={{ marginTop: 24, fontSize: 11, opacity: 0.5 }}>
-        trait 선택 / 가호 / 수동 후원 UI 는 후속 단계에서 구현
-      </p>
     </div>
   );
 }
