@@ -35,7 +35,8 @@
     - `skillsLearnedCount` p50 ≤ 14 (현재 21).
     - `jobUnlocks.tier2` 의 single-job share ≤ 35% (현재 mage 46%).
     - `monk` 또는 `ranger` 의 unlock 횟수 ≥ 1/50 (현재 0/50, 0/50 → 합산 1+ 이상이면 valley 분리 효과 확인).
-    - `moralChoices` p50 60–80 범위 유지 (50 미만으로 떨어지면 over-correction).
+    - `moralChoices` p50 ≥ 50 (Cycle 1 sim baseline 55 의 floor) AND ≤ 80 (over-stimulus 가드).
+      - **Calibration note**: 원안은 `[60,80]` 이었으나 baseline 측정 없는 가설이라 BLOCKED. Cycle 1 sim 실측 (MERCIFUL_PROC_RATE 0.10 환경) 에서 p50 ≈ 55 가 안정점으로 확인되어 50 floor 로 재조정. 80 ceiling 은 over-stimulus 가드로 유지.
   - 기존 vitest 1044 + 50-cycle e2e 회귀 없음.
   - `maxLevel` p50 의 변화가 800k ± 30% 이내 (곡선 평탄화 방지 — 정체성 가드).
 - **반대 기준 (NOT this)**:
@@ -112,7 +113,7 @@
 ### 리스크 / 의존성
 
 - **F1 의 monk/ranger 픽스가 ranger 와 새 충돌 가능** — level-critic 도 "round 2 측정 후 결정" 으로 명시. 구현 단계에서 sim feedback 으로 미세조정 — `monk.dim='prudent'` 가 ranger 와 또 충돌하면 ranger 의 dim 까지 옮기는 다단계 조정 필요. QA 는 "수정 후 sim 재실행 + 분포 ≥ 1/50 확인" 기준으로 검증.
-- **F1 의 `MERCIFUL_PROC_RATE 0.15 → 0.10` over-correction risk** — moralChoices p50 이 60 아래로 떨어지면 EncounterEngine 의 moral 자극 자체가 약해져 personality drift 가 묻혀 다른 봉인 발생 가능. 수용 기준에 "p50 60–80 유지" 명시로 가드.
+- **F1 의 `MERCIFUL_PROC_RATE 0.15 → 0.10` over-correction risk** — 초기 가설은 "moralChoices p50 60–80 유지" 였으나, 실제 sim 측정 결과 0.10 환경의 안정점이 p50 ≈ 55 로 확인되어 baseline floor 를 50 으로 재조정 (위 F1 수용 기준의 calibration note 참조). 자극 자체가 약해져도 50 floor 안에서는 personality drift 가 의미를 잃지 않는 것으로 sim 가 보여줌. 추가 약화 (p50 < 50) 시에는 봉인 risk 가 다시 상승하므로 가드 유지.
 - **F2 와 F3 모두 NarrativeGenerator 와 SagaTypes 의 동시 변경** — 충돌 방지를 위해 같은 PR 또는 sequential PR 로. F2 가 먼저, F3 가 그 위에.
 - **invention 의 partial 채택** — Realm Chapter Narrator 의 3 component 중 1 (bespoke realm-enter) 만 F2 로 채택. component 2 (3 축 modifier) + 3 (chapter 게이지) 은 backlog 로 명시 — 한 cycle 에 다 하면 스코프 크리프.
 

@@ -55,9 +55,9 @@ describe('JobSystem', () => {
 });
 
 describe('Cycle 1 F1 — JobSystem tie-break 분리', () => {
-  it('F1.5: JOBS mage.requiredPersonality.min === 5', () => {
+  it('F1.5: JOBS mage.requiredPersonality.min === 6', () => {
     const mage = JOBS.find(j => j.id === 'mage')!;
-    expect(mage.requiredPersonality!.min).toBe(5);
+    expect(mage.requiredPersonality!.min).toBe(6);
   });
   it('F1.6: JOBS monk.requiredPersonality.dim === "prudent"', () => {
     const monk = JOBS.find(j => j.id === 'monk')!;
@@ -68,9 +68,9 @@ describe('Cycle 1 F1 — JobSystem tie-break 분리', () => {
     expect(ranger.requiredPersonality!.min).toBe(6);
   });
 
-  it('F1.8: hero pious=4 → mage 후보 탈락 (min 5 미만)', () => {
+  it('F1.8: hero pious=4 → mage 후보 탈락 (min 6 미만)', () => {
     // pious=4 만으로는 어떤 age30 job 도 통과 못 함 → null
-    // (이전 mage.min=3 시점에서는 mage 가 통과했음)
+    // (이전 mage.min=3 시점에서는 mage 가 통과했음; cycle 1 에서 6 으로 추가 상향)
     const hero = makeHero();
     hero.personality.adjust('pious', 4);
     hero.personality.adjust('prudent', 2);
@@ -87,9 +87,10 @@ describe('Cycle 1 F1 — JobSystem tie-break 분리', () => {
     expect(job?.id).toBe('ranger');
   });
   it('F1.10: hero pious=5 prudent=5 → monk 후보 포함 (dim=prudent 분리)', () => {
-    // pious=5 만으로 mage(min5) 통과, prudent=5 로 monk(min5) 통과, ranger(min6) 탈락
-    // score 동률 (둘 다 5) → first-match (mage 가 catalog 에서 먼저)
-    // 하지만 monk 가 "후보 포함" 인지 확인하려면 prudent 만 강화해서 single-candidate path 로 검증
+    // cycle 1 mage.min 6 으로 상향: pious=5 만으로는 mage(min6) 탈락,
+    // prudent=5 로 monk(min5) 만 통과, ranger(min6) 탈락 → single-candidate monk.
+    // (이전 mage.min=5 시점에서는 동률 first-match 가 mage 였으나, prudent 강화만 하면
+    // pious=0 이라 mage 후보 자체에 들지 못해 결과는 mage.min 변경 전후로 monk 동일.)
     const hero = makeHero();
     hero.personality.adjust('prudent', 5);
     const job = JobSystem.evaluate(hero, 'age30');

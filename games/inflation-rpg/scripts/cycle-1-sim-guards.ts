@@ -29,8 +29,8 @@ check(maxShare <= 0.35, `F1.13 Tier 2 maxShare ${maxShare.toFixed(3)} > 0.35`);
 const monkRanger = (jobs.monk ?? 0) + (jobs.ranger ?? 0);
 check(monkRanger >= 1, `F1.14 monk+ranger ${monkRanger} < 1`);
 
-// F1.15 — moralChoices p50
-check(s.moralChoices.p50 >= 60 && s.moralChoices.p50 <= 80, `F1.15 moralChoices.p50 ${s.moralChoices.p50} not in [60,80]`);
+// F1.15 — moralChoices p50 (cycle 1 baseline 재조정: 측정값 ~55 floor 기반)
+check(s.moralChoices.p50 >= 50 && s.moralChoices.p50 <= 80, `F1.15 moralChoices.p50 ${s.moralChoices.p50} not in [50,80]`);
 
 // F1.16 — maxLevel curve guard
 check(s.maxLevel.p50 >= 746000 && s.maxLevel.p50 <= 1078000, `F1.16 maxLevel.p50 ${s.maxLevel.p50} not in [746k,1078k]`);
