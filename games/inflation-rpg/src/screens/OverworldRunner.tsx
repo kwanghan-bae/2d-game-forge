@@ -205,6 +205,17 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
               ctrl.recordRejuvenation(5);
             }, 2000);
           }
+          // Cycle-6 P0: 매 arrival 마다 hero snapshot 자동 저장.
+          // 기존엔 "메인 메뉴" 버튼 클릭 경로에서만 saveHeroSnapshot 이 호출되어
+          // page reload / 앱 강제 종료 / 브라우저 충돌 시 run.heroSnapshot 이 null
+          // 인 채로 다음 부팅을 맞이했다 → MainMenu 가 "이어하기" 버튼을 못 띄움.
+          // 매 landmark 도착 시점에 직렬화해서 store 에 밀어넣는다. zustand persist
+          // 가 set() 마다 localStorage 에 flush 하므로 cycle 도중 어느 시점에 죽어도
+          // 다음 부팅에서 동일 hero 로 복원된다 (V3-H B2 의 HeroEntity.restore 활용).
+          //
+          // cycle_ended 직후 clearHeroSnapshot 이 호출되므로 자연 종료 후엔 다시
+          // null 로 돌아간다 (정상 흐름).
+          useGameStore.getState().saveHeroSnapshot(controller.getHero().serialize(controller.getSeed()));
         }
         if (event.type === 'cycle_ended' && !endedRef.current) {
           endedRef.current = true;
