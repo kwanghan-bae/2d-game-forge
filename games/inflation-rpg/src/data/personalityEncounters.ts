@@ -29,8 +29,13 @@ export const PERSONALITY_ENCOUNTERS: readonly PersonalityEncounter[] = [
     negative: { choice: 'reckless_greed', nameKR: '위험한 보물에 손대며 충동이 깊어졌다',       delta: -3 },
   },
   {
+    // cycle 1 F1: pious positive delta 3 → 2 (mage saturation 추가 완화).
+    // pious 는 holy_ruin + shrine meditation + sightseeing 1/3 chance 의 3 source
+    // 가 cumulate 하여 다른 dim 대비 빨리 차오름 (sim 측정 mage share 0.40 ≥ 0.35
+    // ceiling). negative 는 그대로 유지 — cliff 방어 (pious 절벽으로 떨어지는
+    // 분기는 priest/apprentice 로 흡수되어 mage saturation 과 무관).
     kind: 'holy_ruin', dim: 'pious',
-    positive: { choice: 'deep_prayer', nameKR: '폐허의 제단에서 깊은 기도로 신앙이 두터워졌다', delta: 3 },
+    positive: { choice: 'deep_prayer', nameKR: '폐허의 제단에서 깊은 기도로 신앙이 두터워졌다', delta: 2 },
     negative: { choice: 'skip_ritual', nameKR: '신성한 유적을 외면하며 세속에 가까워졌다',     delta: -3 },
   },
   {

@@ -1,10 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { EncounterEngine } from '../EncounterEngine';
+import { EncounterEngine, MERCIFUL_PROC_RATE } from '../EncounterEngine';
 import { HeroEntity } from '../../hero/HeroEntity';
+import { PersonalityState } from '../../hero/PersonalityState';
 import { SeededRng } from '../../cycle/SeededRng';
 import type { OverworldEvent } from '../OverworldEvents';
 
 const baseOpts = { seed: 1, heroHpMax: 100, heroAtkBase: 50 };
+
+function makeHero(): HeroEntity {
+  const hero = HeroEntity.create(baseOpts);
+  // HeroSpawner seeds random priors; reset to neutral for deterministic branch
+  // tests below.
+  hero.personality = new PersonalityState();
+  return hero;
+}
 
 function makeEngine(seed = 1): EncounterEngine {
   return new EncounterEngine(new SeededRng(seed));
@@ -15,20 +24,24 @@ function moralChoices(events: OverworldEvent[]): Extract<OverworldEvent, { type:
 }
 
 describe('EncounterEngine — V1c-1 personality drift landmarks', () => {
+  // cycle 1 F1: holy_ruin positive delta 가 3 → 2 로 약화됨 (mage saturation 완화).
+  // 다른 landmark 와 negative 분기는 ±3 유지.
   it.each([
-    ['watchtower',    'heroic'],
-    ['treasure_cave', 'prudent'],
-    ['holy_ruin',     'pious'],
-    ['crossroads',    'moral'],
-  ] as const)('%s emits a moral_choice on the %s dim with delta ±3', (kind, dim) => {
-    const hero = HeroEntity.create(baseOpts);
+    ['watchtower',    'heroic',  3, 3],
+    ['treasure_cave', 'prudent', 3, 3],
+    ['holy_ruin',     'pious',   2, 3], // positive 2, negative 3 (asymmetric)
+    ['crossroads',    'moral',   3, 3],
+  ] as const)('%s emits a moral_choice on the %s dim with expected ±delta', (kind, dim, posDelta, negDelta) => {
+    const hero = makeHero();
     const engine = makeEngine();
     const events = engine.resolveEncounter(hero, kind, `${kind}_1`);
     const choices = moralChoices(events);
     expect(choices).toHaveLength(1);
     const c = choices[0]!;
     expect(c.dim).toBe(dim);
-    expect(Math.abs(c.delta)).toBe(3);
+    // Prior=0 selects positive branch (current >= 0).
+    expect(c.delta).toBe(posDelta);
+    void negDelta; // negative branch covered by the dedicated branch test below.
   });
 
   it('selects positive branch when current >= 0 and negative when current < 0', () => {
@@ -66,6 +79,18 @@ describe('EncounterEngine — V1c-1 personality drift landmarks', () => {
     const c = moralChoices(events)[0]!;
     expect(hero.personality.get('pious')).toBe(before + c.delta);
   });
+
+  // cycle 1 F1: holy_ruin asymmetric delta — positive +2 (약화), negative -3 (그대로).
+  // 의도: mage saturation 완화 (pious 누적 source 약화) 와 cliff 방어 (pious 음수 절벽은
+  // priest/apprentice 로 흡수되어 mage 와 무관) 의 분리.
+  it('holy_ruin negative branch keeps delta=-3 (asymmetric)', () => {
+    const hero = makeHero();
+    hero.personality.adjust('pious', -4); // < 0 → negative
+    const engine = makeEngine();
+    const events = engine.resolveEncounter(hero, 'holy_ruin', 'hr_neg');
+    const c = moralChoices(events)[0]!;
+    expect(c.delta).toBe(-3);
+  });
 });
 
 describe('EncounterEngine — V1c-1 merciful battle_won proc', () => {
@@ -89,6 +114,19 @@ describe('EncounterEngine — V1c-1 merciful battle_won proc', () => {
   it('never procs on boss kills', () => {
     const fires = killCount(200, 60, 'boss');
     expect(fires).toBe(0);
+  });
+
+  it('F1.4: MERCIFUL_PROC_RATE 1000회 chance → 평균 100 ± 15% (85-115)', () => {
+    // adapt: plan 은 helper 호출 1000 회를 가정했으나 실제 resolveEncounter 는
+    // drop roll → drop pick → merciful chance 의 RNG draw 순서가 얽혀 통계
+    // 신호가 흐려진다. SeededRng.chance(rate) 의 직접 통계로 상수 평균 검증.
+    const rng = new SeededRng(42);
+    let fires = 0;
+    for (let i = 0; i < 1000; i++) {
+      if (rng.chance(MERCIFUL_PROC_RATE)) fires += 1;
+    }
+    expect(fires).toBeGreaterThanOrEqual(85);
+    expect(fires).toBeLessThanOrEqual(115);
   });
 
   it('positive branch when merciful >= 0, negative when < 0', () => {

@@ -3,6 +3,8 @@
  * 이벤트 타입별 나레이션 변형 (5–8개씩). seed 기반으로 선택해 단조로움 방지.
  */
 
+import type { RealmId, SeasonId } from '../types';
+
 /** Object marker (을/를) — NarrativeGenerator 의 동일 로직 복사. */
 function obj(noun: string): string {
   const last = noun.charCodeAt(noun.length - 1);
@@ -118,6 +120,119 @@ function pick<T>(arr: Array<(c: T) => string>, ctx: T, seed: number): string {
   return arr[idx](ctx);
 }
 
+/* ─────────────────────── realmEnter (F2) ────────────────────── */
+const REALM_ENTER_VARIANTS: Record<RealmId, Array<(c: { age: number }) => string>> = {
+  base: [
+    (c) => `(${c.age}세) 들판의 풀이 처음으로 발끝을 스쳤다.`,
+    (c) => `(${c.age}세) 바람이 동쪽에서 불어왔다 — 시작의 들판이다.`,
+    (c) => `(${c.age}세) 머리 위로 첫 햇살이 내렸다.`,
+    (c) => `(${c.age}세) 발걸음마다 흙냄새가 일어났다.`,
+    (c) => `(${c.age}세) 멀리서 새벽 종소리가 들렸다.`,
+  ],
+  sea: [
+    (c) => `(${c.age}세) 바다 안개가 발치까지 올라왔다 — 심해의 문이 열렸다.`,
+    (c) => `(${c.age}세) 파도가 발목을 적셨다, 그 너머로 검은 물결이 솟았다.`,
+    (c) => `(${c.age}세) 짠 공기가 폐를 가득 채웠다.`,
+    (c) => `(${c.age}세) 모래 위에 첫 발자국을 남겼다 — 물길이 그것을 지웠다.`,
+    (c) => `(${c.age}세) 갈매기 한 마리가 시야 끝에서 사라졌다.`,
+  ],
+  volcano: [
+    (c) => `(${c.age}세) 발 밑이 뜨거워졌다 — 화산의 입구다.`,
+    (c) => `(${c.age}세) 검은 재가 머리 위로 떨어졌다.`,
+    (c) => `(${c.age}세) 멀리서 용암이 강처럼 흘렀다.`,
+    (c) => `(${c.age}세) 공기 자체가 떨렸다, 산이 숨 쉬는 소리였다.`,
+    (c) => `(${c.age}세) 붉은 빛이 얼굴을 비추었다.`,
+  ],
+  underworld: [
+    (c) => `(${c.age}세) 발 아래로 길이 사라졌다 — 황천의 입구였다.`,
+    (c) => `(${c.age}세) 빛이 꺼지고, 차가운 손이 어깨를 스쳤다.`,
+    (c) => `(${c.age}세) 그림자가 자신의 그림자를 가졌다.`,
+    (c) => `(${c.age}세) 어디선가 종이 울렸다 — 이미 죽은 자들의 종이었다.`,
+    (c) => `(${c.age}세) 길의 끝에는 강이 흘렀다, 강은 위로 흘렀다.`,
+  ],
+  heaven: [
+    (c) => `(${c.age}세) 발이 구름을 디뎠다 — 천공의 영토에 도달했다.`,
+    (c) => `(${c.age}세) 빛이 모든 방향에서 동시에 왔다.`,
+    (c) => `(${c.age}세) 공기가 너무 가벼워, 숨을 잊었다.`,
+    (c) => `(${c.age}세) 멀리서 노랫소리가 들렸다 — 노래의 출처는 보이지 않았다.`,
+    (c) => `(${c.age}세) 머리 위 별들이 발밑에서 빛났다.`,
+  ],
+  chaos: [
+    (c) => `(${c.age}세) 모든 방향이 한 점으로 모였다 — 혼돈의 중심이다.`,
+    (c) => `(${c.age}세) 시간이 멈췄다, 그러고는 거꾸로 흘렀다.`,
+    (c) => `(${c.age}세) 자신의 손이 두 개로 보였다, 그리고 셋, 그리고 무한대.`,
+    (c) => `(${c.age}세) 들렸던 모든 소리가 한 번에 다시 울렸다.`,
+    (c) => `(${c.age}세) 무엇이 자신이고 무엇이 아닌지의 경계가 흐려졌다.`,
+  ],
+};
+
+/* ─────────────────────── seasonChange (F2) ──────────────────── */
+const SEASON_REALM_PREFIX: Record<RealmId, string> = {
+  base: '들판 위로',
+  sea: '바다 위로',
+  volcano: '용암 위로',
+  underworld: '죽음의 강 위로',
+  heaven: '구름 위로',
+  chaos: '경계 너머로',
+};
+
+const SEASON_CHANGE_VARIANTS: Record<SeasonId, Array<(c: { age: number; prefix: string }) => string>> = {
+  spring: [
+    (c) => `(${c.age}세) 계절이 바뀌었다 — ${c.prefix} 봄이 왔다.`,
+  ],
+  summer: [
+    (c) => `(${c.age}세) 계절이 바뀌었다 — ${c.prefix} 여름이 내렸다.`,
+  ],
+  fall: [
+    (c) => `(${c.age}세) 계절이 바뀌었다 — ${c.prefix} 가을이 들어찼다.`,
+  ],
+  winter: [
+    (c) => `(${c.age}세) 계절이 바뀌었다 — ${c.prefix} 겨울이 덮였다.`,
+  ],
+};
+
+/* ─────────────────────── npcEncounter (F3) ──────────────────── */
+const NPC_ENCOUNTER_VARIANTS: Record<'mentor' | 'rival' | 'passerby', Array<(c: { age: number }) => string>> = {
+  mentor: [
+    (c) => `(${c.age}세) 한 늙은 자가 길을 막았다 — 그의 눈은 자신의 미래를 보고 있었다. 멘토를 만났다.`,
+    (c) => `(${c.age}세) 사원 앞에서 길잡이가 손을 내밀었다. 멘토가 되겠다 했다.`,
+    (c) => `(${c.age}세) 멘토가 처음 가르친 것은 칼이 아니라 침묵이었다.`,
+  ],
+  rival: [
+    (c) => `(${c.age}세) 시야 끝에서 같은 표정의 그림자가 나타났다 — 라이벌이었다.`,
+    (c) => `(${c.age}세) 마을 입구에서 한 검객이 시선을 떨구지 않았다. 라이벌이다.`,
+    (c) => `(${c.age}세) 라이벌의 첫 칼이 자신의 어깨를 스쳤다 — 그가 더 빨랐다.`,
+  ],
+  passerby: [
+    (c) => `(${c.age}세) 한 행인이 지나쳤다, 그러나 그의 얼굴은 오래 남았다.`,
+    (c) => `(${c.age}세) 짧은 인사가 길의 끝까지 따라왔다.`,
+    (c) => `(${c.age}세) 행인은 자신의 이름을 말하지 않았고, 자신도 묻지 않았다.`,
+  ],
+};
+
+/* ─────────────────────── npcDeath (F3) ──────────────────────── */
+const NPC_DEATH_VARIANTS: Array<(c: { age: number }) => string> = [
+  (c) => `(${c.age}세) 멘토가 침대에서 일어나지 못했다 — 한 시대가 끝났다.`,
+  (c) => `(${c.age}세) 라이벌의 마지막 칼은 자신의 것이었다 — 둘 다 살아남지 못했다.`,
+  (c) => `(${c.age}세) 행인의 부고를 멀리서 들었다 — 이름은 끝내 몰랐다.`,
+];
+
+/* ─────────────────────── familyEvent (F3) ───────────────────── */
+const FAMILY_EVENT_VARIANTS: Record<'marriage' | 'child_born' | 'child_grown', Array<(c: { age: number }) => string>> = {
+  marriage: [
+    (c) => `(${c.age}세) 종소리 아래 결혼식을 올렸다.`,
+    (c) => `(${c.age}세) 서로의 손을 잡았다 — 이제 둘이다.`,
+  ],
+  child_born: [
+    (c) => `(${c.age}세) 첫 자식의 울음소리가 새벽을 깨웠다.`,
+    (c) => `(${c.age}세) 자식이 태어났다 — 작은 손이 자신의 손을 쥐었다.`,
+  ],
+  child_grown: [
+    (c) => `(${c.age}세) 자식이 처음으로 자신보다 큰 칼을 들었다.`,
+    (c) => `(${c.age}세) 자식이 떠났다 — 자신의 길로.`,
+  ],
+};
+
 /* ─────────────────── 공개 API ───────────────────────────────── */
 export const NarrationVariants = {
   battle(ctx: { age: number; enemyNameKR: string }, seed = 0): string {
@@ -149,5 +264,25 @@ export const NarrationVariants = {
   },
   rejuvenation(ctx: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return pick(REJUVENATION_VARIANTS, ctx, seed);
+  },
+  realmEnter(ctx: { age: number; realm: RealmId }, seed = 0): string {
+    const variants = REALM_ENTER_VARIANTS[ctx.realm];
+    return pick(variants, { age: ctx.age }, seed);
+  },
+  seasonChange(ctx: { age: number; season: SeasonId; realm: RealmId }, seed = 0): string {
+    const variants = SEASON_CHANGE_VARIANTS[ctx.season];
+    const prefix = SEASON_REALM_PREFIX[ctx.realm];
+    return pick(variants, { age: ctx.age, prefix }, seed);
+  },
+  npcEncounter(ctx: { age: number; kind: 'mentor' | 'rival' | 'passerby' }, seed = 0): string {
+    const variants = NPC_ENCOUNTER_VARIANTS[ctx.kind];
+    return pick(variants, { age: ctx.age }, seed);
+  },
+  npcDeath(ctx: { age: number }, seed = 0): string {
+    return pick(NPC_DEATH_VARIANTS, { age: ctx.age }, seed);
+  },
+  familyEvent(ctx: { age: number; type: 'marriage' | 'child_born' | 'child_grown' }, seed = 0): string {
+    const variants = FAMILY_EVENT_VARIANTS[ctx.type];
+    return pick(variants, { age: ctx.age }, seed);
   },
 };

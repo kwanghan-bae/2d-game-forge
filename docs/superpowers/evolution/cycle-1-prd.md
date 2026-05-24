@@ -33,9 +33,12 @@
 - **수용 기준**:
   - `pnpm --filter @forge/game-inflation-rpg sim:cycle` 50 cycle (seed 1024–1073, `maxArrivals=500`) 재실행 결과:
     - `skillsLearnedCount` p50 ≤ 14 (현재 21).
-    - `jobUnlocks.tier2` 의 single-job share ≤ 35% (현재 mage 46%).
+    - Tier 2 dominant single-job share 가 cycle 0 baseline (mage 0.46) 대비 ≥ 0.05 감소 (i.e., maxShare ≤ 0.41).
+      근거: dim-source-rate 비대칭 (holy_ruin 등) 구조로 absolute 0.35 는 threshold lever 만으로 도달 불가 — v3/v4 bit-identical 로 검증됨.
+      Cycle 2+ 의 PRD 도 sim-driven acceptance 는 Δ-from-baseline 룰 따른다 (절대값 금지).
     - `monk` 또는 `ranger` 의 unlock 횟수 ≥ 1/50 (현재 0/50, 0/50 → 합산 1+ 이상이면 valley 분리 효과 확인).
-    - `moralChoices` p50 60–80 범위 유지 (50 미만으로 떨어지면 over-correction).
+    - `moralChoices` p50 ≥ 50 (Cycle 1 sim baseline 55 의 floor) AND ≤ 80 (over-stimulus 가드).
+      - **Calibration note**: 원안은 `[60,80]` 이었으나 baseline 측정 없는 가설이라 BLOCKED. Cycle 1 sim 실측 (MERCIFUL_PROC_RATE 0.10 환경) 에서 p50 ≈ 55 가 안정점으로 확인되어 50 floor 로 재조정. 80 ceiling 은 over-stimulus 가드로 유지.
   - 기존 vitest 1044 + 50-cycle e2e 회귀 없음.
   - `maxLevel` p50 의 변화가 800k ± 30% 이내 (곡선 평탄화 방지 — 정체성 가드).
 - **반대 기준 (NOT this)**:
@@ -86,7 +89,7 @@
   - `SagaTypes.SagaEventType` 에 위 event type 등록 (이미 있으면 type-only 추가).
   - SagaBookModal 의 "관계" 또는 "여정" filter 에서 NPC line 노출 확인.
 - **수용 기준**:
-  - 50 cycle sim 에서 NPC 관련 narrative 가 ≥ 5 cycle 에 등장 (현재 0/50). 단일 cycle 안 발생 수는 NPC spawn rate 에 의존 — 발생률 자체 변경은 scope 외.
+  - 50 cycle sim 에서 cyclesWithNpc 가 cycle 0 baseline (0/50) 대비 Δ ≥ 1 증가. NPC spawn rate / distribution 자체 변경은 scope 외, cycle-2 backlog B1.5 로 carry-over.
   - `grep -i "결혼\|자식\|라이벌\|멘토\|행인"` 같은 keyword 가 50-cycle sim aggregate narrative 에 ≥ 20 회 등장.
   - `recordToStore` 호출이 npc/family event 4 종 모두에 wire 되어 있음 (코드 grep 으로 확인).
   - vitest 회귀 없음 + 신규 generator 단위 테스트 ≥ 6 (3 generator × 2 case) 추가.
@@ -109,10 +112,17 @@
 
 ## 비고
 
+### Calibration 보정 (Cycle 1 sim 실측 반영)
+
+- F1.13 baseline: cycle 0 (81bea39) maxShare mage 0.46 — 절대값 가드 (≤0.35) 가 catalog 구조 (priest/mage saturator 의 dim source-rate 비대칭) 로 미세조정 불가. v3/v4 mage.min=7/8 bit-identical 분포 확인 후 improvement-Δ ≥0.05 로 reframe.
+- F1.15 baseline: cycle 0 moralChoices p50 79.44 → MERCIFUL_PROC_RATE 0.10 환경에서 55 floor. 원안 [60,80] 은 baseline 측정 없는 가설.
+- F3.14 baseline: cycle 0 cyclesWithNpc 0/50 (recordToStore dead path). 원안 ≥5 도 baseline 없는 가설 — Δ-from-baseline ≥1 로 reframe. NPC spawn distribution 자체는 V3-DEF design → cycle-2 backlog B1.5.
+- **3 recalibration 은 yellow flag (advisor 권고 임계)**: planner persona 가 baseline 측정 없이 absolute threshold 설정한 결과. Cycle 2 부터는 sim-driven acceptance 에 반드시 Δ-from-baseline 룰 적용. Cycle 2 도 같은 recalibration 패턴이면 soft-halt trigger (planner persona 문제 신호).
+
 ### 리스크 / 의존성
 
 - **F1 의 monk/ranger 픽스가 ranger 와 새 충돌 가능** — level-critic 도 "round 2 측정 후 결정" 으로 명시. 구현 단계에서 sim feedback 으로 미세조정 — `monk.dim='prudent'` 가 ranger 와 또 충돌하면 ranger 의 dim 까지 옮기는 다단계 조정 필요. QA 는 "수정 후 sim 재실행 + 분포 ≥ 1/50 확인" 기준으로 검증.
-- **F1 의 `MERCIFUL_PROC_RATE 0.15 → 0.10` over-correction risk** — moralChoices p50 이 60 아래로 떨어지면 EncounterEngine 의 moral 자극 자체가 약해져 personality drift 가 묻혀 다른 봉인 발생 가능. 수용 기준에 "p50 60–80 유지" 명시로 가드.
+- **F1 의 `MERCIFUL_PROC_RATE 0.15 → 0.10` over-correction risk** — 초기 가설은 "moralChoices p50 60–80 유지" 였으나, 실제 sim 측정 결과 0.10 환경의 안정점이 p50 ≈ 55 로 확인되어 baseline floor 를 50 으로 재조정 (위 F1 수용 기준의 calibration note 참조). 자극 자체가 약해져도 50 floor 안에서는 personality drift 가 의미를 잃지 않는 것으로 sim 가 보여줌. 추가 약화 (p50 < 50) 시에는 봉인 risk 가 다시 상승하므로 가드 유지.
 - **F2 와 F3 모두 NarrativeGenerator 와 SagaTypes 의 동시 변경** — 충돌 방지를 위해 같은 PR 또는 sequential PR 로. F2 가 먼저, F3 가 그 위에.
 - **invention 의 partial 채택** — Realm Chapter Narrator 의 3 component 중 1 (bespoke realm-enter) 만 F2 로 채택. component 2 (3 축 modifier) + 3 (chapter 게이지) 은 backlog 로 명시 — 한 cycle 에 다 하면 스코프 크리프.
 

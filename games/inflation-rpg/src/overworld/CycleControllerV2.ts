@@ -15,7 +15,7 @@ import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { computeFieldDamping } from '../zone/fieldDamping';
 import { getFieldDiffThreshold } from '../buff/buffEffects';
-import { seasonForAge, seasonNameKR } from '../season/SeasonState';
+import { seasonForAge } from '../season/SeasonState';
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -314,11 +314,31 @@ export class CycleControllerV2 {
         if (spouse) {
           state.addNpc(spouse);
           events.push({ type: 'family_event', eventKind: 'marriage', npcInstanceId: spouse.instanceId });
+          // Cycle-1 F3: dead path 회수 — family marriage 를 saga 에 기록.
+          this.recordToStore({
+            age: this.hero.age,
+            type: 'familyEvent',
+            narrativeText: NarrativeGenerator.forFamilyEvent(
+              { age: this.hero.age, type: 'marriage' },
+              this.rng.int(100000),
+            ),
+            payload: { eventKind: 'marriage', npcInstanceId: spouse.instanceId },
+          });
         }
         const child = spawnNpc('family_child', { realmId: this.currentRealmId ?? 'base', seed: seed + 4 });
         if (child) {
           state.addNpc(child);
           events.push({ type: 'family_event', eventKind: 'child_birth', npcInstanceId: child.instanceId });
+          // Cycle-1 F3: dead path 회수 — child_birth (event union) → child_born (generator) 매핑.
+          this.recordToStore({
+            age: this.hero.age,
+            type: 'familyEvent',
+            narrativeText: NarrativeGenerator.forFamilyEvent(
+              { age: this.hero.age, type: 'child_born' },
+              this.rng.int(100000),
+            ),
+            payload: { eventKind: 'child_birth', npcInstanceId: child.instanceId },
+          });
         }
       }
     }
@@ -331,6 +351,16 @@ export class CycleControllerV2 {
         const oldRealm = this.currentRealmId;
         this.currentRealmId = newRealm;
         useGameStore.getState().recordSagaRealmTransition(oldRealm, newRealm, this.hero.age, this.hero.chapter);
+        // Cycle-1 F2: realm 진입 saga 이벤트 emit (NarrativeGenerator.forRealmEnter wire)
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'realmEnter',
+          narrativeText: NarrativeGenerator.forRealmEnter(
+            { age: this.hero.age, realm: newRealm },
+            this.rng.int(100000),
+          ),
+          payload: { from: oldRealm, to: newRealm },
+        });
         events.push({ type: 'realm_entered', realmId: newRealm });
       }
     }
@@ -342,6 +372,16 @@ export class CycleControllerV2 {
       tickNpc(npc);
       if (wasAlive && !npc.isAlive) {
         events.push({ type: 'npc_died', npcInstanceId: npc.instanceId });
+        // Cycle-1 F3: dead path 회수 — NPC 사망을 saga 에 기록.
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'npcDeath',
+          narrativeText: NarrativeGenerator.forNpcDeath(
+            { age: this.hero.age },
+            this.rng.int(100000),
+          ),
+          payload: { npcInstanceId: npc.instanceId, kind: npc.kind },
+        });
       }
     }
     // Encounter trigger: 현재 realm 거주 + alive NPC 중 1명 (20% 확률)
@@ -349,6 +389,21 @@ export class CycleControllerV2 {
     if (candidates.length > 0 && this.rng.chance(0.2)) {
       const picked = candidates[this.rng.int(candidates.length)];
       events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
+      // Cycle-1 F3: dead path 회수 — NPC 조우를 saga 에 기록.
+      // npcKind ({mentor,rival,friend,family_*}) → generator kind ({mentor,rival,passerby}) 매핑.
+      const generatorKind: 'mentor' | 'rival' | 'passerby' =
+        picked!.kind === 'mentor' ? 'mentor'
+        : picked!.kind === 'rival' ? 'rival'
+        : 'passerby';
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'npcEncounter',
+        narrativeText: NarrativeGenerator.forNpcEncounter(
+          { age: this.hero.age, kind: generatorKind },
+          this.rng.int(100000),
+        ),
+        payload: { npcInstanceId: picked!.instanceId, kind: picked!.kind },
+      });
     }
 
     // V3-H F6: season transition check (after age tick + NPC tick).
@@ -365,10 +420,14 @@ export class CycleControllerV2 {
           season: { current: newSeason, startedAtAge: Math.floor(this.hero.age) },
         },
       }));
+      // Cycle-1 F2: hard-coded literal 제거 → NarrativeGenerator.forSeasonChange wire
       this.recordToStore({
         age: this.hero.age,
         type: 'seasonChange',
-        narrativeText: `계절이 바뀌었다 — ${seasonNameKR(newSeason)}`,
+        narrativeText: NarrativeGenerator.forSeasonChange(
+          { age: this.hero.age, season: newSeason, realm: this.currentRealmId ?? 'base' },
+          this.rng.int(100000),
+        ),
         payload: { season: newSeason },
       });
       events.push({ type: 'season_changed', season: newSeason });

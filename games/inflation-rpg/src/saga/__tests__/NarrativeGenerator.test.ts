@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { NarrativeGenerator } from '../NarrativeGenerator';
 
 describe('NarrativeGenerator', () => {
@@ -70,5 +72,122 @@ describe('NarrativeGenerator', () => {
     const natural = NarrativeGenerator.forDeath({ age: 75, cause: '자연사' });
     expect(natural).toContain('75세');
     expect(natural).toMatch(/안식|잠들|자연/);
+  });
+});
+
+describe('Cycle 1 F2 — forRealmEnter', () => {
+  const REALMS = ['base', 'sea', 'volcano', 'underworld', 'heaven', 'chaos'] as const;
+
+  it.each(REALMS)('F2.1-F2.7: forRealmEnter(%s, age) → string + 5+ unique variant', (realm) => {
+    const samples = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      samples.add(NarrativeGenerator.forRealmEnter({ age: 13 + i, realm }, i));
+    }
+    expect(samples.size).toBeGreaterThanOrEqual(5);
+    samples.forEach((s) => {
+      expect(typeof s).toBe('string');
+      expect(s.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('F2.8: forRealmEnter 결과에 "N세" 포함', () => {
+    const result = NarrativeGenerator.forRealmEnter({ age: 13, realm: 'sea' });
+    expect(result).toMatch(/\d+세/);
+  });
+});
+
+describe('Cycle 1 F2 — forSeasonChange', () => {
+  it('F2.9: forSeasonChange("spring", 20, "base") → string', () => {
+    const r = NarrativeGenerator.forSeasonChange({ season: 'spring', age: 20, realm: 'base' });
+    expect(typeof r).toBe('string');
+    expect(r.length).toBeGreaterThan(0);
+  });
+
+  it('F2.10: 4 season 모두 throw 0', () => {
+    for (const s of ['spring', 'summer', 'fall', 'winter'] as const) {
+      expect(() => NarrativeGenerator.forSeasonChange({ season: s, age: 20, realm: 'base' })).not.toThrow();
+    }
+  });
+
+  it('F2.11: realm-flavor prefix — sea/volcano summer 결과 다름', () => {
+    const seaSet = new Set<string>();
+    const volcanoSet = new Set<string>();
+    for (let i = 0; i < 30; i++) {
+      seaSet.add(NarrativeGenerator.forSeasonChange({ season: 'summer', age: 20 + i, realm: 'sea' }, i));
+      volcanoSet.add(NarrativeGenerator.forSeasonChange({ season: 'summer', age: 20 + i, realm: 'volcano' }, i));
+    }
+    expect([...seaSet].some((s) => !volcanoSet.has(s))).toBe(true);
+  });
+});
+
+describe('Cycle 1 F3 — NPC narrative generators', () => {
+  it('F3.1: forNpcEncounter(mentor, 22) → string', () => {
+    const r = NarrativeGenerator.forNpcEncounter({ age: 22, kind: 'mentor' });
+    expect(typeof r).toBe('string');
+    expect(r.length).toBeGreaterThan(0);
+  });
+
+  it('F3.2: forNpcEncounter 3 kind 각 3+ variant', () => {
+    for (const kind of ['mentor', 'rival', 'passerby'] as const) {
+      const s = new Set<string>();
+      for (let i = 0; i < 100; i++) {
+        s.add(NarrativeGenerator.forNpcEncounter({ age: 22 + i, kind }, i));
+      }
+      expect(s.size).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('F3.3: forNpcDeath → string + 3+ variant', () => {
+    const s = new Set<string>();
+    for (let i = 0; i < 100; i++) {
+      s.add(NarrativeGenerator.forNpcDeath({ age: 50 + i }, i));
+    }
+    expect(s.size).toBeGreaterThanOrEqual(3);
+    expect(typeof [...s][0]).toBe('string');
+  });
+
+  it('F3.4: forFamilyEvent(marriage, 30) → string', () => {
+    const r = NarrativeGenerator.forFamilyEvent({ age: 30, type: 'marriage' });
+    expect(typeof r).toBe('string');
+    expect(r.length).toBeGreaterThan(0);
+  });
+
+  it('F3.5: forFamilyEvent 3 type 각 2+ variant', () => {
+    for (const type of ['marriage', 'child_born', 'child_grown'] as const) {
+      const s = new Set<string>();
+      for (let i = 0; i < 50; i++) {
+        s.add(NarrativeGenerator.forFamilyEvent({ age: 30 + i, type }, i));
+      }
+      expect(s.size).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('F3.6: forNpcEncounter 반환에 "N세" 포함', () => {
+    const r = NarrativeGenerator.forNpcEncounter({ age: 22, kind: 'mentor' });
+    expect(r).toMatch(/\d+세/);
+  });
+});
+
+describe('Cycle 1 F2.12 — hard-coded season literal 제거 가드', () => {
+  // plan 의 위치는 OverworldRunner.tsx 였으나 코드 정황상 실제 hard-coded
+  // interpolation 은 CycleControllerV2.ts:371 에 있었다. 그 라인을
+  // NarrativeGenerator.forSeasonChange wire 로 교체했고, 회귀를 방지한다.
+  it('F2.12: CycleControllerV2.ts 에 hard-coded "계절이 바뀌었다 — ${" interpolation 부재', () => {
+    const src = readFileSync(
+      join(__dirname, '..', '..', 'overworld', 'CycleControllerV2.ts'),
+      'utf-8',
+    );
+    // template literal 형태의 hard-coded narrative 부재 검사
+    expect(src).not.toMatch(/계절이 바뀌었다 — \$\{/);
+    // positive 검사: NarrativeGenerator.forSeasonChange wire 존재
+    expect(src).toContain('NarrativeGenerator.forSeasonChange');
+  });
+
+  it('F2.12b: CycleControllerV2.ts 에 NarrativeGenerator.forRealmEnter wire 존재', () => {
+    const src = readFileSync(
+      join(__dirname, '..', '..', 'overworld', 'CycleControllerV2.ts'),
+      'utf-8',
+    );
+    expect(src).toContain('NarrativeGenerator.forRealmEnter');
   });
 });

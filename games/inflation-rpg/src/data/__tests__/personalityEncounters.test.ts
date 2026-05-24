@@ -16,9 +16,12 @@ describe('PERSONALITY_ENCOUNTERS catalog', () => {
     expect(new Set(kinds).size).toBe(kinds.length);
   });
 
-  it('positive delta is +3 and negative delta is -3', () => {
+  // cycle 1 F1: holy_ruin positive delta 3 → 2 (asymmetric, mage saturation 완화).
+  // 다른 entry 와 모든 negative 분기는 ±3 유지.
+  it('positive delta is +3 for all entries except holy_ruin (+2), negative delta is -3 everywhere', () => {
     for (const enc of PERSONALITY_ENCOUNTERS) {
-      expect(enc.positive.delta).toBe(3);
+      const expectedPositive = enc.kind === 'holy_ruin' ? 2 : 3;
+      expect(enc.positive.delta).toBe(expectedPositive);
       expect(enc.negative.delta).toBe(-3);
     }
   });

@@ -55,14 +55,37 @@ describe('SkillLearningSystem', () => {
 });
 
 describe('isSkillMilestoneLevel', () => {
-  it('returns true for 5/10/25/50 and every 100 from 100', () => {
+  it('returns true for 5/10/25/50 anchors', () => {
     expect(isSkillMilestoneLevel(5)).toBe(true);
     expect(isSkillMilestoneLevel(10)).toBe(true);
     expect(isSkillMilestoneLevel(25)).toBe(true);
     expect(isSkillMilestoneLevel(50)).toBe(true);
+  });
+  it('returns true every 100 in 100..900', () => {
     expect(isSkillMilestoneLevel(100)).toBe(true);
     expect(isSkillMilestoneLevel(500)).toBe(true);
+    expect(isSkillMilestoneLevel(900)).toBe(true);
+  });
+  it('returns true every 1000 in 1000..9000 (sparsened)', () => {
     expect(isSkillMilestoneLevel(1000)).toBe(true);
+    expect(isSkillMilestoneLevel(5000)).toBe(true);
+    expect(isSkillMilestoneLevel(9000)).toBe(true);
+  });
+  it('returns false at every-100 grain above 1000 (sparsened)', () => {
+    // cycle 1 F1: 1100/1200/.../9900 no longer milestone; only multiples of 1000.
+    expect(isSkillMilestoneLevel(1100)).toBe(false);
+    expect(isSkillMilestoneLevel(1500)).toBe(false);
+    expect(isSkillMilestoneLevel(9900)).toBe(false);
+  });
+  it('returns true every 10000 in 10000+ (deep sparsen)', () => {
+    expect(isSkillMilestoneLevel(10_000)).toBe(true);
+    expect(isSkillMilestoneLevel(50_000)).toBe(true);
+    expect(isSkillMilestoneLevel(820_000)).toBe(true);
+  });
+  it('returns false at every-1000 grain above 10000 (deep sparsen)', () => {
+    expect(isSkillMilestoneLevel(11_000)).toBe(false);
+    expect(isSkillMilestoneLevel(15_000)).toBe(false);
+    expect(isSkillMilestoneLevel(99_000)).toBe(false);
   });
   it('returns false for non-milestone levels', () => {
     expect(isSkillMilestoneLevel(1)).toBe(false);

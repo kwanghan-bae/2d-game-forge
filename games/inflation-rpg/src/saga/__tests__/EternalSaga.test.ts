@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { eraKeyFor, appendEvent, recordRejuvenation, recordRealmTransition } from '../EternalSaga';
 import type { EternalSagaState } from '../../types';
+import type { SagaEventType } from '../SagaTypes';
 
 const empty: EternalSagaState = { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] };
 
@@ -54,5 +55,46 @@ describe('recordRealmTransition', () => {
     const next = recordRealmTransition(empty, 'base', 'volcano', 30, '장년기');
     expect(next.realmTransitions[0].eraKey).toBe('본래 장년기');
     expect(next.realmTransitions[0].atAge).toBe(30);
+  });
+});
+
+describe('Cycle 1 F2 — SagaEventType 등록', () => {
+  it('F2.13: realmEnter + seasonChange 등록됨 (camelCase 컨벤션 유지)', () => {
+    // type-only 가드 — 다음이 컴파일되면 등록된 것
+    const a: SagaEventType = 'realmEnter';
+    const b: SagaEventType = 'seasonChange';
+    expect(a).toBe('realmEnter');
+    expect(b).toBe('seasonChange');
+  });
+  it('F2.13b: appendEvent realmEnter → era chapter events 에 들어감', () => {
+    const ev = {
+      age: 25,
+      type: 'realmEnter' as const,
+      narrativeText: '(25세) 바다 안개가 발치까지 올라왔다.',
+      payload: { from: 'base', to: 'sea' } as Record<string, unknown>,
+    };
+    const next = appendEvent(empty, ev, '청년기');
+    expect(next.events).toHaveLength(1);
+    expect(next.chaptersByEra['본래 청년기'].events[0].type).toBe('realmEnter');
+  });
+});
+
+describe('Cycle 1 F3 — EternalSaga appendEvent NPC', () => {
+  it('F3.10: SagaEventType 에 NPC 3 종 등록됨 (camelCase 컨벤션 유지)', () => {
+    const a: SagaEventType = 'npcEncounter';
+    const b: SagaEventType = 'npcDeath';
+    const c: SagaEventType = 'familyEvent';
+    expect([a, b, c]).toEqual(['npcEncounter', 'npcDeath', 'familyEvent']);
+  });
+  it('F3.11: appendEvent npcEncounter → era chapter events 에 들어감', () => {
+    const ev = {
+      age: 22,
+      type: 'npcEncounter' as const,
+      narrativeText: '(22세) 멘토를 만났다.',
+      payload: { npcInstanceId: 'npc_1', kind: 'mentor' } as Record<string, unknown>,
+    };
+    const next = appendEvent(empty, ev, '청년기');
+    expect(next.events).toHaveLength(1);
+    expect(next.chaptersByEra['본래 청년기'].events[0].type).toBe('npcEncounter');
   });
 });
