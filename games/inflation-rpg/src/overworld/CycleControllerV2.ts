@@ -1,4 +1,4 @@
-import { HeroEntity } from '../hero/HeroEntity';
+import { HeroEntity, type HeroSnapshot } from '../hero/HeroEntity';
 import { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import { EncounterEngine } from './EncounterEngine';
 import { SeededRng } from '../cycle/SeededRng';
@@ -12,6 +12,10 @@ import type { CycleSaga, DeathCause, SagaEvent } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
 import { useGameStore } from '../store/gameStore';
 import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
+import { fieldLevelAtColumn } from '../zone/zoneNavigation';
+import { computeFieldDamping } from '../zone/fieldDamping';
+import { getFieldDiffThreshold } from '../buff/buffEffects';
+import { seasonForAge, seasonNameKR } from '../season/SeasonState';
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -23,6 +27,8 @@ export interface CycleControllerV2Opts {
   getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
   /** V3-D — boss 처치 시 호출. unlockable next realm 의 id 반환. */
   onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
+  /** V3-H B2 — 이어하기 시 기존 hero state 복원. null/undefined 면 새 hero 생성. */
+  heroSnapshot?: HeroSnapshot | null;
 }
 
 export class CycleControllerV2 {
@@ -43,11 +49,14 @@ export class CycleControllerV2 {
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
-    this.hero = HeroEntity.create({
-      seed: opts.seed,
-      heroHpMax: opts.heroHpMax,
-      heroAtkBase: opts.heroAtkBase,
-    });
+    // V3-H B2: restore from snapshot if present, otherwise create fresh hero.
+    this.hero = opts.heroSnapshot
+      ? HeroEntity.restore(opts.heroSnapshot)
+      : HeroEntity.create({
+          seed: opts.seed,
+          heroHpMax: opts.heroHpMax,
+          heroAtkBase: opts.heroAtkBase,
+        });
     this.ai = new HeroDecisionAI(this.hero, { seed: opts.seed, traits: opts.traits });
     this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef));
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
@@ -101,6 +110,23 @@ export class CycleControllerV2 {
       return events;
     }
     const beforeChapter = this.hero.chapter;
+
+    // V3-H F5: trial 은 controller 에서 직접 처리 (fieldLevel / damping 필요)
+    if (kind === 'trial') {
+      const trialEvents = this.resolveTrialEncounter(landmarkId);
+      const agingMulTrial = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+      this.hero.tickAge(agingMulTrial);
+      if (this.hero.chapter !== beforeChapter) {
+        trialEvents.push({
+          type: 'chapter_transition',
+          fromChapter: beforeChapter,
+          toChapter: this.hero.chapter,
+          atAge: this.hero.age,
+        });
+      }
+      return trialEvents;
+    }
+
     if (this.getBuffSnapshot) {
       const snap = this.getBuffSnapshot();
       this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
@@ -134,7 +160,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'battle',
-          narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR }),
+          narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR }, this.rng.int(100000)),
           payload: { enemyId: landmarkId, expGain: ev.expGain },
         });
         if (ev.dropId) {
@@ -144,7 +170,7 @@ export class CycleControllerV2 {
           this.recordToStore({
             age: this.hero.age,
             type: 'drop',
-            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }),
+            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }, this.rng.int(100000)),
             payload: { itemId: ev.dropId },
           });
         }
@@ -160,7 +186,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'skillLearned',
-          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }),
+          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }, this.rng.int(100000)),
           payload: { skillId: ev.skillId, atkBefore: ev.atkBefore, atkAfter: ev.atkAfter },
         });
       }
@@ -168,15 +194,36 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'shrine',
-          narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }),
+          narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }, this.rng.int(100000)),
           payload: { landmarkId: ev.landmarkId },
+        });
+      }
+      if (ev.type === 'meditation_done') {
+        // V3-H F4: shrine 20% 변형 — pious +3 (이미 EncounterEngine 에서 조정됨), saga 기록
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'meditation',
+          narrativeText: `${this.hero.age}세에 사당에서 깊은 명상에 잠겼다 — 신앙이 깊어졌다`,
+          payload: { landmarkId: ev.landmarkId },
+        });
+      }
+      if (ev.type === 'sightseeing_arrived') {
+        // V3-H F3: 절경 랜드마크 — personality dim +1 (랜덤)
+        const DIMS = ['heroic', 'pious', 'merciful'] as const;
+        const dim = DIMS[this.rng.int(DIMS.length)]!;
+        this.hero.personality.adjust(dim, 1);
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'sightseeing',
+          narrativeText: `${ev.landmarkNameKR}에서 잠시 멈춰섰다`,
+          payload: { dim, landmarkId: ev.landmarkId },
         });
       }
       if (ev.type === 'moral_choice') {
         this.recordToStore({
           age: this.hero.age,
           type: 'moralChoice',
-          narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }),
+          narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }, this.rng.int(100000)),
           payload: { choice: ev.choice, dim: ev.dim, delta: ev.delta },
         });
       }
@@ -190,8 +237,10 @@ export class CycleControllerV2 {
             age: this.hero.age,
             cause: ev.cause,
             enemyNameKR: enemyType?.nameKR,
+            oldLevel: ev.oldLevel,
+            newLevel: ev.newLevel,
           }),
-          payload: {},
+          payload: { oldLevel: ev.oldLevel, newLevel: ev.newLevel },
         });
       }
     }
@@ -204,7 +253,7 @@ export class CycleControllerV2 {
         type: 'levelUp',
         narrativeText: NarrativeGenerator.forLevelUpBatch({
           age: this.hero.age, fromLevel: levelFrom, toLevel: levelTo, count: levelCount,
-        }),
+        }, this.rng.int(100000)),
         payload: { from: levelFrom, to: levelTo, count: levelCount },
       });
     }
@@ -219,7 +268,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'jobUnlock',
-          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }),
+          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }, this.rng.int(100000)),
           payload: { jobId: j.jobId, tier: j.tier },
         });
       }
@@ -302,6 +351,29 @@ export class CycleControllerV2 {
       events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
     }
 
+    // V3-H F6: season transition check (after age tick + NPC tick).
+    // Note: stagger/trial early-return paths above also tick age, so a season
+    // crossing in those paths is caught on the following regular arrival — one
+    // arrival late, which is intentional (stagger is a recovery beat).
+    const newSeason = seasonForAge(this.hero.age);
+    const currentMeta = useGameStore.getState().meta;
+    if (newSeason !== currentMeta.season.current) {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: {
+          ...s.meta,
+          season: { current: newSeason, startedAtAge: Math.floor(this.hero.age) },
+        },
+      }));
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'seasonChange',
+        narrativeText: `계절이 바뀌었다 — ${seasonNameKR(newSeason)}`,
+        payload: { season: newSeason },
+      });
+      events.push({ type: 'season_changed', season: newSeason });
+    }
+
     return events;
   }
 
@@ -315,9 +387,57 @@ export class CycleControllerV2 {
         age: this.hero.age,
         yearsBack: years,
         rejuvenationCount: this.hero.rejuvenationCount,
-      }),
+      }, this.rng.int(100000)),
       payload: { years, rejuvenationCount: this.hero.rejuvenationCount },
     });
+  }
+
+  /** V3-H F5: 시련의 제단 — fieldLevel * 2 강도의 적과 모의 전투.
+   *  승리: LV +3 / 패배: LV ×0.85 (최소 1). */
+  private resolveTrialEncounter(landmarkId: string): OverworldEvent[] {
+    const events: OverworldEvent[] = [];
+    const meta = useGameStore.getState().meta;
+    const heroCol = this.hero.gridX;
+    const fieldLv = fieldLevelAtColumn(this.currentRealmId ?? 'base', heroCol);
+    const trialLv = Math.max(1, fieldLv * 2);
+    const buff6 = getFieldDiffThreshold(meta);
+    const damping = computeFieldDamping(this.hero.level, trialLv, buff6);
+    const heroAtk = Math.max(1, Math.floor(this.hero.atk * damping));
+    const enemyHp = trialLv * 30;
+    const enemyAtk = trialLv * 2;
+
+    let eHp = enemyHp;
+    let hHp = this.hero.hp;
+    while (eHp > 0 && hHp > 0) {
+      eHp -= heroAtk;
+      if (eHp > 0) hHp -= enemyAtk;
+    }
+
+    if (eHp <= 0) {
+      // 승리
+      this.hero.level += 3;
+      this.hero.recomputeStats();
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'trial',
+        narrativeText: `${this.hero.age}세에 시련을 이겨냈다 — LV +3`,
+        payload: { trialLv, outcome: 'win', landmarkId },
+      });
+      events.push({ type: 'trial_resolved', trialLv, outcome: 'win' });
+    } else {
+      // 패배
+      const oldLv = this.hero.level;
+      this.hero.level = Math.max(1, Math.floor(this.hero.level * 0.85));
+      this.hero.recomputeStats();
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'trial',
+        narrativeText: `${this.hero.age}세에 시련에 무너졌다 — LV ${oldLv} → ${this.hero.level}`,
+        payload: { trialLv, outcome: 'lose', oldLevel: oldLv, newLevel: this.hero.level, landmarkId },
+      });
+      events.push({ type: 'trial_resolved', trialLv, outcome: 'lose', oldLevel: oldLv, newLevel: this.hero.level });
+    }
+    return events;
   }
 
   private recordToStore(event: SagaEvent): void {

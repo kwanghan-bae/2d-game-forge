@@ -178,6 +178,8 @@ export interface RunState {
   currentRealmId: RealmId;
   /** V3-E — 현재 run 의 NPC roster. */
   npcs: NpcEntity[];
+  /** V3-H B2 — 마지막 저장 시점의 hero snapshot. null = 새 cycle 시작 필요. */
+  heroSnapshot: import('./hero/HeroEntity').HeroSnapshot | null;
 }
 
 export type BuffId =
@@ -210,6 +212,14 @@ export interface EternalSagaState {
   chaptersByEra: Record<string, { eraKey: string; chapter: import('./hero/HeroLifecycle').Chapter; rejuvCount: number; events: import('./saga/SagaTypes').SagaEvent[] }>;
   rejuvenationCount: number;
   realmTransitions: Array<{ from: RealmId; to: RealmId; atAge: number; eraKey: string }>;
+}
+
+export type SeasonId = 'spring' | 'summer' | 'fall' | 'winter';
+
+export interface SeasonState {
+  current: SeasonId;
+  /** 마지막 transition 시점의 hero age. */
+  startedAtAge: number;
 }
 
 export interface MetaState {
@@ -291,6 +301,8 @@ export interface MetaState {
   unlockedRealms: RealmId[];
   /** V3-F — 무한 saga (재생 chapter 누적). */
   eternalSaga: EternalSagaState;
+  /** V3-H — 현재 계절 (cycle 기반, hero age 0/15/30/45 마다 전환). */
+  season: SeasonState;
 }
 
 // Phase G — Ascension Tree (성좌)

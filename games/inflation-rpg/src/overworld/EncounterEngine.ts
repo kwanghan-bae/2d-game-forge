@@ -1,6 +1,6 @@
 import type { SeededRng } from '../cycle/SeededRng';
 import type { HeroEntity } from '../hero/HeroEntity';
-import type { LandmarkKind } from '../data/landmarks';
+import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import type { OverworldEvent } from './OverworldEvents';
 import { ENEMY_DROPS, BOSS_DROPS } from './dropTable';
 import {
@@ -17,8 +17,8 @@ const BOSS_HP_MUL = 4;
 const BOSS_ATK_MUL = 2;
 const ENEMY_EXP_BASE = 12;
 const BOSS_EXP_BASE = 60;
-const DROP_RATE = 0.3;
-const SHRINE_SKILL_GRANT_RATE = 0.4;
+const DROP_RATE = 0.36;           // V3-H F2: +20% (was 0.3)
+const SHRINE_SKILL_GRANT_RATE = 0.48; // V3-H F2: +20% (was 0.4)
 const SHRINE_HEAL_FRACTION = 0.4;
 const MERCIFUL_PROC_RATE = 0.15;
 const MERCIFUL_DRIFT = 3;
@@ -56,10 +56,13 @@ export class EncounterEngine {
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
       if (hero.staggered) {
+        // V3-H E1: hero died in battle — apply -10% level penalty and emit event.
+        const { oldLevel, newLevel } = hero.applyDeathPenalty();
+        events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
         return events;
       }
       const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
-      const baseDropOdds = isBoss ? 0.8 : DROP_RATE;
+      const baseDropOdds = isBoss ? 0.96 : DROP_RATE; // V3-H F2: boss 0.8→0.96 (+20%)
       const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0));
       const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss) : null;
       if (dropId) hero.addEquipment(dropId);
@@ -100,14 +103,22 @@ export class EncounterEngine {
       const healAmount = Math.floor(hero.hpMax * 0.25);
       hero.heal(healAmount);
     } else if (kind === 'shrine') {
-      const before = hero.hp;
-      hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
-      const healed = hero.hp - before;
-      events.push({ type: 'shrine_visited', landmarkId, healed });
-      if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
-        const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
-        if (learn) {
-          events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
+      if (this.rng.chance(0.2)) {
+        // V3-H F4: meditation 변형 (20%) — pious +3, 완전 회복, 추가 aging 0.5 tick
+        hero.personality.adjust('pious', 3);
+        hero.heal(hero.hpMax); // 완전 회복
+        hero.tickAge(0.5);     // 명상에 소요되는 시간
+        events.push({ type: 'meditation_done', landmarkId });
+      } else {
+        const before = hero.hp;
+        hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
+        const healed = hero.hp - before;
+        events.push({ type: 'shrine_visited', landmarkId, healed });
+        if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
+          const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
+          if (learn) {
+            events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
+          }
         }
       }
     } else if (kind === 'cave') {
@@ -131,6 +142,15 @@ export class EncounterEngine {
         hero.personality.adjust('moral', 2);
         events.push({ type: 'moral_choice', choice: 'resist_bandits', dim: 'moral', delta: 2, nameKR: '강도단에 맞서 약자를 지켰다' });
       }
+    } else if (kind === 'sightseeing') {
+      // V3-H F3: 절경 랜드마크 — sightseeing_arrived 를 emit; 실제 personality 조정은
+      // CycleControllerV2.handleArrival 에서 rng 기반으로 처리.
+      const lmType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id));
+      events.push({
+        type: 'sightseeing_arrived',
+        landmarkId,
+        landmarkNameKR: lmType?.nameKR ?? '절경',
+      });
     } else {
       // V1c-1 personality drift landmarks (watchtower / treasure_cave /
       // holy_ruin / crossroads). The catalog lookup is exhaustive for these

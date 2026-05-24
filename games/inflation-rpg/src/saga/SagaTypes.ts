@@ -11,7 +11,12 @@ export type SagaEventType =
   | 'shrine'
   | 'moralChoice'
   | 'rejuvenation'
-  | 'death';
+  | 'death'
+  // V3-H F3/F4/F5: new event types
+  | 'sightseeing'
+  | 'meditation'
+  | 'trial'
+  | 'seasonChange';
 
 export type DeathCause = '전사' | '자연사' | '영광스러운죽음' | '비극';
 

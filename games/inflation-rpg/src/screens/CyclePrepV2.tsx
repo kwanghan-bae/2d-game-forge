@@ -7,9 +7,11 @@ import { useGameStore } from '../store/gameStore';
 interface Props {
   onStart: () => void;
   onCancel: () => void;
+  /** V3-H B2: clear persisted hero snapshot before starting a new cycle. */
+  onClearSnapshot?: () => void;
 }
 
-export function CyclePrepV2({ onStart, onCancel }: Props) {
+export function CyclePrepV2({ onStart, onCancel, onClearSnapshot }: Props) {
   const startCycle = useCycleStoreV2(s => s.start);
   const atkBaseBonus = useGameStore(s => s.meta.atkBaseBonus ?? 0);
   const hpBaseBonus = useGameStore(s => s.meta.hpBaseBonus ?? 0);
@@ -20,11 +22,14 @@ export function CyclePrepV2({ onStart, onCancel }: Props) {
   const preview = useMemo(() => HeroSpawner.spawn(new SeededRng(previewSeed)), [previewSeed]);
 
   const handleStart = () => {
+    // V3-H B2: clear any persisted snapshot so fresh hero spawns (not resume).
+    onClearSnapshot?.();
     startCycle({
       seed: previewSeed,
       traits: [],
       heroHpMax: 100 + hpBaseBonus,
       heroAtkBase: 50 + atkBaseBonus,
+      heroSnapshot: null,  // explicit null overrides run.heroSnapshot in cycleSliceV2.start
     });
     onStart();
   };

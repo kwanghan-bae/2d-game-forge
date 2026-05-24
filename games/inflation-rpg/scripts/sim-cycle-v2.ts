@@ -17,7 +17,9 @@ import { landmarkToCandidate, type PlacedLandmark } from '../src/overworld/Landm
 import { LANDMARK_TYPES } from '../src/data/landmarks';
 import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../src/data/enemyTiers';
 import { SeededRng } from '../src/cycle/SeededRng';
+import { findRealm } from '../src/data/realms';
 import type { TraitId } from '../src/cycle/traits';
+import type { RealmId } from '../src/types';
 import type { OverworldEvent } from '../src/overworld/OverworldEvents';
 import type { CycleSaga } from '../src/saga/SagaTypes';
 import type { Chapter } from '../src/hero/HeroLifecycle';
@@ -139,12 +141,27 @@ function runOneCycle(
 ): { result: SimV2CycleResult; events: StampedEvent[]; saga: CycleSaga } {
   const startAtkBase = opts.heroAtkBase + (opts.atkBonus ?? 0);
   const startHpBase = opts.heroHpMax + (opts.hpBonus ?? 0);
+
+  // V3-H Bug C: realm tracking state for onBossKill wiring
+  let currentRealmId: RealmId = 'base';
+
   const ctrl = new CycleControllerV2({
     seed,
     traits: opts.traits ?? [],
     heroHpMax: startHpBase,
     heroAtkBase: startAtkBase,
+    onBossKill: (current: RealmId) => {
+      const realm = findRealm(current);
+      if (realm.nextRealm) {
+        return realm.nextRealm;
+      }
+      return null;
+    },
   });
+
+  // V3-H Bug C: set initial realm state on controller
+  ctrl.setCurrentRealmId(currentRealmId);
+  ctrl.setUnlockedRealms(['base']);
   const hero = ctrl.getHero();
   const ai = ctrl.getDecisionAI();
   const layout = generateMapLayout(seed);
@@ -204,6 +221,9 @@ function runOneCycle(
         shrineVisits += 1;
       } else if ((ev as { type: string }).type === 'moral_choice') {
         moralChoices += 1;
+      } else if (ev.type === 'realm_entered') {
+        // V3-H Bug C: track current realm for sim continuity
+        currentRealmId = ev.realmId;
       }
     }
 
