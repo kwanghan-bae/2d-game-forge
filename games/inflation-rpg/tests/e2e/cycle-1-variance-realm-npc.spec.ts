@@ -44,20 +44,24 @@ test.describe('Cycle 1 — Variance + Realm Tone + NPC Saga', () => {
       } | undefined;
       if (!store) throw new Error('zustand store not exposed');
       const api = store.getState();
+      // Cycle-3 F1: variant catalog 의 leading `(N세) ` prefix 가 자연어
+      // `N세에 ...` 로 정정됨에 맞춰 e2e 인풋도 갱신. 검증 자체는 본문
+      // 부분 문자열 (심해의 문 등) 기반이라 어느 형태든 통과하지만 실제
+      // 코드와 형태 일치 유지.
       api.recordSagaEvent(
-        { age: 12, type: 'realmEnter', narrativeText: '(12세) 바다 안개가 발치까지 올라왔다 — 심해의 문이 열렸다.', payload: { from: 'base', to: 'sea' } },
+        { age: 12, type: 'realmEnter', narrativeText: '12세에 바다 안개가 발치까지 올라왔다 — 심해의 문이 열렸다.', payload: { from: 'base', to: 'sea' } },
         '어린시절',
       );
       api.recordSagaEvent(
-        { age: 18, type: 'npcEncounter', narrativeText: '(18세) 한 늙은 자가 길을 막았다 — 그의 눈은 자신의 미래를 보고 있었다. 멘토를 만났다.', payload: { kind: 'mentor' } },
+        { age: 18, type: 'npcEncounter', narrativeText: '18세에 한 늙은 자가 길을 막았다 — 그의 눈은 자신의 미래를 보고 있었다. 멘토를 만났다.', payload: { kind: 'mentor' } },
         '청년기',
       );
       api.recordSagaEvent(
-        { age: 32, type: 'familyEvent', narrativeText: '(32세) 종소리 아래 결혼식을 올렸다.', payload: { eventKind: 'marriage' } },
+        { age: 32, type: 'familyEvent', narrativeText: '32세에 종소리 아래 결혼식을 올렸다.', payload: { eventKind: 'marriage' } },
         '장년기',
       );
       api.recordSagaEvent(
-        { age: 55, type: 'npcDeath', narrativeText: '(55세) 멘토가 침대에서 일어나지 못했다 — 한 시대가 끝났다.', payload: { kind: 'mentor' } },
+        { age: 55, type: 'npcDeath', narrativeText: '55세에 멘토가 침대에서 일어나지 못했다 — 한 시대가 끝났다.', payload: { kind: 'mentor' } },
         '노년기',
       );
     });
