@@ -13,24 +13,19 @@ import { writeFileSync, mkdirSync, openSync, writeSync, closeSync } from 'node:f
 import { join } from 'node:path';
 import { CycleControllerV2 } from '../src/overworld/CycleControllerV2';
 import { generateMapLayout } from '../src/overworld/mapLayout';
-import { landmarkToCandidate, type PlacedLandmark } from '../src/overworld/Landmark';
+import { landmarkToCandidate, filterCandidatesByRealm, type PlacedLandmark } from '../src/overworld/Landmark';
 import { LANDMARK_TYPES } from '../src/data/landmarks';
-import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../src/data/enemyTiers';
 import { SeededRng } from '../src/cycle/SeededRng';
 import { findRealm } from '../src/data/realms';
 import { computeLightDelta } from '../src/overworld/lightEmit';
 import { useGameStore } from '../src/store/gameStore';
+import { pickRespawnPlacement } from '../src/overworld/respawn';
 import type { TraitId } from '../src/cycle/traits';
 import type { RealmId } from '../src/types';
 import type { OverworldEvent } from '../src/overworld/OverworldEvents';
 import type { CycleSaga } from '../src/saga/SagaTypes';
 import type { Chapter } from '../src/hero/HeroLifecycle';
 
-const ENEMY_ZONE_COL_RANGES: Record<EnemyZone, { xMin: number; xMax: number }> = {
-  forest:    { xMin: 3,  xMax: 7  },
-  plains:    { xMin: 8,  xMax: 11 },
-  mountains: { xMin: 12, xMax: 16 },
-};
 const GRID_H = 12;
 
 export interface SimV2Options {
@@ -220,11 +215,18 @@ function runOneCycle(
   let endCause = 'unknown';
 
   while (arrivals < maxArrivals) {
-    const candidates = layout.landmarks.filter(l => !l.consumed);
-    if (candidates.length === 0) { endCause = 'no_landmarks'; break; }
-    const chosenCandidate = ai.chooseDestination(candidates.map(landmarkToCandidate));
-    if (!chosenCandidate) { endCause = 'no_choice'; break; }
-    const target = candidates.find(c => c.instanceId === chosenCandidate.id);
+    // Cycle-12 L1 — mirror OverworldScene.pickNextDestination: drop landmarks
+    // that fall outside the hero's current realm BEFORE the AI scores them.
+    // Without this filter the sim picks from a larger pool than the live game
+    // ever sees, and the cycle-12 respawn bug (base-only zoneForColumn) stayed
+    // invisible to the sim while terminating the live game with '무위'. Sim
+    // PASS must reflect what the dev server measures.
+    const unconsumed = layout.landmarks.filter(l => !l.consumed);
+    const reachable = filterCandidatesByRealm(unconsumed, currentRealmId);
+    if (reachable.length === 0) { endCause = '무위'; break; }
+    const chosenCandidate = ai.chooseDestination(reachable.map(landmarkToCandidate));
+    if (!chosenCandidate) { endCause = '무위'; break; }
+    const target = reachable.find(c => c.instanceId === chosenCandidate.id);
     if (!target) { endCause = 'target_not_found'; break; }
 
     const typeId = target.type.id;
@@ -235,6 +237,18 @@ function runOneCycle(
 
     const arrivalEv: OverworldEvent = { type: 'arrived_at', landmarkId: target.instanceId, landmarkKind: target.type.kind };
     stamped.push({ cycleSeed: seed, arrival: arrivals, heroAge: hero.age, heroLevel: hero.level, heroHp: hero.hp, ev: arrivalEv });
+
+    // Cycle-12 L1 — sync hero.gridX/Y to the target before resolving the
+    // arrival. OverworldScene tweens the hero to the landmark cell before
+    // firing 'arrived_at', so the hero's column equals the landmark column
+    // at resolve time. The controller's resolveTrialEncounter +
+    // fieldLevelAtColumn read hero.gridX, so without this mirror the sim's
+    // trial damping is computed at col 0 (lvStart of the realm) instead of
+    // the actual trial altar column. Doesn't simulate intermediate
+    // pathfinding but matches the resolve-time invariant the controller
+    // depends on.
+    hero.gridX = target.gridX;
+    hero.gridY = target.gridY;
 
     const events = ctrl.handleArrival(target.type.kind, target.instanceId);
     arrivals += 1;
@@ -321,15 +335,21 @@ function respawnEnemy(
   counter: number,
   heroChapter: Chapter,
 ): void {
-  const zone: EnemyZone =
-    zoneForColumn(consumed.gridX) ?? ENEMY_ZONES[rng.int(ENEMY_ZONES.length)]!;
-  const range = ENEMY_ZONE_COL_RANGES[zone];
-  const typeId = selectEnemyTypeId(zone, heroChapter);
-  const landmarkType = LANDMARK_TYPES.find(t => t.id === typeId);
+  // Cycle-12 L1 — delegate to the shared pure helper. Base realm keeps
+  // V1e zone-banded narrative; non-base realms place inside `realm.columnRange`
+  // with an enemy from `realm.enemyRoster`. See `src/overworld/respawn.ts`
+  // for the root-cause writeup.
+  const placement = pickRespawnPlacement(consumed.gridX, heroChapter, GRID_H, rng);
+  if (!placement) return;
+  const landmarkType = LANDMARK_TYPES.find(t => t.id === placement.typeId);
   if (!landmarkType) return;
-  const x = range.xMin + rng.int(range.xMax - range.xMin + 1);
-  const y = rng.int(GRID_H);
-  landmarks.push({ instanceId: `${typeId}_respawn_${counter}`, type: landmarkType, gridX: x, gridY: y, consumed: false });
+  landmarks.push({
+    instanceId: `${placement.typeId}_respawn_${counter}`,
+    type: landmarkType,
+    gridX: placement.gridX,
+    gridY: placement.gridY,
+    consumed: false,
+  });
 }
 
 function buildSummary(results: SimV2CycleResult[]): SimV2Summary {
