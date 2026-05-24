@@ -210,7 +210,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           endedRef.current = true;
           // V3-H B2: cycle ends naturally → clear hero snapshot so next visit spawns fresh hero.
           useGameStore.getState().clearHeroSnapshot();
-          endCycle();
+          // Cycle-5 F3: forward optional cause (e.g. '무위') so the saga
+          // records pathfinder-exhausted runs distinctly from '자연사'.
+          endCycle(event.cause);
           onCycleEnd();
         }
       },

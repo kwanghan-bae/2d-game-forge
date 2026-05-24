@@ -84,6 +84,10 @@ export class NarrativeGenerator {
         return `${opts.age}세에 영웅으로서 생을 마감했다.`;
       case '비극':
         return `${opts.age}세에 비극적인 최후를 맞았다.`;
+      case '무위':
+        // Cycle-5 F3: pathfinder candidates-exhausted. 영웅이 갈 곳을 잃어
+        // 자취를 감춘 종결. 향후 동급 stale-realm bug 즉시 visible.
+        return `${opts.age}세에 갈 길을 잃어 자취를 감추었다.`;
     }
   }
 }

@@ -19,7 +19,10 @@ export type OverworldEvent =
   | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }
   | { type: 'npc_died'; npcInstanceId: string }
   | { type: 'family_event'; eventKind: 'marriage' | 'child_birth' | 'parent_death' | 'child_grown'; npcInstanceId?: string }
-  | { type: 'cycle_ended' }
+  // Cycle-5 F3: optional cause discriminates pathfinder-exhausted (`'무위'`)
+  // from natural cycle end. Falsy/undefined falls through to controller default
+  // `'자연사'` so existing tests / abandon flows stay unchanged.
+  | { type: 'cycle_ended'; cause?: import('../saga/SagaTypes').DeathCause }
   // V3-H F3: sightseeing landmark arrived
   | { type: 'sightseeing_arrived'; landmarkId: string; landmarkNameKR: string }
   // V3-H F4: meditation (shrine 20% 변형)

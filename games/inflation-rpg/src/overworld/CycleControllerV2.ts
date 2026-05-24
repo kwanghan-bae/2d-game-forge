@@ -73,6 +73,15 @@ export class CycleControllerV2 {
     this.unlockedRealms = realms;
   }
 
+  /** Cycle-5 F3: pre-finalize injection point for non-'자연사' causes that the
+   *  controller cannot detect on its own (e.g. '무위' = pathfinder
+   *  candidates-exhausted, which the OverworldScene observes and forwards
+   *  via the `cycle_ended` event payload). Only assigned when truthy; a real
+   *  in-game death already set `endCause` during `handleArrival`. */
+  setEndCause(cause: DeathCause): void {
+    this.endCause = cause;
+  }
+
   getUnlockedRealms(): readonly import('../types').RealmId[] { return this.unlockedRealms; }
   getCurrentRealmId(): import('../types').RealmId | null { return this.currentRealmId; }
   getHero(): HeroEntity { return this.hero; }
