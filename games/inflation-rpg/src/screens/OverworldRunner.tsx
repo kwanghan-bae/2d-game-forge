@@ -9,6 +9,7 @@ import { SpendModal } from './SpendModal';
 import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
+import { seasonEmoji, seasonNameKR, seasonBonus } from '../season/SeasonState';
 
 interface Props {
   onCycleEnd: () => void;
@@ -29,7 +30,13 @@ async function bootPhaser(
   initialSpeed: number,
   currentRealm?: import('../types').RealmId,
   unlockedRealms?: readonly import('../types').RealmId[],
-): Promise<{ destroy: () => void; setSpeed: (m: number) => void; setUnlockedRealms: (r: readonly import('../types').RealmId[]) => void }> {
+  currentSeason?: import('../types').SeasonId,
+): Promise<{
+  destroy: () => void;
+  setSpeed: (m: number) => void;
+  setUnlockedRealms: (r: readonly import('../types').RealmId[]) => void;
+  setSeason: (s: import('../types').SeasonId) => void;
+}> {
   const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
     import('phaser'),
     import('../overworld/OverworldScene'),
@@ -43,7 +50,7 @@ async function bootPhaser(
     scene: OverworldScene,
     physics: { default: 'arcade' },
   });
-  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed, currentRealm, unlockedRealms });
+  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed, currentRealm, unlockedRealms, currentSeason });
   const getScene = () => game.scene.getScene('OverworldScene') as InstanceType<typeof OverworldScene> | null;
   const setSpeed = (m: number) => {
     getScene()?.setSpeed(m);
@@ -51,7 +58,10 @@ async function bootPhaser(
   const setUnlockedRealms = (r: readonly import('../types').RealmId[]) => {
     getScene()?.setUnlockedRealms(r);
   };
-  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms };
+  const setSeason = (s: import('../types').SeasonId) => {
+    getScene()?.setSeason(s);
+  };
+  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setSeason };
 }
 
 const SPEED_PRESETS = [1, 2, 5, 10] as const;
@@ -80,6 +90,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const setSceneUnlockedRealmsRef = useRef<((r: readonly import('../types').RealmId[]) => void) | null>(null);
+  const setSceneSeasonRef = useRef<((s: import('../types').SeasonId) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -134,7 +145,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           const evs = controller.handleArrival(event.landmarkKind, event.landmarkId);
           const { delta: rawDelta } = computeLightDelta(evs, event.landmarkKind);
           if (rawDelta > 0) {
-            const rateMul = getLightRateMul(useGameStore.getState().meta);
+            const curMeta = useGameStore.getState().meta;
+            // V3-H F6: spring bonus lightRateMul stacked on top of meta rateMul.
+            const rateMul = getLightRateMul(curMeta) * seasonBonus(curMeta.season.current).lightRateMul;
             const finalDelta = rawDelta * rateMul;
             useGameStore.setState(s => ({
               ...s,
@@ -173,6 +186,11 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           if (realmUnlocked && realmUnlocked.type === 'realm_unlocked') {
             setSceneUnlockedRealmsRef.current?.(controller.getUnlockedRealms());
           }
+          // V3-H F6: season changed → update scene bg tint. Store already updated by controller.
+          const seasonChanged = evs.find(e => e.type === 'season_changed');
+          if (seasonChanged && seasonChanged.type === 'season_changed') {
+            setSceneSeasonRef.current?.(seasonChanged.season);
+          }
           // V3-H E1 + B3: hero_died comes from handleArrival (EncounterEngine emits it).
           // It is NOT a top-level OverworldScene event — move detection here alongside
           // the other evs.find() checks so the auto-rejuv timer actually fires.
@@ -205,15 +223,18 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       speed * moveMul,
       controller.getCurrentRealmId() ?? undefined,
       controller.getUnlockedRealms(),
+      useGameStore.getState().meta.season.current,
     ).then(g => {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;
       setSceneUnlockedRealmsRef.current = g.setUnlockedRealms;
+      setSceneSeasonRef.current = g.setSeason;
     });
 
     return () => {
       setSceneSpeedRef.current = null;
       setSceneUnlockedRealmsRef.current = null;
+      setSceneSeasonRef.current = null;
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
         chapterOverlayTimerRef.current = null;
@@ -256,6 +277,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, flexWrap: 'wrap', width: '100%' }}>
           <span data-testid="hud-light">빛 {Math.floor(meta.light ?? 0)}</span>
           <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
+          <span data-testid="hud-season">{seasonEmoji(meta.season.current)} {seasonNameKR(meta.season.current)}</span>
           <span data-testid="hud-realm">
             {(() => {
               const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);

@@ -25,4 +25,6 @@ export type OverworldEvent =
   // V3-H F4: meditation (shrine 20% 변형)
   | { type: 'meditation_done'; landmarkId: string }
   // V3-H F5: trial result
-  | { type: 'trial_resolved'; trialLv: number; outcome: 'win' | 'lose'; oldLevel?: number; newLevel?: number };
+  | { type: 'trial_resolved'; trialLv: number; outcome: 'win' | 'lose'; oldLevel?: number; newLevel?: number }
+  // V3-H F6: season change
+  | { type: 'season_changed'; season: import('../types').SeasonId };

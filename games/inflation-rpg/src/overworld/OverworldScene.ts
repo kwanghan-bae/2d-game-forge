@@ -11,7 +11,8 @@ import type { OverworldEvent } from './OverworldEvents';
 import type { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import type { HeroEntity } from '../hero/HeroEntity';
 import { generateMapLayout, GRID_H, GRID_W, TILE_PX, type MapLayout } from './mapLayout';
-import type { RealmId } from '../types';
+import type { RealmId, SeasonId } from '../types';
+import { seasonBgTint } from '../season/SeasonState';
 
 export { generateMapLayout, GRID_H, GRID_W };
 export type { MapLayout };
@@ -34,6 +35,8 @@ interface OverworldSceneData {
   /** T13: current realm and unlocked realms for exit-landmark filter. */
   currentRealm?: RealmId;
   unlockedRealms?: readonly RealmId[];
+  /** V3-H F6: starting season for bg tint. Defaults to 'spring'. */
+  currentSeason?: SeasonId;
 }
 
 export class OverworldScene extends Phaser.Scene {
@@ -51,6 +54,7 @@ export class OverworldScene extends Phaser.Scene {
   private initialSpeed: number = 1;
   private currentRealm: RealmId | undefined;
   private unlockedRealms: readonly RealmId[] | undefined;
+  private currentSeason: SeasonId = 'spring';
 
   constructor() { super('OverworldScene'); }
 
@@ -65,6 +69,7 @@ export class OverworldScene extends Phaser.Scene {
     this.initialSpeed = data.initialSpeed ?? 1;
     this.currentRealm = data.currentRealm;
     this.unlockedRealms = data.unlockedRealms;
+    this.currentSeason = data.currentSeason ?? 'spring';
   }
 
   /** V3-H Bug A: sync the scene's unlockedRealms copy after a realm_unlocked
@@ -82,8 +87,15 @@ export class OverworldScene extends Phaser.Scene {
     this.time.timeScale = clamped;
   }
 
+  /** V3-H F6: update camera background tint when the season changes. */
+  setSeason(s: SeasonId): void {
+    this.currentSeason = s;
+    this.cameras.main.setBackgroundColor(seasonBgTint(s));
+  }
+
   create() {
-    this.cameras.main.setBackgroundColor('#0a0e1a');
+    // V3-H F6: apply season-based bg tint from the start (not hardcoded dark).
+    this.cameras.main.setBackgroundColor(seasonBgTint(this.currentSeason));
     this.cameras.main.setBounds(0, 0, GRID_W * TILE_PX, GRID_H * TILE_PX);
     this.setSpeed(this.initialSpeed);
 
