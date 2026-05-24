@@ -3,8 +3,11 @@ import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
 import { computeLightDelta } from '../overworld/lightEmit';
 import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
+import { REALM_CATALOG } from '../data/realms';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { SpendModal } from './SpendModal';
+import { NpcEncounterModal } from './NpcEncounterModal';
+import { SagaBookModal } from './SagaBookModal';
 
 interface Props {
   onCycleEnd: () => void;
@@ -21,21 +24,23 @@ async function bootPhaser(
   ai: import('../decisionAI/HeroDecisionAI').HeroDecisionAI,
   seed: number,
   initialSpeed: number,
+  currentRealm?: import('../types').RealmId,
+  unlockedRealms?: readonly import('../types').RealmId[],
 ): Promise<{ destroy: () => void; setSpeed: (m: number) => void }> {
-  const [Phaser, { OverworldScene, GRID_W, GRID_H }] = await Promise.all([
+  const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
     import('phaser'),
     import('../overworld/OverworldScene'),
   ]);
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: container,
-    width: GRID_W * 32,
+    width: 640,   // V3-D: viewport fixed at 640px regardless of GRID_W
     height: GRID_H * 32,
     backgroundColor: '#0a0e1a',
     scene: OverworldScene,
     physics: { default: 'arcade' },
   });
-  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed });
+  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed, currentRealm, unlockedRealms });
   const setSpeed = (m: number) => {
     const scene = game.scene.getScene('OverworldScene') as InstanceType<typeof OverworldScene> | null;
     scene?.setSpeed(m);
@@ -51,16 +56,21 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
   const meta = useGameStore(s => s.meta);
+  const run = useGameStore(s => s.run);
   const containerRef = useRef<HTMLDivElement>(null);
   const [, setHudTick] = useState(0);
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
+  const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
+  const [sagaModalOpen, setSagaModalOpen] = useState(false);
+  const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveMul = getMoveSpeedMul(meta);
 
   useEffect(() => {
@@ -98,6 +108,20 @@ export function OverworldRunner({ onCycleEnd }: Props) {
               chapterOverlayTimerRef.current = null;
             }, 2000);
           }
+          const npcEncounter = evs.find(e => e.type === 'npc_encounter');
+          if (npcEncounter && npcEncounter.type === 'npc_encounter') {
+            setNpcModal({ npcInstanceId: npcEncounter.npcInstanceId });
+          }
+          const realmEntered = evs.find(e => e.type === 'realm_entered');
+          if (realmEntered && realmEntered.type === 'realm_entered') {
+            useGameStore.getState().setCurrentRealm(realmEntered.realmId);
+            setRealmOverlay({ realmId: realmEntered.realmId, key: Date.now() });
+            if (realmOverlayTimerRef.current) clearTimeout(realmOverlayTimerRef.current);
+            realmOverlayTimerRef.current = setTimeout(() => {
+              setRealmOverlay(null);
+              realmOverlayTimerRef.current = null;
+            }, 2000);
+          }
         }
         if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
           endedRef.current = true;
@@ -109,6 +133,8 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       controller.getDecisionAI(),
       controller.getSeed(),
       speed * moveMul,
+      controller.getCurrentRealmId() ?? undefined,
+      controller.getUnlockedRealms(),
     ).then(g => {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;
@@ -119,6 +145,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
         chapterOverlayTimerRef.current = null;
+      }
+      if (realmOverlayTimerRef.current) {
+        clearTimeout(realmOverlayTimerRef.current);
+        realmOverlayTimerRef.current = null;
       }
       destroy?.();
     };
@@ -171,6 +201,13 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         >
           신의 메뉴
         </button>
+        <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
+        <span data-testid="hud-realm" style={{ marginLeft: 8 }}>
+          {(() => {
+            const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
+            return `🌍 ${r?.nameKR ?? '?'} (${meta.unlockedRealms.length}/${REALM_CATALOG.length})`;
+          })()}
+        </span>
         <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
           {SPEED_PRESETS.map(s => (
             <button
@@ -188,6 +225,8 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
       {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
+      {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
+      {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
 
       <style>{`
         @keyframes forgeChapterFade {
@@ -208,6 +247,32 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         >
           <div style={{ fontSize: 28, fontWeight: 700 }}>📖 {chapterOverlay.toChapter}</div>
           <div style={{ fontSize: 14, opacity: 0.7, marginTop: 4 }}>{chapterOverlay.atAge}세</div>
+        </div>
+      )}
+      {realmOverlay && (
+        <div
+          key={realmOverlay.key}
+          style={{
+            position: 'absolute',
+            top: '40%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#ffd54f',
+            fontSize: 24,
+            fontWeight: 700,
+            background: 'rgba(0,0,0,0.7)',
+            padding: '12px 24px',
+            borderRadius: 8,
+            animation: 'forgeChapterFade 2s ease-in-out forwards',
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+          data-testid="realm-entered-overlay"
+        >
+          다음 영역: {(() => {
+            const r = REALM_CATALOG.find(rr => rr.id === realmOverlay.realmId);
+            return r?.nameKR ?? realmOverlay.realmId;
+          })()}
         </div>
       )}
 

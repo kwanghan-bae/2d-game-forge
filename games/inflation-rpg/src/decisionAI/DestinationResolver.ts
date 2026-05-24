@@ -2,6 +2,8 @@ import type { SeededRng } from '../cycle/SeededRng';
 import type { PersonalityState } from '../hero/PersonalityState';
 import type { LandmarkKind } from '../data/landmarks';
 import type { TraitId } from '../cycle/traits';
+import { findRealm } from '../data/realms';
+import type { RealmId } from '../types';
 
 export interface LandmarkCandidate {
   id: string;
@@ -12,6 +14,8 @@ export interface LandmarkCandidate {
 export interface DecisionContext {
   traits: readonly TraitId[];
   personality: PersonalityState;
+  currentRealm?: RealmId;
+  unlockedRealms?: readonly RealmId[];
 }
 
 const WEIGHT_BASE: Record<LandmarkKind, number> = {
@@ -37,12 +41,25 @@ export class DestinationResolver {
   choose(candidates: readonly LandmarkCandidate[], ctx: DecisionContext): LandmarkCandidate | null {
     if (candidates.length === 0) return null;
 
+    // Filter out 'exit' landmarks when the next realm is not yet unlocked.
+    let filtered: readonly LandmarkCandidate[] = candidates;
+    if (ctx.currentRealm && ctx.unlockedRealms) {
+      const realm = findRealm(ctx.currentRealm);
+      filtered = candidates.filter(c => {
+        if (c.kind !== 'exit') return true;
+        if (!realm.nextRealm) return false;
+        return ctx.unlockedRealms!.includes(realm.nextRealm);
+      });
+      // If filtering removed all candidates, fall back to unfiltered list.
+      if (filtered.length === 0) filtered = candidates;
+    }
+
     const personality = ctx.personality;
     const heroic = personality.get('heroic');
     const pious = personality.get('pious');
     const prudent = personality.get('prudent');
 
-    const weighted = candidates.map(c => {
+    const weighted = filtered.map(c => {
       let w = WEIGHT_BASE[c.kind] ?? 1;
       if (c.kind === 'boss')          w += heroic * 1.5;
       if (c.kind === 'enemy')         w += heroic * 0.3;
