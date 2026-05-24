@@ -266,6 +266,18 @@ export class HeroEntity {
     if (this.hp <= 0) this.staggered = true;
   }
 
+  /** V3-H E1: 패배 시 -10% 레벨 패널티.
+   *  staggered=true 를 설정하고 level 을 floor(level × 0.90) 으로 감소 (최소 1).
+   *  recomputeStats() 를 호출해 새 level 에 맞게 hpMax/atk 을 갱신한다.
+   *  oldLevel / newLevel 을 반환해 호출자가 saga narration 에 사용할 수 있게 한다. */
+  applyDeathPenalty(): { oldLevel: number; newLevel: number } {
+    const oldLevel = this.level;
+    this.staggered = true;
+    this.level = Math.max(1, Math.floor(this.level * 0.90));
+    this.recomputeStats();
+    return { oldLevel, newLevel: this.level };
+  }
+
   heal(amount: number): void {
     this.hp = Math.min(this.hpMax, this.hp + amount);
   }

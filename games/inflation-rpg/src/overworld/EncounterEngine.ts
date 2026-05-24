@@ -56,6 +56,9 @@ export class EncounterEngine {
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
       if (hero.staggered) {
+        // V3-H E1: hero died in battle — apply -10% level penalty and emit event.
+        const { oldLevel, newLevel } = hero.applyDeathPenalty();
+        events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
         return events;
       }
       const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
