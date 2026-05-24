@@ -12,6 +12,9 @@ import type { CycleSaga, DeathCause, SagaEvent } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
 import { useGameStore } from '../store/gameStore';
 import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
+import { fieldLevelAtColumn } from '../zone/zoneNavigation';
+import { computeFieldDamping } from '../zone/fieldDamping';
+import { getFieldDiffThreshold } from '../buff/buffEffects';
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -106,6 +109,23 @@ export class CycleControllerV2 {
       return events;
     }
     const beforeChapter = this.hero.chapter;
+
+    // V3-H F5: trial 은 controller 에서 직접 처리 (fieldLevel / damping 필요)
+    if (kind === 'trial') {
+      const trialEvents = this.resolveTrialEncounter(landmarkId);
+      const agingMulTrial = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+      this.hero.tickAge(agingMulTrial);
+      if (this.hero.chapter !== beforeChapter) {
+        trialEvents.push({
+          type: 'chapter_transition',
+          fromChapter: beforeChapter,
+          toChapter: this.hero.chapter,
+          atAge: this.hero.age,
+        });
+      }
+      return trialEvents;
+    }
+
     if (this.getBuffSnapshot) {
       const snap = this.getBuffSnapshot();
       this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
@@ -346,6 +366,54 @@ export class CycleControllerV2 {
       }, this.rng.int(100000)),
       payload: { years, rejuvenationCount: this.hero.rejuvenationCount },
     });
+  }
+
+  /** V3-H F5: 시련의 제단 — fieldLevel * 2 강도의 적과 모의 전투.
+   *  승리: LV +3 / 패배: LV ×0.85 (최소 1). */
+  private resolveTrialEncounter(landmarkId: string): OverworldEvent[] {
+    const events: OverworldEvent[] = [];
+    const meta = useGameStore.getState().meta;
+    const heroCol = this.hero.gridX;
+    const fieldLv = fieldLevelAtColumn(this.currentRealmId ?? 'base', heroCol);
+    const trialLv = Math.max(1, fieldLv * 2);
+    const buff6 = getFieldDiffThreshold(meta);
+    const damping = computeFieldDamping(this.hero.level, trialLv, buff6);
+    const heroAtk = Math.max(1, Math.floor(this.hero.atk * damping));
+    const enemyHp = trialLv * 30;
+    const enemyAtk = trialLv * 2;
+
+    let eHp = enemyHp;
+    let hHp = this.hero.hp;
+    while (eHp > 0 && hHp > 0) {
+      eHp -= heroAtk;
+      if (eHp > 0) hHp -= enemyAtk;
+    }
+
+    if (eHp <= 0) {
+      // 승리
+      this.hero.level += 3;
+      this.hero.recomputeStats();
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'trial',
+        narrativeText: `${this.hero.age}세에 시련을 이겨냈다 — LV +3`,
+        payload: { trialLv, outcome: 'win', landmarkId },
+      });
+      events.push({ type: 'trial_resolved', trialLv, outcome: 'win' });
+    } else {
+      // 패배
+      const oldLv = this.hero.level;
+      this.hero.level = Math.max(1, Math.floor(this.hero.level * 0.85));
+      this.hero.recomputeStats();
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'trial',
+        narrativeText: `${this.hero.age}세에 시련에 무너졌다 — LV ${oldLv} → ${this.hero.level}`,
+        payload: { trialLv, outcome: 'lose', oldLevel: oldLv, newLevel: this.hero.level, landmarkId },
+      });
+      events.push({ type: 'trial_resolved', trialLv, outcome: 'lose', oldLevel: oldLv, newLevel: this.hero.level });
+    }
+    return events;
   }
 
   private recordToStore(event: SagaEvent): void {

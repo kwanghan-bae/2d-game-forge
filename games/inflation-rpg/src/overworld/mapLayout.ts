@@ -108,6 +108,14 @@ export function generateMapLayout(seed: number): MapLayout {
     place(typeId!, col, row, `_sightseeing_${realm.id}`);
   }
 
+  // V3-H F5: trial_altar — non-base realm 당 1개 (시련의 제단)
+  for (const realm of REALM_CATALOG) {
+    if (realm.id === 'base') continue;
+    const [colStart, colEnd] = realm.columnRange;
+    const col = colStart + Math.floor((colEnd - colStart) / 3);
+    place('trial_altar', col, 1, `_trial_${realm.id}`);
+  }
+
   // V3-D / V3-H: realm 별 column band 의 enemy + boss + 양쪽 경계 exit 배치
   for (let idx = 0; idx < REALM_CATALOG.length; idx++) {
     const realm = REALM_CATALOG[idx];
