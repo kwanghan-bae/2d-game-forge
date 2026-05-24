@@ -67,6 +67,12 @@ export class OverworldScene extends Phaser.Scene {
     this.unlockedRealms = data.unlockedRealms;
   }
 
+  /** V3-H Bug A: sync the scene's unlockedRealms copy after a realm_unlocked
+   *  event so DestinationResolver.choose can see the new exit landmark. */
+  setUnlockedRealms(realms: readonly RealmId[]): void {
+    this.unlockedRealms = realms;
+  }
+
   /** Scale both tween duration (movement) and delayedCall (post-arrival pause)
    *  by the same factor so the cycle plays uniformly faster. Callable while
    *  the scene is running — OverworldRunner uses this for the speed buttons. */
