@@ -20,6 +20,9 @@ import { findRealm } from '../src/data/realms';
 import { computeLightDelta } from '../src/overworld/lightEmit';
 import { useGameStore } from '../src/store/gameStore';
 import { pickRespawnPlacement } from '../src/overworld/respawn';
+import { pickStartingRealm, spawnColumnForRealm } from '../src/overworld/realmRotation';
+import { goldFromCycle, spend } from '../src/meta/MetaProgression';
+import { SagaStorage } from '../src/saga/SagaStorage';
 import type { TraitId } from '../src/cycle/traits';
 import type { RealmId } from '../src/types';
 import type { OverworldEvent } from '../src/overworld/OverworldEvents';
@@ -88,6 +91,8 @@ export interface SimV2CycleResult {
   // Cycle-11 C10-B counters — light emitted + auto-rejuv count this cycle.
   lightEmitted: number;
   rejuvCount: number;
+  // Cycle-16 — starting realm for this cycle (chained sim verification).
+  startRealm: RealmId;
 }
 
 export interface SimV2Summary {
@@ -130,7 +135,7 @@ export function runSimV2(opts: SimV2Options): SimV2Output {
 
   for (let i = 0; i < opts.count; i++) {
     const seed = opts.seedStart + i;
-    const { result, events, saga } = runOneCycle(seed, opts, maxArrivals);
+    const { result, events, saga } = runOneCycle(seed, opts, maxArrivals, false);
     results.push(result);
 
     if (outDir) {
@@ -166,25 +171,171 @@ export function runSimV2(opts: SimV2Options): SimV2Output {
   return { results, summary };
 }
 
+/**
+ * Cycle-16 — chained sim driver. State (sagaHistory, unlockedRealms,
+ * atkBaseBonus, hpBaseBonus, sponsorGold, light) carries across cycles via
+ * the live zustand store; this mirrors what the dev server does between
+ * `cycleSliceV2.start()` and `cycleSliceV2.endCycle()` invocations.
+ *
+ * Differences from `runSimV2`:
+ *   - Entry resets meta fields to a clean baseline so a polluted vitest
+ *     worker doesn't carry pre-existing sagaHistory in. Later iterations
+ *     accumulate naturally.
+ *   - Start realm + unlockedRealms are picked from store, not opts. The
+ *     rotation picker (`pickStartingRealm`) reads `meta.sagaHistory.length`,
+ *     identical to the live `cycleSliceV2.start()` path.
+ *   - After each cycle: `SagaStorage.append`, `goldFromCycle` →
+ *     `spend('balanced')`, exactly mirroring `cycleSliceV2.endCycle`.
+ *     Light is NOT reset.
+ *   - `onBossKill` (inside `runOneCycle(chained=true)`) writes the unlock
+ *     into the store so the next iteration's rotation sees it.
+ *
+ * Opts.atkBonus/hpBonus are still honored as the *initial* meta bonus the
+ * chained run starts from (e.g. seeding a partially-progressed save). After
+ * cycle 0 the bonuses are read fresh from the store each iteration.
+ */
+export function runSimV2Chained(opts: SimV2Options): SimV2Output {
+  const results: SimV2CycleResult[] = [];
+  const maxArrivals = opts.maxArrivals ?? 1200;
+  const outDir = opts.outDir;
+  const mdSampleEvery = opts.mdSampleEvery ?? 0;
+
+  if (outDir) mkdirSync(outDir, { recursive: true });
+
+  // Cycle-16 chained: explicit store reset at entry. zustand store is a
+  // module-level singleton — without this, a polluted vitest worker would
+  // inherit prior tests' sagaHistory/unlockedRealms, breaking the "carry
+  // across cycles" measurement at iteration 0. Seed atk/hp bonus from opts
+  // so chained-from-save scenarios work.
+  useGameStore.setState(s => ({
+    ...s,
+    meta: {
+      ...s.meta,
+      sagaHistory: [],
+      unlockedRealms: ['base'],
+      sponsorGold: 0,
+      atkBaseBonus: opts.atkBonus ?? 0,
+      hpBaseBonus: opts.hpBonus ?? 0,
+      light: 0,
+    },
+    run: { ...s.run, currentRealmId: 'base', npcs: [] },
+  }));
+
+  for (let i = 0; i < opts.count; i++) {
+    const seed = opts.seedStart + i;
+
+    // Mirror cycleSliceV2.start() rotation: pick the realm from current
+    // unlockedRealms + sagaHistory.length, sync it into run.currentRealmId
+    // so runOneCycle(chained=true) sources it from store.
+    const stateBefore = useGameStore.getState();
+    const cycleNumber = stateBefore.meta.sagaHistory.length;
+    const rotated = pickStartingRealm(stateBefore.meta.unlockedRealms, cycleNumber);
+    useGameStore.setState(s => ({ ...s, run: { ...s.run, currentRealmId: rotated } }));
+
+    // Cycle-16: re-read accrued bonuses from store each iteration. After
+    // cycle 0, these have been mutated by the spend('balanced') call below.
+    const metaSnap = useGameStore.getState().meta;
+    const chainedOpts: SimV2Options = {
+      ...opts,
+      atkBonus: metaSnap.atkBaseBonus ?? 0,
+      hpBonus: metaSnap.hpBaseBonus ?? 0,
+    };
+
+    const { result, events, saga } = runOneCycle(seed, chainedOpts, maxArrivals, true);
+    results.push(result);
+
+    // Mirror cycleSliceV2.endCycle(): append saga, accrue gold, auto-spend
+    // via balanced strategy, reset currentRealmId/npcs as the stale-realm
+    // guard. SagaStorage.append handles the SAGA_CAP (100) trim.
+    SagaStorage.append(saga);
+    const gold = goldFromCycle({
+      maxLevel: result.maxLevel,
+      kills: result.kills,
+      bossKills: result.bossKills,
+      drops: result.drops,
+    });
+    useGameStore.setState(s => {
+      const totalGold = (s.meta.sponsorGold ?? 0) + gold;
+      const out = spend({
+        gold: totalGold,
+        atkBaseBonus: s.meta.atkBaseBonus ?? 0,
+        hpBaseBonus: s.meta.hpBaseBonus ?? 0,
+        strategy: 'balanced',
+      });
+      return {
+        ...s,
+        meta: {
+          ...s.meta,
+          sponsorGold: out.goldRemaining,
+          atkBaseBonus: out.atkBaseBonus,
+          hpBaseBonus: out.hpBaseBonus,
+        },
+        run: { ...s.run, currentRealmId: 'base', npcs: [] },
+      };
+    });
+
+    if (outDir) {
+      const jsonlPath = join(outDir, `c${seed}.jsonl`);
+      const fd = openSync(jsonlPath, 'w');
+      try {
+        for (const ev of events) {
+          writeSync(fd, JSON.stringify(ev) + '\n');
+        }
+      } finally {
+        closeSync(fd);
+      }
+
+      if (mdSampleEvery > 0 && i % mdSampleEvery === 0) {
+        const mdPath = join(outDir, `c${seed}.md`);
+        writeFileSync(mdPath, renderMd(result, saga, events), 'utf-8');
+      }
+    }
+  }
+
+  const summary = buildSummary(results);
+  if (outDir) {
+    writeFileSync(join(outDir, 'summary.json'), JSON.stringify(summary, null, 2), 'utf-8');
+  }
+  return { results, summary };
+}
+
 function runOneCycle(
   seed: number,
   opts: SimV2Options,
   maxArrivals: number,
+  /** Cycle-16 — when true, runOneCycle is being driven by the chained sim
+   *  loop. Three behavioral differences vs batch mode:
+   *    1. light pool is NOT reset (live game has a continuous pool across
+   *       cycles; chained mirrors live).
+   *    2. onBossKill callback also mutates `useGameStore.meta.unlockedRealms`
+   *       so the next chained iteration sees the new unlock. Batch sim only
+   *       tracks `currentRealmId` locally for sim continuity.
+   *    3. start realm + unlocked realms are sourced from the store (already
+   *       written by chained driver) rather than from opts. */
+  chained: boolean = false,
 ): { result: SimV2CycleResult; events: StampedEvent[]; saga: CycleSaga } {
   const startAtkBase = opts.heroAtkBase + (opts.atkBonus ?? 0);
   const startHpBase = opts.heroHpMax + (opts.hpBonus ?? 0);
 
-  // Cycle-11 C10-B: each cycle's light pool starts at 0. Without this, light
-  // accumulated across the sim batch would leak between cycles — the live UI
-  // game has a continuous light pool, but per-cycle sim aggregates need clean
-  // separation to measure rejuv triggers per cycle in isolation.
-  useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 0 } }));
+  if (!chained) {
+    // Cycle-11 C10-B: each cycle's light pool starts at 0. Without this, light
+    // accumulated across the sim batch would leak between cycles — the live UI
+    // game has a continuous light pool, but per-cycle sim aggregates need clean
+    // separation to measure rejuv triggers per cycle in isolation.
+    useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 0 } }));
+  }
 
   // V3-H Bug C: realm tracking state for onBossKill wiring
   // Cycle-15: startRealm param drives rotation sweep — hero spawns at
   // `realm.columnRange[0] + 1` so pathfinder bounds match.
-  let currentRealmId: RealmId = opts.startRealm ?? 'base';
-  const initialUnlocked: RealmId[] = opts.unlockedRealms ?? ['base'];
+  // Cycle-16 chained: realm comes from store (chained driver already wrote it).
+  const startingRealmId: RealmId = chained
+    ? useGameStore.getState().run.currentRealmId
+    : opts.startRealm ?? 'base';
+  let currentRealmId: RealmId = startingRealmId;
+  const initialUnlocked: readonly RealmId[] = chained
+    ? useGameStore.getState().meta.unlockedRealms
+    : opts.unlockedRealms ?? ['base'];
 
   const ctrl = new CycleControllerV2({
     seed,
@@ -194,6 +345,11 @@ function runOneCycle(
     onBossKill: (current: RealmId) => {
       const realm = findRealm(current);
       if (realm.nextRealm) {
+        // Cycle-16 chained: also mutate the live store so subsequent chained
+        // iterations see the new unlock + rotation picker uses the wider pool.
+        if (chained) {
+          useGameStore.getState().unlockRealm(realm.nextRealm);
+        }
         return realm.nextRealm;
       }
       return null;
@@ -340,6 +496,8 @@ function runOneCycle(
     // Cycle-11 C10-B — final rejuvenationCount on the hero captures auto-rejuv
     // fires this cycle (HeroEntity resets it per cycle via `create`).
     lightEmitted, rejuvCount: hero.rejuvenationCount,
+    // Cycle-16 — record the realm the cycle started in (rotation verification).
+    startRealm: startingRealmId,
   };
 
   return { result, events: stamped, saga };
@@ -459,8 +617,11 @@ if (process.argv[1]?.endsWith('sim-cycle-v2.ts')) {
   const unlockedRealms = unlockedRaw
     ? (unlockedRaw.split(',').map(s => s.trim()) as import('../src/types').RealmId[])
     : undefined;
+  // Cycle-16: --chained mode carries store state across cycles.
+  const chained = argv.includes('--chained');
 
-  const result = runSimV2({
+  const runner = chained ? runSimV2Chained : runSimV2;
+  const result = runner({
     count, seedStart,
     heroHpMax: hp, heroAtkBase: atk,
     atkBonus, hpBonus,
@@ -468,6 +629,6 @@ if (process.argv[1]?.endsWith('sim-cycle-v2.ts')) {
     startRealm, unlockedRealms,
   });
 
-  console.log(`Wrote ${result.results.length} cycle results to ${outDir}/`);
+  console.log(`Wrote ${result.results.length} cycle results to ${outDir}/ (${chained ? 'chained' : 'batch'})`);
   console.log(`Summary:`, JSON.stringify(result.summary, null, 2));
 }
