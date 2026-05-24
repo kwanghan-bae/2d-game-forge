@@ -17,8 +17,8 @@ const BOSS_HP_MUL = 4;
 const BOSS_ATK_MUL = 2;
 const ENEMY_EXP_BASE = 12;
 const BOSS_EXP_BASE = 60;
-const DROP_RATE = 0.3;
-const SHRINE_SKILL_GRANT_RATE = 0.4;
+const DROP_RATE = 0.36;           // V3-H F2: +20% (was 0.3)
+const SHRINE_SKILL_GRANT_RATE = 0.48; // V3-H F2: +20% (was 0.4)
 const SHRINE_HEAL_FRACTION = 0.4;
 const MERCIFUL_PROC_RATE = 0.15;
 const MERCIFUL_DRIFT = 3;
@@ -62,7 +62,7 @@ export class EncounterEngine {
         return events;
       }
       const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
-      const baseDropOdds = isBoss ? 0.8 : DROP_RATE;
+      const baseDropOdds = isBoss ? 0.96 : DROP_RATE; // V3-H F2: boss 0.8→0.96 (+20%)
       const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0));
       const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss) : null;
       if (dropId) hero.addEquipment(dropId);
