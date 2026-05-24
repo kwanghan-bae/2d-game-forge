@@ -24,7 +24,9 @@ export type SagaEventType =
   | 'npcDeath'
   | 'familyEvent';
 
-export type DeathCause = '전사' | '자연사' | '영광스러운죽음' | '비극';
+// Cycle-5 F3: '무위' = pathfinder candidates-exhausted (출구 없음 / 길을 잃다).
+// 진짜 자연 수명 도달과 명확히 구분되어야 동급 stale-realm bug 가 즉시 보임.
+export type DeathCause = '전사' | '자연사' | '영광스러운죽음' | '비극' | '무위';
 
 export interface SagaEvent {
   age: number;
