@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { NarrativeGenerator } from '../NarrativeGenerator';
 
 describe('NarrativeGenerator', () => {
@@ -115,5 +117,29 @@ describe('Cycle 1 F2 — forSeasonChange', () => {
       volcanoSet.add(NarrativeGenerator.forSeasonChange({ season: 'summer', age: 20 + i, realm: 'volcano' }, i));
     }
     expect([...seaSet].some((s) => !volcanoSet.has(s))).toBe(true);
+  });
+});
+
+describe('Cycle 1 F2.12 — hard-coded season literal 제거 가드', () => {
+  // plan 의 위치는 OverworldRunner.tsx 였으나 코드 정황상 실제 hard-coded
+  // interpolation 은 CycleControllerV2.ts:371 에 있었다. 그 라인을
+  // NarrativeGenerator.forSeasonChange wire 로 교체했고, 회귀를 방지한다.
+  it('F2.12: CycleControllerV2.ts 에 hard-coded "계절이 바뀌었다 — ${" interpolation 부재', () => {
+    const src = readFileSync(
+      join(__dirname, '..', '..', 'overworld', 'CycleControllerV2.ts'),
+      'utf-8',
+    );
+    // template literal 형태의 hard-coded narrative 부재 검사
+    expect(src).not.toMatch(/계절이 바뀌었다 — \$\{/);
+    // positive 검사: NarrativeGenerator.forSeasonChange wire 존재
+    expect(src).toContain('NarrativeGenerator.forSeasonChange');
+  });
+
+  it('F2.12b: CycleControllerV2.ts 에 NarrativeGenerator.forRealmEnter wire 존재', () => {
+    const src = readFileSync(
+      join(__dirname, '..', '..', 'overworld', 'CycleControllerV2.ts'),
+      'utf-8',
+    );
+    expect(src).toContain('NarrativeGenerator.forRealmEnter');
   });
 });

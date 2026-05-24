@@ -16,7 +16,9 @@ export type SagaEventType =
   | 'sightseeing'
   | 'meditation'
   | 'trial'
-  | 'seasonChange';
+  | 'seasonChange'
+  // Cycle-1 F2: realm transition saga record (forRealmEnter wire)
+  | 'realmEnter';
 
 export type DeathCause = '전사' | '자연사' | '영광스러운죽음' | '비극';
 
