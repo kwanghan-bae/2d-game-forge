@@ -9,13 +9,18 @@ interface Props {
 
 type EventFilter = 'all' | 'battle' | 'drop' | 'levelUp' | 'realm' | 'npc' | 'rejuv' | 'sightseeing' | 'meditation' | 'trial' | 'season';
 
-function matchesFilter(t: SagaEventType, f: EventFilter): boolean {
+export function matchesFilter(t: SagaEventType, f: EventFilter): boolean {
   switch (f) {
     case 'all':         return true;
     case 'battle':      return t === 'battle';
     case 'drop':        return t === 'drop';
     case 'levelUp':     return t === 'levelUp';
-    case 'npc':         return t === 'moralChoice' || t === 'shrine';
+    // Cycle-1 F3: NPC dead-path 회수 — npcEncounter/npcDeath/familyEvent 4 신규 매핑
+    case 'npc':         return t === 'moralChoice'
+                            || t === 'shrine'
+                            || t === 'npcEncounter'
+                            || t === 'npcDeath'
+                            || t === 'familyEvent';
     case 'rejuv':       return t === 'rejuvenation';
     case 'realm':       return false; // realm transitions render separately below
     case 'sightseeing': return t === 'sightseeing';
