@@ -33,3 +33,7 @@
 - Cycle 27 (2026-05-25, `6c26ed9`): D2 prudent delta 3 → 4. monk/ranger access.
 - Cycle 28 (2026-05-25, `a721ea8`): D5 MERCIFUL_PROC_RATE 0.10 → 0.07. spare_enemy saturation.
 - Cycle 29 (2026-05-25, `1fb516f`): prod build recon (cycle 4 carry-over). Next 16.1.1 static export PASS.
+- Cycle 30 (2026-05-25, `e7feaf4`): INDEX + STATUS for cycle 22-29 batch.
+- Cycle 31 (2026-05-25, `3eb463d`): maxLevel design intent close (cycle 17 finding, C10-C carry-over).
+- Cycle 32 (2026-05-25, `44dbb86`): mega-cycle subagent stall pattern root cause analysis (cycle 25 룰 첫 적용).
+- Cycle 33 (2026-05-25, `a7bb24a`): D6 era key 3-tier title — 본래 / 재생 #N / 환생 #N.
