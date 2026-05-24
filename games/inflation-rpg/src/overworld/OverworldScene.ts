@@ -3,10 +3,10 @@ import { SeededRng } from '../cycle/SeededRng';
 import { ZONES } from '../data/zones';
 import { LANDMARK_TYPES } from '../data/landmarks';
 import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../data/enemyTiers';
-import { Pathfinder, type GridCell } from './Pathfinding';
+import { Pathfinder, findPathWithFallback, type GridCell } from './Pathfinding';
 import { findRealm } from '../data/realms';
 import type { PlacedLandmark } from './Landmark';
-import { landmarkToCandidate } from './Landmark';
+import { landmarkToCandidate, filterCandidatesByRealm } from './Landmark';
 import type { OverworldEvent } from './OverworldEvents';
 import type { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import type { HeroEntity } from '../hero/HeroEntity';
@@ -55,6 +55,10 @@ export class OverworldScene extends Phaser.Scene {
   private currentRealm: RealmId | undefined;
   private unlockedRealms: readonly RealmId[] | undefined;
   private currentSeason: SeasonId = 'spring';
+  /** Cycle-7 F4: count of times pathfinder columnBounds fallback fired.
+   *  Surfaced to operator via console.warn on first hit + queryable via
+   *  getPathfinderFallbackCount() for future telemetry / e2e assertions. */
+  private pathfinderFallbackCount: number = 0;
 
   constructor() { super('OverworldScene'); }
 
@@ -76,6 +80,52 @@ export class OverworldScene extends Phaser.Scene {
    *  event so DestinationResolver.choose can see the new exit landmark. */
   setUnlockedRealms(realms: readonly RealmId[]): void {
     this.unlockedRealms = realms;
+  }
+
+  /** Cycle-8 C1: sync the scene's currentRealm copy after a realm_entered
+   *  event. Without this, the C1 candidate filter (and the existing
+   *  columnBounds binding on line 200ish) keep applying the previous realm's
+   *  column range after a mid-cycle transition — every sea/volcano/... pick
+   *  is filtered out or null-pathed, and either '무위' triggers or the F4
+   *  fallback re-takes the hot path. Mirrors V3-H Bug A's pattern (a 3-line
+   *  setter wired in OverworldRunner.tsx alongside setCurrentRealm store
+   *  mutation). */
+  setCurrentRealm(realm: RealmId): void {
+    this.currentRealm = realm;
+  }
+
+  /** Cycle-7 F4: telemetry accessor for pathfinder fallback retry count.
+   *  Tests / e2e assertions can check this after a run to confirm the
+   *  fallback did NOT fire in normal gameplay (count = 0). A non-zero
+   *  count signals a stale-realm regression and should also have emitted
+   *  a console.warn at the point of trigger. */
+  getPathfinderFallbackCount(): number {
+    return this.pathfinderFallbackCount;
+  }
+
+  /** Cycle-9 R1: compute pathfinder columnBounds that always include the
+   *  hero's start column and the chosen target's column, on top of the
+   *  current realm's columnRange. Boundary-frame transitions (hero at
+   *  realm.colEnd-1 after realm_entered flips to next realm, OR target at
+   *  nextRealm.columnRange[0] = current colEnd) would otherwise BLOCK the
+   *  start/target cell and force the F4 fallback. With expansion the bounds
+   *  always cover the legitimate path while still rejecting picks 2+ realms
+   *  away (R2 already filters those out of the candidate pool anyway).
+   *
+   *  Returns undefined when currentRealm is undefined (parity with the
+   *  original branch — pathfinder runs unconstrained).
+   *
+   *  Visible for testing. */
+  computeColumnBounds(heroCol: number, targetCol: number): [number, number] | undefined {
+    if (!this.currentRealm) return undefined;
+    const [colStart, colEnd] = findRealm(this.currentRealm).columnRange;
+    // bounds are half-open [cMin, cMax) in Pathfinding.ts. Include hero
+    // start (must be walkable: x >= cMin) AND target column (must satisfy
+    // x < cMax → cMax >= targetCol + 1) AND hero column (cMax >= heroCol + 1
+    // covers the case where hero sits at colEnd after a transition).
+    const cMin = Math.min(colStart, heroCol, targetCol);
+    const cMax = Math.max(colEnd, heroCol + 1, targetCol + 1);
+    return [cMin, cMax];
   }
 
   /** Scale both tween duration (movement) and delayedCall (post-arrival pause)
@@ -148,8 +198,19 @@ export class OverworldScene extends Phaser.Scene {
 
   private async pickNextDestination(): Promise<void> {
     const heroPos = this.heroGridPos();
-    const candidates = this.layout.landmarks
-      .filter(l => !l.consumed)
+    // Cycle-8 C1: drop landmarks whose column lies outside the hero's
+    // current realm BEFORE the AI scores candidates. The pathfinder still
+    // applies `columnBounds = currentRealm.columnRange` below, so leaving
+    // cross-realm landmarks in the candidate set meant every such pick
+    // produced a null path and pushed the F4 fallback to do the recovery —
+    // 89 firings/cycle in the cycle-7 finisher's 4-minute idle baseline.
+    // exit landmarks pass through unconditionally (they are the legitimate
+    // cross-realm transition path).
+    const reachable = filterCandidatesByRealm(
+      this.layout.landmarks.filter(l => !l.consumed),
+      this.currentRealm,
+    );
+    const candidates = reachable
       .filter(l => !(l.gridX === heroPos.x && l.gridY === heroPos.y))
       .map(l => ({ landmark: l, candidate: landmarkToCandidate(l) }));
 
@@ -173,10 +234,36 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     const target = candidates.find(c => c.candidate.id === chosenCandidate.id)!.landmark;
-    const columnBounds = this.currentRealm
-      ? findRealm(this.currentRealm).columnRange
-      : undefined;
-    const path = await this.pathfinder.findPath(heroPos.x, heroPos.y, target.gridX, target.gridY, columnBounds ? { columnBounds } : undefined);
+    // Cycle-9 R1: expand columnBounds to always include hero start AND target
+    // columns. Without this, the boundary case fires the F4 fallback even
+    // after R2 cleans up cross-realm exit picks:
+    //   - hero arrives at exit_a (col = realm.colEnd - 1, inside current
+    //     realm), controller emits realm_entered, scene.currentRealm flips
+    //     to next realm. Next pickNextDestination computes
+    //     columnBounds = nextRealm.columnRange = [colEnd, colEnd+20]. Hero
+    //     gridX is still at colEnd-1 (= one tile *outside* the new bounds),
+    //     pathfinder marks start cell BLOCKED → null → F4 retries.
+    //   - hero picks exit_b at nextRealm.columnRange[0] = colEnd (the
+    //     legitimate cross-realm entry), but currentRealm bounds [colStart,
+    //     colEnd) exclude colEnd → target BLOCKED → null → F4 retries.
+    // The expanded bounds keep stale-realm protection (still rejects targets
+    // 2+ realms away) while letting boundary-frame paths through cleanly.
+    const columnBounds = this.computeColumnBounds(heroPos.x, target.gridX);
+    // Cycle-7 F4: columnBounds null fallback retry. If the hero is stuck
+    // outside the currentRealm column range (a stale-realm regression
+    // category that cycle-5 F2 already root-fixed), retry the same target
+    // without bounds so the run never lock-steps into '무위'.
+    const { path, retried } = await findPathWithFallback(
+      this.pathfinder,
+      heroPos.x, heroPos.y, target.gridX, target.gridY,
+      columnBounds,
+    );
+    if (retried) {
+      this.pathfinderFallbackCount += 1;
+      console.warn(
+        `[OverworldScene] Pathfinder columnBounds fallback fired (count=${this.pathfinderFallbackCount}) — hero (${heroPos.x},${heroPos.y}) target (${target.gridX},${target.gridY}) realm=${this.currentRealm ?? 'none'}. Possible stale-realm regression.`
+      );
+    }
     if (!path || path.length < 2) {
       // Unreachable; mark consumed to skip
       target.consumed = true;
