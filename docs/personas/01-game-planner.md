@@ -17,6 +17,9 @@
   2. **Playwright dev server 1-smoke** — 1× 속도 1-2 분 또는 10× 속도 30 초 이상의 dev server 실제 진행 + 측정 1 회. sim 단일 의존 금지. 측정 항목 = sim 의 수용 기준과 같은 metric (예: ageEnd, endCause, rejuv count, narrative tone).
   - **Why**: Cycle 11 의 PRD 가 "자연사 99.3% / rejuv 99.3% / ageEnd p50 70" 을 sim 30-cycle 측정으로 PASS 처리했지만, dev server 실 게임은 11 세 candidates 고갈로 `cycle_ended('무위')` 종료 → 자연사 0% / rejuv 0% / ageEnd 11. Sim 의 `maxArrivals=1200` 강제 cap 이 인공 metric 이었고, 실 controller 에는 동등 cap 부재 + cross-realm filter 미러 부재로 candidates 고갈 path 가 sim 에서 봉인. **자율진화 시스템의 첫 false PASS** = measurement layer (sim) 가 reality layer (real game) 를 entail 하지 않음. 룰 부재 시 sim PASS 가 unfalsifiable.
   - **How to apply**: PRD 작성 시점 자가 검증. 두 evidence (grep + smoke) 1 세트 의무. Sim 측정만으로 수용 기준 PASS 처리 금지. Smoke 결과가 sim 측정과 산술 거리 큰 경우 (cycle 11 의 age 11 vs age 70) cheap 측정으로 즉시 발견 가능했으므로 PRD 반려 + 측정 layer 재확인.
+- **PRD 산술 충돌 사전 검증 룰 (Cycle 11 부분 partial 결과)**: PRD 의 다항 수용 기준 (예: "자연사 ≥ 30% AND rejuv ≥ 20%") 작성 시 산술 시뮬레이션 의무. 두 기준이 동시 충족 가능한지 back-of-envelope 검증.
+  - **Why**: Cycle 11 의 PRD 가 `maxArrivals=1000` 에서 "자연사 ≥ 30% AND rejuv ≥ 20%" 을 둘 다 PASS 기준으로 설정했지만, 2 rejuv = ~154 추가 actions 필요 → max_arrivals 가 자연사 (age 70) 도달 전 먼저 fire → 산술 동시 충족 불가능. Implementer 가 maxArrivals 1000→1200 design 변경으로 해소 (PRD §"반대 기준" partial fail).
+  - **How to apply**: PRD 작성 시점 자가 검증. 다항 결합 수용 기준은 각 항목의 baseline + 변화량 산술 합산 시 다른 기준과 충돌 안 하는지 검증. 충돌 시 design 변경 (cap 조정 등) 을 PRD 본문에 명시.
 
 ## 책임
 
