@@ -1,6 +1,6 @@
 import type { SeededRng } from '../cycle/SeededRng';
 import type { HeroEntity } from '../hero/HeroEntity';
-import type { LandmarkKind } from '../data/landmarks';
+import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import type { OverworldEvent } from './OverworldEvents';
 import { ENEMY_DROPS, BOSS_DROPS } from './dropTable';
 import {
@@ -134,6 +134,15 @@ export class EncounterEngine {
         hero.personality.adjust('moral', 2);
         events.push({ type: 'moral_choice', choice: 'resist_bandits', dim: 'moral', delta: 2, nameKR: '강도단에 맞서 약자를 지켰다' });
       }
+    } else if (kind === 'sightseeing') {
+      // V3-H F3: 절경 랜드마크 — sightseeing_arrived 를 emit; 실제 personality 조정은
+      // CycleControllerV2.handleArrival 에서 rng 기반으로 처리.
+      const lmType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id));
+      events.push({
+        type: 'sightseeing_arrived',
+        landmarkId,
+        landmarkNameKR: lmType?.nameKR ?? '절경',
+      });
     } else {
       // V1c-1 personality drift landmarks (watchtower / treasure_cave /
       // holy_ruin / crossroads). The catalog lookup is exhaustive for these

@@ -33,6 +33,9 @@ const WEIGHT_BASE: Record<LandmarkKind, number> = {
   treasure_cave: 3,
   holy_ruin:     3,
   crossroads:    3,
+  // V3-H F3/F5: 절경 + 시련
+  sightseeing:   4,
+  trial:         2,
 };
 
 export class DestinationResolver {

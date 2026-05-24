@@ -98,6 +98,16 @@ export function generateMapLayout(seed: number): MapLayout {
   place('crossroads',    8 + rng.int(3),  rng.int(GRID_H));
   place('crossroads',    9 + rng.int(3),  rng.int(GRID_H), '_b');
 
+  // V3-H F3: sightseeing landmark — realm 당 1개 (base 포함)
+  const SIGHTSEEING_TYPES = ['mountain_peak', 'ancient_tree', 'waterfall', 'starry_field', 'sacred_grove'] as const;
+  for (const realm of REALM_CATALOG) {
+    const [colStart, colEnd] = realm.columnRange;
+    const typeId = SIGHTSEEING_TYPES[rng.int(SIGHTSEEING_TYPES.length)];
+    const col = colStart + 2 + rng.int(Math.max(1, colEnd - colStart - 4));
+    const row = 1 + rng.int(GRID_H - 2);
+    place(typeId!, col, row, `_sightseeing_${realm.id}`);
+  }
+
   // V3-D / V3-H: realm 별 column band 의 enemy + boss + 양쪽 경계 exit 배치
   for (let idx = 0; idx < REALM_CATALOG.length; idx++) {
     const realm = REALM_CATALOG[idx];

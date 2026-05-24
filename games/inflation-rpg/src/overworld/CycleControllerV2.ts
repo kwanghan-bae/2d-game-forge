@@ -177,6 +177,18 @@ export class CycleControllerV2 {
           payload: { landmarkId: ev.landmarkId },
         });
       }
+      if (ev.type === 'sightseeing_arrived') {
+        // V3-H F3: 절경 랜드마크 — personality dim +1 (랜덤)
+        const DIMS = ['heroic', 'pious', 'merciful'] as const;
+        const dim = DIMS[this.rng.int(DIMS.length)]!;
+        this.hero.personality.adjust(dim, 1);
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'sightseeing',
+          narrativeText: `${ev.landmarkNameKR}에서 잠시 멈춰섰다`,
+          payload: { dim, landmarkId: ev.landmarkId },
+        });
+      }
       if (ev.type === 'moral_choice') {
         this.recordToStore({
           age: this.hero.age,

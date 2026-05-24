@@ -19,4 +19,10 @@ export type OverworldEvent =
   | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }
   | { type: 'npc_died'; npcInstanceId: string }
   | { type: 'family_event'; eventKind: 'marriage' | 'child_birth' | 'parent_death' | 'child_grown'; npcInstanceId?: string }
-  | { type: 'cycle_ended' };
+  | { type: 'cycle_ended' }
+  // V3-H F3: sightseeing landmark arrived
+  | { type: 'sightseeing_arrived'; landmarkId: string; landmarkNameKR: string }
+  // V3-H F4: meditation (shrine 20% 변형)
+  | { type: 'meditation_done'; landmarkId: string }
+  // V3-H F5: trial result
+  | { type: 'trial_resolved'; trialLv: number; outcome: 'win' | 'lose'; oldLevel?: number; newLevel?: number };
