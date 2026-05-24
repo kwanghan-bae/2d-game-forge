@@ -436,3 +436,91 @@ describe('Cycle-11 C10-B — auto-rejuv trigger at age threshold', () => {
     expect(useGameStore.getState().meta.light).toBe(lightBefore - 450);
   });
 });
+
+describe("Cycle-14 — clearEndCause resurrection unstuck", () => {
+  // dev-server-only bug: '전사' B3 free-rejuv sets endCause='전사' permanently,
+  // both `maybeEmitNaturalDeath` and `maybeAutoRejuvenate` early-return on the
+  // truthy gate → hero ages past 70 forever without firing 자연사. Sim driver
+  // has no B3 path so the bug is dev-server-only (cycle 11 false-PASS pattern).
+  beforeEach(() => {
+    useGameStore.setState(s => ({
+      ...s,
+      meta: { ...s.meta, light: 0, buffLevels: {} },
+      run: { ...s.run, npcs: [] },
+    }));
+  });
+
+  it('clearEndCause() resets endCause to null', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    ctrl.setEndCause('전사');
+    expect(ctrl.getEndCause()).toBe('전사');
+    ctrl.clearEndCause();
+    expect(ctrl.getEndCause()).toBeNull();
+  });
+
+  it("after '전사' + clearEndCause, the next age-70 arrival fires hero_died('자연사')", () => {
+    // Simulate the dev-server B3 resurrection flow: '전사' happens, runner calls
+    // rejuvenate(5) + clearEndCause(), hero ages back up past 70.
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // First simulate '전사' having occurred earlier in the cycle by directly
+    // setting the controller's endCause (parallels what handleArrival line 253
+    // does when EncounterEngine emits hero_died('전사')).
+    ctrl.setEndCause('전사');
+    hero.staggered = false; // post-rejuv recovery already cleared staggered
+    // Park hero at action 999 so the next tickAge bumps to 1000 → age 70.
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+
+    // Before fix: maybeEmitNaturalDeath would early-return on endCause='전사'.
+    // After fix: runner has called clearEndCause() so the guard passes.
+    ctrl.clearEndCause();
+    const evs = ctrl.handleArrival('enemy', 'wolf_resurrect_1');
+    const naturals = evs.filter(e => e.type === 'hero_died' && e.cause === '자연사');
+    expect(naturals.length).toBe(1);
+    expect(ctrl.getEndCause()).toBe('자연사');
+  });
+
+  it("without clearEndCause, endCause stays '전사' and 자연사 never fires (regression guard)", () => {
+    // Same setup minus the clearEndCause() call. This is the pre-cycle-14 bug.
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    ctrl.setEndCause('전사');
+    hero.staggered = false;
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+
+    const evs = ctrl.handleArrival('enemy', 'wolf_stuck_1');
+    const naturals = evs.filter(e => e.type === 'hero_died' && e.cause === '자연사');
+    expect(naturals.length).toBe(0); // bug reproduction
+    expect(ctrl.getEndCause()).toBe('전사'); // still stuck
+  });
+
+  it('clearEndCause also unsticks maybeAutoRejuvenate (light-based age 65 rejuv)', () => {
+    // Same stuck-gate applies to C10-B. After resurrection + clearEndCause,
+    // a hero with enough light should auto-rejuv when hitting age 65 again.
+    useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 1000, buffLevels: {} } }));
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    ctrl.setEndCause('전사');
+    hero.staggered = false;
+    // Park at action 923 (age 64) → next tickAge → action 924 → age 65.
+    hero.actionCount = 923;
+    hero.age = 64;
+    hero.chapter = '노년기';
+
+    // Without clear: rejuvenationCount stays 0.
+    ctrl.handleArrival('enemy', 'wolf_autorejuv_stuck');
+    expect(hero.rejuvenationCount).toBe(0);
+
+    // After clear: a subsequent age-65 crossing fires auto-rejuv. Re-park hero.
+    ctrl.clearEndCause();
+    hero.actionCount = 923;
+    hero.age = 64;
+    hero.chapter = '노년기';
+    ctrl.handleArrival('enemy', 'wolf_autorejuv_unstuck');
+    expect(hero.rejuvenationCount).toBe(1);
+  });
+});

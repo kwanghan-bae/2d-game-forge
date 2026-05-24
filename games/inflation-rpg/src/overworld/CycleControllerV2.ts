@@ -91,6 +91,22 @@ export class CycleControllerV2 {
     this.endCause = cause;
   }
 
+  /** Cycle-14: clear `endCause` after a '전사' → B3 free-rejuv resurrection.
+   *  Without this, the controller is stuck with endCause='전사' for the rest of
+   *  the cycle: both `maybeEmitNaturalDeath` and `maybeAutoRejuvenate` early-
+   *  return on the truthy gate, hero ages past 70 (B3 keeps the only rejuv
+   *  alive at age 65 → 70 → 75 → ...) without ever firing 자연사. Sim driver
+   *  has no B3 path so the bug is dev-server-only — exactly the cycle 11
+   *  false-PASS pattern dogfooded by cycle 13's sim-real parity rule. */
+  clearEndCause(): void {
+    this.endCause = null;
+  }
+
+  /** Cycle-14: read-only accessor for tests. */
+  getEndCause(): DeathCause | null {
+    return this.endCause;
+  }
+
   getUnlockedRealms(): readonly import('../types').RealmId[] { return this.unlockedRealms; }
   getCurrentRealmId(): import('../types').RealmId | null { return this.currentRealmId; }
   getHero(): HeroEntity { return this.hero; }
