@@ -21,7 +21,8 @@
     "build:ios": "next build && cap sync ios && cap open ios",
     "build:android": "next build && cap sync android && cap open android",
     "balance:sweep": "tsx tools/balance-sweep-cli.ts",
-    "sim:cycle": "tsx scripts/sim-cycle.ts"
+    "sim:cycle": "tsx scripts/sim-cycle.ts",
+    "sim:v3": "tsx scripts/sim-cycle-v2.ts"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
