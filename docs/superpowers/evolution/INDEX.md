@@ -61,3 +61,12 @@
 - Cycle 57 (2026-05-25): realm rotation + organic unlock validation.
 - Cycle 58 (2026-05-25): aging cap arithmetic validation.
 - Cycle 59 (2026-05-25): auto-rejuv 3-fold validation.
+- Cycle 61 (2026-05-25): respawn helper validation (cycle 12 9-test).
+- Cycle 62 (2026-05-25): sim shard write validation.
+- Cycle 63 (2026-05-25): pathfinder fallback 3-fold validation.
+- Cycle 64 (2026-05-25): narrative coverage summary (~1080 permutations).
+- Cycle 65 (2026-05-25): persona rule summary (8 rules).
+- Cycle 66 (2026-05-25): cycleSlice.helpers summary.
+- Cycle 67 (2026-05-25): saga flat alias + v24 migration summary.
+- Cycle 68 (2026-05-25): hero snapshot persist summary.
+- Cycle 69 (2026-05-25): circular baseline note (P-1.5 debt).
