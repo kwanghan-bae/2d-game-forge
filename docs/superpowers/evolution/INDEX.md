@@ -40,3 +40,5 @@
 - Cycle 34 (2026-05-25, `2672047`): INDEX for cycle 30-33.
 - Cycle 35 (2026-05-25, `434f8aa`): D7 age 5 prefix variation (battle/levelUp). age5Tone() helper.
 - Cycle 36 (2026-05-25): age 5 tone 확장 (drop/jobUnlock/skillLearned/moralChoice/shrineHealed/shrineCalm/levelUpBatch 모두).
+- Cycle 38 (2026-05-25, `7c7e6c3`): V3 identity activation recap docs.
+- Cycle 39 (2026-05-25): age 6-12 young chapter tone variation (D7 자연 확장).
