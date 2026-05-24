@@ -81,6 +81,7 @@ export function generateMapLayout(seed: number): MapLayout {
   place('lich_king',    18 + rng.int(2), rng.int(GRID_H), '_b2');
 
   place('shrine', 18 + rng.int(2), rng.int(GRID_H));
+  place('shrine', 10 + rng.int(4), rng.int(GRID_H), '_b'); // V3-H F2: +20% shrine 빈도 (2nd shrine)
   place('cave',   15 + rng.int(3), rng.int(GRID_H));
   place('ruin',   12 + rng.int(4), rng.int(GRID_H));
 
