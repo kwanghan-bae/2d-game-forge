@@ -21,10 +21,14 @@ export function App({ config }: AppProps) {
         <CyclePrepV2
           onStart={() => setScreen('overworld')}
           onCancel={() => setScreen('main-menu')}
+          onClearSnapshot={() => useGameStore.getState().clearHeroSnapshot()}
         />
       )}
       {screen === 'overworld' && (
-        <OverworldRunner onCycleEnd={() => setScreen('cycle-result-v2')} />
+        <OverworldRunner
+          onCycleEnd={() => setScreen('cycle-result-v2')}
+          onExitToMenu={() => setScreen('main-menu')}
+        />
       )}
       {screen === 'cycle-result-v2' && (
         <CycleResultV2 onBackToMenu={() => setScreen('main-menu')} />

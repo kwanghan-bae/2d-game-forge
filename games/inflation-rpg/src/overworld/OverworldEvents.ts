@@ -13,10 +13,18 @@ export type OverworldEvent =
   | { type: 'shrine_visited';  landmarkId: string; healed: number }
   | { type: 'moral_choice';    choice: string; dim: PersonalityDim; delta: number; nameKR: string }
   | { type: 'chapter_transition'; fromChapter: Chapter; toChapter: Chapter; atAge: number }
-  | { type: 'hero_died';       cause: '전사' | '자연사'; enemyId?: string }
+  | { type: 'hero_died';       cause: '전사' | '자연사'; enemyId?: string; oldLevel: number; newLevel: number }
   | { type: 'realm_unlocked'; realmId: import('../types').RealmId }
   | { type: 'realm_entered'; realmId: import('../types').RealmId }
   | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }
   | { type: 'npc_died'; npcInstanceId: string }
   | { type: 'family_event'; eventKind: 'marriage' | 'child_birth' | 'parent_death' | 'child_grown'; npcInstanceId?: string }
-  | { type: 'cycle_ended' };
+  | { type: 'cycle_ended' }
+  // V3-H F3: sightseeing landmark arrived
+  | { type: 'sightseeing_arrived'; landmarkId: string; landmarkNameKR: string }
+  // V3-H F4: meditation (shrine 20% 변형)
+  | { type: 'meditation_done'; landmarkId: string }
+  // V3-H F5: trial result
+  | { type: 'trial_resolved'; trialLv: number; outcome: 'win' | 'lose'; oldLevel?: number; newLevel?: number }
+  // V3-H F6: season change
+  | { type: 'season_changed'; season: import('../types').SeasonId };

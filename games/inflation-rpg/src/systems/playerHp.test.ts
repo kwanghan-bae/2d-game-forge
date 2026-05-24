@@ -31,6 +31,7 @@ function makeRun(overrides: Partial<RunState> = {}): RunState {
     playerHp: null,
     currentRealmId: 'base',
     npcs: [],
+    heroSnapshot: null,
     ...overrides,
   };
 }

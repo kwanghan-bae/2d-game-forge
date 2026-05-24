@@ -71,6 +71,8 @@ export const INITIAL_RUN: RunState = {
   currentRealmId: 'base',
   // Phase V3-E — NPC roster
   npcs: [],
+  // Phase V3-H B2 — hero snapshot (null = 새 cycle 시작)
+  heroSnapshot: null,
 };
 
 export const INITIAL_META: MetaState = {
@@ -151,6 +153,8 @@ export const INITIAL_META: MetaState = {
   unlockedRealms: ['base'],
   // Phase V3-F — 무한 saga
   eternalSaga: { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] },
+  // Phase V3-H — 계절
+  season: { current: 'spring', startedAtAge: 0 },
 };
 
 interface GameStore {
@@ -260,6 +264,9 @@ interface GameStore {
   recordSagaEvent: (event: import('../saga/SagaTypes').SagaEvent, chapter: import('../hero/HeroLifecycle').Chapter) => void;
   recordSagaRejuvenation: () => void;
   recordSagaRealmTransition: (from: import('../types').RealmId, to: import('../types').RealmId, atAge: number, chapter: import('../hero/HeroLifecycle').Chapter) => void;
+  // Phase V3-H B2 — hero snapshot persist
+  saveHeroSnapshot: (snapshot: import('../hero/HeroEntity').HeroSnapshot) => void;
+  clearHeroSnapshot: () => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -344,6 +351,22 @@ export function migrateV20ToV21(persisted: unknown): unknown {
   if (s.run && typeof s.run === 'object') {
     if (typeof s.run['currentRealmId'] !== 'string') s.run['currentRealmId'] = 'base';
     if (!Array.isArray(s.run['npcs'])) s.run['npcs'] = [];
+  }
+  return s;
+}
+
+// v21 → v22: Phase V3-H — season state default + heroSnapshot field
+export function migrateV21ToV22(persisted: unknown): unknown {
+  if (typeof persisted !== 'object' || persisted === null) return persisted;
+  const s = persisted as { meta?: Record<string, unknown> | null; run?: Record<string, unknown> | null };
+  if (s.meta && typeof s.meta === 'object') {
+    if (!s.meta['season'] || typeof s.meta['season'] !== 'object') {
+      s.meta['season'] = { current: 'spring', startedAtAge: 0 };
+    }
+  }
+  // B2: normalize heroSnapshot to null on old saves that don't have it
+  if (s.run && typeof s.run === 'object' && s.run['heroSnapshot'] === undefined) {
+    s.run['heroSnapshot'] = null;
   }
   return s;
 }
@@ -547,6 +570,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v20 → v21: Phase V3-D/E/F — multi-zone + NPC + eternal saga
   if (fromVersion <= 20) {
     migrateV20ToV21(s);
+  }
+  // v21 → v22: Phase V3-H — season state default
+  if (fromVersion <= 21) {
+    migrateV21ToV22(s);
   }
   return s;
 }
@@ -1345,10 +1372,17 @@ export const useGameStore = create<GameStore>()(
       recordSagaRealmTransition(from, to, atAge, chapter) {
         set(s => ({ ...s, meta: { ...s.meta, eternalSaga: recordRealmTransition(s.meta.eternalSaga, from, to, atAge, chapter) } }));
       },
+      // Phase V3-H B2 — hero snapshot persist/clear
+      saveHeroSnapshot(snapshot) {
+        set(s => ({ ...s, run: { ...s.run, heroSnapshot: snapshot } }));
+      },
+      clearHeroSnapshot() {
+        set(s => ({ ...s, run: { ...s.run, heroSnapshot: null } }));
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 21,  // 20 → 21 (Phase V3-D/E/F — unlockedRealms + eternalSaga + currentRealmId + npcs)
+      version: 22,  // 21 → 22 (Phase V3-H — season state)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

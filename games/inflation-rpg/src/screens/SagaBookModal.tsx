@@ -7,17 +7,21 @@ interface Props {
   onClose: () => void;
 }
 
-type EventFilter = 'all' | 'battle' | 'drop' | 'levelUp' | 'realm' | 'npc' | 'rejuv';
+type EventFilter = 'all' | 'battle' | 'drop' | 'levelUp' | 'realm' | 'npc' | 'rejuv' | 'sightseeing' | 'meditation' | 'trial' | 'season';
 
 function matchesFilter(t: SagaEventType, f: EventFilter): boolean {
   switch (f) {
-    case 'all':     return true;
-    case 'battle':  return t === 'battle';
-    case 'drop':    return t === 'drop';
-    case 'levelUp': return t === 'levelUp';
-    case 'npc':     return t === 'moralChoice' || t === 'shrine';
-    case 'rejuv':   return t === 'rejuvenation';
-    case 'realm':   return false; // realm transitions render separately below
+    case 'all':         return true;
+    case 'battle':      return t === 'battle';
+    case 'drop':        return t === 'drop';
+    case 'levelUp':     return t === 'levelUp';
+    case 'npc':         return t === 'moralChoice' || t === 'shrine';
+    case 'rejuv':       return t === 'rejuvenation';
+    case 'realm':       return false; // realm transitions render separately below
+    case 'sightseeing': return t === 'sightseeing';
+    case 'meditation':  return t === 'meditation';
+    case 'trial':       return t === 'trial';
+    case 'season':      return t === 'seasonChange';
   }
 }
 
@@ -47,7 +51,7 @@ export function SagaBookModal({ onClose }: Props) {
           <button type="button" data-testid="saga-modal-close" onClick={onClose} style={{ minHeight: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
         </div>
         <div style={{ padding: '8px 16px', borderBottom: '1px solid #333', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {(['all', 'battle', 'drop', 'levelUp', 'realm', 'npc', 'rejuv'] as EventFilter[]).map(f => (
+          {(['all', 'battle', 'drop', 'levelUp', 'realm', 'npc', 'rejuv', 'sightseeing', 'meditation', 'trial', 'season'] as EventFilter[]).map(f => (
             <button
               key={f}
               type="button"

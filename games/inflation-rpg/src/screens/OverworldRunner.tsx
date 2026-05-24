@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
 import { computeLightDelta } from '../overworld/lightEmit';
@@ -8,9 +8,13 @@ import type { SagaEvent } from '../saga/SagaTypes';
 import { SpendModal } from './SpendModal';
 import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
+import { StatusModal } from './StatusModal';
+import { seasonEmoji, seasonNameKR, seasonBonus } from '../season/SeasonState';
 
 interface Props {
   onCycleEnd: () => void;
+  /** V3-H: 자동 저장 후 메인 메뉴로 복귀. cycle 상태는 유지된다. */
+  onExitToMenu?: () => void;
 }
 
 const LOG_LIMIT = 12;
@@ -26,7 +30,13 @@ async function bootPhaser(
   initialSpeed: number,
   currentRealm?: import('../types').RealmId,
   unlockedRealms?: readonly import('../types').RealmId[],
-): Promise<{ destroy: () => void; setSpeed: (m: number) => void }> {
+  currentSeason?: import('../types').SeasonId,
+): Promise<{
+  destroy: () => void;
+  setSpeed: (m: number) => void;
+  setUnlockedRealms: (r: readonly import('../types').RealmId[]) => void;
+  setSeason: (s: import('../types').SeasonId) => void;
+}> {
   const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
     import('phaser'),
     import('../overworld/OverworldScene'),
@@ -40,21 +50,28 @@ async function bootPhaser(
     scene: OverworldScene,
     physics: { default: 'arcade' },
   });
-  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed, currentRealm, unlockedRealms });
+  game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed, currentRealm, unlockedRealms, currentSeason });
+  const getScene = () => game.scene.getScene('OverworldScene') as InstanceType<typeof OverworldScene> | null;
   const setSpeed = (m: number) => {
-    const scene = game.scene.getScene('OverworldScene') as InstanceType<typeof OverworldScene> | null;
-    scene?.setSpeed(m);
+    getScene()?.setSpeed(m);
   };
-  return { destroy: () => game.destroy(true), setSpeed };
+  const setUnlockedRealms = (r: readonly import('../types').RealmId[]) => {
+    getScene()?.setUnlockedRealms(r);
+  };
+  const setSeason = (s: import('../types').SeasonId) => {
+    getScene()?.setSeason(s);
+  };
+  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setSeason };
 }
 
 const SPEED_PRESETS = [1, 2, 5, 10] as const;
 type SpeedPreset = (typeof SPEED_PRESETS)[number];
 
-export function OverworldRunner({ onCycleEnd }: Props) {
+export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const status = useCycleStoreV2(s => s.status);
   const controller = useCycleStoreV2(s => s.controller);
   const endCycle = useCycleStoreV2(s => s.endCycle);
+  const startCycle = useCycleStoreV2(s => s.start);
   const meta = useGameStore(s => s.meta);
   const run = useGameStore(s => s.run);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -63,15 +80,55 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
-  const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
+  type LightFloat = { id: string; amount: number; createdAt: number };
+  const FADE_MS = 1500;
+  const MAX_FLOATS = 3;
+  const [lightFloats, setLightFloats] = useState<LightFloat[]>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
+  const setSceneUnlockedRealmsRef = useRef<((r: readonly import('../types').RealmId[]) => void) | null>(null);
+  const setSceneSeasonRef = useRef<((s: import('../types').SeasonId) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoRejuvTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveMul = getMoveSpeedMul(meta);
+
+  const emitLightFloat = useCallback((amount: number) => {
+    setLightFloats(prev => {
+      const next: LightFloat[] = [...prev, { id: `${Date.now()}-${Math.random()}`, amount, createdAt: Date.now() }];
+      return next.slice(-MAX_FLOATS);
+    });
+  }, []);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const now = Date.now();
+      setLightFloats(prev => prev.filter(f => now - f.createdAt < FADE_MS));
+    }, 500);
+    return () => clearInterval(tick);
+  }, []);
+
+  // V3-H B2: auto-start cycle on mount if no cycle is active.
+  // If run.heroSnapshot exists the cycle controller will restore the hero from it
+  // (same age/level/saga context). Otherwise a fresh hero is created as usual.
+  useEffect(() => {
+    const cycleState = useCycleStoreV2.getState();
+    if (cycleState.status === 'idle' || cycleState.controller === null) {
+      const atkBaseBonus = useGameStore.getState().meta.atkBaseBonus ?? 0;
+      const hpBaseBonus = useGameStore.getState().meta.hpBaseBonus ?? 0;
+      startCycle({
+        seed: Date.now() & 0xffffffff,
+        traits: [],
+        heroHpMax: 100 + hpBaseBonus,
+        heroAtkBase: 50 + atkBaseBonus,
+        // heroSnapshot is picked up automatically from run.heroSnapshot inside cycleSliceV2.start
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (status !== 'running' || !controller || !containerRef.current) return;
@@ -85,17 +142,15 @@ export function OverworldRunner({ onCycleEnd }: Props) {
           const evs = controller.handleArrival(event.landmarkKind, event.landmarkId);
           const { delta: rawDelta } = computeLightDelta(evs, event.landmarkKind);
           if (rawDelta > 0) {
-            const rateMul = getLightRateMul(useGameStore.getState().meta);
+            const curMeta = useGameStore.getState().meta;
+            // V3-H F6: spring bonus lightRateMul stacked on top of meta rateMul.
+            const rateMul = getLightRateMul(curMeta) * seasonBonus(curMeta.season.current).lightRateMul;
             const finalDelta = rawDelta * rateMul;
             useGameStore.setState(s => ({
               ...s,
               meta: { ...s.meta, light: (s.meta.light ?? 0) + finalDelta },
             }));
-            const floaterKey = Date.now() + Math.random();
-            setLightFloaters(prev => [...prev, { key: floaterKey, amount: finalDelta }]);
-            setTimeout(() => {
-              setLightFloaters(prev => prev.filter(f => f.key !== floaterKey));
-            }, 1500);
+            emitLightFloat(finalDelta);
           }
           setHudTick(n => n + 1);
           setLogEntries(controller.getRecentSagaEvents(LOG_LIMIT));
@@ -122,9 +177,39 @@ export function OverworldRunner({ onCycleEnd }: Props) {
               realmOverlayTimerRef.current = null;
             }, 2000);
           }
+          // V3-H Bug A: sync OverworldScene's stale unlockedRealms copy after a
+          // realm_unlocked event so DestinationResolver.choose sees the new exit landmark.
+          const realmUnlocked = evs.find(e => e.type === 'realm_unlocked');
+          if (realmUnlocked && realmUnlocked.type === 'realm_unlocked') {
+            setSceneUnlockedRealmsRef.current?.(controller.getUnlockedRealms());
+          }
+          // V3-H F6: season changed → update scene bg tint. Store already updated by controller.
+          const seasonChanged = evs.find(e => e.type === 'season_changed');
+          if (seasonChanged && seasonChanged.type === 'season_changed') {
+            setSceneSeasonRef.current?.(seasonChanged.season);
+          }
+          // V3-H E1 + B3: hero_died comes from handleArrival (EncounterEngine emits it).
+          // It is NOT a top-level OverworldScene event — move detection here alongside
+          // the other evs.find() checks so the auto-rejuv timer actually fires.
+          const heroDied = evs.find(e => e.type === 'hero_died');
+          if (heroDied && heroDied.type === 'hero_died') {
+            // V3-H B3: 영웅은 불멸 — 사망 후 2초 극적 여운, 자동 5년 회춘.
+            // 회춘은 빛 비용 없이 무료 (영원한 영웅 컨셉).
+            // hero.staggered=true 이므로 다음 arrival 에서 HP 가 자동 회복됨.
+            if (autoRejuvTimerRef.current) clearTimeout(autoRejuvTimerRef.current);
+            autoRejuvTimerRef.current = setTimeout(() => {
+              autoRejuvTimerRef.current = null;
+              const ctrl = useCycleStoreV2.getState().controller;
+              if (!ctrl) return;
+              ctrl.getHero().rejuvenate(5);
+              ctrl.recordRejuvenation(5);
+            }, 2000);
+          }
         }
-        if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
+        if (event.type === 'cycle_ended' && !endedRef.current) {
           endedRef.current = true;
+          // V3-H B2: cycle ends naturally → clear hero snapshot so next visit spawns fresh hero.
+          useGameStore.getState().clearHeroSnapshot();
           endCycle();
           onCycleEnd();
         }
@@ -135,13 +220,18 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       speed * moveMul,
       controller.getCurrentRealmId() ?? undefined,
       controller.getUnlockedRealms(),
+      useGameStore.getState().meta.season.current,
     ).then(g => {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;
+      setSceneUnlockedRealmsRef.current = g.setUnlockedRealms;
+      setSceneSeasonRef.current = g.setSeason;
     });
 
     return () => {
       setSceneSpeedRef.current = null;
+      setSceneUnlockedRealmsRef.current = null;
+      setSceneSeasonRef.current = null;
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
         chapterOverlayTimerRef.current = null;
@@ -149,6 +239,10 @@ export function OverworldRunner({ onCycleEnd }: Props) {
       if (realmOverlayTimerRef.current) {
         clearTimeout(realmOverlayTimerRef.current);
         realmOverlayTimerRef.current = null;
+      }
+      if (autoRejuvTimerRef.current) {
+        clearTimeout(autoRejuvTimerRef.current);
+        autoRejuvTimerRef.current = null;
       }
       destroy?.();
     };
@@ -169,64 +263,87 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   return (
     <div data-testid="overworld-runner" style={{ position: 'relative' }}>
       <div data-testid="overworld-hud" style={hudStyle}>
-        <span data-testid="hud-name">{hero.emoji} {hero.name}</span>
-        <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
-        <span>{hero.job} · LV {hero.level}</span>
-        <span>HP {hero.hp}/{hero.hpMax}</span>
-        <span data-testid="hud-light" style={{ position: 'relative' }}>
-          빛 {Math.floor(meta.light ?? 0)}
-          <span data-testid="light-floaters" style={{ position: 'absolute', left: '100%', top: 0, marginLeft: 8, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
-            {lightFloaters.map(f => (
-              <span
-                key={f.key}
-                style={{
-                  display: 'inline-block',
-                  color: '#ffd54f',
-                  fontWeight: 700,
-                  animation: 'forgeLightFloat 1.5s ease-out forwards',
-                  marginRight: 4,
-                }}
-              >
-                +{f.amount.toFixed(1)}
-              </span>
-            ))}
+        {/* Row 1: character info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, flexWrap: 'wrap', width: '100%' }}>
+          <span data-testid="hud-name">{hero.emoji} {hero.name}</span>
+          <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
+          <span data-testid="hud-job-lv">{hero.job} · LV {hero.level}</span>
+          <span data-testid="hud-hp">HP {hero.hp}/{hero.hpMax}</span>
+        </div>
+        {/* Row 2: meta info + buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, flexWrap: 'wrap', width: '100%' }}>
+          <span data-testid="hud-light">빛 {Math.floor(meta.light ?? 0)}</span>
+          <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
+          <span data-testid="hud-season">{seasonEmoji(meta.season.current)} {seasonNameKR(meta.season.current)}</span>
+          <span data-testid="hud-realm">
+            {(() => {
+              const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
+              return `🌍 ${r?.nameKR ?? '?'} (${meta.unlockedRealms.length}/${REALM_CATALOG.length})`;
+            })()}
           </span>
-        </span>
-        <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
-        <button
-          type="button"
-          onClick={() => setSpendModalOpen(true)}
-          data-testid="open-spend-modal"
-          style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}
-        >
-          신의 메뉴
-        </button>
-        <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
-        <span data-testid="hud-realm" style={{ marginLeft: 8 }}>
-          {(() => {
-            const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
-            return `🌍 ${r?.nameKR ?? '?'} (${meta.unlockedRealms.length}/${REALM_CATALOG.length})`;
-          })()}
-        </span>
-        <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
-          {SPEED_PRESETS.map(s => (
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
-              key={s}
               type="button"
-              onClick={() => setSpeed(s)}
-              data-testid={`speed-${s}x`}
-              data-active={speed === s ? 'true' : undefined}
-              style={speedBtnStyle(speed === s)}
+              onClick={() => setSpendModalOpen(true)}
+              data-testid="open-spend-modal"
+              style={{ padding: '4px 8px', fontSize: 12 }}
             >
-              {s}×
+              신의 메뉴
             </button>
-          ))}
-        </span>
+            <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
+            <button
+              type="button"
+              data-testid="open-status-modal"
+              onClick={() => setStatusModalOpen(true)}
+              style={{ minHeight: 44, padding: '4px 8px', fontSize: 12 }}
+            >
+              📊 상태
+            </button>
+            <span data-testid="speed-buttons" style={{ display: 'inline-flex', gap: 4 }}>
+              {SPEED_PRESETS.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSpeed(s)}
+                  data-testid={`speed-${s}x`}
+                  data-active={speed === s ? 'true' : undefined}
+                  style={speedBtnStyle(speed === s)}
+                >
+                  {s}×
+                </button>
+              ))}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div data-testid="light-floaters" style={{ position: 'absolute', right: 0, top: 60, pointerEvents: 'none', zIndex: 5 }}>
+        {lightFloats.map((f, idx) => {
+          const elapsed = Date.now() - f.createdAt;
+          const opacity = Math.max(0, 1 - elapsed / FADE_MS);
+          return (
+            <div
+              key={f.id}
+              style={{
+                position: 'absolute',
+                right: 16 + idx * 4,
+                top: idx * 18,
+                color: '#ffd54f',
+                fontSize: 14,
+                fontWeight: 700,
+                opacity,
+                transition: 'opacity 0.3s',
+              }}
+            >
+              +{f.amount.toFixed(1)}
+            </div>
+          );
+        })}
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
       {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
       {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
       {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
+      {statusModalOpen && <StatusModal onClose={() => setStatusModalOpen(false)} />}
 
       <style>{`
         @keyframes forgeChapterFade {
@@ -290,8 +407,25 @@ export function OverworldRunner({ onCycleEnd }: Props) {
         )}
       </div>
 
-      <button onClick={() => { endCycle(); onCycleEnd(); }} style={abandonBtnStyle}>
-        포기 (cycle 종료)
+      <button
+        type="button"
+        data-testid="open-main-menu"
+        onClick={() => {
+          // V3-H B2: 자동 저장 — controller 의 현재 hero snapshot 을 run 에 persist.
+          const ctrl = useCycleStoreV2.getState().controller;
+          if (ctrl) {
+            const heroSnap = ctrl.getHero().serialize(ctrl.getSeed());
+            useGameStore.getState().saveHeroSnapshot(heroSnap);
+          }
+          if (onExitToMenu) {
+            onExitToMenu();
+          } else {
+            window.history.back();
+          }
+        }}
+        style={mainMenuBtnStyle}
+      >
+        메인 메뉴
       </button>
     </div>
   );
@@ -313,13 +447,15 @@ function eventColor(type: SagaEvent['type']): string {
 
 const hudStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 16,
+  flexDirection: 'column',
+  gap: 6,
   padding: '8px 16px',
   background: '#1f2937',
   color: '#cbd5e1',
   fontSize: 13,
   borderBottom: '1px solid #334155',
-  flexWrap: 'wrap',
+  position: 'relative',
+  zIndex: 10,
 };
 
 function speedBtnStyle(active: boolean): React.CSSProperties {
@@ -381,14 +517,15 @@ function logRowStyle(color: string): React.CSSProperties {
   };
 }
 
-const abandonBtnStyle: React.CSSProperties = {
+const mainMenuBtnStyle: React.CSSProperties = {
   margin: '12px auto',
   display: 'block',
+  minHeight: 44,
   padding: '8px 16px',
-  background: 'transparent',
-  color: '#94a3b8',
-  border: '1px solid #475569',
-  borderRadius: 4,
+  background: '#3b4252',
+  color: '#eee',
+  border: '1px solid #555',
+  borderRadius: 6,
   cursor: 'pointer',
-  fontSize: 12,
+  fontSize: 13,
 };

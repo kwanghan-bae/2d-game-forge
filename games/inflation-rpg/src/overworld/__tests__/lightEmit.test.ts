@@ -63,7 +63,7 @@ describe('computeLightDelta', () => {
     const evs: OverworldEvent[] = [
       { type: 'moral_choice', choice: 'mercy', dim: 'merciful', delta: 1, nameKR: '자비' },
       { type: 'chapter_transition', fromChapter: '어린시절', toChapter: '청년기', atAge: 15 },
-      { type: 'hero_died', cause: '전사' },
+      { type: 'hero_died', cause: '전사', oldLevel: 10, newLevel: 9 },
       { type: 'tick', t: 1 },
       { type: 'arrived_at', landmarkId: 'l1', landmarkKind: 'enemy' },
       { type: 'battle_started', enemyId: 'e1' },

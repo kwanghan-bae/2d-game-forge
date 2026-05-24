@@ -81,6 +81,7 @@ export function generateMapLayout(seed: number): MapLayout {
   place('lich_king',    18 + rng.int(2), rng.int(GRID_H), '_b2');
 
   place('shrine', 18 + rng.int(2), rng.int(GRID_H));
+  place('shrine', 10 + rng.int(4), rng.int(GRID_H), '_b'); // V3-H F2: +20% shrine 빈도 (2nd shrine)
   place('cave',   15 + rng.int(3), rng.int(GRID_H));
   place('ruin',   12 + rng.int(4), rng.int(GRID_H));
 
@@ -97,20 +98,51 @@ export function generateMapLayout(seed: number): MapLayout {
   place('crossroads',    8 + rng.int(3),  rng.int(GRID_H));
   place('crossroads',    9 + rng.int(3),  rng.int(GRID_H), '_b');
 
-  // V3-D: realm 1-5 별 column band 의 enemy + boss + exit 배치
+  // V3-H F3: sightseeing landmark — realm 당 1개 (base 포함)
+  const SIGHTSEEING_TYPES = ['mountain_peak', 'ancient_tree', 'waterfall', 'starry_field', 'sacred_grove'] as const;
+  for (const realm of REALM_CATALOG) {
+    const [colStart, colEnd] = realm.columnRange;
+    const typeId = SIGHTSEEING_TYPES[rng.int(SIGHTSEEING_TYPES.length)];
+    const col = colStart + 2 + rng.int(Math.max(1, colEnd - colStart - 4));
+    const row = 1 + rng.int(GRID_H - 2);
+    place(typeId!, col, row, `_sightseeing_${realm.id}`);
+  }
+
+  // V3-H F5: trial_altar — non-base realm 당 1개 (시련의 제단)
   for (const realm of REALM_CATALOG) {
     if (realm.id === 'base') continue;
     const [colStart, colEnd] = realm.columnRange;
-    let y = 2;
-    for (let i = 0; i < Math.min(4, realm.enemyRoster.length); i++) {
-      const enemyId = realm.enemyRoster[i];
-      const col = colStart + 2 + i * 4;
-      place(enemyId, col, y, `_r${realm.id}`);
-      y = (y + 3) % (GRID_H - 2) + 1;
+    const col = colStart + Math.floor((colEnd - colStart) / 3);
+    place('trial_altar', col, 1, `_trial_${realm.id}`);
+  }
+
+  // V3-D / V3-H: realm 별 column band 의 enemy + boss + 양쪽 경계 exit 배치
+  for (let idx = 0; idx < REALM_CATALOG.length; idx++) {
+    const realm = REALM_CATALOG[idx];
+    const [colStart, colEnd] = realm.columnRange;
+
+    // realm 1-5 의 enemy + boss (base 는 V1e 기존 배치 유지)
+    if (realm.id !== 'base') {
+      let y = 2;
+      for (let i = 0; i < Math.min(4, realm.enemyRoster.length); i++) {
+        const enemyId = realm.enemyRoster[i];
+        const col = colStart + 2 + i * 4;
+        place(enemyId, col, y, `_r${realm.id}`);
+        y = (y + 3) % (GRID_H - 2) + 1;
+      }
+      place(realm.bossId, colEnd - 2, Math.floor(GRID_H / 2), `_r${realm.id}`);
     }
-    place(realm.bossId, colEnd - 2, Math.floor(GRID_H / 2), `_r${realm.id}`);
+
+    // V3-H Bug B fix: 양쪽 경계 exit (모든 realm 포함, base 도)
     if (realm.nextRealm) {
-      place('exit', colEnd - 1, Math.floor(GRID_H / 2), `_r${realm.id}`);
+      const nextRealm = REALM_CATALOG[idx + 1];
+      // current realm 측 exit: col = colEnd - 1 (current realm 의 마지막 column)
+      place('exit', colEnd - 1, Math.floor(GRID_H / 2), `_${realm.id}_to_${realm.nextRealm}_a`);
+      // next realm 측 exit: col = nextRealm.columnRange[0] (next realm 의 첫 column)
+      if (nextRealm) {
+        const nextRow = Math.min(GRID_H - 1, Math.floor(GRID_H / 2) + 1);
+        place('exit', nextRealm.columnRange[0], nextRow, `_${realm.nextRealm}_from_${realm.id}_b`);
+      }
     }
   }
 
