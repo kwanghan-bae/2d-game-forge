@@ -263,25 +263,32 @@ export const NarrationVariants = {
     return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   levelUpBatch(ctx: { age: number; fromLevel: number; toLevel: number; count: number }, seed = 0): string {
-    return pick(LEVELUP_BATCH_VARIANTS, ctx, seed);
+    const out = pick(LEVELUP_BATCH_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   drop(ctx: { age: number; itemNameKR: string }, seed = 0): string {
-    return pick(DROP_VARIANTS, ctx, seed);
+    const out = pick(DROP_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   shrineHealed(ctx: { age: number; healed: number }, seed = 0): string {
-    return pick(SHRINE_HEALED_VARIANTS, ctx, seed);
+    const out = pick(SHRINE_HEALED_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   shrineCalm(ctx: { age: number }, seed = 0): string {
-    return pick(SHRINE_CALM_VARIANTS, ctx, seed);
+    const out = pick(SHRINE_CALM_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   moralChoice(ctx: { age: number; choiceNameKR: string }, seed = 0): string {
-    return pick(MORAL_VARIANTS, ctx, seed);
+    const out = pick(MORAL_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   skillLearned(ctx: { age: number; skillNameKR: string }, seed = 0): string {
-    return pick(SKILL_VARIANTS, ctx, seed);
+    const out = pick(SKILL_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   jobUnlock(ctx: { age: number; jobNameKR: string; tier: number }, seed = 0): string {
-    return pick(JOB_VARIANTS, ctx, seed);
+    const out = pick(JOB_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   rejuvenation(ctx: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return pick(REJUVENATION_VARIANTS, ctx, seed);
