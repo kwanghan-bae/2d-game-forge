@@ -43,4 +43,20 @@ describe('sim-cycle-v2 (V1a CycleControllerV2 headless driver)', () => {
     expect(out.summary.arrivals.p50).toBeGreaterThan(0);
     expect(typeof out.summary.endCauses).toBe('object');
   });
+
+  // Cycle 10 P0: MAX_ARRIVALS default raised 500 → 1000 to unlock lifecycle
+  // drama. With ageFromActions = floor(5 + 65 × actions/1000) and 1 arrival
+  // = 1 action, the previous 500 cap pinned ageEnd at 37 (well below the
+  // 50-69 老年 chapter and 70+ 마지막 chapter thresholds). 1000 lets age
+  // reach 70 deterministically, activating natural-death + rejuv triggers.
+  it('default maxArrivals allows ageEnd ≥ 70 (cycle 10 lifecycle activation)', () => {
+    const out = runSimV2({
+      count: 1, seedStart: 7777,
+      heroHpMax: 100, heroAtkBase: 50,
+      // no maxArrivals → uses default
+    });
+    const r = out.results[0]!;
+    // Floor(5 + 65 × 1000/1000) = 70 if hero survives to the cap.
+    expect(r.finalAge).toBeGreaterThanOrEqual(60);
+  }, 30_000);
 });
