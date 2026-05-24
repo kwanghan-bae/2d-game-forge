@@ -51,5 +51,7 @@ games/inflation-rpg/balance-sweep-out.md
 .playwright-mcp/
 .tmp-cycle-4-recon/
 .tmp-cycle-4-postsim/
+.tmp-cycle-5-postsim/
 /tmp/cycle-4-recon/
 /tmp/cycle-4-postsim/
+/tmp/cycle-5-postsim/
