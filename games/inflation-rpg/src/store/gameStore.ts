@@ -386,6 +386,76 @@ export function migrateV22ToV23(persisted: unknown): unknown {
   return s;
 }
 
+// v23 → v24: Cycle-7 S1 — sagaHistory stale 5세 entry retroactive cleanup.
+// Cycle 5 의 stale realm bug 기간에 생성된 saga 카드는 hero col 1 에 갇혀
+// 어떤 path 도 없이 즉시 '자연사' 처리되어 sagaHistory 에 5세 평민 LV 1
+// 이벤트 0 entry 가 쌓였다. Cycle 6 P1 의 flat-snapshot fix 는 새 entry
+// 만 정상화했고 기존 stale 카드는 그대로. 사용자가 saga book 을 처음
+// 열었을 때 첫인상이 이런 stale 로 망쳐지지 않도록 retroactive 삭제.
+//
+// 4-AND 조건 (PRD S1 acceptance):
+//   1. eventCount === 0 (chapters 전체 events + highlightEvents 합산 = 0)
+//   2. finalAge ≤ 5 (hero.finalAge 우선, flat finalAge fallback)
+//   3. deathCause === '자연사' (hero.cause 우선, flat deathCause fallback)
+//   4. finalLevel ≤ 1 (hero.finalLevel 우선, flat finalLevel fallback)
+//
+// 조건이 매우 엄격해서 false positive risk 거의 0 — 정상 entry (예:
+// finalLevel 2 인 운 좋은 levelUp 1 회) 는 보존된다. Defensive 처리:
+// 비정상 shape (chapters undefined, hero missing 등) 는 통과시킨다.
+export function migrateV23ToV24(persisted: unknown): unknown {
+  if (typeof persisted !== 'object' || persisted === null) return persisted;
+  const s = persisted as { meta?: Record<string, unknown> | null };
+  if (!s.meta || typeof s.meta !== 'object') return s;
+  const history = s.meta['sagaHistory'];
+  if (!Array.isArray(history)) return s;
+
+  const isStale = (entry: unknown): boolean => {
+    if (typeof entry !== 'object' || entry === null) return false;
+    const e = entry as {
+      chapters?: unknown;
+      highlightEvents?: unknown;
+      hero?: { finalAge?: unknown; finalLevel?: unknown; cause?: unknown };
+      finalAge?: unknown;
+      finalLevel?: unknown;
+      deathCause?: unknown;
+    };
+
+    // eventCount: chapters[].events.length 합산 + highlightEvents.length
+    let eventCount = 0;
+    if (Array.isArray(e.chapters)) {
+      for (const c of e.chapters) {
+        if (c && typeof c === 'object' && Array.isArray((c as { events?: unknown }).events)) {
+          eventCount += ((c as { events: unknown[] }).events).length;
+        }
+      }
+    }
+    if (Array.isArray(e.highlightEvents)) eventCount += e.highlightEvents.length;
+    if (eventCount !== 0) return false;
+
+    // hero.* 우선, flat alias fallback (Cycle 6 P1 미적용 legacy entry 는
+    // hero.* 만 존재하므로 nested 가 source of truth).
+    const finalAge = typeof e.hero?.finalAge === 'number'
+      ? e.hero.finalAge
+      : (typeof e.finalAge === 'number' ? e.finalAge : undefined);
+    if (typeof finalAge !== 'number' || finalAge > 5) return false;
+
+    const cause = typeof e.hero?.cause === 'string'
+      ? e.hero.cause
+      : (typeof e.deathCause === 'string' ? e.deathCause : undefined);
+    if (cause !== '자연사') return false;
+
+    const finalLevel = typeof e.hero?.finalLevel === 'number'
+      ? e.hero.finalLevel
+      : (typeof e.finalLevel === 'number' ? e.finalLevel : undefined);
+    if (typeof finalLevel !== 'number' || finalLevel > 1) return false;
+
+    return true;
+  };
+
+  s.meta['sagaHistory'] = history.filter(entry => !isStale(entry));
+  return s;
+}
+
 // Phase E — Mythic slot cap derived from ascension tier
 //   tier 0 → 0 슬롯, tier 1-4 → 1 슬롯, tier 5-9 → 3 슬롯, tier 10+ → 5 슬롯
 export function computeMythicSlotCap(tier: number): number {
@@ -593,6 +663,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v22 → v23: Cycle-5 F2 — stale realm bug rescue
   if (fromVersion <= 22) {
     migrateV22ToV23(s);
+  }
+  // v23 → v24: Cycle-7 S1 — sagaHistory stale 5세 entry retroactive cleanup
+  if (fromVersion <= 23) {
+    migrateV23ToV24(s);
   }
   return s;
 }
@@ -1401,7 +1475,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 23,  // 22 → 23 (Cycle-5 F2 — stale realm rescue)
+      version: 24,  // 23 → 24 (Cycle-7 S1 — stale sagaHistory cleanup)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
