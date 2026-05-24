@@ -168,6 +168,76 @@ describe('Cycle 1 F3 — NPC narrative generators', () => {
   });
 });
 
+describe('Cycle 3 F1 — 이중 괄호 prefix bug fix', () => {
+  // sim-cycle-v2.ts:330 의 renderer 가 `- (${age}세) ${narrativeText}` 형태로
+  // prefix 를 prepend 한다. variant 의 leading `(AGE세) ` prefix 가 함께 있으면
+  // `(6세) (6세) ...` 이중 prefix 가 된다 (cycle-3-story-critic 발견).
+  //
+  // 정책 (option A): variant text 는 leading `(N세) ` prefix 로 시작하지 않는다.
+  // 본문에 자연어 `${age}세에 ...` 형태로 age 를 포함시켜 cycle-2 baseline 컨벤션과 통일.
+
+  const LEADING_PAREN_PREFIX_RE = /^\(\d+세\)/;
+
+  it('forRealmEnter — 모든 realm × 100 seed: leading "(N세) " prefix 부재', () => {
+    const REALMS = ['base', 'sea', 'volcano', 'underworld', 'heaven', 'chaos'] as const;
+    for (const realm of REALMS) {
+      for (let i = 0; i < 100; i++) {
+        const txt = NarrativeGenerator.forRealmEnter({ age: 5 + i, realm }, i);
+        expect(txt).not.toMatch(LEADING_PAREN_PREFIX_RE);
+      }
+    }
+  });
+
+  it('forSeasonChange — 4 season × 6 realm × 30 seed: leading "(N세) " prefix 부재', () => {
+    const SEASONS = ['spring', 'summer', 'fall', 'winter'] as const;
+    const REALMS = ['base', 'sea', 'volcano', 'underworld', 'heaven', 'chaos'] as const;
+    for (const season of SEASONS) {
+      for (const realm of REALMS) {
+        for (let i = 0; i < 30; i++) {
+          const txt = NarrativeGenerator.forSeasonChange({ season, age: 20 + i, realm }, i);
+          expect(txt).not.toMatch(LEADING_PAREN_PREFIX_RE);
+        }
+      }
+    }
+  });
+
+  it('forNpcEncounter — 3 kind × 100 seed: leading "(N세) " prefix 부재', () => {
+    for (const kind of ['mentor', 'rival', 'passerby'] as const) {
+      for (let i = 0; i < 100; i++) {
+        const txt = NarrativeGenerator.forNpcEncounter({ age: 22 + i, kind }, i);
+        expect(txt).not.toMatch(LEADING_PAREN_PREFIX_RE);
+      }
+    }
+  });
+
+  it('forNpcDeath — 100 seed: leading "(N세) " prefix 부재', () => {
+    for (let i = 0; i < 100; i++) {
+      const txt = NarrativeGenerator.forNpcDeath({ age: 50 + i }, i);
+      expect(txt).not.toMatch(LEADING_PAREN_PREFIX_RE);
+    }
+  });
+
+  it('forFamilyEvent — 3 type × 50 seed: leading "(N세) " prefix 부재', () => {
+    for (const type of ['marriage', 'child_born', 'child_grown'] as const) {
+      for (let i = 0; i < 50; i++) {
+        const txt = NarrativeGenerator.forFamilyEvent({ age: 30 + i, type }, i);
+        expect(txt).not.toMatch(LEADING_PAREN_PREFIX_RE);
+      }
+    }
+  });
+
+  it('age 정보는 본문에 보존 — 첫 그룹 컨벤션 (`${age}세에 ...`) 과 통일', () => {
+    // game UI consumer (SagaBookModal/OverworldRunner/CycleResultV2) 는
+    // narrativeText 만 표시하고 prefix 를 prepend 하지 않음.
+    // 따라서 age 정보는 본문 자연어에 보존되어야 한다.
+    expect(NarrativeGenerator.forRealmEnter({ age: 13, realm: 'sea' })).toMatch(/\d+세/);
+    expect(NarrativeGenerator.forSeasonChange({ season: 'summer', age: 20, realm: 'sea' })).toMatch(/\d+세/);
+    expect(NarrativeGenerator.forNpcEncounter({ age: 22, kind: 'mentor' })).toMatch(/\d+세/);
+    expect(NarrativeGenerator.forNpcDeath({ age: 60 })).toMatch(/\d+세/);
+    expect(NarrativeGenerator.forFamilyEvent({ age: 30, type: 'marriage' })).toMatch(/\d+세/);
+  });
+});
+
 describe('Cycle 1 F2.12 — hard-coded season literal 제거 가드', () => {
   // plan 의 위치는 OverworldRunner.tsx 였으나 코드 정황상 실제 hard-coded
   // interpolation 은 CycleControllerV2.ts:371 에 있었다. 그 라인을
