@@ -234,13 +234,33 @@ const FAMILY_EVENT_VARIANTS: Record<'marriage' | 'child_born' | 'child_grown', A
   ],
 };
 
+/* ─────────────────── Cycle 35 D7 (cycle 19 retry) ─────────────────
+ * age 5 prefix 다양화. "5세에" 의 단조로움 해소. seed % 4 분기:
+ *   0: 원형 (기본 "${age}세에") — 하위 호환 (seed=0 시 기본 catalog 그대로)
+ *   1: "어릴 적부터 "
+ *   2: "유년의 어느 날 "
+ *   3: "동심에 머무는 시기에 "
+ * seed=0 일 때 변형 0 만 사용 → 기존 test fixture 영향 없음. */
+function age5Tone(text: string, seed: number): string {
+  if (seed === 0) return text;
+  const variant = seed % 4;
+  if (variant === 0) return text;
+  const replacement =
+    variant === 1 ? '어릴 적부터 ' :
+    variant === 2 ? '유년의 어느 날 ' :
+    '동심에 머무는 시기에 ';
+  return text.replace(/^5세에 /, replacement);
+}
+
 /* ─────────────────── 공개 API ───────────────────────────────── */
 export const NarrationVariants = {
   battle(ctx: { age: number; enemyNameKR: string }, seed = 0): string {
-    return pick(BATTLE_VARIANTS, ctx, seed);
+    const out = pick(BATTLE_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   levelUp(ctx: { age: number; newLevel: number }, seed = 0): string {
-    return pick(LEVELUP_VARIANTS, ctx, seed);
+    const out = pick(LEVELUP_VARIANTS, ctx, seed);
+    return ctx.age === 5 ? age5Tone(out, seed) : out;
   },
   levelUpBatch(ctx: { age: number; fromLevel: number; toLevel: number; count: number }, seed = 0): string {
     return pick(LEVELUP_BATCH_VARIANTS, ctx, seed);
