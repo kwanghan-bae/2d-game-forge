@@ -14,8 +14,17 @@ import { useGameStore } from '../store/gameStore';
 import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { computeFieldDamping } from '../zone/fieldDamping';
-import { getFieldDiffThreshold } from '../buff/buffEffects';
+import { getFieldDiffThreshold, getRejuvDiscount } from '../buff/buffEffects';
 import { seasonForAge } from '../season/SeasonState';
+import { rejuvenationCost } from '../hero/rejuvenation';
+
+/** Cycle-11 C10-B — auto-rejuv tuning constants. Threshold = age 65 (PRD §C10-B
+ *  example), max 2 rejuvs/cycle (caps light drain + lets sim aggregate cycles
+ *  still reach age 70 → '자연사' for the C10-A criterion). 5-year rollback per
+ *  rejuv mirrors the existing manual SpendModal + post-mortem B3 free-rejuv. */
+const AUTO_REJUV_AGE_THRESHOLD = 65;
+const AUTO_REJUV_MAX_PER_CYCLE = 2;
+const AUTO_REJUV_YEARS = 5;
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -116,6 +125,7 @@ export class CycleControllerV2 {
           atAge: this.hero.age,
         });
       }
+      this.maybeAutoRejuvenate();
       this.maybeEmitNaturalDeath(events);
       return events;
     }
@@ -134,6 +144,7 @@ export class CycleControllerV2 {
           atAge: this.hero.age,
         });
       }
+      this.maybeAutoRejuvenate();
       this.maybeEmitNaturalDeath(trialEvents);
       return trialEvents;
     }
@@ -444,6 +455,13 @@ export class CycleControllerV2 {
       events.push({ type: 'season_changed', season: newSeason });
     }
 
+    // Cycle-11 C10-B: preventive auto-rejuv when hero crosses the threshold
+    // (age >= 65) and has enough light + headroom under the per-cycle cap. Must
+    // run BEFORE the natural-death check below so a successful rejuv (age 65 →
+    // 60) prevents the same arrival's `>= 70` check from firing. tickAge ran in
+    // either branch above by the time we reach here.
+    this.maybeAutoRejuvenate();
+
     // Cycle-11 C10-A: emit hero_died('자연사') when hero crosses age 70 in this
     // arrival. Gated on `!this.endCause` so an in-combat '전사' from
     // EncounterEngine already this arrival wins. Sets staggered=true (parallels
@@ -452,6 +470,41 @@ export class CycleControllerV2 {
     // level for oldLevel/newLevel (no -10% penalty; aging isn't a battle loss).
     this.maybeEmitNaturalDeath(events);
     return events;
+  }
+
+  /** Cycle-11 C10-B — auto-rejuv trigger. Called after every tickAge.
+   *  Fires when:
+   *    - hero is alive (not staggered post-battle)
+   *    - hero.age >= AUTO_REJUV_AGE_THRESHOLD (65)
+   *    - hero.rejuvenationCount < AUTO_REJUV_MAX_PER_CYCLE (2)
+   *    - meta.light >= rejuvenationCost(age) * (1 - rejuvDiscount)
+   *  Side effects mirror cycleSliceV2.rejuvenateHero so the live UI path stays
+   *  the source of truth for cost / discount: deducts light from the store,
+   *  rolls the hero's age back AUTO_REJUV_YEARS, and records the saga
+   *  '재생 #K' marker via the existing recordRejuvenation hook.
+   *  No-op when the controller has already set endCause (cycle ending) or hero
+   *  is staggered. */
+  private maybeAutoRejuvenate(): void {
+    if (this.endCause) return;
+    if (this.hero.staggered) return;
+    if (this.hero.age < AUTO_REJUV_AGE_THRESHOLD) return;
+    if (this.hero.rejuvenationCount >= AUTO_REJUV_MAX_PER_CYCLE) return;
+    const meta = useGameStore.getState().meta;
+    const baseCost = rejuvenationCost(this.hero.age);
+    const discount = getRejuvDiscount(meta);
+    const cost = Math.ceil(baseCost * (1 - discount));
+    const light = meta.light ?? 0;
+    if (light < cost) return;
+    useGameStore.setState(s => ({
+      ...s,
+      meta: { ...s.meta, light: (s.meta.light ?? 0) - cost },
+    }));
+    this.hero.rejuvenate(AUTO_REJUV_YEARS);
+    this.recordRejuvenation(AUTO_REJUV_YEARS);
+    // Cycle-1 F2 parity: cycleSliceV2.rejuvenateHero forwards to the saga
+    // store's recordSagaRejuvenation. Mirror that here so live UI saga sees
+    // the era boundary the same way as a SpendModal-triggered rejuv.
+    useGameStore.getState().recordSagaRejuvenation();
   }
 
   /** Cycle-11 C10-A: emit `hero_died('자연사')` once when hero reaches the
