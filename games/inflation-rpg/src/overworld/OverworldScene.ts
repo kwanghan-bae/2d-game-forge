@@ -6,7 +6,7 @@ import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '.
 import { Pathfinder, findPathWithFallback, type GridCell } from './Pathfinding';
 import { findRealm } from '../data/realms';
 import type { PlacedLandmark } from './Landmark';
-import { landmarkToCandidate } from './Landmark';
+import { landmarkToCandidate, filterCandidatesByRealm } from './Landmark';
 import type { OverworldEvent } from './OverworldEvents';
 import type { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import type { HeroEntity } from '../hero/HeroEntity';
@@ -161,8 +161,19 @@ export class OverworldScene extends Phaser.Scene {
 
   private async pickNextDestination(): Promise<void> {
     const heroPos = this.heroGridPos();
-    const candidates = this.layout.landmarks
-      .filter(l => !l.consumed)
+    // Cycle-8 C1: drop landmarks whose column lies outside the hero's
+    // current realm BEFORE the AI scores candidates. The pathfinder still
+    // applies `columnBounds = currentRealm.columnRange` below, so leaving
+    // cross-realm landmarks in the candidate set meant every such pick
+    // produced a null path and pushed the F4 fallback to do the recovery —
+    // 89 firings/cycle in the cycle-7 finisher's 4-minute idle baseline.
+    // exit landmarks pass through unconditionally (they are the legitimate
+    // cross-realm transition path).
+    const reachable = filterCandidatesByRealm(
+      this.layout.landmarks.filter(l => !l.consumed),
+      this.currentRealm,
+    );
+    const candidates = reachable
       .filter(l => !(l.gridX === heroPos.x && l.gridY === heroPos.y))
       .map(l => ({ landmark: l, candidate: landmarkToCandidate(l) }));
 
