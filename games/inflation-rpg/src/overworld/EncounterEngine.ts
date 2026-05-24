@@ -20,7 +20,9 @@ const BOSS_EXP_BASE = 60;
 const DROP_RATE = 0.36;           // V3-H F2: +20% (was 0.3)
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
-export const MERCIFUL_PROC_RATE = 0.10;       // cycle 1 F1: was 0.15 — personality threshold 의미 회복
+// Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
+// cycle 1 F1 에서 0.15 → 0.10 으로 한 차례 줄였고, 이번이 두 번째 감소.
+export const MERCIFUL_PROC_RATE = 0.07;
 const MERCIFUL_DRIFT = 3;
 
 export interface EncounterEngineOpts {
