@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { CycleControllerV2, type CycleControllerV2Opts } from './CycleControllerV2';
 import { SagaStorage } from '../saga/SagaStorage';
 import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
-import { goldFromCycle, spend } from '../meta/MetaProgression';
+import { goldFromCycle } from '../meta/MetaProgression';
 import { useGameStore } from '../store/gameStore';
 import { rejuvenationCost } from '../hero/rejuvenation';
 import { getRejuvDiscount, getDropChanceBonus, getAgingSpeedMul, getFieldDiffThreshold } from '../buff/buffEffects';
@@ -12,6 +12,7 @@ import { findRealm } from '../data/realms';
 import { seasonBonus } from '../season/SeasonState';
 import { pickStartingRealm, spawnColumnForRealm } from './realmRotation';
 import { GRID_H } from './mapLayout';
+import { applyEndCycleMeta } from './cycleSlice.helpers';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -121,38 +122,11 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       bossKills: stats.bossKills,
       drops: stats.drops,
     });
-    // V1c-1 — auto-spend the freshly accrued gold using the 'balanced'
-    // strategy so the live game's meta bonuses actually grow between cycles.
-    // Headless sim drivers bypass this store entirely (they construct
-    // CycleControllerV2 directly), so multi-scenario strategy comparison in
-    // sim-scenarios.ts stays unaffected.
-    useGameStore.setState(s => {
-      const totalGold = (s.meta.sponsorGold ?? 0) + gold;
-      const out = spend({
-        gold: totalGold,
-        atkBaseBonus: s.meta.atkBaseBonus ?? 0,
-        hpBaseBonus: s.meta.hpBaseBonus ?? 0,
-        strategy: 'balanced',
-      });
-      return {
-        ...s,
-        meta: {
-          ...s.meta,
-          sponsorGold: out.goldRemaining,
-          atkBaseBonus: out.atkBaseBonus,
-          hpBaseBonus: out.hpBaseBonus,
-        },
-        // Cycle-5 F1: stale realm bug fix — 다음 cycle 의 hero 는 base village
-        // col 1 에 spawn 하므로 이전 realm 의 columnBounds 가 남아있으면
-        // pathfinder 가 모든 후보를 차단하여 candidates 소진 → 5세 즉사.
-        // NPC 도 이전 cycle 의 잔존이므로 함께 초기화.
-        run: {
-          ...s.run,
-          currentRealmId: 'base',
-          npcs: [],
-        },
-      };
-    });
+    // Cycle-18 — sim/real parity. The pure transform (`applyEndCycleMeta`)
+    // owns sponsorGold spend + stale-realm reset + npcs clear. Mirror in
+    // `scripts/sim-cycle-v2.ts` calls the same helper so future changes
+    // propagate to both paths automatically. See cycleSlice.helpers.ts.
+    useGameStore.setState(s => applyEndCycleMeta(s, { gold }));
     set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold });
   },
   rejuvenateHero(years) {
