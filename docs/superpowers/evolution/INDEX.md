@@ -8,3 +8,4 @@
 - Cycle 2 partial (2026-05-24, `be1b8f7`): F1 multi-seed + Δ-from-baseline 룰 persona doc 패치. F2/F3 는 cycle 3 (C1/C2) carry-over. Soft-halt 자원 추정 trigger — 사용자 confirm 대기.
 - Cycle 3 partial (2026-05-24, `6135a9a`): F1 이중 괄호 prefix bug fix (cycle 1 F2 regression). multi-seed 룰 첫 적용 — single-seed 0.40 outlier 가 multi-seed 0.453 (priest saturator confirmed). D1-D7 cycle 4 carry-over.
 - Cycle 4 (2026-05-24, `ce4cb80`): Polish Pass (favicon + josa util + dev placeholder + HUD 3-row + 신의 메뉴 카테고리 탭 + 필터 한글). 약점: console 1 + UI 어설픔 3. 머지 가드 1130 PASS. Group A + Group B 병렬 dispatch 첫 시도. D1-D7 + prod 빌드 정찰 cycle 5 carry-over.
+- Cycle 5 (2026-05-24, `28e5539`): Stale Realm Bug Fix (V3-DEF + V3-H compound). `endCycle` reset (`currentRealmId='base'` + `npcs=[]`) + persist v22→v23 migration + `'무위'` cause 분리 (출구 없음). 머지 가드 1138 PASS. Playwright 검증 3 시나리오 — LV 28만+ 정상 진행 확인. **사용자 보고 "계속 오류" 의 진짜 root cause 해소.** F4 pathfinder fallback + saga cleanup cycle 6 carry-over.
