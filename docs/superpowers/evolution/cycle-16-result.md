@@ -13,10 +13,11 @@ unlockedRealms onBossKill 누적, currentRealmId base reset) 를 sim loop
 
 ## 머지 정보
 
-- **Commit**: (TBD after commit)
+- **Commit**: `43692e7` (feat) + `30f012e` (docs)
 - **Branch**: `feat/cycle-16-chained-sim`
-- **Main merge**: (TBD)
+- **Main merge**: `d5851ef` (--no-ff)
 - **Tag**: `cycle-16-complete`
+- 7 file / +695 / -12
 
 ## 머지 가드
 
