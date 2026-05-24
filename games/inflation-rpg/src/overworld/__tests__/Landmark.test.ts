@@ -96,3 +96,75 @@ describe('filterCandidatesByRealm — Cycle-8 C1', () => {
     expect(filtered.map(l => l.instanceId)).toEqual(['exit_a']);
   });
 });
+
+// Cycle-9 R2: cross-realm exit candidate audit. cycle-8 postsim 의 11/11
+// fallback 모두 Mode 2 (cross-realm 2+ jump exit pick) 또는 그 cascade
+// (Mode 1 = hero 가 cross-realm jump 후 scene realm 에서 column out-of-range)
+// 로 분류됨. R2 fix 는 exit candidate 의 column 검증을 추가:
+//   - exit 은 currentRealm.columnRange 안 (= "_a" side at colEnd-1) 또는
+//   - nextRealm.columnRange[0] (= "_b" side, 인접 next realm 의 첫 column)
+//     에만 위치해야 통과. 그 외 (= 2+ realm jump) 은 거부.
+describe('filterCandidatesByRealm — Cycle-9 R2 cross-realm exit audit', () => {
+  it('R2 Case 1: hero=base + 2-realm-jump exit (col 79 = underworld→heaven) 차단', () => {
+    // base columnRange [0,20], sea(next) columnRange [20,40].
+    // col 79 = _underworld_to_heaven_a 위치. base hero 는 reach 불가.
+    // cycle-8 warning 1 (`hero (9,7) target (79,6) realm=base`) 재현.
+    const candidates: PlacedLandmark[] = [
+      mkLm(5, 'enemy', 'base_enemy'),
+      mkLm(79, 'exit', 'underworld_to_heaven_a'),
+    ];
+    const filtered = filterCandidatesByRealm(candidates, 'base');
+    expect(filtered.map(l => l.instanceId)).toEqual(['base_enemy']);
+  });
+
+  it('R2 Case 2: hero=base + 1-realm exit entry (col 20 = sea entry) 통과', () => {
+    // sea = base.nextRealm. col 20 = sea.columnRange[0]. 정상 transition.
+    const candidates: PlacedLandmark[] = [
+      mkLm(20, 'exit', 'sea_from_base_b'),
+    ];
+    const filtered = filterCandidatesByRealm(candidates, 'base');
+    expect(filtered.map(l => l.instanceId)).toEqual(['sea_from_base_b']);
+  });
+
+  it('R2 Case 3: hero=base + currentRealm-side exit (col 19) 통과', () => {
+    // col 19 = base.columnRange[1] - 1. _base_to_sea_a 위치.
+    const candidates: PlacedLandmark[] = [
+      mkLm(19, 'exit', 'base_to_sea_a'),
+    ];
+    const filtered = filterCandidatesByRealm(candidates, 'base');
+    expect(filtered.map(l => l.instanceId)).toEqual(['base_to_sea_a']);
+  });
+
+  it('R2 Case 4: hero=base + exit at col 21 (sea 내부, entry 아님) 차단', () => {
+    // sea.columnRange[0] = 20. col 21 은 entry 가 아니라 sea 내부 → 거부.
+    // 실제 mapLayout 은 이런 exit 을 생성하지 않지만 미래 regression 방어.
+    const candidates: PlacedLandmark[] = [
+      mkLm(21, 'exit', 'fake_exit_in_sea_middle'),
+    ];
+    const filtered = filterCandidatesByRealm(candidates, 'base');
+    expect(filtered).toEqual([]);
+  });
+
+  it('R2 Case 5: hero=sea + exit at col 100 (heaven→chaos a) 차단 (2+ jump)', () => {
+    // sea.nextRealm = volcano (columnRange[0]=40). col 100 = 2 realm 건너뜀.
+    // cycle-8 warning 3 (`hero (38,6) target (100,7) realm=sea`) 재현.
+    const candidates: PlacedLandmark[] = [
+      mkLm(35, 'enemy', 'sea_enemy'),
+      mkLm(100, 'exit', 'heaven_to_chaos_a'),
+    ];
+    const filtered = filterCandidatesByRealm(candidates, 'sea');
+    expect(filtered.map(l => l.instanceId)).toEqual(['sea_enemy']);
+  });
+
+  it('R2 Case 6: hero=chaos (nextRealm null) + 모든 exit 차단', () => {
+    // chaos.nextRealm = null. chaos hero 는 exit 후보 자체가 의미 없음.
+    // 모든 exit 은 chaos.columnRange [100,120] 밖에 있고 nextEntryCol 도 없음.
+    const candidates: PlacedLandmark[] = [
+      mkLm(105, 'enemy', 'chaos_enemy'),
+      mkLm(19, 'exit', 'base_to_sea_a'),
+      mkLm(40, 'exit', 'volcano_from_sea_b'),
+    ];
+    const filtered = filterCandidatesByRealm(candidates, 'chaos');
+    expect(filtered.map(l => l.instanceId)).toEqual(['chaos_enemy']);
+  });
+});
