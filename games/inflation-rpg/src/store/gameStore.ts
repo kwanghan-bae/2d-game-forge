@@ -371,6 +371,21 @@ export function migrateV21ToV22(persisted: unknown): unknown {
   return s;
 }
 
+// v22 → v23: Cycle-5 F2 — stale realm bug rescue. Force run.currentRealmId
+// back to 'base' so existing players whose v22 save froze with a non-base
+// realm id (sea/volcano/...) recover automatically on next load. Without
+// this, the same pathfinder lock-out described in cycle-5 F1 would still
+// trigger once on the very first post-update launch.
+export function migrateV22ToV23(persisted: unknown): unknown {
+  if (typeof persisted !== 'object' || persisted === null) return persisted;
+  const s = persisted as { run?: Record<string, unknown> | null };
+  if (s.run && typeof s.run === 'object') {
+    s.run['currentRealmId'] = 'base';
+    if (!Array.isArray(s.run['npcs'])) s.run['npcs'] = [];
+  }
+  return s;
+}
+
 // Phase E — Mythic slot cap derived from ascension tier
 //   tier 0 → 0 슬롯, tier 1-4 → 1 슬롯, tier 5-9 → 3 슬롯, tier 10+ → 5 슬롯
 export function computeMythicSlotCap(tier: number): number {
@@ -574,6 +589,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v21 → v22: Phase V3-H — season state default
   if (fromVersion <= 21) {
     migrateV21ToV22(s);
+  }
+  // v22 → v23: Cycle-5 F2 — stale realm bug rescue
+  if (fromVersion <= 22) {
+    migrateV22ToV23(s);
   }
   return s;
 }
@@ -1382,7 +1401,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 22,  // 21 → 22 (Phase V3-H — season state)
+      version: 23,  // 22 → 23 (Cycle-5 F2 — stale realm rescue)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

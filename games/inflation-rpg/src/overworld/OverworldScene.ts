@@ -154,7 +154,10 @@ export class OverworldScene extends Phaser.Scene {
       .map(l => ({ landmark: l, candidate: landmarkToCandidate(l) }));
 
     if (candidates.length === 0) {
-      this.onEvent({ type: 'cycle_ended' });
+      // Cycle-5 F3: pathfinder candidates-exhausted = stuck hero. Tag cause
+      // explicitly so the resulting saga shows '무위' rather than a misleading
+      // '자연사'. Future stale-realm bugs surface immediately in saga log.
+      this.onEvent({ type: 'cycle_ended', cause: '무위' });
       return;
     }
 
@@ -163,7 +166,9 @@ export class OverworldScene extends Phaser.Scene {
       unlockedRealms: this.unlockedRealms,
     });
     if (!chosenCandidate) {
-      this.onEvent({ type: 'cycle_ended' });
+      // Cycle-5 F3: AI picked nothing despite candidates — same exit-lost
+      // condition; emit '무위' for parity.
+      this.onEvent({ type: 'cycle_ended', cause: '무위' });
       return;
     }
 

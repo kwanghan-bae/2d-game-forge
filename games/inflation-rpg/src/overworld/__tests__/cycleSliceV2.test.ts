@@ -77,6 +77,66 @@ describe('cycleSliceV2', () => {
     });
   });
 
+  // Cycle-5 F3 — exit_lost ('무위') cause distinguished from '자연사'.
+  // OverworldRunner forwards an optional cause from the `cycle_ended` event;
+  // endCycle pushes it into the controller before finalize so the resulting
+  // saga records the real reason.
+  describe('Cycle-5 F3 — endCycle accepts optional cause', () => {
+    it("forwards '무위' from cycle_ended payload to saga.hero.cause", () => {
+      useCycleStoreV2.getState().start({
+        seed: 1, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      useCycleStoreV2.getState().endCycle('무위');
+      const saga = useCycleStoreV2.getState().lastSaga!;
+      expect(saga.hero.cause).toBe('무위');
+    });
+
+    it("defaults to '자연사' when no cause supplied (regression)", () => {
+      useCycleStoreV2.getState().start({
+        seed: 1, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      useCycleStoreV2.getState().endCycle();
+      const saga = useCycleStoreV2.getState().lastSaga!;
+      expect(saga.hero.cause).toBe('자연사');
+    });
+  });
+
+  // Cycle-5 F1 — stale realm bug. endCycle MUST reset run.currentRealmId to
+  // 'base' so the next cycle's hero (which spawns at base village col 1) is
+  // not pathfinder-locked out by the previous realm's columnBounds.
+  describe('Cycle-5 F1 — endCycle resets run.currentRealmId + npcs', () => {
+    it('resets currentRealmId to base when previous run was in sea realm', () => {
+      useGameStore.setState(s => ({
+        ...s,
+        run: {
+          ...s.run,
+          currentRealmId: 'sea',
+          npcs: [
+            {
+              instanceId: 'n1',
+              kind: 'rival',
+              nameKR: 'stub',
+              emoji: 'X',
+              age: 20,
+              ageRate: 1,
+              isAlive: true,
+              bornChapter: '청년기',
+              relationship: 0,
+              zoneRealmId: 'sea',
+            } satisfies import('../../types').NpcEntity,
+          ],
+        },
+      }));
+      useCycleStoreV2.getState().start({
+        seed: 1, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      useCycleStoreV2.getState().endCycle();
+      const run = useGameStore.getState().run;
+      expect(run.currentRealmId).toBe('base');
+      expect(run.npcs).toHaveLength(0);
+    });
+  });
+
   describe('rejuvenateHero action', () => {
     it('decreases hero age, spends light, increments rejuvenationCount', () => {
       useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 1000 } }));

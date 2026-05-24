@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CycleControllerV2, type CycleControllerV2Opts } from './CycleControllerV2';
 import { SagaStorage } from '../saga/SagaStorage';
-import type { CycleSaga } from '../saga/SagaTypes';
+import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
 import { goldFromCycle, spend } from '../meta/MetaProgression';
 import { useGameStore } from '../store/gameStore';
 import { rejuvenationCost } from '../hero/rejuvenation';
@@ -20,7 +20,11 @@ interface CycleStoreV2State {
   /** Gold awarded at the end of the most recent cycle. */
   lastGoldEarned: number;
   start: (opts: CycleControllerV2Opts) => void;
-  endCycle: () => void;
+  /** Cycle-5 F3: optional cause forwarded into the controller before
+   *  `finalize()`. Used by OverworldRunner when the scene emits
+   *  `cycle_ended` with `cause: '무위'` (pathfinder candidates-exhausted)
+   *  so the saga distinguishes a stuck-hero bug from peaceful '자연사'. */
+  endCycle: (cause?: DeathCause) => void;
   rejuvenateHero: (years: number) => void;
   reset: () => void;
 }
@@ -74,9 +78,13 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     ctrl.setUnlockedRealms(useGameStore.getState().meta.unlockedRealms);
     set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0 });
   },
-  endCycle() {
+  endCycle(cause?: DeathCause) {
     const ctrl = get().controller;
     if (!ctrl) return;
+    // Cycle-5 F3: if a cause was supplied (e.g. '무위' from candidates-
+    // exhausted) push it into the controller before finalize so the saga
+    // records the real reason. Falsy → controller default '자연사' stays.
+    if (cause) ctrl.setEndCause(cause);
     const saga = ctrl.finalize();
     SagaStorage.append(saga);
     // Award sponsorGold based on cycle performance. Counters come from the
@@ -109,6 +117,15 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           sponsorGold: out.goldRemaining,
           atkBaseBonus: out.atkBaseBonus,
           hpBaseBonus: out.hpBaseBonus,
+        },
+        // Cycle-5 F1: stale realm bug fix — 다음 cycle 의 hero 는 base village
+        // col 1 에 spawn 하므로 이전 realm 의 columnBounds 가 남아있으면
+        // pathfinder 가 모든 후보를 차단하여 candidates 소진 → 5세 즉사.
+        // NPC 도 이전 cycle 의 잔존이므로 함께 초기화.
+        run: {
+          ...s.run,
+          currentRealmId: 'base',
+          npcs: [],
         },
       };
     });
