@@ -3,13 +3,22 @@ import { useGameStore } from '../../store/gameStore';
 import { SagaStorage } from '../SagaStorage';
 import type { CycleSaga } from '../SagaTypes';
 
-const stubSaga = (cycleId: string): CycleSaga => ({
-  cycleId,
-  endedAtMs: Date.now(),
-  hero: { name: 'a', seed: 1, finalAge: 5, finalJob: '평민', finalLevel: 1, finalPersonality: { moral:0,prudent:0,heroic:0,merciful:0,pious:0 }, cause: '자연사' },
-  chapters: [],
-  highlightEvents: [],
-});
+const stubSaga = (cycleId: string): CycleSaga => {
+  const finishedAt = Date.now();
+  return {
+    cycleId,
+    endedAtMs: finishedAt,
+    hero: { name: 'a', seed: 1, finalAge: 5, finalJob: '평민', finalLevel: 1, finalPersonality: { moral:0,prudent:0,heroic:0,merciful:0,pious:0 }, cause: '자연사' },
+    chapters: [],
+    highlightEvents: [],
+    // Cycle 6 P1: flat snapshot aliases.
+    finalLevel: 1,
+    finalAge: 5,
+    finalRealm: 'base',
+    deathCause: '자연사',
+    finishedAt,
+  };
+};
 
 describe('SagaStorage', () => {
   beforeEach(() => {

@@ -8,6 +8,11 @@ interface FinalizeOpts {
   finalLevel: number;
   finalPersonality: PersonalitySnapshot;
   cause: DeathCause;
+  /** Cycle 6 P1: realm hero was in when the cycle ended. Surfaced as flat
+   *  `finalRealm` field on CycleSaga for sagaHistory card UI. Caller (=
+   *  CycleControllerV2.finalize) passes `controller.getCurrentRealmId() ??
+   *  'base'` so we never produce undefined. */
+  finalRealm: import('../types').RealmId;
 }
 
 export class SagaRecorder {
@@ -43,9 +48,12 @@ export class SagaRecorder {
       target?.events.push(ev);
     }
     const highlightEvents = this.events.filter(e => ['levelUp', 'death', 'drop'].includes(e.type)).slice(-6);
+    // Cycle 6 P1: snapshot Date.now() once to keep endedAtMs / finishedAt
+    // identical — UI / sort 가 둘을 동시에 쓰는 경우 1ms drift 가 없게.
+    const finishedAt = Date.now();
     return {
-      cycleId: `cycle_${this.seed}_${Date.now()}`,
-      endedAtMs: Date.now(),
+      cycleId: `cycle_${this.seed}_${finishedAt}`,
+      endedAtMs: finishedAt,
       hero: {
         name: this.heroName,
         seed: this.seed,
@@ -57,6 +65,12 @@ export class SagaRecorder {
       },
       chapters,
       highlightEvents,
+      // Cycle 6 P1: flat snapshot aliases (PRD acceptance criterion c).
+      finalLevel: opts.finalLevel,
+      finalAge: opts.finalAge,
+      finalRealm: opts.finalRealm,
+      deathCause: opts.cause,
+      finishedAt,
     };
   }
 }

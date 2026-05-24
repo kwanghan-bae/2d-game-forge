@@ -13,6 +13,7 @@ describe('SagaRecorder', () => {
       finalLevel: 5,
       finalPersonality: { moral: 0, prudent: 0, heroic: 0, merciful: 0, pious: 0 },
       cause: '전사',
+      finalRealm: 'base',
     });
     expect(saga.hero.name).toBe('홍길동');
     expect(saga.chapters.flatMap(c => c.events).length).toBe(2);
@@ -24,7 +25,7 @@ describe('SagaRecorder', () => {
     rec.record({ age: 8, type: 'battle', narrativeText: 'x', payload: {} });
     rec.record({ age: 22, type: 'battle', narrativeText: 'y', payload: {} });
     rec.record({ age: 55, type: 'death', narrativeText: 'z', payload: {} });
-    const saga = rec.finalize({ finalAge: 55, finalJob: '평민', finalLevel: 1, finalPersonality: { moral: 0, prudent: 0, heroic: 0, merciful: 0, pious: 0 }, cause: '자연사' });
+    const saga = rec.finalize({ finalAge: 55, finalJob: '평민', finalLevel: 1, finalPersonality: { moral: 0, prudent: 0, heroic: 0, merciful: 0, pious: 0 }, cause: '자연사', finalRealm: 'base' });
     const childhood = saga.chapters.find(c => c.name === '어린시절');
     const young = saga.chapters.find(c => c.name === '청년기');
     const old = saga.chapters.find(c => c.name === '노년기');

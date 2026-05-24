@@ -520,6 +520,12 @@ export class CycleControllerV2 {
       finalLevel: this.hero.level,
       finalPersonality: this.hero.personality.snapshot(),
       cause: this.endCause ?? '자연사',
+      // Cycle 6 P1: finalRealm 신규 flat field — hero 가 어느 realm 에서
+      // 죽었는지 sagaHistory 카드에 표시하기 위함. cycleSliceV2.endCycle 의
+      // currentRealmId reset 은 본 finalize() 호출 이후이므로 controller 의
+      // local currentRealmId 가 사망 직전 값. setCurrentRealmId 를 한 번도
+      // 호출 안 한 unit-test 경로는 'base' 로 fallback.
+      finalRealm: this.currentRealmId ?? 'base',
     });
   }
 }

@@ -54,4 +54,17 @@ export interface CycleSaga {
   };
   chapters: SagaChapter[];
   highlightEvents: SagaEvent[];
+  // Cycle 6 P1: flat snapshot aliases — sagaHistory[] item 을 단일 카드 UI 에서
+  // 한 번에 binding 하기 위함. nested `hero.finalXxx` 와 동일 값. finalRealm 은
+  // 신규 (이전엔 어디에도 없었음).
+  //
+  // PRD scope 명시: 기존 cycle 5 이전 stale item 은 retroactive migration 안 함.
+  // 즉 v23 이하 persist 에서 깨어난 stale item 은 본 field 가 `undefined` 일 수
+  // 있다 → `?:` optional 로 type 정직성 유지. UI 소비자는 `??` fallback 처리.
+  // 새 finalize() 가 만든 item 은 항상 5 field 모두 채워진다 (PRD 수용 c).
+  finalLevel?: number;
+  finalAge?: number;
+  finalRealm?: import('../types').RealmId;
+  deathCause?: DeathCause;
+  finishedAt?: number;
 }
