@@ -5,7 +5,10 @@ import type { CycleSaga } from '../saga/SagaTypes';
 import { goldFromCycle, spend } from '../meta/MetaProgression';
 import { useGameStore } from '../store/gameStore';
 import { rejuvenationCost } from '../hero/rejuvenation';
-import { getRejuvDiscount, getDropChanceBonus, getAgingSpeedMul } from '../buff/buffEffects';
+import { getRejuvDiscount, getDropChanceBonus, getAgingSpeedMul, getFieldDiffThreshold } from '../buff/buffEffects';
+import { computeFieldDamping } from '../zone/fieldDamping';
+import { fieldLevelAtColumn } from '../zone/zoneNavigation';
+import { findRealm } from '../data/realms';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -30,13 +33,33 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     const ctrl = new CycleControllerV2({
       ...opts,
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
-        const meta = useGameStore.getState().meta;
+        const state = useGameStore.getState();
+        const meta = state.meta;
+        const ctrl = useCycleStoreV2.getState().controller;
+        const hero = ctrl?.getHero();
+        const heroLv = hero?.level ?? 1;
+        const heroCol = (hero as unknown as { gridX?: number })?.gridX ?? 0;
+        const currentRealm = state.run.currentRealmId;
+        const fieldLv = fieldLevelAtColumn(currentRealm, heroCol);
+        const buff6 = getFieldDiffThreshold(meta);
         return {
           dropChanceBonus: getDropChanceBonus(meta),
           agingSpeedMul: getAgingSpeedMul(meta),
+          damping: computeFieldDamping(heroLv, fieldLv, buff6),
         };
       }),
+      onBossKill: opts.onBossKill ?? ((current) => {
+        const state = useGameStore.getState();
+        const realm = findRealm(current);
+        if (realm.nextRealm && !state.meta.unlockedRealms.includes(realm.nextRealm)) {
+          state.unlockRealm(realm.nextRealm);
+          return realm.nextRealm;
+        }
+        return null;
+      }),
     });
+    ctrl.setCurrentRealmId(useGameStore.getState().run.currentRealmId);
+    ctrl.setUnlockedRealms(useGameStore.getState().meta.unlockedRealms);
     set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0 });
   },
   endCycle() {
@@ -95,6 +118,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     }));
     hero.rejuvenate(years);
     ctrl.recordRejuvenation(years);
+    useGameStore.getState().recordSagaRejuvenation();
   },
   reset() {
     set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0 });

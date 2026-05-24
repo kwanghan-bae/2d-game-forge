@@ -33,6 +33,7 @@ import {
 import { computeMaxHp } from '../systems/playerHp';
 import { BASE_TRAIT_IDS } from '../data/traits';
 import { findBuff, nextStepCost, maxAffordable } from '../buff/catalog';
+import { appendEvent, recordRejuvenation, recordRealmTransition } from '../saga/EternalSaga';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -66,6 +67,10 @@ export const INITIAL_RUN: RunState = {
   dungeonRunMonstersDefeated: 0,
   featherUsed: 0,
   playerHp: null,
+  // Phase V3-D — 현재 realm
+  currentRealmId: 'base',
+  // Phase V3-E — NPC roster
+  npcs: [],
 };
 
 export const INITIAL_META: MetaState = {
@@ -142,6 +147,10 @@ export const INITIAL_META: MetaState = {
   light: 0,
   // Phase V3-C — buff catalog 누적 Lv
   buffLevels: {},
+  // Phase V3-D — 해금된 realm
+  unlockedRealms: ['base'],
+  // Phase V3-F — 무한 saga
+  eternalSaga: { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] },
 };
 
 interface GameStore {
@@ -241,6 +250,16 @@ interface GameStore {
     buffId: BuffId,
     count: 1 | 10 | 'max',
   ) => { ok: boolean; reason?: 'invalid' | 'zero' | 'insufficient' | 'oneshot'; count?: number; cost?: number };
+  // Phase V3-D — realm unlock + transition
+  unlockRealm: (realmId: import('../types').RealmId) => void;
+  setCurrentRealm: (realmId: import('../types').RealmId) => void;
+  // Phase V3-E — NPC spawn
+  addNpc: (npc: import('../types').NpcEntity) => void;
+  updateNpc: (instanceId: string, patch: Partial<import('../types').NpcEntity>) => void;
+  // Phase V3-F — eternal saga
+  recordSagaEvent: (event: import('../saga/SagaTypes').SagaEvent, chapter: import('../hero/HeroLifecycle').Chapter) => void;
+  recordSagaRejuvenation: () => void;
+  recordSagaRealmTransition: (from: import('../types').RealmId, to: import('../types').RealmId, atAge: number, chapter: import('../hero/HeroLifecycle').Chapter) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -308,6 +327,23 @@ export function migrateV19ToV20(persisted: unknown): unknown {
   const m = s.meta;
   if (m['buffLevels'] === undefined || typeof m['buffLevels'] !== 'object') {
     m['buffLevels'] = {};
+  }
+  return s;
+}
+
+// v20 → v21: Phase V3-D/E/F — unlockedRealms + eternalSaga + currentRealmId + npcs
+export function migrateV20ToV21(persisted: unknown): unknown {
+  if (typeof persisted !== 'object' || persisted === null) return persisted;
+  const s = persisted as { meta?: Record<string, unknown> | null; run?: Record<string, unknown> | null };
+  if (s.meta && typeof s.meta === 'object') {
+    if (!Array.isArray(s.meta['unlockedRealms'])) s.meta['unlockedRealms'] = ['base'];
+    if (!s.meta['eternalSaga'] || typeof s.meta['eternalSaga'] !== 'object') {
+      s.meta['eternalSaga'] = { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] };
+    }
+  }
+  if (s.run && typeof s.run === 'object') {
+    if (typeof s.run['currentRealmId'] !== 'string') s.run['currentRealmId'] = 'base';
+    if (!Array.isArray(s.run['npcs'])) s.run['npcs'] = [];
   }
   return s;
 }
@@ -507,6 +543,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v19 → v20: Phase V3-C — buffLevels 초기화
   if (fromVersion <= 19) {
     migrateV19ToV20(s);
+  }
+  // v20 → v21: Phase V3-D/E/F — multi-zone + NPC + eternal saga
+  if (fromVersion <= 20) {
+    migrateV20ToV21(s);
   }
   return s;
 }
@@ -1278,10 +1318,37 @@ export const useGameStore = create<GameStore>()(
         }));
         return { ok: true, count: n, cost };
       },
+
+      unlockRealm(realmId) {
+        set(s => {
+          if (s.meta.unlockedRealms.includes(realmId)) return s;
+          return { ...s, meta: { ...s.meta, unlockedRealms: [...s.meta.unlockedRealms, realmId] } };
+        });
+      },
+
+      setCurrentRealm(realmId) {
+        set(s => ({ ...s, run: { ...s.run, currentRealmId: realmId } }));
+      },
+
+      addNpc(npc) {
+        set(s => ({ ...s, run: { ...s.run, npcs: [...s.run.npcs, npc] } }));
+      },
+      updateNpc(instanceId, patch) {
+        set(s => ({ ...s, run: { ...s.run, npcs: s.run.npcs.map(n => n.instanceId === instanceId ? { ...n, ...patch } : n) } }));
+      },
+      recordSagaEvent(event, chapter) {
+        set(s => ({ ...s, meta: { ...s.meta, eternalSaga: appendEvent(s.meta.eternalSaga, event, chapter) } }));
+      },
+      recordSagaRejuvenation() {
+        set(s => ({ ...s, meta: { ...s.meta, eternalSaga: recordRejuvenation(s.meta.eternalSaga) } }));
+      },
+      recordSagaRealmTransition(from, to, atAge, chapter) {
+        set(s => ({ ...s, meta: { ...s.meta, eternalSaga: recordRealmTransition(s.meta.eternalSaga, from, to, atAge, chapter) } }));
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 20,  // 19 → 20 (Phase V3-C — buffLevels)
+      version: 21,  // 20 → 21 (Phase V3-D/E/F — unlockedRealms + eternalSaga + currentRealmId + npcs)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

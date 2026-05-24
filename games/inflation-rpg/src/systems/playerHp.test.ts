@@ -29,6 +29,8 @@ function makeRun(overrides: Partial<RunState> = {}): RunState {
     dungeonRunMonstersDefeated: 0,
     featherUsed: 0,
     playerHp: null,
+    currentRealmId: 'base',
+    npcs: [],
     ...overrides,
   };
 }

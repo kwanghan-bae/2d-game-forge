@@ -1,10 +1,11 @@
 import { SeededRng } from '../cycle/SeededRng';
 import { LANDMARK_TYPES } from '../data/landmarks';
 import { ENEMY_ZONES, selectEnemyTypeId, type EnemyZone } from '../data/enemyTiers';
+import { REALM_CATALOG } from '../data/realms';
 import type { ZoneId } from '../data/zones';
 import type { PlacedLandmark } from './Landmark';
 
-export const GRID_W = 20;
+export const GRID_W = 120;
 export const GRID_H = 12;
 export const TILE_PX = 32;
 
@@ -22,11 +23,17 @@ export function generateMapLayout(seed: number): MapLayout {
     const row: ZoneId[] = [];
     for (let x = 0; x < GRID_W; x++) {
       let zone: ZoneId;
-      if (x < 3)      zone = 'village';
-      else if (x < 8) zone = 'forest';
-      else if (x < 12) zone = 'plains';
-      else if (x < 17) zone = 'mountains';
-      else             zone = 'mystic';
+      // V3-D: column 0-19 = base realm 의 V1e zone band 유지
+      if (x < 20) {
+        if (x < 3)       zone = 'village';
+        else if (x < 8)  zone = 'forest';
+        else if (x < 12) zone = 'plains';
+        else if (x < 17) zone = 'mountains';
+        else             zone = 'mystic';
+      } else {
+        // realm 1-5 의 column band → mystic 한 가지로 통일 (placeholder visual)
+        zone = 'mystic';
+      }
       row.push(zone);
     }
     tiles.push(row);
@@ -89,6 +96,23 @@ export function generateMapLayout(seed: number): MapLayout {
   place('holy_ruin',     18 + rng.int(2), rng.int(GRID_H), '_b');
   place('crossroads',    8 + rng.int(3),  rng.int(GRID_H));
   place('crossroads',    9 + rng.int(3),  rng.int(GRID_H), '_b');
+
+  // V3-D: realm 1-5 별 column band 의 enemy + boss + exit 배치
+  for (const realm of REALM_CATALOG) {
+    if (realm.id === 'base') continue;
+    const [colStart, colEnd] = realm.columnRange;
+    let y = 2;
+    for (let i = 0; i < Math.min(4, realm.enemyRoster.length); i++) {
+      const enemyId = realm.enemyRoster[i];
+      const col = colStart + 2 + i * 4;
+      place(enemyId, col, y, `_r${realm.id}`);
+      y = (y + 3) % (GRID_H - 2) + 1;
+    }
+    place(realm.bossId, colEnd - 2, Math.floor(GRID_H / 2), `_r${realm.id}`);
+    if (realm.nextRealm) {
+      place('exit', colEnd - 1, Math.floor(GRID_H / 2), `_r${realm.id}`);
+    }
+  }
 
   return { tiles, landmarks };
 }

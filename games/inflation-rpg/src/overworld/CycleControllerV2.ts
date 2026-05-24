@@ -6,17 +6,23 @@ import { SagaRecorder } from '../saga/SagaRecorder';
 import { NarrativeGenerator } from '../saga/NarrativeGenerator';
 import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import { lookupDrop } from './dropTable';
+import { findRealm } from '../data/realms';
 import type { TraitId } from '../cycle/traits';
-import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
+import type { CycleSaga, DeathCause, SagaEvent } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
+import { useGameStore } from '../store/gameStore';
+import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
 
 export interface CycleControllerV2Opts {
   seed: number;
   traits: readonly TraitId[];
   heroHpMax: number;
   heroAtkBase: number;
-  /** V3-C — buff snapshot 을 매 arrival 마다 새로 읽어오는 callback. */
-  getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number };
+  /** V3-C — buff snapshot 을 매 arrival 마다 새로 읽어오는 callback.
+   *  V3-D — damping 필드 추가 (field level 대비 hero 약화). */
+  getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
+  /** V3-D — boss 처치 시 호출. unlockable next realm 의 id 반환. */
+  onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
 }
 
 export class CycleControllerV2 {
@@ -24,12 +30,16 @@ export class CycleControllerV2 {
   private ai: HeroDecisionAI;
   private encounter: EncounterEngine;
   private saga: SagaRecorder;
+  private rng: SeededRng;
   private endCause: DeathCause | null = null;
   private readonly seed: number;
   private kills: number = 0;
   private bossKills: number = 0;
   private drops: number = 0;
-  private getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number };
+  private getBuffSnapshot?: () => { dropChanceBonus: number; agingSpeedMul: number; damping: number };
+  private onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
+  private currentRealmId: import('../types').RealmId | null = null;
+  private unlockedRealms: readonly import('../types').RealmId[] = ['base'];
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
@@ -40,10 +50,22 @@ export class CycleControllerV2 {
     });
     this.ai = new HeroDecisionAI(this.hero, { seed: opts.seed, traits: opts.traits });
     this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef));
+    this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
     this.getBuffSnapshot = opts.getBuffSnapshot;
+    this.onBossKill = opts.onBossKill;
   }
 
+  setCurrentRealmId(realmId: import('../types').RealmId): void {
+    this.currentRealmId = realmId;
+  }
+
+  setUnlockedRealms(realms: readonly import('../types').RealmId[]): void {
+    this.unlockedRealms = realms;
+  }
+
+  getUnlockedRealms(): readonly import('../types').RealmId[] { return this.unlockedRealms; }
+  getCurrentRealmId(): import('../types').RealmId | null { return this.currentRealmId; }
   getHero(): HeroEntity { return this.hero; }
   getDecisionAI(): HeroDecisionAI { return this.ai; }
   getSeed(): number { return this.seed; }
@@ -81,7 +103,7 @@ export class CycleControllerV2 {
     const beforeChapter = this.hero.chapter;
     if (this.getBuffSnapshot) {
       const snap = this.getBuffSnapshot();
-      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus });
+      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
     }
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
 
@@ -92,10 +114,24 @@ export class CycleControllerV2 {
 
     for (const ev of events) {
       if (ev.type === 'battle_won') {
-        if (kind === 'boss') this.bossKills += 1; else this.kills += 1;
+        if (kind === 'boss') {
+          this.bossKills += 1;
+          // V3-D realm unlock — controller 는 pure 유지, callback 으로 처리
+          if (this.onBossKill && this.currentRealmId) {
+            const unlocked = this.onBossKill(this.currentRealmId);
+            if (unlocked) {
+              // T13: keep local unlockedRealms in sync so exit filter is
+              // immediately correct in the same cycle.
+              this.unlockedRealms = [...this.unlockedRealms, unlocked];
+              events.push({ type: 'realm_unlocked', realmId: unlocked });
+            }
+          }
+        } else {
+          this.kills += 1;
+        }
         const enemyType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id)) ?? null;
         const enemyNameKR = enemyType?.nameKR ?? '적';
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'battle',
           narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR }),
@@ -105,7 +141,7 @@ export class CycleControllerV2 {
           this.drops += 1;
           const dropItem = lookupDrop(ev.dropId);
           const itemNameKR = dropItem?.nameKR ?? ev.dropId;
-          this.saga.record({
+          this.recordToStore({
             age: this.hero.age,
             type: 'drop',
             narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }),
@@ -121,7 +157,7 @@ export class CycleControllerV2 {
       // job_unlocked events come only from the post-arrival maybeUnlockJobForAge
       // hook below — never from resolveEncounter — so no branch here.
       if (ev.type === 'skill_learned') {
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'skillLearned',
           narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }),
@@ -129,7 +165,7 @@ export class CycleControllerV2 {
         });
       }
       if (ev.type === 'shrine_visited') {
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'shrine',
           narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }),
@@ -137,7 +173,7 @@ export class CycleControllerV2 {
         });
       }
       if (ev.type === 'moral_choice') {
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'moralChoice',
           narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }),
@@ -147,7 +183,7 @@ export class CycleControllerV2 {
       if (ev.type === 'hero_died') {
         this.endCause = ev.cause;
         const enemyType = ev.enemyId ? LANDMARK_TYPES.find(t => ev.enemyId!.startsWith(t.id)) : null;
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'death',
           narrativeText: NarrativeGenerator.forDeath({
@@ -163,7 +199,7 @@ export class CycleControllerV2 {
     // Flush the collected level_ups as one saga record. Avoids 수십 줄 spam
     // from late-game `expGain ∝ lv^1.8` (kill 당 70+ level-ups).
     if (levelCount > 0) {
-      this.saga.record({
+      this.recordToStore({
         age: this.hero.age,
         type: 'levelUp',
         narrativeText: NarrativeGenerator.forLevelUpBatch({
@@ -180,7 +216,7 @@ export class CycleControllerV2 {
       for (const j of jobs) {
         const jobEv = { type: 'job_unlocked' as const, jobId: j.jobId, jobNameKR: j.jobNameKR, tier: j.tier };
         events.push(jobEv);
-        this.saga.record({
+        this.recordToStore({
           age: this.hero.age,
           type: 'jobUnlock',
           narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }),
@@ -197,14 +233,82 @@ export class CycleControllerV2 {
         toChapter: this.hero.chapter,
         atAge: this.hero.age,
       });
+
+      // V3-E: chapter milestone NPC spawn
+      const newChapter = this.hero.chapter;
+      const seed = this.seed ^ Math.floor(this.kills * 7919);
+      const state = useGameStore.getState();
+
+      // 어린시절 시작 시 부모 spawn (이미 있으면 skip)
+      if (newChapter === '어린시절' && !state.run.npcs.some(n => n.kind === 'family_parent')) {
+        const parent = spawnNpc('family_parent', { realmId: this.currentRealmId ?? 'base', seed });
+        if (parent) {
+          state.addNpc(parent);
+        }
+      }
+
+      // 청년기 라이벌 spawn (60%)
+      if (newChapter === '청년기' && !state.run.npcs.some(n => n.kind === 'rival') && this.rng.chance(0.6)) {
+        const rival = spawnNpc('rival', { realmId: this.currentRealmId ?? 'base', seed: seed + 1 });
+        if (rival) state.addNpc(rival);
+      }
+
+      // 청년기 멘토 spawn (30%)
+      if (newChapter === '청년기' && !state.run.npcs.some(n => n.kind === 'mentor') && this.rng.chance(0.3)) {
+        const mentor = spawnNpc('mentor', { realmId: this.currentRealmId ?? 'base', seed: seed + 2 });
+        if (mentor) state.addNpc(mentor);
+      }
+
+      // 장년기 결혼 + 자식 (50%)
+      if (newChapter === '장년기' && !state.run.npcs.some(n => n.kind === 'family_spouse') && this.rng.chance(0.5)) {
+        const spouse = spawnNpc('family_spouse', { realmId: this.currentRealmId ?? 'base', seed: seed + 3 });
+        if (spouse) {
+          state.addNpc(spouse);
+          events.push({ type: 'family_event', eventKind: 'marriage', npcInstanceId: spouse.instanceId });
+        }
+        const child = spawnNpc('family_child', { realmId: this.currentRealmId ?? 'base', seed: seed + 4 });
+        if (child) {
+          state.addNpc(child);
+          events.push({ type: 'family_event', eventKind: 'child_birth', npcInstanceId: child.instanceId });
+        }
+      }
     }
+
+    // V3-D: hero 가 exit landmark 도착 시 realm 전환
+    if (kind === 'exit' && this.currentRealmId) {
+      const realm = findRealm(this.currentRealmId);
+      if (realm.nextRealm && this.unlockedRealms.includes(realm.nextRealm)) {
+        const newRealm = realm.nextRealm;
+        const oldRealm = this.currentRealmId;
+        this.currentRealmId = newRealm;
+        useGameStore.getState().recordSagaRealmTransition(oldRealm, newRealm, this.hero.age, this.hero.chapter);
+        events.push({ type: 'realm_entered', realmId: newRealm });
+      }
+    }
+
+    // V3-E: NPC encounter + lifecycle
+    const npcState = useGameStore.getState().run.npcs;
+    for (const npc of npcState) {
+      const wasAlive = npc.isAlive;
+      tickNpc(npc);
+      if (wasAlive && !npc.isAlive) {
+        events.push({ type: 'npc_died', npcInstanceId: npc.instanceId });
+      }
+    }
+    // Encounter trigger: 현재 realm 거주 + alive NPC 중 1명 (20% 확률)
+    const candidates = npcState.filter(n => n.isAlive && n.zoneRealmId === this.currentRealmId);
+    if (candidates.length > 0 && this.rng.chance(0.2)) {
+      const picked = candidates[this.rng.int(candidates.length)];
+      events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
+    }
+
     return events;
   }
 
   /** Called by cycleSliceV2.rejuvenateHero after hero.rejuvenate(). Records the
    *  saga "재생 #K" marker with the post-rejuvenation age. */
   recordRejuvenation(years: number): void {
-    this.saga.record({
+    this.recordToStore({
       age: this.hero.age,
       type: 'rejuvenation',
       narrativeText: NarrativeGenerator.forRejuvenation({
@@ -214,6 +318,11 @@ export class CycleControllerV2 {
       }),
       payload: { years, rejuvenationCount: this.hero.rejuvenationCount },
     });
+  }
+
+  private recordToStore(event: SagaEvent): void {
+    this.saga.record(event);
+    useGameStore.getState().recordSagaEvent(event, this.hero.chapter);
   }
 
   finalize(): CycleSaga {

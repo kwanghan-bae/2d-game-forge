@@ -4,12 +4,14 @@ import { ZONES } from '../data/zones';
 import { LANDMARK_TYPES } from '../data/landmarks';
 import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../data/enemyTiers';
 import { Pathfinder, type GridCell } from './Pathfinding';
+import { findRealm } from '../data/realms';
 import type { PlacedLandmark } from './Landmark';
 import { landmarkToCandidate } from './Landmark';
 import type { OverworldEvent } from './OverworldEvents';
 import type { HeroDecisionAI } from '../decisionAI/HeroDecisionAI';
 import type { HeroEntity } from '../hero/HeroEntity';
 import { generateMapLayout, GRID_H, GRID_W, TILE_PX, type MapLayout } from './mapLayout';
+import type { RealmId } from '../types';
 
 export { generateMapLayout, GRID_H, GRID_W };
 export type { MapLayout };
@@ -29,6 +31,9 @@ interface OverworldSceneData {
   onEvent: (event: OverworldEvent) => void;
   /** Initial speed multiplier (1 = normal, 10 = 10x). Mutable later via setSpeed(). */
   initialSpeed?: number;
+  /** T13: current realm and unlocked realms for exit-landmark filter. */
+  currentRealm?: RealmId;
+  unlockedRealms?: readonly RealmId[];
 }
 
 export class OverworldScene extends Phaser.Scene {
@@ -44,6 +49,8 @@ export class OverworldScene extends Phaser.Scene {
   private sceneRng!: SeededRng;
   private respawnCounter: number = 0;
   private initialSpeed: number = 1;
+  private currentRealm: RealmId | undefined;
+  private unlockedRealms: readonly RealmId[] | undefined;
 
   constructor() { super('OverworldScene'); }
 
@@ -56,6 +63,8 @@ export class OverworldScene extends Phaser.Scene {
     this.sceneRng = new SeededRng(data.seed ^ 0xabcd1234);
     this.respawnCounter = 0;
     this.initialSpeed = data.initialSpeed ?? 1;
+    this.currentRealm = data.currentRealm;
+    this.unlockedRealms = data.unlockedRealms;
   }
 
   /** Scale both tween duration (movement) and delayedCall (post-arrival pause)
@@ -107,6 +116,10 @@ export class OverworldScene extends Phaser.Scene {
       { fontSize: '24px' },
     ).setOrigin(0.5).setDepth(10);
 
+    // V3-D: camera follow hero. viewport = 640x384, world = 3840x384.
+    this.cameras.main.startFollow(this.heroSprite, true, 0.1, 0.1);
+    this.cameras.main.setDeadzone(200, 100);
+
     // Build walkable grid (all walkable for V1a — no obstacles)
     const grid: GridCell[][] = this.layout.tiles.map(row => row.map(() => 'walkable' as const));
     this.pathfinder = new Pathfinder(grid);
@@ -127,14 +140,20 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
-    const chosenCandidate = this.ai.chooseDestination(candidates.map(c => c.candidate));
+    const chosenCandidate = this.ai.chooseDestination(candidates.map(c => c.candidate), {
+      currentRealm: this.currentRealm,
+      unlockedRealms: this.unlockedRealms,
+    });
     if (!chosenCandidate) {
       this.onEvent({ type: 'cycle_ended' });
       return;
     }
 
     const target = candidates.find(c => c.candidate.id === chosenCandidate.id)!.landmark;
-    const path = await this.pathfinder.findPath(heroPos.x, heroPos.y, target.gridX, target.gridY);
+    const columnBounds = this.currentRealm
+      ? findRealm(this.currentRealm).columnRange
+      : undefined;
+    const path = await this.pathfinder.findPath(heroPos.x, heroPos.y, target.gridX, target.gridY, columnBounds ? { columnBounds } : undefined);
     if (!path || path.length < 2) {
       // Unreachable; mark consumed to skip
       target.consumed = true;
@@ -158,7 +177,11 @@ export class OverworldScene extends Phaser.Scene {
       x: next.x * TILE_PX + TILE_PX / 2,
       y: next.y * TILE_PX + TILE_PX / 2,
       duration: 180,
-      onComplete: () => this.stepAlongPath(),
+      onComplete: () => {
+        this.hero.gridX = next.x;
+        this.hero.gridY = next.y;
+        this.stepAlongPath();
+      },
     });
   }
 

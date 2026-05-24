@@ -42,6 +42,9 @@ export class HeroEntity {
   actionCount: number;
   rejuvenationCount: number;
   staggered: boolean = false;
+  /** V3-D — current grid column. Updated by OverworldScene movement tween. */
+  public gridX: number = 0;
+  public gridY: number = 0;
   equipment: string[] = [];
   personality: PersonalityState;
   unlockedJobId: string | null = null;
