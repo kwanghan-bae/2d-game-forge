@@ -207,4 +207,95 @@ describe('cycleSliceV2', () => {
       expect(useGameStore.getState().meta.light).toBe(lightBefore - expectedCost);
     });
   });
+
+  // Cycle-15 — realm rotation. start() reads unlockedRealms + sagaHistory.length
+  // to pick the cycle's starting realm; hero.gridX is moved in lockstep.
+  describe('Cycle-15 — realm rotation on start()', () => {
+    beforeEach(() => {
+      // Reset to a clean meta with only base unlocked + empty saga.
+      useGameStore.setState(s => ({
+        ...s,
+        meta: { ...s.meta, unlockedRealms: ['base'], sagaHistory: [], light: 0 },
+        run: { ...s.run, currentRealmId: 'base', heroSnapshot: null, npcs: [] },
+      }));
+      useCycleStoreV2.getState().reset();
+    });
+
+    it('single unlocked → starts in base, hero.gridX = 1', () => {
+      useCycleStoreV2.getState().start({
+        seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      expect(ctrl.getCurrentRealmId()).toBe('base');
+      expect(ctrl.getHero().gridX).toBe(1);
+      expect(useGameStore.getState().run.currentRealmId).toBe('base');
+    });
+
+    it('two unlocked + cycleNumber=1 → rotates to sea, hero.gridX = 21', () => {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: {
+          ...s.meta,
+          unlockedRealms: ['base', 'sea'],
+          sagaHistory: [{ cycleId: 'c0' } as never],  // length=1 → idx 1 → 'sea'
+        },
+      }));
+      useCycleStoreV2.getState().start({
+        seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      expect(ctrl.getCurrentRealmId()).toBe('sea');
+      expect(ctrl.getHero().gridX).toBe(21);  // sea.columnRange[0]=20 + 1
+      expect(useGameStore.getState().run.currentRealmId).toBe('sea');
+    });
+
+    it('heroSnapshot resume preserves stored realm (no rotation)', () => {
+      // Create a real snapshot by starting a cycle, then resuming.
+      useCycleStoreV2.getState().start({
+        seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      const ctrl0 = useCycleStoreV2.getState().controller!;
+      const hero0 = ctrl0.getHero();
+      hero0.gridX = 30; hero0.gridY = 6;
+      const snapshot = hero0.serialize(42);
+      // Reset + seed resume scenario: rotation would pick volcano (idx 2),
+      // but a non-null heroSnapshot must short-circuit rotation.
+      useCycleStoreV2.getState().reset();
+      useGameStore.setState(s => ({
+        ...s,
+        meta: {
+          ...s.meta,
+          unlockedRealms: ['base', 'sea', 'volcano'],
+          sagaHistory: [{ cycleId: 'c0' } as never, { cycleId: 'c1' } as never],
+        },
+        run: { ...s.run, currentRealmId: 'sea' },
+      }));
+      useCycleStoreV2.getState().start({
+        seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+        heroSnapshot: snapshot,
+      });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      // Resume branch leaves currentRealmId untouched (still 'sea', not rotated to volcano).
+      expect(ctrl.getCurrentRealmId()).toBe('sea');
+      // hero.gridX preserved from snapshot (30), not overridden to spawn col.
+      expect(ctrl.getHero().gridX).toBe(30);
+    });
+
+    it('three unlocked + cycleNumber=2 → rotates to volcano, hero.gridX = 41', () => {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: {
+          ...s.meta,
+          unlockedRealms: ['base', 'sea', 'volcano'],
+          sagaHistory: [{ cycleId: 'c0' } as never, { cycleId: 'c1' } as never],
+        },
+      }));
+      useCycleStoreV2.getState().start({
+        seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      expect(ctrl.getCurrentRealmId()).toBe('volcano');
+      expect(ctrl.getHero().gridX).toBe(41);  // volcano.columnRange[0]=40 + 1
+    });
+  });
 });

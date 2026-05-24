@@ -10,6 +10,8 @@ import { computeFieldDamping } from '../zone/fieldDamping';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { findRealm } from '../data/realms';
 import { seasonBonus } from '../season/SeasonState';
+import { pickStartingRealm, spawnColumnForRealm } from './realmRotation';
+import { GRID_H } from './mapLayout';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -74,7 +76,29 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         return null;
       }),
     });
-    ctrl.setCurrentRealmId(useGameStore.getState().run.currentRealmId);
+    // Cycle-15 — realm rotation. cycleSliceV2.endCycle() force-resets
+    // run.currentRealmId='base' as a stale-realm guard (cycle-5 F1). Before
+    // cycle-15 that meant every cycle started in base regardless of
+    // unlockedRealms progress. Round-robin rotation reads unlockedRealms +
+    // sagaHistory.length to pick the realm; hero.gridX is moved in lockstep
+    // so pathfinder bounds match. Resuming an in-progress run (heroSnapshot
+    // present) keeps the existing currentRealmId — the snapshot's gridX is
+    // already inside that realm.
+    const { meta: storeMeta, run: storeRun } = useGameStore.getState();
+    let activeRealmId = storeRun.currentRealmId;
+    if (savedSnapshot === null) {
+      const cycleNumber = (storeMeta.sagaHistory ?? []).length;
+      const rotated = pickStartingRealm(storeMeta.unlockedRealms, cycleNumber);
+      const spawnCol = spawnColumnForRealm(rotated);
+      const hero = ctrl.getHero();
+      hero.gridX = spawnCol;
+      hero.gridY = Math.floor(GRID_H / 2);
+      if (rotated !== activeRealmId) {
+        useGameStore.setState(s => ({ ...s, run: { ...s.run, currentRealmId: rotated } }));
+        activeRealmId = rotated;
+      }
+    }
+    ctrl.setCurrentRealmId(activeRealmId);
     ctrl.setUnlockedRealms(useGameStore.getState().meta.unlockedRealms);
     set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0 });
   },
