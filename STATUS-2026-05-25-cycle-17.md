@@ -1,6 +1,6 @@
 # STATUS 2026-05-25 — Cycle 17 (Complete — Chained 1200-arrival bonus growth balance probe)
 
-> 최신 머지 (main): `<pending>` (tag `cycle-17-complete`)
+> 최신 머지 (main): `7472ba1` (tag `cycle-17-complete`)
 > 자율진화 spec: `docs/superpowers/specs/2026-05-24-autonomous-evolution-design.md`
 
 ## 한 줄
@@ -30,7 +30,7 @@ chained_p50 / batch_p50 = **1.01x** (Case 1 / balance OK). N=20 chained @
 | 14 | `77196a1` | `cycle-14-complete` | Dev-server 자연사 emit (`clearEndCause` fix) | full PASS |
 | 15 | `30f209c` | `cycle-15-complete` | Round-robin realm rotation + hero.gridX sync | full PASS |
 | 16 | `d5851ef` | `cycle-16-complete` | Multi-cycle chained sim driver | full PASS |
-| **17** | **`<pending>`** | **`cycle-17-complete`** | **Chained 1200-arrival bonus balance probe (Case 1)** | **full PASS (measurement-only)** |
+| **17** | **`7472ba1`** | **`cycle-17-complete`** | **Chained 1200-arrival bonus balance probe (Case 1)** | **full PASS (measurement-only)** |
 
 ### 자율 머지 cycle 카운트
 
@@ -42,7 +42,7 @@ chained_p50 / batch_p50 = **1.01x** (Case 1 / balance OK). N=20 chained @
 |----|-------|------|------|
 | **C17** | `scripts/measure-cycle-17.ts` 신규 — runSimV2 (atkBonus=0 batch baseline) + runSimV2Chained 를 같은 maxArrivals/count 로 돌려 ratio + curve sample + polynomial degree 출력 | 1 file new | +135/0 |
 
-Commit SHA: `<pending>`
+Commit SHA: `5a8a099` (feat) + `ea8c686` (docs). Main merge `7472ba1`.
 
 ## 머지 가드 결과
 

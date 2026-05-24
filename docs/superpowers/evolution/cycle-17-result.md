@@ -15,9 +15,9 @@ fix 불필요, 측정 + docs only commit**.
 
 ## 머지 정보
 
-- **Commit**: `c2cca99` (feat) + `9f2b1e1` (docs)
+- **Commit**: `5a8a099` (feat) + `ea8c686` (docs)
 - **Branch**: `feat/cycle-17-bonus-balance`
-- **Main merge**: `<pending>`
+- **Main merge**: `7472ba1` (--no-ff)
 - **Tag**: `cycle-17-complete`
 - 1 file new (`measure-cycle-17.ts`) + 2 docs
 
