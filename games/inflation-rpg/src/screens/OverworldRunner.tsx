@@ -78,6 +78,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoRejuvTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveMul = getMoveSpeedMul(meta);
 
   // V3-H B2: auto-start cycle on mount if no cycle is active.
@@ -155,12 +156,25 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             setSceneUnlockedRealmsRef.current?.(controller.getUnlockedRealms());
           }
         }
-        if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
+        if (event.type === 'cycle_ended' && !endedRef.current) {
           endedRef.current = true;
           // V3-H B2: cycle ends naturally → clear hero snapshot so next visit spawns fresh hero.
           useGameStore.getState().clearHeroSnapshot();
           endCycle();
           onCycleEnd();
+        }
+        if (event.type === 'hero_died') {
+          // V3-H B3: 영웅은 불멸 — 사망 후 2초 극적 여운, 자동 5년 회춘.
+          // 회춘은 빛 비용 없이 무료 (영원한 영웅 컨셉).
+          // hero.staggered=true 이므로 다음 arrival 에서 HP 가 자동 회복됨.
+          if (autoRejuvTimerRef.current) clearTimeout(autoRejuvTimerRef.current);
+          autoRejuvTimerRef.current = setTimeout(() => {
+            autoRejuvTimerRef.current = null;
+            const ctrl = useCycleStoreV2.getState().controller;
+            if (!ctrl) return;
+            ctrl.getHero().rejuvenate(5);
+            ctrl.recordRejuvenation(5);
+          }, 2000);
         }
       },
       controller.getHero(),
@@ -185,6 +199,10 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       if (realmOverlayTimerRef.current) {
         clearTimeout(realmOverlayTimerRef.current);
         realmOverlayTimerRef.current = null;
+      }
+      if (autoRejuvTimerRef.current) {
+        clearTimeout(autoRejuvTimerRef.current);
+        autoRejuvTimerRef.current = null;
       }
       destroy?.();
     };
