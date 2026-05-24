@@ -77,6 +77,42 @@ describe('cycleSliceV2', () => {
     });
   });
 
+  // Cycle-5 F1 — stale realm bug. endCycle MUST reset run.currentRealmId to
+  // 'base' so the next cycle's hero (which spawns at base village col 1) is
+  // not pathfinder-locked out by the previous realm's columnBounds.
+  describe('Cycle-5 F1 — endCycle resets run.currentRealmId + npcs', () => {
+    it('resets currentRealmId to base when previous run was in sea realm', () => {
+      useGameStore.setState(s => ({
+        ...s,
+        run: {
+          ...s.run,
+          currentRealmId: 'sea',
+          npcs: [
+            {
+              instanceId: 'n1',
+              kind: 'rival',
+              nameKR: 'stub',
+              emoji: 'X',
+              age: 20,
+              ageRate: 1,
+              isAlive: true,
+              bornChapter: '청년기',
+              relationship: 0,
+              zoneRealmId: 'sea',
+            } satisfies import('../../types').NpcEntity,
+          ],
+        },
+      }));
+      useCycleStoreV2.getState().start({
+        seed: 1, traits: [], heroHpMax: 100, heroAtkBase: 100,
+      });
+      useCycleStoreV2.getState().endCycle();
+      const run = useGameStore.getState().run;
+      expect(run.currentRealmId).toBe('base');
+      expect(run.npcs).toHaveLength(0);
+    });
+  });
+
   describe('rejuvenateHero action', () => {
     it('decreases hero age, spends light, increments rejuvenationCount', () => {
       useGameStore.setState(s => ({ ...s, meta: { ...s.meta, light: 1000 } }));

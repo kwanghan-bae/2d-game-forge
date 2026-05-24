@@ -110,6 +110,15 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           atkBaseBonus: out.atkBaseBonus,
           hpBaseBonus: out.hpBaseBonus,
         },
+        // Cycle-5 F1: stale realm bug fix — 다음 cycle 의 hero 는 base village
+        // col 1 에 spawn 하므로 이전 realm 의 columnBounds 가 남아있으면
+        // pathfinder 가 모든 후보를 차단하여 candidates 소진 → 5세 즉사.
+        // NPC 도 이전 cycle 의 잔존이므로 함께 초기화.
+        run: {
+          ...s.run,
+          currentRealmId: 'base',
+          npcs: [],
+        },
       };
     });
     set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold });
