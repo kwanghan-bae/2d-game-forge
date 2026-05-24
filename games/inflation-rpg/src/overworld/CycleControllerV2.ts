@@ -195,8 +195,10 @@ export class CycleControllerV2 {
             age: this.hero.age,
             cause: ev.cause,
             enemyNameKR: enemyType?.nameKR,
+            oldLevel: ev.oldLevel,
+            newLevel: ev.newLevel,
           }),
-          payload: {},
+          payload: { oldLevel: ev.oldLevel, newLevel: ev.newLevel },
         });
       }
     }

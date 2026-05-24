@@ -13,7 +13,7 @@ export type OverworldEvent =
   | { type: 'shrine_visited';  landmarkId: string; healed: number }
   | { type: 'moral_choice';    choice: string; dim: PersonalityDim; delta: number; nameKR: string }
   | { type: 'chapter_transition'; fromChapter: Chapter; toChapter: Chapter; atAge: number }
-  | { type: 'hero_died';       cause: '전사' | '자연사'; enemyId?: string }
+  | { type: 'hero_died';       cause: '전사' | '자연사'; enemyId?: string; oldLevel: number; newLevel: number }
   | { type: 'realm_unlocked'; realmId: import('../types').RealmId }
   | { type: 'realm_entered'; realmId: import('../types').RealmId }
   | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }

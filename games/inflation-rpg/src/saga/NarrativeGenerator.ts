@@ -53,10 +53,14 @@ export class NarrativeGenerator {
     return `${opts.age}세에 빛의 은총으로 ${opts.yearsBack}년이 사라졌다 — 재생 #${opts.rejuvenationCount}.`;
   }
 
-  static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string }): string {
+  static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string; oldLevel?: number; newLevel?: number }): string {
     switch (opts.cause) {
-      case '전사':
-        return `${opts.age}세에 ${opts.enemyNameKR ?? '강적'}에게 쓰러져 생을 마감했다.`;
+      case '전사': {
+        const levelInfo = (opts.oldLevel !== undefined && opts.newLevel !== undefined)
+          ? ` [LV ${opts.oldLevel} → ${opts.newLevel}]`
+          : '';
+        return `${opts.age}세에 ${opts.enemyNameKR ?? '강적'}에게 쓰러져 시련을 받았다.${levelInfo}`;
+      }
       case '자연사':
         return `${opts.age}세에 안식을 맞아 잠들었다.`;
       case '영광스러운죽음':
