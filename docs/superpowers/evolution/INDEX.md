@@ -37,3 +37,6 @@
 - Cycle 31 (2026-05-25, `3eb463d`): maxLevel design intent close (cycle 17 finding, C10-C carry-over).
 - Cycle 32 (2026-05-25, `44dbb86`): mega-cycle subagent stall pattern root cause analysis (cycle 25 룰 첫 적용).
 - Cycle 33 (2026-05-25, `a7bb24a`): D6 era key 3-tier title — 본래 / 재생 #N / 환생 #N.
+- Cycle 34 (2026-05-25, `2672047`): INDEX for cycle 30-33.
+- Cycle 35 (2026-05-25, `434f8aa`): D7 age 5 prefix variation (battle/levelUp). age5Tone() helper.
+- Cycle 36 (2026-05-25): age 5 tone 확장 (drop/jobUnlock/skillLearned/moralChoice/shrineHealed/shrineCalm/levelUpBatch 모두).
