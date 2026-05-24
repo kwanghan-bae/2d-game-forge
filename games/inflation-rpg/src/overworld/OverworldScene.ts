@@ -167,11 +167,20 @@ export class OverworldScene extends Phaser.Scene {
       this.landmarkSprites.set(lm.instanceId, text);
     }
 
-    // Hero spawn at first village
-    const village = this.layout.landmarks.find(l => l.type.kind === 'village')!;
+    // Hero spawn — use hero entity's gridX/gridY which cycleSliceV2.start()
+    // sets via realmRotation. Cycle-15: rotated realms spawn at
+    // `realm.columnRange[0] + 1`, not the legacy base village. Fall back to
+    // base village (col 1) only if the hero hasn't been positioned yet
+    // (gridX === 0, the default before snapshot/rotation).
+    const spawnX = this.hero.gridX > 0
+      ? this.hero.gridX
+      : this.layout.landmarks.find(l => l.type.kind === 'village')!.gridX;
+    const spawnY = this.hero.gridX > 0
+      ? this.hero.gridY
+      : this.layout.landmarks.find(l => l.type.kind === 'village')!.gridY;
     this.heroSprite = this.add.text(
-      village.gridX * TILE_PX + TILE_PX / 2,
-      village.gridY * TILE_PX + TILE_PX / 2,
+      spawnX * TILE_PX + TILE_PX / 2,
+      spawnY * TILE_PX + TILE_PX / 2,
       this.hero.emoji,
       { fontSize: '24px' },
     ).setOrigin(0.5).setDepth(10);
