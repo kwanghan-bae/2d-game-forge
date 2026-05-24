@@ -9,6 +9,21 @@ interface Props {
 
 type EventFilter = 'all' | 'battle' | 'drop' | 'levelUp' | 'realm' | 'npc' | 'rejuv' | 'sightseeing' | 'meditation' | 'trial' | 'season';
 
+/** Cycle 4 B3: 필터 칩 한글 label. internal value 는 영어 그대로 유지. */
+export const FILTER_LABEL_KR: Record<EventFilter, string> = {
+  all:         '전체',
+  battle:      '전투',
+  drop:        '획득',
+  levelUp:     '성장',
+  realm:       '영지',
+  npc:         '인연',
+  rejuv:       '회춘',
+  sightseeing: '명소',
+  meditation:  '명상',
+  trial:       '시련',
+  season:      '계절',
+};
+
 export function matchesFilter(t: SagaEventType, f: EventFilter): boolean {
   switch (f) {
     case 'all':         return true;
@@ -62,9 +77,9 @@ export function SagaBookModal({ onClose }: Props) {
               type="button"
               onClick={() => setFilter(f)}
               data-testid={`saga-filter-${f}`}
-              style={{ padding: '4px 8px', background: filter === f ? '#3b4252' : '#262830', color: '#eee', border: '1px solid #555', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
+              style={{ padding: '4px 8px', background: filter === f ? '#3b4252' : '#262830', color: '#eee', border: '1px solid #555', borderRadius: 4, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
             >
-              {f === 'all' ? '전체' : f}
+              {FILTER_LABEL_KR[f]}
             </button>
           ))}
         </div>
