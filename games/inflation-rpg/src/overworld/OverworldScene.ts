@@ -2,7 +2,6 @@ import * as Phaser from 'phaser';
 import { SeededRng } from '../cycle/SeededRng';
 import { ZONES } from '../data/zones';
 import { LANDMARK_TYPES } from '../data/landmarks';
-import { ENEMY_ZONES, selectEnemyTypeId, zoneForColumn, type EnemyZone } from '../data/enemyTiers';
 import { Pathfinder, findPathWithFallback, type GridCell } from './Pathfinding';
 import { findRealm } from '../data/realms';
 import type { PlacedLandmark } from './Landmark';
@@ -13,17 +12,10 @@ import type { HeroEntity } from '../hero/HeroEntity';
 import { generateMapLayout, GRID_H, GRID_W, TILE_PX, type MapLayout } from './mapLayout';
 import type { RealmId, SeasonId } from '../types';
 import { seasonBgTint } from '../season/SeasonState';
+import { pickRespawnPlacement } from './respawn';
 
 export { generateMapLayout, GRID_H, GRID_W };
 export type { MapLayout };
-
-/** Column bands per enemy zone — used by respawn when the consumed enemy's
- *  position fell outside any band (extremely rare, just a safety net). */
-const ENEMY_ZONE_COL_RANGES: Record<EnemyZone, { xMin: number; xMax: number }> = {
-  forest:    { xMin: 3,  xMax: 7  },
-  plains:    { xMin: 8,  xMax: 11 },
-  mountains: { xMin: 12, xMax: 16 },
-};
 
 interface OverworldSceneData {
   seed: number;
@@ -324,37 +316,44 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
-  /** Spawn a replacement enemy in the same zone as the consumed landmark,
-   *  picking the enemy type that matches the hero's current chapter so the
-   *  narrative ages along with him (V1e). */
+  /** Cycle-12 L1 — Spawn a replacement enemy inside the consumed enemy's
+   *  realm. Base realm keeps the V1e zone-banded narrative (forest/plains/
+   *  mountains × chapter); non-base realms place inside the realm's
+   *  `columnRange` with an enemy from the realm's `enemyRoster`.
+   *
+   *  Pre-fix: `zoneForColumn(consumed.gridX)` returned null for any col ≥ 20
+   *  and fell back to a random base zone. Respawns always landed in cols
+   *  3-16, OUTSIDE the hero's current realm columnRange. `filterCandidatesByRealm`
+   *  excluded all of them and the cycle terminated with '무위' once the
+   *  ~4 initial non-base enemies drained. Delegating to `pickRespawnPlacement`
+   *  (pure helper) so the sim driver applies the same placement logic. */
   private respawnEnemyNear(consumed: PlacedLandmark): void {
-    // Determine the zone band from the consumed landmark's x position.
-    const zone: EnemyZone =
-      zoneForColumn(consumed.gridX) ??
-      ENEMY_ZONES[this.sceneRng.int(ENEMY_ZONES.length)]!;
-    const range = ENEMY_ZONE_COL_RANGES[zone];
-    const typeId = selectEnemyTypeId(zone, this.hero.chapter);
-    const landmarkType = LANDMARK_TYPES.find(t => t.id === typeId);
+    const placement = pickRespawnPlacement(
+      consumed.gridX,
+      this.hero.chapter,
+      GRID_H,
+      this.sceneRng,
+    );
+    if (!placement) return;
+    const landmarkType = LANDMARK_TYPES.find(t => t.id === placement.typeId);
     if (!landmarkType) return;
 
-    const x = range.xMin + this.sceneRng.int(range.xMax - range.xMin + 1);
-    const y = this.sceneRng.int(GRID_H);
     this.respawnCounter += 1;
-    const instanceId = `${typeId}_respawn_${this.respawnCounter}`;
+    const instanceId = `${placement.typeId}_respawn_${this.respawnCounter}`;
 
     const newLandmark: PlacedLandmark = {
       instanceId,
       type: landmarkType,
-      gridX: x,
-      gridY: y,
+      gridX: placement.gridX,
+      gridY: placement.gridY,
       consumed: false,
     };
     this.layout.landmarks.push(newLandmark);
 
     // Render the new landmark sprite.
     const text = this.add.text(
-      x * TILE_PX + TILE_PX / 2,
-      y * TILE_PX + TILE_PX / 2,
+      placement.gridX * TILE_PX + TILE_PX / 2,
+      placement.gridY * TILE_PX + TILE_PX / 2,
       landmarkType.emoji,
       { fontSize: '20px' },
     ).setOrigin(0.5).setAlpha(0.8);
