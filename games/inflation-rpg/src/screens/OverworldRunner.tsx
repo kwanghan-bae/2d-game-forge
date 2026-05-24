@@ -243,41 +243,49 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   return (
     <div data-testid="overworld-runner" style={{ position: 'relative' }}>
       <div data-testid="overworld-hud" style={hudStyle}>
-        <span data-testid="hud-name">{hero.emoji} {hero.name}</span>
-        <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
-        <span>{hero.job} · LV {hero.level}</span>
-        <span>HP {hero.hp}/{hero.hpMax}</span>
-        <span data-testid="hud-light">빛 {Math.floor(meta.light ?? 0)}</span>
-        <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
-        <button
-          type="button"
-          onClick={() => setSpendModalOpen(true)}
-          data-testid="open-spend-modal"
-          style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}
-        >
-          신의 메뉴
-        </button>
-        <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ marginLeft: 8, padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
-        <span data-testid="hud-realm" style={{ marginLeft: 8 }}>
-          {(() => {
-            const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
-            return `🌍 ${r?.nameKR ?? '?'} (${meta.unlockedRealms.length}/${REALM_CATALOG.length})`;
-          })()}
-        </span>
-        <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
-          {SPEED_PRESETS.map(s => (
+        {/* Row 1: character info */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, flexWrap: 'wrap', width: '100%' }}>
+          <span data-testid="hud-name">{hero.emoji} {hero.name}</span>
+          <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
+          <span data-testid="hud-job-lv">{hero.job} · LV {hero.level}</span>
+          <span data-testid="hud-hp">HP {hero.hp}/{hero.hpMax}</span>
+        </div>
+        {/* Row 2: meta info + buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, flexWrap: 'wrap', width: '100%' }}>
+          <span data-testid="hud-light">빛 {Math.floor(meta.light ?? 0)}</span>
+          <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
+          <span data-testid="hud-realm">
+            {(() => {
+              const r = REALM_CATALOG.find(rr => rr.id === run.currentRealmId);
+              return `🌍 ${r?.nameKR ?? '?'} (${meta.unlockedRealms.length}/${REALM_CATALOG.length})`;
+            })()}
+          </span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
-              key={s}
               type="button"
-              onClick={() => setSpeed(s)}
-              data-testid={`speed-${s}x`}
-              data-active={speed === s ? 'true' : undefined}
-              style={speedBtnStyle(speed === s)}
+              onClick={() => setSpendModalOpen(true)}
+              data-testid="open-spend-modal"
+              style={{ padding: '4px 8px', fontSize: 12 }}
             >
-              {s}×
+              신의 메뉴
             </button>
-          ))}
-        </span>
+            <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
+            <span data-testid="speed-buttons" style={{ display: 'inline-flex', gap: 4 }}>
+              {SPEED_PRESETS.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSpeed(s)}
+                  data-testid={`speed-${s}x`}
+                  data-active={speed === s ? 'true' : undefined}
+                  style={speedBtnStyle(speed === s)}
+                >
+                  {s}×
+                </button>
+              ))}
+            </span>
+          </div>
+        </div>
       </div>
       <div data-testid="light-floaters" style={{ position: 'absolute', right: 0, top: 60, pointerEvents: 'none', zIndex: 5 }}>
         {lightFloats.map((f, idx) => {
@@ -409,13 +417,15 @@ function eventColor(type: SagaEvent['type']): string {
 
 const hudStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 16,
+  flexDirection: 'column',
+  gap: 6,
   padding: '8px 16px',
   background: '#1f2937',
   color: '#cbd5e1',
   fontSize: 13,
   borderBottom: '1px solid #334155',
-  flexWrap: 'wrap',
+  position: 'relative',
+  zIndex: 10,
 };
 
 function speedBtnStyle(active: boolean): React.CSSProperties {
