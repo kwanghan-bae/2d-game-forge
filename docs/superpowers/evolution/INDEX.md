@@ -25,3 +25,11 @@
 - Cycle 19 (abandoned 2026-05-25): narrative tone "5세에" 압축 fix 시도. subagent stall — 작업 미완 abandon. carry-over 잔존.
 - Cycle 20 (2026-05-25, `4432a73`): HeroSnapshot staggered field persist (cycle 6 carry-over). serialize/restore round-trip + legacy snapshot default false. 3 신규 unit test. sim smoke testTimeout 30s → 600s (누적 slow-down 대응). vitest 1236 (+3 cycle 20 + 누적).
 - Cycle 21 (2026-05-25): PRD 산술 충돌 검증 룰 페르소나 patch (cycle 11 carry-over). docs only.
+- Cycle 22 (2026-05-25, `5609fc6`): INDEX + STATUS docs for cycle 18-21.
+- Cycle 23 (2026-05-25, `ca65194`): boss-pick weight 3 → 5 (cycle 10 P1 carry-over). short-timeframe UX.
+- Cycle 24 (2026-05-25, `5538711`): sim onBossKill realm_unlocked dedup (cycle 10 정찰 finding). announcedUnlocks Set.
+- Cycle 25 (2026-05-25, `50be135`): persona sim smoke 누적 slow-down 룰 (cycle 18-20 finding).
+- Cycle 26 (2026-05-25, `23c1193`): D1 priest saturator structural — merciful min 3 → 5.
+- Cycle 27 (2026-05-25, `6c26ed9`): D2 prudent delta 3 → 4. monk/ranger access.
+- Cycle 28 (2026-05-25, `a721ea8`): D5 MERCIFUL_PROC_RATE 0.10 → 0.07. spare_enemy saturation.
+- Cycle 29 (2026-05-25, `1fb516f`): prod build recon (cycle 4 carry-over). Next 16.1.1 static export PASS.
