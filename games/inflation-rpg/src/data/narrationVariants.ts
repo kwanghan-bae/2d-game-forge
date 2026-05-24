@@ -260,43 +260,76 @@ function ageYoungTone(text: string, age: number, seed: number): string {
   return text.replace(new RegExp(`^${age}세에 `), replacement);
 }
 
+/** Cycle 41: age 13-29 (청년기). 4 variants. */
+function ageYoungAdultTone(text: string, age: number, seed: number): string {
+  if (seed === 0 || age < 13 || age > 29) return text;
+  const variant = seed % 4;
+  if (variant === 0) return text;
+  const replacement =
+    variant === 1 ? `${age}세 청춘에 ` :
+    variant === 2 ? `${age}세 한창에 ` :
+    `${age}세 떠오르는 시기에 `;
+  return text.replace(new RegExp(`^${age}세에 `), replacement);
+}
+
+/** Cycle 41: age 30-49 (장년기). 4 variants. */
+function ageMatureTone(text: string, age: number, seed: number): string {
+  if (seed === 0 || age < 30 || age > 49) return text;
+  const variant = seed % 4;
+  if (variant === 0) return text;
+  const replacement =
+    variant === 1 ? `${age}세 무르익은 시기에 ` :
+    variant === 2 ? `${age}세 깊어진 손으로 ` :
+    `${age}세 단련된 의지로 `;
+  return text.replace(new RegExp(`^${age}세에 `), replacement);
+}
+
+/** Single entrypoint — picks by age tier. */
+function ageTone(text: string, age: number, seed: number): string {
+  if (age === 5) return age5Tone(text, seed);
+  if (age <= 12) return ageYoungTone(text, age, seed);
+  if (age <= 29) return ageYoungAdultTone(text, age, seed);
+  if (age <= 49) return ageMatureTone(text, age, seed);
+  return text;
+}
+
 /* ─────────────────── 공개 API ───────────────────────────────── */
 export const NarrationVariants = {
   battle(ctx: { age: number; enemyNameKR: string }, seed = 0): string {
     const out = pick(BATTLE_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   levelUp(ctx: { age: number; newLevel: number }, seed = 0): string {
     const out = pick(LEVELUP_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   levelUpBatch(ctx: { age: number; fromLevel: number; toLevel: number; count: number }, seed = 0): string {
     const out = pick(LEVELUP_BATCH_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   drop(ctx: { age: number; itemNameKR: string }, seed = 0): string {
     const out = pick(DROP_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   shrineHealed(ctx: { age: number; healed: number }, seed = 0): string {
     const out = pick(SHRINE_HEALED_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   shrineCalm(ctx: { age: number }, seed = 0): string {
     const out = pick(SHRINE_CALM_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   moralChoice(ctx: { age: number; choiceNameKR: string }, seed = 0): string {
     const out = pick(MORAL_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   skillLearned(ctx: { age: number; skillNameKR: string }, seed = 0): string {
     const out = pick(SKILL_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   jobUnlock(ctx: { age: number; jobNameKR: string; tier: number }, seed = 0): string {
     const out = pick(JOB_VARIANTS, ctx, seed);
-    return ctx.age === 5 ? age5Tone(out, seed) : ageYoungTone(out, ctx.age, seed);
+    return ageTone(out, ctx.age, seed);
   },
   rejuvenation(ctx: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return pick(REJUVENATION_VARIANTS, ctx, seed);
