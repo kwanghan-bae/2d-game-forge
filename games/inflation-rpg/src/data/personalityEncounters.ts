@@ -24,8 +24,11 @@ export const PERSONALITY_ENCOUNTERS: readonly PersonalityEncounter[] = [
     negative: { choice: 'flee_attack',    nameKR: '습격을 피해 도망쳐 비겁의 그림자를 안았다', delta: -3 },
   },
   {
+    // Cycle 27 (cycle 3 D2 carry-over) — prudent positive delta 3 → 4. prudent 는
+    // treasure_cave 단일 source 라 다른 dim (heroic/moral 3 source 평균) 대비 누적
+    // 속도 느림. monk (min 5) + ranger (min 6) 도달률 1/150 → ↑ 목표.
     kind: 'treasure_cave', dim: 'prudent',
-    positive: { choice: 'safe_path',      nameKR: '의심스러운 보물을 멀리하여 신중함을 길렀다', delta: 3 },
+    positive: { choice: 'safe_path',      nameKR: '의심스러운 보물을 멀리하여 신중함을 길렀다', delta: 4 },
     negative: { choice: 'reckless_greed', nameKR: '위험한 보물에 손대며 충동이 깊어졌다',       delta: -3 },
   },
   {
