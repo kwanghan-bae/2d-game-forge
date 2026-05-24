@@ -45,3 +45,8 @@
 - Cycle 40 (2026-05-25, `79fe245`): INDEX + 40-cycle milestone STATUS.
 - Cycle 41 (2026-05-25, `58d74c0`): age tone tiers 13-29 / 30-49.
 - Cycle 42 (2026-05-25, `7630665`): age tone tiers 50-69 / 70+. All 6 age tiers covered.
+- Cycle 43 (2026-05-25, `a5f4c73`): INDEX for cycle 40-42.
+- Cycle 44 (2026-05-25): batch phase retrospective spec (cycle 22-42).
+- Cycle 45 (2026-05-25): cycle 45-100 plan doc.
+- Cycle 46 (2026-05-25): STATUS for cycle 41-45.
+- Cycle 47 (2026-05-25): sim performance baseline spec (Phase B prep).
