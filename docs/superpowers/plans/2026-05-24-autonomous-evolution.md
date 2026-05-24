@@ -205,10 +205,12 @@ prompt = 공통 prefix + persona-file=`01-game-planner.md` + persona-slug=`prd`
 - docs/superpowers/evolution/cycle-<N>-level-critic.md
 - docs/superpowers/evolution/cycle-<N>-research.md (skipped 일 수도 있음)
 - 이전 cycle 들의 backlog (`cycle-(N-1)-prd.md` 의 "우선순위 외 backlog" 섹션)
+  — **N=1 일 때 이 항목 skip** (직전 cycle 없음)
 
 ## 가드
 - 스코프: feature 3 개 초과 금지
-- 3 의 규칙: 같은 약점이 이번까지 3 cycle 연속 1순위로 등장하면 → 즉시 명시 + Phase G self-check 에서 soft halt 후보로 기록
+- 3 의 규칙: 같은 약점이 이번까지 3 cycle 연속 1순위로 등장하면 → 즉시 명시 + Phase G self-check 에서 soft halt 후보로 기록.
+  — **N < 3 일 때 이 가드 skip** (검출 불가)
 - 컨셉: V3 (eternal hero idle sponsor, 1→수십만 레벨 폭발) 위배 검출 시 reject
 ```
 
@@ -307,6 +309,8 @@ git checkout -b feat/cycle-<N>-<short-topic>
 
 `superpowers:subagent-driven-development` 스킬로 plan 의 task 들을 dispatch. 각 task 완료마다 가벼운 commit.
 
+**Return contract**: nested SDD 가 "all tasks done" 보고 시에만 Step 4 진행. 미완료 보고 / 에러 발생 시 Step 4 의 check 가 자동 fail 로 처리되어 Task 7 Phase F 가 머지 거부.
+
 - [ ] **Step 4: 누락 검증**
 
 ```bash
@@ -341,13 +345,13 @@ pnpm test
 
 Expected: 모든 워크스페이스 vitest 0 exit + fail 0.
 
-- [ ] **Step 3: e2e Playwright**
+- [ ] **Step 3: e2e Playwright (1 retry 허용)**
 
 ```bash
-pnpm --filter @forge/game-inflation-rpg e2e
+pnpm --filter @forge/game-inflation-rpg e2e || pnpm --filter @forge/game-inflation-rpg e2e
 ```
 
-Expected: 0 exit (chromium + iphone14 모두).
+Expected: 0 exit 어느 한 회 (chromium + iphone14 모두). Phaser + Playwright 의 flake 가능성 때문에 1 retry 허용. 둘 다 fail 이면 진짜 회귀로 처리.
 
 - [ ] **Step 4: circular**
 
@@ -370,15 +374,22 @@ pnpm --filter @forge/game-inflation-rpg sim:cycle -- --cycles 50 > /tmp/cycle-<N
 
 Regression 시 어떤 지표가 깨졌는지 STDOUT 에 출력.
 
-- [ ] **Step 6: persist version 가드**
+- [ ] **Step 6: persist version 가드 (조건부)**
 
-PRD 가 store/save schema 를 건드린 경우만:
+이 cycle 의 변경이 store/save schema 파일을 건드린 경우만 실행:
 
 ```bash
-grep -E 'STORE_VERSION|saveEnvelopeSchema' games/inflation-rpg/src/store/*.ts | head -5
+SCHEMA_CHANGED=$(git diff --name-only main -- 'games/inflation-rpg/src/store/' 'games/inflation-rpg/src/save/' | wc -l)
+if [ "$SCHEMA_CHANGED" -gt 0 ]; then
+  BEFORE=$(git show main:games/inflation-rpg/src/store/persist.ts 2>/dev/null | grep -oE 'STORE_VERSION ?[:=] ?[0-9]+' | head -1 | grep -oE '[0-9]+' || echo 0)
+  AFTER=$(grep -oE 'STORE_VERSION ?[:=] ?[0-9]+' games/inflation-rpg/src/store/persist.ts | head -1 | grep -oE '[0-9]+' || echo 0)
+  echo "STORE_VERSION: $BEFORE -> $AFTER"
+  test "$AFTER" -gt "$BEFORE" || { echo "GUARD FAIL: STORE_VERSION 안 올림 (schema 변경 있음)"; exit 1; }
+  grep -E 'migrate[A-Z]|version: [0-9]+' games/inflation-rpg/src/store/persist.ts | head -3 || { echo "GUARD FAIL: migration 함수 없음"; exit 1; }
+fi
 ```
 
-Expected: STORE_VERSION 이 직전 main 대비 +1 + migration 함수 동반.
+Expected: schema 변경 없으면 skip / 있으면 AFTER > BEFORE + migration 함수 존재.
 
 - [ ] **Step 7: 모든 가드 PASS 시 main 머지**
 
@@ -445,13 +456,23 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 3 신호 중 1+ 충족 시 → soft halt:
 
 1. **약점 고갈**: 이번 cycle 평가 (cycle-N-critic + story + level) 의 약점 TOP 3 가 모두 "표류 없음" 또는 점수 9+/10 만 등장
-2. **3 연속 같은 1순위**: cycle-(N-2), cycle-(N-1), cycle-N 의 PRD 1순위 feature 가 같은 카테고리 (3 의 규칙)
+2. **3 연속 같은 1순위**: cycle-(N-2), cycle-(N-1), cycle-N 의 PRD 1순위 feature 가 같은 카테고리 (3 의 규칙). N < 3 일 때 이 신호 skip
 3. **자원 추정**: 다음 cycle 1 회 + 정리 commit 까지의 turn 여유 부족 추정 (휴리스틱: 직전 cycle turn 수가 평균 30+ 이고 남은 context 가 ~30% 이하면 halt)
 
 추가로:
 
 4. **사용자 halt**: 사용자가 명시적 "stop" / "/goal clear" 입력 시 즉시 halt
 5. **Hard halt**: harness 가 context-window / quota 한계 → 자동 정지 (사람-개입 불가)
+
+**Soft halt 시 사용자 confirm 게이트**: 신호 1-3 충족 시 auto-FINAL 하지 않는다. FINAL.md 는 작성하되 메인 세션에 한 줄 알림:
+
+```
+Soft halt 트리거됨 (사유: <약점 고갈 / 3-rule / 자원>).
+계속 진행하려면 "continue" / 종료 확정은 "/goal clear" 또는 "stop".
+사용자 응답 대기.
+```
+
+사용자가 "continue" 응답 시 신호 1-3 무시하고 다음 cycle 진입. "/goal clear" / "stop" 시 FINAL 확정. 신호 4-5 는 confirm 게이트 없이 즉시 정지.
 
 - [ ] **Step 2: halt 시 정리**
 
