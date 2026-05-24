@@ -35,6 +35,7 @@ async function bootPhaser(
   destroy: () => void;
   setSpeed: (m: number) => void;
   setUnlockedRealms: (r: readonly import('../types').RealmId[]) => void;
+  setCurrentRealm: (r: import('../types').RealmId) => void;
   setSeason: (s: import('../types').SeasonId) => void;
 }> {
   const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
@@ -58,10 +59,13 @@ async function bootPhaser(
   const setUnlockedRealms = (r: readonly import('../types').RealmId[]) => {
     getScene()?.setUnlockedRealms(r);
   };
+  const setCurrentRealm = (r: import('../types').RealmId) => {
+    getScene()?.setCurrentRealm(r);
+  };
   const setSeason = (s: import('../types').SeasonId) => {
     getScene()?.setSeason(s);
   };
-  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setSeason };
+  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setCurrentRealm, setSeason };
 }
 
 const SPEED_PRESETS = [1, 2, 5, 10] as const;
@@ -90,6 +94,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const setSceneUnlockedRealmsRef = useRef<((r: readonly import('../types').RealmId[]) => void) | null>(null);
+  const setSceneCurrentRealmRef = useRef<((r: import('../types').RealmId) => void) | null>(null);
   const setSceneSeasonRef = useRef<((s: import('../types').SeasonId) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -170,6 +175,13 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           const realmEntered = evs.find(e => e.type === 'realm_entered');
           if (realmEntered && realmEntered.type === 'realm_entered') {
             useGameStore.getState().setCurrentRealm(realmEntered.realmId);
+            // Cycle-8 C1: also sync the OverworldScene's stale currentRealm copy
+            // so the C1 candidate filter (and the existing columnBounds binding)
+            // immediately switch to the new realm. Without this, the filter
+            // keeps the previous realm's column range for the rest of the
+            // cycle and either '무위'-terminates the run or pushes the F4
+            // fallback back into the hot path — defeats the C1 fix.
+            setSceneCurrentRealmRef.current?.(realmEntered.realmId);
             setRealmOverlay({ realmId: realmEntered.realmId, key: Date.now() });
             if (realmOverlayTimerRef.current) clearTimeout(realmOverlayTimerRef.current);
             realmOverlayTimerRef.current = setTimeout(() => {
@@ -238,12 +250,14 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;
       setSceneUnlockedRealmsRef.current = g.setUnlockedRealms;
+      setSceneCurrentRealmRef.current = g.setCurrentRealm;
       setSceneSeasonRef.current = g.setSeason;
     });
 
     return () => {
       setSceneSpeedRef.current = null;
       setSceneUnlockedRealmsRef.current = null;
+      setSceneCurrentRealmRef.current = null;
       setSceneSeasonRef.current = null;
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
