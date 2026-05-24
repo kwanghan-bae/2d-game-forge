@@ -139,7 +139,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'battle',
-          narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR }),
+          narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR }, this.rng.int(100000)),
           payload: { enemyId: landmarkId, expGain: ev.expGain },
         });
         if (ev.dropId) {
@@ -149,7 +149,7 @@ export class CycleControllerV2 {
           this.recordToStore({
             age: this.hero.age,
             type: 'drop',
-            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }),
+            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }, this.rng.int(100000)),
             payload: { itemId: ev.dropId },
           });
         }
@@ -165,7 +165,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'skillLearned',
-          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }),
+          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }, this.rng.int(100000)),
           payload: { skillId: ev.skillId, atkBefore: ev.atkBefore, atkAfter: ev.atkAfter },
         });
       }
@@ -173,7 +173,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'shrine',
-          narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }),
+          narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }, this.rng.int(100000)),
           payload: { landmarkId: ev.landmarkId },
         });
       }
@@ -181,7 +181,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'moralChoice',
-          narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }),
+          narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }, this.rng.int(100000)),
           payload: { choice: ev.choice, dim: ev.dim, delta: ev.delta },
         });
       }
@@ -211,7 +211,7 @@ export class CycleControllerV2 {
         type: 'levelUp',
         narrativeText: NarrativeGenerator.forLevelUpBatch({
           age: this.hero.age, fromLevel: levelFrom, toLevel: levelTo, count: levelCount,
-        }),
+        }, this.rng.int(100000)),
         payload: { from: levelFrom, to: levelTo, count: levelCount },
       });
     }
@@ -226,7 +226,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'jobUnlock',
-          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }),
+          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }, this.rng.int(100000)),
           payload: { jobId: j.jobId, tier: j.tier },
         });
       }
@@ -322,7 +322,7 @@ export class CycleControllerV2 {
         age: this.hero.age,
         yearsBack: years,
         rejuvenationCount: this.hero.rejuvenationCount,
-      }),
+      }, this.rng.int(100000)),
       payload: { years, rejuvenationCount: this.hero.rejuvenationCount },
     });
   }
