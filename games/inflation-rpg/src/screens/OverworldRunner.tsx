@@ -8,6 +8,7 @@ import type { SagaEvent } from '../saga/SagaTypes';
 import { SpendModal } from './SpendModal';
 import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
+import { StatusModal } from './StatusModal';
 
 interface Props {
   onCycleEnd: () => void;
@@ -75,6 +76,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [lightFloats, setLightFloats] = useState<LightFloat[]>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const setSceneUnlockedRealmsRef = useRef<((r: readonly import('../types').RealmId[]) => void) | null>(null);
@@ -270,6 +272,14 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
               신의 메뉴
             </button>
             <button type="button" onClick={() => setSagaModalOpen(true)} data-testid="open-saga-modal" style={{ padding: '4px 8px', fontSize: 12 }}>📖 기록</button>
+            <button
+              type="button"
+              data-testid="open-status-modal"
+              onClick={() => setStatusModalOpen(true)}
+              style={{ minHeight: 44, padding: '4px 8px', fontSize: 12 }}
+            >
+              📊 상태
+            </button>
             <span data-testid="speed-buttons" style={{ display: 'inline-flex', gap: 4 }}>
               {SPEED_PRESETS.map(s => (
                 <button
@@ -314,6 +324,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
       {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
       {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
+      {statusModalOpen && <StatusModal onClose={() => setStatusModalOpen(false)} />}
 
       <style>{`
         @keyframes forgeChapterFade {
