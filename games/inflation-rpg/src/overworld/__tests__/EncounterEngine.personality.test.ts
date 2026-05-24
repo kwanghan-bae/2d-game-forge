@@ -28,7 +28,7 @@ describe('EncounterEngine — V1c-1 personality drift landmarks', () => {
   // 다른 landmark 와 negative 분기는 ±3 유지.
   it.each([
     ['watchtower',    'heroic',  3, 3],
-    ['treasure_cave', 'prudent', 3, 3],
+    ['treasure_cave', 'prudent', 4, 3], // cycle 27 D2: positive 3 → 4
     ['holy_ruin',     'pious',   2, 3], // positive 2, negative 3 (asymmetric)
     ['crossroads',    'moral',   3, 3],
   ] as const)('%s emits a moral_choice on the %s dim with expected ±delta', (kind, dim, posDelta, negDelta) => {
@@ -116,17 +116,15 @@ describe('EncounterEngine — V1c-1 merciful battle_won proc', () => {
     expect(fires).toBe(0);
   });
 
-  it('F1.4: MERCIFUL_PROC_RATE 1000회 chance → 평균 100 ± 15% (85-115)', () => {
-    // adapt: plan 은 helper 호출 1000 회를 가정했으나 실제 resolveEncounter 는
-    // drop roll → drop pick → merciful chance 의 RNG draw 순서가 얽혀 통계
-    // 신호가 흐려진다. SeededRng.chance(rate) 의 직접 통계로 상수 평균 검증.
+  it('F1.4: MERCIFUL_PROC_RATE 1000회 chance → 평균 70 ± 20% (56-84) (cycle 28 D5)', () => {
+    // cycle 28: rate 0.10 → 0.07. expected mean 70 ± 20% range.
     const rng = new SeededRng(42);
     let fires = 0;
     for (let i = 0; i < 1000; i++) {
       if (rng.chance(MERCIFUL_PROC_RATE)) fires += 1;
     }
-    expect(fires).toBeGreaterThanOrEqual(85);
-    expect(fires).toBeLessThanOrEqual(115);
+    expect(fires).toBeGreaterThanOrEqual(56);
+    expect(fires).toBeLessThanOrEqual(84);
   });
 
   it('positive branch when merciful >= 0, negative when < 0', () => {
