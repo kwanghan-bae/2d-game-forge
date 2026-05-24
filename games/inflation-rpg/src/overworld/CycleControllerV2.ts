@@ -15,6 +15,7 @@ import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { computeFieldDamping } from '../zone/fieldDamping';
 import { getFieldDiffThreshold } from '../buff/buffEffects';
+import { seasonForAge, seasonNameKR } from '../season/SeasonState';
 
 export interface CycleControllerV2Opts {
   seed: number;
@@ -348,6 +349,29 @@ export class CycleControllerV2 {
     if (candidates.length > 0 && this.rng.chance(0.2)) {
       const picked = candidates[this.rng.int(candidates.length)];
       events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
+    }
+
+    // V3-H F6: season transition check (after age tick + NPC tick).
+    // Note: stagger/trial early-return paths above also tick age, so a season
+    // crossing in those paths is caught on the following regular arrival — one
+    // arrival late, which is intentional (stagger is a recovery beat).
+    const newSeason = seasonForAge(this.hero.age);
+    const currentMeta = useGameStore.getState().meta;
+    if (newSeason !== currentMeta.season.current) {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: {
+          ...s.meta,
+          season: { current: newSeason, startedAtAge: Math.floor(this.hero.age) },
+        },
+      }));
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'seasonChange',
+        narrativeText: `계절이 바뀌었다 — ${seasonNameKR(newSeason)}`,
+        payload: { season: newSeason },
+      });
+      events.push({ type: 'season_changed', season: newSeason });
     }
 
     return events;

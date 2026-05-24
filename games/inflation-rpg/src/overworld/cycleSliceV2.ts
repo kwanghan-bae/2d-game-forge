@@ -9,6 +9,7 @@ import { getRejuvDiscount, getDropChanceBonus, getAgingSpeedMul, getFieldDiffThr
 import { computeFieldDamping } from '../zone/fieldDamping';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { findRealm } from '../data/realms';
+import { seasonBonus } from '../season/SeasonState';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -50,10 +51,13 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         const currentRealm = state.run.currentRealmId;
         const fieldLv = fieldLevelAtColumn(currentRealm, heroCol);
         const buff6 = getFieldDiffThreshold(meta);
+        // V3-H F6: apply season bonuses — atkMul folded into damping, dropMul
+        // applied to drop-chance bonus. dampingThresholdBonus added to buff6.
+        const sBonus = seasonBonus(meta.season.current);
         return {
-          dropChanceBonus: getDropChanceBonus(meta),
+          dropChanceBonus: getDropChanceBonus(meta) * sBonus.dropMul,
           agingSpeedMul: getAgingSpeedMul(meta),
-          damping: computeFieldDamping(heroLv, fieldLv, buff6),
+          damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul,
         };
       }),
       onBossKill: opts.onBossKill ?? ((current) => {
