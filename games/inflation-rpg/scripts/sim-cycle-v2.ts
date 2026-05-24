@@ -21,8 +21,9 @@ import { computeLightDelta } from '../src/overworld/lightEmit';
 import { useGameStore } from '../src/store/gameStore';
 import { pickRespawnPlacement } from '../src/overworld/respawn';
 import { pickStartingRealm, spawnColumnForRealm } from '../src/overworld/realmRotation';
-import { goldFromCycle, spend } from '../src/meta/MetaProgression';
+import { goldFromCycle } from '../src/meta/MetaProgression';
 import { SagaStorage } from '../src/saga/SagaStorage';
+import { applyEndCycleMeta } from '../src/overworld/cycleSlice.helpers';
 import type { TraitId } from '../src/cycle/traits';
 import type { RealmId } from '../src/types';
 import type { OverworldEvent } from '../src/overworld/OverworldEvents';
@@ -254,25 +255,10 @@ export function runSimV2Chained(opts: SimV2Options): SimV2Output {
       bossKills: result.bossKills,
       drops: result.drops,
     });
-    useGameStore.setState(s => {
-      const totalGold = (s.meta.sponsorGold ?? 0) + gold;
-      const out = spend({
-        gold: totalGold,
-        atkBaseBonus: s.meta.atkBaseBonus ?? 0,
-        hpBaseBonus: s.meta.hpBaseBonus ?? 0,
-        strategy: 'balanced',
-      });
-      return {
-        ...s,
-        meta: {
-          ...s.meta,
-          sponsorGold: out.goldRemaining,
-          atkBaseBonus: out.atkBaseBonus,
-          hpBaseBonus: out.hpBaseBonus,
-        },
-        run: { ...s.run, currentRealmId: 'base', npcs: [] },
-      };
-    });
+    // Cycle-18 — sim/real parity. Single helper shared with
+    // `cycleSliceV2.endCycle`. Any future change to cycle-end semantics
+    // propagates automatically.
+    useGameStore.setState(s => applyEndCycleMeta(s, { gold }));
 
     if (outDir) {
       const jsonlPath = join(outDir, `c${seed}.jsonl`);
