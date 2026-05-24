@@ -26,7 +26,7 @@ async function bootPhaser(
   initialSpeed: number,
   currentRealm?: import('../types').RealmId,
   unlockedRealms?: readonly import('../types').RealmId[],
-): Promise<{ destroy: () => void; setSpeed: (m: number) => void }> {
+): Promise<{ destroy: () => void; setSpeed: (m: number) => void; setUnlockedRealms: (r: readonly import('../types').RealmId[]) => void }> {
   const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
     import('phaser'),
     import('../overworld/OverworldScene'),
@@ -41,11 +41,14 @@ async function bootPhaser(
     physics: { default: 'arcade' },
   });
   game.scene.start('OverworldScene', { seed, hero, ai, onEvent, initialSpeed, currentRealm, unlockedRealms });
+  const getScene = () => game.scene.getScene('OverworldScene') as InstanceType<typeof OverworldScene> | null;
   const setSpeed = (m: number) => {
-    const scene = game.scene.getScene('OverworldScene') as InstanceType<typeof OverworldScene> | null;
-    scene?.setSpeed(m);
+    getScene()?.setSpeed(m);
   };
-  return { destroy: () => game.destroy(true), setSpeed };
+  const setUnlockedRealms = (r: readonly import('../types').RealmId[]) => {
+    getScene()?.setUnlockedRealms(r);
+  };
+  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms };
 }
 
 const SPEED_PRESETS = [1, 2, 5, 10] as const;
@@ -68,6 +71,7 @@ export function OverworldRunner({ onCycleEnd }: Props) {
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
+  const setSceneUnlockedRealmsRef = useRef<((r: readonly import('../types').RealmId[]) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -122,6 +126,12 @@ export function OverworldRunner({ onCycleEnd }: Props) {
               realmOverlayTimerRef.current = null;
             }, 2000);
           }
+          // V3-H Bug A: sync OverworldScene's stale unlockedRealms copy after a
+          // realm_unlocked event so DestinationResolver.choose sees the new exit landmark.
+          const realmUnlocked = evs.find(e => e.type === 'realm_unlocked');
+          if (realmUnlocked && realmUnlocked.type === 'realm_unlocked') {
+            setSceneUnlockedRealmsRef.current?.(controller.getUnlockedRealms());
+          }
         }
         if ((event.type === 'cycle_ended' || event.type === 'hero_died') && !endedRef.current) {
           endedRef.current = true;
@@ -138,10 +148,12 @@ export function OverworldRunner({ onCycleEnd }: Props) {
     ).then(g => {
       destroy = g.destroy;
       setSceneSpeedRef.current = g.setSpeed;
+      setSceneUnlockedRealmsRef.current = g.setUnlockedRealms;
     });
 
     return () => {
       setSceneSpeedRef.current = null;
+      setSceneUnlockedRealmsRef.current = null;
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
         chapterOverlayTimerRef.current = null;
