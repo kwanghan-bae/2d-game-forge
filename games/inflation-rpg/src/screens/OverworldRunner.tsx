@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { useGameStore } from '../store/gameStore';
 import { computeLightDelta } from '../overworld/lightEmit';
@@ -69,7 +69,10 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
-  const [lightFloaters, setLightFloaters] = useState<Array<{ key: number; amount: number }>>([]);
+  type LightFloat = { id: string; amount: number; createdAt: number };
+  const FADE_MS = 1500;
+  const MAX_FLOATS = 3;
+  const [lightFloats, setLightFloats] = useState<LightFloat[]>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
@@ -80,6 +83,23 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoRejuvTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveMul = getMoveSpeedMul(meta);
+
+  const emitLightFloat = useCallback((amount: number) => {
+    setLightFloats(prev => {
+      const next: LightFloat[] = [...prev, { id: `${Date.now()}-${Math.random()}`, amount, createdAt: Date.now() }];
+      return next.slice(-MAX_FLOATS);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const now = Date.now();
+      setLightFloats(prev => prev.filter(f => now - f.createdAt < FADE_MS));
+    }, 500);
+    return () => clearInterval(tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // V3-H B2: auto-start cycle on mount if no cycle is active.
   // If run.heroSnapshot exists the cycle controller will restore the hero from it
@@ -118,11 +138,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
               ...s,
               meta: { ...s.meta, light: (s.meta.light ?? 0) + finalDelta },
             }));
-            const floaterKey = Date.now() + Math.random();
-            setLightFloaters(prev => [...prev, { key: floaterKey, amount: finalDelta }]);
-            setTimeout(() => {
-              setLightFloaters(prev => prev.filter(f => f.key !== floaterKey));
-            }, 1500);
+            emitLightFloat(finalDelta);
           }
           setHudTick(n => n + 1);
           setLogEntries(controller.getRecentSagaEvents(LOG_LIMIT));
@@ -231,25 +247,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         <span data-testid="hud-age">{hero.age}세 · {hero.chapter}</span>
         <span>{hero.job} · LV {hero.level}</span>
         <span>HP {hero.hp}/{hero.hpMax}</span>
-        <span data-testid="hud-light" style={{ position: 'relative' }}>
-          빛 {Math.floor(meta.light ?? 0)}
-          <span data-testid="light-floaters" style={{ position: 'absolute', left: '100%', top: 0, marginLeft: 8, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
-            {lightFloaters.map(f => (
-              <span
-                key={f.key}
-                style={{
-                  display: 'inline-block',
-                  color: '#ffd54f',
-                  fontWeight: 700,
-                  animation: 'forgeLightFloat 1.5s ease-out forwards',
-                  marginRight: 4,
-                }}
-              >
-                +{f.amount.toFixed(1)}
-              </span>
-            ))}
-          </span>
-        </span>
+        <span data-testid="hud-light">빛 {Math.floor(meta.light ?? 0)}</span>
         <span data-testid="hud-rejuvenation">재생 #{hero.rejuvenationCount}</span>
         <button
           type="button"
@@ -280,6 +278,29 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             </button>
           ))}
         </span>
+      </div>
+      <div data-testid="light-floaters" style={{ position: 'absolute', right: 0, top: 60, pointerEvents: 'none', zIndex: 5 }}>
+        {lightFloats.map((f, idx) => {
+          const elapsed = Date.now() - f.createdAt;
+          const opacity = Math.max(0, 1 - elapsed / FADE_MS);
+          return (
+            <div
+              key={f.id}
+              style={{
+                position: 'absolute',
+                right: 16 + idx * 4,
+                top: idx * 18,
+                color: '#ffd54f',
+                fontSize: 14,
+                fontWeight: 700,
+                opacity,
+                transition: 'opacity 0.3s',
+              }}
+            >
+              +{f.amount.toFixed(1)}
+            </div>
+          );
+        })}
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
       {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
