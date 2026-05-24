@@ -220,6 +220,13 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
                 if (!ctrl) return;
                 ctrl.getHero().rejuvenate(5);
                 ctrl.recordRejuvenation(5);
+                // Cycle-14: clear the controller's stuck endCause = '전사' so the
+                // post-resurrection arrivals can again fire `maybeEmitNaturalDeath`
+                // (age >= 70) and `maybeAutoRejuvenate` (age >= 65 + light).
+                // Without this clear, the hero is locked to the B3 path for the
+                // rest of the cycle and dev-server-only ages past 70 without
+                // ever ending the cycle — exactly the cycle 13 baseline failure.
+                ctrl.clearEndCause();
               }, 2000);
             } else {
               // Cycle-11 C10-A: '자연사' terminates the cycle. Controller has
