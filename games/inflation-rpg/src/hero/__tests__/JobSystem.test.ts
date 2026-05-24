@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { JobSystem } from '../JobSystem';
 import { HeroEntity } from '../HeroEntity';
 import { PersonalityState } from '../PersonalityState';
+import { JOBS } from '../../data/jobs';
 
 function makeHero(): HeroEntity {
   const hero = HeroEntity.create({ seed: 1, heroHpMax: 100, heroAtkBase: 50 });
@@ -50,5 +51,48 @@ describe('JobSystem', () => {
     hero.personality.adjust('merciful', 8);
     const job = JobSystem.evaluate(hero, 'age50');
     expect(job?.id).toBe('saint');
+  });
+});
+
+describe('Cycle 1 F1 — JobSystem tie-break 분리', () => {
+  it('F1.5: JOBS mage.requiredPersonality.min === 5', () => {
+    const mage = JOBS.find(j => j.id === 'mage')!;
+    expect(mage.requiredPersonality!.min).toBe(5);
+  });
+  it('F1.6: JOBS monk.requiredPersonality.dim === "prudent"', () => {
+    const monk = JOBS.find(j => j.id === 'monk')!;
+    expect(monk.requiredPersonality!.dim).toBe('prudent');
+  });
+  it('F1.7: JOBS ranger.requiredPersonality.min === 6', () => {
+    const ranger = JOBS.find(j => j.id === 'ranger')!;
+    expect(ranger.requiredPersonality!.min).toBe(6);
+  });
+
+  it('F1.8: hero pious=4 → mage 후보 탈락 (min 5 미만)', () => {
+    // pious=4 만으로는 어떤 age30 job 도 통과 못 함 → null
+    // (이전 mage.min=3 시점에서는 mage 가 통과했음)
+    const hero = makeHero();
+    hero.personality.adjust('pious', 4);
+    hero.personality.adjust('prudent', 2);
+    const job = JobSystem.evaluate(hero, 'age30');
+    expect(job?.id).not.toBe('mage');
+  });
+  it('F1.9: hero prudent=6 → ranger 로 진화 (min 6 통과)', () => {
+    // age30 fallback 이 없으므로 evaluate 가 정확히 ranger 를 고름
+    // (prudent=6 가 ranger.min=6 통과, monk.min=5 도 통과하지만 score=|6|=6 동률 → 정렬 first-match 로 ranger 가 먼저 등록되어 선택)
+    const hero = makeHero();
+    hero.personality.adjust('prudent', 6);
+    hero.personality.adjust('pious', 2);
+    const job = JobSystem.evaluate(hero, 'age30');
+    expect(job?.id).toBe('ranger');
+  });
+  it('F1.10: hero pious=5 prudent=5 → monk 후보 포함 (dim=prudent 분리)', () => {
+    // pious=5 만으로 mage(min5) 통과, prudent=5 로 monk(min5) 통과, ranger(min6) 탈락
+    // score 동률 (둘 다 5) → first-match (mage 가 catalog 에서 먼저)
+    // 하지만 monk 가 "후보 포함" 인지 확인하려면 prudent 만 강화해서 single-candidate path 로 검증
+    const hero = makeHero();
+    hero.personality.adjust('prudent', 5);
+    const job = JobSystem.evaluate(hero, 'age30');
+    expect(job?.id).toBe('monk');
   });
 });
