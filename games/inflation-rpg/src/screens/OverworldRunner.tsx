@@ -102,7 +102,6 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       const next: LightFloat[] = [...prev, { id: `${Date.now()}-${Math.random()}`, amount, createdAt: Date.now() }];
       return next.slice(-MAX_FLOATS);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -111,7 +110,6 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       setLightFloats(prev => prev.filter(f => now - f.createdAt < FADE_MS));
     }, 500);
     return () => clearInterval(tick);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // V3-H B2: auto-start cycle on mount if no cycle is active.
@@ -130,7 +128,6 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         // heroSnapshot is picked up automatically from run.heroSnapshot inside cycleSliceV2.start
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
