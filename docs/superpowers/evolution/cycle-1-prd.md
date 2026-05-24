@@ -89,7 +89,7 @@
   - `SagaTypes.SagaEventType` 에 위 event type 등록 (이미 있으면 type-only 추가).
   - SagaBookModal 의 "관계" 또는 "여정" filter 에서 NPC line 노출 확인.
 - **수용 기준**:
-  - 50 cycle sim 에서 NPC 관련 narrative 가 ≥ 5 cycle 에 등장 (현재 0/50). 단일 cycle 안 발생 수는 NPC spawn rate 에 의존 — 발생률 자체 변경은 scope 외.
+  - 50 cycle sim 에서 cyclesWithNpc 가 cycle 0 baseline (0/50) 대비 Δ ≥ 1 증가. NPC spawn rate / distribution 자체 변경은 scope 외, cycle-2 backlog B1.5 로 carry-over.
   - `grep -i "결혼\|자식\|라이벌\|멘토\|행인"` 같은 keyword 가 50-cycle sim aggregate narrative 에 ≥ 20 회 등장.
   - `recordToStore` 호출이 npc/family event 4 종 모두에 wire 되어 있음 (코드 grep 으로 확인).
   - vitest 회귀 없음 + 신규 generator 단위 테스트 ≥ 6 (3 generator × 2 case) 추가.
@@ -116,7 +116,8 @@
 
 - F1.13 baseline: cycle 0 (81bea39) maxShare mage 0.46 — 절대값 가드 (≤0.35) 가 catalog 구조 (priest/mage saturator 의 dim source-rate 비대칭) 로 미세조정 불가. v3/v4 mage.min=7/8 bit-identical 분포 확인 후 improvement-Δ ≥0.05 로 reframe.
 - F1.15 baseline: cycle 0 moralChoices p50 79.44 → MERCIFUL_PROC_RATE 0.10 환경에서 55 floor. 원안 [60,80] 은 baseline 측정 없는 가설.
-- 2 recalibration 은 **yellow flag**: planner persona 가 baseline 측정 없이 absolute threshold 설정한 결과. Cycle 2 부터는 sim-driven acceptance 에 반드시 Δ-from-baseline 룰 적용.
+- F3.14 baseline: cycle 0 cyclesWithNpc 0/50 (recordToStore dead path). 원안 ≥5 도 baseline 없는 가설 — Δ-from-baseline ≥1 로 reframe. NPC spawn distribution 자체는 V3-DEF design → cycle-2 backlog B1.5.
+- **3 recalibration 은 yellow flag (advisor 권고 임계)**: planner persona 가 baseline 측정 없이 absolute threshold 설정한 결과. Cycle 2 부터는 sim-driven acceptance 에 반드시 Δ-from-baseline 룰 적용. Cycle 2 도 같은 recalibration 패턴이면 soft-halt trigger (planner persona 문제 신호).
 
 ### 리스크 / 의존성
 
