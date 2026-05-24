@@ -250,3 +250,82 @@ describe('Cycle 1 F3 — handleArrival NPC dead path 회수', () => {
     throw new Error(`F3.9 fail: ${SEEDS.length} seed × ${transitionsObserved} transitions, family chance 모두 miss`);
   });
 });
+
+describe("Cycle-11 C10-A — hero_died('자연사') emit at age cap", () => {
+  // beforeEach 로 store npc 슬레이트 초기화 (다른 테스트 leak 방지).
+  beforeEach(() => {
+    useGameStore.setState(s => ({ ...s, run: { ...s.run, npcs: [] } }));
+  });
+
+  it('emits hero_died(cause=자연사) when hero crosses action 1000 → age 70', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    // Park hero at action 999 (age 69) so the next tickAge bumps actionCount
+    // to 1000 → age 70 inside handleArrival → C10-A guard fires.
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    const evs = ctrl.handleArrival('enemy', 'wolf_natural_1');
+    const deaths = evs.filter(e => e.type === 'hero_died');
+    expect(deaths.length).toBe(1);
+    const d = deaths[0]!;
+    if (d.type !== 'hero_died') throw new Error('narrowing');
+    expect(d.cause).toBe('자연사');
+    // 자연사 emit 시 oldLevel === newLevel (B3 의 -10% 패널티는 '전사' 전용).
+    expect(d.oldLevel).toBe(d.newLevel);
+    expect(hero.staggered).toBe(true);
+  });
+
+  it("sets endCause = '자연사' on the controller so finalize records it explicitly", () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    ctrl.handleArrival('enemy', 'wolf_natural_2');
+    const saga = ctrl.finalize();
+    expect(saga.hero.cause).toBe('자연사');
+  });
+
+  it("is idempotent — only one hero_died('자연사') fires across subsequent arrivals", () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    const hero = ctrl.getHero();
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    const collected: ReturnType<typeof ctrl.handleArrival> = [];
+    for (let i = 0; i < 5; i++) {
+      collected.push(...ctrl.handleArrival('enemy', `wolf_idem_${i}`));
+    }
+    const naturals = collected.filter(e => e.type === 'hero_died' && e.cause === '자연사');
+    expect(naturals.length).toBe(1);
+  });
+
+  it("does not pre-empt a '전사' from EncounterEngine in the same arrival", () => {
+    // Hero entering arrival at age 69 with a fatal encounter (1 HP, huge enemy
+    // atk via 0 atkBase makes hero deal 1 damage → eHp never drops to 0 →
+    // hero takeDamage repeatedly → stagger). '전사' wins; '자연사' must not
+    // double-emit even though tickAge would push to 70 afterward.
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 1, heroAtkBase: 0 });
+    const hero = ctrl.getHero();
+    hero.actionCount = 999;
+    hero.age = 69;
+    hero.chapter = '노년기';
+    hero.hp = 1;
+    hero.hpMax = 1;
+    const evs = ctrl.handleArrival('enemy', 'wolf_combat_69');
+    const deaths = evs.filter(e => e.type === 'hero_died');
+    expect(deaths.length).toBe(1);
+    const d = deaths[0]!;
+    if (d.type !== 'hero_died') throw new Error('narrowing');
+    expect(d.cause).toBe('전사');
+  });
+
+  it('does not fire when hero.age < 70 (regression — normal arrivals unaffected)', () => {
+    const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 100, heroAtkBase: 100000 });
+    // Hero still under 70 (fresh hero starts at age 5).
+    const evs = ctrl.handleArrival('enemy', 'wolf_young');
+    const naturals = evs.filter(e => e.type === 'hero_died' && e.cause === '자연사');
+    expect(naturals.length).toBe(0);
+  });
+});
