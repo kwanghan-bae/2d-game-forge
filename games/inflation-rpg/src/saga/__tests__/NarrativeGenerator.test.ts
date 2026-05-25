@@ -261,3 +261,50 @@ describe('Cycle 1 F2.12 — hard-coded season literal 제거 가드', () => {
     expect(src).toContain('NarrativeGenerator.forRealmEnter');
   });
 });
+
+describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () => {
+  it('forBattle: realm=sea + seed=1 → sea 어휘 (파도 곁에서) suffix', () => {
+    const out = NarrativeGenerator.forBattle(
+      { age: 12, enemyNameKR: '늑대', realm: 'sea' },
+      1,
+    );
+    expect(out).toContain('파도 곁에서');
+    expect(out).toContain('12세');
+    expect(out).toContain('늑대');
+  });
+
+  it('forDrop: realm=volcano + seed=1 → volcano 어휘 (용암의 열기 속) suffix', () => {
+    const out = NarrativeGenerator.forDrop(
+      { age: 20, itemNameKR: '낡은 검', realm: 'volcano' },
+      1,
+    );
+    expect(out).toContain('용암의 열기 속');
+    expect(out).toContain('20세');
+    expect(out).toContain('낡은 검');
+  });
+
+  it('forLevelUpBatch: realm=heaven + seed=1 → heaven 어휘 (빛의 다리 위) suffix', () => {
+    const out = NarrativeGenerator.forLevelUpBatch(
+      { age: 30, fromLevel: 100, toLevel: 150, count: 50, realm: 'heaven' },
+      1,
+    );
+    expect(out).toContain('빛의 다리 위');
+    expect(out).toContain('30세');
+  });
+
+  it('forLevelUpBatch count<=1 → forLevelUp delegate 도 realm forward', () => {
+    const out = NarrativeGenerator.forLevelUpBatch(
+      { age: 22, fromLevel: 24, toLevel: 25, count: 1, realm: 'chaos' },
+      1,
+    );
+    // count=1 path 가 forLevelUp 에 realm 전달하는지 확인
+    expect(out).toContain('혼돈의 중심에서');
+  });
+
+  it('regression: realm 누락 (기존 호출자) — 회귀 0', () => {
+    expect(() => NarrativeGenerator.forBattle({ age: 12, enemyNameKR: '늑대' }, 0)).not.toThrow();
+    expect(() => NarrativeGenerator.forDrop({ age: 20, itemNameKR: '검' }, 0)).not.toThrow();
+    expect(() => NarrativeGenerator.forLevelUp({ age: 15, newLevel: 24 }, 0)).not.toThrow();
+    expect(() => NarrativeGenerator.forLevelUpBatch({ age: 30, fromLevel: 1, toLevel: 5, count: 4 }, 0)).not.toThrow();
+  });
+});

@@ -198,7 +198,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'battle',
-          narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR }, this.rng.int(100000)),
+          narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR, realm: this.currentRealmId }, this.rng.int(100000)),
           payload: { enemyId: landmarkId, expGain: ev.expGain },
         });
         if (ev.dropId) {
@@ -208,7 +208,7 @@ export class CycleControllerV2 {
           this.recordToStore({
             age: this.hero.age,
             type: 'drop',
-            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR }, this.rng.int(100000)),
+            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR, realm: this.currentRealmId }, this.rng.int(100000)),
             payload: { itemId: ev.dropId },
           });
         }
@@ -290,7 +290,7 @@ export class CycleControllerV2 {
         age: this.hero.age,
         type: 'levelUp',
         narrativeText: NarrativeGenerator.forLevelUpBatch({
-          age: this.hero.age, fromLevel: levelFrom, toLevel: levelTo, count: levelCount,
+          age: this.hero.age, fromLevel: levelFrom, toLevel: levelTo, count: levelCount, realm: this.currentRealmId,
         }, this.rng.int(100000)),
         payload: { from: levelFrom, to: levelTo, count: levelCount },
       });
