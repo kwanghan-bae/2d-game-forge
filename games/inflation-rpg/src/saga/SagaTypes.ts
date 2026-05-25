@@ -31,7 +31,11 @@ export type SagaEventType =
   // Cycle 109 F1: boss intro choice saga.
   // payload: { chosenIdx, chosenId, tier } on resolve, or
   // { reason: 'cap_reached', landmarkId } on skip.
-  | 'bossIntro';
+  | 'bossIntro'
+  // Cycle 110 F1: realm fork choice saga.
+  // payload: { choice: 'risk'|'safe', from: RealmId, to: RealmId } on resolve, or
+  // { reason: 'cap_reached', from, to } on skip.
+  | 'realmFork';
 
 // Cycle-5 F3: '무위' = pathfinder candidates-exhausted (출구 없음 / 길을 잃다).
 // 진짜 자연 수명 도달과 명확히 구분되어야 동급 stale-realm bug 가 즉시 보임.
