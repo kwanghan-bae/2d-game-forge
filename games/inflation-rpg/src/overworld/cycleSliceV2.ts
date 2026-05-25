@@ -135,6 +135,13 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       bossKills: stats.bossKills,
       drops: stats.drops,
     });
+    // Cycle 116 — organic crackStones supply. cycle 108 fate roll backlog
+    // 회수. boss kill 당 1 stone, max 3/cycle. fate roll modal 활성화 +
+    // ascension 비용 supply.
+    const crackStoneReward = Math.min(stats.bossKills, 3);
+    if (crackStoneReward > 0) {
+      useGameStore.getState().gainCrackStones(crackStoneReward);
+    }
     // Cycle-18 — sim/real parity. The pure transform (`applyEndCycleMeta`)
     // owns sponsorGold spend + stale-realm reset + npcs clear. Mirror in
     // `scripts/sim-cycle-v2.ts` calls the same helper so future changes
