@@ -1491,7 +1491,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 24,  // 23 → 24 (Cycle-7 S1). cycle 113 의 N3 hall key 는 INITIAL_META default 로 충분; persist drift 없음. v25 bump 은 cycle 114 호스트가 결정.
+      version: 25,  // cycle 122 — v25 bump 재시도 + root cause 진단
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
