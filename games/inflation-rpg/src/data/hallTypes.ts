@@ -23,6 +23,8 @@ export interface HallEntry {
   readonly cause: DeathCause;       // saga.deathCause (or hero.cause fallback)
   readonly realm: string;           // saga.finalRealm (or '' fallback)
   readonly finishedAt: number;      // saga.finishedAt (or saga.endedAtMs fallback)
+  /** Cycle 123 — favorited flag. eviction 시 보호 (rank 외에서도 영구 유지). */
+  readonly favorited?: boolean;
 }
 
 export interface HallState {
