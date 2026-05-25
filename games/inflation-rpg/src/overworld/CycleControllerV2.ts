@@ -61,6 +61,23 @@ export class CycleControllerV2 {
    *  controller 가 cycle 단위로 새로 생성되므로 별도 reset hook 불필요. */
   private milestoneLedger: Set<MilestoneTier> = new Set();
 
+  /** Cycle 108 F1 — per-cycle (= per-controller-instance) fate roll cap.
+   *  Marked true as soon as fate_roll_required emits (modal shown), regardless
+   *  of accept/decline outcome. PRD §F1.동작(2) lean 단순화. Persist 안 됨 —
+   *  controller instance scope only. run-resume 시 새 controller 가 reset. */
+  private fateRollConsumed: boolean = false;
+
+  /** Cycle 108 F1 — fate roll pending guard. True between emit and
+   *  resolveFateRoll() call. Blocks all handleArrival processing so the
+   *  stagger-recover early-return (line 135-152) doesn't auto-revive the hero
+   *  while modal is open. cycle 14 클래스 stuck-state risk 방지. */
+  private fateRollPending: boolean = false;
+
+  /** Cycle 108 F1 — landmarkId captured at fate_roll_required emit time.
+   *  Used as enemyId for the deferred hero_died emit in resolveFateRoll('decline').
+   *  null when no fate roll is pending. */
+  private fateRollLandmarkId: string | null = null;
+
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
     // V3-H B2: restore from snapshot if present, otherwise create fresh hero.
@@ -72,7 +89,11 @@ export class CycleControllerV2 {
           heroAtkBase: opts.heroAtkBase,
         });
     this.ai = new HeroDecisionAI(this.hero, { seed: opts.seed, traits: opts.traits });
-    this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef));
+    this.encounter = new EncounterEngine(new SeededRng(opts.seed ^ 0xdeadbeef), {
+      // Cycle 108 F1: wire fate roll eligibility. EncounterEngine emits
+      // fate_roll_required when this returns true AND hero would die.
+      isFateRollEligible: () => !this.fateRollConsumed,
+    });
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
     this.getBuffSnapshot = opts.getBuffSnapshot;
@@ -112,6 +133,96 @@ export class CycleControllerV2 {
     return this.endCause;
   }
 
+  /** Cycle 108 F1: read-only accessor for tests + Runner gating. */
+  isFateRollPending(): boolean { return this.fateRollPending; }
+  isFateRollConsumed(): boolean { return this.fateRollConsumed; }
+
+  /** Cycle 108 F1 — resolve the pending fate roll.
+   *
+   *  'accept': spend 1 crackStone, restore HP to ceil(maxHp * 0.5), clear
+   *  staggered, *no* death penalty. Saga records fateRoll(outcome=accepted).
+   *  Pending guard cleared so the next arrival proceeds normally.
+   *
+   *  'decline' (or auto-decline on 5s timeout): apply the deferred death
+   *  penalty + emit hero_died('전사'). Saga records fateRoll(outcome=declined)
+   *  followed by the regular death record. Returns the synthesized hero_died
+   *  event so the Runner can drive the B3 free-rejuv timer just as if
+   *  EncounterEngine had emitted it directly. PRD §F1.동작(4b).
+   *
+   *  Guard: if no fate roll is pending, returns [] (no-op). Tests double-call
+   *  protection.
+   *
+   *  Crystal-spend guard: if 'accept' but meta.crackStones < 1, treats as
+   *  decline (UI should have disabled the accept option). PRD §F1.동작(2)
+   *  edge case — modal still consumes the roll. */
+  resolveFateRoll(choice: 'accept' | 'decline'): OverworldEvent[] {
+    if (!this.fateRollPending) return [];
+    const landmarkId = this.fateRollLandmarkId;
+    this.fateRollPending = false;
+    this.fateRollLandmarkId = null;
+
+    const events: OverworldEvent[] = [];
+
+    if (choice === 'accept') {
+      const meta = useGameStore.getState().meta;
+      if (meta.crackStones >= 1) {
+        // Spend 1 stone + heal hero to 50% HP + clear staggered.
+        useGameStore.setState(s => ({
+          ...s,
+          meta: { ...s.meta, crackStones: s.meta.crackStones - 1 },
+        }));
+        this.hero.hp = Math.ceil(this.hero.hpMax * 0.5);
+        this.hero.staggered = false;
+        events.push({ type: 'fate_roll_resolved', outcome: 'accept' });
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'fateRoll',
+          narrativeText: `${this.hero.age}세에 균열석을 소비하여 운명에 저항했다`,
+          payload: { outcome: 'accepted' },
+        });
+        return events;
+      }
+      // Fall through to decline branch — UI should have disabled accept, but
+      // guard defensively. Saga still records the decision moment.
+    }
+
+    // Decline path (explicit choice, timeout, or accept-without-stones).
+    const { oldLevel, newLevel } = this.hero.applyDeathPenalty();
+    events.push({ type: 'fate_roll_resolved', outcome: 'decline' });
+    this.recordToStore({
+      age: this.hero.age,
+      type: 'fateRoll',
+      narrativeText: `${this.hero.age}세에 운명을 받아들였다`,
+      payload: { outcome: 'declined' },
+    });
+    // Synthesize the deferred hero_died emit + record. Mirror the death-record
+    // path used inside handleArrival's for-loop so saga 와 endCause 가 동등하게
+    // wire 된다.
+    const heroDiedEv: OverworldEvent = {
+      type: 'hero_died',
+      cause: '전사',
+      ...(landmarkId !== null ? { enemyId: landmarkId } : {}),
+      oldLevel,
+      newLevel,
+    };
+    events.push(heroDiedEv);
+    this.endCause = '전사';
+    const enemyType = landmarkId ? LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id)) : null;
+    this.recordToStore({
+      age: this.hero.age,
+      type: 'death',
+      narrativeText: NarrativeGenerator.forDeath({
+        age: this.hero.age,
+        cause: '전사',
+        enemyNameKR: enemyType?.nameKR,
+        oldLevel,
+        newLevel,
+      }),
+      payload: { oldLevel, newLevel },
+    });
+    return events;
+  }
+
   getUnlockedRealms(): readonly import('../types').RealmId[] { return this.unlockedRealms; }
   getCurrentRealmId(): import('../types').RealmId | null { return this.currentRealmId; }
   getHero(): HeroEntity { return this.hero; }
@@ -129,6 +240,14 @@ export class CycleControllerV2 {
   }
 
   handleArrival(kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
+    // Cycle 108 F1: while fate roll modal is open, freeze all arrival
+    // processing. Prevents stagger-recover early-return (line 135-152) from
+    // auto-resurrecting the hero (hp full, staggered=false) before the player
+    // can choose accept/decline. Same class of stuck-state risk as cycle 14's
+    // endCause='전사' regression — that one stuck the controller in the gate
+    // direction; this one would silently bypass the modal entirely.
+    if (this.fateRollPending) return [];
+
     // V3-B: staggered hero recovers (hp full, staggered=false) without
     // processing the encounter content. This arrival "costs" the actionCount
     // tick — recovery itself is the cost.
@@ -204,6 +323,22 @@ export class CycleControllerV2 {
       this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
     }
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
+
+    // Cycle 108 F1: fate roll required → controller pauses. No NPC tick, no
+    // season transition, no age tick beyond the encounter's own internal
+    // mutations. The fate roll outcome path (resolveFateRoll) re-enters the
+    // arrival pipeline. We still need to capture the event into our flags
+    // before returning, mirror the early-return shape used by stagger-recover.
+    const fateEvIdx = events.findIndex(e => e.type === 'fate_roll_required');
+    if (fateEvIdx >= 0) {
+      const fateEv = events[fateEvIdx]!;
+      if (fateEv.type === 'fate_roll_required') {
+        this.fateRollConsumed = true;
+        this.fateRollPending = true;
+        this.fateRollLandmarkId = fateEv.enemyId;
+      }
+      return events;
+    }
 
     // Collect level_ups for end-of-arrival batched record.
     let levelFrom = -1;

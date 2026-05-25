@@ -20,6 +20,8 @@ export interface LightDeltaResult {
  *  - moral_choice (personality drift, not positive)
  *  - chapter_transition (cinematic, not earned)
  *  - hero_died, tick, arrived_at, battle_started, cycle_ended (system events)
+ *  - fate_roll_required, fate_roll_resolved (cycle 108 F1 — decision channel,
+ *    not earned light. emit 0 by design.)
  */
 export function computeLightDelta(evs: readonly OverworldEvent[], kind: LandmarkKind): LightDeltaResult {
   let delta = 0;

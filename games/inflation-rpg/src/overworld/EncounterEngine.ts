@@ -30,6 +30,12 @@ export interface EncounterEngineOpts {
   dropChanceBonus?: number;
   /** V3-D — field level damping multiplier (1.0 = no damping, <1.0 = weaker hero). */
   damping?: number;
+  /** Cycle 108 F1: returns true when fate roll is still available in this
+   *  cycle. Controller wires `() => !this.fateRollConsumed`. When true *and*
+   *  hero would die in combat, engine emits `fate_roll_required` instead of
+   *  `hero_died`. applyDeathPenalty is *not* invoked — controller defers it
+   *  to resolveFateRoll('decline'). */
+  isFateRollEligible?: () => boolean;
 }
 
 export class EncounterEngine {
@@ -58,6 +64,20 @@ export class EncounterEngine {
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
       if (hero.staggered) {
+        // Cycle 108 F1: intercept (a) — before applyDeathPenalty, check fate
+        // roll eligibility. If eligible, emit fate_roll_required and *abort*
+        // (level penalty + hero_died emit are deferred to controller's
+        // resolveFateRoll('decline'). hero.hp == 0 + staggered=true still hold
+        // so controller's handleArrival top-guard catches subsequent arrivals
+        // until fate roll resolves).
+        if (this.opts.isFateRollEligible?.()) {
+          // Preview the level penalty without applying it. Mirrors
+          // applyDeathPenalty's floor(level * 0.90) formula but doesn't mutate.
+          const oldLevel = hero.level;
+          const pendingDeathPenaltyNewLevel = Math.max(1, Math.floor(hero.level * 0.90));
+          events.push({ type: 'fate_roll_required', enemyId: landmarkId, oldLevel, pendingDeathPenaltyNewLevel });
+          return events;
+        }
         // V3-H E1: hero died in battle — apply -10% level penalty and emit event.
         const { oldLevel, newLevel } = hero.applyDeathPenalty();
         events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });

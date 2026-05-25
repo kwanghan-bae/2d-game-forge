@@ -420,7 +420,20 @@ function runOneCycle(
     arrivals += 1;
     target.consumed = true;
 
-    for (const ev of events) {
+    // Cycle 108 F1 — sim driver auto-decline policy. PRD §sim-real-parity §1.
+    // Sim is frame-based; the 5s wall-clock timeout doesn't exist here. When
+    // fate_roll_required emits, immediately invoke resolveFateRoll('decline')
+    // and splice the returned events (fate_roll_resolved + hero_died) into
+    // the same per-arrival event stream so downstream counters (endCause,
+    // hero_died ratio, light) see the synthesized death as if EncounterEngine
+    // had emitted it directly. Mirrors dev server's 5s auto-decline outcome.
+    const hasFateRoll = events.some(e => e.type === 'fate_roll_required');
+    const resolveEvents: OverworldEvent[] = hasFateRoll
+      ? ctrl.resolveFateRoll('decline')
+      : [];
+    const allEvents = hasFateRoll ? [...events, ...resolveEvents] : events;
+
+    for (const ev of allEvents) {
       stamped.push({ cycleSeed: seed, arrival: arrivals, heroAge: hero.age, heroLevel: hero.level, heroHp: hero.hp, ev });
       if (ev.type === 'battle_won') {
         if (target.type.kind === 'boss') bossKills += 1; else kills += 1;

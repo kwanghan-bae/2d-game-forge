@@ -14,6 +14,16 @@ export type OverworldEvent =
   | { type: 'moral_choice';    choice: string; dim: PersonalityDim; delta: number; nameKR: string }
   | { type: 'chapter_transition'; fromChapter: Chapter; toChapter: Chapter; atAge: number }
   | { type: 'hero_died';       cause: '전사' | '자연사'; enemyId?: string; oldLevel: number; newLevel: number }
+  // Cycle 108 F1: Fate Roll on Death. Emitted by EncounterEngine when hero
+  // would die in combat AND fate roll is eligible (controller's
+  // fateRollConsumed=false). Controller pauses subsequent processing and
+  // waits for resolveFateRoll('accept' | 'decline'). pendingDeathPenaltyNewLevel
+  // = newLevel that *would* be applied if player declines (UI preview).
+  | { type: 'fate_roll_required'; enemyId: string; oldLevel: number; pendingDeathPenaltyNewLevel: number }
+  // Cycle 108 F1: fate roll resolved. Useful for OverworldRunner / saga
+  // diagnostics. outcome='accept' = crackStone spent + HP 50% restored.
+  // outcome='decline' = death penalty applied + hero_died('전사') emit follows.
+  | { type: 'fate_roll_resolved'; outcome: 'accept' | 'decline' }
   | { type: 'realm_unlocked'; realmId: import('../types').RealmId }
   | { type: 'realm_entered'; realmId: import('../types').RealmId }
   | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }
