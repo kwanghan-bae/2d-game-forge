@@ -32,7 +32,18 @@
   AdMob (rewarded + banner), 원스토어 IAP 4 품목 (TS contract + web stub),
   MonetizationService facade, persist v14, 개인정보처리방침 GitHub Pages, AdFreeIndicator.
   Kotlin native wire 는 분리된 Phase 5a-1 (real-device manual-QA 세션 필요).
-- 다음: **Phase 5a-1** (원스토어 native wire), Phase 5b (Google Play), 5c (App Store).
+- **자율진화 v1** (cycle-100-complete). 8 페르소나 (게임기획자 / 스토리작가 / QA /
+  UI·UX / 게임비평가 / 레벨디자이너 / 웹리서처 / 무료에셋 조사관) + 룰 8 종 +
+  100 cycle. narrative tone (age 6 tier × realm × 9 channel = ~1080) + lifecycle
+  drama (자연사 + auto-rejuv) + run-resume + V3 정체성 (eternal hero idle sponsor).
+- **자율진화 v2** 진행 중 (cycle-120-complete = 20/100). v1 의 4 페르소나 추가
+  surface 후 N1 (Inflation Milestone VFX 8 tier) + N2 (Fate Roll + Boss Intro +
+  Realm Fork mid-cycle decision) + N3 (Hall of Sagas + 즐겨찾기 + filter) + N4
+  (Inflation Curve Chart SVG) 완성. N5 (Live Ops) carry-over. 룰 9 (카테고리
+  균형) 도입.
+- 다음: **자율진화 v2 cycle 121-200** (N5 Live Ops + Hall 확장 + 7th realm +
+  multi-line sim baseline overlay + 13 비핵심 캐릭터 등), **Phase 5a-1** (원스토어
+  native wire), Phase 5b (Google Play), 5c (App Store).
 
 ## Quick start
 
