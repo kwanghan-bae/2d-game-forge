@@ -28,10 +28,14 @@ const CAUSE_EMOJI: Record<string, string> = {
  * 모든 cycle 종료 시 자동 등록된 HallEntry 의 top 5 by 선택된 sort axis.
  * 빈 hall = "아직 기록이 없다" placeholder.
  */
+type CauseFilter = 'all' | string;
+
 export function HallScreen({ onClose }: Props) {
   const hall = useGameStore(s => s.meta.hall ?? { entries: [] });
   const toggleFavorite = useGameStore(s => s.toggleHallFavorite);
   const [sortKey, setSortKey] = useState<SortKey>('maxLevel');
+  const [causeFilter, setCauseFilter] = useState<CauseFilter>('all');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -39,9 +43,16 @@ export function HallScreen({ onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const causes = useMemo<readonly string[]>(() => {
+    return Array.from(new Set(hall.entries.map(e => e.cause)));
+  }, [hall.entries]);
+
   const sorted = useMemo<readonly HallEntry[]>(() => {
-    return [...hall.entries].sort((a, b) => b[sortKey] - a[sortKey]).slice(0, 5);
-  }, [hall.entries, sortKey]);
+    let filtered = [...hall.entries];
+    if (favoritesOnly) filtered = filtered.filter(e => e.favorited === true);
+    if (causeFilter !== 'all') filtered = filtered.filter(e => e.cause === causeFilter);
+    return filtered.sort((a, b) => b[sortKey] - a[sortKey]).slice(0, 5);
+  }, [hall.entries, sortKey, causeFilter, favoritesOnly]);
 
   return (
     <div
@@ -71,7 +82,38 @@ export function HallScreen({ onClose }: Props) {
               {SORT_LABEL_KR[k]}
             </button>
           ))}
+          <button
+            type="button"
+            data-testid="hall-filter-favorites"
+            onClick={() => setFavoritesOnly(v => !v)}
+            style={{ padding: '4px 8px', background: favoritesOnly ? '#3b4252' : '#262830', color: favoritesOnly ? '#ffd700' : '#eee', border: '1px solid #555', borderRadius: 4, fontSize: 11, cursor: 'pointer' }}
+          >
+            ★ 즐겨찾기
+          </button>
         </div>
+        {causes.length > 1 && (
+          <div style={{ padding: '4px 16px', borderBottom: '1px solid #333', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              data-testid="hall-cause-all"
+              onClick={() => setCauseFilter('all')}
+              style={{ padding: '3px 6px', background: causeFilter === 'all' ? '#3b4252' : '#262830', color: '#eee', border: '1px solid #555', borderRadius: 3, fontSize: 10, cursor: 'pointer' }}
+            >
+              모든 cause
+            </button>
+            {causes.map(c => (
+              <button
+                key={c}
+                type="button"
+                data-testid={`hall-cause-${c}`}
+                onClick={() => setCauseFilter(c)}
+                style={{ padding: '3px 6px', background: causeFilter === c ? '#3b4252' : '#262830', color: '#eee', border: '1px solid #555', borderRadius: 3, fontSize: 10, cursor: 'pointer' }}
+              >
+                {CAUSE_EMOJI[c] ?? '◯'} {c}
+              </button>
+            ))}
+          </div>
+        )}
         <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', padding: '8px 16px' }}>
           {sorted.length === 0 ? (
             <div data-testid="hall-empty" style={{ padding: '40px 16px', textAlign: 'center', color: '#888' }}>
