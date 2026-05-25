@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { HallScreen } from './HallScreen';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
   const sagaCount = useGameStore(s => s.meta.sagaHistory?.length ?? 0);
+  const hallCount = useGameStore(s => s.meta.hall?.entries.length ?? 0);
   const heroSnapshot = useGameStore(s => s.run.heroSnapshot);
+  const [hallOpen, setHallOpen] = useState(false);
 
   return (
     <div data-testid="main-menu" style={{ padding: 24, color: '#eee', textAlign: 'center' }}>
@@ -32,6 +35,14 @@ export function MainMenu() {
         </button>
         <button
           type="button"
+          data-testid="btn-hall"
+          onClick={() => setHallOpen(true)}
+          style={menuBtnStyle}
+        >
+          전당 ({hallCount})
+        </button>
+        <button
+          type="button"
           data-testid="btn-saga-gallery"
           onClick={() => setScreen('saga-gallery')}
           style={{ ...menuBtnStyle, opacity: 0.5 }}
@@ -53,6 +64,8 @@ export function MainMenu() {
       <div data-testid="saga-count" style={{ marginTop: 24, fontSize: 12, opacity: 0.6 }}>
         누적 사가: {sagaCount}
       </div>
+
+      {hallOpen && <HallScreen onClose={() => setHallOpen(false)} />}
     </div>
   );
 }
