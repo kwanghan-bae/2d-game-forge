@@ -30,6 +30,7 @@ const CAUSE_EMOJI: Record<string, string> = {
  */
 export function HallScreen({ onClose }: Props) {
   const hall = useGameStore(s => s.meta.hall ?? { entries: [] });
+  const toggleFavorite = useGameStore(s => s.toggleHallFavorite);
   const [sortKey, setSortKey] = useState<SortKey>('maxLevel');
 
   useEffect(() => {
@@ -89,6 +90,15 @@ export function HallScreen({ onClose }: Props) {
                     {e.realm ? `${e.realm} · ` : ''}lv {e.maxLevel.toLocaleString()} · {e.ageEnd}세 · {e.cause}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  data-testid={`hall-favorite-${idx}`}
+                  onClick={() => toggleFavorite(e.id)}
+                  style={{ minHeight: 32, padding: '4px 8px', background: 'transparent', color: e.favorited ? '#ffd700' : '#555', border: 'none', cursor: 'pointer', fontSize: 16 }}
+                  aria-label={e.favorited ? '즐겨찾기 해제' : '즐겨찾기'}
+                >
+                  ★
+                </button>
               </div>
             ))
           )}

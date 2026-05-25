@@ -11,7 +11,7 @@ import {
   isHardModeUnlocked,
 } from '../systems/progression';
 import { addToInventory, removeFromInventory } from '../systems/equipment';
-import { addHallEntry as addHallEntryPure } from '../data/hallCapacity';
+import { addHallEntry as addHallEntryPure, toggleHallFavorite } from '../data/hallCapacity';
 import { QUESTS, getQuestById } from '../data/quests';
 import { attemptCraft } from '../systems/crafting';
 import { enhanceCost } from '../systems/enhance';
@@ -272,6 +272,8 @@ interface GameStore {
   clearHeroSnapshot: () => void;
   // Cycle 113 N3 — Hall of Sagas
   addHallEntry: (entry: import('../data/hallTypes').HallEntry) => void;
+  // Cycle 123 N3 — Hall favorited toggle
+  toggleHallFavorite: (id: string) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1485,6 +1487,13 @@ export const useGameStore = create<GameStore>()(
         // Cycle 113 N3 — top-N union dedup. Pure logic in hallCapacity.ts.
         set(s => {
           const nextHall = addHallEntryPure(s.meta.hall ?? { entries: [] }, entry);
+          return { ...s, meta: { ...s.meta, hall: nextHall } };
+        });
+      },
+      toggleHallFavorite(id) {
+        // Cycle 123 N3 — favorited toggle.
+        set(s => {
+          const nextHall = toggleHallFavorite(s.meta.hall ?? { entries: [] }, id);
           return { ...s, meta: { ...s.meta, hall: nextHall } };
         });
       },
