@@ -16,8 +16,20 @@ import { tickNpc, spawnNpc } from '../npc/NpcLifecycle';
 import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { computeFieldDamping } from '../zone/fieldDamping';
 import { getFieldDiffThreshold, getRejuvDiscount } from '../buff/buffEffects';
+import {
+  BOSS_INTRO_CATALOG,
+  bossIntroSampleSeed,
+  findBossIntroBuff,
+  sampleBossIntroCards,
+  type BossIntroBuff,
+  type BossIntroBuffId,
+} from '../buff/bossIntroCatalog';
 import { seasonForAge } from '../season/SeasonState';
 import { rejuvenationCost } from '../hero/rejuvenation';
+
+/** Cycle 109 F1 — boss intro buff cap. PRD §F1.동작(3): activeBossIntroBuffs
+ *  size >= 4 → modal skip + boss_intro_skipped emit. */
+const BOSS_INTRO_BUFF_CAP = 4;
 
 /** Cycle-11 C10-B — auto-rejuv tuning constants. Threshold = age 65 (PRD §C10-B
  *  example), max 2 rejuvs/cycle (caps light drain + lets sim aggregate cycles
@@ -78,6 +90,35 @@ export class CycleControllerV2 {
    *  null when no fate roll is pending. */
   private fateRollLandmarkId: string | null = null;
 
+  /** Cycle 109 F1 — per-cycle (= per-controller-instance) set of boss landmarkIds
+   *  that have already gone through the boss-intro path. PRD §F1.동작(3):
+   *  per-boss-landmark cap (vs cycle 108's per-cycle fate roll cap). Once a
+   *  landmarkId is in this set, isBossIntroEligible returns false so the inner
+   *  resolveEncounter (re-fight) call skips the intro path. controller scope
+   *  only — persist 안 됨, run-resume 시 fresh controller. */
+  private bossIntroSeenIds: Set<string> = new Set();
+
+  /** Cycle 109 F1 — active transient buffs from boss intro choices.
+   *  cycle 종료까지만 유지 (controller instance scope). 4 cap enforced by
+   *  isBossIntroEligible. Order = insertion (FIFO) — no replacement. */
+  private activeBossIntroBuffs: BossIntroBuff[] = [];
+
+  /** Cycle 109 F1 — boss intro pause guard. True between boss_intro_offered
+   *  emit and resolveBossIntro() call. handleArrival no-ops while this is true
+   *  so the stagger-recover path doesn't fire and Pathfinder doesn't tick past
+   *  this landmark. */
+  private bossIntroPending: boolean = false;
+
+  /** Cycle 109 F1 — landmarkId captured at boss_intro_offered emit time.
+   *  resolveBossIntro re-enters resolveEncounter with this id so the boss
+   *  combat actually runs after the player picks a buff. */
+  private bossIntroLandmarkId: string | null = null;
+
+  /** Cycle 109 F1 — 3 cards captured at offer time. resolveBossIntro indexes
+   *  into this with chosenIdx (0|1|2) to apply the selected buff. null when
+   *  no intro is pending. */
+  private bossIntroPendingCards: BossIntroBuff[] | null = null;
+
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
     // V3-H B2: restore from snapshot if present, otherwise create fresh hero.
@@ -93,6 +134,16 @@ export class CycleControllerV2 {
       // Cycle 108 F1: wire fate roll eligibility. EncounterEngine emits
       // fate_roll_required when this returns true AND hero would die.
       isFateRollEligible: () => !this.fateRollConsumed,
+      // Cycle 109 F1: boss intro eligibility gate = "is this landmark a fresh
+      // candidate for the intro flow?". seenIds membership = false (re-fight
+      // path or controller re-entry). The 4-buff cap is checked separately by
+      // isBossIntroCapped so the engine can still emit boss_intro_skipped
+      // (saga marker) at the cap. PRD §F1.동작(3) advisor §4.
+      isBossIntroEligible: (landmarkId) => !this.bossIntroSeenIds.has(landmarkId),
+      isBossIntroCapped: () => this.activeBossIntroBuffs.length >= BOSS_INTRO_BUFF_CAP,
+      pickBossIntroCards: (landmarkId) => this.sampleBossIntroCardsFor(landmarkId),
+      getBossIntroAtkMul: () => this.getBossIntroAtkMul(),
+      getBossIntroDropBonus: () => this.getBossIntroDropBonus(),
     });
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
@@ -223,6 +274,308 @@ export class CycleControllerV2 {
     return events;
   }
 
+  /** Cycle 109 F1 — read-only accessors for tests + Runner gating. */
+  isBossIntroPending(): boolean { return this.bossIntroPending; }
+  getBossIntroSeenSize(): number { return this.bossIntroSeenIds.size; }
+  getActiveBossIntroBuffs(): readonly BossIntroBuff[] { return this.activeBossIntroBuffs; }
+  getBossIntroLandmarkId(): string | null { return this.bossIntroLandmarkId; }
+
+  /** Cycle 109 F1 — cumulative ATK multiplier from accepted boss intro buffs.
+   *  Returns 1.0 baseline + sum of every atk_mul effect. EncounterEngine boss
+   *  combat reads this via the wired callback. */
+  getBossIntroAtkMul(): number {
+    let mul = 1.0;
+    for (const b of this.activeBossIntroBuffs) {
+      if (b.effect.kind === 'atk_mul') mul += b.effect.value;
+    }
+    return mul;
+  }
+
+  /** Cycle 109 F1 — cumulative max-HP multiplier delta. Caller applies as
+   *  `hero.hpMax * mul`. Currently only consumed by accept-time hp_mul wire. */
+  getBossIntroHpMul(): number {
+    let mul = 1.0;
+    for (const b of this.activeBossIntroBuffs) {
+      if (b.effect.kind === 'hp_mul') mul += b.effect.value;
+    }
+    return mul;
+  }
+
+  /** Cycle 109 F1 — cumulative move_mul (passed to OverworldRunner / scene). */
+  getBossIntroMoveMul(): number {
+    let mul = 1.0;
+    for (const b of this.activeBossIntroBuffs) {
+      if (b.effect.kind === 'move_mul') mul += b.effect.value;
+    }
+    return mul;
+  }
+
+  /** Cycle 109 F1 — cumulative light_mul (Runner-side light accumulation). */
+  getBossIntroLightMul(): number {
+    let mul = 1.0;
+    for (const b of this.activeBossIntroBuffs) {
+      if (b.effect.kind === 'light_mul') mul += b.effect.value;
+    }
+    return mul;
+  }
+
+  /** Cycle 109 F1 — cumulative drop_bonus (additive). Engine adds to baseDropOdds. */
+  getBossIntroDropBonus(): number {
+    let bonus = 0;
+    for (const b of this.activeBossIntroBuffs) {
+      if (b.effect.kind === 'drop_bonus') bonus += b.effect.value;
+    }
+    return bonus;
+  }
+
+  /** Cycle 109 F1 — deterministic 3-card sample for this landmarkId.
+   *  PRD §F1.동작(4): seed = controller.seed ^ landmarkId hash ^ 0xb0551.
+   *  Called by EncounterEngine via the wired pickBossIntroCards callback. */
+  private sampleBossIntroCardsFor(landmarkId: string): readonly {
+    id: BossIntroBuffId; nameKR: string; descKR: string; tier: BossIntroBuff['tier'];
+  }[] {
+    const seed = bossIntroSampleSeed(this.seed, landmarkId);
+    const cards = sampleBossIntroCards(new SeededRng(seed), 3);
+    return cards.map(c => ({ id: c.id, nameKR: c.nameKR, descKR: c.descKR, tier: c.tier }));
+  }
+
+  /** Cycle 109 F1 — resolve the pending boss intro.
+   *
+   *  Applies the chosen card's buff to activeBossIntroBuffs, then re-enters
+   *  resolveEncounter so the boss combat actually runs (PRD §F1.동작(8) opt-a).
+   *  The inner resolveEncounter call sees bossIntroSeenIds.has(landmarkId)=true
+   *  via the wired isBossIntroEligible callback → no infinite recursion.
+   *
+   *  Returns the synthesized events: boss_intro_resolved + the boss combat
+   *  events (battle_started + battle_won/hero_died/fate_roll_required + drops
+   *  + level_ups). Caller (OverworldRunner / sim driver) splices these into
+   *  the same per-arrival event stream.
+   *
+   *  Guard: if no intro is pending, returns []. Crystal-spend-style defensive
+   *  guard for double-resolve.
+   *
+   *  Side effect: also calls the post-arrival processing pipeline (NPC tick,
+   *  season change, milestone detector, age tick) because the inner
+   *  resolveEncounter alone wouldn't trigger those. Mirrors handleArrival's
+   *  shape — for boss intro purposes, the outer arrival "completes" only
+   *  after the boss is resolved. The simplest implementation: re-run a slim
+   *  version of handleArrival's post-encounter steps inline.
+   *
+   *  PRD §F1.동작(8) — the re-entered resolveEncounter handles its own
+   *  battle_started / battle_won. We just need to record battle / drop saga
+   *  events and detect level milestones the same way handleArrival does. */
+  resolveBossIntro(chosenIdx: 0 | 1 | 2): OverworldEvent[] {
+    if (!this.bossIntroPending) return [];
+    const landmarkId = this.bossIntroLandmarkId;
+    const cards = this.bossIntroPendingCards;
+    this.bossIntroPending = false;
+    this.bossIntroLandmarkId = null;
+    this.bossIntroPendingCards = null;
+    if (landmarkId === null || cards === null || cards.length !== 3) return [];
+
+    const events: OverworldEvent[] = [];
+    const chosen = cards[chosenIdx]!;
+    this.activeBossIntroBuffs.push(chosen);
+    // hp_mul takes effect at choice time — bump hero.hpMax + heal proportionally
+    // so the next combat (which we are about to run) actually feels the +HP.
+    if (chosen.effect.kind === 'hp_mul') {
+      const oldHpMax = this.hero.hpMax;
+      const newHpMax = Math.ceil(oldHpMax * (1 + chosen.effect.value));
+      const heal = newHpMax - oldHpMax;
+      this.hero.hpMax = newHpMax;
+      this.hero.hp = Math.min(newHpMax, this.hero.hp + heal);
+    }
+    events.push({ type: 'boss_intro_resolved', chosenIdx, chosenId: chosen.id });
+    this.recordToStore({
+      age: this.hero.age,
+      type: 'bossIntro',
+      narrativeText: `${this.hero.age}세에 보스 앞에서 '${chosen.nameKR}'을(를) 선택했다`,
+      payload: { chosenIdx, chosenId: chosen.id, tier: chosen.tier },
+    });
+
+    // Mark seen *before* re-entering resolveEncounter so the inner call's
+    // isBossIntroEligible(landmarkId) returns false (advisor §2 / §3 — clean
+    // re-entry guard, no recursion risk).
+    this.bossIntroSeenIds.add(landmarkId);
+
+    // Re-enter the encounter pipeline for the actual boss combat. Use the
+    // controller's per-arrival post-processing by funneling through a
+    // slim inline mirror of handleArrival's boss path. Easier (and safer for
+    // sim parity) than calling handleArrival recursively, which would re-tick
+    // age + run NPC tick a second time. Instead: run resolveEncounter only,
+    // then capture bossKills + level milestones + saga records exactly like
+    // handleArrival does for the boss branch.
+    if (this.getBuffSnapshot) {
+      const snap = this.getBuffSnapshot();
+      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
+    }
+    const combatEvents = this.encounter.resolveEncounter(this.hero, 'boss', landmarkId);
+
+    // Mirror handleArrival's per-event handling — bossKills tick, saga
+    // record for battle/drop/level_up/skill_learned/hero_died — so the
+    // boss-after-intro path is observable identically to a direct boss kill.
+    let levelFrom = -1;
+    let levelTo = -1;
+    let levelCount = 0;
+    for (const ev of combatEvents) {
+      if (ev.type === 'battle_won') {
+        this.bossKills += 1;
+        if (this.onBossKill && this.currentRealmId) {
+          const unlocked = this.onBossKill(this.currentRealmId);
+          if (unlocked) {
+            this.unlockedRealms = [...this.unlockedRealms, unlocked];
+            combatEvents.push({ type: 'realm_unlocked', realmId: unlocked });
+          }
+        }
+        const enemyType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id)) ?? null;
+        const enemyNameKR = enemyType?.nameKR ?? '보스';
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'battle',
+          narrativeText: NarrativeGenerator.forBattle({ age: this.hero.age, enemyNameKR, realm: this.currentRealmId }, this.rng.int(100000)),
+          payload: { enemyId: landmarkId, expGain: ev.expGain },
+        });
+        if (ev.dropId) {
+          this.drops += 1;
+          const dropItem = lookupDrop(ev.dropId);
+          const itemNameKR = dropItem?.nameKR ?? ev.dropId;
+          this.recordToStore({
+            age: this.hero.age,
+            type: 'drop',
+            narrativeText: NarrativeGenerator.forDrop({ age: this.hero.age, itemNameKR, realm: this.currentRealmId }, this.rng.int(100000)),
+            payload: { itemId: ev.dropId },
+          });
+        }
+      }
+      if (ev.type === 'level_up') {
+        if (levelCount === 0) levelFrom = ev.from;
+        levelTo = ev.to;
+        levelCount += 1;
+      }
+      if (ev.type === 'skill_learned') {
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'skillLearned',
+          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR, realm: this.currentRealmId }, this.rng.int(100000)),
+          payload: { skillId: ev.skillId, atkBefore: ev.atkBefore, atkAfter: ev.atkAfter },
+        });
+      }
+      if (ev.type === 'fate_roll_required') {
+        // Boss intro → death → fate roll. Pipe through the normal fate roll
+        // pending state so OverworldRunner's existing modal handler picks it up.
+        this.fateRollConsumed = true;
+        this.fateRollPending = true;
+        this.fateRollLandmarkId = ev.enemyId;
+      }
+      if (ev.type === 'hero_died') {
+        this.endCause = ev.cause;
+        const enemyType = ev.enemyId ? LANDMARK_TYPES.find(t => ev.enemyId!.startsWith(t.id)) : null;
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'death',
+          narrativeText: NarrativeGenerator.forDeath({
+            age: this.hero.age,
+            cause: ev.cause,
+            enemyNameKR: enemyType?.nameKR,
+            oldLevel: ev.oldLevel,
+            newLevel: ev.newLevel,
+          }),
+          payload: { oldLevel: ev.oldLevel, newLevel: ev.newLevel },
+        });
+      }
+    }
+    if (levelCount > 0) {
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'levelUp',
+        narrativeText: NarrativeGenerator.forLevelUpBatch({
+          age: this.hero.age, fromLevel: levelFrom, toLevel: levelTo, count: levelCount, realm: this.currentRealmId,
+        }, this.rng.int(100000)),
+        payload: { from: levelFrom, to: levelTo, count: levelCount },
+      });
+      // Cycle 106 F1: milestone crossing detector on boss-intro combat too.
+      const crossings = tiersCrossed(levelFrom, levelTo);
+      for (const tier of crossings) {
+        if (this.milestoneLedger.has(tier)) continue;
+        this.milestoneLedger.add(tier);
+        const preset = presetForTier(tier);
+        combatEvents.push({
+          type: 'inflation_milestone',
+          tier,
+          thresholdLv: preset.thresholdLv,
+          fromLv: levelFrom,
+          toLv: levelTo,
+          atAge: this.hero.age,
+        });
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'milestone',
+          narrativeText: `${this.hero.age}세에 레벨 ${preset.thresholdLv.toLocaleString('en-US')} 돌파`,
+          payload: { tier, thresholdLv: preset.thresholdLv, fromLv: levelFrom, toLv: levelTo },
+        });
+      }
+    }
+
+    // Cycle 109 F1 — mirror handleArrival's post-encounter processing for the
+    // boss-after-intro arrival (advisor §A): the outer handleArrival exited
+    // early on boss_intro_offered, so age tick / NPC tick / season check /
+    // auto-rejuv / natural-death / chapter / job-unlock for *this* arrival
+    // would otherwise silently disappear. Skip the job-unlock + chapter
+    // emission when hero died in combat (parity with handleArrival's
+    // staggered guard).
+    const beforeChapter = this.hero.chapter;
+    if (!this.hero.staggered) {
+      const jobs = this.hero.maybeUnlockJobForAge(this.hero.age);
+      for (const j of jobs) {
+        const jobEv = { type: 'job_unlocked' as const, jobId: j.jobId, jobNameKR: j.jobNameKR, tier: j.tier };
+        combatEvents.push(jobEv);
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'jobUnlock',
+          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier, realm: this.currentRealmId }, this.rng.int(100000)),
+          payload: { jobId: j.jobId, tier: j.tier },
+        });
+      }
+    }
+    const agingMul = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+    this.hero.tickAge(agingMul);
+    if (this.hero.chapter !== beforeChapter) {
+      combatEvents.push({
+        type: 'chapter_transition',
+        fromChapter: beforeChapter,
+        toChapter: this.hero.chapter,
+        atAge: this.hero.age,
+      });
+    }
+
+    // V3-H F6: season transition check (same shape as handleArrival).
+    const newSeason = seasonForAge(this.hero.age);
+    const currentMeta = useGameStore.getState().meta;
+    if (newSeason !== currentMeta.season.current) {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: { ...s.meta, season: { current: newSeason, startedAtAge: Math.floor(this.hero.age) } },
+      }));
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'seasonChange',
+        narrativeText: NarrativeGenerator.forSeasonChange(
+          { age: this.hero.age, season: newSeason, realm: this.currentRealmId ?? 'base' },
+          this.rng.int(100000),
+        ),
+        payload: { season: newSeason },
+      });
+      combatEvents.push({ type: 'season_changed', season: newSeason });
+    }
+
+    // Cycle-11 C10-B auto-rejuv + C10-A natural death — same order as handleArrival.
+    this.maybeAutoRejuvenate();
+    this.maybeEmitNaturalDeath(combatEvents);
+
+    events.push(...combatEvents);
+    return events;
+  }
+
   getUnlockedRealms(): readonly import('../types').RealmId[] { return this.unlockedRealms; }
   getCurrentRealmId(): import('../types').RealmId | null { return this.currentRealmId; }
   getHero(): HeroEntity { return this.hero; }
@@ -247,6 +600,9 @@ export class CycleControllerV2 {
     // endCause='전사' regression — that one stuck the controller in the gate
     // direction; this one would silently bypass the modal entirely.
     if (this.fateRollPending) return [];
+    // Cycle 109 F1: same guard for boss intro pending. Modal open → no further
+    // arrivals processed until resolveBossIntro is invoked.
+    if (this.bossIntroPending) return [];
 
     // V3-B: staggered hero recovers (hp full, staggered=false) without
     // processing the encounter content. This arrival "costs" the actionCount
@@ -338,6 +694,42 @@ export class CycleControllerV2 {
         this.fateRollLandmarkId = fateEv.enemyId;
       }
       return events;
+    }
+
+    // Cycle 109 F1: boss intro offered → controller pauses. Same shape as the
+    // fate roll guard above — capture the cards + landmarkId so resolveBossIntro
+    // can re-enter the encounter. Skip the normal post-arrival processing.
+    const introIdx = events.findIndex(e => e.type === 'boss_intro_offered');
+    if (introIdx >= 0) {
+      const introEv = events[introIdx]!;
+      if (introEv.type === 'boss_intro_offered') {
+        this.bossIntroPending = true;
+        this.bossIntroLandmarkId = introEv.landmarkId;
+        // Resolve catalog entries from the lightweight payload card list.
+        this.bossIntroPendingCards = introEv.cards.map(c => findBossIntroBuff(c.id));
+      }
+      return events;
+    }
+
+    // Cycle 109 F1: boss intro skipped (cap reached) → record saga marker but
+    // continue with the regular boss combat events that follow inline.
+    const skipIdx = events.findIndex(e => e.type === 'boss_intro_skipped');
+    if (skipIdx >= 0) {
+      const skipEv = events[skipIdx]!;
+      if (skipEv.type === 'boss_intro_skipped') {
+        // Mark seen so the next encounter on this landmark doesn't re-trigger.
+        // (In practice landmark.consumed already guards re-encounter, but the
+        // sentinel keeps controller state consistent for tests.)
+        this.bossIntroSeenIds.add(skipEv.landmarkId);
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'bossIntro',
+          narrativeText: `${this.hero.age}세에 보스 앞에서 빛이 꺾였다 — 너무 많은 가호가 깃들어 있었다`,
+          payload: { reason: 'cap_reached', landmarkId: skipEv.landmarkId },
+        });
+      }
+      // fall through to the rest of handleArrival processing — the boss combat
+      // events are already in `events` after the skip marker.
     }
 
     // Collect level_ups for end-of-arrival batched record.

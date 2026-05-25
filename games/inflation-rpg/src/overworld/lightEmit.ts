@@ -22,6 +22,8 @@ export interface LightDeltaResult {
  *  - hero_died, tick, arrived_at, battle_started, cycle_ended (system events)
  *  - fate_roll_required, fate_roll_resolved (cycle 108 F1 — decision channel,
  *    not earned light. emit 0 by design.)
+ *  - boss_intro_offered, boss_intro_resolved, boss_intro_skipped (cycle 109 F1
+ *    — decision channel, not earned light. emit 0 by design.)
  */
 export function computeLightDelta(evs: readonly OverworldEvent[], kind: LandmarkKind): LightDeltaResult {
   let delta = 0;

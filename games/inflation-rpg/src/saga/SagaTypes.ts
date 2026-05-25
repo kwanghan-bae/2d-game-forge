@@ -27,7 +27,11 @@ export type SagaEventType =
   | 'milestone'
   // Cycle 108 F1: fate roll on death — accept/decline outcome saga.
   // payload: { outcome: 'accepted' | 'declined' }.
-  | 'fateRoll';
+  | 'fateRoll'
+  // Cycle 109 F1: boss intro choice saga.
+  // payload: { chosenIdx, chosenId, tier } on resolve, or
+  // { reason: 'cap_reached', landmarkId } on skip.
+  | 'bossIntro';
 
 // Cycle-5 F3: '무위' = pathfinder candidates-exhausted (출구 없음 / 길을 잃다).
 // 진짜 자연 수명 도달과 명확히 구분되어야 동급 stale-realm bug 가 즉시 보임.
