@@ -427,11 +427,27 @@ function runOneCycle(
     // the same per-arrival event stream so downstream counters (endCause,
     // hero_died ratio, light) see the synthesized death as if EncounterEngine
     // had emitted it directly. Mirrors dev server's 5s auto-decline outcome.
-    const hasFateRoll = events.some(e => e.type === 'fate_roll_required');
+    //
+    // Cycle 109 F1 — auto-choice cards[0] policy. PRD §sim-real-parity §1.
+    // When boss_intro_offered emits, invoke resolveBossIntro(0) and splice
+    // the returned events into the same stream. cards[0] = the first
+    // weighted-sample card (effectively uniform across all 10 catalog
+    // entries since weights are equal in current PRD). Mirrors dev server's
+    // 8s auto-choose timeout outcome. Order: fate roll first, then boss intro
+    // — but they never co-occur in the same arrival (boss intro = before
+    // battle, fate roll = after battle).
+    let preFate: OverworldEvent[] = events;
+    let bossIntroFollowup: OverworldEvent[] = [];
+    const hasBossIntro = preFate.some(e => e.type === 'boss_intro_offered');
+    if (hasBossIntro) {
+      bossIntroFollowup = ctrl.resolveBossIntro(0);
+      preFate = [...preFate, ...bossIntroFollowup];
+    }
+    const hasFateRoll = preFate.some(e => e.type === 'fate_roll_required');
     const resolveEvents: OverworldEvent[] = hasFateRoll
       ? ctrl.resolveFateRoll('decline')
       : [];
-    const allEvents = hasFateRoll ? [...events, ...resolveEvents] : events;
+    const allEvents = hasFateRoll ? [...preFate, ...resolveEvents] : preFate;
 
     for (const ev of allEvents) {
       stamped.push({ cycleSeed: seed, arrival: arrivals, heroAge: hero.age, heroLevel: hero.level, heroHp: hero.hp, ev });

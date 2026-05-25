@@ -24,6 +24,25 @@ export type OverworldEvent =
   // diagnostics. outcome='accept' = crackStone spent + HP 50% restored.
   // outcome='decline' = death penalty applied + hero_died('전사') emit follows.
   | { type: 'fate_roll_resolved'; outcome: 'accept' | 'decline' }
+  // Cycle 109 F1: Boss Intro Choice. EncounterEngine emits this *before*
+  // battle_started when kind === 'boss' AND isBossIntroEligible() returns true.
+  // Controller pauses arrival pipeline + opens modal. resolveBossIntro(idx)
+  // applies the chosen buff + immediately runs the boss combat via a recursive
+  // resolveEncounter call (the bossIntroSeenIds guard makes the inner call
+  // skip the intro path so no infinite recursion). cards = the 3 sampled
+  // deterministic buff cards (id + nameKR + descKR + tier).
+  | { type: 'boss_intro_offered'; landmarkId: string; cards: ReadonlyArray<{
+        id: import('../buff/bossIntroCatalog').BossIntroBuffId;
+        nameKR: string;
+        descKR: string;
+        tier: import('../buff/bossIntroCatalog').BossIntroBuffTier;
+      }> }
+  // Cycle 109 F1: boss intro resolved. chosenIdx = 0|1|2 of the 3 cards.
+  | { type: 'boss_intro_resolved'; chosenIdx: 0 | 1 | 2; chosenId: import('../buff/bossIntroCatalog').BossIntroBuffId }
+  // Cycle 109 F1: boss intro skipped because the per-cycle 4-card cap was hit.
+  // Emitted in place of boss_intro_offered when activeBossIntroBuffs.length >= 4.
+  // No modal mounts; controller proceeds straight to the regular boss combat.
+  | { type: 'boss_intro_skipped'; landmarkId: string; reason: 'cap_reached' }
   | { type: 'realm_unlocked'; realmId: import('../types').RealmId }
   | { type: 'realm_entered'; realmId: import('../types').RealmId }
   | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }

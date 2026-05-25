@@ -24,7 +24,13 @@ function driveCycle(
   const kinds: LandmarkKind[] = ['enemy', 'enemy', 'enemy', 'boss', 'enemy', 'village', 'enemy', 'enemy'];
   while (i < maxEvents) {
     const kind = kinds[i % kinds.length];
-    ctrl.handleArrival(kind, `${kind}_${i}`);
+    const evs = ctrl.handleArrival(kind, `${kind}_${i}`);
+    // Cycle 109 F1: when boss_intro_offered emits, this driver picks cards[0]
+    // (matches sim-cycle-v2.ts auto-choice policy). Without this, the boss
+    // intro pause leaves the controller stuck for the rest of the loop.
+    if (evs.some(e => e.type === 'boss_intro_offered')) {
+      ctrl.resolveBossIntro(0);
+    }
     i++;
   }
   return { saga: ctrl.finalize(), iterations: i };

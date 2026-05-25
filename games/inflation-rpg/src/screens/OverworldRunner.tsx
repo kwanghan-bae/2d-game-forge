@@ -10,6 +10,7 @@ import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
 import { FateRollModal } from './FateRollModal';
+import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { seasonEmoji, seasonNameKR, seasonBonus } from '../season/SeasonState';
 // Cycle 106 F2 — inflation milestone VFX overlay
 import { InflationMilestoneVFX } from '../components/InflationMilestoneVFX';
@@ -98,6 +99,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   // Cycle 108 F1 — fate roll modal state.
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
+  // Cycle 109 F1 — boss intro modal state.
+  const [bossIntroModal, setBossIntroModal] = useState<{ landmarkId: string; cards: ReadonlyArray<BossIntroCard> } | null>(null);
   // Cycle 106 F2 — milestone VFX queue
   const milestoneQueue = useMilestoneStore(s => s.queue);
   const pushMilestone = useMilestoneStore(s => s.pushMilestone);
@@ -234,6 +237,18 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             setFateRollModal({
               oldLevel: fateRollRequired.oldLevel,
               pendingDeathPenaltyNewLevel: fateRollRequired.pendingDeathPenaltyNewLevel,
+            });
+          }
+          // Cycle 109 F1: boss intro modal. EncounterEngine emits boss_intro_offered
+          // *before* battle_started when kind === 'boss' AND eligible. Mount
+          // modal — player picks idx within 8s or auto-choose cards[0]. Resolve
+          // callback applies buff + re-enters resolveEncounter for the actual
+          // boss combat (events are spliced in below).
+          const bossIntroOffered = evs.find(e => e.type === 'boss_intro_offered');
+          if (bossIntroOffered && bossIntroOffered.type === 'boss_intro_offered') {
+            setBossIntroModal({
+              landmarkId: bossIntroOffered.landmarkId,
+              cards: bossIntroOffered.cards,
             });
           }
           // V3-H E1 + B3: hero_died comes from handleArrival (EncounterEngine emits it).
@@ -477,6 +492,73 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
                 }, 2000);
               }
             }
+          }}
+        />
+      )}
+      {bossIntroModal && (
+        <BossIntroModal
+          cards={bossIntroModal.cards}
+          onResolve={(idx) => {
+            // Close modal first to avoid double-fire from React render.
+            setBossIntroModal(null);
+            const ctrl = useCycleStoreV2.getState().controller;
+            if (!ctrl) return;
+            const resolveEvents = ctrl.resolveBossIntro(idx);
+            // Light excluded for the boss_intro_resolved / boss_intro_offered
+            // pair; but the inner boss combat events DO emit light. Mirror the
+            // main arrival handler's lightDelta pass on this synthesized stream.
+            const meta = useGameStore.getState().meta;
+            const lightMul = getLightRateMul(meta) * ctrl.getBossIntroLightMul();
+            const lightDelta = computeLightDelta(resolveEvents, 'boss');
+            const totalLight = lightDelta.delta * lightMul;
+            if (totalLight > 0) {
+              useGameStore.setState(s => ({
+                ...s,
+                meta: { ...s.meta, light: (s.meta.light ?? 0) + totalLight },
+              }));
+              emitLightFloat(totalLight);
+            }
+            // Push milestone VFX for any tier crossings produced by the
+            // boss-after-intro combat.
+            for (const ev of resolveEvents) {
+              if (ev.type === 'inflation_milestone') {
+                pushMilestone({
+                  tier: ev.tier,
+                  thresholdLv: ev.thresholdLv,
+                  fromLv: ev.fromLv,
+                  toLv: ev.toLv,
+                  atAge: ev.atAge,
+                });
+              }
+            }
+            // If the boss intro combat surfaced fate_roll_required (hero died
+            // mid-boss + fate roll still available), mount the FateRollModal
+            // exactly like the regular arrival handler does.
+            const fateRoll = resolveEvents.find(e => e.type === 'fate_roll_required');
+            if (fateRoll && fateRoll.type === 'fate_roll_required') {
+              setFateRollModal({
+                oldLevel: fateRoll.oldLevel,
+                pendingDeathPenaltyNewLevel: fateRoll.pendingDeathPenaltyNewLevel,
+              });
+            }
+            // If hero_died emitted directly (no fate roll left), re-enter the
+            // existing B3 free-rejuv timer (cause='전사' branch only — boss
+            // intro is mid-cycle, '자연사' impossible from this path).
+            const heroDied = resolveEvents.find(e => e.type === 'hero_died');
+            if (heroDied && heroDied.type === 'hero_died' && heroDied.cause === '전사') {
+              if (autoRejuvTimerRef.current) clearTimeout(autoRejuvTimerRef.current);
+              autoRejuvTimerRef.current = setTimeout(() => {
+                autoRejuvTimerRef.current = null;
+                const ctrl2 = useCycleStoreV2.getState().controller;
+                if (!ctrl2) return;
+                ctrl2.getHero().rejuvenate(5);
+                ctrl2.recordRejuvenation(5);
+                ctrl2.clearEndCause();
+              }, 2000);
+            }
+            setHudTick(n => n + 1);
+            setLogEntries(ctrl.getRecentSagaEvents(LOG_LIMIT));
+            useGameStore.getState().saveHeroSnapshot(ctrl.getHero().serialize(ctrl.getSeed()));
           }}
         />
       )}

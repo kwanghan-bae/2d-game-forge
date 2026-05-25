@@ -36,6 +36,35 @@ export interface EncounterEngineOpts {
    *  `hero_died`. applyDeathPenalty is *not* invoked — controller defers it
    *  to resolveFateRoll('decline'). */
   isFateRollEligible?: () => boolean;
+  /** Cycle 109 F1: returns true when boss intro is still available for this
+   *  landmark in this cycle. Controller wires `(landmarkId) =>
+   *  !bossIntroSeenIds.has(landmarkId) && activeBossIntroBuffs.length < 4`.
+   *  When true *and* kind === 'boss', engine emits `boss_intro_offered`
+   *  *before* battle_started and aborts the encounter. Controller's
+   *  resolveBossIntro re-enters resolveEncounter (with the same landmarkId
+   *  now in seenIds so the inner call skips this path). */
+  isBossIntroEligible?: (landmarkId: string) => boolean;
+  /** Cycle 109 F1: emitted alongside `boss_intro_offered`. Returns the 3
+   *  deterministic cards for this landmarkId. Controller wires this so the
+   *  catalog + seed mixing logic lives in one place. */
+  pickBossIntroCards?: (landmarkId: string) => ReadonlyArray<{
+    id: import('../buff/bossIntroCatalog').BossIntroBuffId;
+    nameKR: string;
+    descKR: string;
+    tier: import('../buff/bossIntroCatalog').BossIntroBuffTier;
+  }>;
+  /** Cycle 109 F1: when activeBossIntroBuffs.length >= 4, controller wires
+   *  this to true so engine emits `boss_intro_skipped` (still aborts intro
+   *  but lets controller record a saga marker). Default = no skip emission. */
+  isBossIntroCapped?: (landmarkId: string) => boolean;
+  /** Cycle 109 F1: returns the cumulative atk_mul (1.0 + sum of accepted
+   *  atk-tier buffs). Applied multiplicatively to heroAtk inside the combat
+   *  loop. PRD §F1.동작(5) "단순화" — bypasses recomputeStats. */
+  getBossIntroAtkMul?: () => number;
+  /** Cycle 109 F1: returns the cumulative hp_mul. Currently only applied
+   *  implicitly via heroHpMax buff effects — engine itself does not consume
+   *  this. Reserved for future expansion. */
+  getBossIntroDropBonus?: () => number;
 }
 
 export class EncounterEngine {
@@ -54,10 +83,31 @@ export class EncounterEngine {
 
       if (hero.staggered) return events;
 
+      // Cycle 109 F1: boss intro intercept (before battle_started).
+      // PRD §F1.동작(8) opt-(a): controller emits boss_intro_offered, modal
+      // mounts, player picks idx, resolveBossIntro re-calls resolveEncounter
+      // with bossIntroSeenIds.has(landmarkId) → isBossIntroEligible=false on
+      // the inner call (no recursion). If capped (>=4 active buffs), still
+      // abort intro but emit boss_intro_skipped marker.
+      if (isBoss && this.opts.isBossIntroEligible?.(landmarkId)) {
+        if (this.opts.isBossIntroCapped?.(landmarkId)) {
+          events.push({ type: 'boss_intro_skipped', landmarkId, reason: 'cap_reached' });
+          // fall through to regular battle path — skip is *only* the intro,
+          // the boss combat itself proceeds.
+        } else {
+          const cards = this.opts.pickBossIntroCards?.(landmarkId);
+          if (cards && cards.length === 3) {
+            events.push({ type: 'boss_intro_offered', landmarkId, cards });
+            return events; // pause — controller resolves via resolveBossIntro
+          }
+        }
+      }
+
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
       const damping = this.opts.damping ?? 1.0;
-      const heroAtk = Math.max(1, Math.floor(hero.atk * damping));
+      const bossAtkMul = isBoss ? (this.opts.getBossIntroAtkMul?.() ?? 1.0) : 1.0;
+      const heroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul));
       let eHp = enemyHp;
       while (eHp > 0 && !hero.staggered) {
         eHp -= heroAtk;
@@ -85,7 +135,9 @@ export class EncounterEngine {
       }
       const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
       const baseDropOdds = isBoss ? 0.96 : DROP_RATE; // V3-H F2: boss 0.8→0.96 (+20%)
-      const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0));
+      // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
+      const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
+      const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0) + introDropBonus);
       const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss) : null;
       if (dropId) hero.addEquipment(dropId);
 
