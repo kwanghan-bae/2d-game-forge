@@ -125,6 +125,10 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       realm: saga.finalRealm ?? '',
       finishedAt: saga.finishedAt ?? Date.now(),
     });
+    // Cycle 129 N5 F1+F3 — evaluate achievements + auto-grant tokens.
+    // addHallEntry 직후 호출 — saga 가 hall 에 영구 기록된 후 진행도 갱신.
+    // PRD 의 트리거 invariant: token 발생 = achievement 진행도만, server / 광고 / IAP 0.
+    useGameStore.getState().evaluateAndGrantAchievements(saga);
     // Award sponsorGold based on cycle performance. Counters come from the
     // controller's running tally, not an equipment.length approximation.
     const hero = ctrl.getHero();

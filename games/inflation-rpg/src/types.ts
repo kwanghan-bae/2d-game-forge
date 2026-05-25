@@ -305,6 +305,19 @@ export interface MetaState {
   season: SeasonState;
   /** Cycle 112-113 — Hall of Sagas (영구 leaderboard, local only). v25 추가. */
   hall: import('./data/hallTypes').HallState;
+  /** Cycle 129 N5 — F1 AchievementSystem state. v26 추가.
+   *  Hall pattern 의 deferred-import (top-level import 회피 — circular 가드).
+   *  자세한 자료구조는 `data/achievementsTypes.ts` 참조. */
+  achievements: import('./data/achievementsTypes').AchievementsState;
+  /** Cycle 129 N5 — F3 Token Economy 누적 잔액. v26 추가.
+   *  Achievement 완료 시 reward.tokens 누적. 환전 비율 10:1 → crackStones. */
+  tokens: number;
+  /** 시즌 전환 시 자동 환전된 누적량 (telemetry / UI 표시용). v26 추가. */
+  tokensRedeemed: number;
+  /** Cycle 129 N5 — live-ops 시즌 시작 시점 snapshot (mid-cycle clock change 면역).
+   *  meta.season (V3-H age-based env tint) 과는 *완전 분리* — 본 field 는
+   *  live-ops 30-day rotation 의 cycle 시작 timestamp. v26 추가. */
+  seasonStartedAt: number;
 }
 
 // Phase G — Ascension Tree (성좌)

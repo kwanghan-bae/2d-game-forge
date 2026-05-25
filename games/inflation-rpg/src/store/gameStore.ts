@@ -35,6 +35,10 @@ import { computeMaxHp } from '../systems/playerHp';
 import { BASE_TRAIT_IDS } from '../data/traits';
 import { findBuff, nextStepCost, maxAffordable } from '../buff/catalog';
 import { appendEvent, recordRejuvenation, recordRealmTransition } from '../saga/EternalSaga';
+import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
+import { evaluateAchievements } from '../data/achievementsLogic';
+import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
+import type { AchievementProgress } from '../data/achievementsTypes';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -158,6 +162,11 @@ export const INITIAL_META: MetaState = {
   season: { current: 'spring', startedAtAge: 0 },
   // Cycle 112-113 — Hall of Sagas
   hall: { entries: [] },
+  // Cycle 129 N5 — F1 AchievementSystem + F3 Token Economy (v26 추가)
+  achievements: INITIAL_ACHIEVEMENTS,
+  tokens: 0,
+  tokensRedeemed: 0,
+  seasonStartedAt: 0,
 };
 
 interface GameStore {
@@ -274,6 +283,14 @@ interface GameStore {
   addHallEntry: (entry: import('../data/hallTypes').HallEntry) => void;
   // Cycle 123 N3 — Hall favorited toggle
   toggleHallFavorite: (id: string) => void;
+  // Cycle 129 N5 — F3 Token Economy. 10 token → 1 crackStone 환전.
+  //   ok=false reasons: 'invalid' (count<=0 or non-integer), 'insufficient' (잔액 부족).
+  redeemTokens: (
+    tokensToSpend: number,
+  ) => { ok: true; tokenDelta: number; crackDelta: number } | { ok: false; reason: 'invalid' | 'insufficient' };
+  // Cycle 129 N5 — F1 evaluate + auto-grant. cycleSliceV2.endCycle 에서 호출.
+  //   completedAt 신규 set 인 achievement 의 reward.tokens 를 자동 누적 + claimedAt 기록.
+  evaluateAndGrantAchievements: (saga: import('../saga/SagaTypes').CycleSaga, nowMs?: number) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -678,6 +695,46 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v24 → v25: Cycle 112-113 N3 — Hall of Sagas default
   if (fromVersion <= 24 && s.meta) {
     s.meta.hall = s.meta.hall ?? { entries: [] };
+  }
+  // v25 → v26: Cycle 129 N5 — F1 AchievementSystem + F3 Token Economy.
+  // 인라인 default 주입 (cycle 122 패턴 — hall 의 v24→v25 와 동일 form).
+  // EDGE.2/EDGE.3 의 부분 손상 가드도 본 블록 의무: 잘못된 타입 (string 등) →
+  // INITIAL 로 fallback.
+  if (fromVersion <= 25 && s.meta) {
+    const m = s.meta as unknown as Record<string, unknown>;
+    // achievements: 결손 / non-object / 형태 깨짐 → INITIAL.
+    const ach = m['achievements'];
+    if (
+      !ach ||
+      typeof ach !== 'object' ||
+      Array.isArray(ach) ||
+      typeof (ach as { byId?: unknown }).byId !== 'object'
+    ) {
+      // 5 starter 의 fresh progress (모듈 reference 회피, 리터럴 form).
+      const freshById = {
+        'lv-10m-in-3-cycles':   { id: 'lv-10m-in-3-cycles',   progress: 0, completed: false },
+        'npc-collect-4-uniques':{ id: 'npc-collect-4-uniques',progress: 0, completed: false },
+        'realm-conquest-6':     { id: 'realm-conquest-6',     progress: 0, completed: false },
+        'aging-master-10':      { id: 'aging-master-10',      progress: 0, completed: false },
+        'inflation-flash-100x': { id: 'inflation-flash-100x', progress: 0, completed: false },
+      };
+      m['achievements'] = {
+        byId: freshById,
+        last3MaxLevels: [],
+        npcIdsCollected: [],
+        naturalDeathsByRealm: {},
+      };
+    }
+    // tokens: numeric, NaN/string 등은 0 으로 fallback.
+    if (typeof m['tokens'] !== 'number' || !Number.isFinite(m['tokens'] as number)) {
+      m['tokens'] = 0;
+    }
+    if (typeof m['tokensRedeemed'] !== 'number' || !Number.isFinite(m['tokensRedeemed'] as number)) {
+      m['tokensRedeemed'] = 0;
+    }
+    if (typeof m['seasonStartedAt'] !== 'number' || !Number.isFinite(m['seasonStartedAt'] as number)) {
+      m['seasonStartedAt'] = 0;
+    }
   }
   return s;
 }
@@ -1497,10 +1554,103 @@ export const useGameStore = create<GameStore>()(
           return { ...s, meta: { ...s.meta, hall: nextHall } };
         });
       },
+
+      // Cycle 129 N5 — F3 Token Economy. 환전 비율 10:1 (PRD §F3).
+      // PRD 의 트리거 invariant: token 발생 = achievement 진행도만. 본 action 은
+      // 환전 (consume) 만 — token 발생은 evaluateAndGrantAchievements 가 소유.
+      redeemTokens(tokensToSpend) {
+        // F3.3 잔액 음수 가드 + invalid 가드. 정수 + 양수만 허용.
+        if (
+          typeof tokensToSpend !== 'number' ||
+          !Number.isFinite(tokensToSpend) ||
+          tokensToSpend <= 0 ||
+          !Number.isInteger(tokensToSpend)
+        ) {
+          return { ok: false, reason: 'invalid' };
+        }
+        const meta = get().meta;
+        const bal = meta.tokens ?? 0;
+        if (bal < tokensToSpend) {
+          return { ok: false, reason: 'insufficient' };
+        }
+        // F3.2: 10 token → 1 crackStone. tokensToSpend 의 정수 나눗셈.
+        // 잔여 (tokensToSpend % 10) 은 *consume 안 함* — caller 가 10 의 배수만 전달
+        // 하도록 책임 분담 (UI side 에서 10/20/30 step button 제공 의도).
+        // 단순화: floor 분(分) 만큼 환전, 잔여는 그대로 잔존.
+        const crackDelta = Math.floor(tokensToSpend / 10);
+        const actualConsume = crackDelta * 10;
+        if (crackDelta <= 0) {
+          // 10 미만 (e.g. 5) 호출 시 환전 0 — caller 에 명확한 reject.
+          return { ok: false, reason: 'insufficient' };
+        }
+        set(s => ({
+          ...s,
+          meta: {
+            ...s.meta,
+            tokens: (s.meta.tokens ?? 0) - actualConsume,
+            tokensRedeemed: (s.meta.tokensRedeemed ?? 0) + actualConsume,
+            crackStones: (s.meta.crackStones ?? 0) + crackDelta,
+          },
+        }));
+        return { ok: true, tokenDelta: -actualConsume, crackDelta };
+      },
+
+      // Cycle 129 N5 — F1 evaluate + auto-grant.
+      // cycleSliceV2.endCycle 의 addHallEntry 직후 호출 hook. evaluator 가 새로
+      // 완료한 (prior.completed=false → next.completed=true) achievement 의
+      // reward.tokens 를 meta.tokens 에 누적 + 해당 byId entry 에 claimedAt 기록.
+      //
+      // invariant:
+      //   - 이미 completed 인 entry 는 evaluator 가 identity (===) 보존 (F1.8)
+      //   - 새로 완료된 entry 만 spread → claimedAt 주입 (auto-grant simple form)
+      //   - prior mutation 0 — 새 객체 반환
+      evaluateAndGrantAchievements(saga, nowMs) {
+        const at = typeof nowMs === 'number' ? nowMs : Date.now();
+        set(s => {
+          const prior = s.meta.achievements ?? INITIAL_ACHIEVEMENTS;
+          const next = evaluateAchievements({ saga, prior, nowMs: at });
+
+          // newly-granted diff. priorlyId 가 prior 의 entry, nextById 가 next 의 entry.
+          let tokenDelta = 0;
+          const grantedById: Record<typeof ALL_ACHIEVEMENT_IDS[number], AchievementProgress> = { ...next.byId };
+          for (const id of ALL_ACHIEVEMENT_IDS) {
+            const before = prior.byId[id];
+            const after = next.byId[id];
+            if (
+              !before.completed &&
+              after.completed &&
+              after.claimedAt === undefined
+            ) {
+              tokenDelta += ACHIEVEMENT_CATALOG[id].reward.tokens;
+              grantedById[id] = { ...after, claimedAt: at };
+            }
+          }
+
+          // F1.11 invariant 보존: tokenDelta 가 0 이면 next 그대로 (객체 재생성 회피).
+          if (tokenDelta === 0) {
+            return {
+              ...s,
+              meta: {
+                ...s.meta,
+                achievements: next,
+              },
+            };
+          }
+
+          return {
+            ...s,
+            meta: {
+              ...s.meta,
+              achievements: { ...next, byId: grantedById },
+              tokens: (s.meta.tokens ?? 0) + tokenDelta,
+            },
+          };
+        });
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 25,  // cycle 122 — v25 bump 재시도 + root cause 진단
+      version: 26,  // cycle 129 — N5 F1+F3 (achievements + tokens + seasonStartedAt)
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
