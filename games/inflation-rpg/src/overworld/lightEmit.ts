@@ -24,6 +24,8 @@ export interface LightDeltaResult {
  *    not earned light. emit 0 by design.)
  *  - boss_intro_offered, boss_intro_resolved, boss_intro_skipped (cycle 109 F1
  *    — decision channel, not earned light. emit 0 by design.)
+ *  - realm_fork_offered, realm_fork_resolved, realm_fork_skipped (cycle 110 F1
+ *    — decision channel, not earned light. emit 0 by design.)
  */
 export function computeLightDelta(evs: readonly OverworldEvent[], kind: LandmarkKind): LightDeltaResult {
   let delta = 0;

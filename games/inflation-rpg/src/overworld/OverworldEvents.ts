@@ -45,6 +45,32 @@ export type OverworldEvent =
   | { type: 'boss_intro_skipped'; landmarkId: string; reason: 'cap_reached' }
   | { type: 'realm_unlocked'; realmId: import('../types').RealmId }
   | { type: 'realm_entered'; realmId: import('../types').RealmId }
+  // Cycle 110 F1: Realm Fork. handleArrival's exit-landmark branch emits this
+  // *before* `this.currentRealmId = newRealm` when fork is eligible (cap < 4,
+  // not already pending). Controller pauses arrival pipeline + opens modal.
+  // resolveRealmFork('risk'|'safe') applies the chosen buff + performs the
+  // deferred realm transition + emits realm_entered. Cards are deterministic
+  // fixed catalog (no random sampling). Mirror of fate roll + boss intro
+  // pause patterns. auto-choice = trait-based (computeRealmForkAutoChoice).
+  | { type: 'realm_fork_offered';
+      oldRealm: import('../types').RealmId;
+      newRealm: import('../types').RealmId;
+      riskCard: import('../buff/realmForkCatalog').RealmForkCard;
+      safeCard: import('../buff/realmForkCatalog').RealmForkCard;
+      autoChoice: import('../buff/realmForkCatalog').RealmForkCardId;
+    }
+  // Cycle 110 F1: realm fork resolved. Used by sim driver + saga diagnostics.
+  | { type: 'realm_fork_resolved';
+      choice: import('../buff/realmForkCatalog').RealmForkCardId;
+    }
+  // Cycle 110 F1: realm fork skipped because activeRealmForkBuffs cap (4) was
+  // hit. Emitted in place of realm_fork_offered when cap reached. Controller
+  // proceeds straight to the regular realm transition (realm_entered follows).
+  | { type: 'realm_fork_skipped';
+      oldRealm: import('../types').RealmId;
+      newRealm: import('../types').RealmId;
+      reason: 'cap_reached';
+    }
   | { type: 'npc_encounter'; npcInstanceId: string; npcKind: import('../types').NpcEntity['kind'] }
   | { type: 'npc_died'; npcInstanceId: string }
   | { type: 'family_event'; eventKind: 'marriage' | 'child_birth' | 'parent_death' | 'child_grown'; npcInstanceId?: string }

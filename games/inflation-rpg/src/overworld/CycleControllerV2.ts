@@ -24,12 +24,23 @@ import {
   type BossIntroBuff,
   type BossIntroBuffId,
 } from '../buff/bossIntroCatalog';
+import {
+  REALM_FORK_CATALOG,
+  computeRealmForkAutoChoice,
+  findRealmForkCard,
+  type RealmForkCard,
+  type RealmForkCardId,
+} from '../buff/realmForkCatalog';
 import { seasonForAge } from '../season/SeasonState';
 import { rejuvenationCost } from '../hero/rejuvenation';
 
 /** Cycle 109 F1 — boss intro buff cap. PRD §F1.동작(3): activeBossIntroBuffs
  *  size >= 4 → modal skip + boss_intro_skipped emit. */
 const BOSS_INTRO_BUFF_CAP = 4;
+
+/** Cycle 110 F1 — realm fork buff cap. PRD §F1.동작(5/8): activeRealmForkBuffs
+ *  size >= 4 → modal skip + realm_fork_skipped emit. Mirrors boss intro cap. */
+const REALM_FORK_BUFF_CAP = 4;
 
 /** Cycle-11 C10-B — auto-rejuv tuning constants. Threshold = age 65 (PRD §C10-B
  *  example), max 2 rejuvs/cycle (caps light drain + lets sim aggregate cycles
@@ -68,6 +79,10 @@ export class CycleControllerV2 {
   private onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
   private currentRealmId: import('../types').RealmId | null = null;
   private unlockedRealms: readonly import('../types').RealmId[] = ['base'];
+  /** Cycle 110 F1 — trait list captured at construction for trait-based realm
+   *  fork auto-choice. computeRealmForkAutoChoice(this.traits) returns
+   *  'risk' | 'safe' deterministically. */
+  private readonly traits: readonly TraitId[];
   /** Cycle 106 F1 — per-cycle (= per-controller-instance) milestone tier ledger.
    *  Set<tier> 이미 emit 된 tier 추적. 같은 cycle 안 같은 tier 두 번 emit 금지.
    *  controller 가 cycle 단위로 새로 생성되므로 별도 reset hook 불필요. */
@@ -119,8 +134,32 @@ export class CycleControllerV2 {
    *  no intro is pending. */
   private bossIntroPendingCards: BossIntroBuff[] | null = null;
 
+  /** Cycle 110 F1 — active transient buffs from realm fork choices.
+   *  cycle 종료까지만 유지 (controller instance scope). 4 cap. Order = FIFO.
+   *  PRD §F1.동작(5). */
+  private activeRealmForkBuffs: RealmForkCard[] = [];
+
+  /** Cycle 110 F1 — realm fork pause guard. True between realm_fork_offered
+   *  emit and resolveRealmFork() call. handleArrival no-ops while this is true
+   *  so subsequent arrivals don't process while modal is open. */
+  private realmForkPending: boolean = false;
+
+  /** Cycle 110 F1 — captured at fork-offered emit time. The deferred realm
+   *  transition (this.currentRealmId = newRealm + saga + realm_entered emit)
+   *  happens inside resolveRealmFork. null when no fork is pending. */
+  private realmForkPendingTransition: {
+    from: import('../types').RealmId;
+    to: import('../types').RealmId;
+  } | null = null;
+
+  /** Cycle 110 F1 — 2 fixed cards captured at offer time. resolveRealmFork
+   *  indexes into this with the choice id ('risk' | 'safe'). null when no
+   *  fork is pending. */
+  private realmForkPendingCards: { risk: RealmForkCard; safe: RealmForkCard } | null = null;
+
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
+    this.traits = opts.traits;
     // V3-H B2: restore from snapshot if present, otherwise create fresh hero.
     this.hero = opts.heroSnapshot
       ? HeroEntity.restore(opts.heroSnapshot)
@@ -144,6 +183,8 @@ export class CycleControllerV2 {
       pickBossIntroCards: (landmarkId) => this.sampleBossIntroCardsFor(landmarkId),
       getBossIntroAtkMul: () => this.getBossIntroAtkMul(),
       getBossIntroDropBonus: () => this.getBossIntroDropBonus(),
+      // Cycle 110 F1: realm fork atk mul (applies to all combat, not just boss).
+      getRealmForkAtkMul: () => this.getRealmForkAtkMul(),
     });
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
@@ -328,6 +369,182 @@ export class CycleControllerV2 {
     return bonus;
   }
 
+  /** Cycle 110 F1 — read-only accessors for tests + Runner gating. */
+  isRealmForkPending(): boolean { return this.realmForkPending; }
+  getActiveRealmForkBuffs(): readonly RealmForkCard[] { return this.activeRealmForkBuffs; }
+  getRealmForkPendingTransition(): { from: import('../types').RealmId; to: import('../types').RealmId } | null {
+    return this.realmForkPendingTransition;
+  }
+  getRealmForkPendingCards(): { risk: RealmForkCard; safe: RealmForkCard } | null {
+    return this.realmForkPendingCards;
+  }
+  /** Trait-based auto-choice (sim driver + modal timeout). Deterministic.
+   *  Same trait set = same choice. */
+  getRealmForkAutoChoice(): RealmForkCardId {
+    return computeRealmForkAutoChoice(this.traits);
+  }
+
+  /** Cycle 110 F1 — cumulative ATK multiplier from accepted realm fork buffs.
+   *  Mirrors getBossIntroAtkMul but applies to *all* combat (boss + enemy),
+   *  not just boss. Engine wires this via the getRealmForkAtkMul callback. */
+  getRealmForkAtkMul(): number {
+    let mul = 1.0;
+    for (const b of this.activeRealmForkBuffs) {
+      mul += b.effect.atkBonus;
+    }
+    return mul;
+  }
+
+  /** Cycle 110 F1 — cumulative drop-chance bonus from realm fork buffs.
+   *  Additive (e.g. +0.05 = +5 percentage points). Engine sums with V3-C
+   *  drop_chance buff + boss intro drop bonus. */
+  getRealmForkDropBonus(): number {
+    let bonus = 0;
+    for (const b of this.activeRealmForkBuffs) {
+      bonus += b.effect.dropChanceBonus;
+    }
+    return bonus;
+  }
+
+  /** Cycle 110 F1 — cumulative damping bonus (signed, -0.1/+0.1).
+   *  Applied additively to base damping at encounter.setOpts time. Clamp at
+   *  call site. */
+  getRealmForkDampingBonus(): number {
+    let bonus = 0;
+    for (const b of this.activeRealmForkBuffs) {
+      bonus += b.effect.dampingBonus;
+    }
+    return bonus;
+  }
+
+  /** Cycle 110 F1 — cumulative aging-speed multiplier (multiplicative).
+   *  Applied to tickAge's agingMul. 1.0 = no effect, 1.05 = +5% faster aging. */
+  getRealmForkAgingMul(): number {
+    let mul = 1.0;
+    for (const b of this.activeRealmForkBuffs) {
+      mul *= 1 + b.effect.agingSpeedMul;
+    }
+    return mul;
+  }
+
+  /** Cycle 110 F1 — combined aging multiplier: base agingSpeedMul (from
+   *  V3-C buff snapshot) × realm fork aging mul. tickAge consumers should
+   *  call this helper instead of accessing snapshot directly. */
+  private getCombinedAgingMul(): number {
+    const snap = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+    return snap * this.getRealmForkAgingMul();
+  }
+
+  /** Cycle 110 F1 — combined encounter opts (snapshot + boss intro + realm
+   *  fork) for encounter.setOpts call sites. Centralizes the additive damping
+   *  + drop bonus channels so the 3-call-site grep stays clean. */
+  private setEncounterOptsForArrival(): void {
+    if (this.getBuffSnapshot) {
+      const snap = this.getBuffSnapshot();
+      const dampingBonus = this.getRealmForkDampingBonus();
+      // damping ∈ [0, 1.0] — clamp at sum.
+      const damping = Math.max(0, Math.min(1.0, snap.damping + dampingBonus));
+      const dropBonus = snap.dropChanceBonus + this.getRealmForkDropBonus();
+      this.encounter.setOpts({ dropChanceBonus: dropBonus, damping });
+    } else {
+      // No buff snapshot — still apply realm fork standalone if any.
+      const dampingBonus = this.getRealmForkDampingBonus();
+      const dropBonus = this.getRealmForkDropBonus();
+      this.encounter.setOpts({
+        dropChanceBonus: dropBonus,
+        damping: Math.max(0, Math.min(1.0, 1.0 + dampingBonus)),
+      });
+    }
+  }
+
+  /** Cycle 110 F1 — resolve the pending realm fork.
+   *
+   *  'risk' / 'safe': push the chosen card into activeRealmForkBuffs, emit
+   *  realm_fork_resolved, then perform the deferred realm transition (set
+   *  currentRealmId + saga record + realm_entered emit).
+   *
+   *  Guard: if no fork is pending, returns [] (no-op). */
+  resolveRealmFork(choice: RealmForkCardId): OverworldEvent[] {
+    if (!this.realmForkPending) return [];
+    const transition = this.realmForkPendingTransition;
+    const cards = this.realmForkPendingCards;
+    this.realmForkPending = false;
+    this.realmForkPendingTransition = null;
+    this.realmForkPendingCards = null;
+    if (transition === null || cards === null) return [];
+
+    const events: OverworldEvent[] = [];
+    const chosen = choice === 'risk' ? cards.risk : cards.safe;
+    this.activeRealmForkBuffs.push(chosen);
+    events.push({ type: 'realm_fork_resolved', choice });
+    this.recordToStore({
+      age: this.hero.age,
+      type: 'realmFork',
+      narrativeText: `${this.hero.age}세에 ${findRealm(transition.to).nameKR} 입구에서 '${chosen.nameKR}'을(를) 택했다`,
+      payload: { choice, from: transition.from, to: transition.to },
+    });
+
+    // Deferred realm transition — mirror of handleArrival's exit-landmark
+    // branch (lines 970-988 of original code, but with currentRealmId already
+    // captured at offer time as transition.from).
+    this.currentRealmId = transition.to;
+    useGameStore.getState().recordSagaRealmTransition(transition.from, transition.to, this.hero.age, this.hero.chapter);
+    this.recordToStore({
+      age: this.hero.age,
+      type: 'realmEnter',
+      narrativeText: NarrativeGenerator.forRealmEnter(
+        { age: this.hero.age, realm: transition.to },
+        this.rng.int(100000),
+      ),
+      payload: { from: transition.from, to: transition.to },
+    });
+    events.push({ type: 'realm_entered', realmId: transition.to });
+
+    // Cycle 110 F3 — mirror handleArrival's V3-E NPC tick + npc_encounter
+    // block (lines 1204-1243 of original code). The fork intercept early-
+    // returned before reaching the NPC tick, so without this mirror every
+    // realm fork arrival would silently drop one NPC tick + the 20%
+    // npc_encounter roll. (advisor §"resolveRealmFork drops NPC tick" —
+    // new regression in cycle 110, not cycle 109 leftover.)
+    const npcState = useGameStore.getState().run.npcs;
+    for (const npc of npcState) {
+      const wasAlive = npc.isAlive;
+      tickNpc(npc);
+      if (wasAlive && !npc.isAlive) {
+        events.push({ type: 'npc_died', npcInstanceId: npc.instanceId });
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'npcDeath',
+          narrativeText: NarrativeGenerator.forNpcDeath(
+            { age: this.hero.age, realm: this.currentRealmId },
+            this.rng.int(100000),
+          ),
+          payload: { npcInstanceId: npc.instanceId, kind: npc.kind },
+        });
+      }
+    }
+    const candidates = npcState.filter(n => n.isAlive && n.zoneRealmId === this.currentRealmId);
+    if (candidates.length > 0 && this.rng.chance(0.2)) {
+      const picked = candidates[this.rng.int(candidates.length)];
+      events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
+      const generatorKind: 'mentor' | 'rival' | 'passerby' =
+        picked!.kind === 'mentor' ? 'mentor'
+        : picked!.kind === 'rival' ? 'rival'
+        : 'passerby';
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'npcEncounter',
+        narrativeText: NarrativeGenerator.forNpcEncounter(
+          { age: this.hero.age, kind: generatorKind, realm: this.currentRealmId },
+          this.rng.int(100000),
+        ),
+        payload: { npcInstanceId: picked!.instanceId, kind: picked!.kind },
+      });
+    }
+
+    return events;
+  }
+
   /** Cycle 109 F1 — deterministic 3-card sample for this landmarkId.
    *  PRD §F1.동작(4): seed = controller.seed ^ landmarkId hash ^ 0xb0551.
    *  Called by EncounterEngine via the wired pickBossIntroCards callback. */
@@ -405,10 +622,7 @@ export class CycleControllerV2 {
     // age + run NPC tick a second time. Instead: run resolveEncounter only,
     // then capture bossKills + level milestones + saga records exactly like
     // handleArrival does for the boss branch.
-    if (this.getBuffSnapshot) {
-      const snap = this.getBuffSnapshot();
-      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
-    }
+    this.setEncounterOptsForArrival();
     const combatEvents = this.encounter.resolveEncounter(this.hero, 'boss', landmarkId);
 
     // Mirror handleArrival's per-event handling — bossKills tick, saga
@@ -537,7 +751,7 @@ export class CycleControllerV2 {
         });
       }
     }
-    const agingMul = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+    const agingMul = this.getCombinedAgingMul();
     this.hero.tickAge(agingMul);
     if (this.hero.chapter !== beforeChapter) {
       combatEvents.push({
@@ -603,6 +817,9 @@ export class CycleControllerV2 {
     // Cycle 109 F1: same guard for boss intro pending. Modal open → no further
     // arrivals processed until resolveBossIntro is invoked.
     if (this.bossIntroPending) return [];
+    // Cycle 110 F1: same guard for realm fork pending. Modal open → no further
+    // arrivals processed until resolveRealmFork is invoked.
+    if (this.realmForkPending) return [];
 
     // V3-B: staggered hero recovers (hp full, staggered=false) without
     // processing the encounter content. This arrival "costs" the actionCount
@@ -610,7 +827,7 @@ export class CycleControllerV2 {
     if (this.hero.staggered) {
       const beforeChapter = this.hero.chapter;
       this.hero.recoverFromStagger();
-      const agingMul = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+      const agingMul = this.getCombinedAgingMul();
       this.hero.tickAge(agingMul);
       const events: OverworldEvent[] = [];
       if (this.hero.chapter !== beforeChapter) {
@@ -659,7 +876,7 @@ export class CycleControllerV2 {
           payload: { tier, thresholdLv: preset.thresholdLv, fromLv: preTrialLevel, toLv: this.hero.level },
         });
       }
-      const agingMulTrial = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+      const agingMulTrial = this.getCombinedAgingMul();
       this.hero.tickAge(agingMulTrial);
       if (this.hero.chapter !== beforeChapter) {
         trialEvents.push({
@@ -674,10 +891,7 @@ export class CycleControllerV2 {
       return trialEvents;
     }
 
-    if (this.getBuffSnapshot) {
-      const snap = this.getBuffSnapshot();
-      this.encounter.setOpts({ dropChanceBonus: snap.dropChanceBonus, damping: snap.damping });
-    }
+    this.setEncounterOptsForArrival();
     const events = this.encounter.resolveEncounter(this.hero, kind, landmarkId);
 
     // Cycle 108 F1: fate roll required → controller pauses. No NPC tick, no
@@ -896,7 +1110,7 @@ export class CycleControllerV2 {
         });
       }
     }
-    const agingMul = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
+    const agingMul = this.getCombinedAgingMul();
     this.hero.tickAge(agingMul);
     if (this.hero.chapter !== beforeChapter) {
       events.push({
@@ -972,6 +1186,48 @@ export class CycleControllerV2 {
       if (realm.nextRealm && this.unlockedRealms.includes(realm.nextRealm)) {
         const newRealm = realm.nextRealm;
         const oldRealm = this.currentRealmId;
+
+        // Cycle 110 F1: realm fork intercept. If active buffs cap (4) reached
+        // → emit realm_fork_skipped + saga marker + proceed with normal
+        // transition. Otherwise → emit realm_fork_offered + pause arrival
+        // pipeline. resolveRealmFork performs the deferred transition.
+        if (this.activeRealmForkBuffs.length >= REALM_FORK_BUFF_CAP) {
+          events.push({
+            type: 'realm_fork_skipped',
+            oldRealm,
+            newRealm,
+            reason: 'cap_reached',
+          });
+          this.recordToStore({
+            age: this.hero.age,
+            type: 'realmFork',
+            narrativeText: `${this.hero.age}세, ${findRealm(newRealm).nameKR} 입구의 갈래길이 닫혀 있었다`,
+            payload: { reason: 'cap_reached', from: oldRealm, to: newRealm },
+          });
+          // Fall through to normal transition below.
+        } else {
+          // Offer the fork — capture state + pause. resolveRealmFork performs
+          // the actual transition.
+          const pair = { risk: REALM_FORK_CATALOG.risk, safe: REALM_FORK_CATALOG.safe };
+          const autoChoice = computeRealmForkAutoChoice(this.traits);
+          this.realmForkPending = true;
+          this.realmForkPendingTransition = { from: oldRealm, to: newRealm };
+          this.realmForkPendingCards = pair;
+          events.push({
+            type: 'realm_fork_offered',
+            oldRealm,
+            newRealm,
+            riskCard: pair.risk,
+            safeCard: pair.safe,
+            autoChoice,
+          });
+          // Return early — skip the rest of post-arrival processing. The
+          // deferred transition + realm_entered + post-arrival mirror happen
+          // inside resolveRealmFork (cycle 110 F3 helper).
+          return events;
+        }
+
+        // Normal transition path (cap reached → skip-then-transition).
         this.currentRealmId = newRealm;
         useGameStore.getState().recordSagaRealmTransition(oldRealm, newRealm, this.hero.age, this.hero.chapter);
         // Cycle-1 F2: realm 진입 saga 이벤트 emit (NarrativeGenerator.forRealmEnter wire)

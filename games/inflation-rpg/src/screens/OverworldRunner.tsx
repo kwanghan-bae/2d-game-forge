@@ -11,6 +11,9 @@ import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
+import { RealmForkModal } from './RealmForkModal';
+import type { RealmForkCard, RealmForkCardId } from '../buff/realmForkCatalog';
+import { findRealm } from '../data/realms';
 import { seasonEmoji, seasonNameKR, seasonBonus } from '../season/SeasonState';
 // Cycle 106 F2 — inflation milestone VFX overlay
 import { InflationMilestoneVFX } from '../components/InflationMilestoneVFX';
@@ -101,6 +104,14 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
   // Cycle 109 F1 — boss intro modal state.
   const [bossIntroModal, setBossIntroModal] = useState<{ landmarkId: string; cards: ReadonlyArray<BossIntroCard> } | null>(null);
+  // Cycle 110 F1 — realm fork modal state.
+  const [realmForkModal, setRealmForkModal] = useState<{
+    oldRealm: import('../types').RealmId;
+    newRealm: import('../types').RealmId;
+    riskCard: RealmForkCard;
+    safeCard: RealmForkCard;
+    autoChoice: RealmForkCardId;
+  } | null>(null);
   // Cycle 106 F2 — milestone VFX queue
   const milestoneQueue = useMilestoneStore(s => s.queue);
   const pushMilestone = useMilestoneStore(s => s.pushMilestone);
@@ -249,6 +260,22 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             setBossIntroModal({
               landmarkId: bossIntroOffered.landmarkId,
               cards: bossIntroOffered.cards,
+            });
+          }
+          // Cycle 110 F1: realm fork modal. CycleControllerV2 emits
+          // realm_fork_offered before performing realm transition when fork
+          // is eligible (cap < 4 + not pending). Mount modal — player picks
+          // risk/safe within 6s or auto-choose (trait-based). Resolve callback
+          // applies buff + performs deferred realm transition (events spliced
+          // in below).
+          const realmForkOffered = evs.find(e => e.type === 'realm_fork_offered');
+          if (realmForkOffered && realmForkOffered.type === 'realm_fork_offered') {
+            setRealmForkModal({
+              oldRealm: realmForkOffered.oldRealm,
+              newRealm: realmForkOffered.newRealm,
+              riskCard: realmForkOffered.riskCard,
+              safeCard: realmForkOffered.safeCard,
+              autoChoice: realmForkOffered.autoChoice,
             });
           }
           // V3-H E1 + B3: hero_died comes from handleArrival (EncounterEngine emits it).
@@ -554,6 +581,40 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
                 ctrl2.getHero().rejuvenate(5);
                 ctrl2.recordRejuvenation(5);
                 ctrl2.clearEndCause();
+              }, 2000);
+            }
+            setHudTick(n => n + 1);
+            setLogEntries(ctrl.getRecentSagaEvents(LOG_LIMIT));
+            useGameStore.getState().saveHeroSnapshot(ctrl.getHero().serialize(ctrl.getSeed()));
+          }}
+        />
+      )}
+      {realmForkModal && (
+        <RealmForkModal
+          oldRealm={realmForkModal.oldRealm}
+          newRealm={realmForkModal.newRealm}
+          newRealmNameKR={findRealm(realmForkModal.newRealm).nameKR}
+          riskCard={realmForkModal.riskCard}
+          safeCard={realmForkModal.safeCard}
+          autoChoice={realmForkModal.autoChoice}
+          onResolve={(choice) => {
+            setRealmForkModal(null);
+            const ctrl = useCycleStoreV2.getState().controller;
+            if (!ctrl) return;
+            const resolveEvents = ctrl.resolveRealmFork(choice);
+            // realm_fork_resolved + realm_entered are excluded from light emit
+            // (decision channel). No light delta from these events.
+            // Sync the realm_entered side effects (store + scene + overlay)
+            // exactly like the main arrival handler does.
+            const realmEntered = resolveEvents.find(e => e.type === 'realm_entered');
+            if (realmEntered && realmEntered.type === 'realm_entered') {
+              useGameStore.getState().setCurrentRealm(realmEntered.realmId);
+              setSceneCurrentRealmRef.current?.(realmEntered.realmId);
+              setRealmOverlay({ realmId: realmEntered.realmId, key: Date.now() });
+              if (realmOverlayTimerRef.current) clearTimeout(realmOverlayTimerRef.current);
+              realmOverlayTimerRef.current = setTimeout(() => {
+                setRealmOverlay(null);
+                realmOverlayTimerRef.current = null;
               }, 2000);
             }
             setHudTick(n => n + 1);

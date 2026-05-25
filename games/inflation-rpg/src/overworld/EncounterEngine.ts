@@ -65,6 +65,12 @@ export interface EncounterEngineOpts {
    *  implicitly via heroHpMax buff effects — engine itself does not consume
    *  this. Reserved for future expansion. */
   getBossIntroDropBonus?: () => number;
+  /** Cycle 110 F1: returns the cumulative atk_mul from realm fork buffs
+   *  (1.0 + sum of risk-card atkBonus values). Applied multiplicatively to
+   *  heroAtk inside the combat loop for *both* enemy and boss (vs boss intro
+   *  which is boss-only). PRD §F1.동작(5) — separate channel from boss intro,
+   *  engine multiplies both. */
+  getRealmForkAtkMul?: () => number;
 }
 
 export class EncounterEngine {
@@ -107,7 +113,10 @@ export class EncounterEngine {
 
       const damping = this.opts.damping ?? 1.0;
       const bossAtkMul = isBoss ? (this.opts.getBossIntroAtkMul?.() ?? 1.0) : 1.0;
-      const heroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul));
+      // Cycle 110 F1: realm fork atk mul applies to both enemy + boss combat
+      // (vs boss intro which is boss-only). Separate channel, multiply both.
+      const realmAtkMul = this.opts.getRealmForkAtkMul?.() ?? 1.0;
+      const heroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul));
       let eHp = enemyHp;
       while (eHp > 0 && !hero.staggered) {
         eHp -= heroAtk;

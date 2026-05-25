@@ -443,6 +443,18 @@ function runOneCycle(
       bossIntroFollowup = ctrl.resolveBossIntro(0);
       preFate = [...preFate, ...bossIntroFollowup];
     }
+    // Cycle 110 F1 — sim driver trait-based auto-choice. PRD §sim-real-parity §1.
+    // When realm_fork_offered emits, invoke resolveRealmFork(autoChoice) with
+    // controller.getRealmForkAutoChoice() (deterministic per trait set) and
+    // splice the returned events (realm_fork_resolved + realm_entered) into
+    // the same stream. Mirrors dev server's 6s auto-choice timeout. Order:
+    // realm fork happens at exit-landmark arrival, which is a different
+    // arrival kind than boss intro / fate roll — they never co-occur.
+    const hasRealmFork = preFate.some(e => e.type === 'realm_fork_offered');
+    if (hasRealmFork) {
+      const realmForkFollowup = ctrl.resolveRealmFork(ctrl.getRealmForkAutoChoice());
+      preFate = [...preFate, ...realmForkFollowup];
+    }
     const hasFateRoll = preFate.some(e => e.type === 'fate_roll_required');
     const resolveEvents: OverworldEvent[] = hasFateRoll
       ? ctrl.resolveFateRoll('decline')
