@@ -112,6 +112,19 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     if (cause) ctrl.setEndCause(cause);
     const saga = ctrl.finalize();
     SagaStorage.append(saga);
+    // Cycle 114 N3 — append HallEntry. flat metadata only (saga 본문은
+    // sagaHistory[100] FIFO 에 있음, cycleId 로 lookup 가능). cap = 85
+    // hard limit via hallCapacity top-N union dedup.
+    useGameStore.getState().addHallEntry({
+      id: saga.cycleId,
+      cycleId: saga.cycleId,
+      heroName: saga.hero.name,
+      maxLevel: saga.finalLevel ?? 0,
+      ageEnd: saga.finalAge ?? 0,
+      cause: saga.deathCause ?? '자연사',
+      realm: saga.finalRealm ?? '',
+      finishedAt: saga.finishedAt ?? Date.now(),
+    });
     // Award sponsorGold based on cycle performance. Counters come from the
     // controller's running tally, not an equipment.length approximation.
     const hero = ctrl.getHero();
