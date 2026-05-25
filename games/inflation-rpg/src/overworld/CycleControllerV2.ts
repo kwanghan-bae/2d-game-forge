@@ -17,7 +17,6 @@ import { fieldLevelAtColumn } from '../zone/zoneNavigation';
 import { computeFieldDamping } from '../zone/fieldDamping';
 import { getFieldDiffThreshold, getRejuvDiscount } from '../buff/buffEffects';
 import {
-  BOSS_INTRO_CATALOG,
   bossIntroSampleSeed,
   findBossIntroBuff,
   sampleBossIntroCards,
@@ -27,7 +26,6 @@ import {
 import {
   REALM_FORK_CATALOG,
   computeRealmForkAutoChoice,
-  findRealmForkCard,
   type RealmForkCard,
   type RealmForkCardId,
 } from '../buff/realmForkCatalog';
