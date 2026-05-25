@@ -33,6 +33,7 @@ import {
 } from '../buff/realmForkCatalog';
 import { seasonForAge } from '../season/SeasonState';
 import { rejuvenationCost } from '../hero/rejuvenation';
+import { LevelHistoryBuffer, type LevelSnapshot } from './levelHistory';
 
 /** Cycle 109 F1 — boss intro buff cap. PRD §F1.동작(3): activeBossIntroBuffs
  *  size >= 4 → modal skip + boss_intro_skipped emit. */
@@ -157,6 +158,18 @@ export class CycleControllerV2 {
    *  fork is pending. */
   private realmForkPendingCards: { risk: RealmForkCard; safe: RealmForkCard } | null = null;
 
+  /** Cycle 111 F1 — adaptive-decimated level history captured per controller
+   *  arrival. Read at cycle_end by SagaRecorder.finalize() → CycleSaga.levelHistory
+   *  → CycleResultV2's InflationCurveChart. NOT persisted (cycleSliceV2 has
+   *  no persist middleware so memory-only by default). */
+  private levelHistory: LevelHistoryBuffer = new LevelHistoryBuffer();
+
+  /** Cycle 111 F1 — monotonic snapshot push counter (separate from buffer's
+   *  internal stride counter). Becomes the LevelSnapshot.arrivalIndex value
+   *  so chart x-axis reflects controller progression even after decimation
+   *  drops physical samples. */
+  private arrivalCounter: number = 0;
+
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
     this.traits = opts.traits;
@@ -272,6 +285,7 @@ export class CycleControllerV2 {
           narrativeText: `${this.hero.age}세에 균열석을 소비하여 운명에 저항했다`,
           payload: { outcome: 'accepted' },
         });
+        this.pushLevelSnapshot(); // cycle 111 F1: fate roll accept snapshot
         return events;
       }
       // Fall through to decline branch — UI should have disabled accept, but
@@ -312,6 +326,7 @@ export class CycleControllerV2 {
       }),
       payload: { oldLevel, newLevel },
     });
+    this.pushLevelSnapshot(); // cycle 111 F1: fate roll decline snapshot
     return events;
   }
 
@@ -382,6 +397,25 @@ export class CycleControllerV2 {
    *  Same trait set = same choice. */
   getRealmForkAutoChoice(): RealmForkCardId {
     return computeRealmForkAutoChoice(this.traits);
+  }
+
+  /** Cycle 111 F1 — read-only accessor for the level history ring buffer.
+   *  Returns the underlying samples array (immutable from caller's view).
+   *  Used by SagaRecorder.finalize via the finalize() wrapper below + tests. */
+  getLevelHistory(): readonly LevelSnapshot[] {
+    return this.levelHistory.get();
+  }
+
+  /** Cycle 111 F1 — internal push helper. Called at every handleArrival /
+   *  resolve* return path so the buffer captures the most recent hero state.
+   *  Single call site per path; arrivalCounter increments monotonically. */
+  private pushLevelSnapshot(): void {
+    this.levelHistory.push({
+      arrivalIndex: this.arrivalCounter,
+      level: this.hero.level,
+      age: this.hero.age,
+    });
+    this.arrivalCounter += 1;
   }
 
   /** Cycle 110 F1 — cumulative ATK multiplier from accepted realm fork buffs.
@@ -542,6 +576,7 @@ export class CycleControllerV2 {
       });
     }
 
+    this.pushLevelSnapshot(); // cycle 111 F1: realm-fork resolve snapshot
     return events;
   }
 
@@ -787,6 +822,7 @@ export class CycleControllerV2 {
     this.maybeEmitNaturalDeath(combatEvents);
 
     events.push(...combatEvents);
+    this.pushLevelSnapshot(); // cycle 111 F1: boss-intro resolve snapshot
     return events;
   }
 
@@ -840,6 +876,7 @@ export class CycleControllerV2 {
       }
       this.maybeAutoRejuvenate();
       this.maybeEmitNaturalDeath(events);
+      this.pushLevelSnapshot(); // cycle 111 F1: staggered recovery snapshot
       return events;
     }
     const beforeChapter = this.hero.chapter;
@@ -888,6 +925,7 @@ export class CycleControllerV2 {
       }
       this.maybeAutoRejuvenate();
       this.maybeEmitNaturalDeath(trialEvents);
+      this.pushLevelSnapshot(); // cycle 111 F1: trial-branch snapshot
       return trialEvents;
     }
 
@@ -1326,6 +1364,7 @@ export class CycleControllerV2 {
     // re-emitting death — and the natural-death emit itself uses the current
     // level for oldLevel/newLevel (no -10% penalty; aging isn't a battle loss).
     this.maybeEmitNaturalDeath(events);
+    this.pushLevelSnapshot(); // cycle 111 F1: normal-arrival snapshot
     return events;
   }
 
@@ -1476,6 +1515,10 @@ export class CycleControllerV2 {
       // local currentRealmId 가 사망 직전 값. setCurrentRealmId 를 한 번도
       // 호출 안 한 unit-test 경로는 'base' 로 fallback.
       finalRealm: this.currentRealmId ?? 'base',
+      // Cycle 111 F1+F3: attach the captured level history so the post-cycle
+      // result screen can render the inflation curve chart. Memory-only —
+      // cycleSliceV2 has no persist middleware.
+      levelHistory: this.levelHistory.get(),
     });
   }
 }
