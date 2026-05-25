@@ -376,25 +376,30 @@ export const NarrationVariants = {
     const aged = ageTone(out, ctx.age, seed);
     return realmTone(aged, ctx.realm, seed);
   },
-  shrineHealed(ctx: { age: number; healed: number }, seed = 0): string {
+  shrineHealed(ctx: { age: number; healed: number; realm?: RealmId | null }, seed = 0): string {
     const out = pick(SHRINE_HEALED_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
-  shrineCalm(ctx: { age: number }, seed = 0): string {
+  shrineCalm(ctx: { age: number; realm?: RealmId | null }, seed = 0): string {
     const out = pick(SHRINE_CALM_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
-  moralChoice(ctx: { age: number; choiceNameKR: string }, seed = 0): string {
+  moralChoice(ctx: { age: number; choiceNameKR: string; realm?: RealmId | null }, seed = 0): string {
     const out = pick(MORAL_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
-  skillLearned(ctx: { age: number; skillNameKR: string }, seed = 0): string {
+  skillLearned(ctx: { age: number; skillNameKR: string; realm?: RealmId | null }, seed = 0): string {
     const out = pick(SKILL_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
-  jobUnlock(ctx: { age: number; jobNameKR: string; tier: number }, seed = 0): string {
+  jobUnlock(ctx: { age: number; jobNameKR: string; tier: number; realm?: RealmId | null }, seed = 0): string {
     const out = pick(JOB_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
   rejuvenation(ctx: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return pick(REJUVENATION_VARIANTS, ctx, seed);

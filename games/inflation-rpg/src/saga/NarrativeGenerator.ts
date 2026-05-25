@@ -24,22 +24,22 @@ export class NarrativeGenerator {
     return NarrationVariants.drop(opts, seed);
   }
 
-  static forJobUnlock(opts: { age: number; jobNameKR: string; tier: number }, seed = 0): string {
+  static forJobUnlock(opts: { age: number; jobNameKR: string; tier: number; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.jobUnlock(opts, seed);
   }
 
-  static forSkillLearned(opts: { age: number; skillNameKR: string }, seed = 0): string {
+  static forSkillLearned(opts: { age: number; skillNameKR: string; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.skillLearned(opts, seed);
   }
 
-  static forShrine(opts: { age: number; healed: number }, seed = 0): string {
+  static forShrine(opts: { age: number; healed: number; realm?: RealmId | null }, seed = 0): string {
     if (opts.healed <= 0) {
-      return NarrationVariants.shrineCalm({ age: opts.age }, seed);
+      return NarrationVariants.shrineCalm({ age: opts.age, realm: opts.realm }, seed);
     }
     return NarrationVariants.shrineHealed(opts, seed);
   }
 
-  static forMoralChoice(opts: { age: number; choiceNameKR: string }, seed = 0): string {
+  static forMoralChoice(opts: { age: number; choiceNameKR: string; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.moralChoice(opts, seed);
   }
 
