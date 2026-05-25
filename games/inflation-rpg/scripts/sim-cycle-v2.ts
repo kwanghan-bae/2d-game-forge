@@ -255,6 +255,12 @@ export function runSimV2Chained(opts: SimV2Options): SimV2Output {
       bossKills: result.bossKills,
       drops: result.drops,
     });
+    // Cycle 117 — mirror cycle 116 의 organic crackStones drop (sim-real
+    // parity). boss kill 당 1 stone, max 3/cycle.
+    const crackStoneReward = Math.min(result.bossKills, 3);
+    if (crackStoneReward > 0) {
+      useGameStore.getState().gainCrackStones(crackStoneReward);
+    }
     // Cycle-18 — sim/real parity. Single helper shared with
     // `cycleSliceV2.endCycle`. Any future change to cycle-end semantics
     // propagates automatically.
