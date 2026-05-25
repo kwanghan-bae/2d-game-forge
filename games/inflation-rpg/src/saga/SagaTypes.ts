@@ -1,5 +1,6 @@
 import type { Chapter } from '../hero/HeroLifecycle';
 import type { PersonalitySnapshot } from '../hero/PersonalityState';
+import type { LevelSnapshot } from '../overworld/levelHistory';
 
 export type SagaEventType =
   | 'birth'
@@ -84,4 +85,9 @@ export interface CycleSaga {
   finalRealm?: string;
   deathCause?: DeathCause;
   finishedAt?: number;
+  // Cycle 111 F1+F3 — adaptive-decimated 30-60 sample inflation curve.
+  // Optional for backward compat (v23 saga 가 field 없어도 OK; CycleResultV2
+  // 의 chart 는 `??[]` empty fallback). NOT persisted — cycleSliceV2 zustand
+  // has no persist middleware so memory-only by default.
+  levelHistory?: readonly LevelSnapshot[];
 }

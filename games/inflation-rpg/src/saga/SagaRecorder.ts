@@ -1,6 +1,7 @@
 import type { CycleSaga, SagaChapter, SagaEvent, DeathCause } from './SagaTypes';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import type { PersonalitySnapshot } from '../hero/PersonalityState';
+import type { LevelSnapshot } from '../overworld/levelHistory';
 
 interface FinalizeOpts {
   finalAge: number;
@@ -14,6 +15,9 @@ interface FinalizeOpts {
    *  'base'` so we never produce undefined. Typed as `string` to dodge the
    *  types.ts ↔ SagaTypes.ts cycle (see CycleSaga 정의 주석). */
   finalRealm: string;
+  /** Cycle 111 F1+F3: adaptive-decimated level history captured during the
+   *  cycle. Optional — unit tests calling finalize() directly may omit. */
+  levelHistory?: readonly LevelSnapshot[];
 }
 
 export class SagaRecorder {
@@ -72,6 +76,8 @@ export class SagaRecorder {
       finalRealm: opts.finalRealm,
       deathCause: opts.cause,
       finishedAt,
+      // Cycle 111 F1+F3: passthrough optional level history (memory-only).
+      ...(opts.levelHistory !== undefined ? { levelHistory: opts.levelHistory } : {}),
     };
   }
 }

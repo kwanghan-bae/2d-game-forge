@@ -1,4 +1,5 @@
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
+import { InflationCurveChart } from './InflationCurveChart';
 
 interface Props {
   onBackToMenu: () => void;
@@ -35,6 +36,11 @@ export function CycleResultV2({ onBackToMenu }: Props) {
           영웅 {saga.hero.finalPersonality.heroic} / 자비 {saga.hero.finalPersonality.merciful} /
           신앙 {saga.hero.finalPersonality.pious}
         </div>
+      </div>
+
+      <div data-testid="result-curve-section" style={{ marginTop: 16 }}>
+        <h3 style={{ marginBottom: 8, fontSize: 14 }}>인플레이션 곡선</h3>
+        <InflationCurveChart history={saga.levelHistory ?? []} />
       </div>
 
       <h3 style={{ marginTop: 24, marginBottom: 8 }}>일대기</h3>
