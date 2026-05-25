@@ -301,11 +301,12 @@ describe("Cycle-11 C10-A — hero_died('자연사') emit at age cap", () => {
     expect(naturals.length).toBe(1);
   });
 
-  it("does not pre-empt a '전사' from EncounterEngine in the same arrival", () => {
-    // Hero entering arrival at age 69 with a fatal encounter (1 HP, huge enemy
-    // atk via 0 atkBase makes hero deal 1 damage → eHp never drops to 0 →
-    // hero takeDamage repeatedly → stagger). '전사' wins; '자연사' must not
-    // double-emit even though tickAge would push to 70 afterward.
+  it("does not pre-empt a '전사' from EncounterEngine in the same arrival (post cycle 108 — fate roll intercepts, then decline yields 전사)", () => {
+    // Cycle 108 F1: '전사' is now intercepted into fate_roll_required when the
+    // controller's fateRollConsumed=false. The original cycle-11 invariant
+    // ('자연사' does NOT double-emit in same arrival as a fatal battle) still
+    // holds — it just routes through the fate roll path. Auto-decline the
+    // fate roll to recover the original observable: oldLevel→newLevel '전사'.
     const ctrl = new CycleControllerV2({ seed: 42, traits: [], heroHpMax: 1, heroAtkBase: 0 });
     const hero = ctrl.getHero();
     hero.actionCount = 999;
@@ -314,11 +315,21 @@ describe("Cycle-11 C10-A — hero_died('자연사') emit at age cap", () => {
     hero.hp = 1;
     hero.hpMax = 1;
     const evs = ctrl.handleArrival('enemy', 'wolf_combat_69');
-    const deaths = evs.filter(e => e.type === 'hero_died');
+    // Fate roll intercept fires.
+    expect(evs.some(e => e.type === 'fate_roll_required')).toBe(true);
+    // Auto-decline → synthesizes the deferred '전사' hero_died emit. No '자연사'
+    // double-emit (the cycle-11 invariant) — that's enforced via the
+    // controller.endCause='전사' set inside resolveFateRoll, which gates
+    // maybeEmitNaturalDeath on the next arrival via the existing !endCause check.
+    const declined = ctrl.resolveFateRoll('decline');
+    const deaths = declined.filter(e => e.type === 'hero_died');
     expect(deaths.length).toBe(1);
     const d = deaths[0]!;
     if (d.type !== 'hero_died') throw new Error('narrowing');
     expect(d.cause).toBe('전사');
+    // And no '자연사' anywhere across the original arrival + decline events.
+    const naturals = [...evs, ...declined].filter(e => e.type === 'hero_died' && e.cause === '자연사');
+    expect(naturals.length).toBe(0);
   });
 
   it('does not fire when hero.age < 70 (regression — normal arrivals unaffected)', () => {

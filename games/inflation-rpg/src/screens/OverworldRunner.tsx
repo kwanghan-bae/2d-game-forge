@@ -9,6 +9,7 @@ import { SpendModal } from './SpendModal';
 import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
+import { FateRollModal } from './FateRollModal';
 import { seasonEmoji, seasonNameKR, seasonBonus } from '../season/SeasonState';
 // Cycle 106 F2 — inflation milestone VFX overlay
 import { InflationMilestoneVFX } from '../components/InflationMilestoneVFX';
@@ -95,6 +96,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
+  // Cycle 108 F1 — fate roll modal state.
+  const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
   // Cycle 106 F2 — milestone VFX queue
   const milestoneQueue = useMilestoneStore(s => s.queue);
   const pushMilestone = useMilestoneStore(s => s.pushMilestone);
@@ -221,6 +224,17 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           const seasonChanged = evs.find(e => e.type === 'season_changed');
           if (seasonChanged && seasonChanged.type === 'season_changed') {
             setSceneSeasonRef.current?.(seasonChanged.season);
+          }
+          // Cycle 108 F1: fate roll modal. Controller emits fate_roll_required
+          // when hero would die in combat AND fate is still available this cycle.
+          // Mount modal — player chooses A/B within 5s or auto-decline. Resolve
+          // callback re-enters the hero_died processing pipeline (see below).
+          const fateRollRequired = evs.find(e => e.type === 'fate_roll_required');
+          if (fateRollRequired && fateRollRequired.type === 'fate_roll_required') {
+            setFateRollModal({
+              oldLevel: fateRollRequired.oldLevel,
+              pendingDeathPenaltyNewLevel: fateRollRequired.pendingDeathPenaltyNewLevel,
+            });
           }
           // V3-H E1 + B3: hero_died comes from handleArrival (EncounterEngine emits it).
           // It is NOT a top-level OverworldScene event — move detection here alongside
@@ -430,6 +444,42 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
       {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
       {statusModalOpen && <StatusModal onClose={() => setStatusModalOpen(false)} />}
+      {fateRollModal && (
+        <FateRollModal
+          oldLevel={fateRollModal.oldLevel}
+          pendingDeathPenaltyNewLevel={fateRollModal.pendingDeathPenaltyNewLevel}
+          onResolve={(choice) => {
+            // Close modal first so the React render doesn't double-fire.
+            setFateRollModal(null);
+            const ctrl = useCycleStoreV2.getState().controller;
+            if (!ctrl) return;
+            const resolveEvents = ctrl.resolveFateRoll(choice);
+            // Light from these events is 0 by design (excluded list). Still
+            // push HUD tick + log refresh + saga snapshot so UI reflects the
+            // hero state changes (hp on accept, level penalty on decline).
+            setHudTick(n => n + 1);
+            setLogEntries(ctrl.getRecentSagaEvents(LOG_LIMIT));
+            useGameStore.getState().saveHeroSnapshot(ctrl.getHero().serialize(ctrl.getSeed()));
+            // If the resolution produced a hero_died (= decline path),
+            // re-enter the existing B3 free-rejuv timer flow. Mirrors the
+            // arrival handler's hero_died branch (see line 234 below).
+            const heroDied = resolveEvents.find(e => e.type === 'hero_died');
+            if (heroDied && heroDied.type === 'hero_died') {
+              if (heroDied.cause === '전사') {
+                if (autoRejuvTimerRef.current) clearTimeout(autoRejuvTimerRef.current);
+                autoRejuvTimerRef.current = setTimeout(() => {
+                  autoRejuvTimerRef.current = null;
+                  const ctrl2 = useCycleStoreV2.getState().controller;
+                  if (!ctrl2) return;
+                  ctrl2.getHero().rejuvenate(5);
+                  ctrl2.recordRejuvenation(5);
+                  ctrl2.clearEndCause();
+                }, 2000);
+              }
+            }
+          }}
+        />
+      )}
 
       <style>{`
         @keyframes forgeChapterFade {
