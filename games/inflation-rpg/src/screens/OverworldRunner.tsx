@@ -10,6 +10,9 @@ import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
 import { seasonEmoji, seasonNameKR, seasonBonus } from '../season/SeasonState';
+// Cycle 106 F2 — inflation milestone VFX overlay
+import { InflationMilestoneVFX } from '../components/InflationMilestoneVFX';
+import { useMilestoneStore } from '../store/milestoneStore';
 
 interface Props {
   onCycleEnd: () => void;
@@ -92,6 +95,11 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
+  // Cycle 106 F2 — milestone VFX queue
+  const milestoneQueue = useMilestoneStore(s => s.queue);
+  const pushMilestone = useMilestoneStore(s => s.pushMilestone);
+  const dequeueMilestone = useMilestoneStore(s => s.dequeueMilestone);
+  const clearMilestones = useMilestoneStore(s => s.clearMilestones);
   const setSceneSpeedRef = useRef<((m: number) => void) | null>(null);
   const setSceneUnlockedRealmsRef = useRef<((r: readonly import('../types').RealmId[]) => void) | null>(null);
   const setSceneCurrentRealmRef = useRef<((r: import('../types').RealmId) => void) | null>(null);
@@ -195,6 +203,20 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           if (realmUnlocked && realmUnlocked.type === 'realm_unlocked') {
             setSceneUnlockedRealmsRef.current?.(controller.getUnlockedRealms());
           }
+          // Cycle 106 F2 — inflation milestone events → push to FIFO VFX queue.
+          // Multiple tiers in one arrival emit ascending; pushed in same order
+          // (ledger guarantees uniqueness per cycle).
+          for (const ev of evs) {
+            if (ev.type === 'inflation_milestone') {
+              pushMilestone({
+                tier: ev.tier,
+                thresholdLv: ev.thresholdLv,
+                fromLv: ev.fromLv,
+                toLv: ev.toLv,
+                atAge: ev.atAge,
+              });
+            }
+          }
           // V3-H F6: season changed → update scene bg tint. Store already updated by controller.
           const seasonChanged = evs.find(e => e.type === 'season_changed');
           if (seasonChanged && seasonChanged.type === 'season_changed') {
@@ -237,6 +259,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
               if (!endedRef.current) {
                 endedRef.current = true;
                 useGameStore.getState().clearHeroSnapshot();
+                clearMilestones();
                 endCycle('자연사');
                 onCycleEnd();
               }
@@ -258,6 +281,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           endedRef.current = true;
           // V3-H B2: cycle ends naturally → clear hero snapshot so next visit spawns fresh hero.
           useGameStore.getState().clearHeroSnapshot();
+          // Cycle 106 F2 — flush in-flight milestone VFX queue at cycle boundary.
+          clearMilestones();
           // Cycle-5 F3: forward optional cause (e.g. '무위') so the saga
           // records pathfinder-exhausted runs distinctly from '자연사'.
           endCycle(event.cause);
@@ -417,6 +442,18 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           100% { opacity: 0; transform: translateY(-12px); }
         }
       `}</style>
+      {/* Cycle 106 F2 — inflation milestone VFX overlay (queue head only). */}
+      {milestoneQueue.length > 0 && (() => {
+        const head = milestoneQueue[0]!;
+        return (
+          <InflationMilestoneVFX
+            key={head.id}
+            tier={head.tier}
+            thresholdLv={head.thresholdLv}
+            onDone={dequeueMilestone}
+          />
+        );
+      })()}
       {chapterOverlay && (
         <div
           key={chapterOverlay.key}

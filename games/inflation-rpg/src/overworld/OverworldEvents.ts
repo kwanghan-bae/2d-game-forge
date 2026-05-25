@@ -30,4 +30,13 @@ export type OverworldEvent =
   // V3-H F5: trial result
   | { type: 'trial_resolved'; trialLv: number; outcome: 'win' | 'lose'; oldLevel?: number; newLevel?: number }
   // V3-H F6: season change
-  | { type: 'season_changed'; season: import('../types').SeasonId };
+  | { type: 'season_changed'; season: import('../types').SeasonId }
+  // Cycle 106 F1: inflation milestone tier crossing (8 tier × 10^n level).
+  // controller 가 levelUpBatch 직후 fromLv→toLv 의 tier crossing 검출 후 ascending emit.
+  // 같은 cycle 안 같은 tier 재발화 금지 (in-memory ledger).
+  | { type: 'inflation_milestone';
+      tier: import('../data/milestones').MilestoneTier;
+      thresholdLv: number;
+      fromLv: number;
+      toLv: number;
+      atAge: number };
