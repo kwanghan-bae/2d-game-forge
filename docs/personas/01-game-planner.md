@@ -23,6 +23,9 @@
 - **Sim smoke 누적 slow-down 룰 (Cycle 18-20 finding)**: sim smoke test (`pnpm test` 의 vitest 안에 포함) 가 누적 변경으로 felt slow 발생 시, sim smoke 의 `testTimeout` 을 늘리는 미봉책 대신 root cause 분석 carry-over 로 격상.
   - **Why**: Cycle 14-18 의 누적 변경 (controller helper extract / realm rotation / chained sim / endCycle helper / staggered) 후 cycle 20 smoke (default maxArrivals ageEnd ≥ 65) 가 30s timeout 부족 → 600s 로 증가. Subagent watchdog 600s timeout 과 가까워 mega-cycle subagent stall 패턴 (cycle 18-20 3 회 발생) 의 직접 원인.
   - **How to apply**: sim smoke testTimeout 늘리기 commit 은 carry-over 명시 의무 (`cycle-N-result.md` 의 carry-over 에 "sim smoke 누적 slow root cause 분석" 항목). Subagent dispatch 의 prompt 에 sim 측정 skip 또는 매우 작은 N (예: cycle 30 cycle quick) 만 권장.
+- **카테고리 균형 룰 (Cycle 105 finding — advisor pivot)**: 같은 카테고리 (narrative / system / UI / VFX / meta / 운영) 가 **3 cycle 연속** 시 다음 cycle 의 카테고리는 *반드시* 다른 카테고리. spec 단계에서 카테고리 태그 명시.
+  - **Why**: cycle 35-39 (D7 age tone) + cycle 101-104 (realm tone wiring) 가 모두 narrative tone 4-5 연속이었음. v1 의 35-39 는 cycle 1 spec 의 carry-over 라 정당했지만, v2 의 101-104 는 advisor 가 "narrative 외" 를 직접 지적하기까지 self-correct 못함. 룰 부재 시 saturation 카테고리에 머무는 표류 위험.
+  - **How to apply**: cycle-N-prd.md 첫 줄 또는 §우선순위 위에 `category: <narrative|system|UI|VFX|meta|운영>` 명시. 직전 2 cycle 의 카테고리 확인 → 같으면 본 cycle 은 다른 카테고리 강제. 카테고리 saturation 의 *역* 시그널 (3 회 반복은 spec 정식화 시점이 아니라 pivot 시점)로 3 의 규칙을 inverse 적용.
 
 ## 책임
 
