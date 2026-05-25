@@ -303,6 +303,8 @@ export interface MetaState {
   eternalSaga: EternalSagaState;
   /** V3-H — 현재 계절 (cycle 기반, hero age 0/15/30/45 마다 전환). */
   season: SeasonState;
+  /** Cycle 112-113 — Hall of Sagas (영구 leaderboard, local only). v25 추가. */
+  hall: import('./data/hallTypes').HallState;
 }
 
 // Phase G — Ascension Tree (성좌)
