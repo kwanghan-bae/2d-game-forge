@@ -22,7 +22,9 @@ export type SagaEventType =
   // Cycle-1 F3: NPC dead-path 회수 (handleArrival recordToStore wire)
   | 'npcEncounter'
   | 'npcDeath'
-  | 'familyEvent';
+  | 'familyEvent'
+  // Cycle 106 F1: inflation milestone tier 도달 saga 기록 (F3 의 ★ pin source).
+  | 'milestone';
 
 // Cycle-5 F3: '무위' = pathfinder candidates-exhausted (출구 없음 / 길을 잃다).
 // 진짜 자연 수명 도달과 명확히 구분되어야 동급 stale-realm bug 가 즉시 보임.

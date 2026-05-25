@@ -5,6 +5,7 @@ import { SeededRng } from '../cycle/SeededRng';
 import { SagaRecorder } from '../saga/SagaRecorder';
 import { NarrativeGenerator } from '../saga/NarrativeGenerator';
 import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
+import { tiersCrossed, presetForTier, type MilestoneTier } from '../data/milestones';
 import { lookupDrop } from './dropTable';
 import { findRealm } from '../data/realms';
 import type { TraitId } from '../cycle/traits';
@@ -55,6 +56,10 @@ export class CycleControllerV2 {
   private onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
   private currentRealmId: import('../types').RealmId | null = null;
   private unlockedRealms: readonly import('../types').RealmId[] = ['base'];
+  /** Cycle 106 F1 — per-cycle (= per-controller-instance) milestone tier ledger.
+   *  Set<tier> 이미 emit 된 tier 추적. 같은 cycle 안 같은 tier 두 번 emit 금지.
+   *  controller 가 cycle 단위로 새로 생성되므로 별도 reset hook 불필요. */
+  private milestoneLedger: Set<MilestoneTier> = new Set();
 
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
@@ -149,7 +154,36 @@ export class CycleControllerV2 {
 
     // V3-H F5: trial 은 controller 에서 직접 처리 (fieldLevel / damping 필요)
     if (kind === 'trial') {
+      // Cycle 106 F1: capture pre-trial level so direct hero.level mutations
+      // (resolveTrialEncounter writes hero.level += 3 / *= 0.85) still feed
+      // the crossing detector. Trial is the only V3 path where hero level
+      // changes outside the level_up event channel.
+      const preTrialLevel = this.hero.level;
       const trialEvents = this.resolveTrialEncounter(landmarkId);
+      // Apply milestone detector on the trial-win delta. resolveTrialEncounter
+      // already returns the `trial_resolved` event with outcome; we don't
+      // synthesize a level_up event (trial isn't xp-based), but the milestone
+      // crossing rule still applies — fromLv < threshold ≤ toLv.
+      const trialCrossings = tiersCrossed(preTrialLevel, this.hero.level);
+      for (const tier of trialCrossings) {
+        if (this.milestoneLedger.has(tier)) continue;
+        this.milestoneLedger.add(tier);
+        const preset = presetForTier(tier);
+        trialEvents.push({
+          type: 'inflation_milestone',
+          tier,
+          thresholdLv: preset.thresholdLv,
+          fromLv: preTrialLevel,
+          toLv: this.hero.level,
+          atAge: this.hero.age,
+        });
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'milestone',
+          narrativeText: `${this.hero.age}세에 레벨 ${preset.thresholdLv.toLocaleString('en-US')} 돌파`,
+          payload: { tier, thresholdLv: preset.thresholdLv, fromLv: preTrialLevel, toLv: this.hero.level },
+        });
+      }
       const agingMulTrial = this.getBuffSnapshot?.().agingSpeedMul ?? 1.0;
       this.hero.tickAge(agingMulTrial);
       if (this.hero.chapter !== beforeChapter) {
@@ -294,6 +328,30 @@ export class CycleControllerV2 {
         }, this.rng.int(100000)),
         payload: { from: levelFrom, to: levelTo, count: levelCount },
       });
+
+      // Cycle 106 F1: 8-tier inflation milestone crossing detector.
+      // levelFrom→levelTo 사이의 모든 ×10 경계 crossing 을 ascending 으로 emit.
+      // ledger 가 이미 emit 한 tier 차단 (cycle 단위 in-memory). saga 도 같이 기록.
+      const crossings = tiersCrossed(levelFrom, levelTo);
+      for (const tier of crossings) {
+        if (this.milestoneLedger.has(tier)) continue;
+        this.milestoneLedger.add(tier);
+        const preset = presetForTier(tier);
+        events.push({
+          type: 'inflation_milestone',
+          tier,
+          thresholdLv: preset.thresholdLv,
+          fromLv: levelFrom,
+          toLv: levelTo,
+          atAge: this.hero.age,
+        });
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'milestone',
+          narrativeText: `${this.hero.age}세에 레벨 ${preset.thresholdLv.toLocaleString('en-US')} 돌파`,
+          payload: { tier, thresholdLv: preset.thresholdLv, fromLv: levelFrom, toLv: levelTo },
+        });
+      }
     }
 
     // After resolving the encounter, check for job-unlock milestones.

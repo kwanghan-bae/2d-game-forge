@@ -52,3 +52,20 @@
   --forge-stat-bp: var(--color-forge-stat-bp);
   --forge-danger: var(--color-forge-danger);
 }
+
+/*
+ * Cycle 106 F2 — Inflation Milestone palette (content data, not theme tokens).
+ * 8 tier × 10^n level threshold. `--color-milestone-tier-N` 네임스페이스로 wrap.
+ * theme tokens (forge-*) 와 분리. PRD §F2 의 8-tier 표 = single source of truth,
+ * 본 css 가 그것의 raw hex literal.
+ */
+:root {
+  --color-milestone-tier-1: #88ff88; /* tier 1 — lv 100 (연두) */
+  --color-milestone-tier-2: #88ddff; /* tier 2 — lv 1k (시안) */
+  --color-milestone-tier-3: #ffdd44; /* tier 3 — lv 10k (금) */
+  --color-milestone-tier-4: #ff8844; /* tier 4 — lv 100k (오렌지) */
+  --color-milestone-tier-5: #ff44aa; /* tier 5 — lv 1M (마젠타) */
+  --color-milestone-tier-6: #aa44ff; /* tier 6 — lv 10M (보라) */
+  --color-milestone-tier-7: #ffffff; /* tier 7 — lv 100M (백광) */
+  --color-milestone-tier-8: #ff0000; /* tier 8 — lv 1G (적색 + rainbow gradient overlay) */
+}
