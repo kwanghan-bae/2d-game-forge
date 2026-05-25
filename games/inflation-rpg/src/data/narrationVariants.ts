@@ -413,15 +413,18 @@ export const NarrationVariants = {
     const prefix = SEASON_REALM_PREFIX[ctx.realm];
     return pick(variants, { age: ctx.age, prefix }, seed);
   },
-  npcEncounter(ctx: { age: number; kind: 'mentor' | 'rival' | 'passerby' }, seed = 0): string {
+  npcEncounter(ctx: { age: number; kind: 'mentor' | 'rival' | 'passerby'; realm?: RealmId | null }, seed = 0): string {
     const variants = NPC_ENCOUNTER_VARIANTS[ctx.kind];
-    return pick(variants, { age: ctx.age }, seed);
+    const out = pick(variants, { age: ctx.age }, seed);
+    return realmTone(out, ctx.realm, seed);
   },
-  npcDeath(ctx: { age: number }, seed = 0): string {
-    return pick(NPC_DEATH_VARIANTS, { age: ctx.age }, seed);
+  npcDeath(ctx: { age: number; realm?: RealmId | null }, seed = 0): string {
+    const out = pick(NPC_DEATH_VARIANTS, { age: ctx.age }, seed);
+    return realmTone(out, ctx.realm, seed);
   },
-  familyEvent(ctx: { age: number; type: 'marriage' | 'child_born' | 'child_grown' }, seed = 0): string {
+  familyEvent(ctx: { age: number; type: 'marriage' | 'child_born' | 'child_grown'; realm?: RealmId | null }, seed = 0): string {
     const variants = FAMILY_EVENT_VARIANTS[ctx.type];
-    return pick(variants, { age: ctx.age }, seed);
+    const out = pick(variants, { age: ctx.age }, seed);
+    return realmTone(out, ctx.realm, seed);
   },
 };

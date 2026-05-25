@@ -357,7 +357,7 @@ export class CycleControllerV2 {
             age: this.hero.age,
             type: 'familyEvent',
             narrativeText: NarrativeGenerator.forFamilyEvent(
-              { age: this.hero.age, type: 'marriage' },
+              { age: this.hero.age, type: 'marriage', realm: this.currentRealmId },
               this.rng.int(100000),
             ),
             payload: { eventKind: 'marriage', npcInstanceId: spouse.instanceId },
@@ -372,7 +372,7 @@ export class CycleControllerV2 {
             age: this.hero.age,
             type: 'familyEvent',
             narrativeText: NarrativeGenerator.forFamilyEvent(
-              { age: this.hero.age, type: 'child_born' },
+              { age: this.hero.age, type: 'child_born', realm: this.currentRealmId },
               this.rng.int(100000),
             ),
             payload: { eventKind: 'child_birth', npcInstanceId: child.instanceId },
@@ -415,7 +415,7 @@ export class CycleControllerV2 {
           age: this.hero.age,
           type: 'npcDeath',
           narrativeText: NarrativeGenerator.forNpcDeath(
-            { age: this.hero.age },
+            { age: this.hero.age, realm: this.currentRealmId },
             this.rng.int(100000),
           ),
           payload: { npcInstanceId: npc.instanceId, kind: npc.kind },
@@ -437,7 +437,7 @@ export class CycleControllerV2 {
         age: this.hero.age,
         type: 'npcEncounter',
         narrativeText: NarrativeGenerator.forNpcEncounter(
-          { age: this.hero.age, kind: generatorKind },
+          { age: this.hero.age, kind: generatorKind, realm: this.currentRealmId },
           this.rng.int(100000),
         ),
         payload: { npcInstanceId: picked!.instanceId, kind: picked!.kind },
