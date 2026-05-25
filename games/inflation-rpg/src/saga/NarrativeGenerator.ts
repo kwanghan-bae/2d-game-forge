@@ -3,22 +3,24 @@ import type { RealmId, SeasonId } from '../types';
 import { NarrationVariants } from '../data/narrationVariants';
 
 export class NarrativeGenerator {
-  /** seed = 0 (기본값) 이면 항상 첫 번째(기존) 텍스트 → 하위 호환. */
-  static forBattle(opts: { age: number; enemyNameKR: string }, seed = 0): string {
+  /** seed = 0 (기본값) 이면 항상 첫 번째(기존) 텍스트 → 하위 호환.
+   *  Cycle 101 — opts.realm 추가 (optional, null 허용). */
+  static forBattle(opts: { age: number; enemyNameKR: string; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.battle(opts, seed);
   }
 
-  static forLevelUp(opts: { age: number; newLevel: number }, seed = 0): string {
+  static forLevelUp(opts: { age: number; newLevel: number; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.levelUp(opts, seed);
   }
 
-  /** Batch form — seed 기반으로 변형 선택. count = 1 이면 단일 form 으로 위임. */
-  static forLevelUpBatch(opts: { age: number; fromLevel: number; toLevel: number; count: number }, seed = 0): string {
-    if (opts.count <= 1) return NarrativeGenerator.forLevelUp({ age: opts.age, newLevel: opts.toLevel }, seed);
+  /** Batch form — seed 기반으로 변형 선택. count = 1 이면 단일 form 으로 위임.
+   *  Cycle 101: realm 도 delegate forward. */
+  static forLevelUpBatch(opts: { age: number; fromLevel: number; toLevel: number; count: number; realm?: RealmId | null }, seed = 0): string {
+    if (opts.count <= 1) return NarrativeGenerator.forLevelUp({ age: opts.age, newLevel: opts.toLevel, realm: opts.realm }, seed);
     return NarrationVariants.levelUpBatch(opts, seed);
   }
 
-  static forDrop(opts: { age: number; itemNameKR: string }, seed = 0): string {
+  static forDrop(opts: { age: number; itemNameKR: string; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.drop(opts, seed);
   }
 

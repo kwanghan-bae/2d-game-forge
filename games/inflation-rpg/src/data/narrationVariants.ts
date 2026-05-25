@@ -318,23 +318,63 @@ function ageTone(text: string, age: number, seed: number): string {
   return ageFinalTone(text, age, seed);
 }
 
+/* ─────────────────── Cycle 101 — realmTone dispatcher ───────────────────
+ * 6 realm × 4 variant (variant 0 = 원문 그대로 = backward compat).
+ *
+ * 차이점 (의도된 분리):
+ *   ageTone   : `^${age}세에 ` prefix 영역 replace
+ *   realmTone : 본문 끝에 사이절 어휘 append (`${text} ${suffix}.`)
+ * 두 영역이 절대 겹치지 않아 composition 안전.
+ *
+ * Composition order (호출자 안):
+ *   pick → ageTone → realmTone
+ *
+ * seed=0 → 항상 variant 0 (원문 그대로) → 기존 fixture 100% 호환.
+ * realm=null/undefined → 원문 그대로 (early hero spawn 전 graceful).
+ */
+const REALM_SUFFIX_CATALOG: Record<RealmId, readonly [string, string, string]> = {
+  base: ['들판에서', '바람에 흔들리며', '흙냄새 속에서'],
+  sea: ['파도 곁에서', '심해의 침묵 속', '갯바람을 가르며'],
+  volcano: ['용암의 열기 속', '검은 재 위에서', '붉은 빛을 받으며'],
+  underworld: ['황천의 그림자 속', '차가운 손 사이', '꺼진 빛 너머에서'],
+  heaven: ['빛의 다리 위', '구름의 결 사이', '별빛 가루를 밟으며'],
+  chaos: ['혼돈의 중심에서', '시간을 잊은 곳', '경계가 흐려진 자리에서'],
+};
+
+export function realmTone(
+  text: string,
+  realm: RealmId | null | undefined,
+  seed: number,
+): string {
+  if (!realm) return text;
+  if (seed === 0) return text;
+  const variant = ((seed % 4) + 4) % 4;
+  if (variant === 0) return text;
+  const suffix = REALM_SUFFIX_CATALOG[realm][variant - 1];
+  return `${text} ${suffix}.`;
+}
+
 /* ─────────────────── 공개 API ───────────────────────────────── */
 export const NarrationVariants = {
-  battle(ctx: { age: number; enemyNameKR: string }, seed = 0): string {
+  battle(ctx: { age: number; enemyNameKR: string; realm?: RealmId | null }, seed = 0): string {
     const out = pick(BATTLE_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
-  levelUp(ctx: { age: number; newLevel: number }, seed = 0): string {
+  levelUp(ctx: { age: number; newLevel: number; realm?: RealmId | null }, seed = 0): string {
     const out = pick(LEVELUP_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
-  levelUpBatch(ctx: { age: number; fromLevel: number; toLevel: number; count: number }, seed = 0): string {
+  levelUpBatch(ctx: { age: number; fromLevel: number; toLevel: number; count: number; realm?: RealmId | null }, seed = 0): string {
     const out = pick(LEVELUP_BATCH_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
-  drop(ctx: { age: number; itemNameKR: string }, seed = 0): string {
+  drop(ctx: { age: number; itemNameKR: string; realm?: RealmId | null }, seed = 0): string {
     const out = pick(DROP_VARIANTS, ctx, seed);
-    return ageTone(out, ctx.age, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
   shrineHealed(ctx: { age: number; healed: number }, seed = 0): string {
     const out = pick(SHRINE_HEALED_VARIANTS, ctx, seed);
