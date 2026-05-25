@@ -817,6 +817,46 @@ export class CycleControllerV2 {
       combatEvents.push({ type: 'season_changed', season: newSeason });
     }
 
+    // Cycle 118 — mirror handleArrival's V3-E NPC tick + npc_encounter block
+    // (cycle 109 boss intro carry-over, finally회수 after cycle 110 의
+    // resolveRealmFork 동일 fix). 보스 인트로 후속 arrival 의 NPC tick
+    // 누락 회귀 봉인.
+    const npcState118 = useGameStore.getState().run.npcs;
+    for (const npc of npcState118) {
+      const wasAlive = npc.isAlive;
+      tickNpc(npc);
+      if (wasAlive && !npc.isAlive) {
+        combatEvents.push({ type: 'npc_died', npcInstanceId: npc.instanceId });
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'npcDeath',
+          narrativeText: NarrativeGenerator.forNpcDeath(
+            { age: this.hero.age, realm: this.currentRealmId },
+            this.rng.int(100000),
+          ),
+          payload: { npcInstanceId: npc.instanceId, kind: npc.kind },
+        });
+      }
+    }
+    const candidates118 = npcState118.filter(n => n.isAlive && n.zoneRealmId === this.currentRealmId);
+    if (candidates118.length > 0 && this.rng.chance(0.2)) {
+      const picked = candidates118[this.rng.int(candidates118.length)];
+      combatEvents.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
+      const generatorKind: 'mentor' | 'rival' | 'passerby' =
+        picked!.kind === 'mentor' ? 'mentor'
+        : picked!.kind === 'rival' ? 'rival'
+        : 'passerby';
+      this.recordToStore({
+        age: this.hero.age,
+        type: 'npcEncounter',
+        narrativeText: NarrativeGenerator.forNpcEncounter(
+          { age: this.hero.age, kind: generatorKind, realm: this.currentRealmId },
+          this.rng.int(100000),
+        ),
+        payload: { npcInstanceId: picked!.instanceId, kind: picked!.kind },
+      });
+    }
+
     // Cycle-11 C10-B auto-rejuv + C10-A natural death — same order as handleArrival.
     this.maybeAutoRejuvenate();
     this.maybeEmitNaturalDeath(combatEvents);
