@@ -166,3 +166,47 @@ describe('Cycle 101 F2 — NarrationVariants ctx.realm wiring', () => {
     expect(() => NarrationVariants.levelUp({ age: 5, newLevel: 2 }, 7)).not.toThrow();
   });
 });
+
+describe('Cycle 102 F1 — 5 additional channels (shrine/moral/skill/job)', () => {
+  it('shrineHealed: realm wired — heaven suffix 등장', () => {
+    const out = NarrationVariants.shrineHealed({ age: 30, healed: 500, realm: 'heaven' }, 1);
+    expect(out).toContain('빛의 다리 위');
+  });
+
+  it('shrineCalm: realm wired — sea suffix 등장', () => {
+    const out = NarrationVariants.shrineCalm({ age: 25, realm: 'sea' }, 1);
+    expect(out).toContain('파도 곁에서');
+  });
+
+  it('moralChoice: realm wired — volcano suffix 등장', () => {
+    const out = NarrationVariants.moralChoice({ age: 40, choiceNameKR: '구원의 길', realm: 'volcano' }, 2);
+    expect(out).toContain('검은 재 위에서');
+  });
+
+  it('skillLearned: realm wired — underworld suffix 등장', () => {
+    const out = NarrationVariants.skillLearned({ age: 45, skillNameKR: '죽음의 일격', realm: 'underworld' }, 3);
+    expect(out).toContain('꺼진 빛 너머에서');
+  });
+
+  it('jobUnlock: realm wired — chaos suffix 등장', () => {
+    const out = NarrationVariants.jobUnlock({ age: 50, jobNameKR: '광기의 마도사', tier: 3, realm: 'chaos' }, 1);
+    expect(out).toContain('혼돈의 중심에서');
+  });
+
+  it('regression: 5 channel — realm 없이 호출 throw 0', () => {
+    expect(() => NarrationVariants.shrineHealed({ age: 5, healed: 100 }, 7)).not.toThrow();
+    expect(() => NarrationVariants.shrineCalm({ age: 5 }, 7)).not.toThrow();
+    expect(() => NarrationVariants.moralChoice({ age: 5, choiceNameKR: '결단' }, 7)).not.toThrow();
+    expect(() => NarrationVariants.skillLearned({ age: 5, skillNameKR: '검술' }, 7)).not.toThrow();
+    expect(() => NarrationVariants.jobUnlock({ age: 5, jobNameKR: '전사', tier: 1 }, 7)).not.toThrow();
+  });
+
+  it('seed=0 backward compat: 5 channel 모두 realm 무시', () => {
+    const realms: RealmId[] = ['base', 'sea', 'volcano', 'underworld', 'heaven', 'chaos'];
+    for (const realm of realms) {
+      const a = NarrationVariants.shrineHealed({ age: 30, healed: 100, realm }, 0);
+      const b = NarrationVariants.shrineHealed({ age: 30, healed: 100 }, 0);
+      expect(a).toBe(b);
+    }
+  });
+});

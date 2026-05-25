@@ -224,7 +224,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'skillLearned',
-          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR }, this.rng.int(100000)),
+          narrativeText: NarrativeGenerator.forSkillLearned({ age: this.hero.age, skillNameKR: ev.skillNameKR, realm: this.currentRealmId }, this.rng.int(100000)),
           payload: { skillId: ev.skillId, atkBefore: ev.atkBefore, atkAfter: ev.atkAfter },
         });
       }
@@ -232,7 +232,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'shrine',
-          narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed }, this.rng.int(100000)),
+          narrativeText: NarrativeGenerator.forShrine({ age: this.hero.age, healed: ev.healed, realm: this.currentRealmId }, this.rng.int(100000)),
           payload: { landmarkId: ev.landmarkId },
         });
       }
@@ -261,7 +261,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'moralChoice',
-          narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR }, this.rng.int(100000)),
+          narrativeText: NarrativeGenerator.forMoralChoice({ age: this.hero.age, choiceNameKR: ev.nameKR, realm: this.currentRealmId }, this.rng.int(100000)),
           payload: { choice: ev.choice, dim: ev.dim, delta: ev.delta },
         });
       }
@@ -306,7 +306,7 @@ export class CycleControllerV2 {
         this.recordToStore({
           age: this.hero.age,
           type: 'jobUnlock',
-          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier }, this.rng.int(100000)),
+          narrativeText: NarrativeGenerator.forJobUnlock({ age: this.hero.age, jobNameKR: j.jobNameKR, tier: j.tier, realm: this.currentRealmId }, this.rng.int(100000)),
           payload: { jobId: j.jobId, tier: j.tier },
         });
       }
