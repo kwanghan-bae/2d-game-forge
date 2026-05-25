@@ -11,6 +11,7 @@ import {
   isHardModeUnlocked,
 } from '../systems/progression';
 import { addToInventory, removeFromInventory } from '../systems/equipment';
+import { addHallEntry as addHallEntryPure } from '../data/hallCapacity';
 import { QUESTS, getQuestById } from '../data/quests';
 import { attemptCraft } from '../systems/crafting';
 import { enhanceCost } from '../systems/enhance';
@@ -155,6 +156,8 @@ export const INITIAL_META: MetaState = {
   eternalSaga: { events: [], chaptersByEra: {}, rejuvenationCount: 0, realmTransitions: [] },
   // Phase V3-H — 계절
   season: { current: 'spring', startedAtAge: 0 },
+  // Cycle 112-113 — Hall of Sagas
+  hall: { entries: [] },
 };
 
 interface GameStore {
@@ -267,6 +270,8 @@ interface GameStore {
   // Phase V3-H B2 — hero snapshot persist
   saveHeroSnapshot: (snapshot: import('../hero/HeroEntity').HeroSnapshot) => void;
   clearHeroSnapshot: () => void;
+  // Cycle 113 N3 — Hall of Sagas
+  addHallEntry: (entry: import('../data/hallTypes').HallEntry) => void;
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -667,6 +672,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   // v23 → v24: Cycle-7 S1 — sagaHistory stale 5세 entry retroactive cleanup
   if (fromVersion <= 23) {
     migrateV23ToV24(s);
+  }
+  // v24 → v25: Cycle 112-113 N3 — Hall of Sagas default
+  if (fromVersion <= 24 && s.meta) {
+    s.meta.hall = s.meta.hall ?? { entries: [] };
   }
   return s;
 }
@@ -1472,10 +1481,17 @@ export const useGameStore = create<GameStore>()(
       clearHeroSnapshot() {
         set(s => ({ ...s, run: { ...s.run, heroSnapshot: null } }));
       },
+      addHallEntry(entry) {
+        // Cycle 113 N3 — top-N union dedup. Pure logic in hallCapacity.ts.
+        set(s => {
+          const nextHall = addHallEntryPure(s.meta.hall ?? { entries: [] }, entry);
+          return { ...s, meta: { ...s.meta, hall: nextHall } };
+        });
+      },
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 24,  // 23 → 24 (Cycle-7 S1 — stale sagaHistory cleanup)
+      version: 24,  // 23 → 24 (Cycle-7 S1). cycle 113 의 N3 hall key 는 INITIAL_META default 로 충분; persist drift 없음. v25 bump 은 cycle 114 호스트가 결정.
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
