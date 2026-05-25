@@ -7,7 +7,7 @@ interface Props {
   onClose: () => void;
 }
 
-type EventFilter = 'all' | 'battle' | 'drop' | 'levelUp' | 'realm' | 'npc' | 'rejuv' | 'sightseeing' | 'meditation' | 'trial' | 'season';
+type EventFilter = 'all' | 'battle' | 'drop' | 'levelUp' | 'realm' | 'npc' | 'rejuv' | 'sightseeing' | 'meditation' | 'trial' | 'season' | 'milestone';
 
 /** Cycle 4 B3: 필터 칩 한글 label. internal value 는 영어 그대로 유지. */
 export const FILTER_LABEL_KR: Record<EventFilter, string> = {
@@ -22,6 +22,7 @@ export const FILTER_LABEL_KR: Record<EventFilter, string> = {
   meditation:  '명상',
   trial:       '시련',
   season:      '계절',
+  milestone:   '★ 폭발',
 };
 
 export function matchesFilter(t: SagaEventType, f: EventFilter): boolean {
@@ -42,6 +43,7 @@ export function matchesFilter(t: SagaEventType, f: EventFilter): boolean {
     case 'meditation':  return t === 'meditation';
     case 'trial':       return t === 'trial';
     case 'season':      return t === 'seasonChange';
+    case 'milestone':   return t === 'milestone'; // Cycle 107 F3: cycle 106 saga record pin filter
   }
 }
 
@@ -71,7 +73,7 @@ export function SagaBookModal({ onClose }: Props) {
           <button type="button" data-testid="saga-modal-close" onClick={onClose} style={{ minHeight: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
         </div>
         <div style={{ padding: '8px 16px', borderBottom: '1px solid #333', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {(['all', 'battle', 'drop', 'levelUp', 'realm', 'npc', 'rejuv', 'sightseeing', 'meditation', 'trial', 'season'] as EventFilter[]).map(f => (
+          {(['all', 'battle', 'drop', 'levelUp', 'milestone', 'realm', 'npc', 'rejuv', 'sightseeing', 'meditation', 'trial', 'season'] as EventFilter[]).map(f => (
             <button
               key={f}
               type="button"
