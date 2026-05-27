@@ -95,8 +95,9 @@ export function SeasonPassScreen({ onClose }: Props) {
 
   /** Cycle 176 — focus 관리 분할 1/n (ui-ux-designer 의 cycle 156 권고 #2):
    *   modal 열릴 때 close button 에 첫 focus + 닫을 때 직전 포커스 복원.
-   *   Tab cycle trap 자체는 cycle 184+ 분할. */
+   *   Tab cycle trap 자체는 cycle 184 에서 추가 (focus 분할 2/n). */
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
   useEffect(() => {
     previousFocusRef.current = document.activeElement;
@@ -106,6 +107,32 @@ export function SeasonPassScreen({ onClose }: Props) {
         previousFocusRef.current.focus();
       }
     };
+  }, []);
+
+  /** Cycle 184 — focus 분할 2/n: Tab cycle trap. modal 내 첫/마지막 focusable
+   *  element 간 trap. Tab @ 마지막 → 첫, Shift+Tab @ 첫 → 마지막. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const modal = modalRef.current;
+      if (!modal) return;
+      const focusables = modal.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const completedCount = ALL_ACHIEVEMENT_IDS.filter(id => achievements.byId[id]?.completedAt != null).length;
@@ -128,6 +155,7 @@ export function SeasonPassScreen({ onClose }: Props) {
       onClick={onClose}
     >
       <div
+        ref={modalRef}
         data-testid="season-pass-modal"
         role="dialog"
         aria-modal="true"
