@@ -28,4 +28,11 @@ describe('hero skills catalog', () => {
     expect(findSkillById('strike')?.nameKR).toBe('일격');
     expect(findSkillById('nonexistent')).toBeUndefined();
   });
+
+  // Cycle 262: dead skill tail polish — palm_strike atkMul 1.18 → 1.25.
+  // monk/grandmaster 자격 도달 시 매력 ↑. sim tail (cycle 257 = 9 occurrences) 회복 후보.
+  it('palm_strike atkMul ≥ 1.25 (cycle 262 dead-tail polish)', () => {
+    const s = findSkillById('palm_strike')!;
+    expect(s.atkMul).toBeGreaterThanOrEqual(1.25);
+  });
 });
