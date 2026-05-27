@@ -353,6 +353,29 @@ describe('Cycle 161 — pickWeighted helper', () => {
   });
 });
 
+describe('Cycle 258 — NarrationVariants.naturalDeath (5 variant + composition)', () => {
+  it('seed=0 → legacy 1줄 "안식을 맞아 잠들었다" preserved', () => {
+    const r = NarrationVariants.naturalDeath({ age: 70, realm: null }, 0);
+    expect(r).toMatch(/안식을 맞아 잠들었다/);
+  });
+
+  it('5 seed → 3+ 고유 variant 노출 (pool ≥ 5)', () => {
+    const s = new Set<string>();
+    for (let i = 0; i < 25; i++) {
+      s.add(NarrationVariants.naturalDeath({ age: 70, realm: null }, i));
+    }
+    expect(s.size).toBeGreaterThanOrEqual(3);
+  });
+
+  it('age 70+ + realm heaven → ageTone 또는 realmTone composition 흔적', () => {
+    for (let seed = 0; seed < 8; seed++) {
+      const r = NarrationVariants.naturalDeath({ age: 75, realm: 'heaven' }, seed);
+      expect(r).toMatch(/\d+세/);
+      expect(r.length).toBeGreaterThan(10);
+    }
+  });
+});
+
 describe('Cycle 256 F1 — NarrationVariants.npcDeath kind-aware 분기', () => {
   it('rival 사망 → "라이벌" 어휘 등장, "멘토" 어휘 0', () => {
     for (let seed = 0; seed < 6; seed++) {

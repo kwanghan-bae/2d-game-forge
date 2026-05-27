@@ -72,7 +72,7 @@ export class NarrativeGenerator {
     return NarrationVariants.familyEvent(opts, seed);
   }
 
-  static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string; oldLevel?: number; newLevel?: number }): string {
+  static forDeath(opts: { age: number; cause: DeathCause; enemyNameKR?: string; oldLevel?: number; newLevel?: number; realm?: RealmId | null; seed?: number }): string {
     switch (opts.cause) {
       case '전사': {
         const levelInfo = (opts.oldLevel !== undefined && opts.newLevel !== undefined)
@@ -81,7 +81,8 @@ export class NarrativeGenerator {
         return `${opts.age}세에 ${opts.enemyNameKR ?? '강적'}에게 쓰러져 시련을 받았다.${levelInfo}`;
       }
       case '자연사':
-        return `${opts.age}세에 안식을 맞아 잠들었다.`;
+        // Cycle 258: 1줄 hardcoded → NarrationVariants.naturalDeath (5 variant + composition).
+        return NarrationVariants.naturalDeath({ age: opts.age, realm: opts.realm ?? null }, opts.seed ?? 0);
       case '영광스러운죽음':
         return `${opts.age}세에 영웅으로서 생을 마감했다.`;
       case '비극':
