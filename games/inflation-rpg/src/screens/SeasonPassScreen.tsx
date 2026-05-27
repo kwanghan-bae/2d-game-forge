@@ -119,7 +119,18 @@ export function SeasonPassScreen({ onClose }: Props) {
         </div>
 
         <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', padding: '8px 16px' }}>
-          {ALL_ACHIEVEMENT_IDS.map(id => {
+          {[...ALL_ACHIEVEMENT_IDS]
+            .sort((a, b) => {
+              // claimable 우선 → completed 두 번째 → locked 마지막 — 카탈로그 순서 보조 키.
+              const score = (id: typeof a) => {
+                const p = achievements.byId[id];
+                if (p?.completed && !p.claimedAt) return 2;
+                if (p?.completed) return 1;
+                return 0;
+              };
+              return score(b) - score(a);
+            })
+            .map(id => {
             const def = ACHIEVEMENT_CATALOG[id];
             const progress = achievements.byId[id];
             const completed = progress?.completedAt != null;
