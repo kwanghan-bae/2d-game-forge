@@ -20,6 +20,12 @@ export function getSeasonModifierCount(): number {
   return ALL_SEASON_MODIFIER_IDS.length;
 }
 
+/** Cycle 221 — active season 의 한 줄 label string. UI display helper. */
+export function formatActiveSeasonLabel(seasonStartedAt: number, nowMs?: number): string {
+  const def = getActiveSeasonModifier(seasonStartedAt, nowMs);
+  return `✨ ${def.nameKR}`;
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().
