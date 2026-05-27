@@ -137,10 +137,11 @@ describe('Cycle 1 F3 — NPC narrative generators', () => {
     }
   });
 
-  it('F3.3: forNpcDeath → string + 3+ variant', () => {
+  it('F3.3: forNpcDeath → string + 3+ variant (Cycle 256: kind=mentor rotation)', () => {
     const s = new Set<string>();
+    const KINDS = ['mentor', 'rival', 'friend', 'family_parent', 'family_spouse', 'family_child'] as const;
     for (let i = 0; i < 100; i++) {
-      s.add(NarrativeGenerator.forNpcDeath({ age: 50 + i }, i));
+      s.add(NarrativeGenerator.forNpcDeath({ age: 50 + i, kind: KINDS[i % KINDS.length]! }, i));
     }
     expect(s.size).toBeGreaterThanOrEqual(3);
     expect(typeof [...s][0]).toBe('string');
@@ -212,7 +213,7 @@ describe('Cycle 3 F1 — 이중 괄호 prefix bug fix', () => {
 
   it('forNpcDeath — 100 seed: leading "(N세) " prefix 부재', () => {
     for (let i = 0; i < 100; i++) {
-      const txt = NarrativeGenerator.forNpcDeath({ age: 50 + i }, i);
+      const txt = NarrativeGenerator.forNpcDeath({ age: 50 + i, kind: 'mentor' }, i);
       expect(txt).not.toMatch(LEADING_PAREN_PREFIX_RE);
     }
   });
@@ -233,7 +234,7 @@ describe('Cycle 3 F1 — 이중 괄호 prefix bug fix', () => {
     expect(NarrativeGenerator.forRealmEnter({ age: 13, realm: 'sea' })).toMatch(/\d+세/);
     expect(NarrativeGenerator.forSeasonChange({ season: 'summer', age: 20, realm: 'sea' })).toMatch(/\d+세/);
     expect(NarrativeGenerator.forNpcEncounter({ age: 22, kind: 'mentor' })).toMatch(/\d+세/);
-    expect(NarrativeGenerator.forNpcDeath({ age: 60 })).toMatch(/\d+세/);
+    expect(NarrativeGenerator.forNpcDeath({ age: 60, kind: 'mentor' })).toMatch(/\d+세/);
     expect(NarrativeGenerator.forFamilyEvent({ age: 30, type: 'marriage' })).toMatch(/\d+세/);
   });
 });

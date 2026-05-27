@@ -10,6 +10,8 @@
   - 진행률 = **100/100 완료 ★** (cycle 255 = 사용자 명시 목표 달성).
   - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
+- **사용자 prompted 새 100-cycle (cycle 256-355)** = 2026-05-28 시작. 사용자 "다시 한 번 100 cycle" 요청. cycle 256 = 8 페르소나 fan-out kickoff. PRD = `cycle-256-prd.md` (substantive accountability 톤). 메타-rule 3 신규 (micro mode ≤ 30% / sim baseline 매 20 cycle / STATUS 자축 톤 M===N only). EternalCodex 폐기 → Lifebook supersede.
+  - 진행률 = **1/100** (cycle 256 F1 = forNpcDeath kind-aware 분기, vitest 1553 → 1557).
 
 ## Cycle log
 
@@ -174,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 256 (2026-05-28): **새 100-cycle (256-355) 시작 = 1/100**. 8 페르소나 fan-out kickoff. story-critic #2 명백 bug fix — `forNpcDeath` kind-aware 분기. NPC_DEATH_VARIANTS 3 → 14 (Record by 6 kind, NpcEntity['kind'] union 정합 — passerby legacy text 를 friend 로 재배치). composition pipeline `pick → realmTone` 보존. callsite 3 (CycleControllerV2.ts:550,831,1334) + signature 1 (NarrativeGenerator.ts:66) + test 3 군데 kind 인자 추가. **추가 박제**: (1) EternalCodex 폐기 (Lifebook supersede), (2) HeroDecisionAI Sim-C defer (deadline cycle 280), (3) Lifebook invention 신규 listed (research-critic), (4) 자율진화 메타-rule 3 종 (micro mode ≤ 30% / sim baseline 매 20 cycle / STATUS 자축 톤 M===N only). category: narrative (255 meta → 256 narrative, 룰 9 안전). vitest 1553 → 1557 (+4). typecheck PASS. critic 4축 3/3/6/4 (cycle 156 시점 5/4/6/5 대비 하향, substantive accountability 톤).
 - Cycle 255 (2026-05-28): ★ **final STATUS — 사용자 새 100-cycle 의 100/100 완주 ★**. cycle 156-255 = 100 cycle 완료 (cycle 156 = 8 페르소나 fan-out kickoff, cycle 255 = final). vitest 1486 → 1553 (+67 test, 회귀 0). 7 카테고리 분포 (system 21 / balance 20 / narrative 19 / chore 12 / UI 11 / meta 11 / VFX 6). 메타 finding 8 박제. cycle 156 surface 13 슬롯 → 11 소진 (85%), 2 mega-phase carry-over (HeroDecisionAI / EternalCodex). 사용자 명시 목표 달성. `STATUS-2026-05-28-cycle-255.md`. category: meta.
 - Cycle 254 (2026-05-28): INDEX 진행률 99/100 갱신 + cycle 255 = 100/100 완료 임박 명시. category: chore. v3 54/100 (사용자 새 100-cycle 의 99/100).
 - Cycle 253 (2026-05-28): claim narration pool 18 → **20** — 등불/그림자 motif 2 신규. cycle 165 sea/volcano seed 20→22 갱신. category: narrative. vitest 1553 baseline. v3 53/100 (사용자 새 100-cycle 의 98/100).
