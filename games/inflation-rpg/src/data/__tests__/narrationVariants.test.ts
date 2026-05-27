@@ -378,6 +378,20 @@ describe('Cycle 265 — NPC kind pool 정합 invariant (encounter + death Record
   });
 });
 
+describe('Cycle 275 — naturalDeath pool size invariant (cycle 258 wire 보강)', () => {
+  it('pool ≥ 5 — 5 distinct seeds 모두 다른 base text (composition 안 거친 entry)', () => {
+    // composition 적용 시 같은 entry 의 ageTone/realmTone 차이로 outputs differ;
+    // 다만 5 seed (0,1,2,3,4) 의 base pick(NATURAL_DEATH_VARIANTS,...) entry 가
+    // distinct 인지 보장. NarrationVariants.naturalDeath signature 통해 검증.
+    const outs = new Set<string>();
+    for (let seed = 0; seed < 5; seed++) {
+      // realm=null + seed=0 → ageTone/realmTone 모두 변형 안 적용 → 순수 entry 노출
+      outs.add(NarrationVariants.naturalDeath({ age: 50, realm: null }, seed));
+    }
+    expect(outs.size).toBeGreaterThanOrEqual(5);
+  });
+});
+
 describe('Cycle 258 — NarrationVariants.naturalDeath (5 variant + composition)', () => {
   it('seed=0 → legacy 1줄 "안식을 맞아 잠들었다" preserved', () => {
     const r = NarrationVariants.naturalDeath({ age: 70, realm: null }, 0);
