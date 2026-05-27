@@ -33,7 +33,7 @@ export const JOBS: readonly Job[] = [
   { id: 'monk',        nameKR: '수도승',   emoji: '☯️', tier: 2, milestone: 'age30', requiredPersonality: { dim: 'prudent',  min:  5 }, atkMul: 1.7, hpMul: 1.5 },
 
   // Tier 3 — age 50 (장년기 → 노년기)
-  { id: 'hero',        nameKR: '영웅',     emoji: '🌟', tier: 3, milestone: 'age50', requiredPersonality: { dim: 'heroic',   min:  8 }, atkMul: 3.0, hpMul: 2.5 },
+  { id: 'hero',        nameKR: '영웅',     emoji: '🌟', tier: 3, milestone: 'age50', requiredPersonality: { dim: 'heroic',   min:  7 }, atkMul: 3.0, hpMul: 2.5 },
   { id: 'archmage',    nameKR: '대마법사', emoji: '🌌', tier: 3, milestone: 'age50', requiredPersonality: { dim: 'pious',    min:  6 }, atkMul: 3.5, hpMul: 2.0 },
   { id: 'dark_lord',   nameKR: '암흑군주', emoji: '💀', tier: 3, milestone: 'age50', requiredPersonality: { dim: 'moral',    min: -8 }, atkMul: 3.8, hpMul: 2.2 },
   { id: 'saint',       nameKR: '성자',     emoji: '👼', tier: 3, milestone: 'age50', requiredPersonality: { dim: 'merciful', min:  7 }, atkMul: 2.5, hpMul: 3.0 },
