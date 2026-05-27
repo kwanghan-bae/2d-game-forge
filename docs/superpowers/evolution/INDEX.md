@@ -98,3 +98,4 @@
 - Cycle 144 (2026-05-27): claimerTier wire to MainMenu. `mm-claimer-tier` testid — "후원자 등급: <tier> (누적 수령 N)" (totalClaims > 0 gated). category: UI. v2 44/100.
 - Cycle 145 (2026-05-27): **페르소나 surface 1 (advisor 권고 20-cycle 주기)**. game-critic + story-writer + level-designer 3 병렬 dispatch. 공통 핀포인트 = wire-up 부재 (SeasonalModifier sim wire 0 / claimerTier ornament / narration wire-up 0) + claimerTier 1000 sentinel 평생 도달 불가. cycle 146-160 backlog 정착. category: meta (페르소나 surface).
 - Cycle 146 (2026-05-27): level-designer 권고 #1 적용 — claimerTier 경계 1000·200·50·10 → 300·80·20·5 재조정. 평생 도달 가능 sentinel. cycle 143 test 갱신. category: balance. v2 46/100.
+- Cycle 147 (2026-05-27): story-writer 권고 #2 적용 — claim narration 풀 12 의 closure 一邊倒 해소. 12 → 12 유지하되 closure 8 + anticipation 4 분할 (4 신규 anticipation: "다음 무대의 막이 천천히 열린다" 등). category: narrative. v2 47/100.
