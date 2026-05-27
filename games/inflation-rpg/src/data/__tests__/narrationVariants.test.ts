@@ -15,7 +15,7 @@
  *   영역은 절대 겹치지 않음. 둘 다 적용되어도 충돌 0.
  */
 import { describe, expect, it } from 'vitest';
-import { realmTone, NarrationVariants, pickWeighted, ALL_NARRATION_TONES, NARRATION_TONE_LABEL_KR, getNarrationToneLabel, getNarrationToneFromLabel } from '../narrationVariants';
+import { realmTone, NarrationVariants, pickWeighted, ALL_NARRATION_TONES, NARRATION_TONE_LABEL_KR, NARRATION_TONE_DESC_KR, getNarrationToneLabel, getNarrationToneFromLabel } from '../narrationVariants';
 import type { TaggedVariant } from '../narrationVariants';
 import type { RealmId } from '../../types';
 
@@ -260,6 +260,18 @@ describe('Cycle 224 — cross-invariant: TONE_LABEL_KR ↔ ALL_TONES', () => {
   it('NARRATION_TONE_LABEL_KR 의 모든 key 가 ALL_NARRATION_TONES 에 존재', () => {
     for (const tone of Object.keys(NARRATION_TONE_LABEL_KR)) {
       expect(ALL_NARRATION_TONES, `${tone} 의 tone 부재`).toContain(tone);
+    }
+  });
+});
+
+/** Cycle 232 — NARRATION_TONE_DESC_KR invariant: 5 tone 모두 5-30자 설명. */
+describe('Cycle 232 — NARRATION_TONE_DESC_KR', () => {
+  it('5 tone 모두 5-30자 한국어 설명', () => {
+    for (const tone of ALL_NARRATION_TONES) {
+      const desc = NARRATION_TONE_DESC_KR[tone];
+      expect(desc).toBeDefined();
+      expect(desc.length).toBeGreaterThanOrEqual(5);
+      expect(desc.length).toBeLessThanOrEqual(30);
     }
   });
 });
