@@ -26,6 +26,15 @@ export function formatActiveSeasonLabel(seasonStartedAt: number, nowMs?: number)
   return `✨ ${def.nameKR}`;
 }
 
+/** Cycle 225 — active season 의 type ('trait_weight' / 'narrative_weight' /
+ *  'cosmetic'). UI 의 카테고리 차별 (icon / 색 등) 위한 진입점. */
+export function getActiveSeasonModifierType(
+  seasonStartedAt: number,
+  nowMs?: number,
+): import('./seasonalModifierTypes').SeasonModifierType {
+  return getActiveSeasonModifier(seasonStartedAt, nowMs).type;
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().
