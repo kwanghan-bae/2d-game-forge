@@ -11,7 +11,7 @@
   - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
 - **사용자 prompted 새 100-cycle (cycle 256-355)** = 2026-05-28 시작. 사용자 "다시 한 번 100 cycle" 요청. cycle 256 = 8 페르소나 fan-out kickoff. PRD = `cycle-256-prd.md` (substantive accountability 톤). 메타-rule 3 신규 (micro mode ≤ 30% / sim baseline 매 20 cycle / STATUS 자축 톤 M===N only). EternalCodex 폐기 → Lifebook supersede.
-  - 진행률 = **32/100** (cycle 287). vitest 1553 → 1580. STATUS trajectory = `STATUS-2026-05-28-cycle-260.md` / `cycle-270.md` / `cycle-280.md`. **HeroDecisionAI mega-phase 진입** (cycle 278 spec + cycle 279 plan + cycle 281-286 sub-phase σ/α wire chain). cycle 156 carry-over (trait wire dormant) 100 cycle 만에 완전 회수. 다음 = cycle 290 (fourth 10-cycle STATUS).
+  - 진행률 = **38/100** (cycle 293). vitest 1553 → 1581. STATUS trajectory = `STATUS-2026-05-28-cycle-260.md` / `cycle-270.md` / `cycle-280.md` / `cycle-290.md`. **HeroDecisionAI mega-phase α 100% 완성** (cycle 278 spec + cycle 279 plan + cycle 281-286 σ/α wire). cycle 156 carry-over (trait wire dormant) 100 cycle 만에 완전 회수. saint dominance 분산 lever 3종 적용 (cycle 292-293). 다음 = cycle 296 (sim baseline 강제) / cycle 300 (mid-100 STATUS).
 
 ## Cycle log
 
@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 294 (2026-05-28): INDEX 헤더 진행률 32/100 → 38/100 + sub-phase α 완성 + saint lever 3종 적용 + 다음 milestone (cycle 296 sim / cycle 300 STATUS) 명시. category: chore (293 balance → 294 chore, 룰 9 안전). v3 93/100 (사용자 새 100-cycle 의 39/100).
 - Cycle 293 (2026-05-28): **saint dominance 분산 lever 2/2** — `archmage.pious.min: 6 → 5` + `grandmaster.prudent.min: 6 → 5`. cycle 292 (hero heroic 8→7) 후속. Tier-3 4 alt char (hero/archmage/dark_lord/grandmaster) 의 자격 통과율 ↑ 의도. cycle 296 sim baseline 강제 시점에 saint 비율 / jobs sim 도달 수 측정. category: balance (292 balance → 293 balance, 룰 9 안전 ≤ 5). vitest 1581 baseline. v3 92/100 (사용자 새 100-cycle 의 38/100).
 - Cycle 292 (2026-05-28): **saint dominance 분산 시도** — `hero.requiredPersonality.heroic.min: 8 → 7`. cycle 277 diagnosis 의 4 lever 후보 중 4번 (Tier-3 자격 임계점 ↓) 의 가장 가벼운 lever. heroic-aligned hero 의 hero job 통과율 ↑ → saint 외 자격 후보 ↑ 의도. cycle 296 sim baseline 강제 시점에 effect 측정. category: balance (291 system → 292 balance, 룰 9 안전). vitest 1581 baseline. v3 91/100 (사용자 새 100-cycle 의 37/100).
 - Cycle 291 (2026-05-28): HeroEntity.addTrait dedup 가드 (cycle 281 wire 보강) — 중복 trait silent skip + invariant test. caller (TraitRoller) 이미 dedup 하지만 defensive. getTraits() 의 element unique invariant 활성. category: system (290 meta → 291 system, 룰 9 안전). vitest 1580 → 1581 (+1). v3 90/100 (사용자 새 100-cycle 의 36/100).
