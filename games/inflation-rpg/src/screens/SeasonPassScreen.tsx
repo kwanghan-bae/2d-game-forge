@@ -8,6 +8,7 @@ import {
   getSeasonTimeRemainingMs,
   msToDays,
 } from '../data/seasonalModifierSelector';
+import { cosmeticTintToHex } from '../data/seasonalCosmeticTint';
 import { getClaimerTier, getTierUnlockBonus } from '../data/claimerTier';
 
 interface Props {
@@ -40,6 +41,14 @@ export function SeasonPassScreen({ onClose }: Props) {
   const activeSeason = getActiveSeasonModifier(seasonStartedAt);
   // Cycle 173 — 다음 시즌 회전까지 남은 일 (sp-active-season chip suffix).
   const daysRemaining = msToDays(getSeasonTimeRemainingMs(seasonStartedAt));
+  // Cycle 183 — cosmetic 시즌이면 chip 의 left border 를 token 색으로.
+  //   wire chain 의 visualization 을 modal header 에서도 인지.
+  const cosmeticTintHex = (() => {
+    const tint = activeSeason.applyRule.cosmeticTint;
+    if (!tint) return null;
+    const firstToken = Object.values(tint)[0];
+    return firstToken ? cosmeticTintToHex(firstToken) : null;
+  })();
   const claimerTier = getClaimerTier(totalClaims);
   const [pulseId, setPulseId] = useState<string | null>(null);
   const [redeemAmount, setRedeemAmount] = useState(3);
@@ -137,7 +146,7 @@ export function SeasonPassScreen({ onClose }: Props) {
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <strong id="sp-modal-title">도전과제 + 토큰</strong>
-            <span data-testid="sp-active-season" style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400 }} title={activeSeason.description}>
+            <span data-testid="sp-active-season" data-cosmetic-tint={cosmeticTintHex ?? undefined} style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400, borderLeft: cosmeticTintHex ? `3px solid ${cosmeticTintHex}` : undefined, paddingLeft: cosmeticTintHex ? 6 : 0 }} title={activeSeason.description}>
               ✨ 현재 시즌: <span style={{ color: '#ffd700' }}>{activeSeason.nameKR}</span>
               {daysRemaining > 0 && (
                 <span data-testid="sp-season-remaining" style={{ color: '#888', marginLeft: 6 }}>
