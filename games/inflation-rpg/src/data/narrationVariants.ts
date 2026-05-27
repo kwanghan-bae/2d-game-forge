@@ -406,19 +406,25 @@ const NPC_DEATH_VARIANTS_BY_KIND: Record<NpcEntity['kind'], Array<(c: { age: num
   ],
 };
 
-/* ─────────────────────── familyEvent (F3) ───────────────────── */
+/* ─────────────────────── familyEvent (Cycle 271 — pool 6 → 9)
+ * cycle 264 답습 — kind 별 풀 두께. eternal hero × 인간 가족 시간 비대칭의
+ * narrative 강화. 각 event type 의 풀 2 → 3.
+ */
 const FAMILY_EVENT_VARIANTS: Record<'marriage' | 'child_born' | 'child_grown', Array<(c: { age: number }) => string>> = {
   marriage: [
     (c) => `${c.age}세에 종소리 아래 결혼식을 올렸다.`,
     (c) => `${c.age}세에 서로의 손을 잡았다 — 이제 둘이다.`,
+    (c) => `${c.age}세에 반지가 두 영원을 묶었다 — 한 쪽은 인간이었지만.`,
   ],
   child_born: [
     (c) => `${c.age}세에 첫 자식의 울음소리가 새벽을 깨웠다.`,
     (c) => `${c.age}세에 자식이 태어났다 — 작은 손이 자신의 손을 쥐었다.`,
+    (c) => `${c.age}세에 자식의 첫 눈빛이 자신의 영원을 한 번에 흔들었다.`,
   ],
   child_grown: [
     (c) => `${c.age}세에 자식이 처음으로 자신보다 큰 칼을 들었다.`,
     (c) => `${c.age}세에 자식이 떠났다 — 자신의 길로.`,
+    (c) => `${c.age}세에 자식의 등이 자신보다 커진 날 — 거울 앞에 처음으로 늙음을 그리워했다.`,
   ],
 };
 
