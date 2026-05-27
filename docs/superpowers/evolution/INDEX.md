@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 313 (2026-05-28): cleave atkMul 1.08 → 1.12 (warrior AoE 폴리시). category: balance. vitest 1598. v3 100/100 (58/100).
 - Cycle 312 (2026-05-28): strike atkMul ≥ 1.15 invariant (cycle 309 polish 가드). category: system. vitest 1597 → 1598. v3 100/100 (57/100).
 - Cycle 311 (2026-05-28): rival death variant 2 → 3 ("이름을 새기지 못한 채 부러졌다"). NPC_DEATH_VARIANTS_BY_KIND.rival pool 두께 ↑. category: narrative (310 meta → 311 narrative, 룰 9 안전). vitest 1597 baseline. v3 100/100 (사용자 새 100-cycle 의 56/100).
 - Cycle 310 (2026-05-28): **sixth 10-cycle STATUS — 사용자 새 100-cycle 의 55/100**. Chain accountability cycle 301-309 = 9/9 = 100%. 55 cycle 분포: balance 20 + system 13 + meta 9 + narrative 7 + chore 5 + UI 2 + VFX 0. HeroDecisionAI 5/5 책임 method 신설 완성. cycle 316 sim baseline 강제 (MERCIFUL_DRIFT 검증). `STATUS-2026-05-28-cycle-310.md`. category: meta (309 balance → 310 meta, 룰 9 안전). v3 100/100 (사용자 새 100-cycle 의 55/100).
