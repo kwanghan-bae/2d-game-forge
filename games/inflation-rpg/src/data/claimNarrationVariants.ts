@@ -33,6 +33,9 @@ export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   // Cycle 191 — pool 14 → 16. 침묵/숨결 motif 추가.
   '신의 침묵 한 박자가 더 깊어진다',
   '오랜 숨결이 그대의 길을 데운다',
+  // Cycle 199 — pool 16 → 18. 발자국/매듭 motif 추가.
+  '그대의 발자국이 다음 길의 첫 매듭이 된다',
+  '하나의 매듭이 다음 매듭을 부른다',
 ] as const;
 
 /** ClaimerTier 별 후원자 호칭 prefix. cycle 148 story-writer #2 권고.

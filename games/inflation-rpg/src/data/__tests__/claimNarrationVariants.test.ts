@@ -11,8 +11,8 @@ import {
 } from '../claimNarrationVariants';
 
 describe('Cycle 134 — claimNarrationVariants', () => {
-  it('CLAIM_NARRATION_VARIANTS 최소 16 variant (cycle 191 확장)', () => {
-    expect(CLAIM_NARRATION_VARIANTS.length).toBeGreaterThanOrEqual(16);
+  it('CLAIM_NARRATION_VARIANTS 최소 18 variant (cycle 199 확장)', () => {
+    expect(CLAIM_NARRATION_VARIANTS.length).toBeGreaterThanOrEqual(18);
   });
 
   it('모든 variant non-empty + 50 자 이내', () => {
@@ -75,14 +75,14 @@ describe('Cycle 134 — claimNarrationVariants', () => {
       expect(a).toBe(CLAIM_NARRATION_VARIANTS[0]);
     });
 
-    it('realm = sea → sub-pool variant 가 후보에 합류 (union 길이 18, cycle 191 pool 확장 후)', () => {
-      // union = 16 general (cycle 191) + 2 sea = 18. seed 16 → union[16] = first sea variant.
-      const out = pickClaimNarration(16, undefined, 'sea');
+    it('realm = sea → sub-pool variant 가 후보에 합류 (union 길이 20, cycle 199 pool 확장 후)', () => {
+      // union = 18 general (cycle 199) + 2 sea = 20. seed 18 → union[18] = first sea variant.
+      const out = pickClaimNarration(18, undefined, 'sea');
       expect(out).toBe('바다의 너울이 그대의 이름을 적신다');
     });
 
-    it('realm = volcano → seed 17 (union 18 의 idx 17) = second volcano variant', () => {
-      expect(pickClaimNarration(17, undefined, 'volcano')).toBe('잿더미 위로 별이 떨어진다');
+    it('realm = volcano → seed 19 (union 20 의 idx 19) = second volcano variant', () => {
+      expect(pickClaimNarration(19, undefined, 'volcano')).toBe('잿더미 위로 별이 떨어진다');
     });
 
     it('realm = unknown → general pool fallback (backward compat)', () => {
@@ -91,8 +91,8 @@ describe('Cycle 134 — claimNarrationVariants', () => {
       expect(a).toBe(b);
     });
 
-    it('realm = sea + tier=신참 + seed 16 → tier prefix + first sea variant (cycle 191 pool 확장 후)', () => {
-      expect(pickClaimNarration(16, '신참', 'sea')).toBe('용사여, 바다의 너울이 그대의 이름을 적신다');
+    it('realm = sea + tier=신참 + seed 18 → tier prefix + first sea variant (cycle 199 pool 확장 후)', () => {
+      expect(pickClaimNarration(18, '신참', 'sea')).toBe('용사여, 바다의 너울이 그대의 이름을 적신다');
     });
   });
 
