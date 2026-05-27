@@ -157,6 +157,14 @@ export function getNarrationToneLabel(tone: string): string | undefined {
   return (NARRATION_TONE_LABEL_KR as Record<string, string>)[tone];
 }
 
+/** Cycle 226 — 한국어 label → NarrationTone 역방향 lookup. 매칭 부재 → undefined. */
+export function getNarrationToneFromLabel(label: string): NarrationTone | undefined {
+  for (const tone of ALL_NARRATION_TONES) {
+    if (NARRATION_TONE_LABEL_KR[tone] === label) return tone;
+  }
+  return undefined;
+}
+
 /** template 함수에 optional tone 을 부착. cycle 161 의 도입은 type-only — 기존
  *  `pick` 호출자는 변경 없음. */
 export interface TaggedVariant<T> {
