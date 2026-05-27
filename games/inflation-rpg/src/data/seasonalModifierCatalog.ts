@@ -67,6 +67,18 @@ export const SEASON_MODIFIER_CATALOG: Readonly<
       buffCardWeightMul: { legendary: 1.5 },
     },
   },
+  // Cycle 137 — underworld realm 의 shadow trait boost. cycle 129 의 axis 5 종
+  // (traitWeightMul) 재사용. 새 field 추가 0, invariant 보존.
+  'underworld-shadow-trait-boost': {
+    id: 'underworld-shadow-trait-boost',
+    nameKR: '황천의 그림자',
+    description: '황천 차원 진입 시 그림자 계열 trait 추첨 가중 ×2',
+    type: 'trait_weight',
+    applyRule: {
+      // wildcard `shadow_*` 는 cycle 131+ HeroDecisionAI wire 에서 prefix 매칭.
+      traitWeightMul: { 'shadow_*': 2 },
+    },
+  },
 };
 
 /** 모든 starter id (catalog 순회용). cycle 132+ 에서 union 확장 시 동기화. */
