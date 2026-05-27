@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLAIM_NARRATION_VARIANTS,
   pickClaimNarration,
+  pickClaimNarrationWeighted,
   TIER_VOCATIVE_PREFIX,
   CLAIM_NARRATION_BY_REALM,
   CLAIM_NARRATION_BY_REALM_TONED,
@@ -124,6 +125,33 @@ describe('Cycle 134 — claimNarrationVariants', () => {
       for (const v of CLAIM_NARRATION_BY_REALM_TONED['chaos']!) {
         expect(v.tone).toBe('hymn');
       }
+    });
+  });
+
+  /** Cycle 181 — pickClaimNarrationWeighted (cycle 169 toned data 활용). */
+  describe('Cycle 181 — pickClaimNarrationWeighted', () => {
+    it('realm 미매칭 → 기존 pickClaimNarration fallback', () => {
+      expect(pickClaimNarrationWeighted(0, undefined, null)).toBe(pickClaimNarration(0));
+      expect(pickClaimNarrationWeighted(3, undefined, 'realm-unknown')).toBe(pickClaimNarration(3, undefined, 'realm-unknown'));
+    });
+
+    it('weights 미지정 → 기존 pickClaimNarration 동등', () => {
+      expect(pickClaimNarrationWeighted(0, undefined, 'sea')).toBe(pickClaimNarration(0, undefined, 'sea'));
+    });
+
+    it('sea + tone elegy ×2 weight → sea variants 중 elegy 가 등장', () => {
+      // sea 의 2 variant 모두 elegy. weight elegy: 2 → total = 4, seed 1 → 첫 variant.
+      const out = pickClaimNarrationWeighted(1, undefined, 'sea', { elegy: 2 });
+      expect(out).toBe(CLAIM_NARRATION_BY_REALM_TONED['sea']![0].text);
+    });
+
+    it('heaven + ode ×1.5 weight + tier 신참 → tier prefix + heaven variant', () => {
+      const out = pickClaimNarrationWeighted(0, '신참', 'heaven', { ode: 1.5 });
+      expect(out.startsWith('용사여, ')).toBe(true);
+      // heaven 의 variant 가 base 텍스트.
+      const tonedSubset = CLAIM_NARRATION_BY_REALM_TONED['heaven']!.map((v) => v.text);
+      const base = out.replace('용사여, ', '');
+      expect(tonedSubset).toContain(base);
     });
   });
 });
