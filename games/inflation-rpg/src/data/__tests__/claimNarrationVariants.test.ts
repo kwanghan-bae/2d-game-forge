@@ -58,4 +58,34 @@ describe('Cycle 134 — claimNarrationVariants', () => {
     expect(신참.split('용사여').length - 1).toBe(1);
     expect(전설.split('용사여').length - 1).toBe(0);
   });
+
+  /** Cycle 165 — realm-aware sub-pool (story-writer #3 11-cycle 표류 deadline) */
+  describe('Cycle 165 — realm-aware sub-pool', () => {
+    it('realm 미지정 → general pool 만 (backward compat)', () => {
+      const a = pickClaimNarration(0);
+      const b = pickClaimNarration(0, undefined, null);
+      expect(a).toBe(b);
+      expect(a).toBe(CLAIM_NARRATION_VARIANTS[0]);
+    });
+
+    it('realm = sea → sub-pool variant 가 후보에 합류 (union 길이 14)', () => {
+      // union = 12 general + 2 sea = 14. seed 12 → union[12] = first sea variant.
+      const out = pickClaimNarration(12, undefined, 'sea');
+      expect(out).toBe('바다의 너울이 그대의 이름을 적신다');
+    });
+
+    it('realm = volcano → seed 13 (union 14 의 idx 13) = second volcano variant', () => {
+      expect(pickClaimNarration(13, undefined, 'volcano')).toBe('잿더미 위로 별이 떨어진다');
+    });
+
+    it('realm = unknown → general pool fallback (backward compat)', () => {
+      const a = pickClaimNarration(5);
+      const b = pickClaimNarration(5, undefined, 'realm-that-does-not-exist');
+      expect(a).toBe(b);
+    });
+
+    it('realm = sea + tier=신참 + seed 12 → tier prefix + first sea variant', () => {
+      expect(pickClaimNarration(12, '신참', 'sea')).toBe('용사여, 바다의 너울이 그대의 이름을 적신다');
+    });
+  });
 });

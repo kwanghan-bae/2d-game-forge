@@ -39,16 +39,61 @@ export const TIER_VOCATIVE_PREFIX: Readonly<Record<ClaimerTier, string>> = {
 };
 
 /**
+ * Cycle 165 — realm-aware claim narration sub-pool (story-writer #3, cycle 145
+ * 부터 11 cycle 표류 deadline). saga.finalRealm 이 있는 경우 *추가* variant 를
+ * 후보에 합류 → realm 별 톤 token. 매칭 부재 realm 은 general pool 만.
+ *
+ * cycle 165 의 도입은 *data only* — pickClaimNarration 시그니처에 realm 옵션
+ * 인자 추가. 실제 SeasonPassScreen.handleClaim 의 wire (saga.finalRealm 추출
+ * + 전달) 은 cycle 173+ narrative slot 분할.
+ */
+export const CLAIM_NARRATION_BY_REALM: Readonly<Partial<Record<string, readonly string[]>>> = {
+  sea: [
+    '바다의 너울이 그대의 이름을 적신다',
+    '해풍이 신의 인장을 묶어 둔다',
+  ],
+  volcano: [
+    '용암의 숨결이 그대를 새긴다',
+    '잿더미 위로 별이 떨어진다',
+  ],
+  underworld: [
+    '망자들의 합창이 그대를 향한다',
+    '저편의 등불이 처음 켜진다',
+  ],
+  heaven: [
+    '구름이 그대 발 아래 굳는다',
+    '하늘의 종이 한 번 울린다',
+  ],
+  chaos: [
+    '경계 너머의 침묵이 그대를 안다',
+    '없던 길이 그대의 발자국으로 생긴다',
+  ],
+};
+
+/**
  * claim 시점의 narration 한 줄 선택. seed (Date.now() % length) 또는 명시.
  * test 에서는 seed 명시로 결정성 확보.
  *
  * tier 인자 (cycle 148) 가 주어지면 tier-specific prefix 가 base 앞에 붙음.
  * undefined 시 prefix 없는 base 만 반환 (legacy 호출 호환).
+ *
+ * Cycle 165 — realm 인자 추가. realm 이 `CLAIM_NARRATION_BY_REALM` 의 key 와
+ * 매칭하면 해당 realm 의 sub-pool 이 *추가 후보로 합류* (general + realm
+ * union). seed 가 union 길이로 modulo. realm undefined 또는 매칭 부재 시
+ * legacy general pool 만 사용 — backward compat 100%.
  */
-export function pickClaimNarration(seed?: number, tier?: ClaimerTier): string {
+export function pickClaimNarration(
+  seed?: number,
+  tier?: ClaimerTier,
+  realm?: string | null,
+): string {
+  const realmPool = realm && CLAIM_NARRATION_BY_REALM[realm] ? CLAIM_NARRATION_BY_REALM[realm]! : null;
+  const pool: readonly string[] = realmPool
+    ? [...CLAIM_NARRATION_VARIANTS, ...realmPool]
+    : CLAIM_NARRATION_VARIANTS;
   const s = typeof seed === 'number' ? seed : Date.now();
-  const idx = ((s % CLAIM_NARRATION_VARIANTS.length) + CLAIM_NARRATION_VARIANTS.length) % CLAIM_NARRATION_VARIANTS.length;
-  const base = CLAIM_NARRATION_VARIANTS[idx];
+  const idx = ((s % pool.length) + pool.length) % pool.length;
+  const base = pool[idx];
   if (tier === undefined) return base;
   return `${TIER_VOCATIVE_PREFIX[tier]}, ${base}`;
 }
