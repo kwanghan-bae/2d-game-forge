@@ -38,6 +38,7 @@ import { appendEvent, recordRejuvenation, recordRealmTransition } from '../saga/
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
 import { evaluateAchievements } from '../data/achievementsLogic';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
+import { getTierUnlockBonus } from '../data/claimerTier';
 import type { AchievementProgress } from '../data/achievementsTypes';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
@@ -1635,7 +1636,12 @@ export const useGameStore = create<GameStore>()(
           return { ok: false, reason: 'already-claimed' };
         }
         const at = typeof nowMs === 'number' ? nowMs : Date.now();
-        const tokenDelta = ACHIEVEMENT_CATALOG[id].reward.tokens;
+        const baseTokenDelta = ACHIEVEMENT_CATALOG[id].reward.tokens;
+        // Cycle 153: tier 진입 보너스 합산. countBefore = 현재 누적,
+        //   countAfter = +1 후. 같은 tier 안 0, 진입 시 TIER_UNLOCK_REWARD.
+        const countBefore = state.meta.totalClaimsCount ?? 0;
+        const tierBonusResult = getTierUnlockBonus(countBefore, countBefore + 1);
+        const tokenDelta = baseTokenDelta + tierBonusResult.bonus;
         set(s => {
           const ach = s.meta.achievements ?? INITIAL_ACHIEVEMENTS;
           return {

@@ -163,8 +163,8 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements + Cycle 131 manual claim
     expect(m2.achievements.byId['realm-conquest-6'].claimedAt).toBe(claimedAt1);
   });
 
-  /** EDGE.6 — 5 starter 각자 completed → 각자 claim 호출 후 총 tokens=13 */
-  it('EDGE.6 5 starter 완료 + claim — 총 tokens += 13', () => {
+  /** EDGE.6 — 5 starter 각자 completed → 각자 claim → 18 token (base 13 + cycle 153 tier 노련 진입 +5) */
+  it('EDGE.6 5 starter 완료 + claim — 총 tokens += 18 (cycle 153 tier 보너스 포함)', () => {
     // 1. lv-10m-in-3-cycles → 3 cycle 모두 10M+ → reward=1
     for (let i = 0; i < 3; i++) {
       useGameStore.getState().evaluateAndGrantAchievements(
@@ -215,7 +215,7 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements + Cycle 131 manual claim
       );
     }
     expect(useGameStore.getState().claimAchievement('aging-master-10', NOW + 200).ok).toBe(true);
-    expect(useGameStore.getState().meta.tokens).toBe(1 + 2 + 2 + 3);
+    expect(useGameStore.getState().meta.tokens).toBe(1 + 2 + 2 + 3);  // 8, 4 회째 claim — 아직 신참 (5 미만)
 
     // 5. inflation-flash-100x → ×100 jump 3 회 → reward=5
     useGameStore.getState().evaluateAndGrantAchievements(
@@ -229,7 +229,8 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements + Cycle 131 manual claim
       NOW + 200,
     );
     expect(useGameStore.getState().claimAchievement('inflation-flash-100x', NOW + 201).ok).toBe(true);
-    expect(useGameStore.getState().meta.tokens).toBe(13);
+    // base reward 합 13 + cycle 153 tier '노련' 진입 보너스 5 (5 회째 claim) = 18
+    expect(useGameStore.getState().meta.tokens).toBe(18);
 
     // 모든 5 starter 가 completed + claimedAt 기록.
     const m = useGameStore.getState().meta;
