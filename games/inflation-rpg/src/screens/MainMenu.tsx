@@ -97,10 +97,10 @@ export function MainMenu() {
               aria-hidden="true"
               style={{
                 position: 'absolute',
-                top: 6,
-                right: 8,
-                width: 10,
-                height: 10,
+                top: 5,
+                right: 7,
+                width: 12,
+                height: 12,
                 borderRadius: '50%',
                 background: '#ffd700',
                 boxShadow: '0 0 0 0 rgba(255, 215, 0, 0.8)',

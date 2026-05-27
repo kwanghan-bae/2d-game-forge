@@ -174,6 +174,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 234 (2026-05-28): mm-claim-pulse-dot size 10×10 → 12×12 강화 (top 6/right 8 → 5/7 미세 조정). category: UI. v3 34/100 (사용자 새 100-cycle 의 79/100).
 - Cycle 233 (2026-05-28): `getActiveSeasonDescription` helper. tooltip UI 진입점. category: system. typecheck PASS. v3 33/100 (사용자 새 100-cycle 의 78/100).
 - Cycle 232 (2026-05-28): NARRATION_TONE_DESC_KR 5-30자 invariant. category: balance. vitest 1548 (+1). v3 32/100 (사용자 새 100-cycle 의 77/100).
 - Cycle 231 (2026-05-28): `NARRATION_TONE_DESC_KR` 짧은 설명 map (잔잔한 슬픔의 시 / 잿더미의 노래 / 천상의 송가 / 경배의 찬송 / 담담한 한 줄). tooltip / detail panel 사용. category: narrative. typecheck PASS. v3 31/100 (사용자 새 100-cycle 의 76/100).
