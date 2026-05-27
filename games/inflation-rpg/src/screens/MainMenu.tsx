@@ -20,6 +20,16 @@ export function MainMenu() {
 
   return (
     <div data-testid="main-menu" style={{ padding: 24, color: '#eee', textAlign: 'center' }}>
+      <style>{`
+        @keyframes mm-claim-pulse {
+          0%   { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); transform: scale(1); }
+          70%  { box-shadow: 0 0 0 8px rgba(255, 215, 0, 0); transform: scale(1.1); }
+          100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); transform: scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-testid="mm-claim-pulse-dot"] { animation: none !important; }
+        }
+      `}</style>
       <h1 style={{ marginBottom: 8 }}>조선 인플레이션 RPG</h1>
       <p style={{ opacity: 0.7, marginBottom: 8 }}>신이 되어 용사의 일대기를 후원하라</p>
       {totalClaims > 0 && (
@@ -59,9 +69,27 @@ export function MainMenu() {
           type="button"
           data-testid="btn-season-pass"
           onClick={() => setSeasonPassOpen(true)}
-          style={menuBtnStyle}
+          style={{ ...menuBtnStyle, position: 'relative' }}
         >
           도전과제 ({tokens} 🎫{claimable > 0 ? ` · ${claimable} 🎁 수령` : ''})
+          {claimable > 0 && (
+            <span
+              data-testid="mm-claim-pulse-dot"
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                top: 6,
+                right: 8,
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: '#ffd700',
+                boxShadow: '0 0 0 0 rgba(255, 215, 0, 0.8)',
+                animation: 'mm-claim-pulse 1.4s ease-out infinite',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
         </button>
         <button
           type="button"
