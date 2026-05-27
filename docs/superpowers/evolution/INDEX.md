@@ -96,3 +96,5 @@
 - Cycle 142 (2026-05-27): claim narration variant pool 7 → 12. cycle 142 finished 5 추가 ("먼지 한 줌이 다시 별이 되었다" 등). cycle 134 test length 5 → 12 갱신. category: narrative. v2 42/100.
 - Cycle 143 (2026-05-27): `claimerTier.ts` 신규 — 5 tier (신참/노련/숙련/마스터/전설), 경계 0·10·50·200·1000. `getClaimerTier(count)` + `nextTierThreshold(count)` pure. 6 unit test. cycle 144+ UI wire 예정. category: system. vitest 1471 (+6). v2 43/100.
 - Cycle 144 (2026-05-27): claimerTier wire to MainMenu. `mm-claimer-tier` testid — "후원자 등급: <tier> (누적 수령 N)" (totalClaims > 0 gated). category: UI. v2 44/100.
+- Cycle 145 (2026-05-27): **페르소나 surface 1 (advisor 권고 20-cycle 주기)**. game-critic + story-writer + level-designer 3 병렬 dispatch. 공통 핀포인트 = wire-up 부재 (SeasonalModifier sim wire 0 / claimerTier ornament / narration wire-up 0) + claimerTier 1000 sentinel 평생 도달 불가. cycle 146-160 backlog 정착. category: meta (페르소나 surface).
+- Cycle 146 (2026-05-27): level-designer 권고 #1 적용 — claimerTier 경계 1000·200·50·10 → 300·80·20·5 재조정. 평생 도달 가능 sentinel. cycle 143 test 갱신. category: balance. v2 46/100.
