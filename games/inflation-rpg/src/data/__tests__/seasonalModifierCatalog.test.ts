@@ -111,7 +111,10 @@ describe('Cycle 129 F2 — SeasonalModifier catalog', () => {
 
   /** Cycle 192 — narrativeWeightMul 의 key 가 NarrationTone (cycle 161 정의)
    *  의 union 과 정합. catalog 가 type 에 없는 tone 을 정의하면 silent
-   *  dormant. */
+   *  dormant.
+   *
+   *  Cycle 206 — `ALL_NARRATION_TONES` array 사용으로 정합. union 변경 시
+   *  array 도 동기화 의무. */
   it('cycle 192 — narrativeWeightMul key 가 NarrationTone union 과 정합', () => {
     const validTones = new Set(['elegy', 'tragedy', 'ode', 'hymn', 'neutral']);
     for (const id of ALL_SEASON_MODIFIER_IDS) {
