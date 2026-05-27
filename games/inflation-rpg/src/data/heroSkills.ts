@@ -32,7 +32,7 @@ export const HERO_SKILLS: readonly HeroSkill[] = [
 
   // Arcane / mage-ish
   { id: 'fireball',        nameKR: '화염구',       description: '범위 화염',          atkMul: 1.25, hpMul: 1.00, jobIds: ['mage', 'archmage'] },
-  { id: 'icebolt',         nameKR: '얼음창',       description: '관통 얼음',          atkMul: 1.15, hpMul: 1.00, jobIds: ['mage', 'archmage'] },
+  { id: 'icebolt',         nameKR: '얼음창',       description: '관통 얼음',          atkMul: 1.20, hpMul: 1.00, jobIds: ['mage', 'archmage'] },
   { id: 'arcane_mastery',  nameKR: '비전통달',     description: '마법 증폭',          atkMul: 1.22, hpMul: 1.00, jobIds: ['mage', 'archmage', 'sage'] },
 
   // Holy / priest-ish
