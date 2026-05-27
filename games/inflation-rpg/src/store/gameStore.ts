@@ -283,7 +283,7 @@ interface GameStore {
   addHallEntry: (entry: import('../data/hallTypes').HallEntry) => void;
   // Cycle 123 N3 — Hall favorited toggle
   toggleHallFavorite: (id: string) => void;
-  // Cycle 129 N5 — F3 Token Economy. 10 token → 1 crackStone 환전.
+  // Cycle 151 N5 — F3 Token Economy. 5 token → 1 crackStone 환전 (cycle 151 재조정).
   //   ok=false reasons: 'invalid' (count<=0 or non-integer), 'insufficient' (잔액 부족).
   redeemTokens: (
     tokensToSpend: number,
@@ -1581,14 +1581,13 @@ export const useGameStore = create<GameStore>()(
         if (bal < tokensToSpend) {
           return { ok: false, reason: 'insufficient' };
         }
-        // F3.2: 10 token → 1 crackStone. tokensToSpend 의 정수 나눗셈.
-        // 잔여 (tokensToSpend % 10) 은 *consume 안 함* — caller 가 10 의 배수만 전달
-        // 하도록 책임 분담 (UI side 에서 10/20/30 step button 제공 의도).
-        // 단순화: floor 분(分) 만큼 환전, 잔여는 그대로 잔존.
-        const crackDelta = Math.floor(tokensToSpend / 10);
-        const actualConsume = crackDelta * 10;
+        // Cycle 151: 10:1 → 5:1 환전 비율 재조정 (level-designer #2 — token
+        // economy 1.44% sub-margin). 5 token → 1 crackStone. tokensToSpend 의
+        // 정수 나눗셈. 잔여 (tokensToSpend % 5) 은 consume 안 함.
+        const crackDelta = Math.floor(tokensToSpend / 5);
+        const actualConsume = crackDelta * 5;
         if (crackDelta <= 0) {
-          // 10 미만 (e.g. 5) 호출 시 환전 0 — caller 에 명확한 reject.
+          // 5 미만 호출 시 환전 0 — caller 에 명확한 reject.
           return { ok: false, reason: 'insufficient' };
         }
         set(s => ({
