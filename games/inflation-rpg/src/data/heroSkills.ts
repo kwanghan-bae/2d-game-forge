@@ -45,7 +45,7 @@ export const HERO_SKILLS: readonly HeroSkill[] = [
   { id: 'palm_strike',     nameKR: '장권',         description: '내공 권법',          atkMul: 1.25, hpMul: 1.02, jobIds: ['monk', 'grandmaster'] },
 
   // Dark / cursed
-  { id: 'curse',           nameKR: '저주',         description: '디버프 + 데미지',    atkMul: 1.15, hpMul: 0.95, jobIds: ['dark_lord', 'assassin'] },
+  { id: 'curse',           nameKR: '저주',         description: '디버프 + 데미지',    atkMul: 1.15, hpMul: 1.00, jobIds: ['dark_lord', 'assassin'] },
   { id: 'soul_drain',      nameKR: '영혼흡수',     description: '적의 영혼을 흡수',   atkMul: 1.20, hpMul: 1.06, jobIds: ['dark_lord', 'mage'] },
 
   // Universal (sage / apprentice / fallback)
