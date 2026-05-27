@@ -4,6 +4,7 @@ import { HallScreen } from './HallScreen';
 import { SeasonPassScreen } from './SeasonPassScreen';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
+import { getClaimerTier } from '../data/claimerTier';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
@@ -11,6 +12,8 @@ export function MainMenu() {
   const hallCount = useGameStore(s => s.meta.hall?.entries.length ?? 0);
   const tokens = useGameStore(s => s.meta.tokens ?? 0);
   const claimable = useGameStore(s => getClaimableCount(s.meta.achievements ?? INITIAL_ACHIEVEMENTS));
+  const totalClaims = useGameStore(s => s.meta.totalClaimsCount ?? 0);
+  const tier = getClaimerTier(totalClaims);
   const heroSnapshot = useGameStore(s => s.run.heroSnapshot);
   const [hallOpen, setHallOpen] = useState(false);
   const [seasonPassOpen, setSeasonPassOpen] = useState(false);
@@ -18,7 +21,12 @@ export function MainMenu() {
   return (
     <div data-testid="main-menu" style={{ padding: 24, color: '#eee', textAlign: 'center' }}>
       <h1 style={{ marginBottom: 8 }}>조선 인플레이션 RPG</h1>
-      <p style={{ opacity: 0.7, marginBottom: 32 }}>신이 되어 용사의 일대기를 후원하라</p>
+      <p style={{ opacity: 0.7, marginBottom: 8 }}>신이 되어 용사의 일대기를 후원하라</p>
+      {totalClaims > 0 && (
+        <div data-testid="mm-claimer-tier" style={{ marginBottom: 24, fontSize: 12, color: '#ffd700' }}>
+          후원자 등급: <strong>{tier}</strong> <span style={{ color: '#888', fontSize: 11 }}>(누적 수령 {totalClaims})</span>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 280, margin: '0 auto' }}>
         {heroSnapshot && (
