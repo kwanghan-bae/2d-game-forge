@@ -26,3 +26,13 @@ export const NPC_TEMPLATES: readonly NpcTemplate[] = [
   // 가족 — 자식
   { kind: 'family_child',  candidateNames: ['아들','딸'],                            emojis: ['👦','👧'],       ageRate: 1.5, spawnChapter: '장년기', initialAge: 1 },
 ];
+
+/**
+ * Cycle 267 — kind 별 대표 emoji helper. UI guide 의 시각 위계 권고 회수.
+ * 각 NpcEntity['kind'] 의 첫 emoji 를 반환 (deterministic).
+ * fallback = '?' (defensive).
+ */
+export function getNpcKindEmoji(kind: NpcEntity['kind']): string {
+  const tpl = NPC_TEMPLATES.find(t => t.kind === kind);
+  return tpl?.emojis[0] ?? '?';
+}
