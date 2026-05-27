@@ -42,4 +42,11 @@ describe('hero skills catalog', () => {
     const s = findSkillById('curse')!;
     expect(s.hpMul).toBeGreaterThanOrEqual(1.00);
   });
+
+  // Cycle 273: dead skill tail polish — soul_drain atkMul 1.20 → 1.25.
+  // dark_lord/mage 자격 도달 시 매력 ↑. cycle 257 sim tail 7 occurrences 회복 후보.
+  it('soul_drain atkMul ≥ 1.25 (cycle 273 dead-tail polish)', () => {
+    const s = findSkillById('soul_drain')!;
+    expect(s.atkMul).toBeGreaterThanOrEqual(1.25);
+  });
 });
