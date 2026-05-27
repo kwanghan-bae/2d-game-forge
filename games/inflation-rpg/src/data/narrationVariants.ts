@@ -336,6 +336,7 @@ const NPC_ENCOUNTER_VARIANTS: Record<NpcEntity['kind'], Array<(c: { age: number 
     (c) => `${c.age}세에 시야 끝에서 같은 표정의 그림자가 나타났다 — 라이벌이었다.`,
     (c) => `${c.age}세에 마을 입구에서 한 검객이 시선을 떨구지 않았다. 라이벌이다.`,
     (c) => `${c.age}세에 라이벌의 첫 칼이 자신의 어깨를 스쳤다 — 그가 더 빨랐다.`,
+    (c) => `${c.age}세에 라이벌과 처음으로 같은 별 아래 잠들었다 — 적인 채로.`,
   ],
   friend: [
     // legacy passerby 3 줄 재배치 (어휘 자체 보존)
