@@ -16,7 +16,7 @@ export interface HeroSkill {
 
 export const HERO_SKILLS: readonly HeroSkill[] = [
   // Physical / warrior-ish
-  { id: 'strike',          nameKR: '일격',         description: '강력한 단일 강타',    atkMul: 1.10, hpMul: 1.00, jobIds: ['warrior', 'paladin', 'hero'] },
+  { id: 'strike',          nameKR: '일격',         description: '강력한 단일 강타',    atkMul: 1.15, hpMul: 1.00, jobIds: ['warrior', 'paladin', 'hero'] },
   { id: 'cleave',          nameKR: '횡베기',       description: 'AoE 검술',          atkMul: 1.08, hpMul: 1.00, jobIds: ['warrior', 'paladin'] },
   { id: 'shield_wall',     nameKR: '방패막기',     description: '강력한 방어',        atkMul: 1.02, hpMul: 1.18, jobIds: ['warrior', 'paladin'] },
 
