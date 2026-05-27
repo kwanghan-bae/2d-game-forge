@@ -184,6 +184,11 @@ export function getNarrationToneFromLabel(label: string): NarrationTone | undefi
   return undefined;
 }
 
+/** Cycle 241 — NarrationTone → 영어 label safe lookup. cycle 214 의 KR 대칭. */
+export function getNarrationToneEnLabel(tone: string): string | undefined {
+  return (NARRATION_TONE_LABEL_EN as Record<string, string>)[tone];
+}
+
 /** template 함수에 optional tone 을 부착. cycle 161 의 도입은 type-only — 기존
  *  `pick` 호출자는 변경 없음. */
 export interface TaggedVariant<T> {
