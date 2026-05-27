@@ -174,6 +174,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 238 (2026-05-28): NARRATION_TONE_LABEL_EN capitalized alphabetic invariant. category: balance. vitest 1549 (+1). v3 38/100 (사용자 새 100-cycle 의 83/100).
 - Cycle 237 (2026-05-28): NARRATION_TONE_LABEL_EN alt label (dev tooling/log 용). 사용자 UI 는 KR 만 노출. category: narrative. typecheck PASS. v3 37/100 (사용자 새 100-cycle 의 82/100).
 - Cycle 236 (2026-05-28): wire-chain-pattern.md 에 **Micro Mode** 섹션 추가 — cycle 201-240 의 1-3 line/cycle 패턴 박제 + when to use / when to exit 가이드. category: chore. v3 36/100 (사용자 새 100-cycle 의 81/100).
 - Cycle 235 (2026-05-28): mm-claim-pulse keyframes 강화 — 70% 위치의 box-shadow 8px → 10px, scale 1.1 → 1.15, opacity 0.7 → 0.8. 시선 hint 강도 +. category: VFX. v3 35/100 (사용자 새 100-cycle 의 80/100, 4/5 완료).
