@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
 import { getClaimableCount } from '../data/achievementsSelectors';
@@ -84,6 +84,21 @@ export function SeasonPassScreen({ onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  /** Cycle 176 — focus 관리 분할 1/n (ui-ux-designer 의 cycle 156 권고 #2):
+   *   modal 열릴 때 close button 에 첫 focus + 닫을 때 직전 포커스 복원.
+   *   Tab cycle trap 자체는 cycle 184+ 분할. */
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<Element | null>(null);
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement;
+    closeBtnRef.current?.focus();
+    return () => {
+      if (previousFocusRef.current instanceof HTMLElement) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, []);
+
   const completedCount = ALL_ACHIEVEMENT_IDS.filter(id => achievements.byId[id]?.completedAt != null).length;
   const claimableCount = getClaimableCount(achievements);
 
@@ -136,7 +151,7 @@ export function SeasonPassScreen({ onClose }: Props) {
               )}
             </span>
           </div>
-          <button type="button" data-testid="season-pass-close" aria-label="도전과제 모달 닫기" onClick={onClose} style={{ minHeight: 44, minWidth: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
+          <button ref={closeBtnRef} type="button" data-testid="season-pass-close" aria-label="도전과제 모달 닫기" onClick={onClose} style={{ minHeight: 44, minWidth: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
         </div>
 
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', gap: 16, fontSize: 12, flexWrap: 'wrap' }}>
