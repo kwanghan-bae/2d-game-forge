@@ -11,7 +11,7 @@
   - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
 - **사용자 prompted 새 100-cycle (cycle 256-355)** = 2026-05-28 시작. 사용자 "다시 한 번 100 cycle" 요청. cycle 256 = 8 페르소나 fan-out kickoff. PRD = `cycle-256-prd.md` (substantive accountability 톤). 메타-rule 3 신규 (micro mode ≤ 30% / sim baseline 매 20 cycle / STATUS 자축 톤 M===N only). EternalCodex 폐기 → Lifebook supersede.
-  - 진행률 = **1/100** (cycle 256 F1 = forNpcDeath kind-aware 분기, vitest 1553 → 1557).
+  - 진행률 = **16/100** (cycle 256 F1 = forNpcDeath kind-aware 분기, vitest 1553 → 1566). STATUS trajectory = `STATUS-2026-05-28-cycle-260.md` / `cycle-270.md`. 다음 = cycle 280 (메타-rule 1 비율 20-cycle 검증).
 
 ## Cycle log
 
