@@ -10,6 +10,12 @@ export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   '신은 침묵 속에 미소 짓는다',
   '시간의 강물이 그대를 기억한다',
   '하늘이 그대의 발자국을 인장한다',
+  // Cycle 142 — variance pool 7 → 12 확장. realm/personality 가중은 cycle 145+ 페르소나 surface 에서 결정.
+  '먼지 한 줌이 다시 별이 되었다',
+  '잠든 영웅의 이름을 신이 부른다',
+  '운명의 책장이 또 한 장 넘어간다',
+  '여명은 그대의 노래를 들었다',
+  '돌 위에 새겨진 이름이 빛난다',
 ] as const;
 
 /**

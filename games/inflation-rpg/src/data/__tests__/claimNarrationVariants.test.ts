@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { CLAIM_NARRATION_VARIANTS, pickClaimNarration } from '../claimNarrationVariants';
 
 describe('Cycle 134 — claimNarrationVariants', () => {
-  it('CLAIM_NARRATION_VARIANTS 최소 5 variant', () => {
-    expect(CLAIM_NARRATION_VARIANTS.length).toBeGreaterThanOrEqual(5);
+  it('CLAIM_NARRATION_VARIANTS 최소 12 variant (cycle 142 확장)', () => {
+    expect(CLAIM_NARRATION_VARIANTS.length).toBeGreaterThanOrEqual(12);
   });
 
   it('모든 variant non-empty + 50 자 이내', () => {
