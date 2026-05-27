@@ -25,6 +25,7 @@ export function SeasonPassScreen({ onClose }: Props) {
   const redeem = useGameStore(s => s.redeemTokens);
   const claim = useGameStore(s => s.claimAchievement);
   const activeSeason = getActiveSeasonModifier(seasonStartedAt);
+  const [pulseId, setPulseId] = useState<string | null>(null);
   const [redeemAmount, setRedeemAmount] = useState(10);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -33,6 +34,8 @@ export function SeasonPassScreen({ onClose }: Props) {
     if (result.ok) {
       const narration = pickClaimNarration();
       setFeedback(`${narration} (+${result.tokenDelta} 🎫)`);
+      setPulseId(id);
+      setTimeout(() => setPulseId(null), 600);
     } else {
       const msg =
         result.reason === 'already-claimed' ? '이미 수령했습니다'
@@ -140,9 +143,11 @@ export function SeasonPassScreen({ onClose }: Props) {
                       type="button"
                       data-testid={`sp-claim-btn-${id}`}
                       data-claim-state={state}
+                      data-claim-pulse={pulseId === id ? 'true' : undefined}
                       aria-label={claimable ? `${def.nameKR} 수령` : '수령 완료'}
                       onClick={() => claimable && handleClaim(id)}
                       disabled={!claimable}
+                      className={pulseId === id ? 'sp-claim-pulse' : undefined}
                       style={{
                         minHeight: claimable ? 44 : 36,
                         padding: '6px 14px',
@@ -155,6 +160,9 @@ export function SeasonPassScreen({ onClose }: Props) {
                         fontWeight: claimable ? 700 : 400,
                         cursor: claimable ? 'pointer' : 'not-allowed',
                         opacity: claimable ? 1 : 0.6,
+                        transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                        transform: pulseId === id ? 'scale(1.15)' : 'scale(1)',
+                        boxShadow: pulseId === id ? '0 0 16px 4px rgba(255, 215, 0, 0.6)' : 'none',
                       }}
                     >
                       {claimable ? `수령 (+${def.reward.tokens} 🎫)` : '수령 완료'}
