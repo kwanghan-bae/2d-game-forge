@@ -58,7 +58,7 @@ export class NarrativeGenerator {
   }
 
   /** F3 — NPC 첫 조우 나레이션. 3 kind × 3 variant. Cycle 104: realm wired. */
-  static forNpcEncounter(opts: { age: number; kind: 'mentor' | 'rival' | 'passerby'; realm?: RealmId | null }, seed = 0): string {
+  static forNpcEncounter(opts: { age: number; kind: NpcEntity['kind']; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.npcEncounter(opts, seed);
   }
 

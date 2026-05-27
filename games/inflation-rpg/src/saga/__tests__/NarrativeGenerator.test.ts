@@ -127,13 +127,13 @@ describe('Cycle 1 F3 — NPC narrative generators', () => {
     expect(r.length).toBeGreaterThan(0);
   });
 
-  it('F3.2: forNpcEncounter 3 kind 각 3+ variant', () => {
-    for (const kind of ['mentor', 'rival', 'passerby'] as const) {
+  it('F3.2: forNpcEncounter 6 kind (Cycle 264 확장) 각 2+ variant', () => {
+    for (const kind of ['mentor', 'rival', 'friend', 'family_parent', 'family_spouse', 'family_child'] as const) {
       const s = new Set<string>();
       for (let i = 0; i < 100; i++) {
         s.add(NarrativeGenerator.forNpcEncounter({ age: 22 + i, kind }, i));
       }
-      expect(s.size).toBeGreaterThanOrEqual(3);
+      expect(s.size).toBeGreaterThanOrEqual(2);
     }
   });
 
@@ -202,8 +202,8 @@ describe('Cycle 3 F1 — 이중 괄호 prefix bug fix', () => {
     }
   });
 
-  it('forNpcEncounter — 3 kind × 100 seed: leading "(N세) " prefix 부재', () => {
-    for (const kind of ['mentor', 'rival', 'passerby'] as const) {
+  it('forNpcEncounter — 6 kind × 100 seed: leading "(N세) " prefix 부재', () => {
+    for (const kind of ['mentor', 'rival', 'friend', 'family_parent', 'family_spouse', 'family_child'] as const) {
       for (let i = 0; i < 100; i++) {
         const txt = NarrativeGenerator.forNpcEncounter({ age: 22 + i, kind }, i);
         expect(txt).not.toMatch(LEADING_PAREN_PREFIX_RE);

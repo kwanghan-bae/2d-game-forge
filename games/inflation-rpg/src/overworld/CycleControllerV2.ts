@@ -559,15 +559,12 @@ export class CycleControllerV2 {
     if (candidates.length > 0 && this.rng.chance(0.2)) {
       const picked = candidates[this.rng.int(candidates.length)];
       events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
-      const generatorKind: 'mentor' | 'rival' | 'passerby' =
-        picked!.kind === 'mentor' ? 'mentor'
-        : picked!.kind === 'rival' ? 'rival'
-        : 'passerby';
+      // Cycle 264: forNpcEncounter NpcEntity['kind'] 6 union 정합 — generatorKind 변환 제거.
       this.recordToStore({
         age: this.hero.age,
         type: 'npcEncounter',
         narrativeText: NarrativeGenerator.forNpcEncounter(
-          { age: this.hero.age, kind: generatorKind, realm: this.currentRealmId },
+          { age: this.hero.age, kind: picked!.kind, realm: this.currentRealmId },
           this.rng.int(100000),
         ),
         payload: { npcInstanceId: picked!.instanceId, kind: picked!.kind },
@@ -840,15 +837,12 @@ export class CycleControllerV2 {
     if (candidates118.length > 0 && this.rng.chance(0.2)) {
       const picked = candidates118[this.rng.int(candidates118.length)];
       combatEvents.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
-      const generatorKind: 'mentor' | 'rival' | 'passerby' =
-        picked!.kind === 'mentor' ? 'mentor'
-        : picked!.kind === 'rival' ? 'rival'
-        : 'passerby';
+      // Cycle 264: forNpcEncounter NpcEntity['kind'] 6 union 정합.
       this.recordToStore({
         age: this.hero.age,
         type: 'npcEncounter',
         narrativeText: NarrativeGenerator.forNpcEncounter(
-          { age: this.hero.age, kind: generatorKind, realm: this.currentRealmId },
+          { age: this.hero.age, kind: picked!.kind, realm: this.currentRealmId },
           this.rng.int(100000),
         ),
         payload: { npcInstanceId: picked!.instanceId, kind: picked!.kind },
@@ -1346,16 +1340,12 @@ export class CycleControllerV2 {
       const picked = candidates[this.rng.int(candidates.length)];
       events.push({ type: 'npc_encounter', npcInstanceId: picked!.instanceId, npcKind: picked!.kind });
       // Cycle-1 F3: dead path 회수 — NPC 조우를 saga 에 기록.
-      // npcKind ({mentor,rival,friend,family_*}) → generator kind ({mentor,rival,passerby}) 매핑.
-      const generatorKind: 'mentor' | 'rival' | 'passerby' =
-        picked!.kind === 'mentor' ? 'mentor'
-        : picked!.kind === 'rival' ? 'rival'
-        : 'passerby';
+      // Cycle 264: NpcEntity['kind'] 6 union 정합, generator 변환 제거.
       this.recordToStore({
         age: this.hero.age,
         type: 'npcEncounter',
         narrativeText: NarrativeGenerator.forNpcEncounter(
-          { age: this.hero.age, kind: generatorKind, realm: this.currentRealmId },
+          { age: this.hero.age, kind: picked!.kind, realm: this.currentRealmId },
           this.rng.int(100000),
         ),
         payload: { npcInstanceId: picked!.instanceId, kind: picked!.kind },
