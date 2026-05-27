@@ -3,7 +3,7 @@
  * 이벤트 타입별 나레이션 변형 (5–8개씩). seed 기반으로 선택해 단조로움 방지.
  */
 
-import type { RealmId, SeasonId } from '../types';
+import type { NpcEntity, RealmId, SeasonId } from '../types';
 import { josa } from '../utils/josa';
 
 /** Object marker (을/를) — Cycle 4 A2: josa() 으로 forward (single source). */
@@ -337,12 +337,39 @@ const NPC_ENCOUNTER_VARIANTS: Record<'mentor' | 'rival' | 'passerby', Array<(c: 
   ],
 };
 
-/* ─────────────────────── npcDeath (F3) ──────────────────────── */
-const NPC_DEATH_VARIANTS: Array<(c: { age: number }) => string> = [
-  (c) => `${c.age}세에 멘토가 침대에서 일어나지 못했다 — 한 시대가 끝났다.`,
-  (c) => `${c.age}세에 라이벌의 마지막 칼은 자신의 것이었다 — 둘 다 살아남지 못했다.`,
-  (c) => `${c.age}세에 행인의 부고를 멀리서 들었다 — 이름은 끝내 몰랐다.`,
-];
+/* ─────────────────────── npcDeath (F3) — Cycle 256 ─────────────
+ * NPC kind 별 분기. legacy 3 줄 (mentor / rival / friend) 보존 + 신규
+ * 11 줄 = 총 14 variant. NpcEntity['kind'] union 6 kind 모두 production
+ * spawn 확인 (CycleControllerV2.ts:1206/1214/1220/1226/1241).
+ * fallback (kind 누락) = friend 풀 — typecheck 가 강제하므로 defensive.
+ */
+const NPC_DEATH_VARIANTS_BY_KIND: Record<NpcEntity['kind'], Array<(c: { age: number }) => string>> = {
+  mentor: [
+    (c) => `${c.age}세에 멘토가 침대에서 일어나지 못했다 — 한 시대가 끝났다.`,
+    (c) => `${c.age}세에 멘토의 마지막 말은 가르침이 아니라 침묵이었다.`,
+    (c) => `${c.age}세에 멘토는 자신의 지팡이를 영웅에게 건네고 잠들었다.`,
+  ],
+  rival: [
+    (c) => `${c.age}세에 라이벌의 마지막 칼은 자신의 것이었다 — 둘 다 살아남지 못했다.`,
+    (c) => `${c.age}세에 라이벌이 먼저 무릎을 꿇었다 — 영웅은 처음으로 이긴 것이 무서웠다.`,
+  ],
+  friend: [
+    (c) => `${c.age}세에 친구의 부고를 멀리서 들었다 — 이름은 끝내 몰랐다.`,
+    (c) => `${c.age}세에 친구가 떠난 자리에 짧은 인사만 남았다.`,
+  ],
+  family_parent: [
+    (c) => `${c.age}세에 부모가 자신보다 먼저 별이 되었다.`,
+    (c) => `${c.age}세에 부모의 손을 마지막으로 잡았다 — 그 손은 자신을 안았던 그 손이었다.`,
+  ],
+  family_spouse: [
+    (c) => `${c.age}세에 반려자가 먼저 잠들었다 — 영웅은 자신의 회춘이 처음으로 죄스러웠다.`,
+    (c) => `${c.age}세에 반려자의 마지막 숨을 지켜보았다 — 영원은 함께 늙을 수 없는 형벌이었다.`,
+  ],
+  family_child: [
+    (c) => `${c.age}세에 자식이 영웅보다 먼저 늙어 떠났다.`,
+    (c) => `${c.age}세에 자식의 무덤 앞에서 영웅은 처음으로 자신의 영원을 저주했다.`,
+  ],
+};
 
 /* ─────────────────────── familyEvent (F3) ───────────────────── */
 const FAMILY_EVENT_VARIANTS: Record<'marriage' | 'child_born' | 'child_grown', Array<(c: { age: number }) => string>> = {
@@ -544,8 +571,9 @@ export const NarrationVariants = {
     const out = pick(variants, { age: ctx.age }, seed);
     return realmTone(out, ctx.realm, seed);
   },
-  npcDeath(ctx: { age: number; realm?: RealmId | null }, seed = 0): string {
-    const out = pick(NPC_DEATH_VARIANTS, { age: ctx.age }, seed);
+  npcDeath(ctx: { age: number; kind: NpcEntity['kind']; realm?: RealmId | null }, seed = 0): string {
+    const variants = NPC_DEATH_VARIANTS_BY_KIND[ctx.kind] ?? NPC_DEATH_VARIANTS_BY_KIND.friend;
+    const out = pick(variants, { age: ctx.age }, seed);
     return realmTone(out, ctx.realm, seed);
   },
   familyEvent(ctx: { age: number; type: 'marriage' | 'child_born' | 'child_grown'; realm?: RealmId | null }, seed = 0): string {

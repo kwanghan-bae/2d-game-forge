@@ -352,3 +352,37 @@ describe('Cycle 161 — pickWeighted helper', () => {
     expect(() => pickWeighted([], { name: 'A' }, 0)).toThrow();
   });
 });
+
+describe('Cycle 256 F1 — NarrationVariants.npcDeath kind-aware 분기', () => {
+  it('rival 사망 → "라이벌" 어휘 등장, "멘토" 어휘 0', () => {
+    for (let seed = 0; seed < 6; seed++) {
+      const r = NarrationVariants.npcDeath({ age: 45, kind: 'rival', realm: null }, seed);
+      expect(r).toMatch(/라이벌/);
+      expect(r).not.toMatch(/멘토/);
+    }
+  });
+
+  it('mentor 사망 → "멘토" 어휘 등장, "라이벌" 어휘 0', () => {
+    for (let seed = 0; seed < 6; seed++) {
+      const r = NarrationVariants.npcDeath({ age: 45, kind: 'mentor', realm: null }, seed);
+      expect(r).toMatch(/멘토/);
+      expect(r).not.toMatch(/라이벌/);
+    }
+  });
+
+  it('family_spouse 사망 → "반려" 어휘 등장 (eternal hero 비대칭)', () => {
+    for (let seed = 0; seed < 4; seed++) {
+      const r = NarrationVariants.npcDeath({ age: 65, kind: 'family_spouse', realm: null }, seed);
+      expect(r).toMatch(/반려자/);
+    }
+  });
+
+  it('NpcEntity 6 kind 모두 ≥ 1 variant — defensive grep', () => {
+    const KINDS = ['rival', 'mentor', 'friend', 'family_parent', 'family_spouse', 'family_child'] as const;
+    for (const kind of KINDS) {
+      const r = NarrationVariants.npcDeath({ age: 30, kind, realm: null }, 0);
+      expect(r).toMatch(/\d+세/);
+      expect(r.length).toBeGreaterThan(5);
+    }
+  });
+});

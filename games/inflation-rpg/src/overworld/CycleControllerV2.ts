@@ -548,7 +548,7 @@ export class CycleControllerV2 {
           age: this.hero.age,
           type: 'npcDeath',
           narrativeText: NarrativeGenerator.forNpcDeath(
-            { age: this.hero.age, realm: this.currentRealmId },
+            { age: this.hero.age, kind: npc.kind, realm: this.currentRealmId },
             this.rng.int(100000),
           ),
           payload: { npcInstanceId: npc.instanceId, kind: npc.kind },
@@ -829,7 +829,7 @@ export class CycleControllerV2 {
           age: this.hero.age,
           type: 'npcDeath',
           narrativeText: NarrativeGenerator.forNpcDeath(
-            { age: this.hero.age, realm: this.currentRealmId },
+            { age: this.hero.age, kind: npc.kind, realm: this.currentRealmId },
             this.rng.int(100000),
           ),
           payload: { npcInstanceId: npc.instanceId, kind: npc.kind },
@@ -1328,11 +1328,12 @@ export class CycleControllerV2 {
       if (wasAlive && !npc.isAlive) {
         events.push({ type: 'npc_died', npcInstanceId: npc.instanceId });
         // Cycle-1 F3: dead path 회수 — NPC 사망을 saga 에 기록.
+        // Cycle 256: kind-aware 분기 (rival/mentor/family 화법 정합).
         this.recordToStore({
           age: this.hero.age,
           type: 'npcDeath',
           narrativeText: NarrativeGenerator.forNpcDeath(
-            { age: this.hero.age, realm: this.currentRealmId },
+            { age: this.hero.age, kind: npc.kind, realm: this.currentRealmId },
             this.rng.int(100000),
           ),
           payload: { npcInstanceId: npc.instanceId, kind: npc.kind },

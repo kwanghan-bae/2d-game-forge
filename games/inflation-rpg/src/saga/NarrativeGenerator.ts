@@ -1,5 +1,5 @@
 import type { DeathCause } from './SagaTypes';
-import type { RealmId, SeasonId } from '../types';
+import type { NpcEntity, RealmId, SeasonId } from '../types';
 import { NarrationVariants } from '../data/narrationVariants';
 
 export class NarrativeGenerator {
@@ -62,8 +62,8 @@ export class NarrativeGenerator {
     return NarrationVariants.npcEncounter(opts, seed);
   }
 
-  /** F3 — NPC 사망 나레이션. 3 variant. Cycle 104: realm wired. */
-  static forNpcDeath(opts: { age: number; realm?: RealmId | null }, seed = 0): string {
+  /** F3 — NPC 사망 나레이션. Cycle 256: kind-aware 분기 (6 kind, 14 variant). */
+  static forNpcDeath(opts: { age: number; kind: NpcEntity['kind']; realm?: RealmId | null }, seed = 0): string {
     return NarrationVariants.npcDeath(opts, seed);
   }
 
