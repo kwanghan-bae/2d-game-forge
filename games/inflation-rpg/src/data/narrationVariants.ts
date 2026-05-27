@@ -135,6 +135,12 @@ function pick<T>(arr: Array<(c: T) => string>, ctx: T, seed: number): string {
  *  tag 없는 기본. cycle 169+ variant tagging 시 pool 별 tone 강조. */
 export type NarrationTone = 'elegy' | 'tragedy' | 'ode' | 'hymn' | 'neutral';
 
+/** Cycle 206 — NarrationTone 의 union → array 형태. catalog invariant test
+ *  + runtime tone 순회 사용. union 변경 시 본 array 도 동기화 의무. */
+export const ALL_NARRATION_TONES: readonly NarrationTone[] = [
+  'elegy', 'tragedy', 'ode', 'hymn', 'neutral',
+];
+
 /** template 함수에 optional tone 을 부착. cycle 161 의 도입은 type-only — 기존
  *  `pick` 호출자는 변경 없음. */
 export interface TaggedVariant<T> {
