@@ -5,6 +5,7 @@ import {
   getActiveSeasonModifierId,
   getActiveSeasonModifier,
   getActiveCosmeticTint,
+  getActiveNarrativeWeights,
   getSeasonTimeRemainingMs,
   msToDays,
   SEASON_ROTATION_MS,
@@ -95,6 +96,32 @@ describe('Cycle 135 — seasonalModifierSelector', () => {
       expect(msToDays(SEASON_ROTATION_MS)).toBe(30);
       // 0.5 일 → 0 (floor)
       expect(msToDays(12 * 3600 * 1000)).toBe(0);
+    });
+  });
+
+  /** Cycle 197 — getActiveNarrativeWeights helper (cycle 187 inline 캡슐화) */
+  describe('Cycle 197 — getActiveNarrativeWeights', () => {
+    it('narrativeWeightMul 정의된 slot → record 반환', () => {
+      // 카탈로그를 순회하여 narrativeWeightMul 가 있는 slot 의 index 검색.
+      let foundSlot = -1;
+      for (let i = 0; i < ALL_SEASON_MODIFIER_IDS.length; i++) {
+        const def = getActiveSeasonModifier(0, SEASON_ROTATION_MS * i);
+        if (def.applyRule.narrativeWeightMul) {
+          foundSlot = i;
+          break;
+        }
+      }
+      expect(foundSlot).toBeGreaterThanOrEqual(0);
+      const at = SEASON_ROTATION_MS * foundSlot;
+      const weights = getActiveNarrativeWeights(0, at);
+      expect(weights).not.toBeNull();
+      expect(Object.keys(weights!).length).toBeGreaterThan(0);
+    });
+
+    it('narrativeWeightMul 부재인 slot → null', () => {
+      // 첫 slot (volcano-fire-trait-boost) 는 trait_weight 만, narrative 0.
+      const weights = getActiveNarrativeWeights(0, 0);
+      expect(weights).toBeNull();
     });
   });
 });

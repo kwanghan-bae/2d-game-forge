@@ -63,6 +63,18 @@ export function msToDays(ms: number): number {
 }
 
 /**
+ * Cycle 197 — active SeasonModifier 의 narrativeWeightMul 추출. cycle 187 의
+ *  SeasonPassScreen.handleClaim inline 로직의 캡슐화. 없으면 null.
+ */
+export function getActiveNarrativeWeights(
+  seasonStartedAt: number,
+  nowMs?: number,
+): Readonly<Record<string, number>> | null {
+  const def = getActiveSeasonModifier(seasonStartedAt, nowMs);
+  return def.applyRule.narrativeWeightMul ?? null;
+}
+
+/**
  * Cycle 159 — active SeasonModifier 의 realm 별 cosmetic tint token lookup.
  * cycle 155 의 `getCosmeticTint(rule, realmId)` 를 selector 진입점으로 노출.
  * realm 의 sprite/배경 tint 적용 site (cycle 167+ OverworldScene wire 예정)
