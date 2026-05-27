@@ -5,6 +5,8 @@ import {
   getActiveSeasonModifierId,
   getActiveSeasonModifier,
   getActiveCosmeticTint,
+  getSeasonTimeRemainingMs,
+  msToDays,
   SEASON_ROTATION_MS,
 } from '../seasonalModifierSelector';
 import { ALL_SEASON_MODIFIER_IDS, SEASON_MODIFIER_CATALOG } from '../seasonalModifierCatalog';
@@ -64,6 +66,35 @@ describe('Cycle 135 — seasonalModifierSelector', () => {
     it('cosmeticTint 부재인 slot → null', () => {
       // 첫 catalog (spring) 는 plains+field 매칭. sea/chaos 등 다른 realm 은 null.
       expect(getActiveCosmeticTint(0, 'volcano', 0)).toBeNull();
+    });
+  });
+
+  /** Cycle 172 — getSeasonTimeRemainingMs + msToDays */
+  describe('Cycle 172 — season 카운트다운 selector', () => {
+    it('seasonStartedAt = 0, now = 0 → 30 일 전체', () => {
+      expect(getSeasonTimeRemainingMs(0, 0)).toBe(SEASON_ROTATION_MS);
+    });
+
+    it('elapsed = SEASON_ROTATION / 2 → SEASON_ROTATION / 2 남음', () => {
+      const halfWay = SEASON_ROTATION_MS / 2;
+      expect(getSeasonTimeRemainingMs(0, halfWay)).toBe(halfWay);
+    });
+
+    it('elapsed = SEASON_ROTATION → 다음 시즌 시작 즉시, 30 일 남음', () => {
+      // slot 1 시작점, (1+1) * MS - SEASON_ROTATION = SEASON_ROTATION 남음.
+      expect(getSeasonTimeRemainingMs(0, SEASON_ROTATION_MS)).toBe(SEASON_ROTATION_MS);
+    });
+
+    it('clamp — now < seasonStartedAt → 30 일 남음 (음수 elapsed clamp)', () => {
+      expect(getSeasonTimeRemainingMs(1000, 500)).toBe(SEASON_ROTATION_MS);
+    });
+
+    it('msToDays — 1 day = 1', () => {
+      expect(msToDays(24 * 3600 * 1000)).toBe(1);
+      expect(msToDays(0)).toBe(0);
+      expect(msToDays(SEASON_ROTATION_MS)).toBe(30);
+      // 0.5 일 → 0 (floor)
+      expect(msToDays(12 * 3600 * 1000)).toBe(0);
     });
   });
 });
