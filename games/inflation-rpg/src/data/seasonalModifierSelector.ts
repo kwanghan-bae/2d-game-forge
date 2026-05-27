@@ -41,6 +41,11 @@ export function getAllSeasonNamesKR(): readonly string[] {
   return ALL_SEASON_MODIFIER_IDS.map((id) => SEASON_MODIFIER_CATALOG[id].nameKR);
 }
 
+/** Cycle 233 — active season 의 description 추출. tooltip UI 진입점. */
+export function getActiveSeasonDescription(seasonStartedAt: number, nowMs?: number): string {
+  return getActiveSeasonModifier(seasonStartedAt, nowMs).description;
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().
