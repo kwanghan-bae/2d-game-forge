@@ -110,11 +110,11 @@ describe('Cycle 129 — F3 redeemTokens', () => {
   });
 });
 
-describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
+describe('Cycle 129 — F1 evaluateAndGrantAchievements + Cycle 131 manual claim', () => {
   beforeEach(() => resetStore());
 
-  /** F3.1 — achievement 완료 → token 누적 e2e */
-  it('F3.1 realm-conquest-6 완료 → tokens += 2 + claimedAt set', () => {
+  /** F3.1 — achievement 완료 → evaluator 만 / claim 후 token 누적 (cycle 131 분리) */
+  it('F3.1 realm-conquest-6 완료 → evaluator 직후 tokens=0 / claim 후 tokens=2', () => {
     const conquestEvents: SagaEvent[] = [
       mkEvent('realmEnter', { from: 'base', to: 'plains' }),
       mkEvent('realmEnter', { from: 'plains', to: 'forest' }),
@@ -127,15 +127,22 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
       mkSaga({ events: conquestEvents }),
       NOW,
     );
-    const m = useGameStore.getState().meta;
-    // realm-conquest-6 reward.tokens = 2 (catalog).
-    expect(m.tokens).toBe(2);
-    expect(m.achievements.byId['realm-conquest-6'].completed).toBe(true);
-    expect(m.achievements.byId['realm-conquest-6'].claimedAt).toBe(NOW);
+    // Cycle 131: evaluator 만 호출됐을 때 tokens delta = 0, claimedAt = undefined.
+    const m1 = useGameStore.getState().meta;
+    expect(m1.tokens).toBe(0);
+    expect(m1.achievements.byId['realm-conquest-6'].completed).toBe(true);
+    expect(m1.achievements.byId['realm-conquest-6'].claimedAt).toBeUndefined();
+
+    // claim 호출 → tokens += 2 + claimedAt set.
+    const r = useGameStore.getState().claimAchievement('realm-conquest-6', NOW);
+    expect(r).toEqual({ ok: true, tokenDelta: 2 });
+    const m2 = useGameStore.getState().meta;
+    expect(m2.tokens).toBe(2);
+    expect(m2.achievements.byId['realm-conquest-6'].claimedAt).toBe(NOW);
   });
 
-  /** F1.8 + F3.1 — 중복 완료 차단: 이미 grant 된 achievement 재 trigger 시 token 무변동 */
-  it('F1.8/F3.1 중복 완료 — 이미 claimedAt 있는 achievement 재 trigger 시 token 무변동', () => {
+  /** F1.8 — 중복 evaluator 호출 시 byId 안정 + claim 후 다시 호출해도 grant 0 */
+  it('F1.8 중복 evaluator + claim → 두 번째 evaluator 호출은 grant 0', () => {
     const conquestEvents: SagaEvent[] = [
       mkEvent('realmEnter', { from: 'base', to: 'plains' }),
       mkEvent('realmEnter', { from: 'plains', to: 'forest' }),
@@ -145,22 +152,19 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
       mkEvent('realmEnter', { from: 'volcano', to: 'underworld' }),
     ];
     useGameStore.getState().evaluateAndGrantAchievements(mkSaga({ events: conquestEvents }), NOW);
-    const tokensAfter1 = useGameStore.getState().meta.tokens;
+    useGameStore.getState().claimAchievement('realm-conquest-6', NOW);
     const claimedAt1 = useGameStore.getState().meta.achievements.byId['realm-conquest-6'].claimedAt;
+    const tokensAfterClaim = useGameStore.getState().meta.tokens;
 
-    // 다시 같은 saga emit — claimedAt 무변동, tokens 무변동.
+    // 다시 같은 saga emit — evaluator 만 호출됨, claimedAt 무변동, tokens 무변동.
     useGameStore.getState().evaluateAndGrantAchievements(mkSaga({ events: conquestEvents }), NOW + 9999);
     const m2 = useGameStore.getState().meta;
-    expect(m2.tokens).toBe(tokensAfter1);
+    expect(m2.tokens).toBe(tokensAfterClaim);
     expect(m2.achievements.byId['realm-conquest-6'].claimedAt).toBe(claimedAt1);
   });
 
-  /** EDGE.6 — 5 starter 동시 완료 → tokens += 13 (1+2+2+3+5) */
-  it('EDGE.6 5 starter 동시 완료 — 총 tokens += 13', () => {
-    // realm-conquest-6 + npc 4 unique + inflation-flash 3 jumps + lv-10M (1/3
-    // 만 진행) + aging-master 는 분리 path 라 한 saga 로 5 동시 완료 불가.
-    // 대신 *각 starter 가 단독 완료* 인 saga 5 회 emit 으로 총합 검증.
-
+  /** EDGE.6 — 5 starter 각자 completed → 각자 claim 호출 후 총 tokens=13 */
+  it('EDGE.6 5 starter 완료 + claim — 총 tokens += 13', () => {
     // 1. lv-10m-in-3-cycles → 3 cycle 모두 10M+ → reward=1
     for (let i = 0; i < 3; i++) {
       useGameStore.getState().evaluateAndGrantAchievements(
@@ -168,6 +172,7 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
         NOW + i,
       );
     }
+    expect(useGameStore.getState().claimAchievement('lv-10m-in-3-cycles', NOW + 1).ok).toBe(true);
     expect(useGameStore.getState().meta.tokens).toBe(1);
 
     // 2. npc-collect-4 → 4 unique npc → reward=2
@@ -182,6 +187,7 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
       }),
       NOW + 10,
     );
+    expect(useGameStore.getState().claimAchievement('npc-collect-4-uniques', NOW + 10).ok).toBe(true);
     expect(useGameStore.getState().meta.tokens).toBe(1 + 2);
 
     // 3. realm-conquest-6 → 6 realm → reward=2
@@ -198,6 +204,7 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
       }),
       NOW + 20,
     );
+    expect(useGameStore.getState().claimAchievement('realm-conquest-6', NOW + 20).ok).toBe(true);
     expect(useGameStore.getState().meta.tokens).toBe(1 + 2 + 2);
 
     // 4. aging-master-10 → volcano 자연사 10 회 → reward=3
@@ -207,6 +214,7 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
         NOW + 100 + i,
       );
     }
+    expect(useGameStore.getState().claimAchievement('aging-master-10', NOW + 200).ok).toBe(true);
     expect(useGameStore.getState().meta.tokens).toBe(1 + 2 + 2 + 3);
 
     // 5. inflation-flash-100x → ×100 jump 3 회 → reward=5
@@ -220,6 +228,7 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
       }),
       NOW + 200,
     );
+    expect(useGameStore.getState().claimAchievement('inflation-flash-100x', NOW + 201).ok).toBe(true);
     expect(useGameStore.getState().meta.tokens).toBe(13);
 
     // 모든 5 starter 가 completed + claimedAt 기록.
@@ -249,8 +258,8 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
     expect(m.achievements.byId['lv-10m-in-3-cycles'].completed).toBe(false);
   });
 
-  /** Cycle end → token grant → redeemTokens 환전 통합 */
-  it('grant → redeemTokens 통합: realm-conquest-6 완료 → 2 token 잔액, 환전 시 insufficient', () => {
+  /** Cycle end → claim → redeemTokens 환전 통합 (cycle 131 분리) */
+  it('evaluator + claim + redeemTokens 통합: realm-conquest-6 완료 → claim → 2 token / 환전 insufficient', () => {
     const events: SagaEvent[] = [
       mkEvent('realmEnter', { from: 'base', to: 'plains' }),
       mkEvent('realmEnter', { from: 'plains', to: 'forest' }),
@@ -260,6 +269,8 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements (auto-grant)', () => {
       mkEvent('realmEnter', { from: 'volcano', to: 'underworld' }),
     ];
     useGameStore.getState().evaluateAndGrantAchievements(mkSaga({ events }), NOW);
+    expect(useGameStore.getState().meta.tokens).toBe(0);
+    useGameStore.getState().claimAchievement('realm-conquest-6', NOW);
     expect(useGameStore.getState().meta.tokens).toBe(2);
     // 2 token 으로 환전 시도 → 10 미만 → insufficient
     const r = useGameStore.getState().redeemTokens(10);

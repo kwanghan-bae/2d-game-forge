@@ -19,8 +19,23 @@ export function SeasonPassScreen({ onClose }: Props) {
   const tokensRedeemed = useGameStore(s => s.meta.tokensRedeemed ?? 0);
   const crackStones = useGameStore(s => s.meta.crackStones);
   const redeem = useGameStore(s => s.redeemTokens);
+  const claim = useGameStore(s => s.claimAchievement);
   const [redeemAmount, setRedeemAmount] = useState(10);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  function handleClaim(id: typeof ALL_ACHIEVEMENT_IDS[number]) {
+    const result = claim(id);
+    if (result.ok) {
+      setFeedback(`수령 완료: +${result.tokenDelta} 🎫`);
+    } else {
+      const msg =
+        result.reason === 'already-claimed' ? '이미 수령했습니다'
+          : result.reason === 'not-completed' ? '도전과제가 아직 완료되지 않았습니다'
+          : '잘못된 도전과제 id';
+      setFeedback(msg);
+    }
+    setTimeout(() => setFeedback(null), 2500);
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -90,16 +105,46 @@ export function SeasonPassScreen({ onClose }: Props) {
             const def = ACHIEVEMENT_CATALOG[id];
             const progress = achievements.byId[id];
             const completed = progress?.completedAt != null;
+            const claimed = progress?.claimedAt != null;
+            const claimable = completed && !claimed;
+            const state = !completed ? 'locked' : claimed ? 'claimed' : 'claimable';
             return (
               <div key={id} data-testid={`sp-ach-${id}`} style={{ padding: '8px 0', borderBottom: '1px solid #2a2d38', opacity: completed ? 1 : 0.85 }}>
                 <div style={{ fontSize: 13, color: '#ddd', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span>{completed ? '✅' : '◯'}</span>
+                  <span>{claimed ? '✅' : completed ? '🎁' : '◯'}</span>
                   <span style={{ flex: 1, fontWeight: completed ? 600 : 400 }}>{def.nameKR}</span>
                   <span style={{ fontSize: 11, color: '#ffd700' }}>+{def.reward.tokens} 🎫</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{def.description}</div>
                 {!completed && progress && progress.progress > 0 && (
                   <div style={{ fontSize: 10, color: '#666', marginTop: 2 }}>진행도: {progress.progress}</div>
+                )}
+                {completed && (
+                  <div style={{ marginTop: 6, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      data-testid={`sp-claim-btn-${id}`}
+                      data-claim-state={state}
+                      aria-label={claimable ? `${def.nameKR} 수령` : '수령 완료'}
+                      onClick={() => claimable && handleClaim(id)}
+                      disabled={!claimable}
+                      style={{
+                        minHeight: claimable ? 44 : 36,
+                        padding: '6px 14px',
+                        background: claimable ? '#ffd700' : '#3b4252',
+                        color: claimable ? '#1a1d28' : '#666',
+                        border: '1px solid',
+                        borderColor: claimable ? '#ffd700' : '#555',
+                        borderRadius: 6,
+                        fontSize: 13,
+                        fontWeight: claimable ? 700 : 400,
+                        cursor: claimable ? 'pointer' : 'not-allowed',
+                        opacity: claimable ? 1 : 0.6,
+                      }}
+                    >
+                      {claimable ? `수령 (+${def.reward.tokens} 🎫)` : '수령 완료'}
+                    </button>
+                  </div>
                 )}
               </div>
             );
