@@ -76,6 +76,13 @@ export class DestinationResolver {
     const t_miser = hasTrait('t_miser');
     const t_fortune = hasTrait('t_fortune');
     const t_fragile = hasTrait('t_fragile');
+    // Cycle 286 — α T3: 남은 6 trait wire (berserker/iron/prodigy/lucky/genius/terminal_genius).
+    const t_berserker = hasTrait('t_berserker');
+    const t_iron = hasTrait('t_iron');
+    const t_prodigy = hasTrait('t_prodigy');
+    const t_lucky = hasTrait('t_lucky');
+    const t_genius = hasTrait('t_genius');
+    const t_terminal_genius = hasTrait('t_terminal_genius');
 
     const weighted = filtered.map(c => {
       let w = WEIGHT_BASE[c.kind] ?? 1;
@@ -105,6 +112,17 @@ export class DestinationResolver {
       if (c.kind === 'treasure_cave' && t_fortune) w *= 1.6;  // 행운: 보물 동굴
       if (c.kind === 'boss'  && t_fragile)     w *= 0.5;  // 약체: 보스 강한 회피
       if (c.kind === 'shrine' && t_fragile)    w *= 1.4;  // 약체: shrine 회복
+      // Cycle 286 — α T3: 6 추가 trait wire (16/16 production-consumed).
+      if (c.kind === 'enemy' && t_berserker)   w *= 1.3;  // 광전사: 일반 적
+      if (c.kind === 'boss'  && t_berserker)   w *= 1.2;  // 광전사: 보스 동등 선호
+      if (c.kind === 'trial' && t_iron)        w *= 1.5;  // 강철: 시련 선호
+      if (c.kind === 'shrine' && t_prodigy)    w *= 1.3;  // 천재: shrine 배움
+      if (c.kind === 'treasure_cave' && t_lucky) w *= 1.4;  // 행운형 (t_fortune 외 lucky)
+      if (c.kind === 'cave' && t_lucky)        w *= 1.3;  // 행운: cave 보너스
+      if (c.kind === 'holy_ruin' && t_genius)  w *= 1.4;  // 천재: 고대 지혜
+      if (c.kind === 'sightseeing' && t_genius) w *= 1.3; // 천재: 관찰
+      if (c.kind === 'holy_ruin' && t_terminal_genius) w *= 1.6; // 말기 천재: 강한 boost
+      if (c.kind === 'shrine' && t_terminal_genius) w *= 1.4;
       return { candidate: c, weight: Math.max(0.1, w) };
     });
 
