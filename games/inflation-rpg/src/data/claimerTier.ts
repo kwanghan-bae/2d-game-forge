@@ -24,3 +24,21 @@ export function nextTierThreshold(count: number): { nextTier: ClaimerTier | null
   if (count >= 5) return { nextTier: '숙련', remaining: 20 - count };
   return { nextTier: '노련', remaining: 5 - count };
 }
+
+/** Cycle 152 — tier 도달 시 일회성 token bonus. game-critic #2 권고
+ *  ("claimerTier ornament → meaningful progression"). */
+export const TIER_UNLOCK_REWARD: Readonly<Record<ClaimerTier, { tokenBonus: number }>> = {
+  '신참': { tokenBonus: 0 },     // 시작 등급, bonus 0
+  '노련': { tokenBonus: 5 },
+  '숙련': { tokenBonus: 15 },
+  '마스터': { tokenBonus: 50 },
+  '전설': { tokenBonus: 200 },
+};
+
+/** count 가 N → N+1 로 증가 했을 때 새 tier 진입 시 받을 보너스. tier 변동 없으면 0. */
+export function getTierUnlockBonus(countBefore: number, countAfter: number): { bonus: number; newTier: ClaimerTier | null } {
+  const tierBefore = getClaimerTier(countBefore);
+  const tierAfter = getClaimerTier(countAfter);
+  if (tierBefore === tierAfter) return { bonus: 0, newTier: null };
+  return { bonus: TIER_UNLOCK_REWARD[tierAfter].tokenBonus, newTier: tierAfter };
+}
