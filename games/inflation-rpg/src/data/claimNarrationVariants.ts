@@ -3,6 +3,7 @@
 // V3 정체성: 후원자 (player) 가 hero 의 노고를 인정하는 짧은 비트.
 
 export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
+  // closure 톤 (cycle 134/142 정착) — 12 줄 의 8 줄 유지.
   '용사여, 그대의 노고를 치하한다',
   '한 페이지가 더 채워졌다',
   '운명의 저울이 그대 편으로 기울었다',
@@ -10,12 +11,13 @@ export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   '신은 침묵 속에 미소 짓는다',
   '시간의 강물이 그대를 기억한다',
   '하늘이 그대의 발자국을 인장한다',
-  // Cycle 142 — variance pool 7 → 12 확장. realm/personality 가중은 cycle 145+ 페르소나 surface 에서 결정.
-  '먼지 한 줌이 다시 별이 되었다',
   '잠든 영웅의 이름을 신이 부른다',
-  '운명의 책장이 또 한 장 넘어간다',
-  '여명은 그대의 노래를 들었다',
-  '돌 위에 새겨진 이름이 빛난다',
+  // Cycle 147 — story-writer #2 권고: anticipation 톤 4 신규. closure 一邊倒
+  //   의 motif 4-frame (별/책장/이름/하늘) 봉인 해소.
+  '다음 무대의 막이 천천히 열린다',
+  '새 길의 첫 돌이 깔린다',
+  '오는 바람이 그대의 깃발을 흔들 채비를 한다',
+  '아직 쓰지 않은 장이 그대를 기다린다',
 ] as const;
 
 /**
