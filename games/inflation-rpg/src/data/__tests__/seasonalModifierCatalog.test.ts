@@ -84,4 +84,40 @@ describe('Cycle 129 F2 — SeasonalModifier catalog', () => {
     const b = getSeasonModifierDef('volcano-fire-trait-boost');
     expect(a).toBe(b);
   });
+
+  /** Cycle 168 — axis 분포 invariant (level-designer #3, cycle 149 의 균등화).
+   *  catalog 가 trait 4 / narrative 2 / cosmetic 2 = 50%/25%/25% 비중 유지. */
+  it('cycle 168 — catalog 8 의 axis 분포 invariant (trait 4 / narrative 2 / cosmetic 2)', () => {
+    let trait = 0;
+    let narrative = 0;
+    let cosmetic = 0;
+    for (const id of ALL_SEASON_MODIFIER_IDS) {
+      const def = SEASON_MODIFIER_CATALOG[id];
+      if (def.type === 'trait_weight') trait++;
+      else if (def.type === 'narrative_weight') narrative++;
+      else if (def.type === 'cosmetic') cosmetic++;
+    }
+    // cycle 149 (catalog 6 → 8) axis 균등화 후의 분포.
+    expect(trait + narrative + cosmetic).toBe(ALL_SEASON_MODIFIER_IDS.length);
+    expect(trait).toBeGreaterThanOrEqual(4);
+    expect(narrative).toBeGreaterThanOrEqual(2);
+    expect(cosmetic).toBeGreaterThanOrEqual(2);
+    // 단일 axis 가 catalog 의 75% 이상 → false (편향 알람 invariant).
+    const total = trait + narrative + cosmetic;
+    expect(trait / total).toBeLessThan(0.75);
+    expect(narrative / total).toBeLessThan(0.75);
+    expect(cosmetic / total).toBeLessThan(0.75);
+  });
+
+  /** Cycle 168 — traitWeightMul 의 최대 배수 sanity (economy 깨짐 가드). */
+  it('cycle 168 — traitWeightMul 의 모든 값이 [0.5, 3.0] 범위 (economy sanity)', () => {
+    for (const id of ALL_SEASON_MODIFIER_IDS) {
+      const def = SEASON_MODIFIER_CATALOG[id];
+      if (!def.applyRule.traitWeightMul) continue;
+      for (const [pattern, mul] of Object.entries(def.applyRule.traitWeightMul)) {
+        expect(mul, `${id} - ${pattern}`).toBeGreaterThanOrEqual(0.5);
+        expect(mul, `${id} - ${pattern}`).toBeLessThanOrEqual(3.0);
+      }
+    }
+  });
 });
