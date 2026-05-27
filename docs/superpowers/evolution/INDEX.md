@@ -172,6 +172,7 @@
 - Cycle 212 (2026-05-28): sp-active-season chip 에 active tone label wire (cycle 211 매핑). narrative 시즌일 때 "· 비가/비극/송가/찬가" suffix + 청색. `data-tone-label` testid. category: UI. typecheck PASS. v3 12/100 (사용자 새 100-cycle 의 57/100).
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
+- Cycle 217 (2026-05-28): mm-tier-progress-bar transition polish — 0.3s ease → 0.5s cubic-bezier + 80% 초과 시 gold glow box-shadow (다음 tier 임박 시각). category: VFX (cycle 188 VFX 후 29 cycle 격리, 룰 9 안전). v3 17/100 (사용자 새 100-cycle 의 62/100).
 - Cycle 216 (2026-05-28): `getActiveBuffCardWeights` helper — 3 axis (trait/narrative/buffCard) wire 진입점 대칭 완성. legendary-buff-card-bias (cycle 129) 의 wire 진입점. category: system. typecheck PASS. v3 16/100 (사용자 새 100-cycle 의 61/100).
 - Cycle 214 (2026-05-28): `getNarrationToneLabel(tone)` lookup wrapper — unknown string → undefined. caller 가 NarrationTone type 외 plain string 받을 때 safe lookup. category: narrative. typecheck PASS. v3 14/100 (사용자 새 100-cycle 의 59/100).
 - Cycle 211 (2026-05-28): NARRATION_TONE_LABEL_KR 매핑 — elegy/tragedy/ode/hymn/neutral → 비가/비극/송가/찬가/평이. 미래 UI display wire (sp-active-season chip tone preview) 위한 type-foundation. category: narrative. vitest 1539 baseline. v3 11/100 (사용자 새 100-cycle 의 56/100).
