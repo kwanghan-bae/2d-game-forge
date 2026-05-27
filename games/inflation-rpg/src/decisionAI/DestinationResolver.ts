@@ -64,13 +64,18 @@ export class DestinationResolver {
     const prudent = personality.get('prudent');
 
     // Cycle 284 — Sub-phase α T1: trait wire 활성.
-    // 16 trait union 중 boss/enemy/shrine/exit 의 weight modifier 4 종.
+    // Cycle 285 — α T2: 추가 5 trait (timid/thrill/genius/miser/fortune).
     const hasTrait = (id: TraitId): boolean => ctx.traits.includes(id);
     const t_challenge = hasTrait('t_challenge');
     const t_boss_hunter = hasTrait('t_boss_hunter');
     const t_zealot = hasTrait('t_zealot');
     const t_swift = hasTrait('t_swift');
     const t_explorer = hasTrait('t_explorer');
+    const t_timid = hasTrait('t_timid');
+    const t_thrill = hasTrait('t_thrill');
+    const t_miser = hasTrait('t_miser');
+    const t_fortune = hasTrait('t_fortune');
+    const t_fragile = hasTrait('t_fragile');
 
     const weighted = filtered.map(c => {
       let w = WEIGHT_BASE[c.kind] ?? 1;
@@ -91,6 +96,15 @@ export class DestinationResolver {
       if (c.kind === 'shrine' && t_zealot)     w *= 1.4;
       if (c.kind === 'exit'  && t_swift)       w *= 1.4;
       if ((c.kind === 'cave' || c.kind === 'treasure_cave' || c.kind === 'holy_ruin' || c.kind === 'ruin') && t_explorer) w *= 1.3;
+      // Cycle 285 — α T2: 5 추가 trait wire.
+      if (c.kind === 'boss'  && t_timid)       w *= 0.6;  // 겁쟁이: 보스 회피
+      if (c.kind === 'village' && t_timid)     w *= 1.3;  // 겁쟁이: 마을 선호
+      if (c.kind === 'boss'  && t_thrill)      w *= 1.4;  // 스릴 추구
+      if (c.kind === 'shrine' && t_thrill)     w *= 0.7;  // 스릴 추구: 안식 회피
+      if (c.kind === 'market' && t_miser)      w *= 1.5;  // 구두쇠: 시장 선호
+      if (c.kind === 'treasure_cave' && t_fortune) w *= 1.6;  // 행운: 보물 동굴
+      if (c.kind === 'boss'  && t_fragile)     w *= 0.5;  // 약체: 보스 강한 회피
+      if (c.kind === 'shrine' && t_fragile)    w *= 1.4;  // 약체: shrine 회복
       return { candidate: c, weight: Math.max(0.1, w) };
     });
 
