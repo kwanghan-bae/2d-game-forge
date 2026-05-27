@@ -79,6 +79,26 @@ export const SEASON_MODIFIER_CATALOG: Readonly<
       traitWeightMul: { 'shadow_*': 2 },
     },
   },
+  // Cycle 149 — narrative 톤 확장. trait 편향 67% → 50% 로 균등화.
+  'heaven-narrative-ode': {
+    id: 'heaven-narrative-ode',
+    nameKR: '천상의 송가',
+    description: '천상 차원의 narrative tone — 송가/찬미 가중 ×1.5',
+    type: 'narrative_weight',
+    applyRule: {
+      narrativeWeightMul: { ode: 1.5, hymn: 1.5 },
+    },
+  },
+  // Cycle 149 — cosmetic 영역 확장. sea realm sprite tint.
+  'sea-cosmetic-aqua': {
+    id: 'sea-cosmetic-aqua',
+    nameKR: '해류의 푸름',
+    description: '바다 차원의 sprite tint — 청록 색조 (cosmetic only)',
+    type: 'cosmetic',
+    applyRule: {
+      cosmeticTint: { sea: 'aqua-deep' },
+    },
+  },
 };
 
 /** 모든 starter id (catalog 순회용). cycle 132+ 에서 union 확장 시 동기화. */

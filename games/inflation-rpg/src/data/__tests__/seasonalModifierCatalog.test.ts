@@ -11,9 +11,9 @@ import {
 } from '../seasonalModifierCatalog';
 
 describe('Cycle 129 F2 — SeasonalModifier catalog', () => {
-  /** cycle 129 5 starter + cycle 137 1 추가 = 6 modifier */
-  it('6 modifier 존재 (cycle 129 5 + cycle 137 1) + lookup helper 동작', () => {
-    expect(ALL_SEASON_MODIFIER_IDS).toHaveLength(6);
+  /** cycle 129 5 + cycle 137 1 + cycle 149 2 = 8 modifier */
+  it('8 modifier 존재 (cycle 129 5 + 137 1 + 149 2) + lookup helper 동작', () => {
+    expect(ALL_SEASON_MODIFIER_IDS).toHaveLength(8);
     expect(ALL_SEASON_MODIFIER_IDS).toEqual(
       expect.arrayContaining([
         'volcano-fire-trait-boost',
@@ -22,6 +22,8 @@ describe('Cycle 129 F2 — SeasonalModifier catalog', () => {
         'npc-encounter-boost',
         'legendary-buff-card-bias',
         'underworld-shadow-trait-boost',
+        'heaven-narrative-ode',
+        'sea-cosmetic-aqua',
       ]),
     );
     for (const id of ALL_SEASON_MODIFIER_IDS) {
