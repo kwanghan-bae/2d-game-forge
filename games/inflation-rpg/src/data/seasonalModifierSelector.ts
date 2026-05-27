@@ -35,6 +35,12 @@ export function getActiveSeasonModifierType(
   return getActiveSeasonModifier(seasonStartedAt, nowMs).type;
 }
 
+/** Cycle 229 — catalog 의 모든 nameKR 목록. carousel / preview 등 multi-season
+ *  UI 의 진입점 통일. */
+export function getAllSeasonNamesKR(): readonly string[] {
+  return ALL_SEASON_MODIFIER_IDS.map((id) => SEASON_MODIFIER_CATALOG[id].nameKR);
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().
