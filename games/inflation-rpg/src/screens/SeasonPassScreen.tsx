@@ -4,6 +4,7 @@ import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCa
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { pickClaimNarration } from '../data/claimNarrationVariants';
 import { getActiveSeasonModifier } from '../data/seasonalModifierSelector';
+import { getClaimerTier } from '../data/claimerTier';
 
 interface Props {
   onClose: () => void;
@@ -22,9 +23,11 @@ export function SeasonPassScreen({ onClose }: Props) {
   const tokensRedeemed = useGameStore(s => s.meta.tokensRedeemed ?? 0);
   const crackStones = useGameStore(s => s.meta.crackStones);
   const seasonStartedAt = useGameStore(s => s.meta.seasonStartedAt ?? 0);
+  const totalClaims = useGameStore(s => s.meta.totalClaimsCount ?? 0);
   const redeem = useGameStore(s => s.redeemTokens);
   const claim = useGameStore(s => s.claimAchievement);
   const activeSeason = getActiveSeasonModifier(seasonStartedAt);
+  const claimerTier = getClaimerTier(totalClaims);
   const [pulseId, setPulseId] = useState<string | null>(null);
   const [redeemAmount, setRedeemAmount] = useState(10);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -32,7 +35,7 @@ export function SeasonPassScreen({ onClose }: Props) {
   function handleClaim(id: typeof ALL_ACHIEVEMENT_IDS[number]) {
     const result = claim(id);
     if (result.ok) {
-      const narration = pickClaimNarration();
+      const narration = pickClaimNarration(undefined, claimerTier);
       setFeedback(`${narration} (+${result.tokenDelta} 🎫)`);
       setPulseId(id);
       setTimeout(() => setPulseId(null), 600);

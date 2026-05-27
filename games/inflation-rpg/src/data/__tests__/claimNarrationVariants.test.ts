@@ -1,7 +1,7 @@
 // Cycle 134 — claim narration variant pure test.
 
 import { describe, expect, it } from 'vitest';
-import { CLAIM_NARRATION_VARIANTS, pickClaimNarration } from '../claimNarrationVariants';
+import { CLAIM_NARRATION_VARIANTS, pickClaimNarration, TIER_VOCATIVE_PREFIX } from '../claimNarrationVariants';
 
 describe('Cycle 134 — claimNarrationVariants', () => {
   it('CLAIM_NARRATION_VARIANTS 최소 12 variant (cycle 142 확장)', () => {
@@ -29,5 +29,23 @@ describe('Cycle 134 — claimNarrationVariants', () => {
   it('pickClaimNarration(negative seed) — modulo 정상', () => {
     const out = pickClaimNarration(-1);
     expect(CLAIM_NARRATION_VARIANTS).toContain(out);
+  });
+
+  /** Cycle 148 — tier prefix 적용 */
+  it('cycle 148 — tier 인자 시 prefix 부착', () => {
+    expect(pickClaimNarration(0, '신참')).toBe(`${TIER_VOCATIVE_PREFIX['신참']}, ${CLAIM_NARRATION_VARIANTS[0]}`);
+    expect(pickClaimNarration(1, '전설')).toBe(`${TIER_VOCATIVE_PREFIX['전설']}, ${CLAIM_NARRATION_VARIANTS[1]}`);
+  });
+
+  it('cycle 148 — tier undefined 시 prefix 없음 (legacy 호환)', () => {
+    expect(pickClaimNarration(0)).toBe(CLAIM_NARRATION_VARIANTS[0]);
+    expect(pickClaimNarration(0, undefined)).toBe(CLAIM_NARRATION_VARIANTS[0]);
+  });
+
+  it('cycle 148 — TIER_VOCATIVE_PREFIX 5 tier 모두 정의', () => {
+    expect(Object.keys(TIER_VOCATIVE_PREFIX).length).toBe(5);
+    for (const tier of ['신참', '노련', '숙련', '마스터', '전설'] as const) {
+      expect(TIER_VOCATIVE_PREFIX[tier].length).toBeGreaterThan(0);
+    }
   });
 });

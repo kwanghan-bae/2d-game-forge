@@ -1,6 +1,12 @@
-// Cycle 134 — claim 시 표시될 신의 어조 한 줄 variant 풀.
+// Cycle 134/142/147 — claim 시 표시될 신의 어조 한 줄 variant 풀.
 // 사용처: SeasonPassScreen 의 handleClaim 성공 path. feedback 영역에 표시.
 // V3 정체성: 후원자 (player) 가 hero 의 노고를 인정하는 짧은 비트.
+//
+// Cycle 148 — story-writer #2 권고: ClaimerTier 별 후원자 호칭 prefix.
+//   같은 base narration 에 tier-specific prefix 가 붙어 12 base × 5 tier =
+//   60 variation. 전설 player 와 신참이 다른 어조를 듣는다.
+
+import type { ClaimerTier } from './claimerTier';
 
 export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   // closure 톤 (cycle 134/142 정착) — 12 줄 의 8 줄 유지.
@@ -20,12 +26,27 @@ export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   '아직 쓰지 않은 장이 그대를 기다린다',
 ] as const;
 
+/** ClaimerTier 별 후원자 호칭 prefix. cycle 148 story-writer #2 권고.
+ *  신참 = 거리감, 전설 = 친밀감. */
+export const TIER_VOCATIVE_PREFIX: Readonly<Record<ClaimerTier, string>> = {
+  '신참': '용사여',
+  '노련': '오랜 길손이여',
+  '숙련': '익숙한 손이여',
+  '마스터': '장로여',
+  '전설': '오랜 동반자여',
+};
+
 /**
  * claim 시점의 narration 한 줄 선택. seed (Date.now() % length) 또는 명시.
  * test 에서는 seed 명시로 결정성 확보.
+ *
+ * tier 인자 (cycle 148) 가 주어지면 tier-specific prefix 가 base 앞에 붙음.
+ * undefined 시 prefix 없는 base 만 반환 (legacy 호출 호환).
  */
-export function pickClaimNarration(seed?: number): string {
+export function pickClaimNarration(seed?: number, tier?: ClaimerTier): string {
   const s = typeof seed === 'number' ? seed : Date.now();
   const idx = ((s % CLAIM_NARRATION_VARIANTS.length) + CLAIM_NARRATION_VARIANTS.length) % CLAIM_NARRATION_VARIANTS.length;
-  return CLAIM_NARRATION_VARIANTS[idx];
+  const base = CLAIM_NARRATION_VARIANTS[idx];
+  if (tier === undefined) return base;
+  return `${TIER_VOCATIVE_PREFIX[tier]}, ${base}`;
 }
