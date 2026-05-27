@@ -150,6 +150,15 @@ export const NARRATION_TONE_LABEL_KR: Readonly<Record<NarrationTone, string>> = 
   neutral: '평이',
 };
 
+/** Cycle 231 — NarrationTone 의 짧은 설명. tooltip / detail panel 사용. */
+export const NARRATION_TONE_DESC_KR: Readonly<Record<NarrationTone, string>> = {
+  elegy: '잔잔한 슬픔의 시',
+  tragedy: '잿더미의 노래',
+  ode: '천상의 송가',
+  hymn: '경배의 찬송',
+  neutral: '담담한 한 줄',
+};
+
 /** Cycle 214 — unknown string → safe lookup wrapper. catalog 의 weight key 가
  *  type 외 일 가능성 (cycle 192 invariant 가 정합 보장하지만 caller 가 plain
  *  string 받을 경우). 매칭 부재 → undefined. */
