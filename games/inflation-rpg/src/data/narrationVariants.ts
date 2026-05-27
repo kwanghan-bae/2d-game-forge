@@ -337,6 +337,20 @@ const NPC_ENCOUNTER_VARIANTS: Record<'mentor' | 'rival' | 'passerby', Array<(c: 
   ],
 };
 
+/* ─────────────────── naturalDeath (Cycle 258) ────────────────
+ * 자연사 1줄 hardcoded → 5 variant + composition (`pick → ageTone → realmTone`).
+ * V3 정체성 = eternal hero. 자연사 = idle saga 의 클라이맥스. emotional-peak
+ * pool 의 역경제 회수 (story-critic #1 — claim 600+ vs 자연사 1줄).
+ * legacy 1줄 ("안식을 맞아 잠들었다") = entry 0 보존 (seed=0 backward compat).
+ */
+const NATURAL_DEATH_VARIANTS: Array<(c: { age: number }) => string> = [
+  (c) => `${c.age}세에 안식을 맞아 잠들었다.`,
+  (c) => `${c.age}세에 마지막 호흡이 가지런해졌다.`,
+  (c) => `${c.age}세에 한 생애의 페이지가 조용히 닫혔다.`,
+  (c) => `${c.age}세에 영웅은 눈을 감았다 — 다음 영웅은 아직 태어나지 않았다.`,
+  (c) => `${c.age}세에 모든 길이 끝나 자취가 별이 되었다.`,
+];
+
 /* ─────────────────────── npcDeath (F3) — Cycle 256 ─────────────
  * NPC kind 별 분기. legacy 3 줄 (mentor / rival / friend) 보존 + 신규
  * 11 줄 = 총 14 variant. NpcEntity['kind'] union 6 kind 모두 production
@@ -570,6 +584,11 @@ export const NarrationVariants = {
     const variants = NPC_ENCOUNTER_VARIANTS[ctx.kind];
     const out = pick(variants, { age: ctx.age }, seed);
     return realmTone(out, ctx.realm, seed);
+  },
+  naturalDeath(ctx: { age: number; realm?: RealmId | null }, seed = 0): string {
+    const out = pick(NATURAL_DEATH_VARIANTS, { age: ctx.age }, seed);
+    const aged = ageTone(out, ctx.age, seed);
+    return realmTone(aged, ctx.realm, seed);
   },
   npcDeath(ctx: { age: number; kind: NpcEntity['kind']; realm?: RealmId | null }, seed = 0): string {
     const variants = NPC_DEATH_VARIANTS_BY_KIND[ctx.kind] ?? NPC_DEATH_VARIANTS_BY_KIND.friend;

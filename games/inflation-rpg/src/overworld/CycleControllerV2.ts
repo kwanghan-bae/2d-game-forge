@@ -1468,6 +1468,8 @@ export class CycleControllerV2 {
         cause: '자연사',
         oldLevel: this.hero.level,
         newLevel: this.hero.level,
+        realm: this.currentRealmId,
+        seed: this.rng.int(100000),
       }),
       payload: { oldLevel: this.hero.level, newLevel: this.hero.level },
     });
