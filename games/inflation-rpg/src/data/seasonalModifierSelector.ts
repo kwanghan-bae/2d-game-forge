@@ -42,6 +42,27 @@ export function getActiveSeasonModifier(
 }
 
 /**
+ * Cycle 172 — 다음 시즌 회전까지 남은 ms.
+ * `(slot + 1) * SEASON_ROTATION_MS - elapsed`. clamp 0 이상.
+ * UI 의 sp-active-season chip 에 "남은 N 일" 등으로 wire 예정 (cycle 173+).
+ */
+export function getSeasonTimeRemainingMs(
+  seasonStartedAt: number,
+  nowMs?: number,
+): number {
+  const at = typeof nowMs === 'number' ? nowMs : Date.now();
+  const elapsed = Math.max(0, at - (seasonStartedAt ?? 0));
+  const slot = Math.floor(elapsed / SEASON_ROTATION_MS);
+  const nextRotationAt = (slot + 1) * SEASON_ROTATION_MS;
+  return Math.max(0, nextRotationAt - elapsed);
+}
+
+/** ms → 일 (floor). 0.5 일 미만 = 0 일 (UI 표시 시 "오늘" 표기 호환). */
+export function msToDays(ms: number): number {
+  return Math.floor(ms / (24 * 3600 * 1000));
+}
+
+/**
  * Cycle 159 — active SeasonModifier 의 realm 별 cosmetic tint token lookup.
  * cycle 155 의 `getCosmeticTint(rule, realmId)` 를 selector 진입점으로 노출.
  * realm 의 sprite/배경 tint 적용 site (cycle 167+ OverworldScene wire 예정)
