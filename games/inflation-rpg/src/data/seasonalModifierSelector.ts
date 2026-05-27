@@ -46,6 +46,15 @@ export function getActiveSeasonDescription(seasonStartedAt: number, nowMs?: numb
   return getActiveSeasonModifier(seasonStartedAt, nowMs).description;
 }
 
+/** Cycle 239 — active season slot index (0-based, rotation 안). carousel 의
+ *  active dot 표시 등에서 사용. */
+export function getActiveSeasonSlotIndex(seasonStartedAt: number, nowMs?: number): number {
+  const at = typeof nowMs === 'number' ? nowMs : Date.now();
+  const elapsed = Math.max(0, at - (seasonStartedAt ?? 0));
+  const slot = Math.floor(elapsed / SEASON_ROTATION_MS);
+  return ((slot % ALL_SEASON_MODIFIER_IDS.length) + ALL_SEASON_MODIFIER_IDS.length) % ALL_SEASON_MODIFIER_IDS.length;
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().
