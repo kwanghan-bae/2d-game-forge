@@ -42,7 +42,7 @@ export const HERO_SKILLS: readonly HeroSkill[] = [
 
   // Monk / sage-ish
   { id: 'meditation',      nameKR: '명상',         description: '내공 증진',          atkMul: 1.10, hpMul: 1.12, jobIds: ['monk', 'grandmaster', 'sage'] },
-  { id: 'palm_strike',     nameKR: '장권',         description: '내공 권법',          atkMul: 1.18, hpMul: 1.02, jobIds: ['monk', 'grandmaster'] },
+  { id: 'palm_strike',     nameKR: '장권',         description: '내공 권법',          atkMul: 1.25, hpMul: 1.02, jobIds: ['monk', 'grandmaster'] },
 
   // Dark / cursed
   { id: 'curse',           nameKR: '저주',         description: '디버프 + 데미지',    atkMul: 1.15, hpMul: 0.95, jobIds: ['dark_lord', 'assassin'] },
