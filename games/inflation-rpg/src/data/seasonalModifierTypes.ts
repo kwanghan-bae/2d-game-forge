@@ -26,7 +26,12 @@ export type SeasonModifierId =
   | 'legendary-buff-card-bias'
   | 'underworld-shadow-trait-boost'
   | 'heaven-narrative-ode'
-  | 'sea-cosmetic-aqua';
+  | 'sea-cosmetic-aqua'
+  // Cycle 178 — cosmetic axis 4 신규. cycle 177 wire 완성 후 활용 폭 확장.
+  | 'volcano-cosmetic-ember'
+  | 'underworld-cosmetic-shadow'
+  | 'heaven-cosmetic-cloud'
+  | 'chaos-cosmetic-prism';
 
 /** SeasonModifierType — modifier 가 어느 layer 에 영향을 주는지의 literal.
  *  - 'trait_weight'    = HeroDecisionAI 의 trait roll 확률 분포 (cycle 131 wire)
