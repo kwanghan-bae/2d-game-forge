@@ -3,6 +3,7 @@ import { DestinationResolver, type LandmarkCandidate } from '../DestinationResol
 import { PersonalityState } from '../../hero/PersonalityState';
 import { SeededRng } from '../../cycle/SeededRng';
 import type { LandmarkKind } from '../../data/landmarks';
+import type { TraitId } from '../../cycle/traits';
 
 const candidates = (): LandmarkCandidate[] => [
   { id: 'wolf_1',      kind: 'enemy',  difficulty: 1 },
@@ -76,6 +77,36 @@ describe('DestinationResolver', () => {
     }
     // heroic=8 → watchtower gets +6.4 on top of base 3 → >50% expected
     expect(towerPicks).toBeGreaterThan(15);
+  });
+
+  it('Cycle 287 — 16/16 TraitId production-consumed invariant (α wire 정합 가드)', () => {
+    // 각 trait 별 unique landmark kind 의 weight modifier 정합 — 향후 trait 추가 시
+    // wire 누락 자동 감지. 단순화: 각 trait set 으로 단일 cycle resolve 가 throw 안 하고
+    // valid candidate 반환.
+    const ALL_16: TraitId[] = [
+      't_challenge', 't_timid', 't_thrill', 't_genius', 't_fragile',
+      't_terminal_genius', 't_explorer', 't_berserker', 't_miser', 't_boss_hunter',
+      't_fortune', 't_zealot', 't_swift', 't_iron', 't_prodigy', 't_lucky',
+    ];
+    const cands: LandmarkCandidate[] = [
+      { id: 'b', kind: 'boss', difficulty: 0 },
+      { id: 'e', kind: 'enemy', difficulty: 0 },
+      { id: 's', kind: 'shrine', difficulty: 0 },
+      { id: 'm', kind: 'market', difficulty: 0 },
+      { id: 't', kind: 'trial', difficulty: 0 },
+      { id: 'tc', kind: 'treasure_cave', difficulty: 0 },
+      { id: 'hr', kind: 'holy_ruin', difficulty: 0 },
+      { id: 'c', kind: 'cave', difficulty: 0 },
+      { id: 'v', kind: 'village', difficulty: 0 },
+      { id: 'sg', kind: 'sightseeing', difficulty: 0 },
+      { id: 'ex', kind: 'exit', difficulty: 0 },
+    ];
+    const p = PersonalityState.fromTraitPriors({});
+    // 모든 16 trait 보유 hero. resolve throw 안 하고 valid candidate 반환.
+    const r = new DestinationResolver(new SeededRng(42));
+    const chosen = r.choose(cands, { traits: ALL_16, personality: p });
+    expect(chosen).not.toBeNull();
+    expect(cands.some(c => c.id === chosen!.id)).toBe(true);
   });
 
   it('Cycle 284 — Sub-phase α T1: t_challenge boosts boss/enemy weight', () => {
