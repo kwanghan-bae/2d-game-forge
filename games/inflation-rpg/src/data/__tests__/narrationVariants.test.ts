@@ -15,7 +15,7 @@
  *   영역은 절대 겹치지 않음. 둘 다 적용되어도 충돌 0.
  */
 import { describe, expect, it } from 'vitest';
-import { realmTone, NarrationVariants, pickWeighted } from '../narrationVariants';
+import { realmTone, NarrationVariants, pickWeighted, ALL_NARRATION_TONES } from '../narrationVariants';
 import type { TaggedVariant } from '../narrationVariants';
 import type { RealmId } from '../../types';
 
@@ -209,6 +209,18 @@ describe('Cycle 102 F1 — 5 additional channels (shrine/moral/skill/job)', () =
       const b = NarrationVariants.shrineHealed({ age: 30, healed: 100 }, 0);
       expect(a).toBe(b);
     }
+  });
+});
+
+/** Cycle 207 — ALL_NARRATION_TONES length 5 invariant. union 변경 시 동기화 가드. */
+describe('Cycle 207 — ALL_NARRATION_TONES', () => {
+  it('5 tone 모두 정의 (cycle 161 union 정합)', () => {
+    expect(ALL_NARRATION_TONES.length).toBe(5);
+    expect(ALL_NARRATION_TONES).toContain('elegy');
+    expect(ALL_NARRATION_TONES).toContain('tragedy');
+    expect(ALL_NARRATION_TONES).toContain('ode');
+    expect(ALL_NARRATION_TONES).toContain('hymn');
+    expect(ALL_NARRATION_TONES).toContain('neutral');
   });
 });
 
