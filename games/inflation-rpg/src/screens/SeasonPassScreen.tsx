@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
 import { getClaimableCount } from '../data/achievementsSelectors';
+import { pickClaimNarration } from '../data/claimNarrationVariants';
 
 interface Props {
   onClose: () => void;
@@ -27,7 +28,8 @@ export function SeasonPassScreen({ onClose }: Props) {
   function handleClaim(id: typeof ALL_ACHIEVEMENT_IDS[number]) {
     const result = claim(id);
     if (result.ok) {
-      setFeedback(`수령 완료: +${result.tokenDelta} 🎫`);
+      const narration = pickClaimNarration();
+      setFeedback(`${narration} (+${result.tokenDelta} 🎫)`);
     } else {
       const msg =
         result.reason === 'already-claimed' ? '이미 수령했습니다'
