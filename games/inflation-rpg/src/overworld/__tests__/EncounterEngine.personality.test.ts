@@ -155,3 +155,23 @@ describe('EncounterEngine — V1c-1 merciful battle_won proc', () => {
     expect(executing.choice).toBe('execute_enemy');
   });
 });
+
+describe('Cycle 298 — MERCIFUL_DRIFT invariant (cycle 297 lever 정합 가드)', () => {
+  it('sparing branch delta = 2 (cycle 297 nerf, 3 → 2)', () => {
+    // cycle 297 lever 검증 — 미래 drift 변경 시 자동 fail.
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 100, heroAtkBase: 9999 });
+    hero.personality.adjust('merciful', 4); // > 0 → sparing
+    // proc seed scan for firing
+    for (let s = 0; s < 200; s++) {
+      const engine = new EncounterEngine(new SeededRng(s));
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${s}`);
+      const c = evs.find(e => e.type === 'moral_choice' && e.dim === 'merciful');
+      if (c && c.type === 'moral_choice') {
+        expect(c.delta).toBe(2);
+        expect(c.choice).toBe('spare_enemy');
+        return;
+      }
+    }
+    throw new Error('No merciful proc fired in 200 seeds');
+  });
+});
