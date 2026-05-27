@@ -27,6 +27,9 @@ export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   '새 길의 첫 돌이 깔린다',
   '오는 바람이 그대의 깃발을 흔들 채비를 한다',
   '아직 쓰지 않은 장이 그대를 기다린다',
+  // Cycle 185 — pool 12 → 14. 별/책장/이름/하늘 외의 motif (그림자/물결).
+  '그림자도 그대의 발자국을 따라 새겨진다',
+  '잔물결 하나마다 새 이름이 새겨진다',
 ] as const;
 
 /** ClaimerTier 별 후원자 호칭 prefix. cycle 148 story-writer #2 권고.
