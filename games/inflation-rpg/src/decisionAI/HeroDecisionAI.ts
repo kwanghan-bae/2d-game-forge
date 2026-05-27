@@ -32,6 +32,25 @@ export class HeroDecisionAI {
   }
 
   /**
+   * Cycle 302 — Sub-phase δ T1: chooseTargetEnemyId method 신설.
+   * multi-enemy 시 target 선택. v0 heuristic:
+   *   - traits 포함 't_boss_hunter' → 가장 강한 적
+   *   - traits 포함 't_fragile' or 't_timid' → 가장 약한 적
+   *   - else → 가장 약한 적 (default = focus weak first)
+   *
+   * Caller wire 는 cycle 303+ carry-over.
+   * 본 method = HeroDecisionAI 의 *fourth 책임* production-consumed.
+   */
+  chooseTargetEnemyId(enemies: readonly { id: string; difficulty: number }[]): string | null {
+    if (enemies.length === 0) return null;
+    const traits = this.opts.traits;
+    if (traits.includes('t_boss_hunter')) {
+      return enemies.reduce((a, b) => b.difficulty > a.difficulty ? b : a).id;
+    }
+    return enemies.reduce((a, b) => b.difficulty < a.difficulty ? b : a).id;
+  }
+
+  /**
    * Cycle 301 — Sub-phase γ T1: shouldRetreat method 신설.
    * HP / 다음 arrival 의 회복 가능성 판단. v0 heuristic:
    *   - HP ratio < 0.2 → 항상 retreat
