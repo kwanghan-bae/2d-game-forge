@@ -18,6 +18,8 @@ import { seasonEmoji, seasonNameKR, seasonBonus } from '../season/SeasonState';
 // Cycle 106 F2 — inflation milestone VFX overlay
 import { InflationMilestoneVFX } from '../components/InflationMilestoneVFX';
 import { useMilestoneStore } from '../store/milestoneStore';
+import { getActiveCosmeticTint } from '../data/seasonalModifierSelector';
+import { cosmeticTintToHex } from '../data/seasonalCosmeticTint';
 
 interface Props {
   onCycleEnd: () => void;
@@ -45,6 +47,7 @@ async function bootPhaser(
   setUnlockedRealms: (r: readonly import('../types').RealmId[]) => void;
   setCurrentRealm: (r: import('../types').RealmId) => void;
   setSeason: (s: import('../types').SeasonId) => void;
+  setCosmeticTintOverride: (hex: string | null) => void;
 }> {
   const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
     import('phaser'),
@@ -73,7 +76,11 @@ async function bootPhaser(
   const setSeason = (s: import('../types').SeasonId) => {
     getScene()?.setSeason(s);
   };
-  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setCurrentRealm, setSeason };
+  // Cycle 177 — SeasonalModifier cosmeticTint override (wire chain 7/n).
+  const setCosmeticTintOverride = (hex: string | null) => {
+    getScene()?.setCosmeticTintOverride(hex);
+  };
+  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setCurrentRealm, setSeason, setCosmeticTintOverride };
 }
 
 const SPEED_PRESETS = [1, 2, 5, 10] as const;
@@ -121,6 +128,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const setSceneUnlockedRealmsRef = useRef<((r: readonly import('../types').RealmId[]) => void) | null>(null);
   const setSceneCurrentRealmRef = useRef<((r: import('../types').RealmId) => void) | null>(null);
   const setSceneSeasonRef = useRef<((s: import('../types').SeasonId) => void) | null>(null);
+  // Cycle 177 — SeasonalModifier cosmeticTint override ref (wire chain 7/n).
+  const setSceneCosmeticTintRef = useRef<((hex: string | null) => void) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -358,6 +367,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       setSceneUnlockedRealmsRef.current = g.setUnlockedRealms;
       setSceneCurrentRealmRef.current = g.setCurrentRealm;
       setSceneSeasonRef.current = g.setSeason;
+      setSceneCosmeticTintRef.current = g.setCosmeticTintOverride;
     });
 
     return () => {
@@ -365,6 +375,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       setSceneUnlockedRealmsRef.current = null;
       setSceneCurrentRealmRef.current = null;
       setSceneSeasonRef.current = null;
+      setSceneCosmeticTintRef.current = null;
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
         chapterOverlayTimerRef.current = null;
@@ -386,6 +397,22 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   useEffect(() => {
     setSceneSpeedRef.current?.(speed * moveMul);
   }, [speed, moveMul]);
+
+  // Cycle 177 — SeasonalModifier cosmeticTint wire chain 7/n. controller 의
+  // currentRealm 또는 meta.seasonStartedAt 변화 시 active modifier 의
+  // cosmeticTint → hex 매핑을 OverworldScene 에 적용.
+  const currentRealmId = controller?.getCurrentRealmId() ?? null;
+  const seasonStartedAt = meta.seasonStartedAt ?? 0;
+  useEffect(() => {
+    if (!setSceneCosmeticTintRef.current) return;
+    if (!currentRealmId) {
+      setSceneCosmeticTintRef.current(null);
+      return;
+    }
+    const token = getActiveCosmeticTint(seasonStartedAt, currentRealmId);
+    const hex = token ? cosmeticTintToHex(token) : null;
+    setSceneCosmeticTintRef.current(hex);
+  }, [currentRealmId, seasonStartedAt]);
 
   if (status === 'idle' || !controller) {
     return <div style={{ padding: 24, color: '#eee' }}>사이클이 시작되지 않았습니다.</div>;
