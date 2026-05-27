@@ -11,9 +11,9 @@ import {
 } from '../seasonalModifierCatalog';
 
 describe('Cycle 129 F2 — SeasonalModifier catalog', () => {
-  /** cycle 129 5 + cycle 137 1 + cycle 149 2 = 8 modifier */
-  it('8 modifier 존재 (cycle 129 5 + 137 1 + 149 2) + lookup helper 동작', () => {
-    expect(ALL_SEASON_MODIFIER_IDS).toHaveLength(8);
+  /** cycle 129 5 + cycle 137 1 + cycle 149 2 + cycle 178 4 = 12 modifier */
+  it('12 modifier 존재 (cycle 129 5 + 137 1 + 149 2 + 178 4) + lookup helper 동작', () => {
+    expect(ALL_SEASON_MODIFIER_IDS).toHaveLength(12);
     expect(ALL_SEASON_MODIFIER_IDS).toEqual(
       expect.arrayContaining([
         'volcano-fire-trait-boost',

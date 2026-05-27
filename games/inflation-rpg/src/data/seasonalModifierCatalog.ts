@@ -99,6 +99,44 @@ export const SEASON_MODIFIER_CATALOG: Readonly<
       cosmeticTint: { sea: 'aqua-deep' },
     },
   },
+  // Cycle 178 — cosmetic axis 4 신규. cycle 177 wire 완성 후 활용 폭 확장.
+  // 5 realm (sea/volcano/underworld/heaven/chaos) 각자 dedicated 시즌 보유.
+  'volcano-cosmetic-ember': {
+    id: 'volcano-cosmetic-ember',
+    nameKR: '용암의 잔불',
+    description: '용암 차원의 sprite tint — 적색 잔불 (cosmetic only)',
+    type: 'cosmetic',
+    applyRule: {
+      cosmeticTint: { volcano: 'ember-glow' },
+    },
+  },
+  'underworld-cosmetic-shadow': {
+    id: 'underworld-cosmetic-shadow',
+    nameKR: '황천의 어둠',
+    description: '황천 차원의 sprite tint — 보라 어둠 (cosmetic only)',
+    type: 'cosmetic',
+    applyRule: {
+      cosmeticTint: { underworld: 'shadow-ink' },
+    },
+  },
+  'heaven-cosmetic-cloud': {
+    id: 'heaven-cosmetic-cloud',
+    nameKR: '천상의 구름',
+    description: '천상 차원의 sprite tint — 차분한 청회색 (cosmetic only)',
+    type: 'cosmetic',
+    applyRule: {
+      cosmeticTint: { heaven: 'cloud-silver' },
+    },
+  },
+  'chaos-cosmetic-prism': {
+    id: 'chaos-cosmetic-prism',
+    nameKR: '혼돈의 프리즘',
+    description: '혼돈 차원의 sprite tint — 마젠타 (cosmetic only)',
+    type: 'cosmetic',
+    applyRule: {
+      cosmeticTint: { chaos: 'chaos-prism' },
+    },
+  },
 };
 
 /** 모든 starter id (catalog 순회용). cycle 132+ 에서 union 확장 시 동기화. */
