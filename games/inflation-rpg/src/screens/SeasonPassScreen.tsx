@@ -186,12 +186,16 @@ export function SeasonPassScreen({ onClose }: Props) {
             <span data-testid="sp-active-season" data-cosmetic-tint={cosmeticTintHex ?? undefined} style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400, borderLeft: cosmeticTintHex ? `3px solid ${cosmeticTintHex}` : undefined, paddingLeft: cosmeticTintHex ? 6 : 0 }} title={activeSeason.description}>
               ✨ 현재 시즌: <span style={{ color: '#ffd700' }}>{activeSeason.nameKR}</span>
               {daysRemaining > 0 && (
-                <span data-testid="sp-season-remaining" style={{ color: '#888', marginLeft: 6 }}>
+                <span
+                  data-testid="sp-season-remaining"
+                  data-urgent={daysRemaining < 7 ? 'true' : undefined}
+                  style={{ color: daysRemaining < 7 ? '#ffaa66' : '#888', marginLeft: 6, fontWeight: daysRemaining < 7 ? 600 : 400 }}
+                >
                   · 남은 {daysRemaining} 일
                 </span>
               )}
               {daysRemaining === 0 && (
-                <span data-testid="sp-season-remaining" style={{ color: '#888', marginLeft: 6 }}>
+                <span data-testid="sp-season-remaining" data-urgent="true" style={{ color: '#ffaa66', marginLeft: 6, fontWeight: 600 }}>
                   · 곧 회전
                 </span>
               )}
