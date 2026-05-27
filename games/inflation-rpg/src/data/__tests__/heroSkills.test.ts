@@ -55,4 +55,9 @@ describe('hero skills catalog', () => {
     expect(findSkillById('fireball')!.atkMul).toBeGreaterThanOrEqual(1.20);
     expect(findSkillById('icebolt')!.atkMul).toBeGreaterThanOrEqual(1.20);
   });
+
+  // Cycle 312: warrior skill cluster (strike polish cycle 309).
+  it('strike atkMul ≥ 1.15 (cycle 309 polish)', () => {
+    expect(findSkillById('strike')!.atkMul).toBeGreaterThanOrEqual(1.15);
+  });
 });
