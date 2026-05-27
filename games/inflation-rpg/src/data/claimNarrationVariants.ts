@@ -36,6 +36,9 @@ export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   // Cycle 199 — pool 16 → 18. 발자국/매듭 motif 추가.
   '그대의 발자국이 다음 길의 첫 매듭이 된다',
   '하나의 매듭이 다음 매듭을 부른다',
+  // Cycle 253 — pool 18 → 20. 등불/그림자 motif 추가.
+  '꺼지지 않은 등불 하나가 더 밝아진다',
+  '그대의 그림자 끝에 새 길이 보인다',
 ] as const;
 
 /** ClaimerTier 별 후원자 호칭 prefix. cycle 148 story-writer #2 권고.
