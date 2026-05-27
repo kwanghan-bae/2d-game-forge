@@ -92,17 +92,20 @@ export function SeasonPassScreen({ onClose }: Props) {
     >
       <div
         data-testid="season-pass-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sp-modal-title"
         style={{ width: 'min(560px, 96vw)', maxHeight: '88vh', background: '#1a1d28', color: '#eee', borderRadius: 12, border: '1px solid #444', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <strong>도전과제 + 토큰</strong>
+            <strong id="sp-modal-title">도전과제 + 토큰</strong>
             <span data-testid="sp-active-season" style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400 }} title={activeSeason.description}>
               ✨ 현재 시즌: <span style={{ color: '#ffd700' }}>{activeSeason.nameKR}</span>
             </span>
           </div>
-          <button type="button" data-testid="season-pass-close" onClick={onClose} style={{ minHeight: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
+          <button type="button" data-testid="season-pass-close" aria-label="도전과제 모달 닫기" onClick={onClose} style={{ minHeight: 44, minWidth: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
         </div>
 
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', gap: 16, fontSize: 12, flexWrap: 'wrap' }}>
@@ -130,7 +133,7 @@ export function SeasonPassScreen({ onClose }: Props) {
             data-testid="sp-redeem-btn"
             onClick={handleRedeem}
             disabled={tokens < redeemAmount}
-            style={{ minHeight: 36, padding: '6px 12px', background: tokens < redeemAmount ? '#262830' : '#3b4252', color: tokens < redeemAmount ? '#666' : '#eee', border: '1px solid #555', borderRadius: 4, fontSize: 13, cursor: tokens < redeemAmount ? 'not-allowed' : 'pointer' }}
+            style={{ minHeight: 44, padding: '8px 14px', background: tokens < redeemAmount ? '#262830' : '#3b4252', color: tokens < redeemAmount ? '#666' : '#eee', border: '1px solid #555', borderRadius: 4, fontSize: 13, cursor: tokens < redeemAmount ? 'not-allowed' : 'pointer' }}
           >
             환전 (3:1)
           </button>
@@ -138,6 +141,8 @@ export function SeasonPassScreen({ onClose }: Props) {
             <span
               data-testid="sp-feedback"
               data-tier-flash={tierFlash ? 'true' : undefined}
+              role="status"
+              aria-live="polite"
               style={
                 tierFlash
                   ? {
@@ -201,7 +206,7 @@ export function SeasonPassScreen({ onClose }: Props) {
                       disabled={!claimable}
                       className={pulseId === id ? 'sp-claim-pulse' : undefined}
                       style={{
-                        minHeight: claimable ? 44 : 36,
+                        minHeight: 44,
                         padding: '6px 14px',
                         background: claimable ? '#ffd700' : '#3b4252',
                         color: claimable ? '#1a1d28' : '#666',
