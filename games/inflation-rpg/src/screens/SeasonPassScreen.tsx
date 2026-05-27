@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
 import { getClaimableCount } from '../data/achievementsSelectors';
-import { pickClaimNarration, pickClaimNarrationWeighted } from '../data/claimNarrationVariants';
+import { pickClaimNarration, pickClaimNarrationWeighted, formatClaimFeedback } from '../data/claimNarrationVariants';
 import {
   getActiveSeasonModifier,
   getSeasonTimeRemainingMs,
@@ -71,8 +71,8 @@ export function SeasonPassScreen({ onClose }: Props) {
         : pickClaimNarration(undefined, claimerTier, lastFinalRealm);
       // Cycle 154: store 갱신 후 count 가 +1 됐으므로 unlock bonus 재계산.
       const tier = getTierUnlockBonus(countBefore, countBefore + 1);
-      const tierMsg = tier.newTier ? ` ★ ${tier.newTier} 등급 달성!` : '';
-      setFeedback(`${narration} (+${result.tokenDelta} 🎫)${tierMsg}`);
+      // Cycle 203 — cycle 202 formatClaimFeedback helper wire (inline 합성 → helper).
+      setFeedback(formatClaimFeedback(narration, result.tokenDelta, tier.newTier));
       setPulseId(id);
       setTimeout(() => setPulseId(null), 600);
       // Cycle 162 — tier 진입 (newTier 발화) 시 toast 시각 강화 + 표시 timer 2×.
