@@ -77,6 +77,25 @@ HeroDecisionAI trait roll 자체 구현 (cycle 156 carry-over, Sim-C scope) =
 단, 같은 chain 의 분할이 *15 cycle 이상* 시 deadline 룰 적용 (cycle 165 의
 표류 deadline 룰과 동일).
 
+## Micro Mode (cycle 201+ 정착)
+
+cycle 200 의 v2 phase 완료 후 cycle 201+ 부터 **micro mode** 정착:
+- 매 cycle ≈ 1-3 line 코드 변경 또는 1-2 test 추가
+- helper 캡슐화 / invariant 누적 / 작은 UI polish 위주
+- mega-phase 진입 없이도 axis 균형 유지 (룰 9 강제)
+- 한 cycle 당 토큰 부담 매우 작음 → 100+ cycle 의 자율진화에 적합
+
+언제 micro mode 가 유익한가:
+- 큰 axis 가 모두 wire chain 완성된 후 (cycle 187 등)
+- mega-phase 진입 결정 전 buffer 시기
+- 사용자 명시 cycle 카운트 만 채우면 되는 시기 (예: cycle 156 의 사용자 prompted 100-cycle)
+
+언제 micro mode 를 벗어나야 하는가:
+- 페르소나 surface 라운드 (20+ cycle 주기)
+- 사용자 새 axis 명시
+- invariant 누적이 30+ test 도달 (이상 추가는 noise)
+
 ## 변경 이력
 
 - 2026-05-28 — cycle 189 신설 (chain pattern 정착 후 박제).
+- 2026-05-28 — cycle 236: Micro Mode 섹션 추가 (cycle 201-240 의 패턴 정착).
