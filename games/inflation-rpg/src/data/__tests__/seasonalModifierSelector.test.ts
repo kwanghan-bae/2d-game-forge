@@ -10,6 +10,7 @@ import {
   getSeasonTimeRemainingMs,
   msToDays,
   formatActiveSeasonLabel,
+  getAllSeasonModifierTypes,
   SEASON_ROTATION_MS,
 } from '../seasonalModifierSelector';
 import { ALL_SEASON_MODIFIER_IDS, SEASON_MODIFIER_CATALOG } from '../seasonalModifierCatalog';
@@ -124,6 +125,16 @@ describe('Cycle 135 — seasonalModifierSelector', () => {
       // 첫 slot (volcano-fire-trait-boost) 는 trait_weight 만, narrative 0.
       const weights = getActiveNarrativeWeights(0, 0);
       expect(weights).toBeNull();
+    });
+  });
+
+  /** Cycle 243 — getAllSeasonModifierTypes 의 결과가 3 type 모두 포함. */
+  describe('Cycle 243 — getAllSeasonModifierTypes', () => {
+    it('catalog 의 3 type (trait_weight / narrative_weight / cosmetic) 모두 포함', () => {
+      const types = getAllSeasonModifierTypes();
+      expect(types).toContain('trait_weight');
+      expect(types).toContain('narrative_weight');
+      expect(types).toContain('cosmetic');
     });
   });
 
