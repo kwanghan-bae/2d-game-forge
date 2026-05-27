@@ -15,6 +15,11 @@ import type {
 /** 30 일 ms. exported for test 결정성. */
 export const SEASON_ROTATION_MS = 30 * 24 * 3600 * 1000;
 
+/** Cycle 219 — catalog 의 modifier 총 개수. UI display + invariant test 의 진입점 통일. */
+export function getSeasonModifierCount(): number {
+  return ALL_SEASON_MODIFIER_IDS.length;
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().
