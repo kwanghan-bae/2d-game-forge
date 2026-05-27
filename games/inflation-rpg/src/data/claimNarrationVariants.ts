@@ -10,7 +10,9 @@ import type { ClaimerTier } from './claimerTier';
 
 export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   // closure 톤 (cycle 134/142 정착) — 12 줄 의 8 줄 유지.
-  '용사여, 그대의 노고를 치하한다',
+  // Cycle 156 — story-writer #2 권고: variant 0 의 자체 vocative '용사여, ' 제거.
+  //   TIER_VOCATIVE_PREFIX 합성 시 이중 호칭 ('용사여, 용사여, ...') 봉인.
+  '그대의 노고를 치하한다',
   '한 페이지가 더 채워졌다',
   '운명의 저울이 그대 편으로 기울었다',
   '경배하라, 새 별이 떴다',
