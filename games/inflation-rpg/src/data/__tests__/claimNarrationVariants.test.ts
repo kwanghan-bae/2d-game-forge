@@ -48,4 +48,14 @@ describe('Cycle 134 — claimNarrationVariants', () => {
       expect(TIER_VOCATIVE_PREFIX[tier].length).toBeGreaterThan(0);
     }
   });
+
+  /** Cycle 156 — story-writer #2 권고: variant 0 의 자체 vocative 제거로
+   *  TIER_VOCATIVE_PREFIX 합성 시 이중 호칭 ('용사여, 용사여, ...') 부재 검증.
+   *  occurrence-count 가드 — 신참 합성에 '용사여' 1 회, 전설 합성에 0 회. */
+  it('cycle 156 — variant 0 + tier prefix 합성 시 vocative 이중 부재', () => {
+    const 신참 = pickClaimNarration(0, '신참');
+    const 전설 = pickClaimNarration(0, '전설');
+    expect(신참.split('용사여').length - 1).toBe(1);
+    expect(전설.split('용사여').length - 1).toBe(0);
+  });
 });
