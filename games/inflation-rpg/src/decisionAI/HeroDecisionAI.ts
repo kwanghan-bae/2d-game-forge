@@ -32,6 +32,20 @@ export class HeroDecisionAI {
   }
 
   /**
+   * Cycle 303 — Sub-phase ε T1: chooseEncounterNode method 신설.
+   * encounter branch (cave / ruin / trial 등) 의 분기 선택.
+   * v0: deterministic first available (rng 없이).
+   *
+   * Caller wire 는 cycle 304+ carry-over.
+   * 본 method = HeroDecisionAI 의 *fifth 책임* production-consumed.
+   * cycle 256 critic #2 의 4 책임 중 마지막 method 신설 = **5/5 모두 production-consumed**.
+   */
+  chooseEncounterNode(nodes: readonly string[]): string | null {
+    if (nodes.length === 0) return null;
+    return nodes[0] ?? null;
+  }
+
+  /**
    * Cycle 302 — Sub-phase δ T1: chooseTargetEnemyId method 신설.
    * multi-enemy 시 target 선택. v0 heuristic:
    *   - traits 포함 't_boss_hunter' → 가장 강한 적
