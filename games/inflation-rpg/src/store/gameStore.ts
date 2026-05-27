@@ -1651,6 +1651,7 @@ export const useGameStore = create<GameStore>()(
                 },
               },
               tokens: (s.meta.tokens ?? 0) + tokenDelta,
+              totalClaimsCount: (s.meta.totalClaimsCount ?? 0) + 1,
             },
           };
         });
