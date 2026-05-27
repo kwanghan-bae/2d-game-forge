@@ -82,4 +82,24 @@ describe('Cycle 143 — claimerTier', () => {
       );
     }
   });
+
+  /** Cycle 186 — tier curve sanity: 후속 tier 가 ≥ 2× prev (단계 격차 보장). */
+  it('cycle 186 — TIER_UNLOCK_REWARD curve ≥ 2× 단계 격차 (sentinel 매력 보장)', () => {
+    expect(TIER_UNLOCK_REWARD['노련'].tokenBonus).toBeGreaterThanOrEqual(2 * 1); // 신참=0 의 격차는 별도
+    expect(TIER_UNLOCK_REWARD['숙련'].tokenBonus).toBeGreaterThanOrEqual(2 * TIER_UNLOCK_REWARD['노련'].tokenBonus);
+    expect(TIER_UNLOCK_REWARD['마스터'].tokenBonus).toBeGreaterThanOrEqual(2 * TIER_UNLOCK_REWARD['숙련'].tokenBonus);
+    expect(TIER_UNLOCK_REWARD['전설'].tokenBonus).toBeGreaterThanOrEqual(2 * TIER_UNLOCK_REWARD['마스터'].tokenBonus);
+  });
+
+  /** Cycle 186 — tier threshold vs reward 비율 sanity (claim 효율). */
+  it('cycle 186 — tier threshold 1 claim 당 보너스 비율 점진 ≤ 1 token/claim (sub-1 가드)', () => {
+    // 노련 진입 = 5 claim, bonus 5 → 1.0 token/claim
+    expect(TIER_UNLOCK_REWARD['노련'].tokenBonus / 5).toBeLessThanOrEqual(1.5);
+    // 숙련 진입 = 20 claim total, bonus 15 → 0.75 token/claim
+    expect(TIER_UNLOCK_REWARD['숙련'].tokenBonus / 20).toBeLessThanOrEqual(1.5);
+    // 마스터 진입 = 80 claim total, bonus 50 → 0.625 token/claim
+    expect(TIER_UNLOCK_REWARD['마스터'].tokenBonus / 80).toBeLessThanOrEqual(1.5);
+    // 전설 진입 = 300 claim total, bonus 200 → 0.67 token/claim
+    expect(TIER_UNLOCK_REWARD['전설'].tokenBonus / 300).toBeLessThanOrEqual(1.5);
+  });
 });
