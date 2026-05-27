@@ -44,6 +44,12 @@
 - 다음: **자율진화 v2 cycle 121-200** (N5 Live Ops + Hall 확장 + 7th realm +
   multi-line sim baseline overlay + 13 비핵심 캐릭터 등), **Phase 5a-1** (원스토어
   native wire), Phase 5b (Google Play), 5c (App Store).
+- **사용자 prompted 100-cycle 진행 중** (cycle 156-255, 2026-05-27 시작). 8 페르소나
+  fan-out (game-critic / story-writer / level-designer / web-researcher /
+  asset-investigator / ui-ux-designer / game-planner / qa-engineer) 으로 매
+  20 cycle 주기 surface. SeasonalModifier wire chain 8 분할 완성 (cycle 177
+  player-felt landing). 진척 = `docs/superpowers/evolution/INDEX.md` + 매 10
+  cycle `STATUS-YYYY-MM-DD-cycle-N.md`.
 
 ## Quick start
 
