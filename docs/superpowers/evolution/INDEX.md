@@ -2,6 +2,14 @@
 
 8-페르소나 자율진화 루프의 cycle 별 한 줄 요약. spec: `../specs/2026-05-24-autonomous-evolution-design.md`. plan: `../plans/2026-05-24-autonomous-evolution.md`.
 
+## 진행 상태
+
+- **v1 (cycle 1-100)** = `phase-cycle-100-complete` (2026-05-25)
+- **v2 (cycle 101-200)** = 진행 중. cycle 100 STATUS = `STATUS-2026-05-26-cycle-120.md` 등.
+- **사용자 prompted 100-cycle (cycle 156-255)** = 2026-05-27 시작. 8 페르소나 fan-out + 20-cycle 주기 surface + 카테고리 회전 + 10-cycle STATUS.
+  - 진행률 trajectory = `STATUS-2026-05-27-cycle-160.md` / `STATUS-2026-05-27-cycle-180.md` / `STATUS-2026-05-28-cycle-190.md`.
+  - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
+
 ## Cycle log
 
 - Cycle 1 (2026-05-24, `bd3ff10`): Variance + Realm Tone + NPC Saga 회수. 약점: build saturation / realm 톤 부재 / NPC dead path. 곡선: skillsLearned p50 21→9, maxShare mage 0.46→priest 0.40, cyclesWithNpc 0→2. Yellow flag: 3 PRD recalibrations.
@@ -149,3 +157,4 @@
 - Cycle 195 (2026-05-28): cycle 194 selector wire — MainMenu mm-tier-progress 에 progress bar (`mm-tier-progress-bar`) 추가. 200px × 4px gold bar + 0.3s ease transition. cycle 194 의 0-1 normalized → %. 다음 tier 까지의 거리 시각화. category: UI (cycle 193 UI 후 2 cycle 격리, UI 2 연속 후 다음 cycle 196 강제 회전). vitest 1529 = cycle 194 baseline (typecheck PASS, +0). v2 95/100 (사용자 새 100-cycle 의 40/100).
 - Cycle 196 (2026-05-28): cosmeticTintToHex 출력 형식 invariant — 모든 정의된 6 token 이 `#rrggbb` (lowercase 6-char 0-9a-f) 형식. 1 신규 unit test. 미래 token 추가 시 형식 drift 자동 가드. category: balance (cycle 192 balance 후 4 cycle 격리, 룰 9 안전). vitest 1530 (+1). v2 96/100 (사용자 새 100-cycle 의 41/100).
 - Cycle 197 (2026-05-28): `getActiveNarrativeWeights(seasonStartedAt, nowMs?)` helper 신설 — cycle 187 의 SeasonPassScreen.handleClaim inline 로직 (`activeSeason.applyRule.narrativeWeightMul ?? null`) 의 캡슐화. 2 신규 unit test (정의된 slot 반환 + 미정의 slot null). 향후 store / sim driver 의 wire 진입점 통일. category: system (cycle 194 system 후 3 cycle 격리, 룰 9 안전). vitest 1532 (+2). v2 97/100 (사용자 새 100-cycle 의 42/100).
+- Cycle 198 (2026-05-28): INDEX.md 의 헤더에 "진행 상태" 섹션 신설. v1/v2/사용자 prompted 100-cycle 카운터 + STATUS 파일 reference + wire-chain-pattern reference. 미래 reader 가 INDEX 첫 5 줄로 자율진화 시스템의 전체 상태 인지. category: chore (cycle 189 chore 후 9 cycle 격리, 룰 9 안전). vitest 1532 = cycle 197 baseline (docs only, +0). v2 98/100 (사용자 새 100-cycle 의 43/100).
