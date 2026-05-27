@@ -236,6 +236,21 @@ describe('Cycle 218 — getNarrationToneLabel', () => {
   });
 });
 
+/** Cycle 224 — NARRATION_TONE_LABEL_KR keys ↔ ALL_NARRATION_TONES cross-invariant.
+ *  union 추가 시 label 추가도 의무. */
+describe('Cycle 224 — cross-invariant: TONE_LABEL_KR ↔ ALL_TONES', () => {
+  it('모든 ALL_NARRATION_TONES 가 NARRATION_TONE_LABEL_KR 에 존재', () => {
+    for (const tone of ALL_NARRATION_TONES) {
+      expect(NARRATION_TONE_LABEL_KR[tone], `${tone} 의 label 부재`).toBeDefined();
+    }
+  });
+  it('NARRATION_TONE_LABEL_KR 의 모든 key 가 ALL_NARRATION_TONES 에 존재', () => {
+    for (const tone of Object.keys(NARRATION_TONE_LABEL_KR)) {
+      expect(ALL_NARRATION_TONES, `${tone} 의 tone 부재`).toContain(tone);
+    }
+  });
+});
+
 /** Cycle 213 — NARRATION_TONE_LABEL_KR invariant: 5 tone 모두 1-5자 한국어 label. */
 describe('Cycle 213 — NARRATION_TONE_LABEL_KR', () => {
   it('5 tone 모두 1-5자 한국어 label', () => {
