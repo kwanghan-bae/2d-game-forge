@@ -11,6 +11,7 @@ import { JobSystem } from './JobSystem';
 import type { JobMilestone } from '../data/jobs';
 import { lookupDrop } from '../overworld/dropTable';
 import { getAgingDebuff } from './agingDebuff';
+import type { TraitId } from '../cycle/traits';
 
 const EXP_REQ_BASE = 10;
 
@@ -50,6 +51,8 @@ export interface HeroSnapshot {
   unlockedMilestones: import('../data/jobs').JobMilestone[];
   learnedSkillIds: string[];
   staggered?: boolean;
+  /** Cycle 281 — HeroDecisionAI Sub-phase σ T1: trait auto-roll 의 누적 traits. */
+  traits?: TraitId[];
   seed: number;
 }
 
@@ -77,7 +80,19 @@ export class HeroEntity {
   unlockedJobId: string | null = null;
   unlockedMilestones: Set<JobMilestone> = new Set();
   learnedSkillIds: Set<string> = new Set();
+  /** Cycle 281 — HeroDecisionAI Sub-phase σ T1: trait auto-roll 의 누적 traits. */
+  private traits: TraitId[] = [];
   private agingAccum: number = 0;
+
+  /** Cycle 281 — read-only access to accumulated traits. */
+  getTraits(): readonly TraitId[] {
+    return this.traits;
+  }
+
+  /** Cycle 281 — add a trait (no dedup check — caller responsibility). */
+  addTrait(traitId: TraitId): void {
+    this.traits.push(traitId);
+  }
 
   private constructor() {
     this.name = '';
@@ -227,6 +242,7 @@ export class HeroEntity {
       unlockedMilestones: [...this.unlockedMilestones],
       learnedSkillIds: [...this.learnedSkillIds],
       staggered: this.staggered,
+      traits: [...this.traits],
       seed,
     };
   }
@@ -254,6 +270,7 @@ export class HeroEntity {
     h.learnedSkillIds = new Set(snap.learnedSkillIds);
     h.personality = PersonalityState.fromTraitPriors(snap.personality);
     h.staggered = snap.staggered ?? false;
+    h.traits = snap.traits ? [...snap.traits] : [];
     h.recomputeStats();
     // Restore HP within new hpMax bounds
     h.hp = Math.min(snap.hp, h.hpMax);
