@@ -56,6 +56,15 @@ describe('Cycle 134 — claimNarrationVariants', () => {
     }
   });
 
+  /** Cycle 201 — TIER_VOCATIVE_PREFIX 길이 sanity (1-20자 invariant). */
+  it('cycle 201 — TIER_VOCATIVE_PREFIX 각 prefix 의 길이가 1-20자', () => {
+    for (const tier of ['신참', '노련', '숙련', '마스터', '전설'] as const) {
+      const prefix = TIER_VOCATIVE_PREFIX[tier];
+      expect(prefix.length, `${tier} prefix length`).toBeGreaterThanOrEqual(1);
+      expect(prefix.length, `${tier} prefix length`).toBeLessThanOrEqual(20);
+    }
+  });
+
   /** Cycle 156 — story-writer #2 권고: variant 0 의 자체 vocative 제거로
    *  TIER_VOCATIVE_PREFIX 합성 시 이중 호칭 ('용사여, 용사여, ...') 부재 검증.
    *  occurrence-count 가드 — 신참 합성에 '용사여' 1 회, 전설 합성에 0 회. */
