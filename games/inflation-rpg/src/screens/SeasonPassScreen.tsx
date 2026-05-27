@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
 import { getClaimableCount } from '../data/achievementsSelectors';
-import { pickClaimNarration } from '../data/claimNarrationVariants';
+import { pickClaimNarration, pickClaimNarrationWeighted } from '../data/claimNarrationVariants';
 import {
   getActiveSeasonModifier,
   getSeasonTimeRemainingMs,
@@ -63,7 +63,12 @@ export function SeasonPassScreen({ onClose }: Props) {
     const countBefore = totalClaims;
     const result = claim(id);
     if (result.ok) {
-      const narration = pickClaimNarration(undefined, claimerTier, lastFinalRealm);
+      // Cycle 187 — active modifier 의 narrativeWeightMul 이 있으면 weighted pick.
+      //   매칭 부재 시 pickClaimNarrationWeighted 내부 fallback → 기존 plain.
+      const weights = activeSeason.applyRule.narrativeWeightMul;
+      const narration = weights
+        ? pickClaimNarrationWeighted(undefined, claimerTier, lastFinalRealm, weights)
+        : pickClaimNarration(undefined, claimerTier, lastFinalRealm);
       // Cycle 154: store 갱신 후 count 가 +1 됐으므로 unlock bonus 재계산.
       const tier = getTierUnlockBonus(countBefore, countBefore + 1);
       const tierMsg = tier.newTier ? ` ★ ${tier.newTier} 등급 달성!` : '';
