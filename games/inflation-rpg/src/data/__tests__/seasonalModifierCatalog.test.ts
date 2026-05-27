@@ -109,6 +109,20 @@ describe('Cycle 129 F2 — SeasonalModifier catalog', () => {
     expect(cosmetic / total).toBeLessThan(0.75);
   });
 
+  /** Cycle 192 — narrativeWeightMul 의 key 가 NarrationTone (cycle 161 정의)
+   *  의 union 과 정합. catalog 가 type 에 없는 tone 을 정의하면 silent
+   *  dormant. */
+  it('cycle 192 — narrativeWeightMul key 가 NarrationTone union 과 정합', () => {
+    const validTones = new Set(['elegy', 'tragedy', 'ode', 'hymn', 'neutral']);
+    for (const id of ALL_SEASON_MODIFIER_IDS) {
+      const def = SEASON_MODIFIER_CATALOG[id];
+      if (!def.applyRule.narrativeWeightMul) continue;
+      for (const tone of Object.keys(def.applyRule.narrativeWeightMul)) {
+        expect(validTones, `${id} has unknown narrative tone: ${tone}`).toContain(tone);
+      }
+    }
+  });
+
   /** Cycle 182 — narrativeWeightMul / buffCardWeightMul / npcEncounterMul
    *  의 모든 값이 [0.5, 3.0] 범위 (cycle 168 패턴의 narrative axis 확장). */
   it('cycle 182 — 모든 weightMul axis 의 값이 [0.5, 3.0] 범위', () => {
