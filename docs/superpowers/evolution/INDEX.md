@@ -7,7 +7,7 @@
 - **v1 (cycle 1-100)** = `phase-cycle-100-complete` (2026-05-25)
 - **v2 (cycle 101-200)** = 진행 중. cycle 100 STATUS = `STATUS-2026-05-26-cycle-120.md` 등.
 - **사용자 prompted 100-cycle (cycle 156-255)** = 2026-05-27 시작. 8 페르소나 fan-out + 20-cycle 주기 surface + 카테고리 회전 + 10-cycle STATUS.
-  - 진행률 (cycle 246 시점) = **91/100** (cycle 256 = 100/100 완료 목표).
+  - 진행률 (cycle 249 시점) = **94/100** (cycle 256 = 100/100 완료 임박).
   - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
 
@@ -174,6 +174,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 249 (2026-05-28): INDEX 헤더 진행률 91→94/100 갱신 (cycle 256 완료 임박). category: chore. v3 49/100 (사용자 새 100-cycle 의 94/100).
 - Cycle 248 (2026-05-28): `isCosmeticSeason` / `isNarrativeSeason` / `isTraitSeason` predicate helpers — UI 분기 단순화. category: system. typecheck PASS. v3 48/100 (사용자 새 100-cycle 의 93/100).
 - Cycle 247 (2026-05-28): getNarrationToneEnLabel invariant test 2. category: balance. vitest 1552 (+2). v3 47/100 (사용자 새 100-cycle 의 92/100).
 - Cycle 246 (2026-05-28): INDEX 헤더 진행률 72→91/100 갱신. category: chore. v3 46/100 (사용자 새 100-cycle 의 91/100).
