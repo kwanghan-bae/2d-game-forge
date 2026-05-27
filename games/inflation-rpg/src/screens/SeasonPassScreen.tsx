@@ -14,7 +14,7 @@ interface Props {
  * Cycle 130 N5 SeasonPassScreen — player-facing UI for N5 Live Ops.
  *
  * - 5 starter achievement list (claimed / progress / locked)
- * - tokens 잔액 + 환전 (redeemTokens 5:1, cycle 151 재조정)
+ * - tokens 잔액 + 환전 (redeemTokens 3:1, cycle 157 재조정 — cycle 151 5:1 → 3:1)
  * - empty state placeholder
  */
 export function SeasonPassScreen({ onClose }: Props) {
@@ -29,7 +29,7 @@ export function SeasonPassScreen({ onClose }: Props) {
   const activeSeason = getActiveSeasonModifier(seasonStartedAt);
   const claimerTier = getClaimerTier(totalClaims);
   const [pulseId, setPulseId] = useState<string | null>(null);
-  const [redeemAmount, setRedeemAmount] = useState(5);
+  const [redeemAmount, setRedeemAmount] = useState(3);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   function handleClaim(id: typeof ALL_ACHIEVEMENT_IDS[number]) {
@@ -107,11 +107,11 @@ export function SeasonPassScreen({ onClose }: Props) {
         <div style={{ padding: '8px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', gap: 8 }}>
           <input
             type="number"
-            min={5}
-            step={5}
+            min={3}
+            step={3}
             data-testid="sp-redeem-input"
             value={redeemAmount}
-            onChange={e => setRedeemAmount(Math.max(5, Math.floor(Number(e.target.value) || 5)))}
+            onChange={e => setRedeemAmount(Math.max(3, Math.floor(Number(e.target.value) || 3)))}
             style={{ width: 80, padding: '6px 8px', background: '#262830', color: '#eee', border: '1px solid #555', borderRadius: 4, fontSize: 13 }}
           />
           <button
@@ -121,7 +121,7 @@ export function SeasonPassScreen({ onClose }: Props) {
             disabled={tokens < redeemAmount}
             style={{ minHeight: 36, padding: '6px 12px', background: tokens < redeemAmount ? '#262830' : '#3b4252', color: tokens < redeemAmount ? '#666' : '#eee', border: '1px solid #555', borderRadius: 4, fontSize: 13, cursor: tokens < redeemAmount ? 'not-allowed' : 'pointer' }}
           >
-            환전 (5:1)
+            환전 (3:1)
           </button>
           {feedback && <span data-testid="sp-feedback" style={{ fontSize: 11, color: '#aaa', marginLeft: 8 }}>{feedback}</span>}
         </div>
