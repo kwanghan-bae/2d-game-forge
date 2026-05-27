@@ -35,6 +35,29 @@ describe('HeroDecisionAI (v2 / overworld)', () => {
     expect(a1?.id).toBe(a2?.id);
   });
 
+  describe('Cycle 302 — Sub-phase δ T1: chooseTargetEnemyId', () => {
+    const enemies = [
+      { id: 'weak', difficulty: 1 },
+      { id: 'mid', difficulty: 5 },
+      { id: 'strong', difficulty: 10 },
+    ];
+
+    it('default → 가장 약한 적 (focus weak first)', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.chooseTargetEnemyId(enemies)).toBe('weak');
+    });
+
+    it('t_boss_hunter → 가장 강한 적', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: ['t_boss_hunter'] });
+      expect(ai.chooseTargetEnemyId(enemies)).toBe('strong');
+    });
+
+    it('empty → null', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.chooseTargetEnemyId([])).toBeNull();
+    });
+  });
+
   describe('Cycle 301 — Sub-phase γ T1: shouldRetreat', () => {
     it('HP < 0.2 → 항상 retreat', () => {
       const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
