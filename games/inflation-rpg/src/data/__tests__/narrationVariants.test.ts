@@ -15,7 +15,7 @@
  *   영역은 절대 겹치지 않음. 둘 다 적용되어도 충돌 0.
  */
 import { describe, expect, it } from 'vitest';
-import { realmTone, NarrationVariants, pickWeighted, ALL_NARRATION_TONES, NARRATION_TONE_LABEL_KR } from '../narrationVariants';
+import { realmTone, NarrationVariants, pickWeighted, ALL_NARRATION_TONES, NARRATION_TONE_LABEL_KR, getNarrationToneLabel } from '../narrationVariants';
 import type { TaggedVariant } from '../narrationVariants';
 import type { RealmId } from '../../types';
 
@@ -221,6 +221,18 @@ describe('Cycle 207 — ALL_NARRATION_TONES', () => {
     expect(ALL_NARRATION_TONES).toContain('ode');
     expect(ALL_NARRATION_TONES).toContain('hymn');
     expect(ALL_NARRATION_TONES).toContain('neutral');
+  });
+});
+
+/** Cycle 218 — getNarrationToneLabel unknown string → undefined invariant. */
+describe('Cycle 218 — getNarrationToneLabel', () => {
+  it('unknown string → undefined', () => {
+    expect(getNarrationToneLabel('not-a-tone')).toBeUndefined();
+    expect(getNarrationToneLabel('')).toBeUndefined();
+  });
+  it('정의된 tone → label', () => {
+    expect(getNarrationToneLabel('elegy')).toBe('비가');
+    expect(getNarrationToneLabel('ode')).toBe('송가');
   });
 });
 
