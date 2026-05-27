@@ -159,6 +159,16 @@ export const NARRATION_TONE_DESC_KR: Readonly<Record<NarrationTone, string>> = {
   neutral: '담담한 한 줄',
 };
 
+/** Cycle 237 — NarrationTone 의 영어 alt label. dev tooling / log 등에서 사용.
+ *  사용자 UI 는 KR 만 노출. */
+export const NARRATION_TONE_LABEL_EN: Readonly<Record<NarrationTone, string>> = {
+  elegy: 'Elegy',
+  tragedy: 'Tragedy',
+  ode: 'Ode',
+  hymn: 'Hymn',
+  neutral: 'Neutral',
+};
+
 /** Cycle 214 — unknown string → safe lookup wrapper. catalog 의 weight key 가
  *  type 외 일 가능성 (cycle 192 invariant 가 정합 보장하지만 caller 가 plain
  *  string 받을 경우). 매칭 부재 → undefined. */
