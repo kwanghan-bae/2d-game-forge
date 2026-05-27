@@ -143,10 +143,14 @@ export function SeasonPassScreen({ onClose }: Props) {
   const completedCount = ALL_ACHIEVEMENT_IDS.filter(id => achievements.byId[id]?.completedAt != null).length;
   const claimableCount = getClaimableCount(achievements);
 
+  // Cycle 188 — redeem 성공 시 청색 강조 (tierFlash 의 gold 와 차별, 별도 axis).
+  const [redeemFlash, setRedeemFlash] = useState(false);
   function handleRedeem() {
     const result = redeem(redeemAmount);
     if (result.ok) {
       setFeedback(`환전 성공: -${result.tokenDelta} tokens / +${result.crackDelta} 균열석`);
+      setRedeemFlash(true);
+      setTimeout(() => setRedeemFlash(false), 1500);
     } else {
       setFeedback(result.reason === 'invalid' ? '잘못된 수량' : 'tokens 부족');
     }
@@ -245,6 +249,16 @@ export function SeasonPassScreen({ onClose }: Props) {
                       boxShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
                       letterSpacing: '0.02em',
                       transition: 'box-shadow 0.6s ease-out',
+                    }
+                  : redeemFlash
+                  ? {
+                      fontSize: 12,
+                      color: '#80c8ff',
+                      fontWeight: 600,
+                      marginLeft: 8,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: 'rgba(128, 200, 255, 0.10)',
                     }
                   : { fontSize: 11, color: '#aaa', marginLeft: 8 }
               }
