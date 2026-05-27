@@ -47,6 +47,8 @@ export class OverworldScene extends Phaser.Scene {
   private currentRealm: RealmId | undefined;
   private unlockedRealms: readonly RealmId[] | undefined;
   private currentSeason: SeasonId = 'spring';
+  /** Cycle 175 — SeasonalModifier cosmeticTint override. null = base season tint. */
+  private cosmeticTintOverride: string | null = null;
   /** Cycle-7 F4: count of times pathfinder columnBounds fallback fired.
    *  Surfaced to operator via console.warn on first hit + queryable via
    *  getPathfinderFallbackCount() for future telemetry / e2e assertions. */
@@ -133,6 +135,26 @@ export class OverworldScene extends Phaser.Scene {
   setSeason(s: SeasonId): void {
     this.currentSeason = s;
     this.cameras.main.setBackgroundColor(seasonBgTint(s));
+    this.reapplyCosmeticTint();
+  }
+
+  /**
+   * Cycle 175 — SeasonalModifier cosmeticTint override (cycle 159+167 wire 6/n).
+   * `hex` 가 string 이면 setBackgroundColor 로 override, null 이면 base season
+   * tint 로 복원 (`setSeason` 의 색 다시 적용). 호출자 (OverworldRunner) 가
+   * `getActiveCosmeticTint` + `cosmeticTintToHex` 의 chain 결과를 전달.
+   */
+  setCosmeticTintOverride(hex: string | null): void {
+    this.cosmeticTintOverride = hex;
+    this.reapplyCosmeticTint();
+  }
+
+  private reapplyCosmeticTint(): void {
+    if (this.cosmeticTintOverride) {
+      this.cameras.main.setBackgroundColor(this.cosmeticTintOverride);
+    } else {
+      this.cameras.main.setBackgroundColor(seasonBgTint(this.currentSeason));
+    }
   }
 
   create() {
