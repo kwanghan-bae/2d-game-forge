@@ -387,6 +387,7 @@ const NPC_DEATH_VARIANTS_BY_KIND: Record<NpcEntity['kind'], Array<(c: { age: num
   rival: [
     (c) => `${c.age}세에 라이벌의 마지막 칼은 자신의 것이었다 — 둘 다 살아남지 못했다.`,
     (c) => `${c.age}세에 라이벌이 먼저 무릎을 꿇었다 — 영웅은 처음으로 이긴 것이 무서웠다.`,
+    (c) => `${c.age}세에 라이벌의 검은 끝내 자신의 이름을 새기지 못한 채 부러졌다.`,
   ],
   friend: [
     (c) => `${c.age}세에 친구의 부고를 멀리서 들었다 — 이름은 끝내 몰랐다.`,
