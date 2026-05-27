@@ -167,3 +167,4 @@
 - Cycle 205 (2026-05-28): sp-season-remaining urgency 강조 — daysRemaining < 7 또는 === 0 시 color `#888` → `#ffaa66` (호박색) + fontWeight 400 → 600. `data-urgent` attribute (회귀 hook). 시즌 회전 임박을 단계적으로 인지. category: UI. vitest 1536 = cycle 204 baseline. v3 5/100 (사용자 새 100-cycle 의 50/100, **절반 완료**).
 - Cycle 206 (2026-05-28): `ALL_NARRATION_TONES` array export (narrationVariants.ts). cycle 192 invariant 의 union → array 동기화 위한 runtime form. category: narrative. vitest 1536 baseline. v3 6/100 (사용자 새 100-cycle 의 51/100).
 - Cycle 207 (2026-05-28): ALL_NARRATION_TONES length 5 invariant + 5 tone 모두 포함 검증. union/array drift 자동 가드. 1 신규 test. category: balance. vitest 1537 (+1). v3 7/100 (사용자 새 100-cycle 의 52/100).
+- Cycle 208 (2026-05-28): docs/CREDITS.md minor — cycle 177 wire chain 완성 후 catalog 12 modifier 의 디자인 자산 분류 박제. category: chore. vitest 1537 baseline. v3 8/100 (사용자 새 100-cycle 의 53/100).
