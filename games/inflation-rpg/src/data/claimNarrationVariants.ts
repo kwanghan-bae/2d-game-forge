@@ -30,6 +30,9 @@ export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   // Cycle 185 — pool 12 → 14. 별/책장/이름/하늘 외의 motif (그림자/물결).
   '그림자도 그대의 발자국을 따라 새겨진다',
   '잔물결 하나마다 새 이름이 새겨진다',
+  // Cycle 191 — pool 14 → 16. 침묵/숨결 motif 추가.
+  '신의 침묵 한 박자가 더 깊어진다',
+  '오랜 숨결이 그대의 길을 데운다',
 ] as const;
 
 /** ClaimerTier 별 후원자 호칭 prefix. cycle 148 story-writer #2 권고.
