@@ -4,7 +4,7 @@ import { HallScreen } from './HallScreen';
 import { SeasonPassScreen } from './SeasonPassScreen';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
-import { getClaimerTier, nextTierThreshold } from '../data/claimerTier';
+import { getClaimerTier, nextTierThreshold, getClaimerTierProgress } from '../data/claimerTier';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
@@ -34,13 +34,18 @@ export function MainMenu() {
       <p style={{ opacity: 0.7, marginBottom: 8 }}>신이 되어 용사의 일대기를 후원하라</p>
       {totalClaims > 0 && (() => {
         // Cycle 193 — nextTier 까지 남은 횟수 표시 (mm-claimer-tier 아래 추가).
+        // Cycle 195 — progress bar wire (cycle 194 getClaimerTierProgress).
         const next = nextTierThreshold(totalClaims);
+        const progressPct = Math.round(getClaimerTierProgress(totalClaims) * 100);
         return (
           <div data-testid="mm-claimer-tier" style={{ marginBottom: 24, fontSize: 12, color: '#ffd700' }}>
             후원자 등급: <strong>{tier}</strong> <span style={{ color: '#888', fontSize: 11 }}>(누적 수령 {totalClaims})</span>
             {next.nextTier && (
               <div data-testid="mm-tier-progress" style={{ marginTop: 4, fontSize: 10, color: '#888' }}>
                 다음 {next.nextTier} 까지 {next.remaining} 회 필요
+                <div data-testid="mm-tier-progress-bar" style={{ marginTop: 2, height: 4, background: '#262830', borderRadius: 2, overflow: 'hidden', width: 200, marginInline: 'auto' }}>
+                  <div style={{ width: `${progressPct}%`, height: '100%', background: '#ffd700', transition: 'width 0.3s ease' }} />
+                </div>
               </div>
             )}
             {!next.nextTier && (
