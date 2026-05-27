@@ -55,37 +55,38 @@ function resetStore(): void {
   });
 }
 
-describe('Cycle 129 — F3 redeemTokens (cycle 151 ratio 10:1 → 5:1)', () => {
+describe('Cycle 129 — F3 redeemTokens (cycle 151 ratio 10:1 → 5:1 → cycle 157 → 3:1)', () => {
   beforeEach(() => resetStore());
 
-  /** F3.2 — 환전 비율: 5 token → 1 crackStone (cycle 151) */
-  it('F3.2 10 token → 2 crackStone 환전 — 잔액 차감 + crackStones 증가', () => {
+  /** F3.2 — 환전 비율: 3 token → 1 crackStone (cycle 157)
+   *  Math.floor(9/3) = 3 crackStone, actualConsume = 9 */
+  it('F3.2 9 token → 3 crackStone 환전 — 잔액 차감 + crackStones 증가', () => {
     useGameStore.setState(s => ({ meta: { ...s.meta, tokens: 25, crackStones: 0 } }));
-    const r = useGameStore.getState().redeemTokens(10);
-    expect(r).toEqual({ ok: true, tokenDelta: -10, crackDelta: 2 });
+    const r = useGameStore.getState().redeemTokens(9);
+    expect(r).toEqual({ ok: true, tokenDelta: -9, crackDelta: 3 });
     const m = useGameStore.getState().meta;
-    expect(m.tokens).toBe(15);
-    expect(m.crackStones).toBe(2);
-    expect(m.tokensRedeemed).toBe(10);
+    expect(m.tokens).toBe(16);
+    expect(m.crackStones).toBe(3);
+    expect(m.tokensRedeemed).toBe(9);
   });
 
-  it('F3.2 20 token → 4 crackStone 환전 — multi-step', () => {
+  it('F3.2 18 token → 6 crackStone 환전 — multi-step', () => {
     useGameStore.setState(s => ({ meta: { ...s.meta, tokens: 25, crackStones: 5 } }));
-    const r = useGameStore.getState().redeemTokens(20);
-    expect(r).toEqual({ ok: true, tokenDelta: -20, crackDelta: 4 });
+    const r = useGameStore.getState().redeemTokens(18);
+    expect(r).toEqual({ ok: true, tokenDelta: -18, crackDelta: 6 });
     const m = useGameStore.getState().meta;
-    expect(m.tokens).toBe(5);
-    expect(m.crackStones).toBe(9);
-    expect(m.tokensRedeemed).toBe(20);
+    expect(m.tokens).toBe(7);
+    expect(m.crackStones).toBe(11);
+    expect(m.tokensRedeemed).toBe(18);
   });
 
-  /** F3.3 — 잔액 부족: 5 미만이면 insufficient (cycle 151) */
-  it('F3.3 잔액 부족 (4) → ok:false insufficient + meta 무변동', () => {
-    useGameStore.setState(s => ({ meta: { ...s.meta, tokens: 4, crackStones: 0, tokensRedeemed: 0 } }));
-    const r = useGameStore.getState().redeemTokens(5);
+  /** F3.3 — 잔액 부족: tokens < tokensToSpend → insufficient (cycle 157 3:1) */
+  it('F3.3 잔액 부족 (2) → ok:false insufficient + meta 무변동', () => {
+    useGameStore.setState(s => ({ meta: { ...s.meta, tokens: 2, crackStones: 0, tokensRedeemed: 0 } }));
+    const r = useGameStore.getState().redeemTokens(3);
     expect(r).toEqual({ ok: false, reason: 'insufficient' });
     const m = useGameStore.getState().meta;
-    expect(m.tokens).toBe(4);
+    expect(m.tokens).toBe(2);
     expect(m.crackStones).toBe(0);
     expect(m.tokensRedeemed).toBe(0);
   });
@@ -101,10 +102,10 @@ describe('Cycle 129 — F3 redeemTokens (cycle 151 ratio 10:1 → 5:1)', () => {
     expect(useGameStore.getState().meta.tokens).toBe(100);
   });
 
-  /** 5 미만 → insufficient (crackDelta = 0 reject) — cycle 151 */
-  it('3 token 호출 → ok:false insufficient (5 미만 환전 불가)', () => {
+  /** 3 미만 → insufficient (crackDelta = 0 reject) — cycle 157 */
+  it('2 token 호출 → ok:false insufficient (3 미만 환전 불가)', () => {
     useGameStore.setState(s => ({ meta: { ...s.meta, tokens: 100 } }));
-    const r = useGameStore.getState().redeemTokens(3);
+    const r = useGameStore.getState().redeemTokens(2);
     expect(r).toEqual({ ok: false, reason: 'insufficient' });
     expect(useGameStore.getState().meta.tokens).toBe(100);
   });
@@ -259,7 +260,7 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements + Cycle 131 manual claim
     expect(m.achievements.byId['lv-10m-in-3-cycles'].completed).toBe(false);
   });
 
-  /** Cycle end → claim → redeemTokens 환전 통합 (cycle 131 분리, cycle 151 ratio) */
+  /** Cycle end → claim → redeemTokens 환전 통합 (cycle 131 분리, cycle 157 ratio 3:1) */
   it('evaluator + claim + redeemTokens 통합: realm-conquest-6 완료 → claim → 2 token / 환전 insufficient', () => {
     const events: SagaEvent[] = [
       mkEvent('realmEnter', { from: 'base', to: 'plains' }),
@@ -273,8 +274,8 @@ describe('Cycle 129 — F1 evaluateAndGrantAchievements + Cycle 131 manual claim
     expect(useGameStore.getState().meta.tokens).toBe(0);
     useGameStore.getState().claimAchievement('realm-conquest-6', NOW);
     expect(useGameStore.getState().meta.tokens).toBe(2);
-    // 2 token 으로 환전 시도 → 5 미만 → insufficient (cycle 151)
-    const r = useGameStore.getState().redeemTokens(5);
+    // 2 token 으로 환전 시도 → 3 미만 → insufficient (cycle 157)
+    const r = useGameStore.getState().redeemTokens(3);
     expect(r).toEqual({ ok: false, reason: 'insufficient' });
   });
 });

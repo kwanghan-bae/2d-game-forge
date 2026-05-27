@@ -16,8 +16,10 @@
 // 5. inflation-flash-100x  — *단일 cycle 안 ×100 jump 3 회*. baseline 측정 부재,
 //                            cycle 132+ sim 측정 후 재조정 가능 (PRD §F1 명시).
 //
-// reward.tokens 합 = 1 + 2 + 2 + 3 + 5 = 13 / 시즌. F3 (cycle 129) 의 환전 비율
-// 10:1 → 균열석 1/시즌 plausible. cycle 116 organic 90/시즌 대비 ~14% 보조 axis.
+// reward.tokens 합 = 1 + 2 + 2 + 3 + 5 = 13 / 시즌. cycle 157 의 환전 비율 3:1
+// → 균열석 4/시즌 (Math.floor(13/3)). cycle 116 organic 90/시즌 대비 4.32%
+// 보조 axis. 변천: 10:1 (cycle 129) → 5:1 (cycle 151, 1.44% → 2.89%)
+// → 3:1 (cycle 157, 2.89% → 4.32%). 추가 인하 시 organic 균열석 의존성 약화 risk.
 
 import type { AchievementDef, AchievementId } from './achievementsTypes';
 

@@ -1582,13 +1582,14 @@ export const useGameStore = create<GameStore>()(
         if (bal < tokensToSpend) {
           return { ok: false, reason: 'insufficient' };
         }
-        // Cycle 151: 10:1 → 5:1 환전 비율 재조정 (level-designer #2 — token
-        // economy 1.44% sub-margin). 5 token → 1 crackStone. tokensToSpend 의
-        // 정수 나눗셈. 잔여 (tokensToSpend % 5) 은 consume 안 함.
-        const crackDelta = Math.floor(tokensToSpend / 5);
-        const actualConsume = crackDelta * 5;
+        // Cycle 151: 10:1 → 5:1, Cycle 157: 5:1 → 3:1 환전 비율 재조정
+        // (level-designer #2 — realistic 1.56% sub-margin → 2.59% boost).
+        // 3 token → 1 crackStone. tokensToSpend 의 정수 나눗셈. 잔여 (tokensToSpend % 3)
+        // 은 consume 안 함.
+        const crackDelta = Math.floor(tokensToSpend / 3);
+        const actualConsume = crackDelta * 3;
         if (crackDelta <= 0) {
-          // 5 미만 호출 시 환전 0 — caller 에 명확한 reject.
+          // 3 미만 호출 시 환전 0 — caller 에 명확한 reject.
           return { ok: false, reason: 'insufficient' };
         }
         set(s => ({
