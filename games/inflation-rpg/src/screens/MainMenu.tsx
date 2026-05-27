@@ -4,7 +4,7 @@ import { HallScreen } from './HallScreen';
 import { SeasonPassScreen } from './SeasonPassScreen';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
-import { getClaimerTier } from '../data/claimerTier';
+import { getClaimerTier, nextTierThreshold } from '../data/claimerTier';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
@@ -32,11 +32,25 @@ export function MainMenu() {
       `}</style>
       <h1 style={{ marginBottom: 8 }}>조선 인플레이션 RPG</h1>
       <p style={{ opacity: 0.7, marginBottom: 8 }}>신이 되어 용사의 일대기를 후원하라</p>
-      {totalClaims > 0 && (
-        <div data-testid="mm-claimer-tier" style={{ marginBottom: 24, fontSize: 12, color: '#ffd700' }}>
-          후원자 등급: <strong>{tier}</strong> <span style={{ color: '#888', fontSize: 11 }}>(누적 수령 {totalClaims})</span>
-        </div>
-      )}
+      {totalClaims > 0 && (() => {
+        // Cycle 193 — nextTier 까지 남은 횟수 표시 (mm-claimer-tier 아래 추가).
+        const next = nextTierThreshold(totalClaims);
+        return (
+          <div data-testid="mm-claimer-tier" style={{ marginBottom: 24, fontSize: 12, color: '#ffd700' }}>
+            후원자 등급: <strong>{tier}</strong> <span style={{ color: '#888', fontSize: 11 }}>(누적 수령 {totalClaims})</span>
+            {next.nextTier && (
+              <div data-testid="mm-tier-progress" style={{ marginTop: 4, fontSize: 10, color: '#888' }}>
+                다음 {next.nextTier} 까지 {next.remaining} 회 필요
+              </div>
+            )}
+            {!next.nextTier && (
+              <div data-testid="mm-tier-progress" style={{ marginTop: 4, fontSize: 10, color: '#888' }}>
+                최고 등급 도달
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 280, margin: '0 auto' }}>
         {heroSnapshot && (
