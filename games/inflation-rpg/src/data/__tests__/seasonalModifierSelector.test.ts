@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest';
 import {
   getActiveSeasonModifierId,
   getActiveSeasonModifier,
+  getActiveCosmeticTint,
   SEASON_ROTATION_MS,
 } from '../seasonalModifierSelector';
-import { ALL_SEASON_MODIFIER_IDS } from '../seasonalModifierCatalog';
+import { ALL_SEASON_MODIFIER_IDS, SEASON_MODIFIER_CATALOG } from '../seasonalModifierCatalog';
 
 describe('Cycle 135 — seasonalModifierSelector', () => {
   it('seasonStartedAt = 0, nowMs = 0 → 첫 modifier', () => {
@@ -37,5 +38,32 @@ describe('Cycle 135 — seasonalModifierSelector', () => {
     const def = getActiveSeasonModifier(0, 0);
     expect(def.id).toBe(ALL_SEASON_MODIFIER_IDS[0]);
     expect(def.nameKR.length).toBeGreaterThan(0);
+  });
+
+  /** Cycle 159 — getActiveCosmeticTint selector */
+  describe('Cycle 159 — getActiveCosmeticTint', () => {
+    /** catalog 의 cosmeticTint 매핑이 있는 slot 을 검색 */
+    const tintSlotIdx = ALL_SEASON_MODIFIER_IDS.findIndex((id) => {
+      const def = SEASON_MODIFIER_CATALOG[id];
+      return def.applyRule.cosmeticTint !== undefined;
+    });
+
+    it('cosmeticTint 정의된 slot 의 매칭 realm → token 반환', () => {
+      // 해당 slot 의 def 직접 lookup 으로 realm/token 확보 (test 가 catalog 변경에 견고).
+      const def = SEASON_MODIFIER_CATALOG[ALL_SEASON_MODIFIER_IDS[tintSlotIdx]];
+      const realmId = Object.keys(def.applyRule.cosmeticTint!)[0];
+      const expectedToken = def.applyRule.cosmeticTint![realmId];
+      const at = SEASON_ROTATION_MS * tintSlotIdx;
+      expect(getActiveCosmeticTint(0, realmId, at)).toBe(expectedToken);
+    });
+
+    it('매칭되지 않는 realm → null', () => {
+      expect(getActiveCosmeticTint(0, 'realm-that-does-not-exist', 0)).toBeNull();
+    });
+
+    it('cosmeticTint 부재인 slot → null', () => {
+      // 첫 catalog (spring) 는 plains+field 매칭. sea/chaos 등 다른 realm 은 null.
+      expect(getActiveCosmeticTint(0, 'volcano', 0)).toBeNull();
+    });
   });
 });

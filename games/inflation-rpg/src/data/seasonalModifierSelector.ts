@@ -40,3 +40,21 @@ export function getActiveSeasonModifier(
 ): SeasonModifierDef {
   return SEASON_MODIFIER_CATALOG[getActiveSeasonModifierId(seasonStartedAt, nowMs)];
 }
+
+/**
+ * Cycle 159 — active SeasonModifier 의 realm 별 cosmetic tint token lookup.
+ * cycle 155 의 `getCosmeticTint(rule, realmId)` 를 selector 진입점으로 노출.
+ * realm 의 sprite/배경 tint 적용 site (cycle 167+ OverworldScene wire 예정)
+ * 가 useGameStore 의 `seasonStartedAt` 만으로 호출 가능하도록.
+ *
+ * 반환 = tint token (예: 'spring-pastel', 'aqua-deep') 또는 null (미매칭).
+ * token → CSS 색 / Phaser tint 매핑은 consumer 책임 (분리 keep).
+ */
+export function getActiveCosmeticTint(
+  seasonStartedAt: number,
+  realmId: string,
+  nowMs?: number,
+): string | null {
+  const def = getActiveSeasonModifier(seasonStartedAt, nowMs);
+  return def.applyRule.cosmeticTint?.[realmId] ?? null;
+}
