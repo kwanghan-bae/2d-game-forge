@@ -143,3 +143,44 @@ export function pickClaimNarration(
   if (tier === undefined) return base;
   return `${TIER_VOCATIVE_PREFIX[tier]}, ${base}`;
 }
+
+/**
+ * Cycle 181 — SeasonalModifier 의 narrativeWeightMul 적용 weighted variant.
+ * 기존 pickClaimNarration 와 별도 유지 (backward compat). active modifier 가
+ * { ode: 1.5 } 같은 weight 를 갖는 시즌이면 realm 의 toned variant pool 에서
+ * ode tone 변형이 더 자주 등장. realm 이 없거나 toned pool 미정의 realm 이면
+ * 기존 plain pickClaimNarration 동작 fallback.
+ */
+export function pickClaimNarrationWeighted(
+  seed: number | undefined,
+  tier: ClaimerTier | undefined,
+  realm: string | null | undefined,
+  weights?: Partial<Record<import('./narrationVariants').NarrationTone, number>>,
+): string {
+  // Fallback: realm 미매칭 or weights 미지정 → 기존 plain 선택.
+  const tonedPool = realm ? CLAIM_NARRATION_BY_REALM_TONED[realm] : null;
+  if (!tonedPool || !weights || Object.keys(weights).length === 0) {
+    return pickClaimNarration(seed, tier, realm);
+  }
+  // toned pool 의 variant 의 weight 합 (tone 미매칭 = 1 default).
+  const weighted = tonedPool.map((v) => {
+    const w = weights[v.tone];
+    return w === undefined ? 1 : w;
+  });
+  const total = weighted.reduce((a, b) => a + b, 0);
+  if (total <= 0) return pickClaimNarration(seed, tier, realm);
+  const s = typeof seed === 'number' ? seed : Date.now();
+  const pickPoint = ((s % total) + total) % total;
+  let acc = 0;
+  let chosen = tonedPool[tonedPool.length - 1];
+  for (let i = 0; i < weighted.length; i++) {
+    acc += weighted[i];
+    if (pickPoint < acc) {
+      chosen = tonedPool[i];
+      break;
+    }
+  }
+  const base = chosen.text;
+  if (tier === undefined) return base;
+  return `${TIER_VOCATIVE_PREFIX[tier]}, ${base}`;
+}
