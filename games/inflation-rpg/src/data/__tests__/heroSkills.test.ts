@@ -60,4 +60,9 @@ describe('hero skills catalog', () => {
   it('strike atkMul ≥ 1.15 (cycle 309 polish)', () => {
     expect(findSkillById('strike')!.atkMul).toBeGreaterThanOrEqual(1.15);
   });
+
+  // Cycle 315: cleave polish 가드 (cycle 313).
+  it('cleave atkMul ≥ 1.12 (cycle 313 polish)', () => {
+    expect(findSkillById('cleave')!.atkMul).toBeGreaterThanOrEqual(1.12);
+  });
 });
