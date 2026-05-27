@@ -98,6 +98,14 @@ export function SeasonPassScreen({ onClose }: Props) {
         style={{ width: 'min(560px, 96vw)', maxHeight: '88vh', background: '#1a1d28', color: '#eee', borderRadius: 12, border: '1px solid #444', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}
         onClick={e => e.stopPropagation()}
       >
+        <style>{`
+          @media (prefers-reduced-motion: reduce) {
+            .sp-feedback-tier-flash {
+              transition: none !important;
+              box-shadow: none !important;
+            }
+          }
+        `}</style>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <strong id="sp-modal-title">도전과제 + 토큰</strong>
@@ -143,6 +151,7 @@ export function SeasonPassScreen({ onClose }: Props) {
               data-tier-flash={tierFlash ? 'true' : undefined}
               role="status"
               aria-live="polite"
+              className={tierFlash ? 'sp-feedback-tier-flash' : undefined}
               style={
                 tierFlash
                   ? {
@@ -155,6 +164,7 @@ export function SeasonPassScreen({ onClose }: Props) {
                       background: 'rgba(255, 215, 0, 0.12)',
                       boxShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
                       letterSpacing: '0.02em',
+                      transition: 'box-shadow 0.6s ease-out',
                     }
                   : { fontSize: 11, color: '#aaa', marginLeft: 8 }
               }
