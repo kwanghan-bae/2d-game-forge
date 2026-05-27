@@ -35,4 +35,11 @@ describe('hero skills catalog', () => {
     const s = findSkillById('palm_strike')!;
     expect(s.atkMul).toBeGreaterThanOrEqual(1.25);
   });
+
+  // Cycle 266: dead skill tail polish — curse hpMul 0.95 → 1.00.
+  // hpMul 1 미만 패널티 완화. dark_lord/assassin 자격 도달 시 부담 ↓.
+  it('curse hpMul ≥ 1.00 (cycle 266 dead-tail polish, 패널티 완화)', () => {
+    const s = findSkillById('curse')!;
+    expect(s.hpMul).toBeGreaterThanOrEqual(1.00);
+  });
 });
