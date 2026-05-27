@@ -28,6 +28,13 @@ export function SeasonPassScreen({ onClose }: Props) {
   const crackStones = useGameStore(s => s.meta.crackStones);
   const seasonStartedAt = useGameStore(s => s.meta.seasonStartedAt ?? 0);
   const totalClaims = useGameStore(s => s.meta.totalClaimsCount ?? 0);
+  // Cycle 174 — 마지막 saga 의 finalRealm 으로 claim narration 의 sub-pool 합류.
+  //   cycle 165 의 realm-aware narration sub-pool 의 wire 채우기 (story-writer #3 의 마무리).
+  const lastFinalRealm = useGameStore(s => {
+    const sagas = s.meta.sagaHistory;
+    if (!sagas || sagas.length === 0) return null;
+    return sagas[sagas.length - 1]?.finalRealm ?? null;
+  });
   const redeem = useGameStore(s => s.redeemTokens);
   const claim = useGameStore(s => s.claimAchievement);
   const activeSeason = getActiveSeasonModifier(seasonStartedAt);
@@ -47,7 +54,7 @@ export function SeasonPassScreen({ onClose }: Props) {
     const countBefore = totalClaims;
     const result = claim(id);
     if (result.ok) {
-      const narration = pickClaimNarration(undefined, claimerTier);
+      const narration = pickClaimNarration(undefined, claimerTier, lastFinalRealm);
       // Cycle 154: store 갱신 후 count 가 +1 됐으므로 unlock bonus 재계산.
       const tier = getTierUnlockBonus(countBefore, countBefore + 1);
       const tierMsg = tier.newTier ? ` ★ ${tier.newTier} 등급 달성!` : '';
