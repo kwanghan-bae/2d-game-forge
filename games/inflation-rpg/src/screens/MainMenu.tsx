@@ -22,8 +22,8 @@ export function MainMenu() {
     <div data-testid="main-menu" style={{ padding: 24, color: '#eee', textAlign: 'center' }}>
       <style>{`
         @keyframes mm-claim-pulse {
-          0%   { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); transform: scale(1); }
-          70%  { box-shadow: 0 0 0 8px rgba(255, 215, 0, 0); transform: scale(1.1); }
+          0%   { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.8); transform: scale(1); }
+          70%  { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); transform: scale(1.15); }
           100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); transform: scale(1); }
         }
         @media (prefers-reduced-motion: reduce) {
