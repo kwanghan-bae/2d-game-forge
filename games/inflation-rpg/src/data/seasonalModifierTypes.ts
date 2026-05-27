@@ -15,14 +15,15 @@
 //   `meta.season` (env tint) vs `meta.seasonStartedAt` (live-ops timestamp) 으로
 //   분리. cross-mutation 0 의 invariant 는 PRD EDGE.7 의 grep CI step 의무.
 
-/** SeasonModifierId — 5 starter literal. cycle 132+ catalog 확장 시 union 확장.
- *  현재 catalog 의 id 는 PRD §F2 의 5 starter 와 일치. */
+/** SeasonModifierId — cycle 129 5 starter + cycle 137 1 추가 = 6.
+ *  cycle 137+ catalog 확장 시 union 확장 + tests 동기화. */
 export type SeasonModifierId =
   | 'volcano-fire-trait-boost'
   | 'chaos-narrative-elegy'
   | 'field-cosmetic-spring'
   | 'npc-encounter-boost'
-  | 'legendary-buff-card-bias';
+  | 'legendary-buff-card-bias'
+  | 'underworld-shadow-trait-boost';
 
 /** SeasonModifierType — modifier 가 어느 layer 에 영향을 주는지의 literal.
  *  - 'trait_weight'    = HeroDecisionAI 의 trait roll 확률 분포 (cycle 131 wire)
