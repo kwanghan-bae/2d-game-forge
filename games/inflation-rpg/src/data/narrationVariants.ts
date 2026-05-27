@@ -150,6 +150,13 @@ export const NARRATION_TONE_LABEL_KR: Readonly<Record<NarrationTone, string>> = 
   neutral: '평이',
 };
 
+/** Cycle 214 — unknown string → safe lookup wrapper. catalog 의 weight key 가
+ *  type 외 일 가능성 (cycle 192 invariant 가 정합 보장하지만 caller 가 plain
+ *  string 받을 경우). 매칭 부재 → undefined. */
+export function getNarrationToneLabel(tone: string): string | undefined {
+  return (NARRATION_TONE_LABEL_KR as Record<string, string>)[tone];
+}
+
 /** template 함수에 optional tone 을 부착. cycle 161 의 도입은 type-only — 기존
  *  `pick` 호출자는 변경 없음. */
 export interface TaggedVariant<T> {
