@@ -23,7 +23,10 @@ const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
 // cycle 1 F1 에서 0.15 → 0.10 으로 한 차례 줄였고, 이번이 두 번째 감소.
 export const MERCIFUL_PROC_RATE = 0.07;
-const MERCIFUL_DRIFT = 3;
+// Cycle 297 — saint dominance root cause lever (cycle 296 finding의 진짜 axis).
+// drift 3 → 2: merciful 누적 속도 ↓ → saint 자격 통과 도달까지 더 많은 arrival.
+// effect 측정 = cycle 316 sim baseline 강제 시점.
+const MERCIFUL_DRIFT = 2;
 
 export interface EncounterEngineOpts {
   /** Additive bonus to drop chance from V3-C drop_chance buff. */

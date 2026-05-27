@@ -144,14 +144,14 @@ describe('EncounterEngine — V1c-1 merciful battle_won proc', () => {
     heroSparing.personality.adjust('merciful', 4);
     const eventsSparing = makeEngine(firingSeed).resolveEncounter(heroSparing, 'enemy', 'e_1');
     const sparing = moralChoices(eventsSparing).find(c => c.dim === 'merciful')!;
-    expect(sparing.delta).toBe(3);
+    expect(sparing.delta).toBe(2);
     expect(sparing.choice).toBe('spare_enemy');
 
     const heroExecuting = HeroEntity.create({ ...baseOpts, heroAtkBase: 9999 });
     heroExecuting.personality.adjust('merciful', -4);
     const eventsExecuting = makeEngine(firingSeed).resolveEncounter(heroExecuting, 'enemy', 'e_2');
     const executing = moralChoices(eventsExecuting).find(c => c.dim === 'merciful')!;
-    expect(executing.delta).toBe(-3);
+    expect(executing.delta).toBe(-2);
     expect(executing.choice).toBe('execute_enemy');
   });
 });
