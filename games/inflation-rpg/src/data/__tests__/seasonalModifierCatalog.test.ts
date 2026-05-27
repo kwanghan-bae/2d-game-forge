@@ -109,6 +109,31 @@ describe('Cycle 129 F2 — SeasonalModifier catalog', () => {
     expect(cosmetic / total).toBeLessThan(0.75);
   });
 
+  /** Cycle 182 — narrativeWeightMul / buffCardWeightMul / npcEncounterMul
+   *  의 모든 값이 [0.5, 3.0] 범위 (cycle 168 패턴의 narrative axis 확장). */
+  it('cycle 182 — 모든 weightMul axis 의 값이 [0.5, 3.0] 범위', () => {
+    for (const id of ALL_SEASON_MODIFIER_IDS) {
+      const def = SEASON_MODIFIER_CATALOG[id];
+      const rule = def.applyRule;
+      if (rule.narrativeWeightMul) {
+        for (const [tone, mul] of Object.entries(rule.narrativeWeightMul)) {
+          expect(mul, `${id} narrative ${tone}`).toBeGreaterThanOrEqual(0.5);
+          expect(mul, `${id} narrative ${tone}`).toBeLessThanOrEqual(3.0);
+        }
+      }
+      if (rule.buffCardWeightMul) {
+        for (const [rarity, mul] of Object.entries(rule.buffCardWeightMul)) {
+          expect(mul, `${id} buffCard ${rarity}`).toBeGreaterThanOrEqual(0.5);
+          expect(mul, `${id} buffCard ${rarity}`).toBeLessThanOrEqual(3.0);
+        }
+      }
+      if (rule.npcEncounterMul !== undefined) {
+        expect(rule.npcEncounterMul, `${id} npcEncounter`).toBeGreaterThanOrEqual(0.5);
+        expect(rule.npcEncounterMul, `${id} npcEncounter`).toBeLessThanOrEqual(3.0);
+      }
+    }
+  });
+
   /** Cycle 168 — traitWeightMul 의 최대 배수 sanity (economy 깨짐 가드). */
   it('cycle 168 — traitWeightMul 의 모든 값이 [0.5, 3.0] 범위 (economy sanity)', () => {
     for (const id of ALL_SEASON_MODIFIER_IDS) {
