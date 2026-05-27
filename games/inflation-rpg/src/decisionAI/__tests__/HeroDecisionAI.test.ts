@@ -35,6 +35,28 @@ describe('HeroDecisionAI (v2 / overworld)', () => {
     expect(a1?.id).toBe(a2?.id);
   });
 
+  describe('Cycle 301 — Sub-phase γ T1: shouldRetreat', () => {
+    it('HP < 0.2 → 항상 retreat', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.shouldRetreat({ hpRatio: 0.1, enemyDifficulty: 1, heroLevel: 50 })).toBe(true);
+    });
+
+    it('HP < 0.4 + enemy > heroLevel → retreat', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.shouldRetreat({ hpRatio: 0.3, enemyDifficulty: 60, heroLevel: 50 })).toBe(true);
+    });
+
+    it('HP < 0.4 but enemy ≤ heroLevel → no retreat', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.shouldRetreat({ hpRatio: 0.3, enemyDifficulty: 30, heroLevel: 50 })).toBe(false);
+    });
+
+    it('HP healthy → no retreat', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.shouldRetreat({ hpRatio: 0.9, enemyDifficulty: 99, heroLevel: 50 })).toBe(false);
+    });
+  });
+
   describe('Cycle 295 — Sub-phase β T1: chooseSkillId', () => {
     it('HP critical (<0.4) + heal available → heal 우선', () => {
       const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });

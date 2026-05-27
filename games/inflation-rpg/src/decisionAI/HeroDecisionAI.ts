@@ -32,6 +32,22 @@ export class HeroDecisionAI {
   }
 
   /**
+   * Cycle 301 — Sub-phase γ T1: shouldRetreat method 신설.
+   * HP / 다음 arrival 의 회복 가능성 판단. v0 heuristic:
+   *   - HP ratio < 0.2 → 항상 retreat
+   *   - HP ratio < 0.4 + enemyDifficulty > heroLevel → retreat
+   *   - else → no retreat
+   *
+   * Caller wire 는 cycle 302+ carry-over.
+   * 본 method = HeroDecisionAI 의 *third 책임* production-consumed.
+   */
+  shouldRetreat(ctx: { hpRatio: number; enemyDifficulty: number; heroLevel: number }): boolean {
+    if (ctx.hpRatio < 0.2) return true;
+    if (ctx.hpRatio < 0.4 && ctx.enemyDifficulty > ctx.heroLevel) return true;
+    return false;
+  }
+
+  /**
    * Cycle 295 — Sub-phase β T1: chooseSkillId method 신설.
    * available skill ID 목록 + hero context 받아 사용할 skill 결정.
    * v0 heuristic:
