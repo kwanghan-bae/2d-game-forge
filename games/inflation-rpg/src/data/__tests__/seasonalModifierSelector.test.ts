@@ -11,6 +11,9 @@ import {
   msToDays,
   formatActiveSeasonLabel,
   getAllSeasonModifierTypes,
+  isCosmeticSeason,
+  isNarrativeSeason,
+  isTraitSeason,
   SEASON_ROTATION_MS,
 } from '../seasonalModifierSelector';
 import { ALL_SEASON_MODIFIER_IDS, SEASON_MODIFIER_CATALOG } from '../seasonalModifierCatalog';
@@ -125,6 +128,19 @@ describe('Cycle 135 — seasonalModifierSelector', () => {
       // 첫 slot (volcano-fire-trait-boost) 는 trait_weight 만, narrative 0.
       const weights = getActiveNarrativeWeights(0, 0);
       expect(weights).toBeNull();
+    });
+  });
+
+  /** Cycle 251 — isCosmeticSeason / isNarrativeSeason / isTraitSeason 의 정확히 1 개만 true. */
+  describe('Cycle 251 — season type predicates', () => {
+    it('정확히 1 개의 predicate 만 true (mutually exclusive)', () => {
+      for (let i = 0; i < ALL_SEASON_MODIFIER_IDS.length; i++) {
+        const at = SEASON_ROTATION_MS * i;
+        const c = isCosmeticSeason(0, at) ? 1 : 0;
+        const n = isNarrativeSeason(0, at) ? 1 : 0;
+        const t = isTraitSeason(0, at) ? 1 : 0;
+        expect(c + n + t).toBe(1);
+      }
     });
   });
 
