@@ -77,3 +77,8 @@
 - Cycle 91-95 (2026-05-25): final spec prep + spec archive + tag tree + task list + cycle 100 prep.
 - Cycle 96-99 (2026-05-25): final retrospective + README note + system self-awareness + final tag list.
 - Cycle 100 (2026-05-25, milestone): **100/100 자율진화 완주**. V3 정체성 + 사용자 보고 + D-backlog + 8 persona rules 모두 완성.
+- Cycle 101-119 (2026-05-26, `c5dd26e`): **v2 자율진화 20/100** — narrative tone 4 연속 (101-104) + meta-surface 4 페르소나 병렬 N1-N4 (105-114, 룰 9 도입) + balance/sim mirror (115-117) + carry-over (118-119). 자세히는 `STATUS-2026-05-26-cycle-120.md`. vitest 1408 / 회귀 0.
+- Cycle 120-127 (2026-05-26~27): docs (120 STATUS + 126 README + 127 QA test plan) + meta (121 fixture + 122 v25 persist + 123-124 Hall 즐겨찾기·필터) + N5 mega-phase spec (125 Live Ops).
+- Cycle 128 (2026-05-27, `44fb420`): N5 F1 AchievementSystem (5 starter catalog + progress/reward/redeem 로직).
+- Cycle 129 (2026-05-27, `2b40ef8`): N5 F2 SeasonalModifier (Spring/Summer/Fall/Winter 4-tier rotating buff + F1 wiring + persist v26). vitest 1443.
+- Cycle 130 (2026-05-27): N5 F3 SeasonPassScreen — MainMenu 도전과제 진입점 + modal (achievement list + token 환전 UI 10:1). category: UI. v1 100 + v2 30/100.
