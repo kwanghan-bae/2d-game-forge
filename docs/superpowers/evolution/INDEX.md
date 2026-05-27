@@ -173,6 +173,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 224 (2026-05-28): NARRATION_TONE_LABEL_KR ↔ ALL_NARRATION_TONES cross-invariant 2. union 추가 시 label 동기화 의무 박제. category: balance. vitest 1545 (+2). v3 24/100 (사용자 새 100-cycle 의 69/100).
 - Cycle 223 (2026-05-28): README v2 phase 200 완료 마킹 — phase-cycle-200-complete 후보 + 5 mega-phase 회고 + Phase 5a-1 / v3 자율진화 next options. category: chore. v3 23/100 (사용자 새 100-cycle 의 68/100).
 - Cycle 222 (2026-05-28): formatActiveSeasonLabel output 형식 invariant (✨ prefix + nameKR). category: balance. vitest 1543 (+1). v3 22/100 (사용자 새 100-cycle 의 67/100).
 - Cycle 221 (2026-05-28): `formatActiveSeasonLabel(seasonStartedAt, nowMs?)` helper — "✨ ${nameKR}" 형식 통일. category: narrative. typecheck PASS. v3 21/100 (사용자 새 100-cycle 의 66/100).
