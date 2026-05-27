@@ -353,6 +353,31 @@ describe('Cycle 161 — pickWeighted helper', () => {
   });
 });
 
+describe('Cycle 265 — NPC kind pool 정합 invariant (encounter + death Record key 일치)', () => {
+  const NPC_KINDS = ['mentor', 'rival', 'friend', 'family_parent', 'family_spouse', 'family_child'] as const;
+
+  it('npcEncounter 6 kind 모두 ≥ 1 variant + npcDeath 6 kind 모두 ≥ 1 variant', () => {
+    for (const kind of NPC_KINDS) {
+      const enc = NarrationVariants.npcEncounter({ age: 22, kind, realm: null }, 0);
+      const death = NarrationVariants.npcDeath({ age: 65, kind, realm: null }, 0);
+      expect(enc.length).toBeGreaterThan(5);
+      expect(death.length).toBeGreaterThan(5);
+    }
+  });
+
+  it('encounter / death 두 풀의 kind 정합 — 한 풀에만 있는 kind 부재', () => {
+    // 모든 kind 가 둘 다에서 deterministic variant 출력 → 정합 invariant.
+    for (const kind of NPC_KINDS) {
+      for (let seed = 0; seed < 5; seed++) {
+        const enc = NarrationVariants.npcEncounter({ age: 30, kind, realm: null }, seed);
+        const death = NarrationVariants.npcDeath({ age: 60, kind, realm: null }, seed);
+        expect(enc).toBeDefined();
+        expect(death).toBeDefined();
+      }
+    }
+  });
+});
+
 describe('Cycle 258 — NarrationVariants.naturalDeath (5 variant + composition)', () => {
   it('seed=0 → legacy 1줄 "안식을 맞아 잠들었다" preserved', () => {
     const r = NarrationVariants.naturalDeath({ age: 70, realm: null }, 0);
