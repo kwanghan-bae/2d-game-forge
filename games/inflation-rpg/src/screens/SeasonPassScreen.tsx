@@ -4,7 +4,7 @@ import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCa
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { pickClaimNarration } from '../data/claimNarrationVariants';
 import { getActiveSeasonModifier } from '../data/seasonalModifierSelector';
-import { getClaimerTier } from '../data/claimerTier';
+import { getClaimerTier, getTierUnlockBonus } from '../data/claimerTier';
 
 interface Props {
   onClose: () => void;
@@ -33,10 +33,15 @@ export function SeasonPassScreen({ onClose }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null);
 
   function handleClaim(id: typeof ALL_ACHIEVEMENT_IDS[number]) {
+    // Cycle 154: tier 진입 감지를 위해 호출 전 count 캡처.
+    const countBefore = totalClaims;
     const result = claim(id);
     if (result.ok) {
       const narration = pickClaimNarration(undefined, claimerTier);
-      setFeedback(`${narration} (+${result.tokenDelta} 🎫)`);
+      // Cycle 154: store 갱신 후 count 가 +1 됐으므로 unlock bonus 재계산.
+      const tier = getTierUnlockBonus(countBefore, countBefore + 1);
+      const tierMsg = tier.newTier ? ` ★ ${tier.newTier} 등급 달성!` : '';
+      setFeedback(`${narration} (+${result.tokenDelta} 🎫)${tierMsg}`);
       setPulseId(id);
       setTimeout(() => setPulseId(null), 600);
     } else {
