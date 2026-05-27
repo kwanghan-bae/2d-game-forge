@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 309 (2026-05-28): strike atkMul 1.10 → 1.15 (warrior/paladin/hero tier-1/3 폴리시). category: balance (308 chore → 309 balance, 룰 9 안전). vitest 1597 baseline. v3 100/100 (사용자 새 100-cycle 의 54/100).
 - Cycle 308 (2026-05-28): INDEX 헤더 진행률 50/100 → 52/100. category: chore (307 system → 308 chore, 룰 9 안전). v3 100/100 (사용자 새 100-cycle 의 53/100).
 - Cycle 307 (2026-05-28): mage skill cluster invariant (fireball + icebolt atkMul ≥ 1.20 가드). cycle 304+306 의 wire 가드. category: system (306 balance → 307 system, 룰 9 안전). vitest 1596 → 1597 (+1). v3 100/100 (사용자 새 100-cycle 의 52/100).
 - Cycle 306 (2026-05-28): icebolt atkMul 1.15 → 1.20 (mage 추가 폴리시, cycle 304 fireball 후속). category: balance (305 chore → 306 balance, 룰 9 안전). vitest 1596 baseline. v3 100/100 (사용자 새 100-cycle 의 51/100).
