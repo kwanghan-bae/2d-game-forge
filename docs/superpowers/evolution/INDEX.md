@@ -7,7 +7,8 @@
 - **v1 (cycle 1-100)** = `phase-cycle-100-complete` (2026-05-25)
 - **v2 (cycle 101-200)** = 진행 중. cycle 100 STATUS = `STATUS-2026-05-26-cycle-120.md` 등.
 - **사용자 prompted 100-cycle (cycle 156-255)** = 2026-05-27 시작. 8 페르소나 fan-out + 20-cycle 주기 surface + 카테고리 회전 + 10-cycle STATUS.
-  - 진행률 trajectory = `STATUS-2026-05-27-cycle-160.md` / `STATUS-2026-05-27-cycle-180.md` / `STATUS-2026-05-28-cycle-190.md`.
+  - 진행률 (cycle 228 시점) = **72/100**.
+  - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
 
 ## Cycle log
@@ -173,6 +174,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 228 (2026-05-28): INDEX 헤더 진행률 갱신 — 72/100 + STATUS trajectory 7 reference. category: chore. v3 28/100 (사용자 새 100-cycle 의 73/100).
 - Cycle 227 (2026-05-28): getNarrationToneFromLabel invariant test 2. category: balance. vitest 1547 (+2). v3 27/100 (사용자 새 100-cycle 의 72/100).
 - Cycle 226 (2026-05-28): `getNarrationToneFromLabel(label)` reverse lookup helper. 매칭 부재 → undefined. category: narrative. typecheck PASS. v3 26/100 (사용자 새 100-cycle 의 71/100).
 - Cycle 225 (2026-05-28): `getActiveSeasonModifierType()` helper — active modifier 의 type literal 추출. UI 카테고리 차별 진입점. category: system. typecheck PASS. v3 25/100 (사용자 새 100-cycle 의 70/100, **7/10 완료**).
