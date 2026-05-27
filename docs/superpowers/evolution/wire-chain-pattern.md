@@ -64,6 +64,9 @@ HeroDecisionAI trait roll 자체 구현 (cycle 156 carry-over, Sim-C scope) =
 8. UI 표시 (cycle N+12)
 9. balance invariant test (cycle N+13)
 
+**Cycle 215 update**: 단계 5 의 wire 진입점은 이미 `getActiveTraitWeights`
+(cycle 209) 가 정의함. mega-phase 진입 시 helper 호출 1 줄로 끝.
+
 ## 검토 룰 (메타-cycle)
 
 자율진화 시스템의 cycle 170+ STATUS 들이 wire chain 진척을 *cycle 별 단위*
