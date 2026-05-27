@@ -6,6 +6,7 @@ import {
   getActiveSeasonModifier,
   getActiveCosmeticTint,
   getActiveNarrativeWeights,
+  getActiveTraitWeights,
   getSeasonTimeRemainingMs,
   msToDays,
   SEASON_ROTATION_MS,
@@ -122,6 +123,30 @@ describe('Cycle 135 — seasonalModifierSelector', () => {
       // 첫 slot (volcano-fire-trait-boost) 는 trait_weight 만, narrative 0.
       const weights = getActiveNarrativeWeights(0, 0);
       expect(weights).toBeNull();
+    });
+  });
+
+  /** Cycle 209 — getActiveTraitWeights helper (narrative 와 대칭) */
+  describe('Cycle 209 — getActiveTraitWeights', () => {
+    it('첫 slot (volcano-fire-trait-boost) → traitWeightMul 반환', () => {
+      const w = getActiveTraitWeights(0, 0);
+      expect(w).not.toBeNull();
+    });
+    it('cosmetic 또는 narrative-only slot → null', () => {
+      // cycle 178 catalog 12 의 어딘가에 trait 부재 slot 존재.
+      // cosmetic slot 의 trait 부재를 확인.
+      let foundCosmeticSlot = -1;
+      for (let i = 0; i < ALL_SEASON_MODIFIER_IDS.length; i++) {
+        const def = getActiveSeasonModifier(0, SEASON_ROTATION_MS * i);
+        if (def.type === 'cosmetic') {
+          foundCosmeticSlot = i;
+          break;
+        }
+      }
+      expect(foundCosmeticSlot).toBeGreaterThanOrEqual(0);
+      const at = SEASON_ROTATION_MS * foundCosmeticSlot;
+      const w = getActiveTraitWeights(0, at);
+      expect(w).toBeNull();
     });
   });
 });

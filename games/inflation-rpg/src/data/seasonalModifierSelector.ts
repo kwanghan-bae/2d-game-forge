@@ -75,6 +75,18 @@ export function getActiveNarrativeWeights(
 }
 
 /**
+ * Cycle 209 — active SeasonModifier 의 traitWeightMul 추출 (narrative 와 대칭).
+ *  HeroDecisionAI mega-phase (cycle 156 carry-over) 진입 시 wire 진입점.
+ */
+export function getActiveTraitWeights(
+  seasonStartedAt: number,
+  nowMs?: number,
+): Readonly<Record<string, number>> | null {
+  const def = getActiveSeasonModifier(seasonStartedAt, nowMs);
+  return def.applyRule.traitWeightMul ?? null;
+}
+
+/**
  * Cycle 159 — active SeasonModifier 의 realm 별 cosmetic tint token lookup.
  * cycle 155 의 `getCosmeticTint(rule, realmId)` 를 selector 진입점으로 노출.
  * realm 의 sprite/배경 tint 적용 site (cycle 167+ OverworldScene wire 예정)
