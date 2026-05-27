@@ -23,6 +23,13 @@ describe('Cycle 134 — claimNarrationVariants', () => {
     }
   });
 
+  /** Cycle 204 — variant min length 5자 invariant. 5자 미만 = 의미 부재 narrative. */
+  it('cycle 204 — 모든 general variant 의 length ≥ 5 (의미 보장)', () => {
+    for (const v of CLAIM_NARRATION_VARIANTS) {
+      expect(v.length, `"${v}" 너무 짧음`).toBeGreaterThanOrEqual(5);
+    }
+  });
+
   it('pickClaimNarration(seed) — 동일 seed 동일 결과 (deterministic)', () => {
     expect(pickClaimNarration(0)).toBe(CLAIM_NARRATION_VARIANTS[0]);
     expect(pickClaimNarration(CLAIM_NARRATION_VARIANTS.length)).toBe(CLAIM_NARRATION_VARIANTS[0]);
