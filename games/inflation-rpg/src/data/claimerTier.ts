@@ -42,3 +42,14 @@ export function getTierUnlockBonus(countBefore: number, countAfter: number): { b
   if (tierBefore === tierAfter) return { bonus: 0, newTier: null };
   return { bonus: TIER_UNLOCK_REWARD[tierAfter].tokenBonus, newTier: tierAfter };
 }
+
+/** Cycle 194 — 현재 tier 안에서의 progress (0-1 normalized). 전설 (max) 도달 시 1.
+ *  cycle 193 UI 의 mm-tier-progress 의 progress bar 시각화에 사용 가능. */
+export function getClaimerTierProgress(count: number): number {
+  // 경계: 0 / 5 / 20 / 80 / 300
+  if (count >= 300) return 1;
+  if (count >= 80) return (count - 80) / (300 - 80);
+  if (count >= 20) return (count - 20) / (80 - 20);
+  if (count >= 5) return (count - 5) / (20 - 5);
+  return count / 5;
+}

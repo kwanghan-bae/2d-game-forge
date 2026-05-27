@@ -1,7 +1,7 @@
 // Cycle 143 — claimerTier unit test.
 
 import { describe, expect, it } from 'vitest';
-import { getClaimerTier, nextTierThreshold, TIER_UNLOCK_REWARD, getTierUnlockBonus } from '../claimerTier';
+import { getClaimerTier, nextTierThreshold, TIER_UNLOCK_REWARD, getTierUnlockBonus, getClaimerTierProgress } from '../claimerTier';
 import type { ClaimerTier } from '../claimerTier';
 
 describe('Cycle 143 — claimerTier', () => {
@@ -89,6 +89,18 @@ describe('Cycle 143 — claimerTier', () => {
     expect(TIER_UNLOCK_REWARD['숙련'].tokenBonus).toBeGreaterThanOrEqual(2 * TIER_UNLOCK_REWARD['노련'].tokenBonus);
     expect(TIER_UNLOCK_REWARD['마스터'].tokenBonus).toBeGreaterThanOrEqual(2 * TIER_UNLOCK_REWARD['숙련'].tokenBonus);
     expect(TIER_UNLOCK_REWARD['전설'].tokenBonus).toBeGreaterThanOrEqual(2 * TIER_UNLOCK_REWARD['마스터'].tokenBonus);
+  });
+
+  /** Cycle 194 — getClaimerTierProgress 0-1 normalized */
+  it('cycle 194 — getClaimerTierProgress 경계 5/20/80/300 정합', () => {
+    expect(getClaimerTierProgress(0)).toBe(0);      // 신참 0%
+    expect(getClaimerTierProgress(2.5)).toBe(0.5);  // 신참 50%
+    expect(getClaimerTierProgress(5)).toBe(0);      // 노련 진입, 0%
+    expect(getClaimerTierProgress(12.5)).toBe(0.5); // 노련 50% (12.5/15 fraction)
+    expect(getClaimerTierProgress(20)).toBe(0);     // 숙련 진입
+    expect(getClaimerTierProgress(80)).toBe(0);     // 마스터 진입
+    expect(getClaimerTierProgress(300)).toBe(1);    // 전설 (max)
+    expect(getClaimerTierProgress(500)).toBe(1);    // 전설 초과도 max
   });
 
   /** Cycle 186 — tier threshold vs reward 비율 sanity (claim 효율). */
