@@ -35,6 +35,18 @@ describe('HeroDecisionAI (v2 / overworld)', () => {
     expect(a1?.id).toBe(a2?.id);
   });
 
+  describe('Cycle 303 — Sub-phase ε T1: chooseEncounterNode', () => {
+    it('first available 반환 (deterministic)', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.chooseEncounterNode(['a', 'b', 'c'])).toBe('a');
+    });
+
+    it('empty → null', () => {
+      const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
+      expect(ai.chooseEncounterNode([])).toBeNull();
+    });
+  });
+
   describe('Cycle 302 — Sub-phase δ T1: chooseTargetEnemyId', () => {
     const enemies = [
       { id: 'weak', difficulty: 1 },
