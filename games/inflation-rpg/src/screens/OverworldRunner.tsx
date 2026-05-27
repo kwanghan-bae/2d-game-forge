@@ -759,6 +759,10 @@ function eventColor(type: SagaEvent['type']): string {
     case 'shrine':       return '#7dd3fc';
     case 'moralChoice':  return '#f0abfc';
     case 'death':        return '#f87171';
+    // Cycle 261: NPC/family event 시각 위계 surface (UI guide 발견).
+    case 'npcEncounter': return '#bef264';
+    case 'npcDeath':     return '#fdba74';
+    case 'familyEvent':  return '#fbcfe8';
     default:             return '#cbd5e1';
   }
 }
