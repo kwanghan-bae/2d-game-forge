@@ -152,6 +152,12 @@ export class EncounterEngine {
 
       const { leveled } = hero.gainExp(expGain);
 
+      // Cycle 283: Sub-phase σ T3 — milestone level-up 시 trait auto-roll.
+      // milestone level (5/15/30/50/80) 도달 + chance 30% 통과 시 trait 추가.
+      if (leveled.length > 0) {
+        hero.rollTraitsForLevels(this.rng, leveled);
+      }
+
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
 
       // V1c-1 — merciful drift proc on non-boss kills. Sign branches on the

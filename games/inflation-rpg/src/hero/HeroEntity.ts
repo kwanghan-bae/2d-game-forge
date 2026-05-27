@@ -12,6 +12,7 @@ import type { JobMilestone } from '../data/jobs';
 import { lookupDrop } from '../overworld/dropTable';
 import { getAgingDebuff } from './agingDebuff';
 import type { TraitId } from '../cycle/traits';
+import { rollTrait } from './TraitRoller';
 
 const EXP_REQ_BASE = 10;
 
@@ -92,6 +93,24 @@ export class HeroEntity {
   /** Cycle 281 — add a trait (no dedup check — caller responsibility). */
   addTrait(traitId: TraitId): void {
     this.traits.push(traitId);
+  }
+
+  /**
+   * Cycle 283 — Sub-phase σ T3: level-up trait roll wire.
+   * caller 가 gainExp 의 `leveled` 배열을 받아 호출. milestone level 만 roll
+   * 시도, 통과 시 addTrait. 같은 cycle 의 여러 level 누적 OK.
+   * return = 이번에 추가된 trait list (caller 가 narrative emit 등 후속 처리에 사용).
+   */
+  rollTraitsForLevels(rng: SeededRng, levels: readonly number[]): TraitId[] {
+    const added: TraitId[] = [];
+    for (const lv of levels) {
+      const t = rollTrait(rng, this.traits, lv);
+      if (t !== null) {
+        this.addTrait(t);
+        added.push(t);
+      }
+    }
+    return added;
   }
 
   private constructor() {
