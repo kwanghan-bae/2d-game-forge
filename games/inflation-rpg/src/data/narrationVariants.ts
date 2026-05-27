@@ -141,6 +141,15 @@ export const ALL_NARRATION_TONES: readonly NarrationTone[] = [
   'elegy', 'tragedy', 'ode', 'hymn', 'neutral',
 ];
 
+/** Cycle 211 — NarrationTone 의 한국어 label. UI display 시 사용. */
+export const NARRATION_TONE_LABEL_KR: Readonly<Record<NarrationTone, string>> = {
+  elegy: '비가',
+  tragedy: '비극',
+  ode: '송가',
+  hymn: '찬가',
+  neutral: '평이',
+};
+
 /** template 함수에 optional tone 을 부착. cycle 161 의 도입은 type-only — 기존
  *  `pick` 호출자는 변경 없음. */
 export interface TaggedVariant<T> {
