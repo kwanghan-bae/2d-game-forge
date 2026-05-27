@@ -31,6 +31,10 @@ export function SeasonPassScreen({ onClose }: Props) {
   const [pulseId, setPulseId] = useState<string | null>(null);
   const [redeemAmount, setRedeemAmount] = useState(3);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Cycle 162 — tier 진입 시 feedback 시각 강도 부스트 + 표시 timer 2× 확장.
+  // 평생 4 회 milestone 이벤트가 일반 claim 과 같은 fontSize 11 / 2500ms 로
+  // 송출되던 cycle 154 toast 의 강도 부족 해소 (ui-ux-designer #2 분할 1/2).
+  const [tierFlash, setTierFlash] = useState(false);
 
   function handleClaim(id: typeof ALL_ACHIEVEMENT_IDS[number]) {
     // Cycle 154: tier 진입 감지를 위해 호출 전 count 캡처.
@@ -44,6 +48,13 @@ export function SeasonPassScreen({ onClose }: Props) {
       setFeedback(`${narration} (+${result.tokenDelta} 🎫)${tierMsg}`);
       setPulseId(id);
       setTimeout(() => setPulseId(null), 600);
+      // Cycle 162 — tier 진입 (newTier 발화) 시 toast 시각 강화 + 표시 timer 2×.
+      if (tier.newTier) {
+        setTierFlash(true);
+        setTimeout(() => setTierFlash(false), 5000);
+        setTimeout(() => setFeedback(null), 5000);
+        return;
+      }
     } else {
       const msg =
         result.reason === 'already-claimed' ? '이미 수령했습니다'
@@ -123,7 +134,29 @@ export function SeasonPassScreen({ onClose }: Props) {
           >
             환전 (3:1)
           </button>
-          {feedback && <span data-testid="sp-feedback" style={{ fontSize: 11, color: '#aaa', marginLeft: 8 }}>{feedback}</span>}
+          {feedback && (
+            <span
+              data-testid="sp-feedback"
+              data-tier-flash={tierFlash ? 'true' : undefined}
+              style={
+                tierFlash
+                  ? {
+                      fontSize: 16,
+                      color: '#ffd700',
+                      fontWeight: 700,
+                      marginLeft: 8,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      background: 'rgba(255, 215, 0, 0.12)',
+                      boxShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
+                      letterSpacing: '0.02em',
+                    }
+                  : { fontSize: 11, color: '#aaa', marginLeft: 8 }
+              }
+            >
+              {feedback}
+            </span>
+          )}
         </div>
 
         <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', padding: '8px 16px' }}>
