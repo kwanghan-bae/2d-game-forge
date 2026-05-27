@@ -3,7 +3,11 @@ import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { pickClaimNarration } from '../data/claimNarrationVariants';
-import { getActiveSeasonModifier } from '../data/seasonalModifierSelector';
+import {
+  getActiveSeasonModifier,
+  getSeasonTimeRemainingMs,
+  msToDays,
+} from '../data/seasonalModifierSelector';
 import { getClaimerTier, getTierUnlockBonus } from '../data/claimerTier';
 
 interface Props {
@@ -27,6 +31,8 @@ export function SeasonPassScreen({ onClose }: Props) {
   const redeem = useGameStore(s => s.redeemTokens);
   const claim = useGameStore(s => s.claimAchievement);
   const activeSeason = getActiveSeasonModifier(seasonStartedAt);
+  // Cycle 173 — 다음 시즌 회전까지 남은 일 (sp-active-season chip suffix).
+  const daysRemaining = msToDays(getSeasonTimeRemainingMs(seasonStartedAt));
   const claimerTier = getClaimerTier(totalClaims);
   const [pulseId, setPulseId] = useState<string | null>(null);
   const [redeemAmount, setRedeemAmount] = useState(3);
@@ -111,6 +117,16 @@ export function SeasonPassScreen({ onClose }: Props) {
             <strong id="sp-modal-title">도전과제 + 토큰</strong>
             <span data-testid="sp-active-season" style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400 }} title={activeSeason.description}>
               ✨ 현재 시즌: <span style={{ color: '#ffd700' }}>{activeSeason.nameKR}</span>
+              {daysRemaining > 0 && (
+                <span data-testid="sp-season-remaining" style={{ color: '#888', marginLeft: 6 }}>
+                  · 남은 {daysRemaining} 일
+                </span>
+              )}
+              {daysRemaining === 0 && (
+                <span data-testid="sp-season-remaining" style={{ color: '#888', marginLeft: 6 }}>
+                  · 곧 회전
+                </span>
+              )}
             </span>
           </div>
           <button type="button" data-testid="season-pass-close" aria-label="도전과제 모달 닫기" onClick={onClose} style={{ minHeight: 44, minWidth: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
