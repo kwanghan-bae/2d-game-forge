@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { getClaimerTier, nextTierThreshold, TIER_UNLOCK_REWARD, getTierUnlockBonus } from '../claimerTier';
+import type { ClaimerTier } from '../claimerTier';
 
 describe('Cycle 143 — claimerTier', () => {
   it('0 → 신참 / 4 → 신참 / 5 → 노련 (cycle 146 재조정)', () => {
@@ -55,5 +56,30 @@ describe('Cycle 143 — claimerTier', () => {
 
   it('cycle 152 getTierUnlockBonus — 같은 등급 (전설→전설, 500→501) = 0 보너스', () => {
     expect(getTierUnlockBonus(500, 501)).toEqual({ bonus: 0, newTier: null });
+  });
+
+  /** Cycle 163 — TIER_UNLOCK_REWARD compound 산술 sanity (level-designer
+   *  cycle 156 권고 의 compound 50-cycle sim 검증 의 정적 부분). 평생 누적
+   *  보너스 = 5 + 15 + 50 + 200 = 270 token = 90 균열석 (3:1 cycle 157 ratio).
+   *  cycle 116 organic 균열석 90/시즌 와 비교 → 평생 30% 한 시즌 분 보조.
+   *  과도하지 않은 milestone reward. */
+  it('cycle 163 — TIER_UNLOCK_REWARD 평생 누적 = 270 token / 90 균열석 (3:1)', () => {
+    const lifetimeTokens = TIER_UNLOCK_REWARD['신참'].tokenBonus
+      + TIER_UNLOCK_REWARD['노련'].tokenBonus
+      + TIER_UNLOCK_REWARD['숙련'].tokenBonus
+      + TIER_UNLOCK_REWARD['마스터'].tokenBonus
+      + TIER_UNLOCK_REWARD['전설'].tokenBonus;
+    expect(lifetimeTokens).toBe(270);
+    // 3:1 환전 (cycle 157) → 90 균열석 정확.
+    expect(Math.floor(lifetimeTokens / 3)).toBe(90);
+  });
+
+  it('cycle 163 — TIER_UNLOCK_REWARD 단조 증가 (각 tier 가 이전보다 큼)', () => {
+    const tiers: ClaimerTier[] = ['신참', '노련', '숙련', '마스터', '전설'];
+    for (let i = 1; i < tiers.length; i++) {
+      expect(TIER_UNLOCK_REWARD[tiers[i]].tokenBonus).toBeGreaterThan(
+        TIER_UNLOCK_REWARD[tiers[i - 1]].tokenBonus,
+      );
+    }
   });
 });
