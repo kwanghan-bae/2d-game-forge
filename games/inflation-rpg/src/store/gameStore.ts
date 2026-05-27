@@ -288,9 +288,17 @@ interface GameStore {
   redeemTokens: (
     tokensToSpend: number,
   ) => { ok: true; tokenDelta: number; crackDelta: number } | { ok: false; reason: 'invalid' | 'insufficient' };
-  // Cycle 129 N5 — F1 evaluate + auto-grant. cycleSliceV2.endCycle 에서 호출.
-  //   completedAt 신규 set 인 achievement 의 reward.tokens 를 자동 누적 + claimedAt 기록.
+  // Cycle 131 N5 — evaluator only. cycleSliceV2.endCycle 에서 호출.
+  //   evaluator 결과를 meta.achievements 에 저장. token grant 0, claimedAt set 0.
+  //   (cycle 130 까지의 fused grant 는 cycle 131 에서 claimAchievement 액션으로 분리됨.)
   evaluateAndGrantAchievements: (saga: import('../saga/SagaTypes').CycleSaga, nowMs?: number) => void;
+  // Cycle 131 N5 — manual claim 액션. completed && !claimedAt 인 entry 에서만 호출 가능.
+  //   ok=false reasons: 'unknown-id' (catalog 에 없는 id), 'not-completed' (아직 미완료),
+  //   'already-claimed' (이미 claim 됨). ok=true 시 tokens 누적 + claimedAt 박힘.
+  claimAchievement: (
+    id: import('../data/achievementsTypes').AchievementId,
+    nowMs?: number,
+  ) => { ok: true; tokenDelta: number } | { ok: false; reason: 'unknown-id' | 'not-completed' | 'already-claimed' };
 }
 
 // v8 → v9: 기존 EquipmentInstance 에 modifier 자동 굴림 + adsWatched 추가
@@ -1595,57 +1603,58 @@ export const useGameStore = create<GameStore>()(
         return { ok: true, tokenDelta: -actualConsume, crackDelta };
       },
 
-      // Cycle 129 N5 — F1 evaluate + auto-grant.
-      // cycleSliceV2.endCycle 의 addHallEntry 직후 호출 hook. evaluator 가 새로
-      // 완료한 (prior.completed=false → next.completed=true) achievement 의
-      // reward.tokens 를 meta.tokens 에 누적 + 해당 byId entry 에 claimedAt 기록.
-      //
-      // invariant:
-      //   - 이미 completed 인 entry 는 evaluator 가 identity (===) 보존 (F1.8)
-      //   - 새로 완료된 entry 만 spread → claimedAt 주입 (auto-grant simple form)
-      //   - prior mutation 0 — 새 객체 반환
+      // Cycle 131 N5 — evaluator only. claim 책임은 claimAchievement 액션으로 분리.
+      // cycleSliceV2.endCycle 의 addHallEntry 직후 호출 hook. evaluator 의 next 를
+      // meta.achievements 에 저장만 한다. tokens delta = 0, claimedAt set = 0.
+      // 사용자가 SeasonPassScreen 의 claim button 으로 명시 호출해야 토큰이 누적된다.
       evaluateAndGrantAchievements(saga, nowMs) {
         const at = typeof nowMs === 'number' ? nowMs : Date.now();
         set(s => {
           const prior = s.meta.achievements ?? INITIAL_ACHIEVEMENTS;
           const next = evaluateAchievements({ saga, prior, nowMs: at });
-
-          // newly-granted diff. priorlyId 가 prior 의 entry, nextById 가 next 의 entry.
-          let tokenDelta = 0;
-          const grantedById: Record<typeof ALL_ACHIEVEMENT_IDS[number], AchievementProgress> = { ...next.byId };
-          for (const id of ALL_ACHIEVEMENT_IDS) {
-            const before = prior.byId[id];
-            const after = next.byId[id];
-            if (
-              !before.completed &&
-              after.completed &&
-              after.claimedAt === undefined
-            ) {
-              tokenDelta += ACHIEVEMENT_CATALOG[id].reward.tokens;
-              grantedById[id] = { ...after, claimedAt: at };
-            }
-          }
-
-          // F1.11 invariant 보존: tokenDelta 가 0 이면 next 그대로 (객체 재생성 회피).
-          if (tokenDelta === 0) {
-            return {
-              ...s,
-              meta: {
-                ...s.meta,
-                achievements: next,
-              },
-            };
-          }
-
           return {
             ...s,
             meta: {
               ...s.meta,
-              achievements: { ...next, byId: grantedById },
+              achievements: next,
+            },
+          };
+        });
+      },
+
+      // Cycle 131 N5 — manual claim. completed && !claimedAt 인 entry 만 통과.
+      claimAchievement(id, nowMs) {
+        if (!ALL_ACHIEVEMENT_IDS.includes(id)) {
+          return { ok: false, reason: 'unknown-id' };
+        }
+        const state = get();
+        const entry = state.meta.achievements?.byId[id];
+        if (!entry || !entry.completed) {
+          return { ok: false, reason: 'not-completed' };
+        }
+        if (entry.claimedAt !== undefined) {
+          return { ok: false, reason: 'already-claimed' };
+        }
+        const at = typeof nowMs === 'number' ? nowMs : Date.now();
+        const tokenDelta = ACHIEVEMENT_CATALOG[id].reward.tokens;
+        set(s => {
+          const ach = s.meta.achievements ?? INITIAL_ACHIEVEMENTS;
+          return {
+            ...s,
+            meta: {
+              ...s.meta,
+              achievements: {
+                ...ach,
+                byId: {
+                  ...ach.byId,
+                  [id]: { ...ach.byId[id], claimedAt: at },
+                },
+              },
               tokens: (s.meta.tokens ?? 0) + tokenDelta,
             },
           };
         });
+        return { ok: true, tokenDelta };
       },
     }),
     {
