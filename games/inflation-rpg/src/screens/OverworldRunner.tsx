@@ -5,6 +5,8 @@ import { computeLightDelta } from '../overworld/lightEmit';
 import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import { REALM_CATALOG } from '../data/realms';
 import type { SagaEvent } from '../saga/SagaTypes';
+import { getNpcKindEmoji } from '../data/npcs';
+import type { NpcEntity } from '../types';
 import { SpendModal } from './SpendModal';
 import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
@@ -716,12 +718,19 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         {logEntries.length === 0 ? (
           <div style={{ opacity: 0.4, fontSize: 12 }}>아직 사건이 없다.</div>
         ) : (
-          [...logEntries].reverse().map((ev, i) => (
-            <div key={`${logEntries.length - i}-${ev.age}`} style={logRowStyle(eventColor(ev.type))}>
-              <span style={{ opacity: 0.6, marginRight: 6, fontVariantNumeric: 'tabular-nums' }}>{ev.age}세</span>
-              {ev.narrativeText}
-            </div>
-          ))
+          [...logEntries].reverse().map((ev, i) => {
+            // Cycle 268: NPC/family event 시 kind emoji prefix (UI guide visual hierarchy 3단계).
+            const kindEmoji = (ev.type === 'npcEncounter' || ev.type === 'npcDeath')
+              ? getNpcKindEmoji(((ev.payload as { kind?: NpcEntity['kind'] } | undefined)?.kind) ?? 'friend')
+              : '';
+            return (
+              <div key={`${logEntries.length - i}-${ev.age}`} style={logRowStyle(eventColor(ev.type))}>
+                <span style={{ opacity: 0.6, marginRight: 6, fontVariantNumeric: 'tabular-nums' }}>{ev.age}세</span>
+                {kindEmoji && <span style={{ marginRight: 4 }}>{kindEmoji}</span>}
+                {ev.narrativeText}
+              </div>
+            );
+          })
         )}
       </div>
 
