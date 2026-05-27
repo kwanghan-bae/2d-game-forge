@@ -167,4 +167,37 @@ describe('HeroEntity staggered serialization (cycle 20)', () => {
     const restored = HeroEntity.restore(legacy as typeof snap);
     expect(restored.staggered).toBe(false);
   });
+
+  describe('Cycle 281 — HeroEntity.traits field (Sub-phase σ T1)', () => {
+    it('초기 빈 array', () => {
+      const h = mk();
+      expect(h.getTraits()).toEqual([]);
+    });
+
+    it('addTrait 누적', () => {
+      const h = mk();
+      h.addTrait('t_challenge');
+      h.addTrait('t_swift');
+      expect(h.getTraits()).toHaveLength(2);
+      expect(h.getTraits()).toContain('t_challenge');
+    });
+
+    it('serialize/restore round-trip preserves traits', () => {
+      const h = mk();
+      h.addTrait('t_challenge');
+      h.addTrait('t_swift');
+      const snap = h.serialize(7);
+      const restored = HeroEntity.restore(snap);
+      expect(restored.getTraits()).toEqual(['t_challenge', 't_swift']);
+    });
+
+    it('restore handles legacy snapshot without traits field', () => {
+      const h = mk();
+      const snap = h.serialize(7);
+      const { traits: _, ...legacy } = snap;
+      void _;
+      const restored = HeroEntity.restore(legacy as typeof snap);
+      expect(restored.getTraits()).toEqual([]);
+    });
+  });
 });
