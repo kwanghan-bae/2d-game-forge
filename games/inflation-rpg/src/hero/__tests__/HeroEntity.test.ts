@@ -199,5 +199,14 @@ describe('HeroEntity staggered serialization (cycle 20)', () => {
       const restored = HeroEntity.restore(legacy as typeof snap);
       expect(restored.getTraits()).toEqual([]);
     });
+
+    it('Cycle 291 — addTrait dedup (중복 silent skip)', () => {
+      const h = mk();
+      h.addTrait('t_challenge');
+      h.addTrait('t_challenge');
+      h.addTrait('t_challenge');
+      expect(h.getTraits()).toHaveLength(1);
+      expect(h.getTraits()).toEqual(['t_challenge']);
+    });
   });
 });

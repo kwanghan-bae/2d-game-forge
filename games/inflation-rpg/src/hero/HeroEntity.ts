@@ -90,8 +90,13 @@ export class HeroEntity {
     return this.traits;
   }
 
-  /** Cycle 281 — add a trait (no dedup check — caller responsibility). */
+  /**
+   * Cycle 281 — add a trait. Cycle 291: dedup guard.
+   * 중복 trait 추가 시 silent skip. caller (TraitRoller) 이미 dedup 하지만
+   * defensive 가드. invariant — getTraits() 의 각 element 가 unique.
+   */
   addTrait(traitId: TraitId): void {
+    if (this.traits.includes(traitId)) return;
     this.traits.push(traitId);
   }
 
