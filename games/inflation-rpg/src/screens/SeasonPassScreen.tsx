@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { pickClaimNarration } from '../data/claimNarrationVariants';
+import { getActiveSeasonModifier } from '../data/seasonalModifierSelector';
 
 interface Props {
   onClose: () => void;
@@ -20,8 +21,10 @@ export function SeasonPassScreen({ onClose }: Props) {
   const tokens = useGameStore(s => s.meta.tokens ?? 0);
   const tokensRedeemed = useGameStore(s => s.meta.tokensRedeemed ?? 0);
   const crackStones = useGameStore(s => s.meta.crackStones);
+  const seasonStartedAt = useGameStore(s => s.meta.seasonStartedAt ?? 0);
   const redeem = useGameStore(s => s.redeemTokens);
   const claim = useGameStore(s => s.claimAchievement);
+  const activeSeason = getActiveSeasonModifier(seasonStartedAt);
   const [redeemAmount, setRedeemAmount] = useState(10);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -70,8 +73,13 @@ export function SeasonPassScreen({ onClose }: Props) {
         style={{ width: 'min(560px, 96vw)', maxHeight: '88vh', background: '#1a1d28', color: '#eee', borderRadius: 12, border: '1px solid #444', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <strong>도전과제 + 토큰</strong>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <strong>도전과제 + 토큰</strong>
+            <span data-testid="sp-active-season" style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400 }} title={activeSeason.description}>
+              ✨ 현재 시즌: <span style={{ color: '#ffd700' }}>{activeSeason.nameKR}</span>
+            </span>
+          </div>
           <button type="button" data-testid="season-pass-close" onClick={onClose} style={{ minHeight: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
         </div>
 
