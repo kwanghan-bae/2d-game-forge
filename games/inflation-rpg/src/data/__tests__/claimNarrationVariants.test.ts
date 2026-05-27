@@ -1,7 +1,13 @@
 // Cycle 134 — claim narration variant pure test.
 
 import { describe, expect, it } from 'vitest';
-import { CLAIM_NARRATION_VARIANTS, pickClaimNarration, TIER_VOCATIVE_PREFIX } from '../claimNarrationVariants';
+import {
+  CLAIM_NARRATION_VARIANTS,
+  pickClaimNarration,
+  TIER_VOCATIVE_PREFIX,
+  CLAIM_NARRATION_BY_REALM,
+  CLAIM_NARRATION_BY_REALM_TONED,
+} from '../claimNarrationVariants';
 
 describe('Cycle 134 — claimNarrationVariants', () => {
   it('CLAIM_NARRATION_VARIANTS 최소 12 variant (cycle 142 확장)', () => {
@@ -86,6 +92,38 @@ describe('Cycle 134 — claimNarrationVariants', () => {
 
     it('realm = sea + tier=신참 + seed 12 → tier prefix + first sea variant', () => {
       expect(pickClaimNarration(12, '신참', 'sea')).toBe('용사여, 바다의 너울이 그대의 이름을 적신다');
+    });
+  });
+
+  /** Cycle 169 — TONED sub-pool (cycle 161 분할 3/n). data-only invariant 검증. */
+  describe('Cycle 169 — CLAIM_NARRATION_BY_REALM_TONED metadata', () => {
+    it('5 realm 모두 정의 + 각 realm 의 variant 가 BY_REALM 의 text 와 1:1', () => {
+      const realms = ['sea', 'volcano', 'underworld', 'heaven', 'chaos'] as const;
+      for (const realm of realms) {
+        const plain = CLAIM_NARRATION_BY_REALM[realm];
+        const toned = CLAIM_NARRATION_BY_REALM_TONED[realm];
+        expect(plain).toBeDefined();
+        expect(toned).toBeDefined();
+        expect(toned!.length).toBe(plain!.length);
+        // text 1:1 매칭
+        for (let i = 0; i < plain!.length; i++) {
+          expect(toned![i].text).toBe(plain![i]);
+        }
+      }
+    });
+
+    it('각 realm 의 tone 이 narrativeWeightMul 카탈로그 매핑과 정합', () => {
+      // heaven-narrative-ode (cycle 137) → heaven 의 모든 variant tone = 'ode'.
+      // chaos-narrative-elegy 는 없으나 chaos 는 'hymn' (혼돈의 송가) 매핑.
+      for (const v of CLAIM_NARRATION_BY_REALM_TONED['heaven']!) {
+        expect(v.tone).toBe('ode');
+      }
+      for (const v of CLAIM_NARRATION_BY_REALM_TONED['sea']!) {
+        expect(v.tone).toBe('elegy');
+      }
+      for (const v of CLAIM_NARRATION_BY_REALM_TONED['chaos']!) {
+        expect(v.tone).toBe('hymn');
+      }
     });
   });
 });

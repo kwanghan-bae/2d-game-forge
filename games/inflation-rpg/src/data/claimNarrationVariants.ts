@@ -7,6 +7,7 @@
 //   60 variation. 전설 player 와 신참이 다른 어조를 듣는다.
 
 import type { ClaimerTier } from './claimerTier';
+import type { NarrationTone } from './narrationVariants';
 
 export const CLAIM_NARRATION_VARIANTS: readonly string[] = [
   // closure 톤 (cycle 134/142 정착) — 12 줄 의 8 줄 유지.
@@ -67,6 +68,51 @@ export const CLAIM_NARRATION_BY_REALM: Readonly<Partial<Record<string, readonly 
   chaos: [
     '경계 너머의 침묵이 그대를 안다',
     '없던 길이 그대의 발자국으로 생긴다',
+  ],
+};
+
+/**
+ * Cycle 169 — cycle 161 분할 3/n. cycle 165 의 sub-pool 에 tone metadata
+ * 부착 (cycle 161 의 `NarrationTone` 정합). SeasonalModifier 의
+ * narrativeWeightMul (`heaven-narrative-ode` 등) 이 매칭할 tone token 풀.
+ *
+ * 본 cycle 의 도입은 *data only* — `pickClaimNarration` 의 시그니처 변경 0,
+ * 기존 `CLAIM_NARRATION_BY_REALM` 그대로 유지. cycle 175+ 의 wire 단계에서
+ * SeasonalModifier active rule 의 narrativeWeightMul 적용 시 본 toned pool
+ * 로 swap.
+ *
+ * 매핑 의도:
+ * - sea       → elegy (잔잔한 비가)
+ * - volcano   → tragedy (불꽃의 비극)
+ * - underworld → tragedy (망자의 톤)
+ * - heaven    → ode (찬가)
+ * - chaos     → hymn (혼돈의 송가)
+ */
+export interface TonedClaimVariant {
+  readonly text: string;
+  readonly tone: NarrationTone;
+}
+
+export const CLAIM_NARRATION_BY_REALM_TONED: Readonly<Partial<Record<string, readonly TonedClaimVariant[]>>> = {
+  sea: [
+    { text: '바다의 너울이 그대의 이름을 적신다', tone: 'elegy' },
+    { text: '해풍이 신의 인장을 묶어 둔다', tone: 'elegy' },
+  ],
+  volcano: [
+    { text: '용암의 숨결이 그대를 새긴다', tone: 'tragedy' },
+    { text: '잿더미 위로 별이 떨어진다', tone: 'tragedy' },
+  ],
+  underworld: [
+    { text: '망자들의 합창이 그대를 향한다', tone: 'tragedy' },
+    { text: '저편의 등불이 처음 켜진다', tone: 'tragedy' },
+  ],
+  heaven: [
+    { text: '구름이 그대 발 아래 굳는다', tone: 'ode' },
+    { text: '하늘의 종이 한 번 울린다', tone: 'ode' },
+  ],
+  chaos: [
+    { text: '경계 너머의 침묵이 그대를 안다', tone: 'hymn' },
+    { text: '없던 길이 그대의 발자국으로 생긴다', tone: 'hymn' },
   ],
 };
 
