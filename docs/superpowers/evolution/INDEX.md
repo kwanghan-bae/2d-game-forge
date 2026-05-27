@@ -11,7 +11,7 @@
   - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
 - **사용자 prompted 새 100-cycle (cycle 256-355)** = 2026-05-28 시작. 사용자 "다시 한 번 100 cycle" 요청. cycle 256 = 8 페르소나 fan-out kickoff. PRD = `cycle-256-prd.md` (substantive accountability 톤). 메타-rule 3 신규 (micro mode ≤ 30% / sim baseline 매 20 cycle / STATUS 자축 톤 M===N only). EternalCodex 폐기 → Lifebook supersede.
-  - 진행률 = **16/100** (cycle 256 F1 = forNpcDeath kind-aware 분기, vitest 1553 → 1566). STATUS trajectory = `STATUS-2026-05-28-cycle-260.md` / `cycle-270.md`. 다음 = cycle 280 (메타-rule 1 비율 20-cycle 검증).
+  - 진행률 = **32/100** (cycle 287). vitest 1553 → 1580. STATUS trajectory = `STATUS-2026-05-28-cycle-260.md` / `cycle-270.md` / `cycle-280.md`. **HeroDecisionAI mega-phase 진입** (cycle 278 spec + cycle 279 plan + cycle 281-286 sub-phase σ/α wire chain). cycle 156 carry-over (trait wire dormant) 100 cycle 만에 완전 회수. 다음 = cycle 290 (fourth 10-cycle STATUS).
 
 ## Cycle log
 
@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 288 (2026-05-28): INDEX 헤더 진행률 16/100 → 32/100 + HeroDecisionAI mega-phase 진입 표명 + STATUS-cycle-280.md cross-link. category: chore (287 system → 288 chore, 룰 9 안전). v3 87/100 (사용자 새 100-cycle 의 33/100).
 - Cycle 287 (2026-05-28): 16/16 TraitId production-consumed invariant test — 모든 16 trait 보유 hero 의 DestinationResolver.choose 가 throw 안 하고 valid candidate 반환. α wire 정합 drift 자동 가드. category: system (286 balance → 287 system, 룰 9 안전). vitest 1579 → 1580 (+1). v3 86/100 (사용자 새 100-cycle 의 32/100).
 - Cycle 286 (2026-05-28): **Sub-phase α T3 — 16/16 trait wire 완성**. 남은 6 trait (berserker/iron/prodigy/lucky/genius/terminal_genius) wire. 광전사 (enemy×1.3 / boss×1.2), 강철 (trial×1.5), 천재 (shrine×1.3 / holy_ruin×1.4), 행운형 lucky (treasure_cave×1.4 / cave×1.3), 말기 천재 (holy_ruin×1.6 / shrine×1.4). **16/16 production-consumed = α wire 100% 완성**. cycle 156 critic carry-over + cycle 256 critic #2 (trait wire dormant) 100 cycle 만에 *완전 회수*. category: balance (285 → 286 balance, 룰 9 안전 ≤ 5, 4 연속). vitest 1579 baseline. v3 85/100 (사용자 새 100-cycle 의 31/100).
 - Cycle 285 (2026-05-28): **Sub-phase α T2 — 5 추가 trait wire** (timid/thrill/miser/fortune/fragile). 겁쟁이 (boss ×0.6 / village ×1.3), 스릴 추구 (boss ×1.4 / shrine ×0.7), 구두쇠 (market ×1.5), 행운 (treasure_cave ×1.6), 약체 (boss ×0.5 / shrine ×1.4). 16 TraitId 중 10 wired (총 누적). α phase 의 *trait 별 personality* 표면화. category: balance (284 balance → 285 balance, 룰 9 안전 ≤ 5). vitest 1579 baseline. typecheck PASS. v3 84/100 (사용자 새 100-cycle 의 30/100).
