@@ -118,6 +118,78 @@ function pick<T>(arr: Array<(c: T) => string>, ctx: T, seed: number): string {
   return arr[idx](ctx);
 }
 
+/* ─────────────────── Cycle 161 — tone-tagged 선택 헬퍼 ─────────
+ *
+ * story-writer #1 권고 (cycle 156 critic) — `getNarrativeWeightMul` 의 wire
+ * target. SeasonalModifier catalog 의 `heaven-narrative-ode` 등이 매칭할
+ * tone token 풀이 narrationVariants 에 부재했음 (cycle 137/149 catalog 8 의
+ * doubly-dormant 상태).
+ *
+ * 이 cycle 은 *type + helper* 만 추가. 실제 variant pool 의 tone tagging 은
+ * cycle 169+ narrative slot 에서 분할. variant pool 의 점진 도입을 위해
+ * `TaggedVariant<T>` 와 `pick` 둘 다 호환 (mixed array 허용 안 함 — 새 pool
+ * 만 tagged 로 운용).
+ */
+
+/** SeasonalModifier catalog 의 narrativeWeightMul key 와 정합. neutral 은
+ *  tag 없는 기본. cycle 169+ variant tagging 시 pool 별 tone 강조. */
+export type NarrationTone = 'elegy' | 'tragedy' | 'ode' | 'hymn' | 'neutral';
+
+/** template 함수에 optional tone 을 부착. cycle 161 의 도입은 type-only — 기존
+ *  `pick` 호출자는 변경 없음. */
+export interface TaggedVariant<T> {
+  readonly fn: (c: T) => string;
+  readonly tone?: NarrationTone;
+}
+
+/**
+ * tone weight map 으로 가중 선택. weight 미지정 시 plain modulo (기존 pick
+ * 동등). weight === 0 인 variant 는 후보에서 제외 (catalog 의 weight 부재 =
+ * 1 fallback). seed 0 = 첫 항목 (deterministic).
+ */
+export function pickWeighted<T>(
+  arr: ReadonlyArray<TaggedVariant<T>>,
+  ctx: T,
+  seed: number,
+  weights?: Partial<Record<NarrationTone, number>>,
+): string {
+  if (arr.length === 0) {
+    throw new Error('pickWeighted: empty array');
+  }
+  // weight 미지정 or 비어 있음 → plain modulo
+  const noWeights = !weights || Object.keys(weights).length === 0;
+  if (noWeights) {
+    const idx = ((seed % arr.length) + arr.length) % arr.length;
+    return arr[idx].fn(ctx);
+  }
+  // weight 적용: 각 variant 의 tone 의 weight 곱셈. 미매칭 tone (undefined 또는
+  // 'neutral') 은 default 1. weight === 0 → 후보 제외.
+  const weighted = arr.map((v) => {
+    const w = weights[v.tone ?? 'neutral'];
+    return w === undefined ? 1 : w;
+  });
+  const total = weighted.reduce((a, b) => a + b, 0);
+  if (total <= 0) {
+    // 모든 weight 가 0 → fallback to plain modulo
+    const idx = ((seed % arr.length) + arr.length) % arr.length;
+    return arr[idx].fn(ctx);
+  }
+  // seed 0 = 첫 non-zero weight variant (deterministic — test 의 baseline).
+  if (seed === 0) {
+    const firstIdx = weighted.findIndex((w) => w > 0);
+    return arr[firstIdx].fn(ctx);
+  }
+  // weight 기반 cumulative pick — seed 를 total 로 modulo.
+  const pickPoint = (((seed % total) + total) % total);
+  let acc = 0;
+  for (let i = 0; i < weighted.length; i++) {
+    acc += weighted[i];
+    if (pickPoint < acc) return arr[i].fn(ctx);
+  }
+  // 도달 불가 (총합 fallback)
+  return arr[arr.length - 1].fn(ctx);
+}
+
 /* ─────────────────────── realmEnter (F2) ────────────────────── */
 // Cycle-3 F1 fix: leading "(AGE세) " prefix 제거 + 자연어 "${age}세에 " 로 통일.
 // 이유: sim-cycle-v2.ts:330 renderer 의 "- (${age}세) " prefix 와 충돌하던 이중

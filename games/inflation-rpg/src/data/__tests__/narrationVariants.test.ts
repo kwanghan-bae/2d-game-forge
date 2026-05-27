@@ -15,7 +15,8 @@
  *   영역은 절대 겹치지 않음. 둘 다 적용되어도 충돌 0.
  */
 import { describe, expect, it } from 'vitest';
-import { realmTone, NarrationVariants } from '../narrationVariants';
+import { realmTone, NarrationVariants, pickWeighted } from '../narrationVariants';
+import type { TaggedVariant } from '../narrationVariants';
 import type { RealmId } from '../../types';
 
 describe('Cycle 101 F1 — realmTone dispatcher (backward compat)', () => {
@@ -208,5 +209,49 @@ describe('Cycle 102 F1 — 5 additional channels (shrine/moral/skill/job)', () =
       const b = NarrationVariants.shrineHealed({ age: 30, healed: 100 }, 0);
       expect(a).toBe(b);
     }
+  });
+});
+
+/** Cycle 161 — pickWeighted helper (story-writer #1 wire 의 type-foundation). */
+describe('Cycle 161 — pickWeighted helper', () => {
+  // 3-variant pool: ode / hymn / neutral
+  const pool: TaggedVariant<{ name: string }>[] = [
+    { fn: (c) => `${c.name} 의 송가`, tone: 'ode' },
+    { fn: (c) => `${c.name} 의 찬미`, tone: 'hymn' },
+    { fn: (c) => `${c.name} 의 평범한 한 줄`, tone: 'neutral' },
+  ];
+
+  it('weights 미지정 → plain modulo (기존 pick 동등)', () => {
+    expect(pickWeighted(pool, { name: 'A' }, 0)).toBe('A 의 송가');
+    expect(pickWeighted(pool, { name: 'A' }, 1)).toBe('A 의 찬미');
+    expect(pickWeighted(pool, { name: 'A' }, 2)).toBe('A 의 평범한 한 줄');
+    // wrap
+    expect(pickWeighted(pool, { name: 'A' }, 3)).toBe('A 의 송가');
+  });
+
+  it('ode ×2 weight + seed != 0 → ode 가 더 자주 등장', () => {
+    // total weight = 2 + 1 + 1 = 4. seed 1 → pickPoint 1 < 2 (ode).
+    expect(pickWeighted(pool, { name: 'A' }, 1, { ode: 2 })).toBe('A 의 송가');
+    // seed 5 → pickPoint 1 → ode 영역 (1 < 2).
+    expect(pickWeighted(pool, { name: 'A' }, 5, { ode: 2 })).toBe('A 의 송가');
+  });
+
+  it('ode weight=0 → ode 후보 제외', () => {
+    // total = 0 + 1 + 1 = 2. seed 1 → pickPoint 1, hymn=1+1=2, ode skip.
+    expect(pickWeighted(pool, { name: 'A' }, 1, { ode: 0 })).toBe('A 의 평범한 한 줄');
+  });
+
+  it('seed=0 + weights → 첫 non-zero weight variant (deterministic)', () => {
+    expect(pickWeighted(pool, { name: 'A' }, 0, { ode: 2 })).toBe('A 의 송가');
+    // ode=0 + hymn=2 → 첫 non-zero = hymn (idx 1)
+    expect(pickWeighted(pool, { name: 'A' }, 0, { ode: 0, hymn: 2 })).toBe('A 의 찬미');
+  });
+
+  it('all weights 0 → fallback plain modulo', () => {
+    expect(pickWeighted(pool, { name: 'A' }, 1, { ode: 0, hymn: 0, neutral: 0 })).toBe('A 의 찬미');
+  });
+
+  it('empty array → throw', () => {
+    expect(() => pickWeighted([], { name: 'A' }, 0)).toThrow();
   });
 });
