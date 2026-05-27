@@ -8,6 +8,7 @@ import {
   TIER_VOCATIVE_PREFIX,
   CLAIM_NARRATION_BY_REALM,
   CLAIM_NARRATION_BY_REALM_TONED,
+  formatClaimFeedback,
 } from '../claimNarrationVariants';
 
 describe('Cycle 134 — claimNarrationVariants', () => {
@@ -54,6 +55,17 @@ describe('Cycle 134 — claimNarrationVariants', () => {
     for (const tier of ['신참', '노련', '숙련', '마스터', '전설'] as const) {
       expect(TIER_VOCATIVE_PREFIX[tier].length).toBeGreaterThan(0);
     }
+  });
+
+  /** Cycle 202 — formatClaimFeedback helper. */
+  describe('Cycle 202 — formatClaimFeedback', () => {
+    it('tier 없을 때 — narration + delta', () => {
+      expect(formatClaimFeedback('인사', 2, null)).toBe('인사 (+2 🎫)');
+    });
+
+    it('tier 진입 시 — ★ suffix 부착', () => {
+      expect(formatClaimFeedback('인사', 3, '노련')).toBe('인사 (+3 🎫) ★ 노련 등급 달성!');
+    });
   });
 
   /** Cycle 201 — TIER_VOCATIVE_PREFIX 길이 sanity (1-20자 invariant). */

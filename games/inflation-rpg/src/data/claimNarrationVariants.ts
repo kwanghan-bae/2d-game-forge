@@ -193,3 +193,16 @@ export function pickClaimNarrationWeighted(
   if (tier === undefined) return base;
   return `${TIER_VOCATIVE_PREFIX[tier]}, ${base}`;
 }
+
+/**
+ * Cycle 202 — SeasonPassScreen.handleClaim 의 inline feedback string 합성
+ *  캡슐화. narration + token delta + 선택적 tier 진입 marker. 한 곳에 모음.
+ */
+export function formatClaimFeedback(
+  narration: string,
+  tokenDelta: number,
+  tierEntered: import('./claimerTier').ClaimerTier | null,
+): string {
+  const tierMsg = tierEntered ? ` ★ ${tierEntered} 등급 달성!` : '';
+  return `${narration} (+${tokenDelta} 🎫)${tierMsg}`;
+}
