@@ -64,6 +64,17 @@ export function getAllSeasonModifierTypes(): readonly import('./seasonalModifier
   return Array.from(set);
 }
 
+/** Cycle 248 — active season type 의 predicate helpers (UI 분기 단순화). */
+export function isCosmeticSeason(seasonStartedAt: number, nowMs?: number): boolean {
+  return getActiveSeasonModifierType(seasonStartedAt, nowMs) === 'cosmetic';
+}
+export function isNarrativeSeason(seasonStartedAt: number, nowMs?: number): boolean {
+  return getActiveSeasonModifierType(seasonStartedAt, nowMs) === 'narrative_weight';
+}
+export function isTraitSeason(seasonStartedAt: number, nowMs?: number): boolean {
+  return getActiveSeasonModifierType(seasonStartedAt, nowMs) === 'trait_weight';
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().

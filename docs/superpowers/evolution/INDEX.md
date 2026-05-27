@@ -174,6 +174,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 248 (2026-05-28): `isCosmeticSeason` / `isNarrativeSeason` / `isTraitSeason` predicate helpers — UI 분기 단순화. category: system. typecheck PASS. v3 48/100 (사용자 새 100-cycle 의 93/100).
 - Cycle 247 (2026-05-28): getNarrationToneEnLabel invariant test 2. category: balance. vitest 1552 (+2). v3 47/100 (사용자 새 100-cycle 의 92/100).
 - Cycle 246 (2026-05-28): INDEX 헤더 진행률 72→91/100 갱신. category: chore. v3 46/100 (사용자 새 100-cycle 의 91/100).
 - Cycle 245 (2026-05-28): sp-feedback redeemFlash background transition 0.4s ease-out 추가. category: VFX. v3 45/100 (사용자 새 100-cycle 의 90/100, **9/10 완료**).
