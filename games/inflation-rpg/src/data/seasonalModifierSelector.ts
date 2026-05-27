@@ -55,6 +55,15 @@ export function getActiveSeasonSlotIndex(seasonStartedAt: number, nowMs?: number
   return ((slot % ALL_SEASON_MODIFIER_IDS.length) + ALL_SEASON_MODIFIER_IDS.length) % ALL_SEASON_MODIFIER_IDS.length;
 }
 
+/** Cycle 242 — catalog 의 모든 type set (unique). UI 의 axis filter 진입점. */
+export function getAllSeasonModifierTypes(): readonly import('./seasonalModifierTypes').SeasonModifierType[] {
+  const set = new Set<import('./seasonalModifierTypes').SeasonModifierType>();
+  for (const id of ALL_SEASON_MODIFIER_IDS) {
+    set.add(SEASON_MODIFIER_CATALOG[id].type);
+  }
+  return Array.from(set);
+}
+
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
  * (legacy save 의 default). nowMs 미지정 시 Date.now().
