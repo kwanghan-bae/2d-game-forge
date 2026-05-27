@@ -174,6 +174,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 242 (2026-05-28): `getAllSeasonModifierTypes` helper — catalog 의 unique type set. UI axis filter 진입점. category: system. typecheck PASS. v3 42/100 (사용자 새 100-cycle 의 87/100).
 - Cycle 241 (2026-05-28): `getNarrationToneEnLabel` helper (cycle 214 KR 와 대칭). category: narrative. typecheck PASS. v3 41/100 (사용자 새 100-cycle 의 86/100).
 - Cycle 240 (2026-05-28): **milestone STATUS — 사용자 새 100-cycle 의 85/100**. cycle 231-240 trajectory + 7 카테고리 균형. `STATUS-2026-05-28-cycle-240.md`. category: meta. vitest 1549 baseline.
 - Cycle 239 (2026-05-28): `getActiveSeasonSlotIndex` helper — 0-based slot index. carousel active dot 진입점. category: system. typecheck PASS. v3 39/100 (사용자 새 100-cycle 의 84/100).
