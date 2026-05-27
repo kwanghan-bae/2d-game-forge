@@ -64,3 +64,6 @@ cycle 170+ 의 점진 교체 또는 대체 다운로드를 권장 (asset-investi
 ## 변경 이력
 
 - 2026-05-27 — Cycle 164 신설 (asset-investigator 권고 #1, surface = cycle 156).
+- 2026-05-28 — Cycle 208 minor: cycle 177 SeasonalModifier cosmetic wire 완성 후
+  attribution 관점에서 catalog 의 12 SeasonModifier 모두 *디자인 자산* 으로
+  분류 (이미지/오디오 외 가시화 axis). 라이선스 영향 0.
