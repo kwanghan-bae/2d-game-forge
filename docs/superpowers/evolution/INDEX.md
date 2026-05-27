@@ -168,3 +168,4 @@
 - Cycle 206 (2026-05-28): `ALL_NARRATION_TONES` array export (narrationVariants.ts). cycle 192 invariant 의 union → array 동기화 위한 runtime form. category: narrative. vitest 1536 baseline. v3 6/100 (사용자 새 100-cycle 의 51/100).
 - Cycle 207 (2026-05-28): ALL_NARRATION_TONES length 5 invariant + 5 tone 모두 포함 검증. union/array drift 자동 가드. 1 신규 test. category: balance. vitest 1537 (+1). v3 7/100 (사용자 새 100-cycle 의 52/100).
 - Cycle 208 (2026-05-28): docs/CREDITS.md minor — cycle 177 wire chain 완성 후 catalog 12 modifier 의 디자인 자산 분류 박제. category: chore. vitest 1537 baseline. v3 8/100 (사용자 새 100-cycle 의 53/100).
+- Cycle 209 (2026-05-28): `getActiveTraitWeights(seasonStartedAt, nowMs?)` helper 신설 (cycle 197 의 narrative 와 대칭). HeroDecisionAI mega-phase (cycle 156 carry-over) wire 진입점 마련. 2 신규 unit test. category: system. vitest 1539 (+2). v3 9/100 (사용자 새 100-cycle 의 54/100).
