@@ -137,4 +137,34 @@ describe('Cycle 131 — claimAchievement 좁은 케이스', () => {
     expect(useGameStore.getState().meta.achievements.byId['realm-conquest-6'].completed).toBe(true);
     expect(useGameStore.getState().meta.achievements.byId['realm-conquest-6'].claimedAt).toBeUndefined();
   });
+
+  /** Cycle 139 — totalClaimsCount telemetry counter increments on successful claim */
+  it('cycle 139 — claim 성공 시 totalClaimsCount += 1 / 실패 시 변동 0', () => {
+    const conquestEvents: SagaEvent[] = [
+      mkEvent('realmEnter', { from: 'base', to: 'plains' }),
+      mkEvent('realmEnter', { from: 'plains', to: 'forest' }),
+      mkEvent('realmEnter', { from: 'forest', to: 'mountains' }),
+      mkEvent('realmEnter', { from: 'mountains', to: 'sea' }),
+      mkEvent('realmEnter', { from: 'sea', to: 'volcano' }),
+      mkEvent('realmEnter', { from: 'volcano', to: 'underworld' }),
+    ];
+    const saga = mkSaga();
+    saga.chapters = [{ name: 'youth' as never, events: conquestEvents }];
+    useGameStore.getState().evaluateAndGrantAchievements(saga, NOW);
+
+    // initial counter = undefined → 0
+    expect(useGameStore.getState().meta.totalClaimsCount ?? 0).toBe(0);
+
+    // 1 회 성공 → count 1
+    useGameStore.getState().claimAchievement('realm-conquest-6', NOW);
+    expect(useGameStore.getState().meta.totalClaimsCount).toBe(1);
+
+    // 실패 (already-claimed) → 변동 0
+    useGameStore.getState().claimAchievement('realm-conquest-6', NOW + 1);
+    expect(useGameStore.getState().meta.totalClaimsCount).toBe(1);
+
+    // 다른 id 실패 (not-completed) → 변동 0
+    useGameStore.getState().claimAchievement('lv-10m-in-3-cycles', NOW + 2);
+    expect(useGameStore.getState().meta.totalClaimsCount).toBe(1);
+  });
 });
