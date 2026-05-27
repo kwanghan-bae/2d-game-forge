@@ -63,6 +63,15 @@ export class DestinationResolver {
     const pious = personality.get('pious');
     const prudent = personality.get('prudent');
 
+    // Cycle 284 — Sub-phase α T1: trait wire 활성.
+    // 16 trait union 중 boss/enemy/shrine/exit 의 weight modifier 4 종.
+    const hasTrait = (id: TraitId): boolean => ctx.traits.includes(id);
+    const t_challenge = hasTrait('t_challenge');
+    const t_boss_hunter = hasTrait('t_boss_hunter');
+    const t_zealot = hasTrait('t_zealot');
+    const t_swift = hasTrait('t_swift');
+    const t_explorer = hasTrait('t_explorer');
+
     const weighted = filtered.map(c => {
       let w = WEIGHT_BASE[c.kind] ?? 1;
       if (c.kind === 'boss')          w += heroic * 1.5;
@@ -75,6 +84,13 @@ export class DestinationResolver {
       if (c.kind === 'treasure_cave') w += prudent * 0.8;
       if (c.kind === 'holy_ruin')     w += pious * 0.8;
       // crossroads: moral drift → base weight 만 (moral 은 +/- 다 valid)
+      // Cycle 284 — trait wire (multiplicative on landmark kind).
+      if (c.kind === 'boss'  && t_challenge)   w *= 1.3;
+      if (c.kind === 'boss'  && t_boss_hunter) w *= 1.5;
+      if (c.kind === 'enemy' && t_challenge)   w *= 1.2;
+      if (c.kind === 'shrine' && t_zealot)     w *= 1.4;
+      if (c.kind === 'exit'  && t_swift)       w *= 1.4;
+      if ((c.kind === 'cave' || c.kind === 'treasure_cave' || c.kind === 'holy_ruin' || c.kind === 'ruin') && t_explorer) w *= 1.3;
       return { candidate: c, weight: Math.max(0.1, w) };
     });
 

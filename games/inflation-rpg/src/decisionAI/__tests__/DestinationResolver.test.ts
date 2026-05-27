@@ -78,6 +78,43 @@ describe('DestinationResolver', () => {
     expect(towerPicks).toBeGreaterThan(15);
   });
 
+  it('Cycle 284 — Sub-phase α T1: t_challenge boosts boss/enemy weight', () => {
+    const cands: LandmarkCandidate[] = [
+      { id: 'b1', kind: 'boss', difficulty: 0 },
+      { id: 'v1', kind: 'village', difficulty: 0 },
+    ];
+    const p = PersonalityState.fromTraitPriors({});
+    let bossWithout = 0;
+    let bossWith = 0;
+    for (let i = 0; i < 50; i++) {
+      const r1 = new DestinationResolver(new SeededRng(i));
+      const c1 = r1.choose(cands, { traits: [], personality: p });
+      if (c1?.kind === 'boss') bossWithout++;
+      const r2 = new DestinationResolver(new SeededRng(i));
+      const c2 = r2.choose(cands, { traits: ['t_challenge'], personality: p });
+      if (c2?.kind === 'boss') bossWith++;
+    }
+    // t_challenge → boss *= 1.3. ≥ bossWithout 보장 (non-strict).
+    expect(bossWith).toBeGreaterThanOrEqual(bossWithout);
+  });
+
+  it('Cycle 284 — t_boss_hunter strongly boosts boss', () => {
+    const cands: LandmarkCandidate[] = [
+      { id: 'b1', kind: 'boss', difficulty: 0 },
+      { id: 'e1', kind: 'enemy', difficulty: 0 },
+    ];
+    const p = PersonalityState.fromTraitPriors({});
+    let bossWith = 0;
+    for (let i = 0; i < 50; i++) {
+      const r = new DestinationResolver(new SeededRng(i));
+      const c = r.choose(cands, { traits: ['t_boss_hunter'], personality: p });
+      if (c?.kind === 'boss') bossWith++;
+    }
+    // base = boss 5 / enemy 10, ratio 5/15 = 33%. *1.5 → 7.5/17.5 = 43%.
+    // 50 seed 에서 ≥ 15 (30%) 보장.
+    expect(bossWith).toBeGreaterThanOrEqual(15);
+  });
+
   it('V1c-1: holy_ruin preferred by pious hero', () => {
     const piousCandidates: LandmarkCandidate[] = [
       { id: 'holy_1', kind: 'holy_ruin', difficulty: 0 },
