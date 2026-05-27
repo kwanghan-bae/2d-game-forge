@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { HallScreen } from './HallScreen';
 import { SeasonPassScreen } from './SeasonPassScreen';
+import { getClaimableCount } from '../data/achievementsSelectors';
+import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
   const sagaCount = useGameStore(s => s.meta.sagaHistory?.length ?? 0);
   const hallCount = useGameStore(s => s.meta.hall?.entries.length ?? 0);
   const tokens = useGameStore(s => s.meta.tokens ?? 0);
+  const claimable = useGameStore(s => getClaimableCount(s.meta.achievements ?? INITIAL_ACHIEVEMENTS));
   const heroSnapshot = useGameStore(s => s.run.heroSnapshot);
   const [hallOpen, setHallOpen] = useState(false);
   const [seasonPassOpen, setSeasonPassOpen] = useState(false);
@@ -50,7 +53,7 @@ export function MainMenu() {
           onClick={() => setSeasonPassOpen(true)}
           style={menuBtnStyle}
         >
-          도전과제 ({tokens} 🎫)
+          도전과제 ({tokens} 🎫{claimable > 0 ? ` · ${claimable} 🎁 수령` : ''})
         </button>
         <button
           type="button"

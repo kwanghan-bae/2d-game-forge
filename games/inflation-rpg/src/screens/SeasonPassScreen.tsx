@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
+import { getClaimableCount } from '../data/achievementsSelectors';
 
 interface Props {
   onClose: () => void;
@@ -44,6 +45,7 @@ export function SeasonPassScreen({ onClose }: Props) {
   }, [onClose]);
 
   const completedCount = ALL_ACHIEVEMENT_IDS.filter(id => achievements.byId[id]?.completedAt != null).length;
+  const claimableCount = getClaimableCount(achievements);
 
   function handleRedeem() {
     const result = redeem(redeemAmount);
@@ -71,10 +73,13 @@ export function SeasonPassScreen({ onClose }: Props) {
           <button type="button" data-testid="season-pass-close" onClick={onClose} style={{ minHeight: 44, padding: '6px 12px', background: '#3b4252', color: '#eee', border: '1px solid #555', borderRadius: 6, fontSize: 13 }}>✕</button>
         </div>
 
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', gap: 16, fontSize: 12 }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', gap: 16, fontSize: 12, flexWrap: 'wrap' }}>
           <div data-testid="sp-tokens">🎫 토큰: <strong style={{ color: '#ffd700' }}>{tokens}</strong></div>
           <div data-testid="sp-redeemed">누적 환전: {tokensRedeemed}</div>
           <div data-testid="sp-stones">💎 균열석: {crackStones}</div>
+          {claimableCount > 0 && (
+            <div data-testid="sp-claimable-count" style={{ color: '#ffd700', fontWeight: 600 }}>🎁 수령 가능: {claimableCount}</div>
+          )}
           <div style={{ marginLeft: 'auto' }}>{completedCount}/{ALL_ACHIEVEMENT_IDS.length} 완료</div>
         </div>
 
