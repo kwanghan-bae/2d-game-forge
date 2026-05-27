@@ -64,6 +64,13 @@ export function getAllSeasonModifierTypes(): readonly import('./seasonalModifier
   return Array.from(set);
 }
 
+/** Cycle 252 — index 기반 catalog lookup. carousel preview 진입점. 음수/초과 → wrap. */
+export function getSeasonModifierByIndex(idx: number): import('./seasonalModifierTypes').SeasonModifierDef {
+  const n = ALL_SEASON_MODIFIER_IDS.length;
+  const safeIdx = ((idx % n) + n) % n;
+  return SEASON_MODIFIER_CATALOG[ALL_SEASON_MODIFIER_IDS[safeIdx]];
+}
+
 /** Cycle 248 — active season type 의 predicate helpers (UI 분기 단순화). */
 export function isCosmeticSeason(seasonStartedAt: number, nowMs?: number): boolean {
   return getActiveSeasonModifierType(seasonStartedAt, nowMs) === 'cosmetic';
