@@ -44,7 +44,7 @@ export function MainMenu() {
               <div data-testid="mm-tier-progress" style={{ marginTop: 4, fontSize: 10, color: '#888' }}>
                 다음 {next.nextTier} 까지 {next.remaining} 회 필요
                 <div data-testid="mm-tier-progress-bar" style={{ marginTop: 2, height: 4, background: '#262830', borderRadius: 2, overflow: 'hidden', width: 200, marginInline: 'auto' }}>
-                  <div style={{ width: `${progressPct}%`, height: '100%', background: '#ffd700', transition: 'width 0.3s ease' }} />
+                  <div style={{ width: `${progressPct}%`, height: '100%', background: '#ffd700', transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: progressPct > 80 ? '0 0 6px rgba(255, 215, 0, 0.4)' : undefined }} />
                 </div>
               </div>
             )}
