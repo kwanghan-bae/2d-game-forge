@@ -49,4 +49,10 @@ describe('hero skills catalog', () => {
     const s = findSkillById('soul_drain')!;
     expect(s.atkMul).toBeGreaterThanOrEqual(1.25);
   });
+
+  // Cycle 307: mage skill cluster polish 가드 (cycle 304 fireball + cycle 306 icebolt).
+  it('mage skill cluster (fireball + icebolt) atkMul ≥ 1.20', () => {
+    expect(findSkillById('fireball')!.atkMul).toBeGreaterThanOrEqual(1.20);
+    expect(findSkillById('icebolt')!.atkMul).toBeGreaterThanOrEqual(1.20);
+  });
 });
