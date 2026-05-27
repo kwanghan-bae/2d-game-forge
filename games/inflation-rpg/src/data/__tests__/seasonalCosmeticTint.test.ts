@@ -43,4 +43,14 @@ describe('Cycle 167 — cosmeticTintToNumber', () => {
       expect(num).toBe(parseInt(hex.slice(1), 16));
     }
   });
+
+  /** Cycle 196 — hex 형식 invariant: #rrggbb (lowercase, 6 char, 0-9a-f). */
+  it('cycle 196 — 모든 정의된 token 의 hex 가 #rrggbb 형식 (lowercase)', () => {
+    const tokens = ['spring-pastel', 'aqua-deep', 'ember-glow', 'shadow-ink', 'cloud-silver', 'chaos-prism'];
+    for (const t of tokens) {
+      const hex = cosmeticTintToHex(t)!;
+      expect(hex, `${t} should match #rrggbb`).toMatch(/^#[0-9a-f]{6}$/);
+      expect(hex.length, `${t} should be 7 chars`).toBe(7);
+    }
+  });
 });
