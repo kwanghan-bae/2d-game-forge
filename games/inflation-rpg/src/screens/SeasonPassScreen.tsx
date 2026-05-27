@@ -192,7 +192,7 @@ export function SeasonPassScreen({ onClose }: Props) {
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <strong id="sp-modal-title">도전과제 + 토큰</strong>
-            <span data-testid="sp-active-season" data-cosmetic-tint={cosmeticTintHex ?? undefined} data-tone-label={narrativeToneLabel ?? undefined} style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400, borderLeft: cosmeticTintHex ? `3px solid ${cosmeticTintHex}` : undefined, paddingLeft: cosmeticTintHex ? 6 : 0 }} title={activeSeason.description}>
+            <span data-testid="sp-active-season" data-cosmetic-tint={cosmeticTintHex ?? undefined} data-tone-label={narrativeToneLabel ?? undefined} style={{ fontSize: 11, color: '#9aa3b2', fontWeight: 400, borderLeft: cosmeticTintHex ? `3px solid ${cosmeticTintHex}` : undefined, paddingLeft: cosmeticTintHex ? 6 : 0 }} title={`${activeSeason.nameKR} — ${activeSeason.description}`}>
               ✨ 현재 시즌: <span style={{ color: '#ffd700' }}>{activeSeason.nameKR}</span>
               {narrativeToneLabel && (
                 <span style={{ color: '#a0c8ff', marginLeft: 4 }}>· {narrativeToneLabel}</span>
