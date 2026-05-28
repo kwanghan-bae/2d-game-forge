@@ -69,8 +69,8 @@ describe('Cycle 1 F1 — variance pass 상수', () => {
   it('F1.1: SHRINE_SKILL_GRANT_RATE = 0.20', () => {
     expect(SHRINE_SKILL_GRANT_RATE).toBe(0.20);
   });
-  it('F1.2: MERCIFUL_PROC_RATE = 0.07 (cycle 28 D5)', () => {
-    expect(MERCIFUL_PROC_RATE).toBe(0.07);
+  it('F1.2: MERCIFUL_PROC_RATE = 0.04 (cycle 321 lever 5)', () => {
+    expect(MERCIFUL_PROC_RATE).toBe(0.04);
   });
   it('F1.3: SHRINE_SKILL_GRANT_RATE 1000회 chance → 평균 200 ± 15% (170-230)', () => {
     // adapt: plan 은 `runShrineEncounter` helper 를 가정했으나 실제 코드에는 없다.

@@ -116,15 +116,15 @@ describe('EncounterEngine — V1c-1 merciful battle_won proc', () => {
     expect(fires).toBe(0);
   });
 
-  it('F1.4: MERCIFUL_PROC_RATE 1000회 chance → 평균 70 ± 20% (56-84) (cycle 28 D5)', () => {
-    // cycle 28: rate 0.10 → 0.07. expected mean 70 ± 20% range.
+  it('F1.4: MERCIFUL_PROC_RATE 1000회 chance → 평균 40 ± 30% (28-52) (cycle 321 lever 5)', () => {
+    // cycle 321: rate 0.07 → 0.04. expected mean 40 ± 30% range (wider noise band).
     const rng = new SeededRng(42);
     let fires = 0;
     for (let i = 0; i < 1000; i++) {
       if (rng.chance(MERCIFUL_PROC_RATE)) fires += 1;
     }
-    expect(fires).toBeGreaterThanOrEqual(56);
-    expect(fires).toBeLessThanOrEqual(84);
+    expect(fires).toBeGreaterThanOrEqual(28);
+    expect(fires).toBeLessThanOrEqual(52);
   });
 
   it('positive branch when merciful >= 0, negative when < 0', () => {
