@@ -320,6 +320,7 @@ export class BattleScene extends Phaser.Scene {
       }
 
       this.combatTimer?.remove();
+      this.spawnDeathParticles();
 
       if (this.isBoss && this.bossId) {
         this.callbacks.onBossKill(this.bossId, 5, this.cachedBossType ?? 'mini');
@@ -583,6 +584,28 @@ export class BattleScene extends Phaser.Scene {
       duration: 200,
       ease: 'Power2',
     });
+  }
+
+  private spawnDeathParticles() {
+    const cx = this.enemySprite?.x ?? 270;
+    const cy = this.enemySprite?.y ?? 200;
+    const colors = [0xf0c060, 0xe05050, 0xffffff];
+    for (let i = 0; i < 8; i++) {
+      const color = colors[i % colors.length]!;
+      const p = this.add.rectangle(cx, cy, 6, 6, color).setAlpha(0.9);
+      const angle = (Math.PI * 2 * i) / 8;
+      const dist = 40 + Math.random() * 30;
+      this.tweens.add({
+        targets: p,
+        x: cx + Math.cos(angle) * dist,
+        y: cy + Math.sin(angle) * dist,
+        alpha: 0,
+        scale: 0.3,
+        duration: 400,
+        ease: 'Power2',
+        onComplete: () => p.destroy(),
+      });
+    }
   }
 
   private showBossVictoryText() {
