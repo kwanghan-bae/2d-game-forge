@@ -106,4 +106,9 @@ describe('hero skills catalog', () => {
   it('wind_walk atkMul ≥ 1.12 (cycle 342)', () => {
     expect(findSkillById('wind_walk')!.atkMul).toBeGreaterThanOrEqual(1.12);
   });
+
+  // Cycle 347: second_wind polish (cycle 346).
+  it('second_wind hpMul ≥ 1.20 (cycle 346)', () => {
+    expect(findSkillById('second_wind')!.hpMul).toBeGreaterThanOrEqual(1.20);
+  });
 });
