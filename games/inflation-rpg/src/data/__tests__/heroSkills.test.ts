@@ -111,4 +111,11 @@ describe('hero skills catalog', () => {
   it('second_wind hpMul ≥ 1.20 (cycle 346)', () => {
     expect(findSkillById('second_wind')!.hpMul).toBeGreaterThanOrEqual(1.20);
   });
+
+  // Cycle 352: inner_focus polish (cycle 349).
+  it('inner_focus atkMul + hpMul ≥ 1.10 (cycle 349)', () => {
+    const s = findSkillById('inner_focus')!;
+    expect(s.atkMul).toBeGreaterThanOrEqual(1.10);
+    expect(s.hpMul).toBeGreaterThanOrEqual(1.10);
+  });
 });
