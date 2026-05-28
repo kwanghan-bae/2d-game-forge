@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 321 (2026-05-28): **MERCIFUL_PROC_RATE 0.07 → 0.04 (saint lever 5)**. F14 finding 의 branch 재설계 deferred, magnitude lever 5번째 시도. test 2 곳 update. cycle 336 sim 검증. category: balance (320 meta → 321 balance, 룰 9 안전). vitest 1600 baseline. v3 100/100 (66/100).
 - Cycle 320 (2026-05-28): **seventh 10-cycle STATUS + Task 8 완료**. 65/100 (2/3 임박). Chain accountability cycle 311-319 = 8/9 = 89% (cycle 316 차감). 14 메타-finding 누적 (F14 신규 — root cause = deterministic branch 자체). cycle 321 강제 mega-phase = MERCIFUL_PROC_RATE 0 또는 sparing branch 재설계. Lifebook 다시 cycle 340 으로 연기. `STATUS-2026-05-28-cycle-320.md`. category: meta. v3 100/100 (사용자 새 100-cycle 의 65/100).
 - Cycle 319 (2026-05-28): INDEX header 58 → 64/100. category: chore. v3 100/100 (65/100).
 - Cycle 318 (2026-05-28): family_parent pool ≥ 3 invariant (cycle 317 가드). category: system. vitest 1599 → 1600. v3 100/100 (64/100).
