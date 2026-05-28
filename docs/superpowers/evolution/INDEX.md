@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 331 (2026-05-28): mentor death variant 3 → 4 (book page motif). category: narrative. v3 100/100 (76/100).
 - Cycle 330 (2026-05-28): **eighth 10-cycle STATUS — 사용자 새 100-cycle 의 75/100 ★ (3/4 도달)**. Chain accountability cycle 321-329 = 9/9. 75 cycle 분포: balance 28 + system 20 + narrative 11 + meta 10 + chore 7 + UI 2 + VFX 0. cycle 336 sim baseline (saint lever 5 검증). `STATUS-2026-05-28-cycle-330.md`. category: meta. v3 100/100 (75/100).
 - Cycle 329 (2026-05-28): backstab invariant (cycle 328 가드). category: system. vitest 1602 → 1603. v3 100/100 (74/100).
 - Cycle 328 (2026-05-28): backstab atkMul 1.20 → 1.25 + hpMul 0.92 → 0.95 (rogue 폴리시). category: balance. v3 100/100 (73/100).
