@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 8 | Era: 1 | Target: 100
+- Cycle: 9 | Era: 1 | Target: 100
 - Vitest: 1629 | E2E: 60 | Persist: v14
-- Last commit: cd55d82
-- Phase: DONE → next cycle 9, Phase A
-- Category lock: visual×2 balance×2 system×2 narrative×1 sound×1
-- Visual maturity: 6/30
+- Last commit: c142635
+- Phase: DONE → next cycle 10, Phase A
+- Category lock: visual×2 balance×2 system×2 narrative×1 sound×1 visual×1
+- Visual maturity: 7/30
 - Carry-over: (empty)
-- Budget: visual 2/8 sys 2/8 narr 1/8 sound 1/8 balance 2/8
+- Budget: visual 3/9 sys 2/9 narr 1/9 sound 1/9 balance 2/9
 
 ## 비주얼 성숙도 상세 (0-3 × 10영역)
 
@@ -19,7 +19,7 @@
 | 배경 | 1 | zone rectangle + sprite landmark |
 | 아이콘 | 1 | Kenney UI icons 기본 |
 | 전환 | 1 | 300ms opacity fade (ScreenTransition) |
-| 폰트 | 0 | 시스템 폰트만 |
+| 폰트 | 1 | Galmuri11 body + Galmuri14 heading (pixel bitmap) |
 | BGM | 0 | 3곡 placeholder급 |
 | SFX | 0 | 12개 기본 효과음 |
 | 색상 | 0 | dark-gold 테마만 (realm accent 미적용) |
