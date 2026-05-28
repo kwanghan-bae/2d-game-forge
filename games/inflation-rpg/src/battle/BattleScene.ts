@@ -35,6 +35,7 @@ import { preloadDungeonSheet, createDungeonSprite } from '../sprites/spriteLoade
 import { getHeroFrame, getMonsterFrame } from '../sprites/spriteFrames';
 import { getPassiveBonuses, type PassiveBonuses } from '../systems/passives';
 import { getAtmosphereText } from '../data/realmAtmosphere';
+import { getBattleQuote } from '../data/battleQuotes';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -167,7 +168,8 @@ export class BattleScene extends Phaser.Scene {
     this.enemyText = this.add.text(16, 16, this.enemyName, { fontSize: '16px', color: '#e05050' });
     this.hpBarBg = this.add.rectangle(16, 44, 320, 10, theme.panel).setOrigin(0);
     this.hpBarFill = this.add.rectangle(16, 44, 320, 10, theme.hp).setOrigin(0);
-    this.logText = this.add.text(16, 64, '', { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
+    const battleQuote = getBattleQuote(run.characterId) ?? '';
+    this.logText = this.add.text(16, 64, battleQuote, { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
     this.killCount = 0;
     this.killCountText = this.add.text(336, 16, 'Kill: 0', { fontSize: '14px', color: '#f0c060' }).setOrigin(1, 0);
 
