@@ -11,7 +11,7 @@
   - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
 - **사용자 prompted 새 100-cycle (cycle 256-355)** = 2026-05-28 시작. 사용자 "다시 한 번 100 cycle" 요청. cycle 256 = 8 페르소나 fan-out kickoff. PRD = `cycle-256-prd.md` (substantive accountability 톤). 메타-rule 3 신규 (micro mode ≤ 30% / sim baseline 매 20 cycle / STATUS 자축 톤 M===N only). EternalCodex 폐기 → Lifebook supersede.
-  - 진행률 = **88/100** (cycle 305 = mid-point milestone 도달). vitest 1553 → 1596. STATUS trajectory = `STATUS-2026-05-28-cycle-260/270/280/290/300.md`. **HeroDecisionAI mega-phase 5/5 책임 모두 production-consumed ★** (α chooseDestination + 16/16 trait wire + β chooseSkillId + γ shouldRetreat + δ chooseTargetEnemyId + ε chooseEncounterNode). cycle 256 critic #2 의 4 책임 부재 finding 의 완전 회수. saint root cause lever (MERCIFUL_DRIFT 3→2) 진입, cycle 316 sim 검증 대기. 다음 = cycle 310 (sixth 10-cycle STATUS).
+  - 진행률 = **97/100 ★ (cycle 355 final 임박)** (cycle 305 = mid-point milestone 도달). vitest 1553 → 1596. STATUS trajectory = `STATUS-2026-05-28-cycle-260/270/280/290/300.md`. **HeroDecisionAI mega-phase 5/5 책임 모두 production-consumed ★** (α chooseDestination + 16/16 trait wire + β chooseSkillId + γ shouldRetreat + δ chooseTargetEnemyId + ε chooseEncounterNode). cycle 256 critic #2 의 4 책임 부재 finding 의 완전 회수. saint root cause lever (MERCIFUL_DRIFT 3→2) 진입, cycle 316 sim 검증 대기. 다음 = cycle 310 (sixth 10-cycle STATUS).
 
 ## Cycle log
 
@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 353 (2026-05-28): INDEX header 88 → 97/100 + cycle 355 final 임박 표명. category: chore. v3 100/100 (98/100).
 - Cycle 352 (2026-05-28): inner_focus invariant (cycle 349 가드). category: system. v3 100/100 (97/100).
 - Cycle 351 (2026-05-28): family_child variant 3 → 4 (시간 비대칭 peak motif). category: narrative. v3 100/100 (96/100).
 - Cycle 350 (2026-05-28): **penultimate STATUS — 95/100**. 5 cycle 후 ★ FINAL. 누적 분포 95 cycle: balance 38 + system 30 + narrative 16 + meta 12 + chore 8 + UI 2 + VFX 0. mega-phase HeroDecisionAI 5/5 완성. Lifebook 폐기 결정 표명. `STATUS-2026-05-28-cycle-350.md`. category: meta. v3 100/100 (95/100).
