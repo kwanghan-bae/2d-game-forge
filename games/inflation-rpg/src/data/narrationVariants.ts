@@ -402,6 +402,7 @@ const NPC_DEATH_VARIANTS_BY_KIND: Record<NpcEntity['kind'], Array<(c: { age: num
   family_spouse: [
     (c) => `${c.age}세에 반려자가 먼저 잠들었다 — 영웅은 자신의 회춘이 처음으로 죄스러웠다.`,
     (c) => `${c.age}세에 반려자의 마지막 숨을 지켜보았다 — 영원은 함께 늙을 수 없는 형벌이었다.`,
+    (c) => `${c.age}세에 반려자가 빈 자리만 남겼다 — 영웅의 영원은 그날부터 반쪽이었다.`,
   ],
   family_child: [
     (c) => `${c.age}세에 자식이 영웅보다 먼저 늙어 떠났다.`,
