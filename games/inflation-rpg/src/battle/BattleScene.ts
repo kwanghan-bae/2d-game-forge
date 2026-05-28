@@ -37,6 +37,8 @@ import { getPassiveBonuses, type PassiveBonuses } from '../systems/passives';
 import { getAtmosphereText } from '../data/realmAtmosphere';
 import { getBattleQuote } from '../data/battleQuotes';
 
+import { REALM_ACCENTS } from '../systems/realmAccent';
+
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
   type: BossType,
@@ -113,8 +115,20 @@ export class BattleScene extends Phaser.Scene {
     const { run } = useGameStore.getState();
     playBgm('battle');
 
-    const bg = this.add.rectangle(0, 0, 360, 600, theme.bg).setOrigin(0);
-    void bg;
+    // Gradient background based on current realm
+    const realmColors = REALM_ACCENTS[run.currentRealmId] ?? REALM_ACCENTS.base;
+    const bgKey = `bg_gradient_${run.currentRealmId}`;
+    if (!this.textures.exists(bgKey)) {
+      const canvas = this.textures.createCanvas(bgKey, 360, 600)!;
+      const ctx = canvas.getContext();
+      const grad = ctx.createLinearGradient(0, 0, 0, 600);
+      grad.addColorStop(0, '#0a0a12');
+      grad.addColorStop(1, realmColors.accentDim);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 360, 600);
+      canvas.refresh();
+    }
+    this.add.image(0, 0, bgKey).setOrigin(0);
 
     // 신 flow only — currentDungeonId is invariant non-null at this point.
     const dungeon = getDungeonById(run.currentDungeonId!);

@@ -10,7 +10,7 @@ describe('equipmentFlavor', () => {
 
   it('no flavor text exceeds 50 characters', () => {
     for (const [id, text] of Object.entries(EQUIPMENT_FLAVOR)) {
-      expect(text.length).toBeLessThanOrEqual(50, `${id}: "${text}" is too long`);
+      expect(text.length, `${id} too long`).toBeLessThanOrEqual(50);
     }
   });
 

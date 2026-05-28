@@ -36,10 +36,7 @@ describe('craft economy balance', () => {
       if (!nextTier) continue;
       const currentPower = totalStatPower(rarity);
       const nextPower = totalStatPower(nextTier);
-      expect(nextPower).toBeGreaterThan(
-        currentPower,
-        `Tier-up from ${rarity}→${nextTier}: no stat improvement`
-      );
+      expect(nextPower).toBeGreaterThan(currentPower);
     }
   });
 
@@ -73,10 +70,7 @@ describe('craft economy balance', () => {
         const sources = EQUIPMENT_BASES.filter(e => e.slot === slot && e.rarity === rarity);
         const targets = EQUIPMENT_BASES.filter(e => e.slot === slot && e.rarity === nextTier);
         if (sources.length > 0) {
-          expect(targets.length).toBeGreaterThan(
-            0,
-            `No ${nextTier} ${slot} exists for crafting from ${rarity}`
-          );
+          expect(targets.length).toBeGreaterThan(0);
         }
       }
     }
