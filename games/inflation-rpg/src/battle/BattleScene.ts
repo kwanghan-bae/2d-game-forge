@@ -327,6 +327,7 @@ export class BattleScene extends Phaser.Scene {
 
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));
+      playSfx('coin');
       if (!this.isBoss) {
         // Non-boss: DR = round(level * 0.5), counter increments owned by incrementDungeonKill
         useGameStore.getState().incrementDungeonKill(run.level, pb.itemFindMult);
@@ -426,6 +427,7 @@ export class BattleScene extends Phaser.Scene {
     }
     // Phase Realms — apply damage to run.playerHp and check defeat.
     useGameStore.getState().applyDamageToPlayer(finalDmgTaken);
+    playSfx('player-hit');
     const runAfterHit = useGameStore.getState().run;
     const currentPlayerHp = runAfterHit?.playerHp ?? 0;
 
@@ -503,6 +505,7 @@ export class BattleScene extends Phaser.Scene {
           this.enemyMaxHP,
         );
         this.applySkillResult(result, skill.id);
+        playSfx('skill');
         fireSkill(this.skillState, skill, time);
       }
     }
