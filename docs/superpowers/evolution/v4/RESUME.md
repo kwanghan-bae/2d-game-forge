@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 17 | Era: 1 | Target: 100
+- Cycle: 18 | Era: 1 | Target: 100
 - Vitest: 1639 | E2E: 60 | Persist: v27
-- Last commit: 3a3d07e
-- Phase: DONE → next cycle 18, Phase A
-- Category lock: vis×5 bal×3 sys×3 narr×3 sound×3
+- Last commit: 19e2124
+- Phase: DONE → next cycle 19, Phase A
+- Category lock: vis×5 bal×3 sys×4 narr×3 sound×3
 - Visual maturity: 9/30
 - Carry-over: (empty)
-- Budget: visual 5/17 sys 3/17 narr 3/17 sound 3/17 balance 3/17
+- Budget: visual 5/18 sys 4/18 narr 3/18 sound 3/18 balance 3/18
 
 ## 비주얼 성숙도 상세 (0-3 × 10영역)
 
