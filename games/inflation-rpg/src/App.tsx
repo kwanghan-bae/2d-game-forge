@@ -34,6 +34,18 @@ export function App({ config }: AppProps) {
     applyRealmAccent(currentRealmId);
   }, [currentRealmId]);
 
+  // Global UI click SFX — plays 'click' for any button/a press
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('button, [role="button"], a')) {
+        playSfx('click');
+      }
+    };
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, []);
+
   const story = pendingStoryId ? getStoryById(pendingStoryId) : null;
   const char = characterId ? getCharacterById(characterId) : null;
   const reaction = (story && characterId)
