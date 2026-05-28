@@ -187,6 +187,10 @@ export class BattleScene extends Phaser.Scene {
     this.killCount = 0;
     this.killCountText = this.add.text(336, 16, 'Kill: 0', { fontSize: '14px', color: '#f0c060' }).setOrigin(1, 0);
 
+    // Floor progress indicator
+    const floorLabel = `F${run.currentFloor}`;
+    this.add.text(336, 34, floorLabel, { fontSize: '11px', color: '#aaaaaa' }).setOrigin(1, 0);
+
     // Realm atmosphere flavor text (fades out after 2s)
     if (run.currentRealmId) {
       const atmoText = getAtmosphereText(run.currentRealmId);
