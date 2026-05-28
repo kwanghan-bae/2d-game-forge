@@ -390,7 +390,8 @@ export class BattleScene extends Phaser.Scene {
         // (combatTimer 는 이미 line 204 에서 제거됨.)
         if (spGained > 0) {
           this.consecutiveLevelUps++;
-          playSfx('levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
+          const isMilestone = newLevel % 10 === 0;
+          playSfx(isMilestone ? 'milestone' : 'levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
           this.callbacks.onLevelUp(newLevel);
         } else {
           this.consecutiveLevelUps = 0;
@@ -441,7 +442,8 @@ export class BattleScene extends Phaser.Scene {
       // Defensive: if we somehow reach here, end the battle as a level-up or normal victory.
       if (spGained > 0) {
         this.consecutiveLevelUps++;
-        playSfx('levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
+        const isMilestone = newLevel % 10 === 0;
+        playSfx(isMilestone ? 'milestone' : 'levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
         this.callbacks.onLevelUp(newLevel);
       } else {
         this.callbacks.onBattleEnd(true);
