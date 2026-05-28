@@ -33,6 +33,7 @@ import type { EffectsState } from '../types';
 import { computeMaxHp } from '../systems/playerHp';
 import { preloadDungeonSheet, createDungeonSprite } from '../sprites/spriteLoader';
 import { getHeroFrame, getMonsterFrame } from '../sprites/spriteFrames';
+import { getPassiveBonuses, type PassiveBonuses } from '../systems/passives';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -84,6 +85,8 @@ export class BattleScene extends Phaser.Scene {
   // floor 기반 monsterLevel 을 전투 내내 캐시. create() 에서 항상 셋.
   private cachedMonsterLevel = 0;
   private effectsState: EffectsState = createEffectsState();
+  private passiveBonuses: PassiveBonuses = { statBoostMult: 1, critRateBonus: 0, dodgeRateBonus: 0, expBoostMult: 1, goldBoostMult: 1, bossDamageMult: 1, firstStrikeMult: 1 };
+  private isFirstRound = true;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
   private enemySprite?: Phaser.GameObjects.Sprite;
@@ -153,6 +156,8 @@ export class BattleScene extends Phaser.Scene {
       });
     }
     this.enemyHP = this.enemyMaxHP;
+    this.passiveBonuses = getPassiveBonuses(run.characterId);
+    this.isFirstRound = true;
 
     this.enemyText = this.add.text(16, 16, this.enemyName, { fontSize: '16px', color: '#e05050' });
     this.hpBarBg = this.add.rectangle(16, 44, 320, 10, theme.panel).setOrigin(0);
@@ -197,8 +202,8 @@ export class BattleScene extends Phaser.Scene {
       const ascTreeHpMult = 1 + 0.05 * ascTree.hp_pct;
       const atkMetaMult = getMythicFlatMult(meta, 'atk') * getRelicFlatMult(meta, 'atk');
       const hpMetaMult = getMythicFlatMult(meta, 'hp') * getRelicFlatMult(meta, 'hp');
-      this.cachedPlayerAtk = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult);
-      this.cachedPlayerHpMax = calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult, hpMetaMult);
+      this.cachedPlayerAtk = Math.floor(calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult) * this.passiveBonuses.statBoostMult);
+      this.cachedPlayerHpMax = Math.floor(calcFinalStat('hp', run.allocated.hp, char.statMultipliers.hp, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeHpMult, hpMetaMult) * this.passiveBonuses.statBoostMult);
     }
   }
 
@@ -220,12 +225,13 @@ export class BattleScene extends Phaser.Scene {
     const agiMetaMult = getMythicFlatMult(meta, 'agi') * getRelicFlatMult(meta, 'agi');
     const lucMetaMult = getMythicFlatMult(meta, 'luc') * getRelicFlatMult(meta, 'luc');
 
-    const playerATK = calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult);
-    const playerDEF = calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, defMetaMult);
-    const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, agiMetaMult);
-    const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, lucMetaMult);
+    const pb = this.passiveBonuses;
+    const playerATK = Math.floor(calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult) * pb.statBoostMult);
+    const playerDEF = Math.floor(calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, defMetaMult) * pb.statBoostMult);
+    const playerAGI = Math.floor(calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, agiMetaMult) * pb.statBoostMult);
+    const playerLUC = Math.floor(calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, lucMetaMult) * pb.statBoostMult);
 
-    const crit = Math.random() < calcCritChance(playerAGI, playerLUC);
+    const crit = Math.random() < calcCritChance(playerAGI, playerLUC) + pb.critRateBonus;
     const combo = Math.random() < 0.05 + playerAGI * 0.0005;
     const hits = combo ? 3 : 1;
     let totalDmg = 0;
@@ -236,6 +242,13 @@ export class BattleScene extends Phaser.Scene {
         rngRoll: Math.random(),
         critMultBonus: 0.20 * ascTree.crit_damage,
       });
+    }
+
+    // Passive damage multipliers
+    if (this.isBoss) totalDmg = Math.floor(totalDmg * pb.bossDamageMult);
+    if (this.isFirstRound) {
+      totalDmg = Math.floor(totalDmg * pb.firstStrikeMult);
+      this.isFirstRound = false;
     }
 
     // Phase Realms — magnitudeBuff for light_of_truth mythic.
@@ -302,8 +315,8 @@ export class BattleScene extends Phaser.Scene {
         playSfx('hit');
       }
 
-      const expGain = Math.floor(10 * Math.pow(run.level, 2.0));
-      const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1));
+      const expGain = Math.floor(10 * Math.pow(run.level, 2.0) * pb.expBoostMult);
+      const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1) * pb.goldBoostMult);
       const goldGain = applyMetaDropMult(rawGoldGain, 'gold', meta);
       const xpMetaMult = getMythicXpMult(meta) * getRelicXpMult(meta);
       const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode, meta.ascTree.sp_per_lvl, xpMetaMult);
@@ -384,6 +397,11 @@ export class BattleScene extends Phaser.Scene {
     }
 
     const monsterLevelForAtk = this.cachedMonsterLevel;
+    // Passive dodge — skip enemy attack entirely
+    if (this.passiveBonuses.dodgeRateBonus > 0 && Math.random() < this.passiveBonuses.dodgeRateBonus) {
+      this.logText?.setText('회피!');
+      return;
+    }
     const debuffMult = getDebuffStatMultiplier(this.effectsState, 'enemy');
     const enemyATK = Math.floor(resolveEnemyAtk({
       monsterLevel: monsterLevelForAtk,

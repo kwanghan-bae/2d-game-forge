@@ -6,7 +6,7 @@ export const CHARACTERS: Character[] = [
   {
     id: 'hwarang', nameKR: '화랑', emoji: '⚔️', statFocus: 'AGI·ATK',
     statMultipliers: { hp: 1.0, atk: 1.1, def: 1.0, agi: 1.2, luc: 1.0 },
-    passiveSkill: { id: 'hwarang_spirit', nameKR: '화랑정신', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'hwarang_spirit', nameKR: '화랑정신', description: '모든 스탯 15% 증가', effect: 'stat_boost', value: 1.15 },
     unlockSoulGrade: 0,
     activeSkills: SKILLS.hwarang,
   },
@@ -27,7 +27,7 @@ export const CHARACTERS: Character[] = [
   {
     id: 'geomgaek', nameKR: '검객', emoji: '🗡️', statFocus: 'ATK·크리',
     statMultipliers: { hp: 0.95, atk: 1.15, def: 0.9, agi: 1.1, luc: 1.05 },
-    passiveSkill: { id: 'sword_mastery', nameKR: '검술', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'sword_mastery', nameKR: '검술', description: '치명타 확률 25% 증가', effect: 'crit_rate', value: 0.25 },
     unlockSoulGrade: 0,
     activeSkills: SKILLS.geomgaek,
   },
@@ -42,14 +42,14 @@ export const CHARACTERS: Character[] = [
   {
     id: 'dosa', nameKR: '도사', emoji: '🔥', statFocus: 'ATK·마법',
     statMultipliers: { hp: 0.9, atk: 1.2, def: 0.85, agi: 1.0, luc: 1.1 },
-    passiveSkill: { id: 'tao_power', nameKR: '도력', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'tao_power', nameKR: '도력', description: '보스 데미지 30% 증가', effect: 'boss_damage', value: 1.3 },
     unlockSoulGrade: 3,
     activeSkills: SKILLS.dosa,
   },
   {
     id: 'yacha', nameKR: '야차', emoji: '😈', statFocus: 'AGI·회피',
     statMultipliers: { hp: 0.85, atk: 1.1, def: 0.85, agi: 1.35, luc: 1.0 },
-    passiveSkill: { id: 'ghost_step', nameKR: '귀신발걸음', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'ghost_step', nameKR: '귀신발걸음', description: '회피 확률 20%', effect: 'dodge_rate', value: 0.2 },
     unlockSoulGrade: 3,
     activeSkills: SKILLS.yacha,
   },
@@ -71,14 +71,14 @@ export const CHARACTERS: Character[] = [
   {
     id: 'jangsu', nameKR: '장수', emoji: '🪖', statFocus: 'DEF·HP',
     statMultipliers: { hp: 1.2, atk: 0.95, def: 1.25, agi: 0.85, luc: 0.9 },
-    passiveSkill: { id: 'iron_wall', nameKR: '철벽', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'iron_wall', nameKR: '철벽', description: '첫 타격 데미지 2배', effect: 'first_strike', value: 2.0 },
     unlockSoulGrade: 4,
     activeSkills: SKILLS.jangsu,
   },
   {
     id: 'seungbyeong', nameKR: '승병', emoji: '🙏', statFocus: 'DEF·반격',
     statMultipliers: { hp: 1.1, atk: 1.0, def: 1.2, agi: 0.9, luc: 0.95 },
-    passiveSkill: { id: 'monk_guard', nameKR: '호법', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'monk_guard', nameKR: '호법', description: '획득 경험치 20% 증가', effect: 'exp_boost', value: 1.2 },
     unlockSoulGrade: 5,
     activeSkills: SKILLS.seungbyeong,
   },
@@ -100,7 +100,7 @@ export const CHARACTERS: Character[] = [
   {
     id: 'yongnyeo', nameKR: '용녀', emoji: '🐉', statFocus: '균형·전지',
     statMultipliers: { hp: 1.1, atk: 1.1, def: 1.1, agi: 1.1, luc: 1.1 },
-    passiveSkill: { id: 'dragon_blessing', nameKR: '용의축복', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'dragon_blessing', nameKR: '용의축복', description: '골드 획득 30% 증가', effect: 'gold_boost', value: 1.3 },
     unlockSoulGrade: 7,
     activeSkills: SKILLS.yongnyeo,
   },
@@ -114,7 +114,7 @@ export const CHARACTERS: Character[] = [
   {
     id: 'seonin', nameKR: '선인', emoji: '🌙', statFocus: '균형·지혜',
     statMultipliers: { hp: 1.15, atk: 1.15, def: 1.1, agi: 1.1, luc: 1.15 },
-    passiveSkill: { id: 'immortal_body', nameKR: '신선체', description: '모든 스탯 10% 증가', effect: 'stat_boost', value: 1.1 },
+    passiveSkill: { id: 'immortal_body', nameKR: '신선체', description: '모든 스탯 20% 증가', effect: 'stat_boost', value: 1.2 },
     unlockSoulGrade: 9,
     activeSkills: SKILLS.seonin,
   },
