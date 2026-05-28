@@ -40,13 +40,14 @@ export function setVolumes(music: number, sfx: number, isMuted: boolean): void {
   }
 }
 
-export function playSfx(id: string): void {
+export function playSfx(id: string, playbackRate = 1): void {
   if (!isBrowser() || muted || sfxVolume <= 0) return;
   try {
     const pool = getSfxPool(id);
     const idle = pool.find((a) => a.paused || a.ended) ?? pool[0]!;
     idle.currentTime = 0;
     idle.volume = sfxVolume;
+    idle.playbackRate = Math.max(0.5, Math.min(2, playbackRate));
     idle.play().catch(() => {
       /* silent — file missing or autoplay blocked */
     });
