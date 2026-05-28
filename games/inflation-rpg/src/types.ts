@@ -322,6 +322,8 @@ export interface MetaState {
   /** Cycle 139 N5 — claim 액션 누적 카운터. telemetry / UI badge 의 진원지.
    *  optional — legacy save (v26 이전 또는 v26 새 init) 는 undefined → 0 으로 해석. */
   totalClaimsCount?: number;
+  /** Cycle 10 — 몬스터 도감 처치 횟수. monsterId → kill count. */
+  bestiary: Record<string, number>;
 }
 
 // Phase G — Ascension Tree (성좌)

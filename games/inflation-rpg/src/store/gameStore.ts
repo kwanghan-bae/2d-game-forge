@@ -169,6 +169,7 @@ export const INITIAL_META: MetaState = {
   tokens: 0,
   tokensRedeemed: 0,
   seasonStartedAt: 0,
+  bestiary: {},
 };
 
 interface GameStore {
@@ -746,6 +747,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
       m['seasonStartedAt'] = 0;
     }
   }
+  // Cycle 10 — bestiary (몬스터 도감 처치 횟수)
+  if (fromVersion <= 26 && s.meta) {
+    (s.meta as Record<string, unknown>)['bestiary'] = (s.meta as Record<string, unknown>)['bestiary'] ?? {};
+  }
   return s;
 }
 
@@ -987,6 +992,10 @@ export const useGameStore = create<GameStore>()(
 
       trackKill: (monsterId) => {
         const state = get();
+        // Bestiary kill count
+        set((s) => ({
+          meta: { ...s.meta, bestiary: { ...s.meta.bestiary, [monsterId]: (s.meta.bestiary[monsterId] ?? 0) + 1 } },
+        }));
         for (const q of QUESTS) {
           if (q.type !== 'kill_count') continue;
           if (state.meta.questsCompleted.includes(q.id)) continue;
@@ -1673,7 +1682,7 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'korea_inflation_rpg_save',
-      version: 26,  // cycle 129 — N5 F1+F3 (achievements + tokens + seasonStartedAt)
+      version: 27,  // cycle 10 — bestiary kill count tracking
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }
