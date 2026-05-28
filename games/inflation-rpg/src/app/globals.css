@@ -1,4 +1,5 @@
 @import "../styles/modern-dark-gold.css";
+@import "galmuri/dist/galmuri.css";
 
 :root {
   --background: var(--forge-bg-base);
@@ -25,7 +26,7 @@ html, body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Galmuri11, Arial, Helvetica, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;

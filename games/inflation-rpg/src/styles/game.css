@@ -12,12 +12,14 @@
   --forge-rarity-epic: #c060e0;
   --forge-rarity-legendary: #f0c060;
   --forge-rarity-mythic: #e05050;
+  --forge-font-body: Galmuri11, -apple-system, sans-serif;
+  --forge-font-heading: Galmuri14, Galmuri11, -apple-system, sans-serif;
 }
 
 .forge-ui-root {
   background: var(--forge-bg-base);
   color: var(--forge-text-primary);
-  font-family: -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: Galmuri11, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   min-height: 100dvh;
   max-width: 430px;
   margin: 0 auto;
@@ -34,6 +36,12 @@
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
   box-sizing: border-box;
+}
+
+.forge-ui-root h1,
+.forge-ui-root h2,
+.forge-ui-root h3 {
+  font-family: var(--forge-font-heading);
 }
 
 .forge-screen--no-safe-area {
