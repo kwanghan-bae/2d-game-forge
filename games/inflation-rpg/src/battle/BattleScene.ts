@@ -87,6 +87,8 @@ export class BattleScene extends Phaser.Scene {
   private effectsState: EffectsState = createEffectsState();
   private passiveBonuses: PassiveBonuses = { statBoostMult: 1, critRateBonus: 0, dodgeRateBonus: 0, expBoostMult: 1, goldBoostMult: 1, bossDamageMult: 1, firstStrikeMult: 1, itemFindMult: 1, beastDamageMult: 1, lifeConversion: 0 };
   private isFirstRound = true;
+  private killCount = 0;
+  private killCountText?: Phaser.GameObjects.Text;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
   private enemySprite?: Phaser.GameObjects.Sprite;
@@ -164,6 +166,8 @@ export class BattleScene extends Phaser.Scene {
     this.hpBarBg = this.add.rectangle(16, 44, 320, 10, theme.panel).setOrigin(0);
     this.hpBarFill = this.add.rectangle(16, 44, 320, 10, theme.hp).setOrigin(0);
     this.logText = this.add.text(16, 64, '', { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
+    this.killCount = 0;
+    this.killCountText = this.add.text(336, 16, 'Kill: 0', { fontSize: '14px', color: '#f0c060' }).setOrigin(1, 0);
 
     // Entity sprites — hero (left) and enemy (right)
     const heroFrame = getHeroFrame(run.characterId);
@@ -329,6 +333,8 @@ export class BattleScene extends Phaser.Scene {
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));
       playSfx('coin');
+      this.killCount++;
+      if (this.killCountText) this.killCountText.setText(`Kill: ${this.killCount}`);
       if (!this.isBoss) {
         // Non-boss: DR = round(level * 0.5), counter increments owned by incrementDungeonKill
         useGameStore.getState().incrementDungeonKill(run.level, pb.itemFindMult);
