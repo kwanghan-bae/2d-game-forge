@@ -49,7 +49,7 @@ export const HERO_SKILLS: readonly HeroSkill[] = [
   { id: 'soul_drain',      nameKR: '영혼흡수',     description: '적의 영혼을 흡수',   atkMul: 1.25, hpMul: 1.06, jobIds: ['dark_lord', 'mage'] },
 
   // Universal (sage / apprentice / fallback)
-  { id: 'second_wind',     nameKR: '재생의 호흡',  description: 'HP 자연 회복',       atkMul: 1.00, hpMul: 1.15, jobIds: ['apprentice', 'sage', 'priest'] },
+  { id: 'second_wind',     nameKR: '재생의 호흡',  description: 'HP 자연 회복',       atkMul: 1.00, hpMul: 1.20, jobIds: ['apprentice', 'sage', 'priest'] },
   { id: 'inner_focus',     nameKR: '내적 집중',    description: '모든 스탯 소폭 향상', atkMul: 1.05, hpMul: 1.05, jobIds: ['apprentice', 'sage'] },
 ];
 
