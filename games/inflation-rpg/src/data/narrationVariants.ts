@@ -397,6 +397,7 @@ const NPC_DEATH_VARIANTS_BY_KIND: Record<NpcEntity['kind'], Array<(c: { age: num
   family_parent: [
     (c) => `${c.age}세에 부모가 자신보다 먼저 별이 되었다.`,
     (c) => `${c.age}세에 부모의 손을 마지막으로 잡았다 — 그 손은 자신을 안았던 그 손이었다.`,
+    (c) => `${c.age}세에 부모의 빈 자리에서 영웅은 처음으로 자신의 영원이 무거웠다.`,
   ],
   family_spouse: [
     (c) => `${c.age}세에 반려자가 먼저 잠들었다 — 영웅은 자신의 회춘이 처음으로 죄스러웠다.`,
