@@ -72,4 +72,9 @@ describe('hero skills catalog', () => {
     expect(findSkillById('cleave')!.atkMul).toBeGreaterThanOrEqual(1.12);
     expect(findSkillById('shield_wall')!.hpMul).toBeGreaterThan(1.0);
   });
+
+  // Cycle 325: rogue cluster invariant (shadow_step polish cycle 324).
+  it('shadow_step atkMul ≥ 1.18 (cycle 324)', () => {
+    expect(findSkillById('shadow_step')!.atkMul).toBeGreaterThanOrEqual(1.18);
+  });
 });
