@@ -26,7 +26,7 @@ export const HERO_SKILLS: readonly HeroSkill[] = [
   { id: 'wind_walk',       nameKR: '바람걸음',     description: '회피 강화',          atkMul: 1.05, hpMul: 1.08, jobIds: ['archer', 'ranger', 'rogue'] },
 
   // Stealth / rogue-ish
-  { id: 'backstab',        nameKR: '기습',         description: '뒤치기 치명',        atkMul: 1.20, hpMul: 0.92, jobIds: ['rogue', 'assassin'] },
+  { id: 'backstab',        nameKR: '기습',         description: '뒤치기 치명',        atkMul: 1.25, hpMul: 0.95, jobIds: ['rogue', 'assassin'] },
   { id: 'poison',          nameKR: '독묻히기',     description: '독 추가',           atkMul: 1.10, hpMul: 0.98, jobIds: ['rogue', 'assassin'] },
   { id: 'shadow_step',     nameKR: '그림자걸음',   description: '회피 + 기습',        atkMul: 1.18, hpMul: 1.04, jobIds: ['rogue', 'assassin', 'dark_lord'] },
 
