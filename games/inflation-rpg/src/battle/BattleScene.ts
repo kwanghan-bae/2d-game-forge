@@ -90,6 +90,7 @@ export class BattleScene extends Phaser.Scene {
   private isFirstRound = true;
   private killCount = 0;
   private killCountText?: Phaser.GameObjects.Text;
+  private consecutiveLevelUps = 0;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
   private enemySprite?: Phaser.GameObjects.Sprite;
@@ -361,8 +362,11 @@ export class BattleScene extends Phaser.Scene {
         // 신 flow — 처치 후 다음 행동 결정
         // (combatTimer 는 이미 line 204 에서 제거됨.)
         if (spGained > 0) {
-          playSfx('levelup');
+          this.consecutiveLevelUps++;
+          playSfx('levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
           this.callbacks.onLevelUp(newLevel);
+        } else {
+          this.consecutiveLevelUps = 0;
         }
 
         const dungeonId = currentRun.currentDungeonId;
@@ -409,7 +413,8 @@ export class BattleScene extends Phaser.Scene {
       // currentDungeonId is invariant non-null in new flow — the dungeon-flow branch above always returns.
       // Defensive: if we somehow reach here, end the battle as a level-up or normal victory.
       if (spGained > 0) {
-        playSfx('levelup');
+        this.consecutiveLevelUps++;
+        playSfx('levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
         this.callbacks.onLevelUp(newLevel);
       } else {
         this.callbacks.onBattleEnd(true);
