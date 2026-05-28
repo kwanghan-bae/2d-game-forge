@@ -4,6 +4,7 @@ import { MainMenu } from './screens/MainMenu';
 import { CyclePrepV2 } from './screens/CyclePrepV2';
 import { OverworldRunner } from './screens/OverworldRunner';
 import { CycleResultV2 } from './screens/CycleResultV2';
+import { BestiaryScreen } from './screens/BestiaryScreen';
 import { StoryModal } from './components/StoryModal';
 import { ScreenTransition } from './components/ScreenTransition';
 import { getStoryById } from './data/stories';
@@ -64,6 +65,7 @@ export function App({ config }: AppProps) {
             <button type="button" onClick={() => setScreen('main-menu')}>돌아가기</button>
           </div>
         )}
+        {screen === 'bestiary' && <BestiaryScreen />}
       </ScreenTransition>
       {story && (
         <StoryModal
