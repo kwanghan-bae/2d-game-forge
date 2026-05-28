@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 350 (2026-05-28): **penultimate STATUS — 95/100**. 5 cycle 후 ★ FINAL. 누적 분포 95 cycle: balance 38 + system 30 + narrative 16 + meta 12 + chore 8 + UI 2 + VFX 0. mega-phase HeroDecisionAI 5/5 완성. Lifebook 폐기 결정 표명. `STATUS-2026-05-28-cycle-350.md`. category: meta. v3 100/100 (95/100).
 - Cycle 349 (2026-05-28): inner_focus 1.05/1.05 → 1.10/1.10 (sage 폴리시). category: balance. v3 100/100 (94/100).
 - Cycle 348 (2026-05-28): family_spouse death variant 3 → 4 ("다음 생 약속" motif). category: narrative. v3 100/100 (93/100).
 - Cycle 347 (2026-05-28): second_wind invariant. category: system. v3 100/100 (92/100).
