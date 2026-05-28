@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 335 (2026-05-28): multishot atkMul 1.12 → 1.20 (archer 폴리시). category: balance. v3 100/100 (80/100).
 - Cycle 334 (2026-05-28): INDEX header 70 → 78. category: chore. v3 100/100 (79/100).
 - Cycle 333 (2026-05-28): poison invariant. category: system. vitest 1603 → 1604. v3 100/100 (78/100).
 - Cycle 332 (2026-05-28): poison atkMul 1.10 → 1.15 + hpMul 0.98 → 1.00. category: balance. v3 100/100 (77/100).
