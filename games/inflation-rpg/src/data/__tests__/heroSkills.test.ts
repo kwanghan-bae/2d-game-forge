@@ -94,4 +94,11 @@ describe('hero skills catalog', () => {
   it('multishot atkMul ≥ 1.20 (cycle 335)', () => {
     expect(findSkillById('multishot')!.atkMul).toBeGreaterThanOrEqual(1.20);
   });
+
+  // Cycle 339: aim polish (cycle 338).
+  it('aim atkMul ≥ 1.22 + hpMul ≥ 1.00 (cycle 338)', () => {
+    const s = findSkillById('aim')!;
+    expect(s.atkMul).toBeGreaterThanOrEqual(1.22);
+    expect(s.hpMul).toBeGreaterThanOrEqual(1.00);
+  });
 });
