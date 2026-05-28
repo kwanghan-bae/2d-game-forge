@@ -20,7 +20,8 @@ export function ScreenTransition({ children, transitionKey, duration = 300 }: Sc
     <div
       style={{
         opacity: visible ? 1 : 0,
-        transition: `opacity ${duration}ms ease-in-out`,
+        transform: visible ? 'translateY(0)' : 'translateY(12px)',
+        transition: `opacity ${duration}ms ease-out, transform ${duration}ms ease-out`,
         width: '100%',
         height: '100%',
       }}
