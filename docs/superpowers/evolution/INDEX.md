@@ -177,7 +177,7 @@
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
 - Cycle 317 (2026-05-28): family_parent death variant 2 → 3 (시간 비대칭 motif). category: narrative. vitest 1599. v3 100/100 (62/100).
-- Cycle 316 (2026-05-28): sim baseline 4차 강제 (메타-rule 2) — 진행 중, commit 별도.
+- Cycle 316 (2026-05-28): **sim baseline 4차 강제 + MERCIFUL_DRIFT lever 무관 확정 (4차 검증)**. saint 80% / maxLevel 4.92M = cycle 296 deterministic 동일. drift 3→2 effect 0. F14 신규 finding: 진짜 root cause = `if (current >= 0) sparing` deterministic branch (drift magnitude 아님). cycle 321+ Saint Re-Balance mega-phase = branch 분기 자체 재설계. `cycle-316-sim-baseline.md`. category: balance. v3 100/100 (61/100).
 - Cycle 315 (2026-05-28): cleave atkMul ≥ 1.12 invariant (cycle 313 가드). category: system. vitest 1598 → 1599. v3 100/100 (60/100).
 - Cycle 314 (2026-05-28): INDEX header 52/100 → 58/100. category: chore. v3 100/100 (59/100).
 - Cycle 313 (2026-05-28): cleave atkMul 1.08 → 1.12 (warrior AoE 폴리시). category: balance. vitest 1598. v3 100/100 (58/100).
