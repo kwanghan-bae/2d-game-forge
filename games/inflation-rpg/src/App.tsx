@@ -10,6 +10,7 @@ import { getStoryById } from './data/stories';
 import { getCharacterReaction } from './data/characterReactions';
 import { getCharacterById } from './data/characters';
 import { playBgm, bgmIdForScreen } from './systems/sound';
+import { applyRealmAccent } from './systems/realmAccent';
 import type { StartGameConfig } from './types';
 
 interface AppProps {
@@ -20,11 +21,16 @@ export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
   const pendingStoryId = useGameStore((s) => s.pendingStoryId);
   const characterId = useGameStore((s) => s.run?.characterId);
+  const currentRealmId = useGameStore((s) => s.run?.currentRealmId ?? 'base');
   const setScreen = useGameStore.getState().setScreen;
 
   useEffect(() => {
     playBgm(bgmIdForScreen(screen));
   }, [screen]);
+
+  useEffect(() => {
+    applyRealmAccent(currentRealmId);
+  }, [currentRealmId]);
 
   const story = pendingStoryId ? getStoryById(pendingStoryId) : null;
   const char = characterId ? getCharacterById(characterId) : null;
