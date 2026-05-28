@@ -101,4 +101,9 @@ describe('hero skills catalog', () => {
     expect(s.atkMul).toBeGreaterThanOrEqual(1.22);
     expect(s.hpMul).toBeGreaterThanOrEqual(1.00);
   });
+
+  // Cycle 343: wind_walk polish (cycle 342).
+  it('wind_walk atkMul ≥ 1.12 (cycle 342)', () => {
+    expect(findSkillById('wind_walk')!.atkMul).toBeGreaterThanOrEqual(1.12);
+  });
 });
