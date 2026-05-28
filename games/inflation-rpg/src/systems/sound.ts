@@ -55,11 +55,31 @@ export function playSfx(id: string): void {
   }
 }
 
+const CROSSFADE_MS = 500;
+let fadeOutTimer: ReturnType<typeof setInterval> | null = null;
+
+function fadeOutAndStop(audio: HTMLAudioElement, durationMs: number): void {
+  const steps = 10;
+  const interval = durationMs / steps;
+  const startVol = audio.volume;
+  let step = 0;
+  if (fadeOutTimer) clearInterval(fadeOutTimer);
+  fadeOutTimer = setInterval(() => {
+    step++;
+    audio.volume = Math.max(0, startVol * (1 - step / steps));
+    if (step >= steps) {
+      if (fadeOutTimer) clearInterval(fadeOutTimer);
+      fadeOutTimer = null;
+      audio.pause();
+    }
+  }, interval);
+}
+
 export function playBgm(id: string | null): void {
   if (!isBrowser()) return;
   if (id === currentBgmId) return;
   if (currentBgm) {
-    currentBgm.pause();
+    fadeOutAndStop(currentBgm, CROSSFADE_MS);
     currentBgm = null;
   }
   currentBgmId = id;
@@ -67,10 +87,20 @@ export function playBgm(id: string | null): void {
   try {
     const audio = new Audio(`${SOUNDS_BASE}/bgm/${id}.ogg`);
     audio.loop = true;
-    audio.volume = muted ? 0 : musicVolume;
+    // Fade in
+    audio.volume = 0;
     audio.play().catch(() => {
       /* silent */
     });
+    const steps = 10;
+    const interval = CROSSFADE_MS / steps;
+    const targetVol = muted ? 0 : musicVolume;
+    let step = 0;
+    const fadeIn = setInterval(() => {
+      step++;
+      audio.volume = Math.min(targetVol, targetVol * (step / steps));
+      if (step >= steps) clearInterval(fadeIn);
+    }, interval);
     currentBgm = audio;
   } catch {
     /* silent */
@@ -90,6 +120,7 @@ export function bgmIdForScreen(screen: Screen): string | null {
 
 // Test helpers (vitest 환경에서 audio pool/state 리셋)
 export function _resetSoundForTest(): void {
+  if (fadeOutTimer) { clearInterval(fadeOutTimer); fadeOutTimer = null; }
   currentBgm?.pause();
   currentBgm = null;
   currentBgmId = null;
