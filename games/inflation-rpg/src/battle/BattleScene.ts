@@ -294,7 +294,7 @@ export class BattleScene extends Phaser.Scene {
     this.logText?.setText(logParts.join(''));
 
     const ratio = this.enemyHP / this.enemyMaxHP;
-    this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+    this.animateHpBar(ratio);
 
     if (this.enemyHP <= 0) {
       // Phase Realms — on_kill procs (sp_steal → cooldownReduce).
@@ -423,7 +423,7 @@ export class BattleScene extends Phaser.Scene {
     if (totalReflect > 0) {
       this.enemyHP = Math.max(0, this.enemyHP - totalReflect);
       const ratio = this.enemyHP / this.enemyMaxHP;
-      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+      this.animateHpBar(ratio);
     }
     // Phase Realms — apply damage to run.playerHp and check defeat.
     useGameStore.getState().applyDamageToPlayer(finalDmgTaken);
@@ -476,7 +476,7 @@ export class BattleScene extends Phaser.Scene {
     if (tickResult.stateDelta.enemyHpDelta) {
       this.enemyHP = Math.max(0, this.enemyHP + tickResult.stateDelta.enemyHpDelta);
       const ratio = this.enemyHP / this.enemyMaxHP;
-      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+      this.animateHpBar(ratio);
     }
   }
 
@@ -515,7 +515,7 @@ export class BattleScene extends Phaser.Scene {
     if (result.damage !== undefined) {
       this.enemyHP = Math.max(0, this.enemyHP - result.damage);
       const ratio = this.enemyHP / this.enemyMaxHP;
-      this.hpBarFill?.setDisplaySize(Math.max(0, 320 * ratio), 10);
+      this.animateHpBar(ratio);
     }
     if (result.debuff !== undefined) {
       addEffect(this.effectsState, {
@@ -557,6 +557,16 @@ export class BattleScene extends Phaser.Scene {
       alpha: 0,
       duration: 800,
       onComplete: () => text.destroy(),
+    });
+  }
+
+  private animateHpBar(ratio: number) {
+    if (!this.hpBarFill) return;
+    this.tweens.add({
+      targets: this.hpBarFill,
+      displayWidth: Math.max(0, 320 * ratio),
+      duration: 200,
+      ease: 'Power2',
     });
   }
 
