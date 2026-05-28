@@ -36,6 +36,7 @@ import { getHeroFrame, getMonsterFrame } from '../sprites/spriteFrames';
 import { getPassiveBonuses, type PassiveBonuses } from '../systems/passives';
 import { getAtmosphereText } from '../data/realmAtmosphere';
 import { getBattleQuote } from '../data/battleQuotes';
+import { getBossVictoryMessage } from '../data/bossVictoryMessages';
 
 import { REALM_ACCENTS } from '../systems/realmAccent';
 
@@ -652,8 +653,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private showBossVictoryText() {
-    const titles = ['격파!', '승리!', '정복!', '토벌 완료!'];
-    const title = titles[Math.floor(Math.random() * titles.length)]!;
+    const title = getBossVictoryMessage(this.cachedBossType ?? 'mini');
     const text = this.add.text(180, 180, title, {
       fontSize: '32px',
       color: '#f0c060',
