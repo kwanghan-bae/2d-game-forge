@@ -50,7 +50,7 @@ export const HERO_SKILLS: readonly HeroSkill[] = [
 
   // Universal (sage / apprentice / fallback)
   { id: 'second_wind',     nameKR: '재생의 호흡',  description: 'HP 자연 회복',       atkMul: 1.00, hpMul: 1.20, jobIds: ['apprentice', 'sage', 'priest'] },
-  { id: 'inner_focus',     nameKR: '내적 집중',    description: '모든 스탯 소폭 향상', atkMul: 1.05, hpMul: 1.05, jobIds: ['apprentice', 'sage'] },
+  { id: 'inner_focus',     nameKR: '내적 집중',    description: '모든 스탯 소폭 향상', atkMul: 1.10, hpMul: 1.10, jobIds: ['apprentice', 'sage'] },
 ];
 
 export function findSkillsForJob(jobId: string): HeroSkill[] {
