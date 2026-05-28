@@ -302,7 +302,7 @@ export class BattleScene extends Phaser.Scene {
         playSfx('hit');
       }
 
-      const expGain = Math.floor(run.level * 10);
+      const expGain = Math.floor(10 * Math.pow(run.level, 2.0));
       const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1));
       const goldGain = applyMetaDropMult(rawGoldGain, 'gold', meta);
       const xpMetaMult = getMythicXpMult(meta) * getRelicXpMult(meta);
