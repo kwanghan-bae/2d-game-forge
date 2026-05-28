@@ -11,7 +11,7 @@
   - STATUS trajectory = `STATUS-2026-05-27-cycle-160.md` / `cycle-170.md` / `cycle-180.md` / `cycle-190.md` / `STATUS-2026-05-28-cycle-200.md` / `cycle-210.md` / `cycle-220.md`. 다음 = cycle 230 / 240 / 250 / 256.
   - 운영 룰 = `wire-chain-pattern.md` (분할 진행 framework, cycle 189 신설).
 - **사용자 prompted 새 100-cycle (cycle 256-355)** = 2026-05-28 시작. 사용자 "다시 한 번 100 cycle" 요청. cycle 256 = 8 페르소나 fan-out kickoff. PRD = `cycle-256-prd.md` (substantive accountability 톤). 메타-rule 3 신규 (micro mode ≤ 30% / sim baseline 매 20 cycle / STATUS 자축 톤 M===N only). EternalCodex 폐기 → Lifebook supersede.
-  - 진행률 = **70/100** (cycle 305 = mid-point milestone 도달). vitest 1553 → 1596. STATUS trajectory = `STATUS-2026-05-28-cycle-260/270/280/290/300.md`. **HeroDecisionAI mega-phase 5/5 책임 모두 production-consumed ★** (α chooseDestination + 16/16 trait wire + β chooseSkillId + γ shouldRetreat + δ chooseTargetEnemyId + ε chooseEncounterNode). cycle 256 critic #2 의 4 책임 부재 finding 의 완전 회수. saint root cause lever (MERCIFUL_DRIFT 3→2) 진입, cycle 316 sim 검증 대기. 다음 = cycle 310 (sixth 10-cycle STATUS).
+  - 진행률 = **78/100** (cycle 305 = mid-point milestone 도달). vitest 1553 → 1596. STATUS trajectory = `STATUS-2026-05-28-cycle-260/270/280/290/300.md`. **HeroDecisionAI mega-phase 5/5 책임 모두 production-consumed ★** (α chooseDestination + 16/16 trait wire + β chooseSkillId + γ shouldRetreat + δ chooseTargetEnemyId + ε chooseEncounterNode). cycle 256 critic #2 의 4 책임 부재 finding 의 완전 회수. saint root cause lever (MERCIFUL_DRIFT 3→2) 진입, cycle 316 sim 검증 대기. 다음 = cycle 310 (sixth 10-cycle STATUS).
 
 ## Cycle log
 
@@ -176,6 +176,7 @@
 - Cycle 213 (2026-05-28): NARRATION_TONE_LABEL_KR 1-5자 invariant. category: balance. vitest 1540 (+1). v3 13/100 (사용자 새 100-cycle 의 58/100).
 - Cycle 215 (2026-05-28): wire-chain-pattern.md 의 HeroDecisionAI mega-phase 예시에 cycle 209 의 wire 진입점 reference. mega-phase 진입 시 단계 5 가 1-line wire 로 단축됨 박제. category: chore. v3 15/100 (사용자 새 100-cycle 의 60/100, **3/5 완료**).
 - Cycle 219 (2026-05-28): `getSeasonModifierCount()` helper — catalog 총 개수 통일 진입점. category: system. typecheck PASS. v3 19/100 (사용자 새 100-cycle 의 64/100).
+- Cycle 334 (2026-05-28): INDEX header 70 → 78. category: chore. v3 100/100 (79/100).
 - Cycle 333 (2026-05-28): poison invariant. category: system. vitest 1603 → 1604. v3 100/100 (78/100).
 - Cycle 332 (2026-05-28): poison atkMul 1.10 → 1.15 + hpMul 0.98 → 1.00. category: balance. v3 100/100 (77/100).
 - Cycle 331 (2026-05-28): mentor death variant 3 → 4 (book page motif). category: narrative. v3 100/100 (76/100).
