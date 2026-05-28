@@ -121,6 +121,14 @@ export function MainMenu() {
         </button>
         <button
           type="button"
+          data-testid="btn-bestiary"
+          onClick={() => setScreen('bestiary')}
+          style={menuBtnStyle}
+        >
+          📖 몬스터 도감
+        </button>
+        <button
+          type="button"
           data-testid="btn-settings"
           onClick={() => setScreen('settings')}
           style={{ ...menuBtnStyle, opacity: 0.5 }}

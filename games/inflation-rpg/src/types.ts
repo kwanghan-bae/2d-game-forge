@@ -407,7 +407,8 @@ export type Screen =
   | 'overworld'
   | 'cycle-result-v2'
   | 'settings'
-  | 'saga-gallery';
+  | 'saga-gallery'
+  | 'bestiary';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
