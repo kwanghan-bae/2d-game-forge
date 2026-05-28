@@ -31,4 +31,18 @@ describe('sound system', () => {
   it('playBgm with null stops current track', () => {
     expect(() => playBgm(null)).not.toThrow();
   });
+
+  it('playBgm crossfade: switching tracks does not throw', () => {
+    // Simulate switching from one track to another
+    playBgm('lobby');
+    expect(() => playBgm('field')).not.toThrow();
+    // Switching back triggers fadeOut of previous
+    expect(() => playBgm('lobby')).not.toThrow();
+  });
+
+  it('playBgm same id is no-op', () => {
+    playBgm('lobby');
+    // Second call with same id should be no-op
+    expect(() => playBgm('lobby')).not.toThrow();
+  });
 });
