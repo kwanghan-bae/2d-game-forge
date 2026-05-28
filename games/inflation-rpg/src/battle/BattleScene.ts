@@ -85,7 +85,7 @@ export class BattleScene extends Phaser.Scene {
   // floor 기반 monsterLevel 을 전투 내내 캐시. create() 에서 항상 셋.
   private cachedMonsterLevel = 0;
   private effectsState: EffectsState = createEffectsState();
-  private passiveBonuses: PassiveBonuses = { statBoostMult: 1, critRateBonus: 0, dodgeRateBonus: 0, expBoostMult: 1, goldBoostMult: 1, bossDamageMult: 1, firstStrikeMult: 1 };
+  private passiveBonuses: PassiveBonuses = { statBoostMult: 1, critRateBonus: 0, dodgeRateBonus: 0, expBoostMult: 1, goldBoostMult: 1, bossDamageMult: 1, firstStrikeMult: 1, itemFindMult: 1, beastDamageMult: 1, lifeConversion: 0 };
   private isFirstRound = true;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
@@ -227,7 +227,9 @@ export class BattleScene extends Phaser.Scene {
     const lucMetaMult = getMythicFlatMult(meta, 'luc') * getRelicFlatMult(meta, 'luc');
 
     const pb = this.passiveBonuses;
-    const playerATK = Math.floor(calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult) * pb.statBoostMult);
+    const baseATK = Math.floor(calcFinalStat('atk', run.allocated.atk, char.statMultipliers.atk, allEquipped, baseAbility, charLevelMult, ascTierMult, ascTreeAtkMult, atkMetaMult) * pb.statBoostMult);
+    const playerHP = this.cachedPlayerHpMax;
+    const playerATK = baseATK + Math.floor(playerHP * pb.lifeConversion);
     const playerDEF = Math.floor(calcFinalStat('def', run.allocated.def, char.statMultipliers.def, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, defMetaMult) * pb.statBoostMult);
     const playerAGI = Math.floor(calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, agiMetaMult) * pb.statBoostMult);
     const playerLUC = Math.floor(calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, lucMetaMult) * pb.statBoostMult);
@@ -247,6 +249,7 @@ export class BattleScene extends Phaser.Scene {
 
     // Passive damage multipliers
     if (this.isBoss) totalDmg = Math.floor(totalDmg * pb.bossDamageMult);
+    if (!this.isBoss) totalDmg = Math.floor(totalDmg * pb.beastDamageMult);
     if (this.isFirstRound) {
       totalDmg = Math.floor(totalDmg * pb.firstStrikeMult);
       this.isFirstRound = false;
@@ -326,7 +329,7 @@ export class BattleScene extends Phaser.Scene {
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));
       if (!this.isBoss) {
         // Non-boss: DR = round(level * 0.5), counter increments owned by incrementDungeonKill
-        useGameStore.getState().incrementDungeonKill(run.level);
+        useGameStore.getState().incrementDungeonKill(run.level, pb.itemFindMult);
         if (this.currentMonsterId) {
           useGameStore.getState().trackKill(this.currentMonsterId);
         }

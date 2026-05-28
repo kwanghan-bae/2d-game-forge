@@ -9,6 +9,9 @@ export interface PassiveBonuses {
   goldBoostMult: number;
   bossDamageMult: number;
   firstStrikeMult: number;
+  itemFindMult: number;
+  beastDamageMult: number;
+  lifeConversion: number;  // fraction of maxHP added to ATK
 }
 
 const DEFAULT_BONUSES: PassiveBonuses = {
@@ -19,6 +22,9 @@ const DEFAULT_BONUSES: PassiveBonuses = {
   goldBoostMult: 1,
   bossDamageMult: 1,
   firstStrikeMult: 1,
+  itemFindMult: 1,
+  beastDamageMult: 1,
+  lifeConversion: 0,
 };
 
 export function getPassiveBonuses(characterId: string): PassiveBonuses {
@@ -49,6 +55,15 @@ export function getPassiveBonuses(characterId: string): PassiveBonuses {
       break;
     case 'first_strike':
       bonuses.firstStrikeMult = p.value;
+      break;
+    case 'item_find':
+      bonuses.itemFindMult = p.value;
+      break;
+    case 'beast_damage':
+      bonuses.beastDamageMult = p.value;
+      break;
+    case 'life_conversion':
+      bonuses.lifeConversion = p.value;
       break;
   }
 

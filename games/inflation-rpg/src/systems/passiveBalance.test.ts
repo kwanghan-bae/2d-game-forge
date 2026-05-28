@@ -34,6 +34,16 @@ function estimatePowerMult(characterId: string): number {
   power *= (1 + (pb.expBoostMult - 1) * 0.3);
   power *= (1 + (pb.goldBoostMult - 1) * 0.2);
 
+  // Item find: DR boost accelerates gear progression, ~0.25 weight
+  power *= (1 + (pb.itemFindMult - 1) * 0.25);
+
+  // Beast damage: non-boss mob damage boost, weighted 70% (70% encounters are non-boss)
+  power *= (1 + (pb.beastDamageMult - 1) * 0.7);
+
+  // Life conversion: HP→ATK fraction, assume avg playerHP ~500 at mid-game vs base ATK ~100
+  // Effective ATK boost ≈ lifeConversion * 5 (500/100). Very rough heuristic.
+  power *= (1 + pb.lifeConversion * 5);
+
   return power;
 }
 

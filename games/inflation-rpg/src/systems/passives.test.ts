@@ -53,5 +53,23 @@ describe('getPassiveBonuses', () => {
     expect(b.goldBoostMult).toBe(1);
     expect(b.bossDamageMult).toBe(1);
     expect(b.firstStrikeMult).toBe(1);
+    expect(b.itemFindMult).toBe(1);
+    expect(b.beastDamageMult).toBe(1);
+    expect(b.lifeConversion).toBe(0);
+  });
+
+  it('returns item_find for mudang', () => {
+    const b = getPassiveBonuses('mudang');
+    expect(b.itemFindMult).toBe(1.2);
+  });
+
+  it('returns life_conversion for choeui', () => {
+    const b = getPassiveBonuses('choeui');
+    expect(b.lifeConversion).toBe(0.05);
+  });
+
+  it('returns beast_damage for tiger_hunter', () => {
+    const b = getPassiveBonuses('tiger_hunter');
+    expect(b.beastDamageMult).toBe(1.5);
   });
 });

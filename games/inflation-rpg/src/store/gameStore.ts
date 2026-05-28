@@ -194,7 +194,7 @@ interface GameStore {
   setCurrentFloor: (floor: number) => void;
   advanceStage: () => void;
   resetDungeon: () => void;
-  incrementDungeonKill: (monsterLevel: number) => void;
+  incrementDungeonKill: (monsterLevel: number, itemFindMult?: number) => void;
   incrementQuestProgress: (questId: string, by?: number) => void;
   completeQuest: (questId: string) => void;
   trackKill: (monsterId: string) => void;
@@ -925,14 +925,14 @@ export const useGameStore = create<GameStore>()(
         },
       })),
 
-      incrementDungeonKill: (monsterLevel) => set((s) => {
+      incrementDungeonKill: (monsterLevel, itemFindMult = 1) => set((s) => {
         const dungLv = s.meta.ascTree.dungeon_currency;
         // DR has no ascTree drop node; applyMetaDropMult adds mythic+relic on top of dungLv scaling.
-        const drGained = applyMetaDropMult(
+        const drGained = Math.floor(applyMetaDropMult(
           applyDropMult(Math.max(1, Math.round(monsterLevel * 0.5)), 0.10, dungLv),
           'dr',
           s.meta,
-        );
+        ) * itemFindMult);
         return {
           run: {
             ...s.run,
