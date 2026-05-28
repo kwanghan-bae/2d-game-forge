@@ -12,7 +12,7 @@ import { ScreenTransition } from './components/ScreenTransition';
 import { getStoryById } from './data/stories';
 import { getCharacterReaction } from './data/characterReactions';
 import { getCharacterById } from './data/characters';
-import { playBgm, bgmIdForScreen } from './systems/sound';
+import { playBgm, playSfx, bgmIdForScreen } from './systems/sound';
 import { applyRealmAccent } from './systems/realmAccent';
 import type { StartGameConfig } from './types';
 

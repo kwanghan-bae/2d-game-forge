@@ -11,18 +11,15 @@ function dpsEfficiency(skill: ActiveSkill): number {
   const e = skill.effect;
   switch (e.type) {
     case 'multi_hit':
-      return (e.multiplier * e.targets) / skill.cooldownSec;
+      return (e.multiplier! * e.targets!) / skill.cooldownSec;
     case 'aoe':
-      return (e.multiplier * e.targets) / skill.cooldownSec;
+      return (e.multiplier! * e.targets!) / skill.cooldownSec;
     case 'execute':
-      // Execute value = roughly 2x single hit equivalent scaled by threshold
-      return (2 / e.executeThreshold) / skill.cooldownSec;
+      return (2 / e.executeThreshold!) / skill.cooldownSec;
     case 'heal':
-      // Heal value = healPercent as a "virtual damage prevented" equivalent
-      return (e.healPercent / 10) / skill.cooldownSec;
+      return (e.healPercent! / 10) / skill.cooldownSec;
     case 'buff':
-      // Buff value = buffPercent * duration / cooldown (uptime-adjusted power)
-      return (e.buffPercent * e.buffDurationSec / 100) / skill.cooldownSec;
+      return (e.buffPercent! * e.buffDurationSec! / 100) / skill.cooldownSec;
     default:
       return 0;
   }
