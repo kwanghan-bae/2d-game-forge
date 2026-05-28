@@ -22,7 +22,7 @@ export const HERO_SKILLS: readonly HeroSkill[] = [
 
   // Ranged / archer-ish
   { id: 'aim',             nameKR: '저격',         description: '정확한 일격',        atkMul: 1.15, hpMul: 0.98, jobIds: ['archer', 'ranger'] },
-  { id: 'multishot',       nameKR: '연사',         description: '연속 화살',          atkMul: 1.12, hpMul: 1.00, jobIds: ['archer', 'ranger'] },
+  { id: 'multishot',       nameKR: '연사',         description: '연속 화살',          atkMul: 1.20, hpMul: 1.00, jobIds: ['archer', 'ranger'] },
   { id: 'wind_walk',       nameKR: '바람걸음',     description: '회피 강화',          atkMul: 1.05, hpMul: 1.08, jobIds: ['archer', 'ranger', 'rogue'] },
 
   // Stealth / rogue-ish
