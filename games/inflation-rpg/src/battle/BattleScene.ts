@@ -482,6 +482,11 @@ export class BattleScene extends Phaser.Scene {
     // Phase Realms — apply damage to run.playerHp and check defeat.
     useGameStore.getState().applyDamageToPlayer(finalDmgTaken);
     playSfx('player-hit');
+    // Hero hit flash — red tint for 100ms
+    if (this.heroSprite) {
+      this.heroSprite.setTint(0xff4444);
+      this.time.delayedCall(100, () => this.heroSprite?.clearTint());
+    }
     const runAfterHit = useGameStore.getState().run;
     const currentPlayerHp = runAfterHit?.playerHp ?? 0;
 
