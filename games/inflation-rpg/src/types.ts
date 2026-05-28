@@ -34,7 +34,8 @@ export interface PassiveSkill {
   id: string;
   nameKR: string;
   description: string;
-  effect: 'stat_boost' | 'beast_damage' | 'item_find' | 'life_conversion' | 'bp_ring';
+  effect: 'stat_boost' | 'beast_damage' | 'item_find' | 'life_conversion' | 'bp_ring'
+    | 'crit_rate' | 'dodge_rate' | 'exp_boost' | 'gold_boost' | 'boss_damage' | 'first_strike';
   value: number;
 }
 
