@@ -414,6 +414,7 @@ export interface Story {
   type: StoryType;
   refId: string;     // regionId or bossId
   textKR: string;
+  reactions?: Partial<Record<string, string>>;  // characterId → reaction text
 }
 
 export interface StartGameConfig {
