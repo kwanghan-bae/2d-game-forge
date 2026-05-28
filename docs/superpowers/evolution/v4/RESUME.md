@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 5 | Era: 1 | Target: 100
+- Cycle: 6 | Era: 1 | Target: 100
 - Vitest: 1623 | E2E: 60 | Persist: v14
-- Last commit: aa6deee
-- Phase: DONE → next cycle 6, Phase A
-- Category lock: visual×1 balance×1 system×1 narrative×1 sound×1
-- Visual maturity: 5/30
+- Last commit: 41e0749
+- Phase: DONE → next cycle 7, Phase A
+- Category lock: visual×2 balance×1 system×1 narrative×1 sound×1
+- Visual maturity: 6/30
 - Carry-over: (empty)
-- Budget: visual 1/5 sys 1/5 narr 1/5 sound 1/5 balance 1/5
+- Budget: visual 2/6 sys 1/6 narr 1/6 sound 1/6 balance 1/6
 
 ## 비주얼 성숙도 상세 (0-3 × 10영역)
 
@@ -18,7 +18,7 @@
 | 이펙트 | 1 | hit flash (tint + scale punch) |
 | 배경 | 1 | zone rectangle + sprite landmark |
 | 아이콘 | 1 | Kenney UI icons 기본 |
-| 전환 | 0 | 화면 전환 애니메이션 없음 |
+| 전환 | 1 | 300ms opacity fade (ScreenTransition) |
 | 폰트 | 0 | 시스템 폰트만 |
 | BGM | 0 | 3곡 placeholder급 |
 | SFX | 0 | 12개 기본 효과음 |
