@@ -203,6 +203,12 @@ export class BattleScene extends Phaser.Scene {
     );
     this.enemySprite = createDungeonSprite(this, 270, 200, enemyFrame, this.isBoss ? 5 : 4);
 
+    // Boss entrance SFX + screen flash
+    if (this.isBoss) {
+      playSfx('boss-appear');
+      this.cameras.main.flash(300, 255, 200, 100, false);
+    }
+
     void this.enemyText; void this.hpBarBg;
     this.combatTimer = this.time.addEvent({ delay: 600, callback: this.doRound, callbackScope: this, loop: true });
 
