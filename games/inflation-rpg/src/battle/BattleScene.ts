@@ -324,7 +324,11 @@ export class BattleScene extends Phaser.Scene {
 
     const logParts: string[] = [];
     if (combo) logParts.push(`${hits}연타! `);
-    if (crit) { logParts.push('치명타! '); playSfx('crit'); }
+    if (crit) {
+      logParts.push('치명타! ');
+      playSfx('crit');
+      this.cameras.main.shake(150, 0.01);
+    }
     logParts.push(`${totalEnemyDmg.toLocaleString()} 데미지`);
     if (attackProcs.magicBurstDamage > 0) logParts.push(' (마법 폭발!)');
     this.logText?.setText(logParts.join(''));
