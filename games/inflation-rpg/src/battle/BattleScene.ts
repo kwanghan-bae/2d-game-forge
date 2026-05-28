@@ -34,6 +34,7 @@ import { computeMaxHp } from '../systems/playerHp';
 import { preloadDungeonSheet, createDungeonSprite } from '../sprites/spriteLoader';
 import { getHeroFrame, getMonsterFrame } from '../sprites/spriteFrames';
 import { getPassiveBonuses, type PassiveBonuses } from '../systems/passives';
+import { getAtmosphereText } from '../data/realmAtmosphere';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -168,6 +169,13 @@ export class BattleScene extends Phaser.Scene {
     this.logText = this.add.text(16, 64, '', { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
     this.killCount = 0;
     this.killCountText = this.add.text(336, 16, 'Kill: 0', { fontSize: '14px', color: '#f0c060' }).setOrigin(1, 0);
+
+    // Realm atmosphere flavor text (fades out after 2s)
+    if (run.currentRealmId) {
+      const atmoText = getAtmosphereText(run.currentRealmId);
+      const atmo = this.add.text(180, 560, atmoText, { fontSize: '11px', color: '#ccccaa', fontStyle: 'italic' }).setOrigin(0.5);
+      this.tweens.add({ targets: atmo, alpha: 0, delay: 2000, duration: 1000 });
+    }
 
     // Entity sprites — hero (left) and enemy (right)
     const heroFrame = getHeroFrame(run.characterId);
