@@ -82,4 +82,11 @@ describe('hero skills catalog', () => {
   it('backstab atkMul ≥ 1.25 (cycle 328)', () => {
     expect(findSkillById('backstab')!.atkMul).toBeGreaterThanOrEqual(1.25);
   });
+
+  // Cycle 333: poison polish (cycle 332).
+  it('poison atkMul ≥ 1.15 + hpMul ≥ 1.00 (cycle 332)', () => {
+    const s = findSkillById('poison')!;
+    expect(s.atkMul).toBeGreaterThanOrEqual(1.15);
+    expect(s.hpMul).toBeGreaterThanOrEqual(1.00);
+  });
 });
