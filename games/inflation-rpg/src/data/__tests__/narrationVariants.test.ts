@@ -447,4 +447,13 @@ describe('Cycle 256 F1 — NarrationVariants.npcDeath kind-aware 분기', () => 
       expect(r.length).toBeGreaterThan(5);
     }
   });
+
+  // Cycle 318: family_parent pool ≥ 3 (cycle 317 wire 가드).
+  it('family_parent pool ≥ 3 distinct outputs', () => {
+    const outs = new Set<string>();
+    for (let seed = 0; seed < 5; seed++) {
+      outs.add(NarrationVariants.npcDeath({ age: 50, kind: 'family_parent', realm: null }, seed));
+    }
+    expect(outs.size).toBeGreaterThanOrEqual(3);
+  });
 });
