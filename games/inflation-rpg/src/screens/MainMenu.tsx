@@ -129,6 +129,14 @@ export function MainMenu() {
         </button>
         <button
           type="button"
+          data-testid="btn-stats"
+          onClick={() => setScreen('stats')}
+          style={menuBtnStyle}
+        >
+          📊 통계
+        </button>
+        <button
+          type="button"
           data-testid="btn-settings"
           onClick={() => setScreen('settings')}
           style={{ ...menuBtnStyle, opacity: 0.5 }}

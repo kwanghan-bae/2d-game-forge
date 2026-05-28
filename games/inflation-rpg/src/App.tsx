@@ -5,6 +5,7 @@ import { CyclePrepV2 } from './screens/CyclePrepV2';
 import { OverworldRunner } from './screens/OverworldRunner';
 import { CycleResultV2 } from './screens/CycleResultV2';
 import { BestiaryScreen } from './screens/BestiaryScreen';
+import { StatsScreen } from './screens/StatsScreen';
 import { StoryModal } from './components/StoryModal';
 import { SaveIndicator } from './components/SaveIndicator';
 import { ScreenTransition } from './components/ScreenTransition';
@@ -79,6 +80,7 @@ export function App({ config }: AppProps) {
           </div>
         )}
         {screen === 'bestiary' && <BestiaryScreen />}
+        {screen === 'stats' && <StatsScreen />}
       </ScreenTransition>
       {story && (
         <StoryModal
