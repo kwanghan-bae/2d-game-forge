@@ -25,6 +25,7 @@ import { rollMythicDrop, awardMilestoneMythic, equipMythic, unequipMythic } from
 import { MILESTONE_TIERS } from '../data/mythics';
 import { EMPTY_COMPASS_OWNED } from '../data/compass';
 import { DUNGEONS } from '../data/dungeons';
+import { getRegionEnterStory } from '../data/stories';
 import {
   awardMiniBossCompass as awardMiniBossCompassSystem,
   awardMajorBossCompass as awardMajorBossCompassSystem,
@@ -901,8 +902,14 @@ export const useGameStore = create<GameStore>()(
           };
         }),
 
-      selectDungeon: (dungeonId) =>
-        set((s) => ({ run: { ...s.run, currentDungeonId: dungeonId } })),
+      selectDungeon: (dungeonId) => {
+        const state = get();
+        if (dungeonId && !state.meta.dungeonProgress[dungeonId]) {
+          const story = getRegionEnterStory(dungeonId);
+          if (story) set({ pendingStoryId: story.id });
+        }
+        set((s) => ({ run: { ...s.run, currentDungeonId: dungeonId } }));
+      },
       setCurrentFloor: (floor) =>
         set((s) => ({ run: { ...s.run, currentFloor: floor } })),
 

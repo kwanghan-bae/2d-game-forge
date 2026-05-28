@@ -4,6 +4,10 @@ import { MainMenu } from './screens/MainMenu';
 import { CyclePrepV2 } from './screens/CyclePrepV2';
 import { OverworldRunner } from './screens/OverworldRunner';
 import { CycleResultV2 } from './screens/CycleResultV2';
+import { StoryModal } from './components/StoryModal';
+import { getStoryById } from './data/stories';
+import { getCharacterReaction } from './data/characterReactions';
+import { getCharacterById } from './data/characters';
 import type { StartGameConfig } from './types';
 
 interface AppProps {
@@ -12,7 +16,15 @@ interface AppProps {
 
 export function App({ config }: AppProps) {
   const screen = useGameStore((s) => s.screen);
+  const pendingStoryId = useGameStore((s) => s.pendingStoryId);
+  const characterId = useGameStore((s) => s.run?.characterId);
   const setScreen = useGameStore.getState().setScreen;
+
+  const story = pendingStoryId ? getStoryById(pendingStoryId) : null;
+  const char = characterId ? getCharacterById(characterId) : null;
+  const reaction = (story && characterId)
+    ? getCharacterReaction(characterId, story.type as 'region_enter' | 'boss_defeat', story.id)
+    : null;
 
   return (
     <div className="forge-ui-root" data-assets-base={config.assetsBasePath}>
@@ -38,6 +50,14 @@ export function App({ config }: AppProps) {
           <p>이 화면은 V1b 에서 구현됩니다.</p>
           <button type="button" onClick={() => setScreen('main-menu')}>돌아가기</button>
         </div>
+      )}
+      {story && (
+        <StoryModal
+          title={story.type === 'boss_defeat' ? '승리!' : '새로운 지역'}
+          emoji={char?.emoji}
+          textKR={reaction ? `${story.textKR}\n\n${char?.nameKR ?? ''}: "${reaction}"` : story.textKR}
+          onClose={() => useGameStore.getState().setPendingStory(null)}
+        />
       )}
     </div>
   );
