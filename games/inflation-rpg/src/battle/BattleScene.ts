@@ -31,6 +31,8 @@ import { getMythicFlatMult, getMythicXpMult, getMythicProcs, getMythicReviveCoun
 import { getRelicFlatMult, getRelicXpMult, relicNoDeathLoss, relicReviveCount } from '../systems/relics';
 import type { EffectsState } from '../types';
 import { computeMaxHp } from '../systems/playerHp';
+import { preloadDungeonSheet, createDungeonSprite } from '../sprites/spriteLoader';
+import { getHeroFrame, getMonsterFrame } from '../sprites/spriteFrames';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -83,8 +85,15 @@ export class BattleScene extends Phaser.Scene {
   private cachedMonsterLevel = 0;
   private effectsState: EffectsState = createEffectsState();
 
+  private heroSprite?: Phaser.GameObjects.Sprite;
+  private enemySprite?: Phaser.GameObjects.Sprite;
+
   constructor() {
     super({ key: 'BattleScene' });
+  }
+
+  preload() {
+    preloadDungeonSheet(this);
   }
 
   init(data: BattleCallbacks) {
@@ -149,6 +158,15 @@ export class BattleScene extends Phaser.Scene {
     this.hpBarBg = this.add.rectangle(16, 44, 320, 10, theme.panel).setOrigin(0);
     this.hpBarFill = this.add.rectangle(16, 44, 320, 10, theme.hp).setOrigin(0);
     this.logText = this.add.text(16, 64, '', { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
+
+    // Entity sprites — hero (left) and enemy (right)
+    const heroFrame = getHeroFrame(run.characterId);
+    this.heroSprite = createDungeonSprite(this, 90, 250, heroFrame, 4);
+    const enemyFrame = getMonsterFrame(
+      this.isBoss ? (this.bossId ?? '') : this.currentMonsterId,
+      this.isBoss,
+    );
+    this.enemySprite = createDungeonSprite(this, 270, 200, enemyFrame, this.isBoss ? 5 : 4);
 
     void this.enemyText; void this.hpBarBg;
     this.combatTimer = this.time.addEvent({ delay: 600, callback: this.doRound, callbackScope: this, loop: true });
@@ -231,6 +249,20 @@ export class BattleScene extends Phaser.Scene {
     });
     const totalEnemyDmg = totalDmg + attackProcs.magicBurstDamage;
     this.enemyHP = Math.max(0, this.enemyHP - totalEnemyDmg);
+
+    // Hit VFX — flash enemy sprite white + scale punch
+    if (this.enemySprite) {
+      this.enemySprite.setTintFill(0xffffff);
+      this.time.delayedCall(80, () => this.enemySprite?.clearTint());
+      this.tweens.add({
+        targets: this.enemySprite,
+        scaleX: (this.isBoss ? 5 : 4) * 1.2,
+        scaleY: (this.isBoss ? 5 : 4) * 1.2,
+        duration: 60,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+      });
+    }
 
     // Phase Realms — apply lifesteal heal to run.playerHp.
     if (attackProcs.lifestealHeal > 0) {

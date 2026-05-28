@@ -13,6 +13,9 @@ import { generateMapLayout, GRID_H, GRID_W, TILE_PX, type MapLayout } from './ma
 import type { RealmId, SeasonId } from '../types';
 import { seasonBgTint } from '../season/SeasonState';
 import { pickRespawnPlacement } from './respawn';
+import { preloadDungeonSheet, createDungeonSprite } from '../sprites/spriteLoader';
+import { getHeroFrame, MONSTER_FRAMES } from '../sprites/spriteFrames';
+import { useGameStore } from '../store/gameStore';
 
 export { generateMapLayout, GRID_H, GRID_W };
 export type { MapLayout };
@@ -36,8 +39,8 @@ export class OverworldScene extends Phaser.Scene {
   private ai!: HeroDecisionAI;
   private onEvent!: (e: OverworldEvent) => void;
   private layout!: MapLayout;
-  private heroSprite!: Phaser.GameObjects.Text;
-  private landmarkSprites: Map<string, Phaser.GameObjects.Text> = new Map();
+  private heroSprite!: Phaser.GameObjects.Sprite;
+  private landmarkSprites: Map<string, Phaser.GameObjects.Sprite | Phaser.GameObjects.Text> = new Map();
   private currentPath: { x: number; y: number }[] = [];
   private currentTarget: PlacedLandmark | null = null;
   private pathfinder!: Pathfinder;
@@ -157,6 +160,10 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  preload() {
+    preloadDungeonSheet(this);
+  }
+
   create() {
     // V3-H F6: apply season-based bg tint from the start (not hardcoded dark).
     this.cameras.main.setBackgroundColor(seasonBgTint(this.currentSeason));
@@ -178,34 +185,39 @@ export class OverworldScene extends Phaser.Scene {
       }
     }
 
-    // Render landmarks as emoji text
+    // Render landmarks — use sprites for monster landmarks, text for others
     for (const lm of this.layout.landmarks) {
-      const text = this.add.text(
-        lm.gridX * TILE_PX + TILE_PX / 2,
-        lm.gridY * TILE_PX + TILE_PX / 2,
-        lm.type.emoji,
-        { fontSize: '20px' },
-      ).setOrigin(0.5);
-      this.landmarkSprites.set(lm.instanceId, text);
+      const cx = lm.gridX * TILE_PX + TILE_PX / 2;
+      const cy = lm.gridY * TILE_PX + TILE_PX / 2;
+      if (lm.type.kind === 'enemy' || lm.type.kind === 'boss') {
+        const frameIdx = lm.type.kind === 'boss'
+          ? MONSTER_FRAMES.boss_demon
+          : MONSTER_FRAMES.skeleton;
+        const sprite = createDungeonSprite(this, cx, cy, frameIdx, 2);
+        sprite.setOrigin(0.5);
+        this.landmarkSprites.set(lm.instanceId, sprite);
+      } else {
+        const text = this.add.text(cx, cy, lm.type.emoji, { fontSize: '20px' }).setOrigin(0.5);
+        this.landmarkSprites.set(lm.instanceId, text);
+      }
     }
 
-    // Hero spawn — use hero entity's gridX/gridY which cycleSliceV2.start()
-    // sets via realmRotation. Cycle-15: rotated realms spawn at
-    // `realm.columnRange[0] + 1`, not the legacy base village. Fall back to
-    // base village (col 1) only if the hero hasn't been positioned yet
-    // (gridX === 0, the default before snapshot/rotation).
+    // Hero spawn
     const spawnX = this.hero.gridX > 0
       ? this.hero.gridX
       : this.layout.landmarks.find(l => l.type.kind === 'village')!.gridX;
     const spawnY = this.hero.gridX > 0
       ? this.hero.gridY
       : this.layout.landmarks.find(l => l.type.kind === 'village')!.gridY;
-    this.heroSprite = this.add.text(
+    const heroFrame = getHeroFrame(useGameStore.getState().run.characterId ?? '');
+    this.heroSprite = createDungeonSprite(
+      this,
       spawnX * TILE_PX + TILE_PX / 2,
       spawnY * TILE_PX + TILE_PX / 2,
-      this.hero.emoji,
-      { fontSize: '24px' },
-    ).setOrigin(0.5).setDepth(10);
+      heroFrame,
+      2,
+    );
+    this.heroSprite.setOrigin(0.5).setDepth(10);
 
     // V3-D: camera follow hero. viewport = 640x384, world = 3840x384.
     this.cameras.main.startFollow(this.heroSprite, true, 0.1, 0.1);
