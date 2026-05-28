@@ -89,4 +89,9 @@ describe('hero skills catalog', () => {
     expect(s.atkMul).toBeGreaterThanOrEqual(1.15);
     expect(s.hpMul).toBeGreaterThanOrEqual(1.00);
   });
+
+  // Cycle 337: multishot polish (cycle 335).
+  it('multishot atkMul ≥ 1.20 (cycle 335)', () => {
+    expect(findSkillById('multishot')!.atkMul).toBeGreaterThanOrEqual(1.20);
+  });
 });
