@@ -65,4 +65,11 @@ describe('hero skills catalog', () => {
   it('cleave atkMul ≥ 1.12 (cycle 313 polish)', () => {
     expect(findSkillById('cleave')!.atkMul).toBeGreaterThanOrEqual(1.12);
   });
+
+  // Cycle 322: full warrior cluster invariant (strike + cleave + shield_wall hpMul).
+  it('warrior cluster: strike + cleave atkMul + shield_wall hpMul', () => {
+    expect(findSkillById('strike')!.atkMul).toBeGreaterThanOrEqual(1.15);
+    expect(findSkillById('cleave')!.atkMul).toBeGreaterThanOrEqual(1.12);
+    expect(findSkillById('shield_wall')!.hpMul).toBeGreaterThan(1.0);
+  });
 });
