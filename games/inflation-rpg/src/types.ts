@@ -408,7 +408,8 @@ export type Screen =
   | 'cycle-result-v2'
   | 'settings'
   | 'saga-gallery'
-  | 'bestiary';
+  | 'bestiary'
+  | 'stats';
 
 export type StoryType = 'region_enter' | 'boss_defeat';
 
