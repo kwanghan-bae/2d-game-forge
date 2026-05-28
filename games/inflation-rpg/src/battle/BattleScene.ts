@@ -3,7 +3,7 @@ import { resolveForgeTheme } from '@forge/core';
 import { useGameStore } from '../store/gameStore';
 import { calcFinalStat, calcDamageReduction, calcCritChance } from '../systems/stats';
 import { applyExpGain } from '../systems/experience';
-import { playSfx } from '../systems/sound';
+import { playSfx, playBgm } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedInstances } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
@@ -106,6 +106,7 @@ export class BattleScene extends Phaser.Scene {
   create() {
     const theme = resolveForgeTheme();
     const { run } = useGameStore.getState();
+    playBgm('battle');
 
     const bg = this.add.rectangle(0, 0, 360, 600, theme.bg).setOrigin(0);
     void bg;
@@ -284,7 +285,7 @@ export class BattleScene extends Phaser.Scene {
 
     const logParts: string[] = [];
     if (combo) logParts.push(`${hits}연타! `);
-    if (crit) logParts.push('치명타! ');
+    if (crit) { logParts.push('치명타! '); playSfx('crit'); }
     logParts.push(`${totalEnemyDmg.toLocaleString()} 데미지`);
     if (attackProcs.magicBurstDamage > 0) logParts.push(' (마법 폭발!)');
     this.logText?.setText(logParts.join(''));
@@ -400,6 +401,7 @@ export class BattleScene extends Phaser.Scene {
     // Passive dodge — skip enemy attack entirely
     if (this.passiveBonuses.dodgeRateBonus > 0 && Math.random() < this.passiveBonuses.dodgeRateBonus) {
       this.logText?.setText('회피!');
+      playSfx('dodge');
       return;
     }
     const debuffMult = getDebuffStatMultiplier(this.effectsState, 'enemy');
@@ -550,6 +552,10 @@ export class BattleScene extends Phaser.Scene {
       duration: 800,
       onComplete: () => text.destroy(),
     });
+  }
+
+  shutdown() {
+    playBgm('field');
   }
 
 }

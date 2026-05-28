@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
 import { MainMenu } from './screens/MainMenu';
 import { CyclePrepV2 } from './screens/CyclePrepV2';
@@ -8,6 +8,7 @@ import { StoryModal } from './components/StoryModal';
 import { getStoryById } from './data/stories';
 import { getCharacterReaction } from './data/characterReactions';
 import { getCharacterById } from './data/characters';
+import { playBgm, bgmIdForScreen } from './systems/sound';
 import type { StartGameConfig } from './types';
 
 interface AppProps {
@@ -19,6 +20,10 @@ export function App({ config }: AppProps) {
   const pendingStoryId = useGameStore((s) => s.pendingStoryId);
   const characterId = useGameStore((s) => s.run?.characterId);
   const setScreen = useGameStore.getState().setScreen;
+
+  useEffect(() => {
+    playBgm(bgmIdForScreen(screen));
+  }, [screen]);
 
   const story = pendingStoryId ? getStoryById(pendingStoryId) : null;
   const char = characterId ? getCharacterById(characterId) : null;
