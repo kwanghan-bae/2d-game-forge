@@ -169,6 +169,7 @@ export const INITIAL_META: MetaState = {
   tokens: 0,
   tokensRedeemed: 0,
   seasonStartedAt: 0,
+  battleSpeed: 1,
   bestiary: {},
 };
 
@@ -207,6 +208,7 @@ interface GameStore {
   skipTutorial: () => void;
   restartTutorial: () => void;
   setVolumes: (music: number, sfx: number, muted: boolean) => void;
+  toggleBattleSpeed: () => void;
   gainDR: (amount: number) => void;
   gainEnhanceStones: (amount: number) => void;
   enhanceItem: (instanceId: string) => void;
@@ -1046,6 +1048,7 @@ export const useGameStore = create<GameStore>()(
       skipTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: true, tutorialStep: -1 } })),
       restartTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: false, tutorialStep: 0 } })),
       setVolumes: (music, sfx, muted) => set((s) => ({ meta: { ...s.meta, musicVolume: music, sfxVolume: sfx, muted } })),
+      toggleBattleSpeed: () => set((s) => ({ meta: { ...s.meta, battleSpeed: s.meta.battleSpeed === 1 ? 2 : 1 } })),
 
       gainDR: (amount) =>
         set((s) => ({ meta: { ...s.meta, dr: s.meta.dr + amount } })),

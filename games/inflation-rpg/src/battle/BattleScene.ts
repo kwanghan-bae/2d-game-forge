@@ -210,7 +210,8 @@ export class BattleScene extends Phaser.Scene {
     }
 
     void this.enemyText; void this.hpBarBg;
-    this.combatTimer = this.time.addEvent({ delay: 600, callback: this.doRound, callbackScope: this, loop: true });
+    const combatDelay = 600 / (useGameStore.getState().meta.battleSpeed ?? 1);
+    this.combatTimer = this.time.addEvent({ delay: combatDelay, callback: this.doRound, callbackScope: this, loop: true });
 
     this.effectsState = createEffectsState();
 
