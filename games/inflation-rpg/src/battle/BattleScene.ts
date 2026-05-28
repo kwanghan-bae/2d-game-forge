@@ -315,6 +315,7 @@ export class BattleScene extends Phaser.Scene {
         const story = getBossDefeatStory(this.bossId);
         if (story) useGameStore.getState().setPendingStory(story.id);
         playSfx('boss-victory');
+        this.showBossVictoryText();
       } else {
         playSfx('hit');
       }
@@ -567,6 +568,33 @@ export class BattleScene extends Phaser.Scene {
       displayWidth: Math.max(0, 320 * ratio),
       duration: 200,
       ease: 'Power2',
+    });
+  }
+
+  private showBossVictoryText() {
+    const titles = ['격파!', '승리!', '정복!', '토벌 완료!'];
+    const title = titles[Math.floor(Math.random() * titles.length)]!;
+    const text = this.add.text(180, 180, title, {
+      fontSize: '32px',
+      color: '#f0c060',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0).setScale(0.5);
+    this.tweens.add({
+      targets: text,
+      alpha: 1,
+      scale: 1.2,
+      duration: 400,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: text,
+          alpha: 0,
+          y: 140,
+          duration: 600,
+          delay: 500,
+          onComplete: () => text.destroy(),
+        });
+      },
     });
   }
 
