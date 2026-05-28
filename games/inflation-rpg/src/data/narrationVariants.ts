@@ -407,6 +407,7 @@ const NPC_DEATH_VARIANTS_BY_KIND: Record<NpcEntity['kind'], Array<(c: { age: num
   family_child: [
     (c) => `${c.age}세에 자식이 영웅보다 먼저 늙어 떠났다.`,
     (c) => `${c.age}세에 자식의 무덤 앞에서 영웅은 처음으로 자신의 영원을 저주했다.`,
+    (c) => `${c.age}세에 자식의 마지막 말은 "아버지/어머니는 늙지 않네요" 였다.`,
   ],
 };
 
