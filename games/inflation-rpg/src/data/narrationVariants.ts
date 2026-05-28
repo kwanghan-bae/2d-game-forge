@@ -394,6 +394,7 @@ const NPC_DEATH_VARIANTS_BY_KIND: Record<NpcEntity['kind'], Array<(c: { age: num
     (c) => `${c.age}세에 친구의 부고를 멀리서 들었다 — 이름은 끝내 몰랐다.`,
     (c) => `${c.age}세에 친구가 떠난 자리에 짧은 인사만 남았다.`,
     (c) => `${c.age}세에 친구의 술잔이 마지막으로 빈 채로 식어갔다.`,
+    (c) => `${c.age}세에 친구의 빈 자리에서 영웅은 자신만 늙지 않는 형벌을 다시 깨달았다.`,
   ],
   family_parent: [
     (c) => `${c.age}세에 부모가 자신보다 먼저 별이 되었다.`,
