@@ -77,4 +77,9 @@ describe('hero skills catalog', () => {
   it('shadow_step atkMul ≥ 1.18 (cycle 324)', () => {
     expect(findSkillById('shadow_step')!.atkMul).toBeGreaterThanOrEqual(1.18);
   });
+
+  // Cycle 329: backstab polish (cycle 328).
+  it('backstab atkMul ≥ 1.25 (cycle 328)', () => {
+    expect(findSkillById('backstab')!.atkMul).toBeGreaterThanOrEqual(1.25);
+  });
 });
