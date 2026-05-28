@@ -6,6 +6,7 @@ import { OverworldRunner } from './screens/OverworldRunner';
 import { CycleResultV2 } from './screens/CycleResultV2';
 import { BestiaryScreen } from './screens/BestiaryScreen';
 import { StoryModal } from './components/StoryModal';
+import { SaveIndicator } from './components/SaveIndicator';
 import { ScreenTransition } from './components/ScreenTransition';
 import { getStoryById } from './data/stories';
 import { getCharacterReaction } from './data/characterReactions';
@@ -75,6 +76,7 @@ export function App({ config }: AppProps) {
           onClose={() => useGameStore.getState().setPendingStory(null)}
         />
       )}
+      <SaveIndicator />
     </div>
   );
 }
