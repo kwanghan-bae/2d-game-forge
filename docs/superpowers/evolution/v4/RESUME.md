@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 25 | Era: 2 | Target: 100
+- Cycle: 26 | Era: 2 | Target: 100
 - Vitest: 1652 | E2E: 60 | Persist: v27
-- Last commit: c78c1c7
-- Phase: DONE → next cycle 26, Phase A
-- Category lock: vis×6 bal×5 sys×5 narr×5 sound×4
-- Visual maturity: 10/30
+- Last commit: 25b7f6e
+- Phase: DONE → next cycle 27, Phase A
+- Category lock: vis×7 bal×5 sys×5 narr×5 sound×4
+- Visual maturity: 11/30
 - Carry-over: (empty)
-- Budget: visual 6/25 sys 5/25 narr 5/25 sound 4/25 balance 5/25
+- Budget: visual 7/26 sys 5/26 narr 5/26 sound 4/26 balance 5/26
 
 ## 비주얼 성숙도 상세 (0-3 × 10영역)
 
@@ -18,7 +18,7 @@
 | 이펙트 | 3 | hit flash + HP bar tween + death particle burst |
 | 배경 | 1 | zone rectangle + sprite landmark |
 | 아이콘 | 1 | Kenney UI icons 기본 |
-| 전환 | 1 | 300ms opacity fade (ScreenTransition) |
+| 전환 | 2 | 300ms opacity + slide-up (12px translateY) |
 | 폰트 | 1 | Galmuri11 body + Galmuri14 heading (pixel bitmap) |
 | BGM | 0 | 3곡 placeholder급 |
 | SFX | 0 | 12개 기본 효과음 |
