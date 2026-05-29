@@ -349,7 +349,7 @@ export class BattleScene extends Phaser.Scene {
     this.totalDamageDealt += totalEnemyDmg;
     this.enemyHP = Math.max(0, this.enemyHP - totalEnemyDmg);
 
-    // Hit VFX — flash enemy sprite white + scale punch
+    // Hit VFX — flash enemy sprite white + scale punch + slash line
     if (this.enemySprite) {
       this.enemySprite.setTintFill(0xffffff);
       this.time.delayedCall(80, () => this.enemySprite?.clearTint());
@@ -361,6 +361,12 @@ export class BattleScene extends Phaser.Scene {
         yoyo: true,
         ease: 'Quad.easeOut',
       });
+      // Slash line effect
+      const slash = this.add.graphics();
+      const sx = 140, sy = 230, ex = 270 + (Math.random() - 0.5) * 20, ey = 180 + (Math.random() - 0.5) * 20;
+      slash.lineStyle(crit ? 3 : 2, crit ? 0xff4444 : 0xffffff, 1);
+      slash.lineBetween(sx, sy, ex, ey);
+      this.tweens.add({ targets: slash, alpha: 0, duration: 200, onComplete: () => slash.destroy() });
     }
 
     // Phase Realms — apply lifesteal heal to run.playerHp.
