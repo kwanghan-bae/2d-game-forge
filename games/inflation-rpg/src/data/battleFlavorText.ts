@@ -564,3 +564,54 @@ export function getChainLightningMessage(seed: number): string {
 export function getBossSlayerMessage(seed: number): string {
   return BOSS_SLAYER_MESSAGES[seed % BOSS_SLAYER_MESSAGES.length];
 }
+
+// C264: flavor text 11 — stamina, vigor, insurance, multi_kill, crit_heal
+const STAMINA_MESSAGES = [
+  '피로가 쌓이고 있다...',
+  '마을에서 쉬어야 할 때다!',
+  '체력이 한계에 다다른다...',
+];
+
+const VIGOR_MESSAGES = [
+  '마을의 활력이 몸에 남아있다!',
+  '충분한 휴식 후 전투 준비 완료!',
+  '활력 넘치는 상태로 전투 돌입!',
+];
+
+const INSURANCE_MESSAGES = [
+  '보험 덕분에 피해가 줄었다!',
+  '첫 번째 패배의 충격이 완화됐다!',
+  '안전망이 레벨 손실을 막아줬다!',
+];
+
+const MULTI_KILL_MESSAGES = [
+  '연속 일격! 경험치 폭증!',
+  '멀티킬 달성! 추가 보상!',
+  '연쇄 처치의 쾌감!',
+];
+
+const CRIT_HEAL_MESSAGES = [
+  '치명타의 충격파로 체력 회복!',
+  '크리티컬 에너지 흡수!',
+  '회심의 일격이 활력을 되찾아준다!',
+];
+
+export function getStaminaMessage(seed: number): string {
+  return STAMINA_MESSAGES[seed % STAMINA_MESSAGES.length];
+}
+
+export function getVigorMessage(seed: number): string {
+  return VIGOR_MESSAGES[seed % VIGOR_MESSAGES.length];
+}
+
+export function getInsuranceMessage(seed: number): string {
+  return INSURANCE_MESSAGES[seed % INSURANCE_MESSAGES.length];
+}
+
+export function getMultiKillMessage(seed: number): string {
+  return MULTI_KILL_MESSAGES[seed % MULTI_KILL_MESSAGES.length];
+}
+
+export function getCritHealMessage(seed: number): string {
+  return CRIT_HEAL_MESSAGES[seed % CRIT_HEAL_MESSAGES.length];
+}
