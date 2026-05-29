@@ -299,6 +299,9 @@ export const ARMOR_REDUCTION = 0.10; // -10% damage taken
 export const ARMOR_DURATION = 10; // lasts 10 fights
 // C243: hero specialization
 export const SPEC_ATK_BONUS = 0.25; // +25% ATK after prestige (auto-granted)
+// C245: kill combo milestone
+export const COMBO_MILESTONE_INTERVAL = 50; // every 50-kill streak
+export const COMBO_MILESTONE_GOLD_BONUS = 0.30; // +30% gold on milestone fight
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -859,7 +862,9 @@ export class EncounterEngine {
       const goldStreakMul = this.fightsSinceSpend >= GOLD_STREAK_THRESHOLD ? (1 + GOLD_STREAK_BONUS) : 1;
       // C230: combo gold multiplier
       const comboGoldMul2 = this.comboStreak >= COMBO_GOLD_THRESHOLD ? (1 + COMBO_GOLD_MUL_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2);
+      // C245: kill combo milestone — bonus gold every 50 kills
+      const comboMilestoneMul = (this.killCount > 0 && this.killCount % COMBO_MILESTONE_INTERVAL === 0) ? (1 + COMBO_MILESTONE_GOLD_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT, PASSIVE_GOLD_CAP);
