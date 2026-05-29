@@ -385,6 +385,10 @@ export const VILLAGE_BLESSING_GOLD_BONUS = 0.10;
 export const VILLAGE_BLESSING_DURATION = 10;
 // C277: exp cascade — 3+ one-hit kills = +50% exp
 export const EXP_CASCADE_BONUS = 0.50;
+// C278: battle hardening — HP growth every 100 fights
+export const BATTLE_HARDEN_INTERVAL = 100;
+export const BATTLE_HARDEN_HP_BONUS = 0.01; // +1% max HP
+export const BATTLE_HARDEN_CAP = 0.10; // max +10%
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1117,6 +1121,14 @@ export class EncounterEngine {
       if (eliteComboGuarantee) this.eliteCombo = 0; // consumed
       // C146: wave tracking
       this.totalWins++;
+      // C278: battle hardening — every 100 total fights, +1% max HP
+      const totalFights = this.totalWins + this.totalDeaths;
+      if (totalFights > 0 && totalFights % BATTLE_HARDEN_INTERVAL === 0) {
+        const hardenBonus = Math.min(BATTLE_HARDEN_CAP, Math.floor(totalFights / BATTLE_HARDEN_INTERVAL) * BATTLE_HARDEN_HP_BONUS);
+        const hpGain = Math.max(1, Math.floor(hero.hpMax * hardenBonus));
+        hero.hpMax += hpGain;
+        hero.hp += hpGain;
+      }
       // C218: gold streak counter
       this.fightsSinceSpend++;
       // C223: kills since level-up counter
