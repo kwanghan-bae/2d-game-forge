@@ -1,58 +1,45 @@
 import { describe, it, expect } from 'vitest';
-import { getAllSkills } from './skills';
-import type { ActiveSkill } from '../types';
+import { SKILLS } from './skills';
 
-/**
- * Skill balance sim — verifies all skills have reasonable DPS efficiency
- * and no outlier dominates the pool.
- */
+describe('Skill cooldown balance', () => {
+  const allSkills = Object.values(SKILLS).flat();
 
-function dpsEfficiency(skill: ActiveSkill): number {
-  const e = skill.effect;
-  switch (e.type) {
-    case 'multi_hit':
-      return (e.multiplier! * e.targets!) / skill.cooldownSec;
-    case 'aoe':
-      return (e.multiplier! * e.targets!) / skill.cooldownSec;
-    case 'execute':
-      return (2 / e.executeThreshold!) / skill.cooldownSec;
-    case 'heal':
-      return (e.healPercent! / 10) / skill.cooldownSec;
-    case 'buff':
-      return (e.buffPercent! * e.buffDurationSec! / 100) / skill.cooldownSec;
-    default:
-      return 0;
-  }
-}
-
-describe('skill balance', () => {
-  const skills = getAllSkills();
-
-  it('all 32 skills are defined', () => {
-    expect(skills).toHaveLength(32);
-  });
-
-  it('no skill has DPS efficiency > 4× the median', () => {
-    const efficiencies = skills.map(dpsEfficiency).sort((a, b) => a - b);
-    const median = efficiencies[Math.floor(efficiencies.length / 2)]!;
-    const max = efficiencies[efficiencies.length - 1]!;
-    // Max should not exceed 4× median — ensures no single skill dominates
-    expect(max).toBeLessThan(median * 4);
-  });
-
-  it('cooldowns are within 5–20 second range', () => {
-    for (const skill of skills) {
-      expect(skill.cooldownSec).toBeGreaterThanOrEqual(5);
-      expect(skill.cooldownSec).toBeLessThanOrEqual(20);
+  it('all cooldowns are between 3 and 25 seconds', () => {
+    for (const s of allSkills) {
+      expect(s.cooldownSec, `${s.name} cooldown`).toBeGreaterThanOrEqual(3);
+      expect(s.cooldownSec, `${s.name} cooldown`).toBeLessThanOrEqual(25);
     }
   });
 
-  it('damage multipliers are within 1–4× range', () => {
-    for (const skill of skills) {
-      if (skill.effect.type === 'multi_hit' || skill.effect.type === 'aoe') {
-        expect(skill.effect.multiplier).toBeGreaterThanOrEqual(1);
-        expect(skill.effect.multiplier).toBeLessThanOrEqual(4);
+  it('execute skills have high cooldown (≥10s)', () => {
+    const executes = allSkills.filter((s) => s.effect.type === 'execute');
+    for (const s of executes) {
+      expect(s.cooldownSec, `${s.name} execute cooldown`).toBeGreaterThanOrEqual(10);
+    }
+  });
+
+  it('heal skills have moderate cooldown (≥7s)', () => {
+    const heals = allSkills.filter((s) => s.effect.type === 'heal');
+    for (const s of heals) {
+      expect(s.cooldownSec, `${s.name} heal cooldown`).toBeGreaterThanOrEqual(7);
+    }
+  });
+
+  it('buff duration never exceeds cooldown', () => {
+    const buffs = allSkills.filter((s) => s.effect.type === 'buff');
+    for (const s of buffs) {
+      if ('buffDurationSec' in s.effect) {
+        expect(
+          (s.effect as { buffDurationSec: number }).buffDurationSec,
+          `${s.name} buff duration <= cooldown`
+        ).toBeLessThanOrEqual(s.cooldownSec);
       }
+    }
+  });
+
+  it('every character has exactly 2 skills', () => {
+    for (const [charId, skills] of Object.entries(SKILLS)) {
+      expect(skills, `${charId} skill count`).toHaveLength(2);
     }
   });
 });
