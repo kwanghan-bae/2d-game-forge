@@ -218,6 +218,8 @@ export const BOSS_STREAK_STAT_SCALE = 0.05; // +5% HP/ATK per boss streak
 // C200: prestige system
 export const PRESTIGE_LEVEL_REQUIREMENT = 200;
 export const PRESTIGE_STAT_BONUS = 0.10; // +10% all stats per prestige
+// C213: multi-prestige scaling
+export const PRESTIGE_LEVEL_INCREMENT = 50; // each prestige requires 50 more levels
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -873,8 +875,10 @@ export class EncounterEngine {
       }
       // C184: level-up momentum — flag for next fight exp bonus
       if (leveled.length > 0) this.levelUpMomentum = true;
-      // C200: prestige system — reset level at 200, gain permanent bonus
-      if (hero.level >= PRESTIGE_LEVEL_REQUIREMENT) {
+      // C200: prestige system — reset level at threshold, gain permanent bonus
+      // C213: each prestige requires 50 more levels (200, 250, 300, ...)
+      const prestigeThreshold = PRESTIGE_LEVEL_REQUIREMENT + this.prestigeCount * PRESTIGE_LEVEL_INCREMENT;
+      if (hero.level >= prestigeThreshold) {
         this.prestigeCount++;
         hero.level = 1;
         hero.exp = 0;
