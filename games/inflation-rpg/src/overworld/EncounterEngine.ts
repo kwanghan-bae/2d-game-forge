@@ -79,6 +79,8 @@ export const WAVE_INTERVAL = 20; // every 20 wins triggers wave
 export const WAVE_SIZE = 3; // 3 consecutive enemies
 export const WAVE_BONUS_EXP_MUL = 2.0; // ×2 exp for wave fights
 export const WAVE_BONUS_GOLD_MUL = 3.0; // ×3 gold for wave fights
+// C147: gold penalty on death
+export const GOLD_DEATH_PENALTY = 0.10; // lose 10% gold on death
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -258,6 +260,9 @@ export class EncounterEngine {
         this.comboStreak = 0;
         // C141: survival streak resets on death
         this.survivalStreak = 0;
+        // C147: gold loss on death — lose 10%
+        const goldLost = Math.floor(hero.gold * GOLD_DEATH_PENALTY);
+        hero.gold -= goldLost;
         // C137: death streak tracking
         this.deathStreak++;
         if (this.deathStreak >= DEATH_STREAK_THRESHOLD) {
