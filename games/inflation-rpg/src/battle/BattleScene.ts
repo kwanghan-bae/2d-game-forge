@@ -396,8 +396,12 @@ export class BattleScene extends Phaser.Scene {
     if (combo) logParts.push(`${hits}연타! `);
     if (crit) {
       logParts.push('치명타! ');
-      playSfx('crit');
-      this.cameras.main.shake(150, 0.01);
+      // Dynamic pitch: heavier impact for higher damage ratio
+      const dmgRatio = Math.min(totalEnemyDmg / Math.max(1, this.enemyMaxHP), 1);
+      const critRate = 1.0 - dmgRatio * 0.3; // 1.0 → 0.7 for massive crits
+      playSfx('crit', critRate);
+      if (this.isBoss) playSfx('hit', 0.6); // deep impact overlay for boss crits
+      this.cameras.main.shake(150, 0.01 + dmgRatio * 0.01);
     }
     logParts.push(`${totalEnemyDmg.toLocaleString()} 데미지`);
     if (attackProcs.magicBurstDamage > 0) logParts.push(' (마법 폭발!)');
