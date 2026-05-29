@@ -127,6 +127,9 @@ export const BOSS_ENRAGE_HP_THRESHOLD = 0.5; // below 50% HP
 export const BOSS_ENRAGE_ATK_MUL = 2.0; // ×2 ATK when enraged
 // C166: exp overflow gold bonus
 export const EXP_OVERFLOW_GOLD_RATIO = 100; // 1 gold per 100 overflow exp
+// C167: close call exp bonus — survive at low HP for bonus exp
+export const CLOSE_CALL_HP_THRESHOLD = 0.20; // below 20% HP after fight
+export const CLOSE_CALL_EXP_BONUS = 0.50; // +50% exp
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -391,7 +394,10 @@ export class EncounterEngine {
       const comboExpMul = this.comboStreak >= COMBO_EXP_THRESHOLD
         ? 1 + (this.comboStreak - COMBO_EXP_THRESHOLD) * COMBO_EXP_BONUS_PER
         : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul);
+      // C167: close call exp bonus — low HP after fight
+      const closeCallMul = (!hero.staggered && hero.hp < hero.hpMax * CLOSE_CALL_HP_THRESHOLD && tookDamage)
+        ? (1 + CLOSE_CALL_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
