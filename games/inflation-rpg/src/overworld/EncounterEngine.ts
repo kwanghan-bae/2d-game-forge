@@ -244,6 +244,9 @@ export const NIGHT_EXP_MUL = 2.0; // ×2 exp at night
 export const NIGHT_ENEMY_DMG_MUL = 1.5; // enemies ×1.5 damage at night
 // C221: lucky find
 export const LUCKY_FIND_CHANCE = 0.02; // 2% chance per fight
+// C223: exp combo chain
+export const EXP_CHAIN_KILLS_THRESHOLD = 5; // kills since last level-up
+export const EXP_CHAIN_BONUS = 0.25; // +25% exp if chained enough kills
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -376,6 +379,7 @@ export class EncounterEngine {
   private eliteCombo = 0; // C216: consecutive elite kills
   private fightsSinceSpend = 0; // C218: fights without spending gold
   private totalDeaths = 0; // C219: total death count
+  private killsSinceLevelUp = 0; // C223: kills since last level-up
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -696,7 +700,9 @@ export class EncounterEngine {
       const arenaMul = this.arenaActive ? ARENA_REWARD_MUL : 1;
       // C220: night exp bonus
       const nightExpMul = isNight ? NIGHT_EXP_MUL : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul);
+      // C223: exp combo chain
+      const expChainMul = this.killsSinceLevelUp >= EXP_CHAIN_KILLS_THRESHOLD ? (1 + EXP_CHAIN_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -828,6 +834,8 @@ export class EncounterEngine {
       this.totalWins++;
       // C218: gold streak counter
       this.fightsSinceSpend++;
+      // C223: kills since level-up counter
+      this.killsSinceLevelUp++;
       // C210: check kill milestones
       const nextMilestone = ACHIEVEMENT_KILL_THRESHOLDS[this.achievementMilestones];
       if (nextMilestone !== undefined && this.totalWins >= nextMilestone) {
@@ -938,7 +946,10 @@ export class EncounterEngine {
         }
       }
       // C184: level-up momentum — flag for next fight exp bonus
-      if (leveled.length > 0) this.levelUpMomentum = true;
+      if (leveled.length > 0) {
+        this.levelUpMomentum = true;
+        this.killsSinceLevelUp = 0; // C223: reset chain
+      }
       // C200: prestige system — reset level at threshold, gain permanent bonus
       // C213: each prestige requires 50 more levels (200, 250, 300, ...)
       const prestigeThreshold = PRESTIGE_LEVEL_REQUIREMENT + this.prestigeCount * PRESTIGE_LEVEL_INCREMENT;
