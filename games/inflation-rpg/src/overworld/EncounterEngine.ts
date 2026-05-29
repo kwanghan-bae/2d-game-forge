@@ -53,6 +53,10 @@ export const VILLAGE_REST_HP_BOOST = 0.01; // +1% max HP permanently
 // C136: shrine meditation buff — temp ATK boost lasting N fights
 export const SHRINE_MEDITATION_ATK_BUFF = 0.25; // +25% ATK
 export const SHRINE_MEDITATION_BUFF_DURATION = 5; // lasts 5 fights
+// C137: death streak mercy — reduce damage after consecutive deaths
+export const DEATH_STREAK_THRESHOLD = 3; // 3 deaths in a row triggers mercy
+export const MERCY_DAMAGE_REDUCTION = 0.30; // -30% incoming damage
+export const MERCY_DURATION = 3; // lasts 3 fights
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -118,6 +122,8 @@ export class EncounterEngine {
   private battleMomentum = 0;
   private dropStreak = 0;
   private shrineBuffRemaining = 0; // C136: fights remaining with shrine ATK buff
+  private deathStreak = 0; // C137: consecutive deaths
+  private mercyRemaining = 0; // C137: fights remaining with damage reduction
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -130,6 +136,7 @@ export class EncounterEngine {
   getBattleMomentum(): number { return this.battleMomentum; }
   getDropStreak(): number { return this.dropStreak; }
   getShrineBuffRemaining(): number { return this.shrineBuffRemaining; }
+  getMercyRemaining(): number { return this.mercyRemaining; }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
@@ -202,7 +209,9 @@ export class EncounterEngine {
           const rageAtk = isBoss
             ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN))
             : enemyAtk;
-          hero.takeDamage(rageAtk);
+          // C137: mercy damage reduction after death streak
+          const mercyReduction = this.mercyRemaining > 0 ? (1 - MERCY_DAMAGE_REDUCTION) : 1;
+          hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction)));
           rageTurn++;
         }
       }
@@ -211,6 +220,13 @@ export class EncounterEngine {
       if (hero.staggered) {
         // C120: combo streak resets on death
         this.comboStreak = 0;
+        // C137: death streak tracking
+        this.deathStreak++;
+        if (this.deathStreak >= DEATH_STREAK_THRESHOLD) {
+          this.mercyRemaining = MERCY_DURATION;
+          this.deathStreak = 0; // reset after granting mercy
+          events.push({ type: 'mercy_activated', duration: MERCY_DURATION });
+        }
         // Cycle 108 F1: intercept (a) — before applyDeathPenalty, check fate
         // roll eligibility. If eligible, emit fate_roll_required and *abort*
         // (level penalty + hero_died emit are deferred to controller's
@@ -275,6 +291,9 @@ export class EncounterEngine {
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
+      // C137: win resets death streak, decrement mercy
+      this.deathStreak = 0;
+      if (this.mercyRemaining > 0) this.mercyRemaining--;
       // C132: boss rage event — notify when boss fight lasted multiple turns
       if (isBoss && rageTurn > 0) {
         events.push({ type: 'boss_rage', turns: rageTurn, atkMultiplier: 1 + rageTurn * BOSS_RAGE_ATK_PER_TURN });

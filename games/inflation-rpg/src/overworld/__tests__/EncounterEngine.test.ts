@@ -481,3 +481,39 @@ describe('EncounterEngine — C136 shrine meditation buff', () => {
     expect(engine.getShrineBuffRemaining()).toBe(0);
   });
 });
+
+describe('EncounterEngine — C137 death streak mercy', () => {
+  it('mercy activates after 3 consecutive deaths', () => {
+    // Weak hero that dies easily
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 1, heroAtkBase: 1 });
+    const engine = new EncounterEngine(new SeededRng(1));
+
+    // Die 3 times (hero dies in 1 hit with hpMax=1)
+    for (let i = 0; i < 3; i++) {
+      hero.recoverFromStagger(); // reset stagger
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      // Should die each time
+      expect(evs.some(e => e.type === 'hero_died')).toBe(true);
+    }
+
+    // After 3rd death, mercy should be granted
+    expect(engine.getMercyRemaining()).toBe(3);
+  });
+
+  it('mercy decrements on wins and resets death streak', () => {
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 1, heroAtkBase: 1 });
+    const engine = new EncounterEngine(new SeededRng(1));
+
+    // Die 3 times to get mercy
+    for (let i = 0; i < 3; i++) {
+      hero.recoverFromStagger();
+      engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+    }
+    expect(engine.getMercyRemaining()).toBe(3);
+
+    // Now give hero enough power to win
+    const strongHero = HeroEntity.create({ seed: 1, heroHpMax: 10000, heroAtkBase: 100000 });
+    engine.resolveEncounter(strongHero, 'enemy', 'e_win');
+    expect(engine.getMercyRemaining()).toBe(2);
+  });
+});
