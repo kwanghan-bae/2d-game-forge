@@ -297,6 +297,8 @@ export const COMPANION_EXP_BONUS = 0.15; // +15% exp with companion
 export const ARMOR_BUY_COST = 300;
 export const ARMOR_REDUCTION = 0.10; // -10% damage taken
 export const ARMOR_DURATION = 10; // lasts 10 fights
+// C243: hero specialization
+export const SPEC_ATK_BONUS = 0.25; // +25% ATK after prestige (auto-granted)
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -561,7 +563,9 @@ export class EncounterEngine {
       const berserkerMul = hero.hp < hero.hpMax * BERSERKER_HP_THRESHOLD ? (1 + BERSERKER_ATK_BONUS) : 1;
       // C238: darkness curse ATK penalty
       const curseMul = this.darknessCursed ? (1 - DARKNESS_CURSE_ATK_PENALTY) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul));
+      // C243: hero specialization — permanent ATK bonus after first prestige
+      const specMul = this.prestigeCount > 0 ? (1 + SPEC_ATK_BONUS) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
