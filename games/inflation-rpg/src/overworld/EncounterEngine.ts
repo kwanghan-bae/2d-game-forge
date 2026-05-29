@@ -268,6 +268,8 @@ export const BOSS_ENRAGE_TIMER_MUL = 2.0; // boss ATK doubles
 // C230: combo gold multiplier
 export const COMBO_GOLD_THRESHOLD = 10; // combo streak >= 10
 export const COMBO_GOLD_MUL_BONUS = 0.30; // +30% gold
+// C231: village bank
+export const BANK_DEPOSIT_RATE = 0.30; // deposit 30% of gold
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -402,6 +404,7 @@ export class EncounterEngine {
   private totalDeaths = 0; // C219: total death count
   private killsSinceLevelUp = 0; // C223: kills since last level-up
   private totalDangerFights = 0; // C226: total danger zone fights
+  private bankGold = 0; // C231: gold stored in village bank
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -1037,6 +1040,16 @@ export class EncounterEngine {
       const healRate = Math.min(VILLAGE_HEAL_CAP, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT);
       const healAmount = Math.floor(hero.hpMax * healRate);
       hero.heal(healAmount);
+      // C231: village bank — withdraw stored gold, then deposit portion
+      if (this.bankGold > 0) {
+        hero.gold += this.bankGold;
+        this.bankGold = 0;
+      }
+      const bankDeposit = Math.floor(hero.gold * BANK_DEPOSIT_RATE);
+      if (bankDeposit > 0) {
+        hero.gold -= bankDeposit;
+        this.bankGold += bankDeposit;
+      }
       // C212: arena challenge — spend gold for high-reward next fight
       if (hero.gold >= ARENA_COST) {
         hero.gold -= ARENA_COST;
