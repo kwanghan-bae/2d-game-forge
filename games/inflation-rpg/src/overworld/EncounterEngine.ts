@@ -338,6 +338,8 @@ export const VILLAGE_VIGOR_HP_BONUS = 0.10; // +10% max HP temp
 export const VILLAGE_VIGOR_DURATION = 5; // lasts 5 fights
 // C259: gold magnet prestige scaling
 export const GOLD_MAGNET_PRESTIGE_BONUS = 1; // +1 passive gold per prestige
+// C260: death insurance
+export const DEATH_INSURANCE_PENALTY = 0.05; // first death only -5% level
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -481,6 +483,7 @@ export class EncounterEngine {
   private sacrificeFuryRemaining = 0; // C248: fury buff from sacrifice
   private bossSlayerRemaining = 0; // C251: exp buff from boss kill
   private villageRestRemaining = 0; // C258: rest bonus from village
+  private deathInsuranceUsed = false; // C260: first death insurance
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -780,6 +783,12 @@ export class EncounterEngine {
           hero.exp = Math.floor(hero.exp * EXP_SHIELD_PRESERVE);
         }
         const { oldLevel, newLevel } = hero.applyDeathPenalty();
+        // C260: death insurance — first death per village cycle is lighter
+        if (!this.deathInsuranceUsed) {
+          this.deathInsuranceUsed = true;
+          const recovered = Math.max(0, Math.floor(oldLevel * (0.10 - DEATH_INSURANCE_PENALTY)));
+          if (recovered > 0) hero.level = Math.min(oldLevel, newLevel + recovered);
+        }
         // C140: track who killed us for revenge
         this.lastDeathEnemyId = landmarkId;
         events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
@@ -1162,6 +1171,8 @@ export class EncounterEngine {
       this.fightsSinceVillage = 0;
       // C258: village vigor — temp HP bonus
       this.villageRestRemaining = VILLAGE_VIGOR_DURATION;
+      // C260: reset death insurance at village
+      this.deathInsuranceUsed = false;
       // C218: reset gold streak (village spends gold)
       this.fightsSinceSpend = 0;
       // C134: village rest bonus — arrive with low HP → permanent max HP boost
