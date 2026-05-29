@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { RealmForkCard, RealmForkCardId } from '../buff/realmForkCatalog';
 import type { RealmId } from '../types';
+import { getRegionLore } from '../data/regionLore';
 
 /**
  * Cycle 110 F1 — Realm Fork modal.
@@ -34,9 +35,10 @@ const CARD_COLORS: Record<RealmForkCardId, { bg: string; border: string; accent:
   safe: { bg: '#1f3a2f', border: '#4d8a6a', accent: '#6fdc99' },
 };
 
-export function RealmForkModal({ newRealmNameKR, riskCard, safeCard, autoChoice, onResolve }: Props) {
+export function RealmForkModal({ newRealm, newRealmNameKR, riskCard, safeCard, autoChoice, onResolve }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(Math.ceil(TIMEOUT_MS / 1000));
   const [resolved, setResolved] = useState(false);
+  const loreText = useMemo(() => getRegionLore(newRealm), [newRealm]);
 
   useEffect(() => {
     if (resolved) return;
@@ -114,6 +116,11 @@ export function RealmForkModal({ newRealmNameKR, riskCard, safeCard, autoChoice,
         <div style={{ fontSize: 13, color: '#aaa', marginBottom: 14 }}>
           <strong style={{ color: '#fff' }}>{newRealmNameKR}</strong> 입구 — 두 갈래 중 하나를 택하라.
         </div>
+        {loreText && (
+          <p data-testid="realm-fork-lore" style={{ fontSize: 12, fontStyle: 'italic', color: '#94a3b8', margin: '0 0 14px', lineHeight: 1.6 }}>
+            {loreText}
+          </p>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {cards.map(({ idx, card }) => {
             const palette = CARD_COLORS[card.id];
