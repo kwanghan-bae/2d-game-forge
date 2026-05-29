@@ -141,6 +141,8 @@ export const GREED_MODE_GOLD_BONUS = 1.0; // +100% gold
 // C171: dodge chance based on kills
 export const DODGE_PER_100_KILLS = 0.05; // 5% per 100 kills
 export const DODGE_CAP = 0.20; // max 20%
+// C172: boss streak bounty
+export const BOSS_STREAK_MULTIPLIER = 1; // +1× per consecutive boss kill
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -217,6 +219,7 @@ export class EncounterEngine {
   private killMilestones = 0; // C148: number of milestones reached
   private areaVisits: Map<string, number> = new Map(); // C151: area familiarity
   private shopShieldRemaining = 0; // C154: village shop HP shield duration
+  private bossStreak = 0; // C172: consecutive boss kills this run
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -472,7 +475,10 @@ export class EncounterEngine {
       hero.gold += goldEarned;
       // C157: boss vault — lump sum gold bonus for boss kills
       if (isBoss) {
-        const vaultGold = hero.level * BOSS_VAULT_GOLD_PER_LEVEL;
+        this.bossStreak++;
+        // C172: boss streak multiplier
+        const streakMul = 1 + (this.bossStreak - 1) * BOSS_STREAK_MULTIPLIER;
+        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul);
         hero.gold += vaultGold;
         events.push({ type: 'boss_vault', gold: vaultGold });
       }
