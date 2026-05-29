@@ -235,6 +235,8 @@ export const DAMAGE_REFLECT_RATE = 0.05; // 5% of damage taken reflected
 // C208: passive gold income
 export const PASSIVE_GOLD_PER_VISIT = 1; // +1 gold/fight per village visit
 export const PASSIVE_GOLD_CAP = 10; // max passive income per fight
+// C209: boss immunity phase
+export const BOSS_IMMUNITY_INTERVAL = 3; // immune every 3rd turn
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -448,8 +450,11 @@ export class EncounterEngine {
         // C192: boss rage reset on crit
         if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
         hitCount++;
-        totalDamageDealt += heroAtk;
-        eHp -= heroAtk;
+        // C209: boss immunity phase — boss takes 0 damage every Nth turn
+        const bossImmune = isBoss && hitCount % BOSS_IMMUNITY_INTERVAL === 0;
+        const effectiveAtk = bossImmune ? 0 : heroAtk;
+        totalDamageDealt += effectiveAtk;
+        eHp -= effectiveAtk;
         // C194: double hit — 10% chance for extra strike after 200 kills
         if (eHp > 0 && this.killCount >= DOUBLE_HIT_KILL_THRESHOLD && this.rng.chance(DOUBLE_HIT_CHANCE)) {
           totalDamageDealt += heroAtk;
