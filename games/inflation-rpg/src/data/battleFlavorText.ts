@@ -133,3 +133,44 @@ export function getLuckyDodgeMessage(seed: number): string {
 export function getMercyMessage(seed: number): string {
   return MERCY_MESSAGES[seed % MERCY_MESSAGES.length];
 }
+
+// C150: wave mechanic messages
+const WAVE_STARTED_MESSAGES = [
+  '웨이브 시작! 연속 전투!',
+  '강적들이 몰려온다!',
+  '파도처럼 밀려드는 적!',
+] as const;
+
+const WAVE_COMPLETE_MESSAGES = [
+  '웨이브 클리어! 보너스 획득!',
+  '연속 전투 완료! 대단하다!',
+  '모든 적을 물리쳤다!',
+] as const;
+
+const MILESTONE_KILL_MESSAGES = [
+  '처치 마일스톤 달성!',
+  '전투력이 영구 상승했다!',
+  '수많은 적을 쓰러뜨렸다!',
+] as const;
+
+const GOLD_LOSS_MESSAGES = [
+  '골드를 잃었다...',
+  '금화가 흩어졌다!',
+  '패배의 대가를 치렀다.',
+] as const;
+
+export function getWaveStartedMessage(seed: number): string {
+  return WAVE_STARTED_MESSAGES[seed % WAVE_STARTED_MESSAGES.length];
+}
+
+export function getWaveCompleteMessage(seed: number): string {
+  return WAVE_COMPLETE_MESSAGES[seed % WAVE_COMPLETE_MESSAGES.length];
+}
+
+export function getMilestoneKillMessage(seed: number): string {
+  return MILESTONE_KILL_MESSAGES[seed % MILESTONE_KILL_MESSAGES.length];
+}
+
+export function getGoldLossMessage(seed: number): string {
+  return GOLD_LOSS_MESSAGES[seed % GOLD_LOSS_MESSAGES.length];
+}
