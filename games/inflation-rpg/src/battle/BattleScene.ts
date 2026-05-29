@@ -199,6 +199,26 @@ export class BattleScene extends Phaser.Scene {
     const floorLabel = `F${run.currentFloor}`;
     this.add.text(336, 34, floorLabel, { fontSize: '11px', color: '#aaaaaa' }).setOrigin(1, 0);
 
+    // Battle speed toggle button
+    const speed = useGameStore.getState().meta.battleSpeed ?? 1;
+    const speedBtn = this.add.text(16, 16, `×${speed}`, {
+      fontSize: '14px',
+      color: '#aaccff',
+      backgroundColor: '#222244',
+      padding: { x: 6, y: 2 },
+    }).setInteractive({ useHandCursor: true });
+    speedBtn.on('pointerdown', () => {
+      useGameStore.getState().toggleBattleSpeed();
+      const newSpeed = useGameStore.getState().meta.battleSpeed;
+      speedBtn.setText(`×${newSpeed}`);
+      // Restart combat timer with new speed
+      if (this.combatTimer) {
+        this.combatTimer.remove(false);
+        const newDelay = 600 / newSpeed;
+        this.combatTimer = this.time.addEvent({ delay: newDelay, callback: this.doRound, callbackScope: this, loop: true });
+      }
+    });
+
     // Realm atmosphere flavor text (fades out after 2s)
     if (run.currentRealmId) {
       const atmoText = getAtmosphereText(run.currentRealmId);
