@@ -1010,16 +1010,27 @@ export class BattleScene extends Phaser.Scene {
       : amount >= 1_000
         ? `${(amount / 1_000).toFixed(1)}K`
         : `${amount}`;
-    const text = this.add.text(x, y, label, {
-      fontSize: isCrit ? '18px' : '14px',
+    const fontSize = isCrit ? '20px' : '14px';
+    const text = this.add.text(x, y, isCrit ? `💥${label}` : label, {
+      fontSize,
       color: isCrit ? '#ff4444' : '#ffffff',
       fontStyle: isCrit ? 'bold' : 'normal',
     }).setOrigin(0.5).setAlpha(1);
+    // Crit: scale punch then float up
+    if (isCrit) {
+      text.setScale(1.5);
+      this.tweens.add({
+        targets: text,
+        scale: 1,
+        duration: 150,
+        ease: 'Back.easeOut',
+      });
+    }
     this.tweens.add({
       targets: text,
-      y: y - 40,
+      y: y - 50,
       alpha: 0,
-      duration: 600,
+      duration: isCrit ? 800 : 600,
       ease: 'Cubic.easeOut',
       onComplete: () => text.destroy(),
     });
