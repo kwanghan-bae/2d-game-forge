@@ -17,8 +17,8 @@ describe('inflationCurve power-law functions', () => {
     expect(heroAtkAtLevel(10, 10)).toBe(100);
   });
 
-  it('expGainForKill: lv5 = floor(10 * 5^1.8)', () => {
-    const expected = Math.floor(10 * Math.pow(5, 1.8));
+  it('expGainForKill: lv5 = floor(10 * 5^1.6)', () => {
+    const expected = Math.floor(10 * Math.pow(5, 1.6));
     expect(expGainForKill(10, 5)).toBe(expected);
   });
 
@@ -27,7 +27,7 @@ describe('inflationCurve power-law functions', () => {
     expect(expRequiredForLevel(10, 5)).toBe(expected);
   });
 
-  it('acceleration: expGain grows faster than expReq (ratio = lv^0.6)', () => {
+  it('acceleration: expGain grows faster than expReq (ratio = lv^0.4)', () => {
     const gain5 = expGainForKill(10, 5);
     const gain10 = expGainForKill(10, 10);
     const req5 = expRequiredForLevel(10, 5);
