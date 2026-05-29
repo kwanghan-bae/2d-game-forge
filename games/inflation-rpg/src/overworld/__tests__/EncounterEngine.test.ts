@@ -303,3 +303,33 @@ describe('EncounterEngine — C124 close call', () => {
     expect(evs.some(e => e.type === 'close_call')).toBe(false);
   });
 });
+
+describe('EncounterEngine — C125 battle momentum', () => {
+  it('momentum increases on each battle win', () => {
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1));
+    engine.resolveEncounter(hero, 'enemy', 'e_0');
+    engine.resolveEncounter(hero, 'enemy', 'e_1');
+    engine.resolveEncounter(hero, 'enemy', 'e_2');
+    expect(engine.getBattleMomentum()).toBe(3);
+  });
+
+  it('momentum resets on village visit', () => {
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1));
+    engine.resolveEncounter(hero, 'enemy', 'e_0');
+    engine.resolveEncounter(hero, 'enemy', 'e_1');
+    expect(engine.getBattleMomentum()).toBe(2);
+    engine.resolveEncounter(hero, 'village', 'v_0');
+    expect(engine.getBattleMomentum()).toBe(0);
+  });
+
+  it('momentum caps at 20', () => {
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1));
+    for (let i = 0; i < 25; i++) {
+      engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+    }
+    expect(engine.getBattleMomentum()).toBe(20);
+  });
+});
