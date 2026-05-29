@@ -122,6 +122,9 @@ export const CRIT_GOLD_BONUS = 0.30; // +30% gold when fight had critical hit
 export const DANGER_ZONE_GOLD_MUL = 2.0; // ×2 gold in danger zones
 // C164: gold level scaling power
 export const GOLD_LEVEL_POWER = 1.2; // gold scales as level^1.2 instead of linear
+// C165: boss enrage at 50% HP
+export const BOSS_ENRAGE_HP_THRESHOLD = 0.5; // below 50% HP
+export const BOSS_ENRAGE_ATK_MUL = 2.0; // ×2 ATK when enraged
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -292,8 +295,10 @@ export class EncounterEngine {
         eHp -= heroAtk;
         if (eHp > 0) {
           // C132: boss rage — boss ATK escalates each turn the fight lasts
+          // C165: boss enrage — ×2 ATK when below 50% HP
+          const enrageMul = isBoss && eHp < enemyHp * BOSS_ENRAGE_HP_THRESHOLD ? BOSS_ENRAGE_ATK_MUL : 1;
           const rageAtk = isBoss
-            ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN))
+            ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN) * enrageMul)
             : enemyAtk;
           // C137: mercy damage reduction after death streak
           const mercyReduction = this.mercyRemaining > 0 ? (1 - MERCY_DAMAGE_REDUCTION) : 1;
