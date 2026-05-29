@@ -373,6 +373,9 @@ export const COMBO_BREAK_EXP_BONUS = 0.50; // +50% exp on next fight
 // C273: boss kill counter ATK
 export const BOSS_KILL_ATK_INTERVAL = 5; // every 5 bosses
 export const BOSS_KILL_ATK_BONUS = 0.03; // +3% ATK per milestone
+// C274: gold cascade — 3+ consecutive one-hit kills = double gold
+export const GOLD_CASCADE_MULTIPLIER = 2.0;
+export const GOLD_CASCADE_THRESHOLD = 3;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -995,7 +998,9 @@ export class EncounterEngine {
       const fullHpGoldMul = (hero.hp >= hero.hpMax) ? (1 + FULL_HP_GOLD_BONUS) : 1;
       // C270: elite gold bonus
       const eliteGoldMul = isElite ? (1 + ELITE_GOLD_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul);
+      // C274: gold cascade
+      const goldCascadeMul = this.consecutiveOneHits >= GOLD_CASCADE_THRESHOLD ? GOLD_CASCADE_MULTIPLIER : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       // C259: gold magnet prestige scaling
