@@ -643,7 +643,12 @@ export class BattleScene extends Phaser.Scene {
         );
         this.applySkillResult(result, skill.id);
         this.skillUseCount++;
-        playSfx('skill');
+        // Type-differentiated skill SFX
+        const skillSfxPitch: Record<string, number> = {
+          multi_hit: 1.2, aoe: 0.8, heal: 1.4, buff: 1.1,
+          execute: 0.7, debuff: 0.9, reflect: 1.3,
+        };
+        playSfx('skill', skillSfxPitch[skill.effect.type] ?? 1.0);
         fireSkill(this.skillState, skill, time);
       }
     }
