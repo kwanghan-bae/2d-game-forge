@@ -259,6 +259,9 @@ export const DANGER_MAGNET_SPAWN_BONUS = 0.10; // +10% danger zone spawn
 // C227: quick kill bonus
 export const QUICK_KILL_MAX_HITS = 2; // 1-2 hits counts as quick kill
 export const QUICK_KILL_EXP_BONUS = 0.10; // +10% exp
+// C228: bounty board
+export const BOUNTY_KILL_INTERVAL = 25; // bounty every 25 kills
+export const BOUNTY_GOLD_REWARD = 100; // flat gold reward
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -862,6 +865,10 @@ export class EncounterEngine {
       const nextMilestone = ACHIEVEMENT_KILL_THRESHOLDS[this.achievementMilestones];
       if (nextMilestone !== undefined && this.totalWins >= nextMilestone) {
         this.achievementMilestones++;
+      }
+      // C228: bounty board — flat gold every N kills
+      if (this.totalWins % BOUNTY_KILL_INTERVAL === 0) {
+        hero.gold += BOUNTY_GOLD_REWARD;
       }
       // C173: exhaustion counter
       this.fightsSinceVillage++;
