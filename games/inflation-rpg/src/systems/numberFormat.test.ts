@@ -10,6 +10,16 @@ describe('Number formatting', () => {
     expect(formatCompact(2500000000)).toBe('2.5B');
   });
 
+  it('formatCompact handles edge cases defensively', () => {
+    expect(formatCompact(0)).toBe('0');
+    expect(formatCompact(-5)).toBe('0');
+    expect(formatCompact(NaN)).toBe('0');
+    expect(formatCompact(Infinity)).toBe('0');
+    expect(formatCompact(-Infinity)).toBe('0');
+    expect(formatCompact(999)).toBe('999');
+    expect(formatCompact(1000)).toBe('1.0K');
+  });
+
   it('formatWithCommas adds separators', () => {
     expect(formatWithCommas(1234567)).toBe('1,234,567');
     expect(formatWithCommas(999)).toBe('999');
