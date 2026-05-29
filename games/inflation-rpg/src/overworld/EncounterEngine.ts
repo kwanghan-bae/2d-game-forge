@@ -266,7 +266,7 @@ export const BOUNTY_GOLD_REWARD = 100; // flat gold reward
 export const BOSS_ENRAGE_TIMER_TURN = 10; // boss enrages after 10 hits
 export const BOSS_ENRAGE_TIMER_MUL = 2.0; // boss ATK doubles
 // C230: combo gold multiplier
-export const COMBO_GOLD_THRESHOLD = 10; // combo streak >= 10
+export const COMBO_GOLD_MUL_THRESHOLD = 10; // combo streak >= 10
 export const COMBO_GOLD_MUL_BONUS = 0.30; // +30% gold
 // C231: village bank
 export const BANK_DEPOSIT_RATE = 0.30; // deposit 30% of gold
@@ -956,7 +956,7 @@ export class EncounterEngine {
       // C218: gold streak bonus
       const goldStreakMul = this.fightsSinceSpend >= GOLD_STREAK_THRESHOLD ? (1 + GOLD_STREAK_BONUS) : 1;
       // C230: combo gold multiplier
-      const comboGoldMul2 = this.comboStreak >= COMBO_GOLD_THRESHOLD ? (1 + COMBO_GOLD_MUL_BONUS) : 1;
+      const comboGoldMul2 = this.comboStreak >= COMBO_GOLD_MUL_THRESHOLD ? (1 + COMBO_GOLD_MUL_BONUS) : 1;
       // C245: kill combo milestone — bonus gold every 50 kills
       const comboMilestoneMul = (this.killCount > 0 && this.killCount % COMBO_MILESTONE_INTERVAL === 0) ? (1 + COMBO_MILESTONE_GOLD_BONUS) : 1;
       // C250: full HP gold bonus
