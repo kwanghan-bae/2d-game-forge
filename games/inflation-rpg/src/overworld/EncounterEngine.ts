@@ -95,6 +95,9 @@ export const TREASURE_GOBLIN_RATE = 0.03; // 3% chance
 export const TREASURE_GOBLIN_GOLD_MUL = 10; // ×10 gold
 export const TREASURE_GOBLIN_HP_MUL = 0.3; // 30% HP (easy to kill)
 export const TREASURE_GOBLIN_FLEE_RATE = 0.4; // 40% chance to flee after 2 turns
+// C153: combo gold bonus — gold scales with combo streak
+export const COMBO_GOLD_THRESHOLD = 3;
+export const COMBO_GOLD_BONUS_PER = 0.20; // +20% per combo level above threshold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -379,7 +382,11 @@ export class EncounterEngine {
       const waveMul = this.waveRemaining > 0 ? WAVE_BONUS_GOLD_MUL : 1;
       // C149: momentum gold bonus
       const momentumGoldMul = this.battleMomentum >= GOLD_MOMENTUM_THRESHOLD ? (1 + GOLD_MOMENTUM_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul);
+      // C153: combo gold bonus
+      const comboGoldMul = this.comboStreak >= COMBO_GOLD_THRESHOLD
+        ? 1 + (this.comboStreak - COMBO_GOLD_THRESHOLD) * COMBO_GOLD_BONUS_PER
+        : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul * comboGoldMul);
       hero.gold += goldEarned;
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
