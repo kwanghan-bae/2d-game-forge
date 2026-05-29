@@ -237,6 +237,9 @@ export const PASSIVE_GOLD_PER_VISIT = 1; // +1 gold/fight per village visit
 export const PASSIVE_GOLD_CAP = 10; // max passive income per fight
 // C209: boss immunity phase
 export const BOSS_IMMUNITY_INTERVAL = 3; // immune every 3rd turn
+// C210: achievement kill milestones
+export const ACHIEVEMENT_KILL_THRESHOLDS = [100, 500, 1000];
+export const ACHIEVEMENT_ATK_BONUS = 0.05; // +5% ATK per milestone
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -331,6 +334,7 @@ export class EncounterEngine {
   private critStreak = 0; // C203: consecutive crits
   private goldInvested = 0; // C205: locked gold
   private investFightsRemaining = 0; // C205: fights until payout
+  private achievementMilestones = 0; // C210: number of kill milestones reached
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -428,7 +432,9 @@ export class EncounterEngine {
       if (this.comboBreakerReady) this.comboBreakerReady = false;
       // C200: prestige stat bonus
       const prestigeMul = 1 + this.prestigeCount * PRESTIGE_STAT_BONUS;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul));
+      // C210: achievement kill milestone ATK bonus
+      const achieveMul = 1 + this.achievementMilestones * ACHIEVEMENT_ATK_BONUS;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -729,6 +735,11 @@ export class EncounterEngine {
       this.survivalStreak++;
       // C146: wave tracking
       this.totalWins++;
+      // C210: check kill milestones
+      const nextMilestone = ACHIEVEMENT_KILL_THRESHOLDS[this.achievementMilestones];
+      if (nextMilestone !== undefined && this.totalWins >= nextMilestone) {
+        this.achievementMilestones++;
+      }
       // C173: exhaustion counter
       this.fightsSinceVillage++;
       // C197: survivor counter
