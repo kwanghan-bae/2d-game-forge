@@ -349,6 +349,20 @@ export class BattleScene extends Phaser.Scene {
       if (bossQuote) this.pushLog(bossQuote);
     }
 
+    // Enemy idle bobbing (vertical float)
+    this.time.delayedCall(this.isBoss ? 600 : 350, () => {
+      if (this.enemySprite && this.enemySprite.active) {
+        this.tweens.add({
+          targets: this.enemySprite,
+          y: this.enemySprite.y - 4,
+          duration: this.isBoss ? 1500 : 1000,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      }
+    });
+
     void this.enemyText; void this.hpBarBg;
     const combatDelay = 600 / (useGameStore.getState().meta.battleSpeed ?? 1);
     this.combatTimer = this.time.addEvent({ delay: combatDelay, callback: this.doRound, callbackScope: this, loop: true });
