@@ -20,6 +20,8 @@ export type OverworldEvent =
   | { type: 'first_blood'; expGain: number; dropId: string | null }
   | { type: 'revenge_kill'; enemyId: string }
   | { type: 'lucky_dodge' }
+  | { type: 'wave_started'; size: number }
+  | { type: 'wave_complete'; totalWins: number }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
   | { type: 'level_up';        from: number; to: number }

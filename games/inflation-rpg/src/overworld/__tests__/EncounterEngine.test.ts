@@ -3,6 +3,8 @@ import {
   EncounterEngine,
   SHRINE_SKILL_GRANT_RATE,
   MERCIFUL_PROC_RATE,
+  WAVE_INTERVAL,
+  WAVE_SIZE,
 } from '../EncounterEngine';
 import { HeroEntity } from '../../hero/HeroEntity';
 import { SeededRng } from '../../cycle/SeededRng';
@@ -660,5 +662,24 @@ describe('EncounterEngine — C144 gold currency', () => {
     eng1.resolveEncounter(hero1, 'enemy', 'e_0');
     eng2.resolveEncounter(hero2, 'boss', 'b_0');
     expect(hero2.gold).toBeGreaterThan(hero1.gold);
+  });
+
+  it('C146: wave triggers after WAVE_INTERVAL wins and gives bonus', () => {
+    const hero = makeHero();
+    const eng = new EncounterEngine(new SeededRng(42));
+    let waveStarted = false;
+    let waveComplete = false;
+    // Win WAVE_INTERVAL fights to trigger wave
+    for (let i = 0; i < WAVE_INTERVAL; i++) {
+      const events = eng.resolveEncounter(hero, 'enemy', `e_${i}`);
+      if (events.some(e => e.type === 'wave_started')) waveStarted = true;
+    }
+    expect(waveStarted).toBe(true);
+    // Next WAVE_SIZE wins should complete the wave
+    for (let i = 0; i < WAVE_SIZE; i++) {
+      const events = eng.resolveEncounter(hero, 'enemy', `w_${i}`);
+      if (events.some(e => e.type === 'wave_complete')) waveComplete = true;
+    }
+    expect(waveComplete).toBe(true);
   });
 });
