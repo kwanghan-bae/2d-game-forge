@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 73 | Era: 3 | Target: 100
-- Vitest: 1727 | E2E: 60 | Persist: v27
+- Cycle: 74 | Era: 3 | Target: 100
+- Vitest: 1729 | E2E: 60 | Persist: v27
 - Last commit: (pending)
-- Phase: DONE → next cycle 74, Phase A
-- Category lock: vis×17 bal×14 sys×14 narr×14 sound×14
-- Visual maturity: 18/30
+- Phase: DONE → next cycle 75, Phase A
+- Category lock: vis×18 bal×14 sys×14 narr×14 sound×14
+- Visual maturity: 19/30
 - Carry-over: (empty)
-- Budget: visual 17/73 sys 14/73 narr 14/73 sound 14/73 balance 14/73
+- Budget: visual 18/74 sys 14/74 narr 14/74 sound 14/74 balance 14/74
 - Era 2 summary: docs/superpowers/evolution/v4/era-2-summary.md
 
 ## 비주얼 성숙도 상세 (0-3 × 10영역)
@@ -19,7 +19,7 @@
 | 이펙트 | 3 | hit flash + HP bar tween + death particle burst |
 | 배경 | 2 | zone rect + realm gradient (canvas texture) |
 | 아이콘 | 1 | Kenney UI icons 기본 |
-| 전환 | 2 | 300ms opacity + slide-up (12px translateY) |
+| 전환 | 2 | 300ms opacity + slide-up + enemy spawn 3-style variety |
 | 폰트 | 1 | Galmuri11 body + Galmuri14 heading (pixel bitmap) |
 | BGM | 0 | 3곡 placeholder급 |
 | SFX | 1 | 12개 기본 효과음 + realm ambient loop |
