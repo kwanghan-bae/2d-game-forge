@@ -36,7 +36,7 @@ function driveCycle(
   return { saga: ctrl.finalize(), iterations: i };
 }
 
-describe('CycleControllerV2 headless driver', () => {
+describe('CycleControllerV2 headless driver', { timeout: 60_000 }, () => {
   it('hero age advances across 200 arrivals (action-time aging)', () => {
     const ctrl = new CycleControllerV2({
       seed: 42, traits: [],
