@@ -435,6 +435,7 @@ export class BattleScene extends Phaser.Scene {
         const story = getBossDefeatStory(this.bossId);
         if (story) useGameStore.getState().setPendingStory(story.id);
         playSfx('boss-victory');
+        this.cameras.main.shake(300, 0.02);
         this.showBossVictoryText();
       } else {
         playSfx('hit', 0.9 + Math.random() * 0.2);
@@ -584,6 +585,11 @@ export class BattleScene extends Phaser.Scene {
     if (this.heroSprite) {
       this.heroSprite.setTint(0xff4444);
       this.time.delayedCall(100, () => this.heroSprite?.clearTint());
+    }
+    // Screen shake on heavy hits (boss or >20% hp damage)
+    const hpRatio = this.cachedPlayerHpMax > 0 ? finalDmgTaken / this.cachedPlayerHpMax : 0;
+    if (this.isBoss || hpRatio > 0.2) {
+      this.cameras.main.shake(200, this.isBoss ? 0.015 : 0.008);
     }
     const runAfterHit = useGameStore.getState().run;
     const currentPlayerHp = runAfterHit?.playerHp ?? 0;
