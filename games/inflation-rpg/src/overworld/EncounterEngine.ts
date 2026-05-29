@@ -146,6 +146,8 @@ export const BOSS_STREAK_MULTIPLIER = 1; // +1× per consecutive boss kill
 // C173: exhaustion debuff
 export const EXHAUSTION_THRESHOLD = 50; // fights without village
 export const EXHAUSTION_ATK_PENALTY = 0.10; // -10% ATK
+// C174: lifesteal on kill
+export const LIFESTEAL_RATE = 0.01; // 1% of damage dealt → HP
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -312,11 +314,13 @@ export class EncounterEngine {
       let hitCount = 0;
       let rageTurn = 0;
       let luckyDodge = false;
+      let totalDamageDealt = 0; // C174: track for lifesteal
       while (eHp > 0 && !hero.staggered) {
         const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
         if (isCrit) didCrit = true;
         hitCount++;
+        totalDamageDealt += heroAtk;
         eHp -= heroAtk;
         if (eHp > 0) {
           // C132: boss rage — boss ATK escalates each turn the fight lasts
@@ -491,6 +495,9 @@ export class EncounterEngine {
       // C156: HP regen on win
       const regenAmount = Math.max(1, Math.floor(hero.hpMax * WIN_HP_REGEN_RATE));
       hero.heal(regenAmount);
+      // C174: lifesteal — heal based on damage dealt
+      const lifestealHeal = Math.max(1, Math.floor(totalDamageDealt * LIFESTEAL_RATE));
+      hero.heal(lifestealHeal);
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
       // C136: decrement shrine buff after each fight
