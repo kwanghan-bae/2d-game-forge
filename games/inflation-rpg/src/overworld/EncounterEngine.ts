@@ -287,6 +287,9 @@ export const DARKNESS_CURSE_ATK_PENALTY = 0.20; // -20% ATK while cursed
 // C239: boss loot table
 export const BOSS_LOOT_GOLD_MUL = 2.0; // bosses matching loot table give x2 gold
 export const BOSS_LOOT_INTERVAL = 5; // every 5th boss is a "loot boss"
+// C240: time pressure
+export const TIME_PRESSURE_PER_100 = 0.10; // +10% enemy HP per 100 fights
+export const TIME_PRESSURE_CAP = 1.00; // max +100% enemy HP
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -462,7 +465,9 @@ export class EncounterEngine {
       const atkMul = isDangerZone ? DANGER_ZONE_STAT_MUL : 1; // elite has normal ATK
       // C199: endgame boss scaling — bosses get stronger with streak
       const bossStreakScale = isBoss ? (1 + this.bossStreak * BOSS_STREAK_STAT_SCALE) : 1;
-      const enemyHp = Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale);
+      // C240: time pressure — enemies get tougher over total fights
+      const timePressureMul = 1 + Math.min(TIME_PRESSURE_CAP, Math.floor(this.totalWins / 100) * TIME_PRESSURE_PER_100);
+      const enemyHp = Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul);
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale);
 
       if (hero.staggered) return events;
