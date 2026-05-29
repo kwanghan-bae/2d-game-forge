@@ -108,6 +108,9 @@ export const OVERKILL_GOLD_BONUS = 1.0; // +100% gold on one-shot kills
 export const WIN_HP_REGEN_RATE = 0.02; // recover 2% max HP per win
 // C157: boss gold vault — bonus lump gold on boss defeat
 export const BOSS_VAULT_GOLD_PER_LEVEL = 100;
+// C158: near-death power surge — low HP = ATK boost
+export const NEAR_DEATH_HP_THRESHOLD = 0.10; // below 10% HP
+export const NEAR_DEATH_ATK_MUL = 1.5; // ×1.5 ATK when near death
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -259,7 +262,9 @@ export class EncounterEngine {
       const revengeMul = this.lastDeathEnemyId === landmarkId ? 1 + REVENGE_ATK_BONUS : 1;
       // C148: kill milestone ATK bonus
       const milestoneMul = 1 + this.killMilestones * KILL_MILESTONE_ATK_BONUS;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul));
+      // C158: near-death power surge
+      const nearDeathMul = hero.hp < hero.hpMax * NEAR_DEATH_HP_THRESHOLD ? NEAR_DEATH_ATK_MUL : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
