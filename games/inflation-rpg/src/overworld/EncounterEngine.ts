@@ -47,6 +47,9 @@ export const BOSS_RAGE_ATK_PER_TURN = 0.10; // +10% base ATK per turn
 export const ELITE_SPAWN_RATE = 0.05; // 5% chance on enemy encounters
 export const ELITE_HP_MUL = 2.0;
 export const ELITE_EXP_MUL = 2.5;
+// C134: village rest bonus — arrive with low HP → permanent max HP boost
+export const VILLAGE_REST_HP_THRESHOLD = 0.30; // < 30% HP to trigger
+export const VILLAGE_REST_HP_BOOST = 0.01; // +1% max HP permanently
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -323,6 +326,12 @@ export class EncounterEngine {
     } else if (kind === 'village') {
       // C125: village visit resets battle momentum
       this.battleMomentum = 0;
+      // C134: village rest bonus — arrive with low HP → permanent max HP boost
+      if (hero.hp < hero.hpMax * VILLAGE_REST_HP_THRESHOLD) {
+        const hpBoost = Math.max(1, Math.floor(hero.hpMax * VILLAGE_REST_HP_BOOST));
+        hero.hpMax += hpBoost;
+        events.push({ type: 'village_rest_bonus', hpBoost });
+      }
       const healAmount = Math.floor(hero.hpMax * 0.25);
       hero.heal(healAmount);
     } else if (kind === 'shrine') {

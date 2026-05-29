@@ -431,3 +431,25 @@ describe('EncounterEngine — C133 elite enemy', () => {
     }
   });
 });
+
+describe('EncounterEngine — C134 village rest bonus', () => {
+  it('grants HP boost when arriving at village with low HP', () => {
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 1000, heroAtkBase: 100 });
+    // Damage hero to below 30% HP
+    hero.takeDamage(750); // hp = 250, which is 25% of 1000
+    const hpMaxBefore = hero.hpMax;
+    const engine = new EncounterEngine(new SeededRng(1));
+    const events = engine.resolveEncounter(hero, 'village', 'v_0');
+    const bonus = events.find(e => e.type === 'village_rest_bonus');
+    expect(bonus).toBeDefined();
+    expect(hero.hpMax).toBeGreaterThan(hpMaxBefore);
+  });
+
+  it('no bonus when HP is above threshold', () => {
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 1000, heroAtkBase: 100 });
+    // Hero is at full HP — above 30%
+    const engine = new EncounterEngine(new SeededRng(1));
+    const events = engine.resolveEncounter(hero, 'village', 'v_0');
+    expect(events.some(e => e.type === 'village_rest_bonus')).toBe(false);
+  });
+});
