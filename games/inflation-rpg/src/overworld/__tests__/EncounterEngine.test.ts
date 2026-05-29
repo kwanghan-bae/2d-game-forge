@@ -279,3 +279,27 @@ describe('EncounterEngine — C123 overkill', () => {
     expect(evs.some(e => e.type === 'overkill')).toBe(false);
   });
 });
+
+describe('EncounterEngine — C124 close call', () => {
+  it('close_call fires when hero survives with < 10% HP', () => {
+    // Hero with low HP that barely survives
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 100, heroAtkBase: 50 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    // Damage hero to < 10% HP manually, then fight a very weak enemy
+    hero.takeDamage(92); // 8 HP remaining (8% of 100)
+    // The enemy will do some damage but hero should survive with strong atk
+    const evs = engine.resolveEncounter(hero, 'enemy', 'e_0');
+    // Either close_call fires or hero dies — both are valid depending on RNG
+    const hasCloseCall = evs.some(e => e.type === 'close_call');
+    const hasDeath = evs.some(e => e.type === 'hero_died');
+    // At least one of these should happen since HP is very low
+    expect(hasCloseCall || hasDeath || hero.hp >= hero.hpMax * 0.10).toBe(true);
+  });
+
+  it('close_call does not fire on overkill (no damage taken)', () => {
+    const hero = makeHero(1); // massive ATK, one-shots everything
+    const engine = new EncounterEngine(new SeededRng(1));
+    const evs = engine.resolveEncounter(hero, 'enemy', 'e_0');
+    expect(evs.some(e => e.type === 'close_call')).toBe(false);
+  });
+});
