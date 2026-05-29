@@ -361,6 +361,8 @@ export const DODGE_COUNTER_ATK_CAP = 0.20; // max +20%
 // C269: low HP exp bonus
 export const LOW_HP_EXP_THRESHOLD = 0.30; // below 30% HP
 export const LOW_HP_EXP_BONUS = 0.25; // +25% exp
+// C270: elite gold bonus
+export const ELITE_GOLD_BONUS = 0.50; // +50% gold from elites
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -973,7 +975,9 @@ export class EncounterEngine {
       const comboMilestoneMul = (this.killCount > 0 && this.killCount % COMBO_MILESTONE_INTERVAL === 0) ? (1 + COMBO_MILESTONE_GOLD_BONUS) : 1;
       // C250: full HP gold bonus
       const fullHpGoldMul = (hero.hp >= hero.hpMax) ? (1 + FULL_HP_GOLD_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul);
+      // C270: elite gold bonus
+      const eliteGoldMul = isElite ? (1 + ELITE_GOLD_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       // C259: gold magnet prestige scaling
