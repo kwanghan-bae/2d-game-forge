@@ -5,6 +5,7 @@ import type { Chapter } from '../hero/HeroLifecycle';
 export type OverworldEvent =
   | { type: 'tick';            t: number }
   | { type: 'arrived_at';      landmarkId: string; landmarkKind: LandmarkKind }
+  | { type: 'danger_zone_entered'; enemyId: string }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
   | { type: 'level_up';        from: number; to: number }

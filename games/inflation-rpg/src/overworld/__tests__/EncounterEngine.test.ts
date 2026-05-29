@@ -86,3 +86,71 @@ describe('Cycle 1 F1 — variance pass 상수', () => {
     expect(fires).toBeLessThanOrEqual(230);
   });
 });
+
+describe('EncounterEngine — C119 danger zone', () => {
+  it('danger_zone_entered fires probabilistically on enemy encounters', () => {
+    let dangerCount = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const hero = makeHero(seed);
+      const engine = new EncounterEngine(new SeededRng(seed));
+      const events = engine.resolveEncounter(hero, 'enemy', `e_${seed}`);
+      if (events.some(e => e.type === 'danger_zone_entered')) dangerCount++;
+    }
+    // 15% rate over 200 → expect 10-60 triggers (binomial variance)
+    expect(dangerCount).toBeGreaterThan(10);
+    expect(dangerCount).toBeLessThan(60);
+  });
+
+  it('danger_zone_entered never fires on boss encounters', () => {
+    for (let seed = 0; seed < 100; seed++) {
+      const hero = makeHero(seed);
+      const engine = new EncounterEngine(new SeededRng(seed));
+      const events = engine.resolveEncounter(hero, 'boss', `b_${seed}`);
+      expect(events.some(e => e.type === 'danger_zone_entered')).toBe(false);
+    }
+  });
+
+  it('danger zone gives ×3 exp compared to normal', () => {
+    // Find a seed that triggers danger zone
+    let dangerSeed = -1;
+    for (let seed = 0; seed < 200; seed++) {
+      const hero = makeHero(seed);
+      const engine = new EncounterEngine(new SeededRng(seed));
+      const events = engine.resolveEncounter(hero, 'enemy', 'e_test');
+      if (events.some(e => e.type === 'danger_zone_entered')) {
+        dangerSeed = seed;
+        break;
+      }
+    }
+    expect(dangerSeed).toBeGreaterThanOrEqual(0);
+
+    // Get danger exp
+    const heroD = makeHero(dangerSeed);
+    const engD = new EncounterEngine(new SeededRng(dangerSeed));
+    const eventsD = engD.resolveEncounter(heroD, 'enemy', 'e_test');
+    const wonD = eventsD.find(e => e.type === 'battle_won');
+
+    // Get normal exp with a seed that does NOT trigger danger zone
+    let normalSeed = -1;
+    for (let seed = 0; seed < 200; seed++) {
+      const hero = makeHero(seed);
+      const engine = new EncounterEngine(new SeededRng(seed));
+      const events = engine.resolveEncounter(hero, 'enemy', 'e_test');
+      if (!events.some(e => e.type === 'danger_zone_entered')) {
+        normalSeed = seed;
+        break;
+      }
+    }
+    const heroN = makeHero(normalSeed);
+    const engN = new EncounterEngine(new SeededRng(normalSeed));
+    const eventsN = engN.resolveEncounter(heroN, 'enemy', 'e_test');
+    const wonN = eventsN.find(e => e.type === 'battle_won');
+
+    // Both should have battle_won with exp; danger should be 3× normal
+    expect(wonD?.type === 'battle_won' && wonD.expGain).toBeGreaterThan(0);
+    expect(wonN?.type === 'battle_won' && wonN.expGain).toBeGreaterThan(0);
+    if (wonD?.type === 'battle_won' && wonN?.type === 'battle_won') {
+      expect(wonD.expGain).toBe(wonN.expGain * 3);
+    }
+  });
+});

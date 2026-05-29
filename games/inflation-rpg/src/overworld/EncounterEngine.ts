@@ -18,6 +18,10 @@ const BOSS_ATK_MUL = 3;  // was 2, tuned C110 — boss danger onset earlier
 const ENEMY_EXP_BASE = 12;
 const BOSS_EXP_BASE = 60;
 const DROP_RATE = 0.36;           // V3-H F2: +20% (was 0.3)
+// C119: danger zone — stronger enemy variant with bonus exp
+export const DANGER_ZONE_RATE = 0.15;
+export const DANGER_ZONE_STAT_MUL = 1.5;
+export const DANGER_ZONE_EXP_MUL = 3;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -89,8 +93,11 @@ export class EncounterEngine {
     const events: OverworldEvent[] = [];
     if (kind === 'enemy' || kind === 'boss') {
       const isBoss = kind === 'boss';
-      const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : 1);
-      const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : 1);
+      // C119: danger zone — 15% chance on regular enemies. ×1.5 stats, ×3 exp.
+      const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE);
+      const dangerMul = isDangerZone ? DANGER_ZONE_STAT_MUL : 1;
+      const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : dangerMul);
+      const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : dangerMul);
 
       if (hero.staggered) return events;
 
@@ -114,6 +121,9 @@ export class EncounterEngine {
         }
       }
 
+      if (isDangerZone) {
+        events.push({ type: 'danger_zone_entered', enemyId: landmarkId });
+      }
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
       const damping = this.opts.damping ?? 1.0;
@@ -147,7 +157,8 @@ export class EncounterEngine {
         events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
         return events;
       }
-      const expGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
+      const baseExpGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
+      const expGain = isDangerZone ? Math.floor(baseExpGain * DANGER_ZONE_EXP_MUL) : baseExpGain;
       const baseDropOdds = isBoss ? 0.96 : DROP_RATE; // V3-H F2: boss 0.8→0.96 (+20%)
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
