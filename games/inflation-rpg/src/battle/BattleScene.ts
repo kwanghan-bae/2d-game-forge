@@ -40,6 +40,7 @@ import { getBossBattleQuote } from '../data/bossBattleQuotes';
 import { getBossVictoryMessage } from '../data/bossVictoryMessages';
 import { getDeathQuote } from '../data/deathQuotes';
 import { getBossLastWords } from '../data/bossLastWords';
+import { getAreaWarning } from '../data/areaWarnings';
 
 import { REALM_ACCENTS } from '../systems/realmAccent';
 
@@ -197,7 +198,10 @@ export class BattleScene extends Phaser.Scene {
     this.hpBarBg = this.add.rectangle(16, 44, 320, 10, theme.panel).setOrigin(0);
     this.hpBarFill = this.add.rectangle(16, 44, 320, 10, theme.hp).setOrigin(0);
     const battleQuote = getBattleQuote(run.characterId) ?? '';
-    this.logText = this.add.text(16, 64, battleQuote, { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
+    // Area danger warning for significantly higher level areas
+    const areaWarning = getAreaWarning(monsterLevel, run.level);
+    const initialLog = areaWarning ? `⚠️ ${areaWarning}\n${battleQuote}` : battleQuote;
+    this.logText = this.add.text(16, 64, initialLog, { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
     this.killCount = 0;
     this.roundCount = 0;
     this.totalDamageDealt = 0;
