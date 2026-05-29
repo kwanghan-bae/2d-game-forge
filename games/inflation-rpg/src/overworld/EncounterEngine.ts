@@ -213,6 +213,8 @@ export const SURVIVOR_THRESHOLD = 100; // fights without dying
 export const SURVIVOR_HP_BONUS = 0.10; // +10% max HP
 // C198: combo breaker — ATK bonus after losing combo
 export const COMBO_BREAKER_ATK_BONUS = 0.30; // +30% ATK
+// C199: endgame boss scaling
+export const BOSS_STREAK_STAT_SCALE = 0.05; // +5% HP/ATK per boss streak
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -335,8 +337,10 @@ export class EncounterEngine {
       const isTreasureGoblin = !isBoss && !isDangerZone && !isElite && this.rng.chance(goblinRate);
       const hpMul = isDangerZone ? DANGER_ZONE_STAT_MUL : isElite ? ELITE_HP_MUL : isTreasureGoblin ? TREASURE_GOBLIN_HP_MUL : 1;
       const atkMul = isDangerZone ? DANGER_ZONE_STAT_MUL : 1; // elite has normal ATK
-      const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul);
-      const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul);
+      // C199: endgame boss scaling — bosses get stronger with streak
+      const bossStreakScale = isBoss ? (1 + this.bossStreak * BOSS_STREAK_STAT_SCALE) : 1;
+      const enemyHp = Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale);
+      const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale);
 
       if (hero.staggered) return events;
 
