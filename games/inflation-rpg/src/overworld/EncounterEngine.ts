@@ -111,6 +111,8 @@ export const BOSS_VAULT_GOLD_PER_LEVEL = 100;
 // C158: near-death power surge — low HP = ATK boost
 export const NEAR_DEATH_HP_THRESHOLD = 0.10; // below 10% HP
 export const NEAR_DEATH_ATK_MUL = 1.5; // ×1.5 ATK when near death
+// C159: double-or-nothing — chance to keep gold on death
+export const GOLD_SAVE_CHANCE = 0.25; // 25% chance to not lose gold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -305,9 +307,13 @@ export class EncounterEngine {
         this.comboStreak = 0;
         // C141: survival streak resets on death
         this.survivalStreak = 0;
-        // C147: gold loss on death — lose 10%
-        const goldLost = Math.floor(hero.gold * GOLD_DEATH_PENALTY);
-        hero.gold -= goldLost;
+        // C147: gold loss on death — lose 10% (C159: 25% chance to save)
+        if (!this.rng.chance(GOLD_SAVE_CHANCE)) {
+          const goldLost = Math.floor(hero.gold * GOLD_DEATH_PENALTY);
+          hero.gold -= goldLost;
+        } else {
+          events.push({ type: 'gold_saved' });
+        }
         // C137: death streak tracking
         this.deathStreak++;
         if (this.deathStreak >= DEATH_STREAK_THRESHOLD) {

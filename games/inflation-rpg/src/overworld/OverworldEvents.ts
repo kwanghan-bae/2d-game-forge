@@ -26,6 +26,7 @@ export type OverworldEvent =
   | { type: 'treasure_goblin'; enemyId: string }
   | { type: 'village_shop_purchase'; cost: number; effect: string }
   | { type: 'boss_vault'; gold: number }
+  | { type: 'gold_saved' }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
   | { type: 'level_up';        from: number; to: number }
