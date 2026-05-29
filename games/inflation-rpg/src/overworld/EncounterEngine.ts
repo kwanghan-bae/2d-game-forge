@@ -315,6 +315,9 @@ export const SACRIFICE_FURY_DURATION = 5; // lasts 5 fights
 export const WAVE_PRESTIGE_EXP_BONUS = 0.10; // +10% wave exp per prestige
 // C250: full HP gold bonus
 export const FULL_HP_GOLD_BONUS = 0.20; // +20% gold when at full HP
+// C251: boss slayer exp buff
+export const BOSS_SLAYER_EXP_BONUS = 0.50; // +50% exp after boss kill
+export const BOSS_SLAYER_DURATION = 3; // lasts 3 fights
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -456,6 +459,7 @@ export class EncounterEngine {
   private bossesKilled = 0; // C239: boss kill counter for loot table
   private armorRemaining = 0; // C242: armor buff fights remaining
   private sacrificeFuryRemaining = 0; // C248: fury buff from sacrifice
+  private bossSlayerRemaining = 0; // C251: exp buff from boss kill
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -812,7 +816,9 @@ export class EncounterEngine {
       const quickKillMul = hitCount <= QUICK_KILL_MAX_HITS ? (1 + QUICK_KILL_EXP_BONUS) : 1;
       // C241: companion exp bonus
       const companionMul = this.totalWins >= COMPANION_UNLOCK_WINS ? (1 + COMPANION_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul);
+      // C251: boss slayer exp buff
+      const bossSlayerMul = this.bossSlayerRemaining > 0 ? (1 + BOSS_SLAYER_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -908,6 +914,8 @@ export class EncounterEngine {
         const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul * bossLootMul);
         hero.gold += vaultGold;
         events.push({ type: 'boss_vault', gold: vaultGold });
+        // C251: boss slayer buff
+        this.bossSlayerRemaining = BOSS_SLAYER_DURATION;
       }
       // C156: HP regen on win
       // C238: reset consecutive deaths on win
@@ -962,6 +970,8 @@ export class EncounterEngine {
       if (this.armorRemaining > 0) this.armorRemaining--;
       // C248: decrement sacrifice fury
       if (this.sacrificeFuryRemaining > 0) this.sacrificeFuryRemaining--;
+      // C251: decrement boss slayer
+      if (this.bossSlayerRemaining > 0) this.bossSlayerRemaining--;
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
       if (this.mercyRemaining > 0) this.mercyRemaining--;
