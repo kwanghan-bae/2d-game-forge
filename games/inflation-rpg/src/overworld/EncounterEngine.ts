@@ -389,6 +389,8 @@ export const EXP_CASCADE_BONUS = 0.50;
 export const BATTLE_HARDEN_INTERVAL = 100;
 export const BATTLE_HARDEN_HP_BONUS = 0.01; // +1% max HP
 export const BATTLE_HARDEN_CAP = 0.10; // max +10%
+// C279: prestige exp scaling — +5% exp per prestige
+export const PRESTIGE_EXP_BONUS = 0.05;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -943,7 +945,9 @@ export class EncounterEngine {
       if (this.comboBreakBonus) this.comboBreakBonus = false;
       // C277: exp cascade
       const expCascadeMul = this.consecutiveOneHits >= GOLD_CASCADE_THRESHOLD ? (1 + EXP_CASCADE_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul);
+      // C279: prestige exp scaling
+      const prestigeExpMul = 1 + this.prestigeCount * PRESTIGE_EXP_BONUS;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
