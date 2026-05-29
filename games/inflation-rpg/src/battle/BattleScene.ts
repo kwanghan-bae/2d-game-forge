@@ -254,8 +254,9 @@ export class BattleScene extends Phaser.Scene {
       ease: 'Back.easeOut',
     });
 
-    // Boss entrance SFX + screen flash + special quote
+    // Boss golden tint for visual hierarchy
     if (this.isBoss) {
+      this.enemySprite.setTint(0xffd700);
       playSfx('boss-appear');
       this.cameras.main.flash(300, 255, 200, 100, false);
       const bossQuote = getBossBattleQuote(run.characterId);
@@ -364,7 +365,11 @@ export class BattleScene extends Phaser.Scene {
     // Hit VFX — flash enemy sprite white + scale punch + slash line
     if (this.enemySprite) {
       this.enemySprite.setTintFill(0xffffff);
-      this.time.delayedCall(80, () => this.enemySprite?.clearTint());
+      this.time.delayedCall(80, () => {
+        if (!this.enemySprite) return;
+        this.enemySprite.clearTint();
+        if (this.isBoss) this.enemySprite.setTint(0xffd700);
+      });
       this.tweens.add({
         targets: this.enemySprite,
         scaleX: (this.isBoss ? 5 : 4) * 1.2,
