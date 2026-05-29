@@ -4,6 +4,7 @@ import { useGameStore } from '../store/gameStore';
 import { computeLightDelta } from '../overworld/lightEmit';
 import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import { REALM_CATALOG } from '../data/realms';
+import { getRealmLore } from '../data/realmLore';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { getNpcKindEmoji } from '../data/npcs';
 import type { NpcEntity } from '../types';
@@ -223,7 +224,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             realmOverlayTimerRef.current = setTimeout(() => {
               setRealmOverlay(null);
               realmOverlayTimerRef.current = null;
-            }, 2000);
+            }, 3000);
           }
           // V3-H Bug A: sync OverworldScene's stale unlockedRealms copy after a
           // realm_unlocked event so DestinationResolver.choose sees the new exit landmark.
@@ -700,7 +701,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             background: 'rgba(0,0,0,0.7)',
             padding: '12px 24px',
             borderRadius: 8,
-            animation: 'forgeChapterFade 2s ease-in-out forwards',
+            animation: 'forgeChapterFade 3s ease-in-out forwards',
             pointerEvents: 'none',
             zIndex: 50,
           }}
@@ -710,6 +711,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             const r = REALM_CATALOG.find(rr => rr.id === realmOverlay.realmId);
             return r?.nameKR ?? realmOverlay.realmId;
           })()}
+          <div style={{ fontSize: 12, fontWeight: 400, marginTop: 6, opacity: 0.8, maxWidth: 280, lineHeight: 1.5 }}>
+            {getRealmLore(realmOverlay.realmId)}
+          </div>
         </div>
       )}
 
