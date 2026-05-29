@@ -262,6 +262,9 @@ export const QUICK_KILL_EXP_BONUS = 0.10; // +10% exp
 // C228: bounty board
 export const BOUNTY_KILL_INTERVAL = 25; // bounty every 25 kills
 export const BOUNTY_GOLD_REWARD = 100; // flat gold reward
+// C229: boss enrage timer
+export const BOSS_ENRAGE_TIMER_TURN = 10; // boss enrages after 10 hits
+export const BOSS_ENRAGE_TIMER_MUL = 2.0; // boss ATK doubles
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -555,8 +558,10 @@ export class EncounterEngine {
           // C132: boss rage — boss ATK escalates each turn the fight lasts
           // C165: boss enrage — ×2 ATK when below 50% HP
           const enrageMul = isBoss && eHp < enemyHp * BOSS_ENRAGE_HP_THRESHOLD ? BOSS_ENRAGE_ATK_MUL : 1;
+          // C229: boss enrage timer — additional multiplier after 10 hits
+          const timerEnrageMul = isBoss && rageTurn >= BOSS_ENRAGE_TIMER_TURN ? BOSS_ENRAGE_TIMER_MUL : 1;
           const rageAtk = isBoss
-            ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN) * enrageMul)
+            ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN) * enrageMul * timerEnrageMul)
             : enemyAtk;
           // C137: mercy damage reduction after death streak
           const mercyReduction = this.mercyRemaining > 0 ? (1 - MERCY_DAMAGE_REDUCTION) : 1;
