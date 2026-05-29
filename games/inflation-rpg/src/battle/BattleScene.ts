@@ -84,6 +84,7 @@ export class BattleScene extends Phaser.Scene {
   private hpBarFill?: Phaser.GameObjects.Rectangle;
   private enemyText?: Phaser.GameObjects.Text;
   private logText?: Phaser.GameObjects.Text;
+  private logHistory: string[] = [];
   private skillState: SkillState = createSkillState();
   private activeSkills: ActiveSkill[] = [];
   private cachedPlayerAtk = 0;
@@ -250,7 +251,7 @@ export class BattleScene extends Phaser.Scene {
       playSfx('boss-appear');
       this.cameras.main.flash(300, 255, 200, 100, false);
       const bossQuote = getBossBattleQuote(run.characterId);
-      if (bossQuote && this.logText) this.logText.setText(bossQuote);
+      if (bossQuote) this.pushLog(bossQuote);
     }
 
     void this.enemyText; void this.hpBarBg;
@@ -386,7 +387,7 @@ export class BattleScene extends Phaser.Scene {
     }
     logParts.push(`${totalEnemyDmg.toLocaleString()} 데미지`);
     if (attackProcs.magicBurstDamage > 0) logParts.push(' (마법 폭발!)');
-    this.logText?.setText(logParts.join(''));
+    this.pushLog(logParts.join(''));
 
     // Floating damage number
     this.showFloatingDamage(totalEnemyDmg, crit);
@@ -513,7 +514,7 @@ export class BattleScene extends Phaser.Scene {
     const monsterLevelForAtk = this.cachedMonsterLevel;
     // Passive dodge — skip enemy attack entirely
     if (this.passiveBonuses.dodgeRateBonus > 0 && Math.random() < this.passiveBonuses.dodgeRateBonus) {
-      this.logText?.setText('회피!');
+      this.pushLog('회피!');
       playSfx('dodge', 0.8 + Math.random() * 0.5);
       // Dodge animation: hero sidesteps left and returns
       if (this.heroSprite) {
@@ -764,6 +765,12 @@ export class BattleScene extends Phaser.Scene {
       ease: 'Cubic.easeOut',
       onComplete: () => text.destroy(),
     });
+  }
+
+  private pushLog(msg: string) {
+    this.logHistory.push(msg);
+    if (this.logHistory.length > 3) this.logHistory.shift();
+    if (this.logText) this.logText.setText(this.logHistory.join('\n'));
   }
 
   private showBattleStats() {
