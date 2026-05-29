@@ -302,6 +302,9 @@ export const SPEC_ATK_BONUS = 0.25; // +25% ATK after prestige (auto-granted)
 // C245: kill combo milestone
 export const COMBO_MILESTONE_INTERVAL = 50; // every 50-kill streak
 export const COMBO_MILESTONE_GOLD_BONUS = 0.30; // +30% gold on milestone fight
+// C246: elemental weakness
+export const ELEMENTAL_LEVEL_MOD = 3; // hero level divisible by this = advantage
+export const ELEMENTAL_DMG_BONUS = 0.50; // +50% damage on elemental advantage
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -568,7 +571,9 @@ export class EncounterEngine {
       const curseMul = this.darknessCursed ? (1 - DARKNESS_CURSE_ATK_PENALTY) : 1;
       // C243: hero specialization — permanent ATK bonus after first prestige
       const specMul = this.prestigeCount > 0 ? (1 + SPEC_ATK_BONUS) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul));
+      // C246: elemental weakness
+      const elementalMul = (hero.level % ELEMENTAL_LEVEL_MOD === 0) ? (1 + ELEMENTAL_DMG_BONUS) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
