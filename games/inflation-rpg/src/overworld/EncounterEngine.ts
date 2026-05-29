@@ -106,6 +106,8 @@ export const VILLAGE_SHOP_SHIELD_DURATION = 3; // lasts 3 fights
 export const OVERKILL_GOLD_BONUS = 1.0; // +100% gold on one-shot kills
 // C156: HP regen on win
 export const WIN_HP_REGEN_RATE = 0.02; // recover 2% max HP per win
+// C157: boss gold vault — bonus lump gold on boss defeat
+export const BOSS_VAULT_GOLD_PER_LEVEL = 100;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -401,6 +403,12 @@ export class EncounterEngine {
       const overkillGoldMul = isOverkill ? (1 + OVERKILL_GOLD_BONUS) : 1;
       const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul);
       hero.gold += goldEarned;
+      // C157: boss vault — lump sum gold bonus for boss kills
+      if (isBoss) {
+        const vaultGold = hero.level * BOSS_VAULT_GOLD_PER_LEVEL;
+        hero.gold += vaultGold;
+        events.push({ type: 'boss_vault', gold: vaultGold });
+      }
       // C156: HP regen on win
       const regenAmount = Math.max(1, Math.floor(hero.hpMax * WIN_HP_REGEN_RATE));
       hero.heal(regenAmount);
