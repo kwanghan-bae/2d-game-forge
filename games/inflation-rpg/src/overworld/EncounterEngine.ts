@@ -225,6 +225,9 @@ export const TREASURE_HUNTER_CAVE_INTERVAL = 5;
 export const TREASURE_HUNTER_GOLD_BONUS = 0.10; // +10% gold per tier
 // C215: exp shield
 export const EXP_SHIELD_PRESERVE = 0.5; // preserve 50% of exp on first death
+// C216: elite combo
+export const ELITE_COMBO_THRESHOLD = 3; // 3 elites in a row
+export const ELITE_COMBO_DROP_GUARANTEE = true;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -354,6 +357,7 @@ export class EncounterEngine {
   private arenaActive = false; // C212: next fight is arena
   private caveVisits = 0; // C214: total cave visits
   private expShieldUsed = false; // C215: one-time exp preservation
+  private eliteCombo = 0; // C216: consecutive elite kills
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -660,8 +664,12 @@ export class EncounterEngine {
       const bossExpMul = isBoss ? BOSS_KILL_EXP_MUL : 1;
       // C211: wind weather exp bonus
       const weatherExpMul = weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1;
+      // C212: arena reward multiplier (used for both exp and gold)
+      const arenaMul = this.arenaActive ? ARENA_REWARD_MUL : 1;
       const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul);
-      const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
+      // C216: elite combo — 3 consecutive elites guarantee drop on next
+      const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
+      const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
       // C123: overkill bonus — one-hit kills get +15% drop rate
@@ -715,8 +723,6 @@ export class EncounterEngine {
       // C188: revenge gold bonus
       const revengeGoldMul = this.revengeGoldRemaining > 0 ? (1 + REVENGE_GOLD_BONUS) : 1;
       if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
-      // C212: arena reward multiplier
-      const arenaMul = this.arenaActive ? ARENA_REWARD_MUL : 1;
       // C214: treasure hunter gold bonus
       const treasureHunterMul = 1 + Math.floor(this.caveVisits / TREASURE_HUNTER_CAVE_INTERVAL) * TREASURE_HUNTER_GOLD_BONUS;
       const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul);
@@ -776,6 +782,9 @@ export class EncounterEngine {
       if (this.mercyRemaining > 0) this.mercyRemaining--;
       // C141: survival streak increments on win
       this.survivalStreak++;
+      // C216: elite combo tracking
+      if (isElite) { this.eliteCombo++; } else { this.eliteCombo = 0; }
+      if (eliteComboGuarantee) this.eliteCombo = 0; // consumed
       // C146: wave tracking
       this.totalWins++;
       // C210: check kill milestones
