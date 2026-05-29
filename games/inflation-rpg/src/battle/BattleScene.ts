@@ -245,15 +245,47 @@ export class BattleScene extends Phaser.Scene {
     );
     this.enemySprite = createDungeonSprite(this, 270, 200, enemyFrame, this.isBoss ? 5 : 4);
 
-    // Enemy spawn bounce animation
-    this.enemySprite.setScale(0);
-    this.tweens.add({
-      targets: this.enemySprite,
-      scaleX: this.isBoss ? 5 : 4,
-      scaleY: this.isBoss ? 5 : 4,
-      duration: 300,
-      ease: 'Back.easeOut',
-    });
+    // Enemy spawn animation — varied by enemy type
+    const targetScale = this.isBoss ? 5 : 4;
+    if (this.isBoss) {
+      // Boss: dramatic spin + scale entrance
+      this.enemySprite.setScale(0).setAngle(-180).setAlpha(0);
+      this.tweens.add({
+        targets: this.enemySprite,
+        scaleX: targetScale, scaleY: targetScale,
+        angle: 0, alpha: 1,
+        duration: 500,
+        ease: 'Back.easeOut',
+      });
+    } else {
+      // Normal enemies: rotate between 3 spawn styles
+      const spawnStyle = (this.scene.key.charCodeAt(0) + Date.now()) % 3;
+      if (spawnStyle === 0) {
+        // Bounce (classic)
+        this.enemySprite.setScale(0);
+        this.tweens.add({
+          targets: this.enemySprite,
+          scaleX: targetScale, scaleY: targetScale,
+          duration: 300, ease: 'Back.easeOut',
+        });
+      } else if (spawnStyle === 1) {
+        // Slide from right
+        this.enemySprite.setScale(targetScale).setX(400).setAlpha(0);
+        this.tweens.add({
+          targets: this.enemySprite,
+          x: 270, alpha: 1,
+          duration: 250, ease: 'Power2',
+        });
+      } else {
+        // Fade in with slight float up
+        this.enemySprite.setScale(targetScale).setAlpha(0).setY(220);
+        this.tweens.add({
+          targets: this.enemySprite,
+          alpha: 1, y: 200,
+          duration: 300, ease: 'Sine.easeOut',
+        });
+      }
+    }
 
     // Boss golden tint for visual hierarchy
     if (this.isBoss) {
