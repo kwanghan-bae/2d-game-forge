@@ -224,6 +224,8 @@ export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 export const DANGER_TAX_IMMUNITY = true;
 // C203: critical hit streak
 export const CRIT_STREAK_GUARANTEE_THRESHOLD = 3; // 3 crits → next guaranteed
+// C204: boss kill exp burst
+export const BOSS_KILL_EXP_MUL = 3.0; // ×3 exp for boss kills
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -594,7 +596,9 @@ export class EncounterEngine {
       const expDecayMul = hero.level > EXP_DECAY_LEVEL_START
         ? Math.max(1 - EXP_DECAY_CAP, 1 - (hero.level - EXP_DECAY_LEVEL_START) * EXP_DECAY_PER_LEVEL)
         : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul);
+      // C204: boss kill exp burst
+      const bossExpMul = isBoss ? BOSS_KILL_EXP_MUL : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
