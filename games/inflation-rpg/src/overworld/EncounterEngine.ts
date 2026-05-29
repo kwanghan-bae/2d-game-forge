@@ -284,6 +284,9 @@ export const EXP_OVERFLOW_BONUS = 0.50; // 50% bonus on carried-over exp
 // C238: darkness curse
 export const DARKNESS_CURSE_DEATHS = 3; // consecutive deaths to trigger curse
 export const DARKNESS_CURSE_ATK_PENALTY = 0.20; // -20% ATK while cursed
+// C239: boss loot table
+export const BOSS_LOOT_GOLD_MUL = 2.0; // bosses matching loot table give x2 gold
+export const BOSS_LOOT_INTERVAL = 5; // every 5th boss is a "loot boss"
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -422,6 +425,7 @@ export class EncounterEngine {
   private totalCrits = 0; // C235: total critical hits landed
   private consecutiveDeaths = 0; // C238: consecutive death counter
   private darknessCursed = false; // C238: curse active flag
+  private bossesKilled = 0; // C239: boss kill counter for loot table
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -846,11 +850,14 @@ export class EncounterEngine {
       // C157: boss vault — lump sum gold bonus for boss kills
       if (isBoss) {
         this.bossStreak++;
+        this.bossesKilled++; // C239
         // C172: boss streak multiplier
         const streakMul = 1 + (this.bossStreak - 1) * BOSS_STREAK_MULTIPLIER;
         // C186: overkill boss vault doubler
         const bossOverkillMul = isOverkill ? BOSS_OVERKILL_VAULT_MUL : 1;
-        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul);
+        // C239: boss loot table — every Nth boss gives double gold
+        const bossLootMul = (this.bossesKilled % BOSS_LOOT_INTERVAL === 0) ? BOSS_LOOT_GOLD_MUL : 1;
+        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul * bossLootMul);
         hero.gold += vaultGold;
         events.push({ type: 'boss_vault', gold: vaultGold });
       }
