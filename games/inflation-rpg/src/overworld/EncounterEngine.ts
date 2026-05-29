@@ -68,6 +68,8 @@ export const REVENGE_ATK_BONUS = 0.50; // +50% ATK on revenge
 // C141: survival streak — long survival grants bonus exp
 export const SURVIVAL_STREAK_THRESHOLD = 10; // fights survived to start bonus
 export const SURVIVAL_STREAK_EXP_BONUS = 0.05; // +5% per fight above threshold
+// C142: lucky dodge — chance to survive fatal hit with 1 HP
+export const LUCKY_DODGE_CHANCE = 0.10; // 10% on fatal blow
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -214,6 +216,7 @@ export class EncounterEngine {
       let didCrit = false;
       let hitCount = 0;
       let rageTurn = 0;
+      let luckyDodge = false;
       while (eHp > 0 && !hero.staggered) {
         const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
@@ -228,6 +231,12 @@ export class EncounterEngine {
           // C137: mercy damage reduction after death streak
           const mercyReduction = this.mercyRemaining > 0 ? (1 - MERCY_DAMAGE_REDUCTION) : 1;
           hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction)));
+          // C142: lucky dodge — survive fatal hit with 10% chance
+          if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
+            hero.staggered = false;
+            hero.hp = 1;
+            luckyDodge = true;
+          }
           rageTurn++;
         }
       }
@@ -356,6 +365,10 @@ export class EncounterEngine {
         const adrenalineHeal = Math.max(1, Math.floor(hero.hpMax * CLOSE_CALL_HEAL));
         hero.heal(adrenalineHeal);
         events.push({ type: 'close_call', hpRemaining: hero.hp, healed: adrenalineHeal });
+      }
+      // C142: lucky dodge event
+      if (luckyDodge) {
+        events.push({ type: 'lucky_dodge' });
       }
 
       // V1c-1 — merciful drift proc on non-boss kills. Sign branches on the
