@@ -14,6 +14,7 @@ import { getBossById } from '../data/bosses';
 import type { BossType } from '../types';
 import { getBossDefeatStory } from '../data/stories';
 import { resolveEnemyMaxHp, resolveEnemyAtk, resolvePlayerHit, resolveDamageTaken } from './resolver';
+import { formatCompact } from '../systems/numberFormat';
 import { isRunOver, onDefeat } from '../systems/bp';
 import {
   createSkillState, isSkillReady, fireSkill, computeSkillEffect,
@@ -1062,11 +1063,7 @@ export class BattleScene extends Phaser.Scene {
   private showFloatingDamage(amount: number, isCrit: boolean) {
     const x = 270 + (Math.random() - 0.5) * 30;
     const y = 170;
-    const label = amount >= 1_000_000
-      ? `${(amount / 1_000_000).toFixed(1)}M`
-      : amount >= 1_000
-        ? `${(amount / 1_000).toFixed(1)}K`
-        : `${amount}`;
+    const label = formatCompact(amount);
     // Inflation scaling: fontSize grows with digit count (14→32px)
     const digits = Math.max(1, Math.floor(Math.log10(amount + 1)) + 1);
     const baseSize = isCrit ? 18 : 14;
@@ -1123,16 +1120,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private showBattleStats() {
-    const dmgStr = this.totalDamageDealt >= 1_000_000
-      ? `${(this.totalDamageDealt / 1_000_000).toFixed(1)}M`
-      : this.totalDamageDealt >= 1_000
-        ? `${(this.totalDamageDealt / 1_000).toFixed(1)}K`
-        : `${this.totalDamageDealt}`;
+    const dmgStr = formatCompact(this.totalDamageDealt);
     const elapsed = Math.max(1, Math.floor((Date.now() - this.battleStartTime) / 1000));
     const dps = this.totalDamageDealt / elapsed;
-    const dpsStr = dps >= 1_000_000 ? `${(dps / 1_000_000).toFixed(1)}M`
-      : dps >= 1_000 ? `${(dps / 1_000).toFixed(1)}K`
-      : `${Math.floor(dps)}`;
+    const dpsStr = formatCompact(dps);
     const stats = `⚔${dmgStr} | DPS:${dpsStr} | ⟳${this.roundCount} | 💀${this.killCount}`;
     if (this.logText) this.logText.setText(stats);
     // Update session records
