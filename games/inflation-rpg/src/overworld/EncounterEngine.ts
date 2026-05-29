@@ -279,6 +279,8 @@ export const CRIT_GOLD_SCALE_PER_100 = 0.10; // +10% crit gold per 100 crits
 export const CRIT_GOLD_SCALE_CAP = 0.50; // max +50% additional
 // C236: overkill heal
 export const OVERKILL_HEAL_RATE = 0.05; // 5% max HP restored on one-hit kill
+// C237: exp overflow
+export const EXP_OVERFLOW_BONUS = 0.50; // 50% bonus on carried-over exp
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -774,6 +776,11 @@ export class EncounterEngine {
       }
 
       const { leveled } = hero.gainExp(expGain);
+      // C237: exp overflow bonus — leftover exp after level-up boosted by 50%
+      if (leveled.length > 0 && hero.exp > 0) {
+        const overflowBonus = Math.floor(hero.exp * EXP_OVERFLOW_BONUS);
+        hero.exp += overflowBonus;
+      }
       // C166: exp overflow gold bonus — excess exp converts to gold
       if (leveled.length > 0) {
         const overflowGold = Math.floor(hero.exp / EXP_OVERFLOW_GOLD_RATIO);
