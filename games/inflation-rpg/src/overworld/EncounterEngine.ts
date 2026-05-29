@@ -472,6 +472,34 @@ export const COMBO_HEAL_THRESHOLD = 20;
 export const COMBO_HEAL_RATE = 0.01;
 // C310: danger gold interest — danger zone fights increase gold interest earned
 export const DANGER_INTEREST_BONUS = 0.02;
+// C311: crit chain — consecutive crits give +10% ATK each (cap +50%)
+export const CRIT_CHAIN_ATK_BONUS = 0.10;
+export const CRIT_CHAIN_CAP = 0.50;
+// C312: gold harvest — kills at full HP give +15% gold
+export const GOLD_HARVEST_HP_THRESHOLD = 1.0;
+export const GOLD_HARVEST_BONUS = 0.15;
+// C313: wave heal — each wave kill heals 2% HP
+export const WAVE_HEAL_RATE = 0.02;
+// C314: prestige gold multiplier — +10% gold per prestige
+export const PRESTIGE_GOLD_MUL_BONUS = 0.10;
+// C315: combo finisher — killing at combo 100+ grants 3× exp
+export const COMBO_FINISHER_THRESHOLD = 100;
+export const COMBO_FINISHER_EXP_MUL = 3.0;
+// C316: village forge upgrade — forge cost decreases by 50 per prestige (min 100)
+export const FORGE_COST_PRESTIGE_DISCOUNT = 50;
+export const FORGE_COST_MIN = 100;
+// C317: enemy weakening — enemies lose 5% HP per 50 total kills (cap -25%)
+export const ENEMY_WEAKEN_INTERVAL = 50;
+export const ENEMY_WEAKEN_RATE = 0.05;
+export const ENEMY_WEAKEN_CAP = 0.25;
+// C318: gold per crit — each total crit ever = +1 flat gold income
+export const GOLD_PER_CRIT = 1;
+export const GOLD_PER_CRIT_CAP = 50;
+// C319: regeneration buff — at 10+ village visits, win HP regen doubles
+export const REGEN_BUFF_VILLAGE_THRESHOLD = 10;
+export const REGEN_BUFF_MUL = 2.0;
+// C320: danger zone ATK — fighting in danger zone gives +10% ATK
+export const DANGER_ZONE_ATK_BONUS = 0.10;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -626,6 +654,7 @@ export class EncounterEngine {
   private survivorGritActive = false; // C286: survived at low HP
   private fightChainCount = 0; // C293: fights since last village (for exp chain)
   private goldShieldRemaining = 0; // C307: gold shield from shop
+  private consecutiveCrits = 0; // C311: crit chain counter
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -664,7 +693,9 @@ export class EncounterEngine {
       const bossStreakScale = isBoss ? (1 + this.bossStreak * BOSS_STREAK_STAT_SCALE) : 1;
       // C240: time pressure — enemies get tougher over total fights
       const timePressureMul = 1 + Math.min(TIME_PRESSURE_CAP, Math.floor(this.totalWins / 100) * TIME_PRESSURE_PER_100);
-      const enemyHp = Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul);
+      // C317: enemy weakening — kills reduce enemy HP
+      const enemyWeakenMul = 1 - Math.min(ENEMY_WEAKEN_CAP, Math.floor(this.killCount / ENEMY_WEAKEN_INTERVAL) * ENEMY_WEAKEN_RATE);
+      const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * enemyWeakenMul));
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale);
 
       if (hero.staggered) return events;
@@ -772,7 +803,11 @@ export class EncounterEngine {
       const prestigeAtkMul = 1 + this.prestigeCount * PRESTIGE_ATK_BONUS_PER;
       // C291: vengeful spirit — consecutive deaths (danger streak) = bonus ATK
       const vengefulMul = this.consecutiveDeaths >= VENGEFUL_SPIRIT_THRESHOLD ? (1 + VENGEFUL_SPIRIT_ATK_BONUS) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul));
+      // C311: crit chain ATK bonus
+      const critChainMul = 1 + Math.min(CRIT_CHAIN_CAP, this.consecutiveCrits * CRIT_CHAIN_ATK_BONUS);
+      // C320: danger zone ATK bonus
+      const dangerAtkMul = isDangerZone ? (1 + DANGER_ZONE_ATK_BONUS) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -818,6 +853,10 @@ export class EncounterEngine {
         // C309: combo heal — at 20+ combo, heal per hit
         if (this.comboStreak >= COMBO_HEAL_THRESHOLD) {
           hero.heal(Math.max(1, Math.floor(hero.hpMax * COMBO_HEAL_RATE)));
+        }
+        // C313: wave heal — each hit during wave heals
+        if (this.waveRemaining > 0) {
+          hero.heal(Math.max(1, Math.floor(hero.hpMax * WAVE_HEAL_RATE)));
         }
         // C194: double hit — 10% chance for extra strike after 200 kills
         if (eHp > 0 && this.killCount >= DOUBLE_HIT_KILL_THRESHOLD && this.rng.chance(DOUBLE_HIT_CHANCE)) {
@@ -1079,7 +1118,9 @@ export class EncounterEngine {
       const expChainFightMul = 1 + Math.min(EXP_CHAIN_CAP, this.fightChainCount * EXP_CHAIN_PER_FIGHT);
       // C299: elite exp bonus
       const eliteExpMul2 = isElite ? (1 + ELITE_EXP_BONUS_RATE) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2);
+      // C315: combo finisher
+      const comboFinisherMul = this.comboStreak >= COMBO_FINISHER_THRESHOLD ? COMBO_FINISHER_EXP_MUL : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -1172,7 +1213,13 @@ export class EncounterEngine {
       const comboGoldHighMul = this.comboStreak >= COMBO_GOLD_HIGH_THRESHOLD ? COMBO_GOLD_HIGH_MUL : 1;
       // C303: kill streak gold bonus
       const killStreakGoldMul = this.fightChainCount >= KILL_STREAK_GOLD_THRESHOLD ? (1 + KILL_STREAK_GOLD_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul) + levelMilestoneGold;
+      // C312: gold harvest — no damage taken this fight = +15% gold
+      const goldHarvestMul = !tookDamage ? (1 + GOLD_HARVEST_BONUS) : 1;
+      // C314: prestige gold multiplier
+      const prestigeGoldMul2 = 1 + this.prestigeCount * PRESTIGE_GOLD_MUL_BONUS;
+      // C318: gold per crit
+      const critGoldFlat = Math.min(GOLD_PER_CRIT_CAP, this.totalCrits * GOLD_PER_CRIT);
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2) + levelMilestoneGold + critGoldFlat;
       hero.gold += goldEarned;
       // C280: lucky gold drop
       if (this.rng.chance(LUCKY_GOLD_CHANCE)) {
@@ -1221,7 +1268,9 @@ export class EncounterEngine {
       // C217: HP regen scaling based on kills
       const regenBonus = Math.min(REGEN_SCALE_CAP, Math.floor(this.totalWins / 50) * REGEN_SCALE_PER_50_KILLS);
       const regenAmount = Math.max(1, Math.floor(hero.hpMax * (WIN_HP_REGEN_RATE + regenBonus)));
-      hero.heal(regenAmount);
+      // C319: regen buff — double regen at 10+ village visits
+      const regenBuffMul = this.villageVisits >= REGEN_BUFF_VILLAGE_THRESHOLD ? REGEN_BUFF_MUL : 1;
+      hero.heal(Math.floor(regenAmount * regenBuffMul));
       // C174: lifesteal — heal based on damage dealt
       const lifestealHeal = Math.max(1, Math.floor(totalDamageDealt * LIFESTEAL_RATE));
       hero.heal(lifestealHeal);
@@ -1361,6 +1410,10 @@ export class EncounterEngine {
       }
       if (didCrit) {
         events.push({ type: 'critical_hit', streak: this.comboStreak });
+        // C311: crit chain counter
+        this.consecutiveCrits++;
+      } else {
+        this.consecutiveCrits = 0;
       }
       if (this.comboStreak >= COMBO_STREAK_THRESHOLD) {
         events.push({ type: 'combo_streak', streak: this.comboStreak, bonusMul: comboBonus });
@@ -1473,10 +1526,12 @@ export class EncounterEngine {
         events.push({ type: 'village_shop_purchase', cost: ARMOR_BUY_COST, effect: 'armor' });
       }
       // C271: gold forge — convert gold to permanent ATK
+      // C316: forge cost discount per prestige
+      const forgeCost = Math.max(FORGE_COST_MIN, GOLD_FORGE_COST - this.prestigeCount * FORGE_COST_PRESTIGE_DISCOUNT);
       if (hero.gold >= GOLD_FORGE_THRESHOLD) {
-        hero.gold -= GOLD_FORGE_COST;
+        hero.gold -= forgeCost;
         hero.atk += GOLD_FORGE_ATK_FLAT;
-        events.push({ type: 'village_shop_purchase', cost: GOLD_FORGE_COST, effect: 'atk_forge' });
+        events.push({ type: 'village_shop_purchase', cost: forgeCost, effect: 'atk_forge' });
       }
       // C307: gold shield from any village shop purchase
       this.goldShieldRemaining = GOLD_SHIELD_DURATION;
