@@ -102,6 +102,8 @@ export const COMBO_GOLD_BONUS_PER = 0.20; // +20% per combo level above threshol
 export const VILLAGE_SHOP_COST = 50;
 export const VILLAGE_SHOP_SHIELD_MUL = 0.20; // +20% max HP
 export const VILLAGE_SHOP_SHIELD_DURATION = 3; // lasts 3 fights
+// C155: overkill gold bonus
+export const OVERKILL_GOLD_BONUS = 1.0; // +100% gold on one-shot kills
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -393,7 +395,9 @@ export class EncounterEngine {
       const comboGoldMul = this.comboStreak >= COMBO_GOLD_THRESHOLD
         ? 1 + (this.comboStreak - COMBO_GOLD_THRESHOLD) * COMBO_GOLD_BONUS_PER
         : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul * comboGoldMul);
+      // C155: overkill gold bonus
+      const overkillGoldMul = isOverkill ? (1 + OVERKILL_GOLD_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul);
       hero.gold += goldEarned;
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
