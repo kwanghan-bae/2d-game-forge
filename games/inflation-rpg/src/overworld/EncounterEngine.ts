@@ -256,6 +256,9 @@ export const GOLD_INTEREST_PRESTIGE_BONUS = 0.01; // +1% per prestige
 // C226: danger magnet
 export const DANGER_MAGNET_THRESHOLD = 10; // danger fights to activate
 export const DANGER_MAGNET_SPAWN_BONUS = 0.10; // +10% danger zone spawn
+// C227: quick kill bonus
+export const QUICK_KILL_MAX_HITS = 2; // 1-2 hits counts as quick kill
+export const QUICK_KILL_EXP_BONUS = 0.10; // +10% exp
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -719,7 +722,9 @@ export class EncounterEngine {
       const nightExpMul = isNight ? NIGHT_EXP_MUL : 1;
       // C223: exp combo chain
       const expChainMul = this.killsSinceLevelUp >= EXP_CHAIN_KILLS_THRESHOLD ? (1 + EXP_CHAIN_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul);
+      // C227: quick kill bonus
+      const quickKillMul = hitCount <= QUICK_KILL_MAX_HITS ? (1 + QUICK_KILL_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
