@@ -101,6 +101,9 @@ export class BattleScene extends Phaser.Scene {
   private roundCount = 0;
   private totalDamageDealt = 0;
   private skillUseCount = 0;
+  private killStreak = 0;
+  private streakText?: Phaser.GameObjects.Text;
+  private tookDamageThisFight = false;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
   private enemySprite?: Phaser.GameObjects.Sprite;
@@ -196,7 +199,10 @@ export class BattleScene extends Phaser.Scene {
     this.roundCount = 0;
     this.totalDamageDealt = 0;
     this.skillUseCount = 0;
+    this.killStreak = 0;
+    this.tookDamageThisFight = false;
     this.killCountText = this.add.text(336, 16, 'Kill: 0', { fontSize: '14px', color: '#f0c060' }).setOrigin(1, 0);
+    this.streakText = this.add.text(336, 50, '', { fontSize: '11px', color: '#ff9944' }).setOrigin(1, 0);
 
     // Floor progress indicator
     const floorLabel = `F${run.currentFloor}`;
@@ -445,6 +451,16 @@ export class BattleScene extends Phaser.Scene {
       playSfx('coin');
       this.killCount++;
       if (this.killCountText) this.killCountText.setText(`Kill: ${this.killCount}`);
+      // Kill streak: no-damage kills in a row
+      if (!this.tookDamageThisFight) {
+        this.killStreak++;
+      } else {
+        this.killStreak = 0;
+      }
+      this.tookDamageThisFight = false;
+      if (this.streakText) {
+        this.streakText.setText(this.killStreak >= 3 ? `🔥 ${this.killStreak} streak` : '');
+      }
       if (!this.isBoss) {
         // Non-boss: DR = round(level * 0.5), counter increments owned by incrementDungeonKill
         useGameStore.getState().incrementDungeonKill(run.level, pb.itemFindMult);
@@ -562,6 +578,7 @@ export class BattleScene extends Phaser.Scene {
     }
     // Phase Realms — apply damage to run.playerHp and check defeat.
     useGameStore.getState().applyDamageToPlayer(finalDmgTaken);
+    this.tookDamageThisFight = true;
     playSfx('player-hit', 0.85 + Math.random() * 0.3);
     // Hero hit flash — red tint for 100ms
     if (this.heroSprite) {
