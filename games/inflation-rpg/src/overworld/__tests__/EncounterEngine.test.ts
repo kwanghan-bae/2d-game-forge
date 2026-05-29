@@ -682,4 +682,14 @@ describe('EncounterEngine — C144 gold currency', () => {
     }
     expect(waveComplete).toBe(true);
   });
+
+  it('C147: death causes 10% gold loss', () => {
+    const hero = HeroEntity.create({ seed: 42, heroHpMax: 1, heroAtkBase: 1 });
+    hero.gold = 1000;
+    const eng = new EncounterEngine(new SeededRng(1));
+    eng.resolveEncounter(hero, 'enemy', 'e_0');
+    // Hero should die (weak stats) and lose 10% gold
+    expect(hero.staggered).toBe(true);
+    expect(hero.gold).toBe(900);
+  });
 });
