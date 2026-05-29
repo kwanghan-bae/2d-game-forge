@@ -326,6 +326,9 @@ export class BattleScene extends Phaser.Scene {
         rngRoll: Math.random(),
         critMultBonus: 0.20 * ascTree.crit_damage,
       });
+      if (combo) {
+        this.time.delayedCall(i * 60, () => playSfx('hit', 1.0 + i * 0.15));
+      }
     }
 
     // Passive damage multipliers
