@@ -108,6 +108,8 @@ export class BattleScene extends Phaser.Scene {
   private tookDamageThisFight = false;
   private battleStartTime = 0;
   private timerText?: Phaser.GameObjects.Text;
+  private heartbeatActive = false;
+  private heartbeatTimer?: Phaser.Time.TimerEvent;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
   private enemySprite?: Phaser.GameObjects.Sprite;
@@ -667,6 +669,21 @@ export class BattleScene extends Phaser.Scene {
     }
     const runAfterHit = useGameStore.getState().run;
     const currentPlayerHp = runAfterHit?.playerHp ?? 0;
+
+    // Low HP heartbeat — start when below 25%, stop on heal/revive/death
+    const maxHpForCheck = this.cachedPlayerHpMax;
+    if (currentPlayerHp > 0 && maxHpForCheck > 0 && currentPlayerHp / maxHpForCheck < 0.25) {
+      if (!this.heartbeatActive) {
+        this.heartbeatActive = true;
+        this.heartbeatTimer = this.time.addEvent({
+          delay: 800, loop: true,
+          callback: () => playSfx('hit', 0.5), // low-pitch thump as heartbeat
+        });
+      }
+    } else if (this.heartbeatActive) {
+      this.heartbeatActive = false;
+      this.heartbeatTimer?.remove();
+    }
 
     if (currentPlayerHp <= 0) {
       // Phase E — Revive check (feather_of_fate relic + phoenix_feather mythic).
