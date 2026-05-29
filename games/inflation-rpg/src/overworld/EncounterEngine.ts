@@ -143,6 +143,9 @@ export const DODGE_PER_100_KILLS = 0.05; // 5% per 100 kills
 export const DODGE_CAP = 0.20; // max 20%
 // C172: boss streak bounty
 export const BOSS_STREAK_MULTIPLIER = 1; // +1× per consecutive boss kill
+// C173: exhaustion debuff
+export const EXHAUSTION_THRESHOLD = 50; // fights without village
+export const EXHAUSTION_ATK_PENALTY = 0.10; // -10% ATK
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -220,6 +223,7 @@ export class EncounterEngine {
   private areaVisits: Map<string, number> = new Map(); // C151: area familiarity
   private shopShieldRemaining = 0; // C154: village shop HP shield duration
   private bossStreak = 0; // C172: consecutive boss kills this run
+  private fightsSinceVillage = 0; // C173: fights without village visit
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -297,7 +301,9 @@ export class EncounterEngine {
       const milestoneMul = 1 + this.killMilestones * KILL_MILESTONE_ATK_BONUS;
       // C158: near-death power surge
       const nearDeathMul = hero.hp < hero.hpMax * NEAR_DEATH_HP_THRESHOLD ? NEAR_DEATH_ATK_MUL : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul));
+      // C173: exhaustion debuff
+      const exhaustionMul = this.fightsSinceVillage >= EXHAUSTION_THRESHOLD ? (1 - EXHAUSTION_ATK_PENALTY) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -498,6 +504,8 @@ export class EncounterEngine {
       this.survivalStreak++;
       // C146: wave tracking
       this.totalWins++;
+      // C173: exhaustion counter
+      this.fightsSinceVillage++;
       // C148: kill counter milestone
       this.killCount++;
       if (this.killCount % KILL_MILESTONE_INTERVAL === 0) {
@@ -590,6 +598,8 @@ export class EncounterEngine {
     } else if (kind === 'village') {
       // C125: village visit resets battle momentum
       this.battleMomentum = 0;
+      // C173: reset exhaustion
+      this.fightsSinceVillage = 0;
       // C134: village rest bonus — arrive with low HP → permanent max HP boost
       if (hero.hp < hero.hpMax * VILLAGE_REST_HP_THRESHOLD) {
         const hpBoost = Math.max(1, Math.floor(hero.hpMax * VILLAGE_REST_HP_BOOST));
