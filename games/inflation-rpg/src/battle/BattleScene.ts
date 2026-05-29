@@ -652,6 +652,10 @@ export class BattleScene extends Phaser.Scene {
         stateAfterKill.markDungeonProgress(dungeonId, nextFloor);
         stateAfterKill.setCurrentFloor(nextFloor);
         this.showBattleStats();
+        // Floor clear ascending chime (3-note)
+        playSfx('click', 1.0);
+        this.time.delayedCall(80, () => playSfx('click', 1.3));
+        this.time.delayedCall(160, () => playSfx('click', 1.6));
         // Floor clear character quote
         const clearQuote = getFloorClearQuote(run.characterId);
         if (clearQuote) this.pushLog(clearQuote);
