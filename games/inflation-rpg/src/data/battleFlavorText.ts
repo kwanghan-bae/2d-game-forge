@@ -513,3 +513,54 @@ export function getTimePressureMessage(seed: number): string {
 export function getCompanionMessage(seed: number): string {
   return COMPANION_MESSAGES[seed % COMPANION_MESSAGES.length];
 }
+
+// C254: flavor text 10 — specialization, elemental, survival_heal, chain_lightning, boss_slayer
+const SPECIALIZATION_MESSAGES = [
+  '각성한 전사의 힘이 폭발한다!',
+  '전문화의 길, 더 강해졌다!',
+  '프레스티지의 보상이 빛난다!',
+];
+
+const ELEMENTAL_MESSAGES = [
+  '속성 약점을 찔렀다!',
+  '원소의 힘이 적을 관통한다!',
+  '상성 우위! 추가 피해!',
+];
+
+const SURVIVAL_HEAL_MESSAGES = [
+  '연승의 기운으로 체력이 회복된다!',
+  '전투 경험이 몸을 치유한다!',
+  '생존 본능이 상처를 아물게 한다!',
+];
+
+const CHAIN_LIGHTNING_MESSAGES = [
+  '연쇄 번개가 적을 강타한다!',
+  '콤보의 전격이 폭발한다!',
+  '번개 사슬이 적을 꿰뚫는다!',
+];
+
+const BOSS_SLAYER_MESSAGES = [
+  '보스 처치의 여운이 남아있다!',
+  '슬레이어의 기운으로 더 강하게!',
+  '보스킬 버프 발동!',
+];
+
+export function getSpecializationMessage(seed: number): string {
+  return SPECIALIZATION_MESSAGES[seed % SPECIALIZATION_MESSAGES.length];
+}
+
+export function getElementalMessage(seed: number): string {
+  return ELEMENTAL_MESSAGES[seed % ELEMENTAL_MESSAGES.length];
+}
+
+export function getSurvivalHealMessage(seed: number): string {
+  return SURVIVAL_HEAL_MESSAGES[seed % SURVIVAL_HEAL_MESSAGES.length];
+}
+
+export function getChainLightningMessage(seed: number): string {
+  return CHAIN_LIGHTNING_MESSAGES[seed % CHAIN_LIGHTNING_MESSAGES.length];
+}
+
+export function getBossSlayerMessage(seed: number): string {
+  return BOSS_SLAYER_MESSAGES[seed % BOSS_SLAYER_MESSAGES.length];
+}
