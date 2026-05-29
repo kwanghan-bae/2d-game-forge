@@ -483,6 +483,26 @@ export class BattleScene extends Phaser.Scene {
       this.spawnDeathParticles();
       // Enemy death fade-out
       if (this.enemySprite) {
+        // Particle burst on enemy death
+        const ex = this.enemySprite.x;
+        const ey = this.enemySprite.y;
+        const particleColor = this.isBoss ? 0xffd700 : 0xff4444;
+        const particleCount = this.isBoss ? 20 : 8;
+        for (let i = 0; i < particleCount; i++) {
+          const p = this.add.circle(ex, ey, Phaser.Math.Between(2, 4), particleColor, 1);
+          const angle = (Math.PI * 2 * i) / particleCount;
+          const dist = Phaser.Math.Between(30, 60);
+          this.tweens.add({
+            targets: p,
+            x: ex + Math.cos(angle) * dist,
+            y: ey + Math.sin(angle) * dist,
+            alpha: 0,
+            scale: 0,
+            duration: Phaser.Math.Between(300, 500),
+            ease: 'Power2',
+            onComplete: () => p.destroy(),
+          });
+        }
         this.tweens.add({
           targets: this.enemySprite,
           alpha: 0,
