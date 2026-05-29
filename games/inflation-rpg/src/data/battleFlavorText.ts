@@ -309,3 +309,54 @@ export function getShieldBreakMessage(seed: number): string {
 export function getGoldArmorMessage(seed: number): string {
   return GOLD_ARMOR_MESSAGES[seed % GOLD_ARMOR_MESSAGES.length];
 }
+
+// C207: flavor text expansion 6
+const CRIT_STREAK_MESSAGES = [
+  '연속 회심! 멈출 수 없다!',
+  '치명타의 연쇄!',
+  '날카로운 감각이 폭발한다!',
+];
+
+const GOLD_INVEST_MESSAGES = [
+  '투자 수익 회수!',
+  '돈이 돈을 벌었다!',
+  '기다린 보람이 있다!',
+];
+
+const DAMAGE_REFLECT_MESSAGES = [
+  '공격이 되돌아간다!',
+  '반사 데미지!',
+  '가시 같은 반격!',
+];
+
+const BOSS_EXP_MESSAGES = [
+  '보스의 경험치가 쏟아진다!',
+  '대물을 잡은 보상!',
+  '거대한 경험의 물결!',
+];
+
+const PRESTIGE_MESSAGES = [
+  '새로운 시작, 더 강하게!',
+  '윤회의 힘이 깃든다!',
+  '전생의 기억이 되살아난다!',
+];
+
+export function getCritStreakMessage(seed: number): string {
+  return CRIT_STREAK_MESSAGES[seed % CRIT_STREAK_MESSAGES.length];
+}
+
+export function getGoldInvestMessage(seed: number): string {
+  return GOLD_INVEST_MESSAGES[seed % GOLD_INVEST_MESSAGES.length];
+}
+
+export function getDamageReflectMessage(seed: number): string {
+  return DAMAGE_REFLECT_MESSAGES[seed % DAMAGE_REFLECT_MESSAGES.length];
+}
+
+export function getBossExpMessage(seed: number): string {
+  return BOSS_EXP_MESSAGES[seed % BOSS_EXP_MESSAGES.length];
+}
+
+export function getPrestigeMessage(seed: number): string {
+  return PRESTIGE_MESSAGES[seed % PRESTIGE_MESSAGES.length];
+}
