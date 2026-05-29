@@ -200,6 +200,10 @@ export const GOLD_TAX_RATE = 0.05; // 5% per fight
 // C194: double hit chance
 export const DOUBLE_HIT_KILL_THRESHOLD = 200;
 export const DOUBLE_HIT_CHANCE = 0.10; // 10%
+// C195: gold sacrifice heal in combat
+export const GOLD_HEAL_HP_THRESHOLD = 0.20; // trigger below 20% HP
+export const GOLD_HEAL_COST = 100;
+export const GOLD_HEAL_AMOUNT = 0.30; // heal 30% max HP
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -388,6 +392,7 @@ export class EncounterEngine {
       let rageTurn = 0;
       let luckyDodge = false;
       let totalDamageDealt = 0; // C174: track for lifesteal
+      let goldHealUsed = false; // C195: once per fight
       while (eHp > 0 && !hero.staggered) {
         const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
@@ -432,6 +437,12 @@ export class EncounterEngine {
             hero.staggered = false;
             hero.hp = 1;
             luckyDodge = true;
+          }
+          // C195: gold sacrifice heal — auto-heal when low HP (once per fight)
+          if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= GOLD_HEAL_COST && !goldHealUsed) {
+            hero.gold -= GOLD_HEAL_COST;
+            hero.heal(Math.floor(hero.hpMax * GOLD_HEAL_AMOUNT));
+            goldHealUsed = true;
           }
           rageTurn++;
         }
