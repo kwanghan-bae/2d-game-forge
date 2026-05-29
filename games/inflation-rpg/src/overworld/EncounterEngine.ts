@@ -549,6 +549,30 @@ export const KILL_EXP_MILESTONE_AMOUNT = 50;
 // C340: combo shield — combo 10+ reduces damage
 export const COMBO_SHIELD_THRESHOLD = 10;
 export const COMBO_SHIELD_REDUCTION = 0.15;
+// C341: overkill chain gold
+export const OVERKILL_CHAIN_GOLD_MUL = 0.10;
+export const OVERKILL_CHAIN_CAP = 5;
+// C342: prestige full heal on village
+export const PRESTIGE_HEAL_BONUS = 0.10; // +10% max HP heal per prestige at village
+// C343: exp theft on crit
+export const EXP_THEFT_RATE = 0.05; // 5% of base exp stolen on crit
+// C344: gold insurance enhanced payout
+export const GOLD_INSURANCE_PAYOUT_MUL = 3;
+// C345: battle fatigue recovery
+export const FATIGUE_FIGHT_THRESHOLD = 50;
+export const FATIGUE_RECOVERY_HEAL = 0.20;
+// C346: elite spawn rate at high combo
+export const ELITE_COMBO_SPAWN_BONUS = 0.02; // +2% elite spawn per 5 combo
+// C347: village training extended duration
+export const TRAINING_EXTENDED_DURATION = 5;
+// C348: danger zone combo preserve
+export const DANGER_COMBO_PRESERVE = true;
+// C349: boss frenzy exponential
+export const BOSS_FRENZY_EXP_BASE = 1.5;
+export const BOSS_FRENZY_CAP = 3;
+// C350: gold surge every N fights
+export const GOLD_SURGE_INTERVAL = 25;
+export const GOLD_SURGE_AMOUNT = 0.10; // 10% of current gold
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -708,6 +732,8 @@ export class EncounterEngine {
   private eliteFuryRemaining = 0; // C331: post-elite crit boost
   private uniqueBossKills = 0; // C335: unique boss kills
   private dangerCascadeRemaining = 0; // C336: danger cascade duration
+  private consecutiveBossKills = 0; // C349: boss frenzy tracking
+  private fightsSinceVillage = 0; // C345: fatigue recovery tracking
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -733,7 +759,9 @@ export class EncounterEngine {
       // C178: danger streak tracking
       if (isDangerZone) { this.dangerStreak++; } else { this.dangerStreak = 0; }
       // C133: elite enemy — 5% chance on non-boss, non-danger encounters. ×2 HP, guaranteed drop, ×2.5 exp.
-      const isElite = !isBoss && !isDangerZone && this.rng.chance(ELITE_SPAWN_RATE);
+      // C346: elite spawn rate boost at high combo
+      const eliteComboBonus = Math.floor(this.comboStreak / 5) * ELITE_COMBO_SPAWN_BONUS;
+      const isElite = !isBoss && !isDangerZone && this.rng.chance(ELITE_SPAWN_RATE + eliteComboBonus);
       // C152: treasure goblin — 3% on non-boss, non-danger, non-elite. Low HP, high gold.
       // C180: gold magnet — combo boosts goblin spawn
       const goblinRate = this.comboStreak >= GOLD_MAGNET_COMBO_THRESHOLD
@@ -1089,6 +1117,8 @@ export class EncounterEngine {
           this.deathInsuranceUsed = true;
           const recovered = Math.max(0, Math.floor(oldLevel * (0.10 - DEATH_INSURANCE_PENALTY)));
           if (recovered > 0) hero.level = Math.min(oldLevel, newLevel + recovered);
+          // C344: insurance enhanced payout — recover gold on insurance
+          hero.gold += Math.floor(hero.level * GOLD_INSURANCE_PAYOUT_MUL);
         }
         // C140: track who killed us for revenge
         this.lastDeathEnemyId = landmarkId;
@@ -1097,9 +1127,12 @@ export class EncounterEngine {
       }
       // C120: combo streak — no-damage kills in a row grant bonus exp
       if (tookDamage) {
-        // C272: combo break consolation
-        if (this.comboStreak >= COMBO_BREAK_THRESHOLD) this.comboBreakBonus = true;
-        this.comboStreak = 0;
+        // C348: danger zone preserves combo
+        if (!(isDangerZone && DANGER_COMBO_PRESERVE)) {
+          // C272: combo break consolation
+          if (this.comboStreak >= COMBO_BREAK_THRESHOLD) this.comboBreakBonus = true;
+          this.comboStreak = 0;
+        }
       } else {
         this.comboStreak++;
       }
@@ -1229,7 +1262,9 @@ export class EncounterEngine {
         hero.exp += hoardExp;
       }
 
-      const { leveled } = hero.gainExp(expGain);
+      // C343: exp theft on crit
+      const expTheft = didCrit ? Math.floor(expGain * EXP_THEFT_RATE) : 0;
+      const { leveled } = hero.gainExp(expGain + expTheft);
       // C336: danger zone kill sets cascade for next fights
       if (isDangerZone) this.dangerCascadeRemaining = DANGER_CASCADE_DURATION;
       // C237: exp overflow bonus — leftover exp after level-up boosted by 50%
@@ -1263,6 +1298,8 @@ export class EncounterEngine {
         : 1;
       // C155: overkill gold bonus
       const overkillGoldMul = isOverkill ? (1 + OVERKILL_GOLD_BONUS) : 1;
+      // C341: overkill chain gold — consecutive one-shots boost gold
+      const overkillChainMul = 1 + Math.min(OVERKILL_CHAIN_CAP, this.consecutiveOneHits) * OVERKILL_CHAIN_GOLD_MUL;
       // C161: crit gold bonus
       // C235: crit gold scaling based on total crits
       const critGoldScale = Math.min(CRIT_GOLD_SCALE_CAP, Math.floor(this.totalCrits / 100) * CRIT_GOLD_SCALE_PER_100);
@@ -1313,7 +1350,7 @@ export class EncounterEngine {
       const doubleGoldMul = this.rng.chance(DOUBLE_GOLD_CHANCE) ? 2 : 1;
       // C338: crit gold bonus
       const critGoldBonusMul = didCrit ? CRIT_GOLD_BONUS_MUL : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul) + levelMilestoneGold + critGoldFlat;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul) + levelMilestoneGold + critGoldFlat;
       // C328: combo gold floor
       const goldFloor = this.comboStreak >= COMBO_GOLD_FLOOR_THRESHOLD ? hero.level * COMBO_GOLD_FLOOR_PER_LEVEL : 0;
       hero.gold += Math.max(goldEarned, goldFloor);
@@ -1347,6 +1384,12 @@ export class EncounterEngine {
         this.bossSlayerRemaining = BOSS_SLAYER_DURATION;
         // C321: boss fury buff
         this.bossFuryRemaining = BOSS_FURY_DURATION;
+        // C349: boss frenzy — consecutive boss kills give exponential reward
+        this.consecutiveBossKills++;
+        const frenzyMul = Math.min(BOSS_FRENZY_CAP, Math.pow(BOSS_FRENZY_EXP_BASE, this.consecutiveBossKills - 1));
+        hero.exp += Math.floor(hero.level * 10 * frenzyMul);
+      } else {
+        this.consecutiveBossKills = 0;
       }
       // C302: gold overflow — excess gold above threshold converts to exp
       if (hero.gold > GOLD_OVERFLOW_THRESHOLD) {
@@ -1465,9 +1508,18 @@ export class EncounterEngine {
       }
       // C148: kill counter milestone
       this.killCount++;
+      this.fightsSinceVillage++;
       // C339: kill count exp milestone — every 100 kills burst
       if (this.killCount % KILL_EXP_MILESTONE_INTERVAL === 0) {
         hero.exp += KILL_EXP_MILESTONE_AMOUNT * hero.level;
+      }
+      // C345: fatigue recovery — heal after sustained combat
+      if (this.fightsSinceVillage % FATIGUE_FIGHT_THRESHOLD === 0) {
+        hero.heal(Math.max(1, Math.floor(hero.hpMax * FATIGUE_RECOVERY_HEAL)));
+      }
+      // C350: gold surge every N fights
+      if (this.killCount % GOLD_SURGE_INTERVAL === 0) {
+        hero.gold += Math.max(1, Math.floor(hero.gold * GOLD_SURGE_AMOUNT));
       }
       // C185: elite bounty tracking
       if (isElite) {
@@ -1603,7 +1655,8 @@ export class EncounterEngine {
       // C282: village shield
       this.villageShieldActive = true;
       // C285: village training ATK buff
-      this.villageTrainingRemaining = VILLAGE_TRAINING_DURATION;
+      // C347: extended training duration
+      this.villageTrainingRemaining = VILLAGE_TRAINING_DURATION + TRAINING_EXTENDED_DURATION;
       // C324: village ATK flat
       hero.atk += VILLAGE_ATK_FLAT;
       // C276: village blessing for deathless streak
@@ -1655,6 +1708,12 @@ export class EncounterEngine {
       hero.gold += VILLAGE_GOLD_FOUNTAIN;
       // C337: fountain enhanced heal
       hero.heal(Math.max(1, Math.floor(hero.hpMax * FOUNTAIN_ENHANCED_HEAL)));
+      // C342: prestige heal bonus at village
+      if (this.prestigeCount > 0) {
+        hero.heal(Math.max(1, Math.floor(hero.hpMax * this.prestigeCount * PRESTIGE_HEAL_BONUS)));
+      }
+      // C345: reset fatigue counter at village
+      this.fightsSinceVillage = 0;
       // C304: rest exp — village grants flat exp
       hero.exp += hero.level * REST_EXP_PER_LEVEL;
       // C310: danger interest — danger streak boosts gold at village
