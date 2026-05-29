@@ -160,6 +160,9 @@ export const DANGER_STREAK_EXP_STEP = 0.5; // +0.5× exp per consecutive danger 
 export const DANGER_STREAK_EXP_CAP = 3.0; // max ×3 exp in danger zone
 // C179: shield break counter-attack
 export const SHIELD_BREAK_ATK_MUL = 1.5; // ×1.5 ATK on fight after shield expires
+// C180: gold magnet — combo boosts treasure goblin rate
+export const GOLD_MAGNET_COMBO_THRESHOLD = 7;
+export const GOLD_MAGNET_GOBLIN_MUL = 2.0; // double goblin spawn rate
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -266,7 +269,11 @@ export class EncounterEngine {
       // C133: elite enemy — 5% chance on non-boss, non-danger encounters. ×2 HP, guaranteed drop, ×2.5 exp.
       const isElite = !isBoss && !isDangerZone && this.rng.chance(ELITE_SPAWN_RATE);
       // C152: treasure goblin — 3% on non-boss, non-danger, non-elite. Low HP, high gold.
-      const isTreasureGoblin = !isBoss && !isDangerZone && !isElite && this.rng.chance(TREASURE_GOBLIN_RATE);
+      // C180: gold magnet — combo boosts goblin spawn
+      const goblinRate = this.comboStreak >= GOLD_MAGNET_COMBO_THRESHOLD
+        ? TREASURE_GOBLIN_RATE * GOLD_MAGNET_GOBLIN_MUL
+        : TREASURE_GOBLIN_RATE;
+      const isTreasureGoblin = !isBoss && !isDangerZone && !isElite && this.rng.chance(goblinRate);
       const hpMul = isDangerZone ? DANGER_ZONE_STAT_MUL : isElite ? ELITE_HP_MUL : isTreasureGoblin ? TREASURE_GOBLIN_HP_MUL : 1;
       const atkMul = isDangerZone ? DANGER_ZONE_STAT_MUL : 1; // elite has normal ATK
       const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul);
