@@ -624,3 +624,21 @@ describe('EncounterEngine — C141 survival streak', () => {
     expect(exp16?.type === 'battle_won' && exp16.expGain).toBeGreaterThan(0);
   });
 });
+
+describe('EncounterEngine — C142 lucky dodge', () => {
+  it('lucky dodge can save hero from death', () => {
+    // Need: hero takes fatal damage (hp→0) but dodge procs (10%)
+    // Hero with very low HP, moderate ATK (needs 2+ hits to kill enemy)
+    let dodgeFound = false;
+    for (let seed = 1; seed <= 5000; seed++) {
+      const hero = HeroEntity.create({ seed, heroHpMax: 5, heroAtkBase: 20 });
+      const engine = new EncounterEngine(new SeededRng(seed));
+      const evs = engine.resolveEncounter(hero, 'enemy', 'e_0');
+      if (evs.some(e => e.type === 'lucky_dodge')) {
+        dodgeFound = true;
+        break;
+      }
+    }
+    expect(dodgeFound).toBe(true);
+  });
+});
