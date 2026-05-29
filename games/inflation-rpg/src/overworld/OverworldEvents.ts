@@ -9,6 +9,7 @@ export type OverworldEvent =
   | { type: 'combo_streak'; streak: number; bonusMul: number }
   | { type: 'critical_hit'; streak: number }
   | { type: 'overkill'; enemyId: string }
+  | { type: 'close_call'; hpRemaining: number; healed: number }
   | { type: 'milestone_reached'; level: number }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
