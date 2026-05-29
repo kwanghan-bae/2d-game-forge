@@ -310,11 +310,14 @@ export class BattleScene extends Phaser.Scene {
       }
     }
 
-    // Boss golden tint for visual hierarchy
+    // Boss entrance dramatic sequence
     if (this.isBoss) {
       this.enemySprite.setTint(0xffd700);
-      playSfx('boss-appear');
+      // Dramatic 2-tone entrance: deep rumble then appear
+      playSfx('boss-appear', 0.7); // low rumble
+      this.time.delayedCall(150, () => playSfx('boss-appear', 1.2)); // high confirm
       this.cameras.main.flash(300, 255, 200, 100, false);
+      this.cameras.main.shake(200, 0.01); // subtle tremor
       const bossQuote = getBossBattleQuote(run.characterId);
       if (bossQuote) this.pushLog(bossQuote);
     }
