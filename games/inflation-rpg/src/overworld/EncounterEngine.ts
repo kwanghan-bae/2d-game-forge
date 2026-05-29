@@ -169,6 +169,9 @@ export const DEATH_HP_DECAY_RATE = 0.01; // -1% max HP per death
 export const VILLAGE_HEAL_BASE = 0.25;
 export const VILLAGE_HEAL_PER_VISIT = 0.01; // +1% per visit
 export const VILLAGE_HEAL_CAP = 0.40;
+// C183: overkill streak → invincibility
+export const OVERKILL_STREAK_THRESHOLD = 3;
+export const OVERKILL_INVINCIBILITY_FIGHTS = 1;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -251,6 +254,8 @@ export class EncounterEngine {
   private dangerStreak = 0; // C178: consecutive danger zone fights
   private shieldBreakReady = false; // C179: shield just expired → next fight bonus
   private villageVisits = 0; // C182: total village visits for heal scaling
+  private overkillStreak = 0; // C183: consecutive 1-hit kills
+  private invincibleFights = 0; // C183: fights remaining with invincibility
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -375,6 +380,11 @@ export class EncounterEngine {
             rageTurn++;
             continue;
           }
+          // C183: invincibility — skip all damage
+          if (this.invincibleFights > 0) {
+            rageTurn++;
+            continue;
+          }
           hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction)));
           // C142: lucky dodge — survive fatal hit with 10% chance
           if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
@@ -387,6 +397,18 @@ export class EncounterEngine {
       }
       const tookDamage = hero.hp < hpBefore;
       const isOverkill = hitCount === 1 && !hero.staggered;
+      // C183: overkill streak tracking
+      if (isOverkill) {
+        this.overkillStreak++;
+        if (this.overkillStreak >= OVERKILL_STREAK_THRESHOLD) {
+          this.invincibleFights += OVERKILL_INVINCIBILITY_FIGHTS;
+          this.overkillStreak = 0;
+        }
+      } else {
+        this.overkillStreak = 0;
+      }
+      // C183: decrement invincibility after fight
+      if (this.invincibleFights > 0) this.invincibleFights--;
       if (hero.staggered) {
         // C120: combo streak resets on death
         this.comboStreak = 0;
