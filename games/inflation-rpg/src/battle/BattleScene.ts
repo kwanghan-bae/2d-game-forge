@@ -105,6 +105,8 @@ export class BattleScene extends Phaser.Scene {
   private killStreak = 0;
   private streakText?: Phaser.GameObjects.Text;
   private tookDamageThisFight = false;
+  private battleStartTime = 0;
+  private timerText?: Phaser.GameObjects.Text;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
   private enemySprite?: Phaser.GameObjects.Sprite;
@@ -235,6 +237,19 @@ export class BattleScene extends Phaser.Scene {
       const atmo = this.add.text(180, 560, atmoText, { fontSize: '11px', color: '#ccccaa', fontStyle: 'italic' }).setOrigin(0.5);
       this.tweens.add({ targets: atmo, alpha: 0, delay: 2000, duration: 1000 });
     }
+
+    // Battle elapsed timer
+    this.battleStartTime = Date.now();
+    this.timerText = this.add.text(336, 50, '⏱ 0s', {
+      fontSize: '10px', color: '#666666',
+    }).setOrigin(1, 0);
+    this.time.addEvent({
+      delay: 1000, loop: true,
+      callback: () => {
+        const elapsed = Math.floor((Date.now() - this.battleStartTime) / 1000);
+        if (this.timerText) this.timerText.setText(`⏱ ${elapsed}s`);
+      },
+    });
 
     // Entity sprites — hero (left) and enemy (right)
     const heroFrame = getHeroFrame(run.characterId);
