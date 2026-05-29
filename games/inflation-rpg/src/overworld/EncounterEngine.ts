@@ -183,6 +183,9 @@ export const BOSS_OVERKILL_VAULT_MUL = 2.0;
 export const CAVE_TREASURE_CHANCE = 0.30;
 export const CAVE_TREASURE_MIN = 100;
 export const CAVE_TREASURE_MAX = 500;
+// C188: revenge gold after death
+export const REVENGE_GOLD_FIGHTS = 3;
+export const REVENGE_GOLD_BONUS = 0.50; // +50% gold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -270,6 +273,7 @@ export class EncounterEngine {
   private levelUpMomentum = false; // C184: next fight gets exp bonus after level-up
   private eliteKills = 0; // C185: total elite kills for bounty board
   private eliteBountyMilestones = 0; // C185: milestones reached
+  private revengeGoldRemaining = 0; // C188: fights with revenge gold bonus
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -440,6 +444,8 @@ export class EncounterEngine {
         hero.hpMax = Math.max(1, hero.hpMax - hpDecay);
         // C137: death streak tracking
         this.deathStreak++;
+        // C188: revenge gold — next 3 wins give bonus gold
+        this.revengeGoldRemaining = REVENGE_GOLD_FIGHTS;
         if (this.deathStreak >= DEATH_STREAK_THRESHOLD) {
           this.mercyRemaining = MERCY_DURATION;
           this.deathStreak = 0; // reset after granting mercy
@@ -563,7 +569,10 @@ export class EncounterEngine {
       const critGoldMul = didCrit ? (1 + CRIT_GOLD_BONUS) : 1;
       // C170: greed mode — high gold boosts gold gains
       const greedGoldMul = hero.gold >= GREED_MODE_GOLD_THRESHOLD ? (1 + GREED_MODE_GOLD_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul);
+      // C188: revenge gold bonus
+      const revengeGoldMul = this.revengeGoldRemaining > 0 ? (1 + REVENGE_GOLD_BONUS) : 1;
+      if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul);
       hero.gold += goldEarned;
       // C157: boss vault — lump sum gold bonus for boss kills
       if (isBoss) {
