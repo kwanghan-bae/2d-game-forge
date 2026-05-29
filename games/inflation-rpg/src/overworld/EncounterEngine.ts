@@ -234,6 +234,9 @@ export const REGEN_SCALE_CAP = 0.05; // max +5% extra regen
 // C218: gold streak
 export const GOLD_STREAK_THRESHOLD = 5; // fights without spending
 export const GOLD_STREAK_BONUS = 0.5; // +50% gold
+// C219: death counter ATK
+export const DEATH_ATK_BONUS = 0.01; // +1% per death
+export const DEATH_ATK_CAP = 0.20; // max +20%
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -365,6 +368,7 @@ export class EncounterEngine {
   private expShieldUsed = false; // C215: one-time exp preservation
   private eliteCombo = 0; // C216: consecutive elite kills
   private fightsSinceSpend = 0; // C218: fights without spending gold
+  private totalDeaths = 0; // C219: total death count
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -474,7 +478,9 @@ export class EncounterEngine {
       const prestigeMul = 1 + this.prestigeCount * PRESTIGE_STAT_BONUS;
       // C210: achievement kill milestone ATK bonus
       const achieveMul = 1 + this.achievementMilestones * ACHIEVEMENT_ATK_BONUS;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul));
+      // C219: death counter ATK bonus
+      const deathAtkMul = 1 + Math.min(DEATH_ATK_CAP, this.totalDeaths * DEATH_ATK_BONUS);
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -585,6 +591,8 @@ export class EncounterEngine {
         hero.hpMax = Math.max(1, hero.hpMax - hpDecay);
         // C137: death streak tracking
         this.deathStreak++;
+        // C219: total death counter
+        this.totalDeaths++;
         // C188: revenge gold — next 3 wins give bonus gold
         this.revengeGoldRemaining = REVENGE_GOLD_FIGHTS;
         if (this.deathStreak >= DEATH_STREAK_THRESHOLD) {
