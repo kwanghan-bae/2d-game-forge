@@ -272,6 +272,8 @@ export const COMBO_GOLD_MUL_BONUS = 0.30; // +30% gold
 export const BANK_DEPOSIT_RATE = 0.30; // deposit 30% of gold
 // C232: first hit advantage
 export const FIRST_HIT_DAMAGE_MUL = 1.5;
+// C234: heal on level-up
+export const LEVEL_UP_HEAL_RATE = 0.50; // restore 50% HP on level-up
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -995,6 +997,8 @@ export class EncounterEngine {
       if (leveled.length > 0) {
         this.levelUpMomentum = true;
         this.killsSinceLevelUp = 0; // C223: reset chain
+        // C234: heal on level-up
+        hero.heal(Math.floor(hero.hpMax * LEVEL_UP_HEAL_RATE));
       }
       // C200: prestige system — reset level at threshold, gain permanent bonus
       // C213: each prestige requires 50 more levels (200, 250, 300, ...)
