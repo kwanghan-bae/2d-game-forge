@@ -105,10 +105,10 @@ describe('EncounterEngine — V1c-1 merciful battle_won proc', () => {
     return mercifulEvents;
   }
 
-  it('procs sometimes on regular enemy kills (probabilistic, > 0 and < N over 60 seeds)', () => {
-    const fires = killCount(100, 60, 'enemy');
+  it('procs sometimes on regular enemy kills (probabilistic, > 0 and < N over 200 seeds)', () => {
+    const fires = killCount(100, 200, 'enemy');
     expect(fires).toBeGreaterThan(0);
-    expect(fires).toBeLessThan(60);
+    expect(fires).toBeLessThan(200);
   });
 
   it('never procs on boss kills', () => {

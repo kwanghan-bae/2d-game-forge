@@ -102,6 +102,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [logEntries, setLogEntries] = useState<readonly SagaEvent[]>([]);
   const [speed, setSpeed] = useState<SpeedPreset>(1);
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
+  const [dangerFlash, setDangerFlash] = useState(false);
+  const dangerFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   type LightFloat = { id: string; amount: number; createdAt: number };
   const FADE_MS = 1500;
@@ -197,6 +199,15 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           }
           setHudTick(n => n + 1);
           setLogEntries(controller.getRecentSagaEvents(LOG_LIMIT));
+          // C119: danger zone flash
+          if (evs.some(e => e.type === 'danger_zone_entered')) {
+           setDangerFlash(true);
+           if (dangerFlashTimerRef.current) clearTimeout(dangerFlashTimerRef.current);
+           dangerFlashTimerRef.current = setTimeout(() => {
+             setDangerFlash(false);
+             dangerFlashTimerRef.current = null;
+           }, 1200);
+          }
           const transition = evs.find(e => e.type === 'chapter_transition');
           if (transition && transition.type === 'chapter_transition') {
             setChapterOverlay({ toChapter: transition.toChapter, atAge: transition.atAge, key: Date.now() });
@@ -678,6 +689,15 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           />
         );
       })()}
+      {dangerFlash && (
+        <div style={{
+          position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)',
+          color: '#ff4444', fontSize: 22, fontWeight: 700, textShadow: '0 0 8px #ff0000',
+          animation: 'fadeIn 0.2s ease-out', pointerEvents: 'none', zIndex: 20,
+        }} data-testid="danger-zone-flash">
+          ⚠️ 강적 출현!
+        </div>
+      )}
       {chapterOverlay && (
         <div
           key={chapterOverlay.key}
