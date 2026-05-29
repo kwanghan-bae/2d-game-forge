@@ -379,6 +379,10 @@ export const GOLD_CASCADE_THRESHOLD = 3;
 // C275: adrenaline rush — below 20% HP = +30% ATK for that fight
 export const ADRENALINE_HP_THRESHOLD = 0.20;
 export const ADRENALINE_ATK_BONUS = 0.30;
+// C276: village blessing — deathless streak reward
+export const VILLAGE_BLESSING_STREAK = 20; // fights without death
+export const VILLAGE_BLESSING_GOLD_BONUS = 0.10;
+export const VILLAGE_BLESSING_DURATION = 10;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -526,6 +530,8 @@ export class EncounterEngine {
   private consecutiveOneHits = 0; // C261: consecutive one-hit kills
   private shrineBlessingRemaining = 0; // C265: shrine exp blessing
   private comboBreakBonus = false; // C272: consolation exp boost
+  private villageBlessingRemaining = 0; // C276: gold blessing duration
+  private fightsSinceLastDeath = 0; // C276: deathless streak
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -806,6 +812,8 @@ export class EncounterEngine {
         this.totalDeaths++;
         // C238: darkness curse — consecutive deaths trigger penalty
         this.consecutiveDeaths++;
+        // C276: reset deathless streak
+        this.fightsSinceLastDeath = 0;
         if (this.consecutiveDeaths >= DARKNESS_CURSE_DEATHS) {
           this.darknessCursed = true;
         }
@@ -1005,7 +1013,10 @@ export class EncounterEngine {
       const eliteGoldMul = isElite ? (1 + ELITE_GOLD_BONUS) : 1;
       // C274: gold cascade
       const goldCascadeMul = this.consecutiveOneHits >= GOLD_CASCADE_THRESHOLD ? GOLD_CASCADE_MULTIPLIER : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul);
+      // C276: village blessing gold
+      const villageBlessMul = this.villageBlessingRemaining > 0 ? (1 + VILLAGE_BLESSING_GOLD_BONUS) : 1;
+      if (this.villageBlessingRemaining > 0) this.villageBlessingRemaining--;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       // C259: gold magnet prestige scaling
@@ -1034,6 +1045,8 @@ export class EncounterEngine {
       // C156: HP regen on win
       // C238: reset consecutive deaths on win
       this.consecutiveDeaths = 0;
+      // C276: deathless streak increment
+      this.fightsSinceLastDeath++;
       // C217: HP regen scaling based on kills
       const regenBonus = Math.min(REGEN_SCALE_CAP, Math.floor(this.totalWins / 50) * REGEN_SCALE_PER_50_KILLS);
       const regenAmount = Math.max(1, Math.floor(hero.hpMax * (WIN_HP_REGEN_RATE + regenBonus)));
@@ -1246,6 +1259,10 @@ export class EncounterEngine {
       this.villageRestRemaining = VILLAGE_VIGOR_DURATION;
       // C260: reset death insurance at village
       this.deathInsuranceUsed = false;
+      // C276: village blessing for deathless streak
+      if (this.fightsSinceLastDeath >= VILLAGE_BLESSING_STREAK) {
+        this.villageBlessingRemaining = VILLAGE_BLESSING_DURATION;
+      }
       // C218: reset gold streak (village spends gold)
       this.fightsSinceSpend = 0;
       // C134: village rest bonus — arrive with low HP → permanent max HP boost
