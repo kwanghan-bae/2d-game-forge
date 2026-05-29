@@ -106,6 +106,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const dangerFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [milestoneFlash, setMilestoneFlash] = useState<number | null>(null);
   const milestoneFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [comboDisplay, setComboDisplay] = useState<number>(0);
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   type LightFloat = { id: string; amount: number; createdAt: number };
   const FADE_MS = 1500;
@@ -219,6 +220,13 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
              setMilestoneFlash(null);
              milestoneFlashTimerRef.current = null;
            }, 2000);
+          }
+          // C128: update combo display from combo_streak event
+          const comboEvent = evs.find(e => e.type === 'combo_streak');
+          if (comboEvent && comboEvent.type === 'combo_streak') {
+            setComboDisplay(comboEvent.streak);
+          } else if (evs.some(e => e.type === 'hero_died')) {
+            setComboDisplay(0);
           }
           const transition = evs.find(e => e.type === 'chapter_transition');
           if (transition && transition.type === 'chapter_transition') {
@@ -701,6 +709,15 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           />
         );
       })()}
+      {comboDisplay >= 3 && (
+        <div style={{
+          position: 'absolute', top: 8, right: 8, padding: '4px 8px',
+          background: 'rgba(255,150,0,0.85)', borderRadius: 6,
+          color: '#fff', fontSize: 12, fontWeight: 700, zIndex: 15,
+        }} data-testid="combo-hud">
+          🔥 {comboDisplay} Combo
+        </div>
+      )}
       {dangerFlash && (
         <div style={{
           position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)',
