@@ -513,6 +513,11 @@ export class BattleScene extends Phaser.Scene {
       useGameStore.getState().gainLevels(newLevel - run.level, spGained);
       useGameStore.setState((s) => ({ run: { ...s.run, goldThisRun: s.run.goldThisRun + goldGain, exp: newExp } }));
       playSfx('coin');
+
+      // Floating reward numbers
+      this.showFloatingReward(`+${goldGain.toLocaleString()} G`, '#f0c060', 270, 260);
+      this.showFloatingReward(`+${expGain.toLocaleString()} XP`, '#60c0f0', 270, 280);
+
       this.killCount++;
       if (this.killCountText) this.killCountText.setText(`Kill: ${this.killCount}`);
       // Kill streak: no-damage kills in a row
@@ -961,6 +966,18 @@ export class BattleScene extends Phaser.Scene {
       alpha: 0,
       duration: 600,
       ease: 'Cubic.easeOut',
+      onComplete: () => text.destroy(),
+    });
+  }
+
+  private showFloatingReward(label: string, color: string, x: number, y: number) {
+    const text = this.add.text(x, y, label, {
+      fontSize: '11px', color, fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0.9);
+    this.tweens.add({
+      targets: text,
+      y: y - 30, alpha: 0,
+      duration: 800, ease: 'Cubic.easeOut',
       onComplete: () => text.destroy(),
     });
   }
