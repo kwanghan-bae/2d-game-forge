@@ -350,6 +350,9 @@ export const CRIT_HEAL_RATE = 0.02; // 2% max HP on crit
 // C265: shrine blessing
 export const SHRINE_BLESSING_EXP_BONUS = 0.20; // +20% exp
 export const SHRINE_BLESSING_DURATION = 5; // lasts 5 fights
+// C266: gold hoard ATK
+export const GOLD_HOARD_THRESHOLD = 500;
+export const GOLD_HOARD_ATK_BONUS = 0.10; // +10% ATK with 500+ gold
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -629,7 +632,9 @@ export class EncounterEngine {
       // C257: stamina penalty
       const staminaPenalty = Math.min(STAMINA_PENALTY_CAP, Math.floor(this.fightsSinceVillage / STAMINA_FIGHTS_PER_PENALTY) * STAMINA_ATK_PENALTY);
       const staminaMul = 1 - staminaPenalty;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul));
+      // C266: gold hoard ATK bonus
+      const goldHoardMul = hero.gold >= GOLD_HOARD_THRESHOLD ? (1 + GOLD_HOARD_ATK_BONUS) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
