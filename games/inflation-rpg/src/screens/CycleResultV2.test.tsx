@@ -42,7 +42,7 @@ describe('CycleResultV2 combat stats', () => {
     expect(panel.textContent).toContain('3');
     expect(panel.textContent).toContain('12');
     expect(panel.textContent).toContain('42');
-    expect(panel.textContent).toContain('1500');
+    expect(panel.textContent).toContain('1.5K');
   });
 
   it('hides combat stats panel when stats are null', () => {
