@@ -14,7 +14,7 @@ import { findEncounterForKind, selectBranch } from '../data/personalityEncounter
 const ENEMY_BASE_HP = 30;
 const ENEMY_BASE_ATK = 8;
 const BOSS_HP_MUL = 4;
-const BOSS_ATK_MUL = 2;
+const BOSS_ATK_MUL = 3;  // was 2, tuned C110 — boss danger onset earlier
 const ENEMY_EXP_BASE = 12;
 const BOSS_EXP_BASE = 60;
 const DROP_RATE = 0.36;           // V3-H F2: +20% (was 0.3)

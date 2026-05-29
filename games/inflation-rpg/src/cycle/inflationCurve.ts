@@ -11,7 +11,7 @@ export const CURVE = {
   k_hp:    0.7, // hero.hpMax = hpBase * lv^k_hp
   k_eHp:   1.0, // enemy.hp = baseHp * lv^k_eHp
   k_eAtk:  0.8, // enemy.atk = baseAtk * lv^k_eAtk
-  k_gain:  1.8, // expGain = baseGain * lv^k_gain
+  k_gain:  1.6, // expGain = baseGain * lv^k_gain (was 1.8, tuned C110)
   k_req:   1.2, // expReq = baseReq * lv^k_req
 } as const;
 
