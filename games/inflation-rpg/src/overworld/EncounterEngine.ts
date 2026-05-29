@@ -446,6 +446,32 @@ export const ELITE_EXP_BONUS_RATE = 0.30;
 // C300: village investment upgrade — each village visit increases investment return by 1%
 export const VILLAGE_INVEST_BONUS_PER_VISIT = 0.01;
 export const VILLAGE_INVEST_BONUS_CAP = 0.20;
+// C301: focus strike — every 5th hit deals ×2 damage
+export const FOCUS_STRIKE_INTERVAL = 5;
+export const FOCUS_STRIKE_MUL = 2.0;
+// C302: gold overflow — excess gold above 5000 converts to exp at 10:1
+export const GOLD_OVERFLOW_THRESHOLD = 5000;
+export const GOLD_OVERFLOW_RATIO = 10; // 10 gold = 1 exp
+// C303: kill streak gold — 10+ kills without village = +25% gold
+export const KILL_STREAK_GOLD_THRESHOLD = 10;
+export const KILL_STREAK_GOLD_BONUS = 0.25;
+// C304: rest exp — village also grants flat 5 × level exp
+export const REST_EXP_PER_LEVEL = 5;
+// C305: enemy scaling cap — time pressure caps at level 50
+export const TIME_PRESSURE_LEVEL_CAP = 50;
+// C306: lifesteal — every 10th hit restores 3% HP
+export const LIFESTEAL_INTERVAL = 10;
+export const LIFESTEAL_HIT_RATE = 0.03;
+// C307: gold shield — spending gold at shop grants temporary damage reduction
+export const GOLD_SHIELD_DURATION = 3;
+export const GOLD_SHIELD_REDUCTION = 0.15;
+// C308: boss exp scaling — bosses give more exp with each prestige
+export const BOSS_EXP_PRESTIGE_BONUS = 0.10;
+// C309: combo heal — at 20+ combo, heal 1% per hit
+export const COMBO_HEAL_THRESHOLD = 20;
+export const COMBO_HEAL_RATE = 0.01;
+// C310: danger gold interest — danger zone fights increase gold interest earned
+export const DANGER_INTEREST_BONUS = 0.02;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -599,6 +625,7 @@ export class EncounterEngine {
   private villageTrainingRemaining = 0; // C285: ATK buff duration
   private survivorGritActive = false; // C286: survived at low HP
   private fightChainCount = 0; // C293: fights since last village (for exp chain)
+  private goldShieldRemaining = 0; // C307: gold shield from shop
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -779,9 +806,19 @@ export class EncounterEngine {
         const dodgeAtkBonus = Math.min(DODGE_COUNTER_ATK_CAP, dodgeCount * DODGE_COUNTER_ATK_BONUS);
         // C294: armor break on crit — reduce enemy effective HP
         const armorBreakMul = (isCrit && hitCount > 1) ? (1 + ARMOR_BREAK_RATE) : 1;
-        const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul * (1 + dodgeAtkBonus) * armorBreakMul);
+        // C301: focus strike — every 5th hit ×2
+        const focusStrikeMul = (hitCount > 0 && hitCount % FOCUS_STRIKE_INTERVAL === 0) ? FOCUS_STRIKE_MUL : 1;
+        const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul * (1 + dodgeAtkBonus) * armorBreakMul * focusStrikeMul);
         totalDamageDealt += effectiveAtk;
         eHp -= effectiveAtk;
+        // C306: lifesteal — every 10th hit
+        if (hitCount > 0 && hitCount % LIFESTEAL_INTERVAL === 0) {
+          hero.heal(Math.max(1, Math.floor(hero.hpMax * LIFESTEAL_HIT_RATE)));
+        }
+        // C309: combo heal — at 20+ combo, heal per hit
+        if (this.comboStreak >= COMBO_HEAL_THRESHOLD) {
+          hero.heal(Math.max(1, Math.floor(hero.hpMax * COMBO_HEAL_RATE)));
+        }
         // C194: double hit — 10% chance for extra strike after 200 kills
         if (eHp > 0 && this.killCount >= DOUBLE_HIT_KILL_THRESHOLD && this.rng.chance(DOUBLE_HIT_CHANCE)) {
           totalDamageDealt += heroAtk;
@@ -826,7 +863,10 @@ export class EncounterEngine {
           const armorMul = this.armorRemaining > 0 ? (1 - ARMOR_REDUCTION) : 1;
           // C258: village vigor damage reduction
           const vigorMul = this.villageRestRemaining > 0 ? (1 - VILLAGE_VIGOR_HP_BONUS) : 1;
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul * vigorMul));
+          // C307: gold shield damage reduction
+          const goldShieldMul = this.goldShieldRemaining > 0 ? (1 - GOLD_SHIELD_REDUCTION) : 1;
+          if (this.goldShieldRemaining > 0) this.goldShieldRemaining--;
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul * vigorMul * goldShieldMul));
           // C282: village shield absorbs first hit
           if (this.villageShieldActive) {
             this.villageShieldActive = false;
@@ -995,7 +1035,7 @@ export class EncounterEngine {
         ? Math.max(1 - EXP_DECAY_CAP, 1 - (hero.level - EXP_DECAY_LEVEL_START) * EXP_DECAY_PER_LEVEL)
         : 1;
       // C204: boss kill exp burst
-      const bossExpMul = isBoss ? BOSS_KILL_EXP_MUL : 1;
+      const bossExpMul = isBoss ? (BOSS_KILL_EXP_MUL + this.prestigeCount * BOSS_EXP_PRESTIGE_BONUS) : 1;
       // C211: wind weather exp bonus
       const weatherExpMul = weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1;
       // C212: arena reward multiplier (used for both exp and gold)
@@ -1130,7 +1170,9 @@ export class EncounterEngine {
       const treasureHoardMul2 = (this.killCount > 0 && this.killCount % TREASURE_HOARD_INTERVAL === 0) ? TREASURE_HOARD_MUL : 1;
       // C297: combo gold high — at 50+ combo, gold ×1.5
       const comboGoldHighMul = this.comboStreak >= COMBO_GOLD_HIGH_THRESHOLD ? COMBO_GOLD_HIGH_MUL : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul) + levelMilestoneGold;
+      // C303: kill streak gold bonus
+      const killStreakGoldMul = this.fightChainCount >= KILL_STREAK_GOLD_THRESHOLD ? (1 + KILL_STREAK_GOLD_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul) + levelMilestoneGold;
       hero.gold += goldEarned;
       // C280: lucky gold drop
       if (this.rng.chance(LUCKY_GOLD_CHANCE)) {
@@ -1159,6 +1201,13 @@ export class EncounterEngine {
         events.push({ type: 'boss_vault', gold: vaultGold });
         // C251: boss slayer buff
         this.bossSlayerRemaining = BOSS_SLAYER_DURATION;
+      }
+      // C302: gold overflow — excess gold above threshold converts to exp
+      if (hero.gold > GOLD_OVERFLOW_THRESHOLD) {
+        const excess = hero.gold - GOLD_OVERFLOW_THRESHOLD;
+        const bonusExp = Math.floor(excess / GOLD_OVERFLOW_RATIO);
+        hero.gold = GOLD_OVERFLOW_THRESHOLD;
+        hero.exp += bonusExp;
       }
       // C156: HP regen on win
       // C238: reset consecutive deaths on win
@@ -1429,6 +1478,8 @@ export class EncounterEngine {
         hero.atk += GOLD_FORGE_ATK_FLAT;
         events.push({ type: 'village_shop_purchase', cost: GOLD_FORGE_COST, effect: 'atk_forge' });
       }
+      // C307: gold shield from any village shop purchase
+      this.goldShieldRemaining = GOLD_SHIELD_DURATION;
       // C168: gold interest
       // C225: interest scales with prestige
       const interestRate = VILLAGE_GOLD_INTEREST_RATE + this.prestigeCount * GOLD_INTEREST_PRESTIGE_BONUS + Math.floor(this.villageVisits / INTEREST_VILLAGE_INTERVAL) * INTEREST_VILLAGE_BONUS;
@@ -1438,6 +1489,10 @@ export class EncounterEngine {
       if (interest > 0) hero.gold += interest;
       // C201: village gold fountain
       hero.gold += VILLAGE_GOLD_FOUNTAIN;
+      // C304: rest exp — village grants flat exp
+      hero.exp += hero.level * REST_EXP_PER_LEVEL;
+      // C310: danger interest — danger streak boosts gold at village
+      hero.gold += Math.floor(this.dangerStreak * DANGER_INTEREST_BONUS * hero.gold);
       // C205: gold investment — lock gold for GOLD_INVEST_LOCK_FIGHTS fights, get ×3 return
       if (this.investFightsRemaining <= 0 && hero.gold >= GOLD_INVEST_MIN) {
         const investAmount = Math.floor(hero.gold * 0.5); // invest half
