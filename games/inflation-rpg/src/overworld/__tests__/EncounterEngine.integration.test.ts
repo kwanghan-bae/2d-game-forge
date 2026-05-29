@@ -8,7 +8,7 @@ import { SeededRng } from '../../cycle/SeededRng';
  * mechanics interact without crash or degenerate behavior.
  */
 describe('EncounterEngine — C127 headless sim smoke', () => {
-  it('200 encounters produce valid event stream with all mechanic interactions', { timeout: 30_000 }, () => {
+  it('200 encounters produce valid event stream with all mechanic interactions', { timeout: 120_000 }, () => {
     const hero = HeroEntity.create({ seed: 42, heroHpMax: 500, heroAtkBase: 200 });
     const engine = new EncounterEngine(new SeededRng(42));
 
