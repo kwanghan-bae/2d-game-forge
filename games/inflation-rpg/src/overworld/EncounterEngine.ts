@@ -329,6 +329,10 @@ export const LUCKY_CRIT_MUL = 3.0; // x3 damage instead of x2
 // C256: danger zone exp scaling
 export const DANGER_EXP_SCALE_PER_10 = 0.05; // +5% per 10 danger fights
 export const DANGER_EXP_SCALE_CAP = 0.30; // max +30%
+// C257: stamina system
+export const STAMINA_FIGHTS_PER_PENALTY = 30; // every 30 fights without village
+export const STAMINA_ATK_PENALTY = 0.05; // -5% ATK per threshold
+export const STAMINA_PENALTY_CAP = 0.20; // max -20% ATK
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -601,7 +605,10 @@ export class EncounterEngine {
       const elementalMul = (hero.level % ELEMENTAL_LEVEL_MOD === 0) ? (1 + ELEMENTAL_DMG_BONUS) : 1;
       // C248: sacrifice fury ATK bonus
       const furyMul = this.sacrificeFuryRemaining > 0 ? (1 + SACRIFICE_FURY_ATK_BONUS) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul));
+      // C257: stamina penalty
+      const staminaPenalty = Math.min(STAMINA_PENALTY_CAP, Math.floor(this.fightsSinceVillage / STAMINA_FIGHTS_PER_PENALTY) * STAMINA_ATK_PENALTY);
+      const staminaMul = 1 - staminaPenalty;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
