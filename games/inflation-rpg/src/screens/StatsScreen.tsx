@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store/gameStore';
+import { formatCompact } from '../systems/numberFormat';
 
 /** 플레이 통계 요약 화면. */
 export function StatsScreen() {
@@ -14,8 +15,8 @@ export function StatsScreen() {
   const questsDone = meta.questsCompleted.length;
 
   const stats = [
-    { label: '최고 레벨', value: bestLevel.toLocaleString() },
-    { label: '총 처치 수', value: totalKills.toLocaleString() },
+    { label: '최고 레벨', value: formatCompact(bestLevel) },
+    { label: '총 처치 수', value: formatCompact(totalKills) },
     { label: '발견한 몬스터', value: `${monstersDiscovered}종` },
     { label: '보스 처치', value: `${bossesKilled}마리` },
     { label: '완료한 퀘스트', value: `${questsDone}개` },
