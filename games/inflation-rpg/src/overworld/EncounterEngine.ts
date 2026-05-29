@@ -189,6 +189,9 @@ export const REVENGE_GOLD_BONUS = 0.50; // +50% gold
 // C189: shrine mastery — increased meditation chance
 export const SHRINE_MASTERY_THRESHOLD = 5; // tithes needed
 export const SHRINE_MASTERY_MEDITATION_CHANCE = 0.40; // up from 20%
+// C190: gold armor — reduce damage when rich
+export const GOLD_ARMOR_THRESHOLD = 500;
+export const GOLD_ARMOR_REDUCTION = 0.10; // -10% damage
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -406,7 +409,9 @@ export class EncounterEngine {
             rageTurn++;
             continue;
           }
-          hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction)));
+          // C190: gold armor — reduce damage when gold > threshold
+          const goldArmorMul = hero.gold >= GOLD_ARMOR_THRESHOLD ? (1 - GOLD_ARMOR_REDUCTION) : 1;
+          hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul)));
           // C142: lucky dodge — survive fatal hit with 10% chance
           if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
             hero.staggered = false;
