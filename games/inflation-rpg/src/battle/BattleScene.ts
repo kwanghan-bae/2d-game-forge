@@ -549,7 +549,16 @@ export class BattleScene extends Phaser.Scene {
         useGameStore.getState().trackBossDefeat(this.bossId);
         const story = getBossDefeatStory(this.bossId);
         if (story) useGameStore.getState().setPendingStory(story.id);
-        playSfx('boss-victory');
+        if (this.cachedBossType === 'final') {
+          // Grand fanfare for final boss — 5-note ascending
+          playSfx('milestone', 0.8);
+          this.time.delayedCall(120, () => playSfx('milestone', 1.0));
+          this.time.delayedCall(240, () => playSfx('milestone', 1.2));
+          this.time.delayedCall(360, () => playSfx('milestone', 1.5));
+          this.time.delayedCall(480, () => playSfx('milestone', 1.8));
+        } else {
+          playSfx('boss-victory');
+        }
         this.cameras.main.shake(300, 0.02);
         this.showBossVictoryText();
       } else {
