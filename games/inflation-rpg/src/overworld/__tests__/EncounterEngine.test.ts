@@ -154,3 +154,58 @@ describe('EncounterEngine — C119 danger zone', () => {
     }
   });
 });
+
+describe('EncounterEngine — C120 combo streak', () => {
+  it('combo streak increments on no-damage kills', () => {
+    // heroAtk=100000 one-shots everything, so hero takes no damage
+    const hero = makeHero();
+    const engine = new EncounterEngine(new SeededRng(999));
+    for (let i = 0; i < 5; i++) {
+      engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+    }
+    expect(engine.getComboStreak()).toBe(5);
+  });
+
+  it('combo streak resets on death', () => {
+    // hero with very low HP will die
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 1, heroAtkBase: 1 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    engine.resolveEncounter(hero, 'enemy', 'e_0');
+    expect(engine.getComboStreak()).toBe(0);
+  });
+
+  it('emits combo_streak event at threshold (>=3)', () => {
+    const hero = makeHero();
+    const engine = new EncounterEngine(new SeededRng(42));
+    let comboEvents = 0;
+    for (let i = 0; i < 5; i++) {
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      if (evs.some(e => e.type === 'combo_streak')) comboEvents++;
+    }
+    // Streak 1,2 = no event; streak 3,4,5 = event (3 events)
+    expect(comboEvents).toBe(3);
+  });
+
+  it('combo bonus increases exp at streak >= 3', () => {
+    const hero1 = makeHero(77);
+    const engine1 = new EncounterEngine(new SeededRng(77));
+    // First kill: streak=1, no bonus
+    const evs1 = engine1.resolveEncounter(hero1, 'enemy', 'e_first');
+    const exp1 = evs1.find(e => e.type === 'battle_won');
+
+    // Build streak to 3
+    const hero2 = makeHero(77);
+    const engine2 = new EncounterEngine(new SeededRng(77));
+    for (let i = 0; i < 3; i++) {
+      engine2.resolveEncounter(hero2, 'enemy', `e_${i}`);
+    }
+    // 4th kill: streak=4 (above threshold) → has bonus
+    const evs4 = engine2.resolveEncounter(hero2, 'enemy', 'e_bonus');
+    const exp4 = evs4.find(e => e.type === 'battle_won');
+
+    // Both should have exp, and the streak version should be higher
+    if (exp1?.type === 'battle_won' && exp4?.type === 'battle_won') {
+      expect(exp4.expGain).toBeGreaterThan(exp1.expGain);
+    }
+  });
+});

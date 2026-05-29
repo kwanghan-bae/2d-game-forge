@@ -22,6 +22,9 @@ const DROP_RATE = 0.36;           // V3-H F2: +20% (was 0.3)
 export const DANGER_ZONE_RATE = 0.15;
 export const DANGER_ZONE_STAT_MUL = 1.5;
 export const DANGER_ZONE_EXP_MUL = 3;
+// C120: combo streak — consecutive no-damage kills grant bonus exp
+export const COMBO_STREAK_THRESHOLD = 3; // streak >= 3 to start bonus
+export const COMBO_STREAK_EXP_BONUS = 0.1; // +10% per streak beyond threshold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -83,11 +86,16 @@ export interface EncounterEngineOpts {
 }
 
 export class EncounterEngine {
+  private comboStreak = 0;
+
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
   setOpts(opts: EncounterEngineOpts): void {
     this.opts = { ...this.opts, ...opts };
   }
+
+  getComboStreak(): number { return this.comboStreak; }
+  resetComboStreak(): void { this.comboStreak = 0; }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
@@ -132,12 +140,16 @@ export class EncounterEngine {
       // (vs boss intro which is boss-only). Separate channel, multiply both.
       const realmAtkMul = this.opts.getRealmForkAtkMul?.() ?? 1.0;
       const heroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul));
+      const hpBefore = hero.hp;
       let eHp = enemyHp;
       while (eHp > 0 && !hero.staggered) {
         eHp -= heroAtk;
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
+      const tookDamage = hero.hp < hpBefore;
       if (hero.staggered) {
+        // C120: combo streak resets on death
+        this.comboStreak = 0;
         // Cycle 108 F1: intercept (a) — before applyDeathPenalty, check fate
         // roll eligibility. If eligible, emit fate_roll_required and *abort*
         // (level penalty + hero_died emit are deferred to controller's
@@ -157,8 +169,18 @@ export class EncounterEngine {
         events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
         return events;
       }
+      // C120: combo streak — no-damage kills in a row grant bonus exp
+      if (tookDamage) {
+        this.comboStreak = 0;
+      } else {
+        this.comboStreak++;
+      }
+      const comboBonus = this.comboStreak >= COMBO_STREAK_THRESHOLD
+        ? 1 + (this.comboStreak - COMBO_STREAK_THRESHOLD + 1) * COMBO_STREAK_EXP_BONUS
+        : 1;
       const baseExpGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
-      const expGain = isDangerZone ? Math.floor(baseExpGain * DANGER_ZONE_EXP_MUL) : baseExpGain;
+      const dangerMul2 = isDangerZone ? DANGER_ZONE_EXP_MUL : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * comboBonus);
       const baseDropOdds = isBoss ? 0.96 : DROP_RATE; // V3-H F2: boss 0.8→0.96 (+20%)
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
@@ -175,6 +197,9 @@ export class EncounterEngine {
       }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      if (this.comboStreak >= COMBO_STREAK_THRESHOLD) {
+        events.push({ type: 'combo_streak', streak: this.comboStreak, bonusMul: comboBonus });
+      }
 
       // V1c-1 — merciful drift proc on non-boss kills. Sign branches on the
       // hero's current merciful so a prior=0 hero is nudged toward whichever
