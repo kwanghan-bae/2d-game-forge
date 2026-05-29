@@ -277,6 +277,8 @@ export const LEVEL_UP_HEAL_RATE = 0.50; // restore 50% HP on level-up
 // C235: crit gold scaling
 export const CRIT_GOLD_SCALE_PER_100 = 0.10; // +10% crit gold per 100 crits
 export const CRIT_GOLD_SCALE_CAP = 0.50; // max +50% additional
+// C236: overkill heal
+export const OVERKILL_HEAL_RATE = 0.05; // 5% max HP restored on one-hit kill
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -841,6 +843,10 @@ export class EncounterEngine {
       // C174: lifesteal — heal based on damage dealt
       const lifestealHeal = Math.max(1, Math.floor(totalDamageDealt * LIFESTEAL_RATE));
       hero.heal(lifestealHeal);
+      // C236: overkill heal
+      if (isOverkill) {
+        hero.heal(Math.max(1, Math.floor(hero.hpMax * OVERKILL_HEAL_RATE)));
+      }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
       // C212: reset arena after fight
