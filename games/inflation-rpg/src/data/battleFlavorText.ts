@@ -462,3 +462,54 @@ export function getBountyMessage(seed: number): string {
 export function getBankMessage(seed: number): string {
   return BANK_MESSAGES[seed % BANK_MESSAGES.length];
 }
+
+// C244: flavor text 9 — overkill_heal, exp_overflow, darkness_curse, time_pressure, companion
+const OVERKILL_HEAL_MESSAGES = [
+  '일격에 쓰러뜨리며 생명력이 회복됐다!',
+  '압도적 승리, 체력이 차오른다!',
+  '적의 에너지를 흡수했다!',
+];
+
+const EXP_OVERFLOW_MESSAGES = [
+  '넘치는 경험치가 증폭됐다!',
+  '레벨업의 여운이 남아있다!',
+  '잔여 경험치 보너스 획득!',
+];
+
+const DARKNESS_CURSE_MESSAGES = [
+  '어둠의 저주가 내려앉았다...',
+  '연패의 그림자가 드리운다...',
+  '저주받은 전사, 성소를 찾아야 한다...',
+];
+
+const TIME_PRESSURE_MESSAGES = [
+  '시간이 흐를수록 적이 강해진다!',
+  '전장의 긴장감이 고조된다!',
+  '적들이 점점 단련되고 있다!',
+];
+
+const COMPANION_MESSAGES = [
+  '동료의 응원으로 경험치가 늘었다!',
+  '함께라서 더 빠르게 성장한다!',
+  '동료가 전투를 지원한다!',
+];
+
+export function getOverkillHealMessage(seed: number): string {
+  return OVERKILL_HEAL_MESSAGES[seed % OVERKILL_HEAL_MESSAGES.length];
+}
+
+export function getExpOverflowMessage(seed: number): string {
+  return EXP_OVERFLOW_MESSAGES[seed % EXP_OVERFLOW_MESSAGES.length];
+}
+
+export function getDarknessCurseMessage(seed: number): string {
+  return DARKNESS_CURSE_MESSAGES[seed % DARKNESS_CURSE_MESSAGES.length];
+}
+
+export function getTimePressureMessage(seed: number): string {
+  return TIME_PRESSURE_MESSAGES[seed % TIME_PRESSURE_MESSAGES.length];
+}
+
+export function getCompanionMessage(seed: number): string {
+  return COMPANION_MESSAGES[seed % COMPANION_MESSAGES.length];
+}
