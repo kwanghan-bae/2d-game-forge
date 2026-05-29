@@ -197,6 +197,9 @@ export const BOSS_RAGE_RESET_ON_CRIT = true;
 // C193: gold tax at high levels
 export const GOLD_TAX_LEVEL_THRESHOLD = 50;
 export const GOLD_TAX_RATE = 0.05; // 5% per fight
+// C194: double hit chance
+export const DOUBLE_HIT_KILL_THRESHOLD = 200;
+export const DOUBLE_HIT_CHANCE = 0.10; // 10%
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -394,6 +397,11 @@ export class EncounterEngine {
         hitCount++;
         totalDamageDealt += heroAtk;
         eHp -= heroAtk;
+        // C194: double hit — 10% chance for extra strike after 200 kills
+        if (eHp > 0 && this.killCount >= DOUBLE_HIT_KILL_THRESHOLD && this.rng.chance(DOUBLE_HIT_CHANCE)) {
+          totalDamageDealt += heroAtk;
+          eHp -= heroAtk;
+        }
         if (eHp > 0) {
           // C132: boss rage — boss ATK escalates each turn the fight lasts
           // C165: boss enrage — ×2 ATK when below 50% HP
