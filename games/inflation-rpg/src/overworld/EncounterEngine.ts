@@ -70,6 +70,10 @@ export const SURVIVAL_STREAK_THRESHOLD = 10; // fights survived to start bonus
 export const SURVIVAL_STREAK_EXP_BONUS = 0.05; // +5% per fight above threshold
 // C142: lucky dodge — chance to survive fatal hit with 1 HP
 export const LUCKY_DODGE_CHANCE = 0.10; // 10% on fatal blow
+// C144: gold from battles
+export const GOLD_PER_KILL_BASE = 5; // base gold per kill
+export const GOLD_BOSS_MUL = 5; // bosses give 5× gold
+export const GOLD_ELITE_MUL = 3; // elites give 3× gold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -326,6 +330,11 @@ export class EncounterEngine {
       if (leveled.length > 0) {
         hero.rollTraitsForLevels(this.rng, leveled);
       }
+
+      // C144: gold earned from battle
+      const goldMul = isBoss ? GOLD_BOSS_MUL : isElite ? GOLD_ELITE_MUL : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul);
+      hero.gold += goldEarned;
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
       // C136: decrement shrine buff after each fight
