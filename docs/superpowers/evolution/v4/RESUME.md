@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 59 | Era: 3 | Target: 100
+- Cycle: 60 | Era: 3 | Target: 100
 - Vitest: 1696 | E2E: 60 | Persist: v27
-- Last commit: 6c4560c
-- Phase: DONE → next cycle 60, Phase A
-- Category lock: vis×14 bal×11 sys×12 narr×11 sound×11
-- Visual maturity: 15/30
+- Last commit: 3834a88
+- Phase: DONE → next cycle 61, Phase A
+- Category lock: vis×15 bal×11 sys×12 narr×11 sound×11
+- Visual maturity: 16/30
 - Carry-over: (empty)
-- Budget: visual 14/59 sys 12/59 narr 11/59 sound 11/59 balance 11/59
+- Budget: visual 15/60 sys 12/60 narr 11/60 sound 11/60 balance 11/60
 - Era 2 summary: docs/superpowers/evolution/v4/era-2-summary.md
 
 ## 비주얼 성숙도 상세 (0-3 × 10영역)
@@ -23,7 +23,7 @@
 | 폰트 | 1 | Galmuri11 body + Galmuri14 heading (pixel bitmap) |
 | BGM | 0 | 3곡 placeholder급 |
 | SFX | 0 | 12개 기본 효과음 |
-| 색상 | 1 | realm accent system (6 realm × distinct color) |
+| 색상 | 2 | realm accent system (6 realm × distinct color) + HP bar dynamic |
 
 ## 확정 사항 (Cycle 0 부트스트랩)
 
