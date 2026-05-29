@@ -158,6 +158,8 @@ export const LUCKY_TREASURE_MAX = 200;
 // C178: danger zone exp scaling
 export const DANGER_STREAK_EXP_STEP = 0.5; // +0.5× exp per consecutive danger fight
 export const DANGER_STREAK_EXP_CAP = 3.0; // max ×3 exp in danger zone
+// C179: shield break counter-attack
+export const SHIELD_BREAK_ATK_MUL = 1.5; // ×1.5 ATK on fight after shield expires
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -238,6 +240,7 @@ export class EncounterEngine {
   private fightsSinceVillage = 0; // C173: fights without village visit
   private shrineTithes = 0; // C175: number of gold tithes at shrines
   private dangerStreak = 0; // C178: consecutive danger zone fights
+  private shieldBreakReady = false; // C179: shield just expired → next fight bonus
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -321,7 +324,10 @@ export class EncounterEngine {
       const exhaustionMul = this.fightsSinceVillage >= EXHAUSTION_THRESHOLD ? (1 - EXHAUSTION_ATK_PENALTY) : 1;
       // C175: shrine tithe ATK bonus
       const titheMul = 1 + this.shrineTithes * SHRINE_TITHE_ATK_BONUS;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul));
+      // C179: shield break counter-attack
+      const shieldBreakMul = this.shieldBreakReady ? SHIELD_BREAK_ATK_MUL : 1;
+      if (this.shieldBreakReady) this.shieldBreakReady = false;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -527,7 +533,11 @@ export class EncounterEngine {
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
       // C154: decrement shop shield after each fight
-      if (this.shopShieldRemaining > 0) this.shopShieldRemaining--;
+      if (this.shopShieldRemaining > 0) {
+        this.shopShieldRemaining--;
+        // C179: shield break — when shield expires, next fight gets bonus
+        if (this.shopShieldRemaining === 0) this.shieldBreakReady = true;
+      }
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
       if (this.mercyRemaining > 0) this.mercyRemaining--;
