@@ -90,6 +90,11 @@ export const GOLD_MOMENTUM_BONUS = 0.50; // +50% gold when momentum >= threshold
 // C151: area familiarity — revisiting areas gives exp bonus
 export const AREA_FAMILIARITY_EXP_BONUS = 0.05; // +5% per visit
 export const AREA_FAMILIARITY_CAP = 5; // max 5 stacks = +25%
+// C152: treasure goblin — rare rich enemy
+export const TREASURE_GOBLIN_RATE = 0.03; // 3% chance
+export const TREASURE_GOBLIN_GOLD_MUL = 10; // ×10 gold
+export const TREASURE_GOBLIN_HP_MUL = 0.3; // 30% HP (easy to kill)
+export const TREASURE_GOBLIN_FLEE_RATE = 0.4; // 40% chance to flee after 2 turns
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -187,7 +192,9 @@ export class EncounterEngine {
       const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE);
       // C133: elite enemy — 5% chance on non-boss, non-danger encounters. ×2 HP, guaranteed drop, ×2.5 exp.
       const isElite = !isBoss && !isDangerZone && this.rng.chance(ELITE_SPAWN_RATE);
-      const hpMul = isDangerZone ? DANGER_ZONE_STAT_MUL : isElite ? ELITE_HP_MUL : 1;
+      // C152: treasure goblin — 3% on non-boss, non-danger, non-elite. Low HP, high gold.
+      const isTreasureGoblin = !isBoss && !isDangerZone && !isElite && this.rng.chance(TREASURE_GOBLIN_RATE);
+      const hpMul = isDangerZone ? DANGER_ZONE_STAT_MUL : isElite ? ELITE_HP_MUL : isTreasureGoblin ? TREASURE_GOBLIN_HP_MUL : 1;
       const atkMul = isDangerZone ? DANGER_ZONE_STAT_MUL : 1; // elite has normal ATK
       const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul);
       const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul);
@@ -219,6 +226,9 @@ export class EncounterEngine {
       }
       if (isElite) {
         events.push({ type: 'elite_spawned', enemyId: landmarkId });
+      }
+      if (isTreasureGoblin) {
+        events.push({ type: 'treasure_goblin', enemyId: landmarkId });
       }
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
@@ -364,7 +374,7 @@ export class EncounterEngine {
       }
 
       // C144: gold earned from battle
-      const goldMul = isBoss ? GOLD_BOSS_MUL : isElite ? GOLD_ELITE_MUL : 1;
+      const goldMul = isBoss ? GOLD_BOSS_MUL : isElite ? GOLD_ELITE_MUL : isTreasureGoblin ? TREASURE_GOBLIN_GOLD_MUL : 1;
       // C146: wave bonus multiplier
       const waveMul = this.waveRemaining > 0 ? WAVE_BONUS_GOLD_MUL : 1;
       // C149: momentum gold bonus
