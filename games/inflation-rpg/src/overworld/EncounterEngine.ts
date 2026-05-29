@@ -179,6 +179,10 @@ export const ELITE_BOUNTY_INTERVAL = 5; // every 5 unique elites
 export const ELITE_BOUNTY_EXP_BONUS = 0.05; // +5% permanent exp per milestone
 // C186: boss overkill vault doubler
 export const BOSS_OVERKILL_VAULT_MUL = 2.0;
+// C187: cave treasure room
+export const CAVE_TREASURE_CHANCE = 0.30;
+export const CAVE_TREASURE_MIN = 100;
+export const CAVE_TREASURE_MAX = 500;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -755,15 +759,22 @@ export class EncounterEngine {
         this.shrineTithes++;
       }
     } else if (kind === 'cave') {
-      // 부상자 발견. 도덕적 결정.
-      const heroic = hero.personality.get('heroic');
-      const merciful = hero.personality.get('merciful');
-      if (heroic + merciful >= 0) {
-        hero.personality.adjust('moral', 1);
-        events.push({ type: 'moral_choice', choice: 'help_injured', dim: 'moral', delta: 1, nameKR: '부상자를 도와 영혼이 정화되었다' });
+      // C187: cave treasure room — 30% chance for gold instead of moral choice
+      if (this.rng.chance(CAVE_TREASURE_CHANCE)) {
+        const treasureGold = CAVE_TREASURE_MIN + this.rng.int(CAVE_TREASURE_MAX - CAVE_TREASURE_MIN + 1);
+        hero.gold += treasureGold;
+        events.push({ type: 'lucky_treasure', gold: treasureGold });
       } else {
-        hero.personality.adjust('moral', -1);
-        events.push({ type: 'moral_choice', choice: 'ignore_injured', dim: 'moral', delta: -1, nameKR: '부상자를 외면하여 영혼이 어두워졌다' });
+        // 부상자 발견. 도덕적 결정.
+        const heroic = hero.personality.get('heroic');
+        const merciful = hero.personality.get('merciful');
+        if (heroic + merciful >= 0) {
+          hero.personality.adjust('moral', 1);
+          events.push({ type: 'moral_choice', choice: 'help_injured', dim: 'moral', delta: 1, nameKR: '부상자를 도와 영혼이 정화되었다' });
+        } else {
+          hero.personality.adjust('moral', -1);
+          events.push({ type: 'moral_choice', choice: 'ignore_injured', dim: 'moral', delta: -1, nameKR: '부상자를 외면하여 영혼이 어두워졌다' });
+        }
       }
     } else if (kind === 'ruin') {
       // 강도 만남. moral 따라 분기.
