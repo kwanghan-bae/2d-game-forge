@@ -177,6 +177,8 @@ export const LEVEL_UP_EXP_BONUS = 1.0; // +100% exp on next fight after leveling
 // C185: elite bounty board
 export const ELITE_BOUNTY_INTERVAL = 5; // every 5 unique elites
 export const ELITE_BOUNTY_EXP_BONUS = 0.05; // +5% permanent exp per milestone
+// C186: boss overkill vault doubler
+export const BOSS_OVERKILL_VAULT_MUL = 2.0;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -564,7 +566,9 @@ export class EncounterEngine {
         this.bossStreak++;
         // C172: boss streak multiplier
         const streakMul = 1 + (this.bossStreak - 1) * BOSS_STREAK_MULTIPLIER;
-        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul);
+        // C186: overkill boss vault doubler
+        const bossOverkillMul = isOverkill ? BOSS_OVERKILL_VAULT_MUL : 1;
+        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul);
         hero.gold += vaultGold;
         events.push({ type: 'boss_vault', gold: vaultGold });
       }
