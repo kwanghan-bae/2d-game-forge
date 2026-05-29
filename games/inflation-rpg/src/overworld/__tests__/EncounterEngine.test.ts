@@ -703,4 +703,27 @@ describe('EncounterEngine — C144 gold currency', () => {
     }
     expect(milestoneCount).toBe(1);
   });
+
+  it('C149: momentum >= 5 gives gold bonus', () => {
+    const hero = makeHero();
+    const eng = new EncounterEngine(new SeededRng(1));
+    // Fight 5+ wins to build momentum to 5
+    for (let i = 0; i < 5; i++) {
+      eng.resolveEncounter(hero, 'enemy', `e_${i}`);
+    }
+    const goldBefore = hero.gold;
+    eng.resolveEncounter(hero, 'enemy', 'e_bonus');
+    const goldAfter = hero.gold;
+    const goldGained = goldAfter - goldBefore;
+    // With momentum >= 5, should get +50% gold vs base
+    // Base at this level: GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * 1.5
+    expect(goldGained).toBeGreaterThan(0);
+    // Compare with a fresh engine (no momentum)
+    const hero2 = makeHero();
+    const eng2 = new EncounterEngine(new SeededRng(1));
+    eng2.resolveEncounter(hero2, 'enemy', 'e_0');
+    const baseGold = hero2.gold;
+    // The momentum hero should earn more per fight (accounting for level diff)
+    expect(goldGained).toBeGreaterThan(baseGold);
+  });
 });
