@@ -308,6 +308,9 @@ export const ELEMENTAL_DMG_BONUS = 0.50; // +50% damage on elemental advantage
 // C247: survival heal
 export const SURVIVAL_HEAL_THRESHOLD = 10; // streak needed
 export const SURVIVAL_HEAL_RATE = 0.03; // 3% HP per fight
+// C248: sacrifice fury
+export const SACRIFICE_FURY_ATK_BONUS = 0.05; // +5% ATK after gold sacrifice heal
+export const SACRIFICE_FURY_DURATION = 5; // lasts 5 fights
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -448,6 +451,7 @@ export class EncounterEngine {
   private darknessCursed = false; // C238: curse active flag
   private bossesKilled = 0; // C239: boss kill counter for loot table
   private armorRemaining = 0; // C242: armor buff fights remaining
+  private sacrificeFuryRemaining = 0; // C248: fury buff from sacrifice
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -576,7 +580,9 @@ export class EncounterEngine {
       const specMul = this.prestigeCount > 0 ? (1 + SPEC_ATK_BONUS) : 1;
       // C246: elemental weakness
       const elementalMul = (hero.level % ELEMENTAL_LEVEL_MOD === 0) ? (1 + ELEMENTAL_DMG_BONUS) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul));
+      // C248: sacrifice fury ATK bonus
+      const furyMul = this.sacrificeFuryRemaining > 0 ? (1 + SACRIFICE_FURY_ATK_BONUS) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -658,6 +664,8 @@ export class EncounterEngine {
             hero.gold -= GOLD_HEAL_COST;
             hero.heal(Math.floor(hero.hpMax * GOLD_HEAL_AMOUNT));
             goldHealUsed = true;
+            // C248: sacrifice fury — gain ATK buff
+            this.sacrificeFuryRemaining = SACRIFICE_FURY_DURATION;
           }
           rageTurn++;
         }
@@ -946,6 +954,8 @@ export class EncounterEngine {
       }
       // C242: decrement armor after each fight
       if (this.armorRemaining > 0) this.armorRemaining--;
+      // C248: decrement sacrifice fury
+      if (this.sacrificeFuryRemaining > 0) this.sacrificeFuryRemaining--;
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
       if (this.mercyRemaining > 0) this.mercyRemaining--;
