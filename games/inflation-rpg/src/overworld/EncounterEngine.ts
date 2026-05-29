@@ -363,6 +363,10 @@ export const LOW_HP_EXP_THRESHOLD = 0.30; // below 30% HP
 export const LOW_HP_EXP_BONUS = 0.25; // +25% exp
 // C270: elite gold bonus
 export const ELITE_GOLD_BONUS = 0.50; // +50% gold from elites
+// C271: gold forge at village
+export const GOLD_FORGE_COST = 500;
+export const GOLD_FORGE_THRESHOLD = 1000;
+export const GOLD_FORGE_ATK_FLAT = 5; // +5 permanent ATK
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1237,6 +1241,12 @@ export class EncounterEngine {
         hero.gold -= ARMOR_BUY_COST;
         this.armorRemaining = ARMOR_DURATION;
         events.push({ type: 'village_shop_purchase', cost: ARMOR_BUY_COST, effect: 'armor' });
+      }
+      // C271: gold forge — convert gold to permanent ATK
+      if (hero.gold >= GOLD_FORGE_THRESHOLD) {
+        hero.gold -= GOLD_FORGE_COST;
+        hero.atk += GOLD_FORGE_ATK_FLAT;
+        events.push({ type: 'village_shop_purchase', cost: GOLD_FORGE_COST, effect: 'atk_forge' });
       }
       // C168: gold interest
       // C225: interest scales with prestige
