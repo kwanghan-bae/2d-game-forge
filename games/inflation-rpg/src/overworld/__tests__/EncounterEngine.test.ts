@@ -554,3 +554,25 @@ describe('EncounterEngine — C138 exp diminishing returns', () => {
     }
   });
 });
+
+describe('EncounterEngine — C139 first blood', () => {
+  it('first fight emits first_blood event with guaranteed drop', () => {
+    const hero = makeHero(1); // massive ATK, wins easily
+    const engine = new EncounterEngine(new SeededRng(1));
+    const evs = engine.resolveEncounter(hero, 'enemy', 'e_0');
+    const fb = evs.find(e => e.type === 'first_blood');
+    expect(fb).toBeDefined();
+    if (fb?.type === 'first_blood') {
+      expect(fb.dropId).not.toBeNull(); // guaranteed drop
+      expect(fb.expGain).toBeGreaterThan(0);
+    }
+  });
+
+  it('second fight does NOT emit first_blood', () => {
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1));
+    engine.resolveEncounter(hero, 'enemy', 'e_0');
+    const evs2 = engine.resolveEncounter(hero, 'enemy', 'e_1');
+    expect(evs2.some(e => e.type === 'first_blood')).toBe(false);
+  });
+});
