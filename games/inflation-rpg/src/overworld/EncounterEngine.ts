@@ -247,6 +247,10 @@ export const LUCKY_FIND_CHANCE = 0.02; // 2% chance per fight
 // C223: exp combo chain
 export const EXP_CHAIN_KILLS_THRESHOLD = 5; // kills since last level-up
 export const EXP_CHAIN_BONUS = 0.25; // +25% exp if chained enough kills
+// C224: berserker mode
+export const BERSERKER_HP_THRESHOLD = 0.25; // below 25% HP
+export const BERSERKER_ATK_BONUS = 0.40; // +40% ATK
+export const BERSERKER_CRIT_BONUS = 0.20; // +20% crit chance
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -495,7 +499,9 @@ export class EncounterEngine {
       const achieveMul = 1 + this.achievementMilestones * ACHIEVEMENT_ATK_BONUS;
       // C219: death counter ATK bonus
       const deathAtkMul = 1 + Math.min(DEATH_ATK_CAP, this.totalDeaths * DEATH_ATK_BONUS);
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul));
+      // C224: berserker mode — low HP gives massive ATK
+      const berserkerMul = hero.hp < hero.hpMax * BERSERKER_HP_THRESHOLD ? (1 + BERSERKER_ATK_BONUS) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -510,7 +516,9 @@ export class EncounterEngine {
       while (eHp > 0 && !hero.staggered) {
         // C203: crit streak — guaranteed crit after 3 consecutive crits
         const guaranteedCrit = this.critStreak >= CRIT_STREAK_GUARANTEE_THRESHOLD;
-        const isCrit = canCrit && (guaranteedCrit || this.rng.chance(CRIT_CHANCE * weatherCritMul));
+        // C224: berserker crit bonus
+        const berserkerCrit = hero.hp < hero.hpMax * BERSERKER_HP_THRESHOLD ? BERSERKER_CRIT_BONUS : 0;
+        const isCrit = canCrit && (guaranteedCrit || this.rng.chance(CRIT_CHANCE * weatherCritMul + berserkerCrit));
         if (isCrit) { this.critStreak++; } else { this.critStreak = 0; }
         if (guaranteedCrit) this.critStreak = 0; // consume guarantee
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
