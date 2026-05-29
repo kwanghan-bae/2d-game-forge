@@ -138,6 +138,9 @@ export const WAVE_MULTI_KILL_ATK_BONUS = 1; // +1 permanent ATK per wave clear
 export const GREED_MODE_GOLD_THRESHOLD = 1000;
 export const GREED_MODE_EXP_PENALTY = 0.20; // -20% exp
 export const GREED_MODE_GOLD_BONUS = 1.0; // +100% gold
+// C171: dodge chance based on kills
+export const DODGE_PER_100_KILLS = 0.05; // 5% per 100 kills
+export const DODGE_CAP = 0.20; // max 20%
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -317,6 +320,12 @@ export class EncounterEngine {
           const mercyReduction = this.mercyRemaining > 0 ? (1 - MERCY_DAMAGE_REDUCTION) : 1;
           // C154: shop shield damage reduction
           const shieldReduction = this.shopShieldRemaining > 0 ? (1 - VILLAGE_SHOP_SHIELD_MUL) : 1;
+          // C171: dodge chance based on kill count
+          const dodgeChance = Math.min(DODGE_CAP, Math.floor(this.killCount / 100) * DODGE_PER_100_KILLS);
+          if (dodgeChance > 0 && this.rng.chance(dodgeChance)) {
+            rageTurn++;
+            continue;
+          }
           hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction)));
           // C142: lucky dodge — survive fatal hit with 10% chance
           if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
