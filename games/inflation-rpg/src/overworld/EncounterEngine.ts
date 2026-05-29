@@ -194,6 +194,9 @@ export const GOLD_ARMOR_THRESHOLD = 500;
 export const GOLD_ARMOR_REDUCTION = 0.10; // -10% damage
 // C192: boss rage reset on crit
 export const BOSS_RAGE_RESET_ON_CRIT = true;
+// C193: gold tax at high levels
+export const GOLD_TAX_LEVEL_THRESHOLD = 50;
+export const GOLD_TAX_RATE = 0.05; // 5% per fight
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -586,6 +589,11 @@ export class EncounterEngine {
       if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
       const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul);
       hero.gold += goldEarned;
+      // C193: gold tax at high levels
+      if (hero.level >= GOLD_TAX_LEVEL_THRESHOLD) {
+        const tax = Math.floor(hero.gold * GOLD_TAX_RATE);
+        hero.gold -= tax;
+      }
       // C157: boss vault — lump sum gold bonus for boss kills
       if (isBoss) {
         this.bossStreak++;
