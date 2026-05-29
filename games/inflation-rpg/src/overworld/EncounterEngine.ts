@@ -321,6 +321,8 @@ export const BOSS_SLAYER_DURATION = 3; // lasts 3 fights
 // C252: chain lightning
 export const CHAIN_LIGHTNING_COMBO = 20; // combo streak needed
 export const CHAIN_LIGHTNING_DMG_RATE = 0.20; // 20% of hero ATK as bonus
+// C253: prestige gold bonus
+export const PRESTIGE_GOLD_BONUS_PER_LEVEL = 5; // gold per level at prestige time
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1119,6 +1121,9 @@ export class EncounterEngine {
       // C213: each prestige requires 50 more levels (200, 250, 300, ...)
       const prestigeThreshold = PRESTIGE_LEVEL_REQUIREMENT + this.prestigeCount * PRESTIGE_LEVEL_INCREMENT;
       if (hero.level >= prestigeThreshold) {
+        // C253: prestige gold bonus — reward based on level reached
+        const prestigeGoldBonus = hero.level * PRESTIGE_GOLD_BONUS_PER_LEVEL;
+        hero.gold += prestigeGoldBonus;
         this.prestigeCount++;
         hero.level = 1;
         hero.exp = 0;
