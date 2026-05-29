@@ -43,6 +43,10 @@ export const MOMENTUM_CAP = 20; // max 20 stacks = +40% ATK
 export const DROP_STREAK_THRESHOLD = 3; // 3 drops in a row → next is upgraded
 // C132: boss rage — boss ATK escalates per combat turn
 export const BOSS_RAGE_ATK_PER_TURN = 0.10; // +10% base ATK per turn
+// C133: elite enemy — rare spawn, x2 HP, guaranteed drop
+export const ELITE_SPAWN_RATE = 0.05; // 5% chance on enemy encounters
+export const ELITE_HP_MUL = 2.0;
+export const ELITE_EXP_MUL = 2.5;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -125,9 +129,12 @@ export class EncounterEngine {
       const isBoss = kind === 'boss';
       // C119: danger zone — 15% chance on regular enemies. ×1.5 stats, ×3 exp.
       const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE);
-      const dangerMul = isDangerZone ? DANGER_ZONE_STAT_MUL : 1;
-      const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : dangerMul);
-      const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : dangerMul);
+      // C133: elite enemy — 5% chance on non-boss, non-danger encounters. ×2 HP, guaranteed drop, ×2.5 exp.
+      const isElite = !isBoss && !isDangerZone && this.rng.chance(ELITE_SPAWN_RATE);
+      const hpMul = isDangerZone ? DANGER_ZONE_STAT_MUL : isElite ? ELITE_HP_MUL : 1;
+      const atkMul = isDangerZone ? DANGER_ZONE_STAT_MUL : 1; // elite has normal ATK
+      const enemyHp = enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul);
+      const enemyAtk = enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul);
 
       if (hero.staggered) return events;
 
@@ -153,6 +160,9 @@ export class EncounterEngine {
 
       if (isDangerZone) {
         events.push({ type: 'danger_zone_entered', enemyId: landmarkId });
+      }
+      if (isElite) {
+        events.push({ type: 'elite_spawned', enemyId: landmarkId });
       }
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
@@ -221,8 +231,10 @@ export class EncounterEngine {
         : 1;
       const baseExpGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
       const dangerMul2 = isDangerZone ? DANGER_ZONE_EXP_MUL : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * comboBonus);
-      const baseDropOdds = isBoss ? 0.96 : DROP_RATE; // V3-H F2: boss 0.8→0.96 (+20%)
+      // C133: elite exp multiplier
+      const eliteMul = isElite ? ELITE_EXP_MUL : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus);
+      const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : DROP_RATE; // C133: elite = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
       // C123: overkill bonus — one-hit kills get +15% drop rate

@@ -13,6 +13,7 @@ export type OverworldEvent =
   | { type: 'drop_upgraded'; dropId: string }
   | { type: 'milestone_reached'; level: number }
   | { type: 'boss_rage'; turns: number; atkMultiplier: number }
+  | { type: 'elite_spawned'; enemyId: string }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
   | { type: 'level_up';        from: number; to: number }
