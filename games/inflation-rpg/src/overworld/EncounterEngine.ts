@@ -228,6 +228,9 @@ export const EXP_SHIELD_PRESERVE = 0.5; // preserve 50% of exp on first death
 // C216: elite combo
 export const ELITE_COMBO_THRESHOLD = 3; // 3 elites in a row
 export const ELITE_COMBO_DROP_GUARANTEE = true;
+// C217: HP regen scaling
+export const REGEN_SCALE_PER_50_KILLS = 0.001; // +0.1% regen per 50 kills
+export const REGEN_SCALE_CAP = 0.05; // max +5% extra regen
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -746,7 +749,9 @@ export class EncounterEngine {
         events.push({ type: 'boss_vault', gold: vaultGold });
       }
       // C156: HP regen on win
-      const regenAmount = Math.max(1, Math.floor(hero.hpMax * WIN_HP_REGEN_RATE));
+      // C217: HP regen scaling based on kills
+      const regenBonus = Math.min(REGEN_SCALE_CAP, Math.floor(this.totalWins / 50) * REGEN_SCALE_PER_50_KILLS);
+      const regenAmount = Math.max(1, Math.floor(hero.hpMax * (WIN_HP_REGEN_RATE + regenBonus)));
       hero.heal(regenAmount);
       // C174: lifesteal — heal based on damage dealt
       const lifestealHeal = Math.max(1, Math.floor(totalDamageDealt * LIFESTEAL_RATE));
