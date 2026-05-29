@@ -223,6 +223,8 @@ export const PRESTIGE_LEVEL_INCREMENT = 50; // each prestige requires 50 more le
 // C214: treasure hunter
 export const TREASURE_HUNTER_CAVE_INTERVAL = 5;
 export const TREASURE_HUNTER_GOLD_BONUS = 0.10; // +10% gold per tier
+// C215: exp shield
+export const EXP_SHIELD_PRESERVE = 0.5; // preserve 50% of exp on first death
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -351,6 +353,7 @@ export class EncounterEngine {
   private achievementMilestones = 0; // C210: number of kill milestones reached
   private arenaActive = false; // C212: next fight is arena
   private caveVisits = 0; // C214: total cave visits
+  private expShieldUsed = false; // C215: one-time exp preservation
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -593,6 +596,11 @@ export class EncounterEngine {
           return events;
         }
         // V3-H E1: hero died in battle — apply -10% level penalty and emit event.
+        // C215: exp shield — first death preserves 50% of exp
+        if (!this.expShieldUsed) {
+          this.expShieldUsed = true;
+          hero.exp = Math.floor(hero.exp * EXP_SHIELD_PRESERVE);
+        }
         const { oldLevel, newLevel } = hero.applyDeathPenalty();
         // C140: track who killed us for revenge
         this.lastDeathEnemyId = landmarkId;
