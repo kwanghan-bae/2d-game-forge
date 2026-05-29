@@ -370,6 +370,9 @@ export const GOLD_FORGE_ATK_FLAT = 5; // +5 permanent ATK
 // C272: combo break consolation
 export const COMBO_BREAK_THRESHOLD = 30; // lost combo must be >= this
 export const COMBO_BREAK_EXP_BONUS = 0.50; // +50% exp on next fight
+// C273: boss kill counter ATK
+export const BOSS_KILL_ATK_INTERVAL = 5; // every 5 bosses
+export const BOSS_KILL_ATK_BONUS = 0.03; // +3% ATK per milestone
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -652,7 +655,9 @@ export class EncounterEngine {
       const staminaMul = 1 - staminaPenalty;
       // C266: gold hoard ATK bonus
       const goldHoardMul = hero.gold >= GOLD_HOARD_THRESHOLD ? (1 + GOLD_HOARD_ATK_BONUS) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul));
+      // C273: boss kill counter ATK
+      const bossKillAtkMul = 1 + Math.floor(this.bossesKilled / BOSS_KILL_ATK_INTERVAL) * BOSS_KILL_ATK_BONUS;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
