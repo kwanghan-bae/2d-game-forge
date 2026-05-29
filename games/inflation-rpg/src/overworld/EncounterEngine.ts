@@ -116,6 +116,8 @@ export const GOLD_SAVE_CHANCE = 0.25; // 25% chance to not lose gold
 // C160: combo exp escalation — high combo gives escalating exp
 export const COMBO_EXP_THRESHOLD = 10;
 export const COMBO_EXP_BONUS_PER = 0.10; // +10% per combo above threshold
+// C161: critical hit gold bonus
+export const CRIT_GOLD_BONUS = 0.30; // +30% gold when fight had critical hit
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -419,7 +421,9 @@ export class EncounterEngine {
         : 1;
       // C155: overkill gold bonus
       const overkillGoldMul = isOverkill ? (1 + OVERKILL_GOLD_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul);
+      // C161: crit gold bonus
+      const critGoldMul = didCrit ? (1 + CRIT_GOLD_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul);
       hero.gold += goldEarned;
       // C157: boss vault — lump sum gold bonus for boss kills
       if (isBoss) {
