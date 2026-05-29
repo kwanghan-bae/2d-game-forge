@@ -333,3 +333,34 @@ describe('EncounterEngine — C125 battle momentum', () => {
     expect(engine.getBattleMomentum()).toBe(20);
   });
 });
+
+describe('EncounterEngine — C126 drop streak', () => {
+  it('dropStreak increments on consecutive drops', () => {
+    // Use dropChanceBonus to guarantee drops
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1), { dropChanceBonus: 1.0 });
+    engine.resolveEncounter(hero, 'enemy', 'e_0');
+    engine.resolveEncounter(hero, 'enemy', 'e_1');
+    expect(engine.getDropStreak()).toBeGreaterThanOrEqual(2);
+  });
+
+  it('dropStreak resets on no-drop', () => {
+    // Use dropChanceBonus = -1 to guarantee no drops
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1), { dropChanceBonus: -1.0 });
+    engine.resolveEncounter(hero, 'enemy', 'e_0');
+    expect(engine.getDropStreak()).toBe(0);
+  });
+
+  it('drop_upgraded event fires after 3 consecutive drops', () => {
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1), { dropChanceBonus: 1.0 });
+    let upgraded = false;
+    for (let i = 0; i < 10; i++) {
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      if (evs.some(e => e.type === 'drop_upgraded')) upgraded = true;
+    }
+    // With guaranteed drops, streak reaches 3 quickly → upgrade fires
+    expect(upgraded).toBe(true);
+  });
+});
