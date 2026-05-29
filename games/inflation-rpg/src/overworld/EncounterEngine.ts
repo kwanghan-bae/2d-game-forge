@@ -318,6 +318,9 @@ export const FULL_HP_GOLD_BONUS = 0.20; // +20% gold when at full HP
 // C251: boss slayer exp buff
 export const BOSS_SLAYER_EXP_BONUS = 0.50; // +50% exp after boss kill
 export const BOSS_SLAYER_DURATION = 3; // lasts 3 fights
+// C252: chain lightning
+export const CHAIN_LIGHTNING_COMBO = 20; // combo streak needed
+export const CHAIN_LIGHTNING_DMG_RATE = 0.20; // 20% of hero ATK as bonus
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -626,6 +629,12 @@ export class EncounterEngine {
         if (eHp > 0 && this.killCount >= DOUBLE_HIT_KILL_THRESHOLD && this.rng.chance(DOUBLE_HIT_CHANCE)) {
           totalDamageDealt += heroAtk;
           eHp -= heroAtk;
+        }
+        // C252: chain lightning — bonus damage at high combo
+        if (eHp > 0 && this.comboStreak >= CHAIN_LIGHTNING_COMBO) {
+          const lightningDmg = Math.floor(heroAtk * CHAIN_LIGHTNING_DMG_RATE);
+          totalDamageDealt += lightningDmg;
+          eHp -= lightningDmg;
         }
         if (eHp > 0) {
           // C132: boss rage — boss ATK escalates each turn the fight lasts
