@@ -355,6 +355,9 @@ export const GOLD_HOARD_THRESHOLD = 500;
 export const GOLD_HOARD_ATK_BONUS = 0.10; // +10% ATK with 500+ gold
 // C267: revenge exp
 export const REVENGE_EXP_BONUS = 0.30; // +30% exp during revenge window
+// C268: dodge counter ATK
+export const DODGE_COUNTER_ATK_BONUS = 0.02; // +2% ATK per dodge in fight
+export const DODGE_COUNTER_ATK_CAP = 0.20; // max +20%
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -648,6 +651,7 @@ export class EncounterEngine {
       let luckyDodge = false;
       let totalDamageDealt = 0; // C174: track for lifesteal
       let goldHealUsed = false; // C195: once per fight
+      let dodgeCount = 0; // C268: dodges this fight
       while (eHp > 0 && !hero.staggered) {
         // C203: crit streak — guaranteed crit after 3 consecutive crits
         const guaranteedCrit = this.critStreak >= CRIT_STREAK_GUARANTEE_THRESHOLD;
@@ -665,7 +669,9 @@ export class EncounterEngine {
         const bossImmune = isBoss && hitCount % BOSS_IMMUNITY_INTERVAL === 0;
         // C232: first hit advantage
         const firstHitMul = hitCount === 1 ? FIRST_HIT_DAMAGE_MUL : 1;
-        const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul);
+        // C268: dodge counter ATK boost
+        const dodgeAtkBonus = Math.min(DODGE_COUNTER_ATK_CAP, dodgeCount * DODGE_COUNTER_ATK_BONUS);
+        const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul * (1 + dodgeAtkBonus));
         totalDamageDealt += effectiveAtk;
         eHp -= effectiveAtk;
         // C194: double hit — 10% chance for extra strike after 200 kills
@@ -695,6 +701,7 @@ export class EncounterEngine {
           // C171: dodge chance based on kill count
           const dodgeChance = Math.min(DODGE_CAP, Math.floor(this.killCount / 100) * DODGE_PER_100_KILLS);
           if (dodgeChance > 0 && this.rng.chance(dodgeChance)) {
+            dodgeCount++; // C268
             rageTurn++;
             continue;
           }
