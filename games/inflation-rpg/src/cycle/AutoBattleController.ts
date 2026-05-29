@@ -5,6 +5,14 @@ import { applyTraitMods, type TraitId, type ResolvedLoadout } from './traits';
 import { TRAIT_CATALOG } from '../data/traits';
 import { type ControllerLoadout } from './loadoutTypes';
 import { HeroDecisionAI } from './HeroDecisionAI';
+import {
+  heroAtkAtLevel,
+  heroHpMaxAtLevel,
+  enemyHpAtLevel,
+  enemyAtkAtLevel,
+  expGainForKill,
+  expRequiredForLevel as curveExpRequired,
+} from './inflationCurve';
 
 // Re-export so existing consumers (tests, etc.) can import from AutoBattleController.
 export type { ControllerLoadout };
@@ -165,11 +173,9 @@ export class AutoBattleController {
   }
 
   private spawnEnemy(): void {
-    // Sim-A uses a minimal placeholder enemy stat curve. Real monster data
-    // integration arrives in Task 5 where we connect to data/monsters.ts.
     this.enemySpawnCounter += 1;
     const enemyLevel = this.state.heroLv;
-    const enemyMaxHp = Math.max(10, enemyLevel * 20);
+    const enemyMaxHp = enemyHpAtLevel(20, enemyLevel, 1.0);
     this.currentEnemyId = `sim_enemy_lv${enemyLevel}_#${this.enemySpawnCounter}`;
     this.currentEnemyHp = enemyMaxHp;
     this.emit({
@@ -185,7 +191,7 @@ export class AutoBattleController {
 
   private heroAttack(): void {
     if (!this.currentEnemyId) return;
-    const dmg = Math.max(1, this.loadout.heroAtkBase + this.state.heroLv * 2);
+    const dmg = heroAtkAtLevel(this.loadout.heroAtkBase, this.state.heroLv);
     this.currentEnemyHp = Math.max(0, this.currentEnemyHp - dmg);
     this.emit({
       t: this.state.tNowMs,
@@ -198,7 +204,7 @@ export class AutoBattleController {
 
   private enemyAttack(): void {
     if (!this.currentEnemyId) return;
-    const dmg = Math.max(1, this.state.heroLv * 3);
+    const dmg = enemyAtkAtLevel(3, this.state.heroLv, 1.0);
     this.state.heroHp = Math.max(0, this.state.heroHp - dmg);
     this.emit({
       t: this.state.tNowMs,
@@ -208,14 +214,13 @@ export class AutoBattleController {
       remaining: this.state.heroHp,
     });
     if (this.state.heroHp <= 0) {
-      // Hero defeat: restore to full and consume extra BP — placeholder until Phase Sim-G balance tuning.
       this.state.heroHp = this.state.heroHpMax;
     }
   }
 
   private killEnemy(): void {
     if (!this.currentEnemyId) return;
-    const exp = Math.max(1, Math.floor(this.state.heroLv * 10 * this.expMul));
+    const exp = Math.max(1, Math.floor(expGainForKill(10, this.state.heroLv) * this.expMul));
     const gold = Math.max(1, Math.floor((this.state.heroLv * 2) * this.goldMul) + this.rng.int(this.state.heroLv));
     this.emit({
       t: this.state.tNowMs,
@@ -239,9 +244,9 @@ export class AutoBattleController {
       this.state.heroExp -= cost;
       const from = this.state.heroLv;
       this.state.heroLv = from + 1;
-      // Sim-A stat curve placeholder. Tuning to inflation §11.5 happens in Phase Sim-G.
-      const hpDelta = Math.floor(this.state.heroHpMax * 0.05);
-      this.state.heroHpMax += hpDelta;
+      const newHpMax = heroHpMaxAtLevel(this.loadout.heroHpMax, this.state.heroLv);
+      const hpDelta = newHpMax - this.state.heroHpMax;
+      this.state.heroHpMax = newHpMax;
       this.state.heroHp = this.state.heroHpMax; // full heal on level
       this.emit({
         t: this.state.tNowMs,
@@ -300,8 +305,7 @@ export class AutoBattleController {
   }
 
   private expRequiredForLevel(lv: number): number {
-    // Polynomial curve placeholder. Inflation curve fine-tune in Phase Sim-G.
-    return Math.floor(10 * Math.pow(lv, 1.3));
+    return curveExpRequired(10, lv);
   }
 }
 
