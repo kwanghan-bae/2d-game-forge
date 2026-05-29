@@ -305,6 +305,9 @@ export const COMBO_MILESTONE_GOLD_BONUS = 0.30; // +30% gold on milestone fight
 // C246: elemental weakness
 export const ELEMENTAL_LEVEL_MOD = 3; // hero level divisible by this = advantage
 export const ELEMENTAL_DMG_BONUS = 0.50; // +50% damage on elemental advantage
+// C247: survival heal
+export const SURVIVAL_HEAL_THRESHOLD = 10; // streak needed
+export const SURVIVAL_HEAL_RATE = 0.03; // 3% HP per fight
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -905,6 +908,10 @@ export class EncounterEngine {
       // C236: overkill heal
       if (isOverkill) {
         hero.heal(Math.max(1, Math.floor(hero.hpMax * OVERKILL_HEAL_RATE)));
+      }
+      // C247: survival heal — long streaks regenerate HP
+      if (this.survivalStreak >= SURVIVAL_HEAL_THRESHOLD) {
+        hero.heal(Math.max(1, Math.floor(hero.hpMax * SURVIVAL_HEAL_RATE)));
       }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
