@@ -107,6 +107,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [milestoneFlash, setMilestoneFlash] = useState<number | null>(null);
   const milestoneFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [comboDisplay, setComboDisplay] = useState<number>(0);
+  const [momentumDisplay, setMomentumDisplay] = useState<number>(0);
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   type LightFloat = { id: string; amount: number; createdAt: number };
   const FADE_MS = 1500;
@@ -227,6 +228,14 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             setComboDisplay(comboEvent.streak);
           } else if (evs.some(e => e.type === 'hero_died')) {
             setComboDisplay(0);
+            setMomentumDisplay(0);
+          }
+          // C129: momentum display — track battles since village
+          if (evs.some(e => e.type === 'battle_won')) {
+            setMomentumDisplay(m => Math.min(m + 1, 20));
+          }
+          if (event.landmarkKind === 'village') {
+            setMomentumDisplay(0);
           }
           const transition = evs.find(e => e.type === 'chapter_transition');
           if (transition && transition.type === 'chapter_transition') {
@@ -716,6 +725,15 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           color: '#fff', fontSize: 12, fontWeight: 700, zIndex: 15,
         }} data-testid="combo-hud">
           🔥 {comboDisplay} Combo
+        </div>
+      )}
+      {momentumDisplay >= 3 && (
+        <div style={{
+          position: 'absolute', top: comboDisplay >= 3 ? 34 : 8, right: 8, padding: '4px 8px',
+          background: 'rgba(100,180,255,0.85)', borderRadius: 6,
+          color: '#fff', fontSize: 11, fontWeight: 600, zIndex: 15,
+        }} data-testid="momentum-hud">
+          ⚡ ATK +{momentumDisplay * 2}%
         </div>
       )}
       {dangerFlash && (
