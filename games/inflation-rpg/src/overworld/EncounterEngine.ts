@@ -36,6 +36,9 @@ export const OVERKILL_DROP_BONUS = 0.15; // +15% drop chance on one-hit kills
 // C124: close call — survive barely, get adrenaline heal
 export const CLOSE_CALL_THRESHOLD = 0.10; // < 10% HP remaining
 export const CLOSE_CALL_HEAL = 0.05; // heal 5% of max HP
+// C125: battle momentum — consecutive fights without village boost ATK
+export const MOMENTUM_ATK_BONUS = 0.02; // +2% ATK per stack
+export const MOMENTUM_CAP = 20; // max 20 stacks = +40% ATK
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -98,6 +101,7 @@ export interface EncounterEngineOpts {
 
 export class EncounterEngine {
   private comboStreak = 0;
+  private battleMomentum = 0;
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -107,6 +111,7 @@ export class EncounterEngine {
 
   getComboStreak(): number { return this.comboStreak; }
   resetComboStreak(): void { this.comboStreak = 0; }
+  getBattleMomentum(): number { return this.battleMomentum; }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
@@ -150,7 +155,9 @@ export class EncounterEngine {
       // Cycle 110 F1: realm fork atk mul applies to both enemy + boss combat
       // (vs boss intro which is boss-only). Separate channel, multiply both.
       const realmAtkMul = this.opts.getRealmForkAtkMul?.() ?? 1.0;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul));
+      // C125: momentum ATK bonus = +2% per momentum stack (capped at 20 = +40%)
+      const momentumMul = 1 + this.battleMomentum * MOMENTUM_ATK_BONUS;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -219,6 +226,8 @@ export class EncounterEngine {
       }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      // C125: battle momentum — consecutive fights without village give ATK bonus
+      this.battleMomentum = Math.min(this.battleMomentum + 1, MOMENTUM_CAP);
       if (isOverkill) {
         events.push({ type: 'overkill', enemyId: landmarkId });
       }
@@ -271,6 +280,8 @@ export class EncounterEngine {
         }
       }
     } else if (kind === 'village') {
+      // C125: village visit resets battle momentum
+      this.battleMomentum = 0;
       const healAmount = Math.floor(hero.hpMax * 0.25);
       hero.heal(healAmount);
     } else if (kind === 'shrine') {
