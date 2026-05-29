@@ -109,3 +109,10 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  15% { opacity: 0.8; }
+  75% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
