@@ -27,6 +27,10 @@ export const COMBO_STREAK_THRESHOLD = 3; // streak >= 3 to start bonus
 export const COMBO_STREAK_EXP_BONUS = 0.1; // +10% per streak beyond threshold
 // C121: milestone levels that trigger fanfare event
 export const MILESTONE_LEVELS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000];
+// C122: critical hit — unlocked by high combo streak
+export const CRIT_STREAK_THRESHOLD = 5; // combo >= 5 to unlock crit chance
+export const CRIT_CHANCE = 0.20; // 20% per attack to crit
+export const CRIT_DAMAGE_MUL = 2; // x2 damage on crit
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -141,10 +145,16 @@ export class EncounterEngine {
       // Cycle 110 F1: realm fork atk mul applies to both enemy + boss combat
       // (vs boss intro which is boss-only). Separate channel, multiply both.
       const realmAtkMul = this.opts.getRealmForkAtkMul?.() ?? 1.0;
-      const heroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul));
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul));
+      // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
+      const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
       let eHp = enemyHp;
+      let didCrit = false;
       while (eHp > 0 && !hero.staggered) {
+        const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
+        const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
+        if (isCrit) didCrit = true;
         eHp -= heroAtk;
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
@@ -199,6 +209,9 @@ export class EncounterEngine {
       }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      if (didCrit) {
+        events.push({ type: 'critical_hit', streak: this.comboStreak });
+      }
       if (this.comboStreak >= COMBO_STREAK_THRESHOLD) {
         events.push({ type: 'combo_streak', streak: this.comboStreak, bonusMul: comboBonus });
       }

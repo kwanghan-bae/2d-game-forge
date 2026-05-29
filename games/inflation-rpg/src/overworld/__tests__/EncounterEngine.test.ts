@@ -239,3 +239,25 @@ describe('EncounterEngine — C121 milestone fanfare', () => {
     expect(milestoneEvents.filter(l => l < 10)).toHaveLength(0);
   });
 });
+
+describe('EncounterEngine — C122 critical hit', () => {
+  it('critical_hit event does not fire when combo < 5', () => {
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1));
+    for (let i = 0; i < 4; i++) {
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      expect(evs.some(e => e.type === 'critical_hit')).toBe(false);
+    }
+  });
+
+  it('critical_hit can fire when combo >= 5 (probabilistic)', () => {
+    const hero = makeHero(42);
+    const engine = new EncounterEngine(new SeededRng(42));
+    let critSeen = false;
+    for (let i = 0; i < 20; i++) {
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      if (evs.some(e => e.type === 'critical_hit')) critSeen = true;
+    }
+    expect(critSeen).toBe(true);
+  });
+});

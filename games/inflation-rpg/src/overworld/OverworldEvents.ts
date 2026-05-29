@@ -7,6 +7,7 @@ export type OverworldEvent =
   | { type: 'arrived_at';      landmarkId: string; landmarkKind: LandmarkKind }
   | { type: 'danger_zone_entered'; enemyId: string }
   | { type: 'combo_streak'; streak: number; bonusMul: number }
+  | { type: 'critical_hit'; streak: number }
   | { type: 'milestone_reached'; level: number }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
