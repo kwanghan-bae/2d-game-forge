@@ -44,6 +44,7 @@ import { getAreaWarning } from '../data/areaWarnings';
 import { getFloorClearQuote } from '../data/floorClearQuotes';
 
 import { REALM_ACCENTS } from '../systems/realmAccent';
+import { updateRecord } from '../systems/battleRecords';
 
 function pickBossIdByType(
   bossIds: { mini: string; major: string; sub: [string, string, string]; final: string },
@@ -1014,6 +1015,13 @@ export class BattleScene extends Phaser.Scene {
       : `${Math.floor(dps)}`;
     const stats = `⚔${dmgStr} | DPS:${dpsStr} | ⟳${this.roundCount} | 💀${this.killCount}`;
     if (this.logText) this.logText.setText(stats);
+    // Update session records
+    updateRecord({
+      maxDps: dps,
+      maxKillStreak: this.killStreak,
+      totalKills: this.killCount,
+      totalDamage: this.totalDamageDealt,
+    });
   }
 
   shutdown() {
