@@ -360,3 +360,54 @@ export function getBossExpMessage(seed: number): string {
 export function getPrestigeMessage(seed: number): string {
   return PRESTIGE_MESSAGES[seed % PRESTIGE_MESSAGES.length];
 }
+
+// C222: flavor text expansion 7
+const NIGHT_MODE_MESSAGES = [
+  '어둠 속에서 적이 더 강해진다!',
+  '야간 전투! 경험치가 쏟아진다!',
+  '밤의 위험, 밤의 보상!',
+];
+
+const ARENA_MESSAGES = [
+  '아레나에 입장! 강적이 기다린다!',
+  '관객의 환호가 들린다!',
+  '도전자여, 증명하라!',
+];
+
+const GOLD_INVEST_RETURN_MESSAGES = [
+  '투자금 회수! 3배의 이익!',
+  '금화가 금화를 낳았다!',
+  '인내의 보상!',
+];
+
+const ACHIEVEMENT_MESSAGES = [
+  '업적 달성! 힘이 솟는다!',
+  '이정표를 세웠다!',
+  '전설에 한 걸음 더!',
+];
+
+const LUCKY_FIND_MESSAGES = [
+  '바닥에 빛나는 것이...!',
+  '행운의 발견!',
+  '누군가 떨어뜨린 장비를 찾았다!',
+];
+
+export function getNightModeMessage(seed: number): string {
+  return NIGHT_MODE_MESSAGES[seed % NIGHT_MODE_MESSAGES.length];
+}
+
+export function getArenaMessage(seed: number): string {
+  return ARENA_MESSAGES[seed % ARENA_MESSAGES.length];
+}
+
+export function getGoldInvestReturnMessage(seed: number): string {
+  return GOLD_INVEST_RETURN_MESSAGES[seed % GOLD_INVEST_RETURN_MESSAGES.length];
+}
+
+export function getAchievementMessage(seed: number): string {
+  return ACHIEVEMENT_MESSAGES[seed % ACHIEVEMENT_MESSAGES.length];
+}
+
+export function getLuckyFindMessage(seed: number): string {
+  return LUCKY_FIND_MESSAGES[seed % LUCKY_FIND_MESSAGES.length];
+}
