@@ -39,6 +39,7 @@ import { getBattleQuote } from '../data/battleQuotes';
 import { getBossBattleQuote } from '../data/bossBattleQuotes';
 import { getBossVictoryMessage } from '../data/bossVictoryMessages';
 import { getDeathQuote } from '../data/deathQuotes';
+import { getBossLastWords } from '../data/bossLastWords';
 
 import { REALM_ACCENTS } from '../systems/realmAccent';
 
@@ -845,6 +846,28 @@ export class BattleScene extends Phaser.Scene {
         });
       },
     });
+
+    // Boss last words — subtle italic line below victory text
+    const lastWords = getBossLastWords(this.bossId ?? '');
+    if (lastWords) {
+      const lw = this.add.text(180, 220, `"${lastWords}"`, {
+        fontSize: '11px',
+        color: '#aa8888',
+        fontStyle: 'italic',
+      }).setOrigin(0.5).setAlpha(0);
+      this.tweens.add({
+        targets: lw,
+        alpha: 0.8,
+        duration: 600,
+        delay: 300,
+        onComplete: () => {
+          this.tweens.add({
+            targets: lw, alpha: 0, duration: 800, delay: 1200,
+            onComplete: () => lw.destroy(),
+          });
+        },
+      });
+    }
   }
 
   private showFloatingDamage(amount: number, isCrit: boolean) {
