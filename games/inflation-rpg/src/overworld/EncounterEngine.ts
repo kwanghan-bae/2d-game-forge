@@ -211,6 +211,8 @@ export const EXP_DECAY_CAP = 0.50; // max -50%
 // C197: survivor bonus
 export const SURVIVOR_THRESHOLD = 100; // fights without dying
 export const SURVIVOR_HP_BONUS = 0.10; // +10% max HP
+// C198: combo breaker — ATK bonus after losing combo
+export const COMBO_BREAKER_ATK_BONUS = 0.30; // +30% ATK
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -300,6 +302,7 @@ export class EncounterEngine {
   private eliteBountyMilestones = 0; // C185: milestones reached
   private revengeGoldRemaining = 0; // C188: fights with revenge gold bonus
   private fightsSinceDeath = 0; // C197: fights without dying
+  private comboBreakerReady = false; // C198: ATK bonus after combo break
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -390,7 +393,10 @@ export class EncounterEngine {
       // C179: shield break counter-attack
       const shieldBreakMul = this.shieldBreakReady ? SHIELD_BREAK_ATK_MUL : 1;
       if (this.shieldBreakReady) this.shieldBreakReady = false;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul));
+      // C198: combo breaker ATK bonus
+      const comboBreakerMul = this.comboBreakerReady ? (1 + COMBO_BREAKER_ATK_BONUS) : 1;
+      if (this.comboBreakerReady) this.comboBreakerReady = false;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -471,6 +477,8 @@ export class EncounterEngine {
       if (this.invincibleFights > 0) this.invincibleFights--;
       if (hero.staggered) {
         // C120: combo streak resets on death
+        // C198: combo breaker — if had high combo, grant ATK bonus
+        if (this.comboStreak >= 3) this.comboBreakerReady = true;
         this.comboStreak = 0;
         // C141: survival streak resets on death
         this.survivalStreak = 0;
