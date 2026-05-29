@@ -57,6 +57,9 @@ export const SHRINE_MEDITATION_BUFF_DURATION = 5; // lasts 5 fights
 export const DEATH_STREAK_THRESHOLD = 3; // 3 deaths in a row triggers mercy
 export const MERCY_DAMAGE_REDUCTION = 0.30; // -30% incoming damage
 export const MERCY_DURATION = 3; // lasts 3 fights
+// C138: exp diminishing returns at high levels
+export const EXP_DIMINISH_THRESHOLD = 1000; // level 1000+ starts reduction
+export const EXP_DIMINISH_FACTOR = 0.0005; // -0.05% per level above threshold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -259,7 +262,11 @@ export class EncounterEngine {
       const dangerMul2 = isDangerZone ? DANGER_ZONE_EXP_MUL : 1;
       // C133: elite exp multiplier
       const eliteMul = isElite ? ELITE_EXP_MUL : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus);
+      // C138: diminishing returns at high levels (soft cap)
+      const diminish = hero.level > EXP_DIMINISH_THRESHOLD
+        ? Math.max(0.1, 1 - (hero.level - EXP_DIMINISH_THRESHOLD) * EXP_DIMINISH_FACTOR)
+        : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : DROP_RATE; // C133: elite = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
