@@ -18,6 +18,7 @@ export type OverworldEvent =
   | { type: 'shrine_buff_granted'; duration: number }
   | { type: 'mercy_activated'; duration: number }
   | { type: 'first_blood'; expGain: number; dropId: string | null }
+  | { type: 'revenge_kill'; enemyId: string }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
   | { type: 'level_up';        from: number; to: number }
