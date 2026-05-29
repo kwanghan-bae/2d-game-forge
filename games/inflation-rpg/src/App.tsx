@@ -35,12 +35,13 @@ export function App({ config }: AppProps) {
     applyRealmAccent(currentRealmId);
   }, [currentRealmId]);
 
-  // Global UI click SFX — plays 'click' for any button/a press
+  // Global UI click SFX — plays 'click' with subtle pitch variation
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (target?.closest('button, [role="button"], a')) {
-        playSfx('click');
+        const pitch = 0.95 + Math.random() * 0.1; // 0.95–1.05
+        playSfx('click', pitch);
       }
     };
     document.addEventListener('click', handler, true);
