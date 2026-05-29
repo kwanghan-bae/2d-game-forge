@@ -98,6 +98,10 @@ export const TREASURE_GOBLIN_FLEE_RATE = 0.4; // 40% chance to flee after 2 turn
 // C153: combo gold bonus — gold scales with combo streak
 export const COMBO_GOLD_THRESHOLD = 3;
 export const COMBO_GOLD_BONUS_PER = 0.20; // +20% per combo level above threshold
+// C154: village shop — spend gold for temp HP shield
+export const VILLAGE_SHOP_COST = 50;
+export const VILLAGE_SHOP_SHIELD_MUL = 0.20; // +20% max HP
+export const VILLAGE_SHOP_SHIELD_DURATION = 3; // lasts 3 fights
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -173,6 +177,7 @@ export class EncounterEngine {
   private killCount = 0; // C148: total kills for milestone tracking
   private killMilestones = 0; // C148: number of milestones reached
   private areaVisits: Map<string, number> = new Map(); // C151: area familiarity
+  private shopShieldRemaining = 0; // C154: village shop HP shield duration
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -270,7 +275,9 @@ export class EncounterEngine {
             : enemyAtk;
           // C137: mercy damage reduction after death streak
           const mercyReduction = this.mercyRemaining > 0 ? (1 - MERCY_DAMAGE_REDUCTION) : 1;
-          hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction)));
+          // C154: shop shield damage reduction
+          const shieldReduction = this.shopShieldRemaining > 0 ? (1 - VILLAGE_SHOP_SHIELD_MUL) : 1;
+          hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction)));
           // C142: lucky dodge — survive fatal hit with 10% chance
           if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
             hero.staggered = false;
@@ -392,6 +399,8 @@ export class EncounterEngine {
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
+      // C154: decrement shop shield after each fight
+      if (this.shopShieldRemaining > 0) this.shopShieldRemaining--;
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
       if (this.mercyRemaining > 0) this.mercyRemaining--;
@@ -493,6 +502,12 @@ export class EncounterEngine {
         const hpBoost = Math.max(1, Math.floor(hero.hpMax * VILLAGE_REST_HP_BOOST));
         hero.hpMax += hpBoost;
         events.push({ type: 'village_rest_bonus', hpBoost });
+      }
+      // C154: village shop — spend gold for HP shield
+      if (hero.gold >= VILLAGE_SHOP_COST) {
+        hero.gold -= VILLAGE_SHOP_COST;
+        this.shopShieldRemaining = VILLAGE_SHOP_SHIELD_DURATION;
+        events.push({ type: 'village_shop_purchase', cost: VILLAGE_SHOP_COST, effect: 'hp_shield' });
       }
       const healAmount = Math.floor(hero.hpMax * 0.25);
       hero.heal(healAmount);

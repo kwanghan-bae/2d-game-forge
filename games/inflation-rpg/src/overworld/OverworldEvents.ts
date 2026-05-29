@@ -24,6 +24,7 @@ export type OverworldEvent =
   | { type: 'wave_complete'; totalWins: number }
   | { type: 'milestone_kill'; killCount: number; milestones: number }
   | { type: 'treasure_goblin'; enemyId: string }
+  | { type: 'village_shop_purchase'; cost: number; effect: string }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
   | { type: 'level_up';        from: number; to: number }
