@@ -326,6 +326,9 @@ export const PRESTIGE_GOLD_BONUS_PER_LEVEL = 5; // gold per level at prestige ti
 // C255: lucky crit
 export const LUCKY_CRIT_CHANCE = 0.05; // 5% chance for super crit
 export const LUCKY_CRIT_MUL = 3.0; // x3 damage instead of x2
+// C256: danger zone exp scaling
+export const DANGER_EXP_SCALE_PER_10 = 0.05; // +5% per 10 danger fights
+export const DANGER_EXP_SCALE_CAP = 0.30; // max +30%
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -779,6 +782,7 @@ export class EncounterEngine {
       const baseExpGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
       const dangerMul2 = isDangerZone
         ? Math.min(DANGER_STREAK_EXP_CAP, DANGER_ZONE_EXP_MUL + (this.dangerStreak - 1) * DANGER_STREAK_EXP_STEP)
+          + Math.min(DANGER_EXP_SCALE_CAP, Math.floor(this.totalDangerFights / 10) * DANGER_EXP_SCALE_PER_10)
         : 1;
       // C133: elite exp multiplier
       const eliteMul = isElite ? ELITE_EXP_MUL : 1;
