@@ -1067,15 +1067,26 @@ export class BattleScene extends Phaser.Scene {
       : amount >= 1_000
         ? `${(amount / 1_000).toFixed(1)}K`
         : `${amount}`;
-    const fontSize = isCrit ? '20px' : '14px';
+    // Inflation scaling: fontSize grows with digit count (14→32px)
+    const digits = Math.max(1, Math.floor(Math.log10(amount + 1)) + 1);
+    const baseSize = isCrit ? 18 : 14;
+    const scaledSize = Math.min(32, baseSize + (digits - 1) * 3);
+    const fontSize = `${scaledSize}px`;
+    // Color gradient by magnitude: white → gold → red
+    const color = isCrit ? '#ff4444'
+      : digits >= 7 ? '#ff6600'
+      : digits >= 5 ? '#ffd700'
+      : digits >= 3 ? '#f0c060'
+      : '#ffffff';
     const text = this.add.text(x, y, isCrit ? `💥${label}` : label, {
       fontSize,
-      color: isCrit ? '#ff4444' : '#ffffff',
-      fontStyle: isCrit ? 'bold' : 'normal',
+      color,
+      fontStyle: (isCrit || digits >= 5) ? 'bold' : 'normal',
     }).setOrigin(0.5).setAlpha(1);
-    // Crit: scale punch then float up
-    if (isCrit) {
-      text.setScale(1.5);
+    // Crit or big number: scale punch then float up
+    if (isCrit || digits >= 5) {
+      const punchScale = 1 + digits * 0.1;
+      text.setScale(punchScale);
       this.tweens.add({
         targets: text,
         scale: 1,
@@ -1085,9 +1096,9 @@ export class BattleScene extends Phaser.Scene {
     }
     this.tweens.add({
       targets: text,
-      y: y - 50,
+      y: y - 50 - digits * 3,
       alpha: 0,
-      duration: isCrit ? 800 : 600,
+      duration: isCrit ? 800 : 600 + digits * 30,
       ease: 'Cubic.easeOut',
       onComplete: () => text.destroy(),
     });
