@@ -205,3 +205,55 @@ export function getBossVaultMessage(seed: number): string {
 export function getGoldSavedMessage(seed: number): string {
   return GOLD_SAVED_MESSAGES[seed % GOLD_SAVED_MESSAGES.length];
 }
+
+// C176: Flavor text expansion 4 — dodge, exhaustion, greed, lifesteal, tithe
+
+const DODGE_MESSAGES = [
+  '적의 공격을 피했다!',
+  '민첩하게 회피했다!',
+  '빗나갔다!',
+] as const;
+
+const EXHAUSTION_MESSAGES = [
+  '피로가 몰려온다...',
+  '몸이 무거워지기 시작했다.',
+  '쉬지 않고 싸우니 힘이 빠진다.',
+] as const;
+
+const GREED_MODE_MESSAGES = [
+  '금화의 무게가 주머니를 짓누른다.',
+  '부의 유혹에 눈이 어두워진다.',
+  '탐욕이 지혜를 가린다.',
+] as const;
+
+const LIFESTEAL_MESSAGES = [
+  '적의 생명력을 흡수했다!',
+  '피를 나누어 받았다.',
+  '적의 힘이 내 것이 된다.',
+] as const;
+
+const SHRINE_TITHE_MESSAGES = [
+  '금화를 제단에 바쳤다.',
+  '신전에 헌금을 올렸다.',
+  '힘이 솟아오른다!',
+] as const;
+
+export function getDodgeMessage(seed: number): string {
+  return DODGE_MESSAGES[seed % DODGE_MESSAGES.length];
+}
+
+export function getExhaustionMessage(seed: number): string {
+  return EXHAUSTION_MESSAGES[seed % EXHAUSTION_MESSAGES.length];
+}
+
+export function getGreedModeMessage(seed: number): string {
+  return GREED_MODE_MESSAGES[seed % GREED_MODE_MESSAGES.length];
+}
+
+export function getLifestealMessage(seed: number): string {
+  return LIFESTEAL_MESSAGES[seed % LIFESTEAL_MESSAGES.length];
+}
+
+export function getShrineTitheMessage(seed: number): string {
+  return SHRINE_TITHE_MESSAGES[seed % SHRINE_TITHE_MESSAGES.length];
+}
