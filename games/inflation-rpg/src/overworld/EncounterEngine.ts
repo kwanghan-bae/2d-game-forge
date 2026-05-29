@@ -383,6 +383,8 @@ export const ADRENALINE_ATK_BONUS = 0.30;
 export const VILLAGE_BLESSING_STREAK = 20; // fights without death
 export const VILLAGE_BLESSING_GOLD_BONUS = 0.10;
 export const VILLAGE_BLESSING_DURATION = 10;
+// C277: exp cascade — 3+ one-hit kills = +50% exp
+export const EXP_CASCADE_BONUS = 0.50;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -935,7 +937,9 @@ export class EncounterEngine {
       // C272: combo break consolation
       const comboBreakMul = this.comboBreakBonus ? (1 + COMBO_BREAK_EXP_BONUS) : 1;
       if (this.comboBreakBonus) this.comboBreakBonus = false;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul);
+      // C277: exp cascade
+      const expCascadeMul = this.consecutiveOneHits >= GOLD_CASCADE_THRESHOLD ? (1 + EXP_CASCADE_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
