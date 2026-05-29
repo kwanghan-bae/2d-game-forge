@@ -358,6 +358,9 @@ export const REVENGE_EXP_BONUS = 0.30; // +30% exp during revenge window
 // C268: dodge counter ATK
 export const DODGE_COUNTER_ATK_BONUS = 0.02; // +2% ATK per dodge in fight
 export const DODGE_COUNTER_ATK_CAP = 0.20; // max +20%
+// C269: low HP exp bonus
+export const LOW_HP_EXP_THRESHOLD = 0.30; // below 30% HP
+export const LOW_HP_EXP_BONUS = 0.25; // +25% exp
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -894,7 +897,9 @@ export class EncounterEngine {
       const shrineBlessMul = this.shrineBlessingRemaining > 0 ? (1 + SHRINE_BLESSING_EXP_BONUS) : 1;
       // C267: revenge exp bonus
       const revengeExpMul = this.revengeGoldRemaining > 0 ? (1 + REVENGE_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul);
+      // C269: low HP exp bonus
+      const lowHpExpMul = hero.hp < hero.hpMax * LOW_HP_EXP_THRESHOLD ? (1 + LOW_HP_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
