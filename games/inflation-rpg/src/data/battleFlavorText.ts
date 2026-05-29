@@ -174,3 +174,34 @@ export function getMilestoneKillMessage(seed: number): string {
 export function getGoldLossMessage(seed: number): string {
   return GOLD_LOSS_MESSAGES[seed % GOLD_LOSS_MESSAGES.length];
 }
+
+// C163: treasure goblin and boss vault messages
+const TREASURE_GOBLIN_MESSAGES = [
+  '보물 고블린이 나타났다!',
+  '반짝이는 주머니를 든 고블린!',
+  '금화를 잔뜩 가진 적이 출현!',
+] as const;
+
+const BOSS_VAULT_MESSAGES = [
+  '보스의 금고가 열렸다!',
+  '막대한 보물을 획득했다!',
+  '금빛 보상이 쏟아진다!',
+] as const;
+
+const GOLD_SAVED_MESSAGES = [
+  '기적적으로 금화를 지켰다!',
+  '골드를 잃지 않았다!',
+  '행운이 따랐다!',
+] as const;
+
+export function getTreasureGoblinMessage(seed: number): string {
+  return TREASURE_GOBLIN_MESSAGES[seed % TREASURE_GOBLIN_MESSAGES.length];
+}
+
+export function getBossVaultMessage(seed: number): string {
+  return BOSS_VAULT_MESSAGES[seed % BOSS_VAULT_MESSAGES.length];
+}
+
+export function getGoldSavedMessage(seed: number): string {
+  return GOLD_SAVED_MESSAGES[seed % GOLD_SAVED_MESSAGES.length];
+}
