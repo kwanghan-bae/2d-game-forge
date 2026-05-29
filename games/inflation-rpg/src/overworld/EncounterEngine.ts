@@ -245,6 +245,10 @@ export const WEATHER_CHANCE = 0.3; // 30% chance of non-normal weather
 export const WEATHER_RAIN_ATK_PENALTY = 0.1; // -10% ATK in rain
 export const WEATHER_WIND_EXP_BONUS = 0.2; // +20% exp in wind
 export const WEATHER_FOG_CRIT_PENALTY = 0.5; // halved crit chance in fog
+// C212: arena challenge
+export const ARENA_COST = 200;
+export const ARENA_REWARD_MUL = 5; // ×5 exp and gold from arena fight
+export const ARENA_ENEMY_HP_MUL = 3; // enemies ×3 tougher
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -340,6 +344,7 @@ export class EncounterEngine {
   private goldInvested = 0; // C205: locked gold
   private investFightsRemaining = 0; // C205: fights until payout
   private achievementMilestones = 0; // C210: number of kill milestones reached
+  private arenaActive = false; // C212: next fight is arena
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -453,7 +458,8 @@ export class EncounterEngine {
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
-      let eHp = enemyHp;
+      // C212: arena enemy HP boost
+      let eHp = this.arenaActive ? enemyHp * ARENA_ENEMY_HP_MUL : enemyHp;
       let didCrit = false;
       let hitCount = 0;
       let rageTurn = 0;
@@ -640,7 +646,7 @@ export class EncounterEngine {
       const bossExpMul = isBoss ? BOSS_KILL_EXP_MUL : 1;
       // C211: wind weather exp bonus
       const weatherExpMul = weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul);
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
@@ -695,7 +701,9 @@ export class EncounterEngine {
       // C188: revenge gold bonus
       const revengeGoldMul = this.revengeGoldRemaining > 0 ? (1 + REVENGE_GOLD_BONUS) : 1;
       if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul);
+      // C212: arena reward multiplier
+      const arenaMul = this.arenaActive ? ARENA_REWARD_MUL : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT, PASSIVE_GOLD_CAP);
@@ -723,6 +731,8 @@ export class EncounterEngine {
       hero.heal(lifestealHeal);
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      // C212: reset arena after fight
+      if (this.arenaActive) this.arenaActive = false;
       // C177: lucky treasure — random gold bonus
       if (this.rng.chance(LUCKY_TREASURE_CHANCE)) {
         const treasureGold = LUCKY_TREASURE_MIN + this.rng.int(LUCKY_TREASURE_MAX - LUCKY_TREASURE_MIN + 1);
@@ -905,6 +915,11 @@ export class EncounterEngine {
       const healRate = Math.min(VILLAGE_HEAL_CAP, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT);
       const healAmount = Math.floor(hero.hpMax * healRate);
       hero.heal(healAmount);
+      // C212: arena challenge — spend gold for high-reward next fight
+      if (hero.gold >= ARENA_COST) {
+        hero.gold -= ARENA_COST;
+        this.arenaActive = true;
+      }
     } else if (kind === 'shrine') {
       // C189: shrine mastery — increased meditation chance after enough tithes
       const meditationChance = this.shrineTithes >= SHRINE_MASTERY_THRESHOLD
