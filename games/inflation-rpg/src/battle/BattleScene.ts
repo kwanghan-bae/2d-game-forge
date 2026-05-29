@@ -705,12 +705,44 @@ export class BattleScene extends Phaser.Scene {
 
   private animateHpBar(ratio: number) {
     if (!this.hpBarFill) return;
+    // Color shift: green when full → yellow at mid → red when low
+    const color = ratio > 0.5
+      ? Phaser.Display.Color.Interpolate.ColorWithColor(
+          new Phaser.Display.Color(240, 192, 48), // yellow
+          new Phaser.Display.Color(48, 220, 80),  // green
+          100, Math.round((ratio - 0.5) * 200))
+      : Phaser.Display.Color.Interpolate.ColorWithColor(
+          new Phaser.Display.Color(220, 40, 40),  // red
+          new Phaser.Display.Color(240, 192, 48), // yellow
+          100, Math.round(ratio * 200));
+    const tint = Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+    this.hpBarFill.setFillStyle(tint);
+
     this.tweens.add({
       targets: this.hpBarFill,
       displayWidth: Math.max(0, 320 * ratio),
       duration: 200,
       ease: 'Power2',
     });
+
+    // Low-HP pulse effect
+    if (ratio > 0 && ratio < 0.25) {
+      if (!this.hpBarFill.getData('pulsing')) {
+        this.hpBarFill.setData('pulsing', true);
+        this.tweens.add({
+          targets: this.hpBarFill,
+          alpha: 0.5,
+          duration: 300,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+      }
+    } else if (this.hpBarFill.getData('pulsing')) {
+      this.hpBarFill.setData('pulsing', false);
+      this.tweens.killTweensOf(this.hpBarFill);
+      this.hpBarFill.setAlpha(1);
+    }
   }
 
   private spawnDeathParticles() {
