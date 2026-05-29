@@ -408,6 +408,18 @@ export class BattleScene extends Phaser.Scene {
 
       this.combatTimer?.remove();
       this.spawnDeathParticles();
+      // Enemy death fade-out
+      if (this.enemySprite) {
+        this.tweens.add({
+          targets: this.enemySprite,
+          alpha: 0,
+          scaleX: 0,
+          scaleY: 0,
+          duration: 250,
+          ease: 'Power2',
+          onComplete: () => this.enemySprite?.destroy(),
+        });
+      }
 
       if (this.isBoss && this.bossId) {
         this.callbacks.onBossKill(this.bossId, 5, this.cachedBossType ?? 'mini');
