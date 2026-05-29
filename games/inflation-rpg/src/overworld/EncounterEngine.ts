@@ -353,6 +353,8 @@ export const SHRINE_BLESSING_DURATION = 5; // lasts 5 fights
 // C266: gold hoard ATK
 export const GOLD_HOARD_THRESHOLD = 500;
 export const GOLD_HOARD_ATK_BONUS = 0.10; // +10% ATK with 500+ gold
+// C267: revenge exp
+export const REVENGE_EXP_BONUS = 0.30; // +30% exp during revenge window
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -883,7 +885,9 @@ export class EncounterEngine {
       const multiKillMul = this.consecutiveOneHits >= MULTI_KILL_THRESHOLD ? (1 + MULTI_KILL_EXP_BONUS) : 1;
       // C265: shrine blessing exp bonus
       const shrineBlessMul = this.shrineBlessingRemaining > 0 ? (1 + SHRINE_BLESSING_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul);
+      // C267: revenge exp bonus
+      const revengeExpMul = this.revengeGoldRemaining > 0 ? (1 + REVENGE_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
