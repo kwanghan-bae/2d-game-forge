@@ -95,6 +95,9 @@ export class BattleScene extends Phaser.Scene {
   private killCount = 0;
   private killCountText?: Phaser.GameObjects.Text;
   private consecutiveLevelUps = 0;
+  private roundCount = 0;
+  private totalDamageDealt = 0;
+  private skillUseCount = 0;
 
   private heroSprite?: Phaser.GameObjects.Sprite;
   private enemySprite?: Phaser.GameObjects.Sprite;
@@ -186,6 +189,9 @@ export class BattleScene extends Phaser.Scene {
     const battleQuote = getBattleQuote(run.characterId) ?? '';
     this.logText = this.add.text(16, 64, battleQuote, { fontSize: '12px', color: '#8aaa88', wordWrap: { width: 320 } });
     this.killCount = 0;
+    this.roundCount = 0;
+    this.totalDamageDealt = 0;
+    this.skillUseCount = 0;
     this.killCountText = this.add.text(336, 16, 'Kill: 0', { fontSize: '14px', color: '#f0c060' }).setOrigin(1, 0);
 
     // Floor progress indicator
@@ -260,6 +266,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private doRound() {
+    this.roundCount++;
     const state = useGameStore.getState();
     const { run, meta } = state;
     const char = getCharacterById(run.characterId);
@@ -316,6 +323,7 @@ export class BattleScene extends Phaser.Scene {
       magnitudeBuff: lightBuff,
     });
     const totalEnemyDmg = totalDmg + attackProcs.magicBurstDamage;
+    this.totalDamageDealt += totalEnemyDmg;
     this.enemyHP = Math.max(0, this.enemyHP - totalEnemyDmg);
 
     // Hit VFX — flash enemy sprite white + scale punch
@@ -449,6 +457,7 @@ export class BattleScene extends Phaser.Scene {
         const nextFloor = finishedFloor + 1;
         stateAfterKill.markDungeonProgress(dungeonId, nextFloor);
         stateAfterKill.setCurrentFloor(nextFloor);
+        this.showBattleStats();
         stateAfterKill.setScreen('main-menu');
         return;
       }
@@ -585,6 +594,7 @@ export class BattleScene extends Phaser.Scene {
           this.enemyMaxHP,
         );
         this.applySkillResult(result, skill.id);
+        this.skillUseCount++;
         playSfx('skill');
         fireSkill(this.skillState, skill, time);
       }
@@ -696,6 +706,16 @@ export class BattleScene extends Phaser.Scene {
         });
       },
     });
+  }
+
+  private showBattleStats() {
+    const dmgStr = this.totalDamageDealt >= 1_000_000
+      ? `${(this.totalDamageDealt / 1_000_000).toFixed(1)}M`
+      : this.totalDamageDealt >= 1_000
+        ? `${(this.totalDamageDealt / 1_000).toFixed(1)}K`
+        : `${this.totalDamageDealt}`;
+    const stats = `⚔${dmgStr} | ⟳${this.roundCount} | 💀${this.killCount} | ✦${this.skillUseCount}`;
+    if (this.logText) this.logText.setText(stats);
   }
 
   shutdown() {
