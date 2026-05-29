@@ -155,6 +155,9 @@ export const SHRINE_TITHE_ATK_BONUS = 0.02; // gain +2% permanent ATK per tithe
 export const LUCKY_TREASURE_CHANCE = 0.05; // 5%
 export const LUCKY_TREASURE_MIN = 50;
 export const LUCKY_TREASURE_MAX = 200;
+// C178: danger zone exp scaling
+export const DANGER_STREAK_EXP_STEP = 0.5; // +0.5× exp per consecutive danger fight
+export const DANGER_STREAK_EXP_CAP = 3.0; // max ×3 exp in danger zone
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -234,6 +237,7 @@ export class EncounterEngine {
   private bossStreak = 0; // C172: consecutive boss kills this run
   private fightsSinceVillage = 0; // C173: fights without village visit
   private shrineTithes = 0; // C175: number of gold tithes at shrines
+  private dangerStreak = 0; // C178: consecutive danger zone fights
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -254,6 +258,8 @@ export class EncounterEngine {
       const isBoss = kind === 'boss';
       // C119: danger zone — 15% chance on regular enemies. ×1.5 stats, ×3 exp.
       const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE);
+      // C178: danger streak tracking
+      if (isDangerZone) { this.dangerStreak++; } else { this.dangerStreak = 0; }
       // C133: elite enemy — 5% chance on non-boss, non-danger encounters. ×2 HP, guaranteed drop, ×2.5 exp.
       const isElite = !isBoss && !isDangerZone && this.rng.chance(ELITE_SPAWN_RATE);
       // C152: treasure goblin — 3% on non-boss, non-danger, non-elite. Low HP, high gold.
@@ -411,7 +417,9 @@ export class EncounterEngine {
         ? 1 + (this.comboStreak - COMBO_STREAK_THRESHOLD + 1) * COMBO_STREAK_EXP_BONUS
         : 1;
       const baseExpGain = expGainForKill(isBoss ? BOSS_EXP_BASE : ENEMY_EXP_BASE, hero.level);
-      const dangerMul2 = isDangerZone ? DANGER_ZONE_EXP_MUL : 1;
+      const dangerMul2 = isDangerZone
+        ? Math.min(DANGER_STREAK_EXP_CAP, DANGER_ZONE_EXP_MUL + (this.dangerStreak - 1) * DANGER_STREAK_EXP_STEP)
+        : 1;
       // C133: elite exp multiplier
       const eliteMul = isElite ? ELITE_EXP_MUL : 1;
       // C138: diminishing returns at high levels (soft cap)
