@@ -340,6 +340,9 @@ export const VILLAGE_VIGOR_DURATION = 5; // lasts 5 fights
 export const GOLD_MAGNET_PRESTIGE_BONUS = 1; // +1 passive gold per prestige
 // C260: death insurance
 export const DEATH_INSURANCE_PENALTY = 0.05; // first death only -5% level
+// C261: multi-kill bonus
+export const MULTI_KILL_THRESHOLD = 3; // 3 consecutive one-hit kills
+export const MULTI_KILL_EXP_BONUS = 0.40; // +40% exp on qualifying kill
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -484,6 +487,7 @@ export class EncounterEngine {
   private bossSlayerRemaining = 0; // C251: exp buff from boss kill
   private villageRestRemaining = 0; // C258: rest bonus from village
   private deathInsuranceUsed = false; // C260: first death insurance
+  private consecutiveOneHits = 0; // C261: consecutive one-hit kills
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -715,6 +719,8 @@ export class EncounterEngine {
       }
       const tookDamage = hero.hp < hpBefore;
       const isOverkill = hitCount === 1 && !hero.staggered;
+      // C261: multi-kill tracking
+      if (isOverkill) { this.consecutiveOneHits++; } else { this.consecutiveOneHits = 0; }
       // C183: overkill streak tracking
       if (isOverkill) {
         this.overkillStreak++;
@@ -860,7 +866,9 @@ export class EncounterEngine {
       const companionMul = this.totalWins >= COMPANION_UNLOCK_WINS ? (1 + COMPANION_EXP_BONUS) : 1;
       // C251: boss slayer exp buff
       const bossSlayerMul = this.bossSlayerRemaining > 0 ? (1 + BOSS_SLAYER_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul);
+      // C261: multi-kill bonus
+      const multiKillMul = this.consecutiveOneHits >= MULTI_KILL_THRESHOLD ? (1 + MULTI_KILL_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
