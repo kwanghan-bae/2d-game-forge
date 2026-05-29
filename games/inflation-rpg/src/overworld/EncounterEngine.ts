@@ -311,6 +311,8 @@ export const SURVIVAL_HEAL_RATE = 0.03; // 3% HP per fight
 // C248: sacrifice fury
 export const SACRIFICE_FURY_ATK_BONUS = 0.05; // +5% ATK after gold sacrifice heal
 export const SACRIFICE_FURY_DURATION = 5; // lasts 5 fights
+// C249: wave exp scaling with prestige
+export const WAVE_PRESTIGE_EXP_BONUS = 0.10; // +10% wave exp per prestige
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -771,7 +773,7 @@ export class EncounterEngine {
         ? 1 + (this.survivalStreak - SURVIVAL_STREAK_THRESHOLD) * SURVIVAL_STREAK_EXP_BONUS
         : 1;
       // C146: wave bonus exp
-      const waveMulExp = this.waveRemaining > 0 ? WAVE_BONUS_EXP_MUL : 1;
+      const waveMulExp = this.waveRemaining > 0 ? (WAVE_BONUS_EXP_MUL + this.prestigeCount * WAVE_PRESTIGE_EXP_BONUS) : 1;
       // C151: area familiarity bonus
       const visits = this.areaVisits.get(landmarkId) ?? 0;
       const familiarityMul = 1 + Math.min(visits, AREA_FAMILIARITY_CAP) * AREA_FAMILIARITY_EXP_BONUS;
