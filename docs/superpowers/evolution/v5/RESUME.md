@@ -1,13 +1,13 @@
 # RESUME — v5
-- Cycle: 102 | Target: 200 | Protocol: v5
+- Cycle: 105 | Target: 200 | Protocol: v5
 - Vitest: 1817 | E2E: 60 | Persist: v27
-- Last commit: 06b79e2
-- Phase: DONE → next cycle 103 (평가 완료, Phase 2 진입)
-- Category budget (era 5): visual 1 | balance 0 | system 1 | narrative 0 | sound 0
-- Category lock: [visual, system] (cycle 101-102)
+- Last commit: 45577a1
+- Phase: DONE → next cycle 106, Phase 1 (평가 사이클: 106%3==0)
+- Category budget (era 5): visual 2 | balance 1 | system 1 | narrative 1 | sound 0
+- Category lock: [narrative, visual] (cycle 104-105)
 - Visual maturity: 26/30
 - Carry-over: (empty)
-- Debt: characterBackstories.ts wrong IDs (age 31)
+- Debt: characterBackstories.ts wrong IDs (age 31), typecheck errors in 3 test files (pre-existing)
 
 ## Integration backlog (v4 미통합 파일)
 | 파일 | 함수 | 상태 | age |
