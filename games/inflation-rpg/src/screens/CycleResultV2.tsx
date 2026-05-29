@@ -1,4 +1,5 @@
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
+import type { CycleCombatStats } from '../overworld/cycleSliceV2';
 import { InflationCurveChart } from './InflationCurveChart';
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 
 export function CycleResultV2({ onBackToMenu }: Props) {
   const saga = useCycleStoreV2(s => s.lastSaga);
+  const combatStats = useCycleStoreV2(s => s.lastCycleStats);
   const reset = useCycleStoreV2(s => s.reset);
 
   if (!saga) {
@@ -37,6 +39,8 @@ export function CycleResultV2({ onBackToMenu }: Props) {
           신앙 {saga.hero.finalPersonality.pious}
         </div>
       </div>
+
+      {combatStats && <CombatStatsPanel stats={combatStats} />}
 
       <div data-testid="result-curve-section" style={{ marginTop: 16 }}>
         <h3 style={{ marginBottom: 8, fontSize: 14 }}>인플레이션 곡선</h3>
@@ -70,6 +74,24 @@ export function CycleResultV2({ onBackToMenu }: Props) {
           메인 메뉴로
         </button>
       </div>
+    </div>
+  );
+}
+
+function CombatStatsPanel({ stats }: { stats: CycleCombatStats }) {
+  return (
+    <div data-testid="result-combat-stats" style={{
+      background: '#1e293b', padding: 12, borderRadius: 6, marginTop: 12, fontSize: 13,
+      display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px',
+    }}>
+      <div style={{ gridColumn: '1 / -1', fontWeight: 'bold', marginBottom: 4, fontSize: 14, color: '#fbbf24' }}>
+        ⚔ 전투 기록
+      </div>
+      <div>💀 처치: {stats.kills}</div>
+      <div>👑 보스: {stats.bossKills}</div>
+      <div>📦 드랍: {stats.drops}</div>
+      <div>⭐ 최고 레벨: {stats.maxLevel}</div>
+      <div style={{ gridColumn: '1 / -1' }}>💰 획득 골드: {stats.goldEarned}</div>
     </div>
   );
 }

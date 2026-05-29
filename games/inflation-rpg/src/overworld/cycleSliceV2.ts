@@ -16,12 +16,22 @@ import { applyEndCycleMeta } from './cycleSlice.helpers';
 
 type Status = 'idle' | 'running' | 'ended';
 
+export interface CycleCombatStats {
+  kills: number;
+  bossKills: number;
+  drops: number;
+  maxLevel: number;
+  goldEarned: number;
+}
+
 interface CycleStoreV2State {
   status: Status;
   controller: CycleControllerV2 | null;
   lastSaga: CycleSaga | null;
   /** Gold awarded at the end of the most recent cycle. */
   lastGoldEarned: number;
+  /** Combat stats snapshot from the most recent cycle end. */
+  lastCycleStats: CycleCombatStats | null;
   start: (opts: CycleControllerV2Opts) => void;
   /** Cycle-5 F3: optional cause forwarded into the controller before
    *  `finalize()`. Used by OverworldRunner when the scene emits
@@ -37,6 +47,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
   controller: null,
   lastSaga: null,
   lastGoldEarned: 0,
+  lastCycleStats: null,
   start(opts) {
     // V3-H B2: resolve which hero snapshot to use.
     //  - opts.heroSnapshot === undefined → check run.heroSnapshot (auto-resume from save).
@@ -101,7 +112,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     }
     ctrl.setCurrentRealmId(activeRealmId);
     ctrl.setUnlockedRealms(useGameStore.getState().meta.unlockedRealms);
-    set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0 });
+    set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null });
   },
   endCycle(cause?: DeathCause) {
     const ctrl = get().controller;
@@ -151,7 +162,13 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     // `scripts/sim-cycle-v2.ts` calls the same helper so future changes
     // propagate to both paths automatically. See cycleSlice.helpers.ts.
     useGameStore.setState(s => applyEndCycleMeta(s, { gold }));
-    set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold });
+    set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, lastCycleStats: {
+      kills: stats.kills,
+      bossKills: stats.bossKills,
+      drops: stats.drops,
+      maxLevel: hero.level,
+      goldEarned: gold,
+    } });
   },
   rejuvenateHero(years) {
     const ctrl = get().controller;
@@ -172,6 +189,6 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     useGameStore.getState().recordSagaRejuvenation();
   },
   reset() {
-    set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0 });
+    set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null });
   },
 }));
