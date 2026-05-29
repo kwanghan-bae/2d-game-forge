@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 101 | Era: 5 (101-200) | Target: 200
-- Vitest: 1813 | E2E: 60 | Persist: v27
+- Cycle: 102 | Era: 5 (101-200) | Target: 200
+- Vitest: 1817 | E2E: 60 | Persist: v27
 - Last commit: (pending)
-- Phase: DONE → next cycle 102, Phase A
-- Category lock: vis×26 bal×18 sys×19 narr×19 sound×19
+- Phase: DONE → next cycle 103, Phase A
+- Category lock: vis×26 bal×18 sys×20 narr×19 sound×19
 - Visual maturity: 26/30
 - Carry-over: (empty)
-- Budget (run 2): visual 1/1 sys 0/1 narr 0/1 sound 0/1 balance 0/1
+- Budget (run 2): visual 1/2 sys 1/2 narr 0/2 sound 0/2 balance 0/2
 - Era 3 summary: docs/superpowers/evolution/v4/era-3-summary.md
 - Era 2 summary: docs/superpowers/evolution/v4/era-2-summary.md
 
