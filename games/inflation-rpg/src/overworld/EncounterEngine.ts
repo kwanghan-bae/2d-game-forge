@@ -74,6 +74,11 @@ export const LUCKY_DODGE_CHANCE = 0.10; // 10% on fatal blow
 export const GOLD_PER_KILL_BASE = 5; // base gold per kill
 export const GOLD_BOSS_MUL = 5; // bosses give 5× gold
 export const GOLD_ELITE_MUL = 3; // elites give 3× gold
+// C146: wave mechanic — every N fights, bonus challenge
+export const WAVE_INTERVAL = 20; // every 20 wins triggers wave
+export const WAVE_SIZE = 3; // 3 consecutive enemies
+export const WAVE_BONUS_EXP_MUL = 2.0; // ×2 exp for wave fights
+export const WAVE_BONUS_GOLD_MUL = 3.0; // ×3 gold for wave fights
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -144,6 +149,8 @@ export class EncounterEngine {
   private firstBloodUsed = false; // C139: has first fight bonus been consumed
   private lastDeathEnemyId: string | null = null; // C140: revenge tracking
   private survivalStreak = 0; // C141: consecutive fights without death
+  private totalWins = 0; // C146: total wins for wave trigger
+  private waveRemaining = 0; // C146: fights left in current wave
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -302,7 +309,9 @@ export class EncounterEngine {
       const survivalBonus = this.survivalStreak >= SURVIVAL_STREAK_THRESHOLD
         ? 1 + (this.survivalStreak - SURVIVAL_STREAK_THRESHOLD) * SURVIVAL_STREAK_EXP_BONUS
         : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus);
+      // C146: wave bonus exp
+      const waveMulExp = this.waveRemaining > 0 ? WAVE_BONUS_EXP_MUL : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
@@ -333,7 +342,9 @@ export class EncounterEngine {
 
       // C144: gold earned from battle
       const goldMul = isBoss ? GOLD_BOSS_MUL : isElite ? GOLD_ELITE_MUL : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul);
+      // C146: wave bonus multiplier
+      const waveMul = this.waveRemaining > 0 ? WAVE_BONUS_GOLD_MUL : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul);
       hero.gold += goldEarned;
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
@@ -344,6 +355,17 @@ export class EncounterEngine {
       if (this.mercyRemaining > 0) this.mercyRemaining--;
       // C141: survival streak increments on win
       this.survivalStreak++;
+      // C146: wave tracking
+      this.totalWins++;
+      if (this.waveRemaining > 0) {
+        this.waveRemaining--;
+        if (this.waveRemaining === 0) {
+          events.push({ type: 'wave_complete', totalWins: this.totalWins });
+        }
+      } else if (this.totalWins % WAVE_INTERVAL === 0) {
+        this.waveRemaining = WAVE_SIZE;
+        events.push({ type: 'wave_started', size: WAVE_SIZE });
+      }
       // C139: mark first blood as used
       if (!this.firstBloodUsed) {
         this.firstBloodUsed = true;
