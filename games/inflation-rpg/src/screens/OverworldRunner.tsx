@@ -104,6 +104,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [chapterOverlay, setChapterOverlay] = useState<{ toChapter: string; atAge: number; key: number } | null>(null);
   const [dangerFlash, setDangerFlash] = useState(false);
   const dangerFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [milestoneFlash, setMilestoneFlash] = useState<number | null>(null);
+  const milestoneFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   type LightFloat = { id: string; amount: number; createdAt: number };
   const FADE_MS = 1500;
@@ -207,6 +209,16 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
              setDangerFlash(false);
              dangerFlashTimerRef.current = null;
            }, 1200);
+          }
+          // C121: milestone fanfare
+          const milestone = evs.find(e => e.type === 'milestone_reached');
+          if (milestone && milestone.type === 'milestone_reached') {
+           setMilestoneFlash(milestone.level);
+           if (milestoneFlashTimerRef.current) clearTimeout(milestoneFlashTimerRef.current);
+           milestoneFlashTimerRef.current = setTimeout(() => {
+             setMilestoneFlash(null);
+             milestoneFlashTimerRef.current = null;
+           }, 2000);
           }
           const transition = evs.find(e => e.type === 'chapter_transition');
           if (transition && transition.type === 'chapter_transition') {
@@ -696,6 +708,16 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           animation: 'fadeIn 0.2s ease-out', pointerEvents: 'none', zIndex: 20,
         }} data-testid="danger-zone-flash">
           ⚠️ 강적 출현!
+        </div>
+      )}
+      {milestoneFlash !== null && (
+        <div style={{
+          position: 'absolute', top: '25%', left: '50%', transform: 'translateX(-50%)',
+          color: '#ffd700', fontSize: 26, fontWeight: 700, textShadow: '0 0 12px #ffaa00',
+          animation: 'fadeIn 0.3s ease-out', pointerEvents: 'none', zIndex: 21,
+          textAlign: 'center',
+        }} data-testid="milestone-flash">
+          🎉 LV {milestoneFlash.toLocaleString()} 돌파!
         </div>
       )}
       {chapterOverlay && (

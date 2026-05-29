@@ -25,6 +25,8 @@ export const DANGER_ZONE_EXP_MUL = 3;
 // C120: combo streak — consecutive no-damage kills grant bonus exp
 export const COMBO_STREAK_THRESHOLD = 3; // streak >= 3 to start bonus
 export const COMBO_STREAK_EXP_BONUS = 0.1; // +10% per streak beyond threshold
+// C121: milestone levels that trigger fanfare event
+export const MILESTONE_LEVELS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000];
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -222,6 +224,10 @@ export class EncounterEngine {
 
       for (const newLv of leveled) {
         events.push({ type: 'level_up', from: newLv - 1, to: newLv });
+        // C121: milestone fanfare at key levels
+        if (MILESTONE_LEVELS.includes(newLv)) {
+          events.push({ type: 'milestone_reached', level: newLv });
+        }
         // cycle 1 F1: milestone channel 도 SHRINE_SKILL_GRANT_RATE 따르게 통합.
         // 매 100 레벨 마다 deterministic grant 라 826k level 환경에서 ~8200 회
         // fire → skill saturation. shrine 과 같은 확률 gate 로 두 channel 통일.
