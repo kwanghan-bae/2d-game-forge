@@ -87,6 +87,9 @@ export const KILL_MILESTONE_ATK_BONUS = 0.01; // +1% ATK per milestone
 // C149: gold momentum bonus — high momentum gives extra gold
 export const GOLD_MOMENTUM_THRESHOLD = 5;
 export const GOLD_MOMENTUM_BONUS = 0.50; // +50% gold when momentum >= threshold
+// C151: area familiarity — revisiting areas gives exp bonus
+export const AREA_FAMILIARITY_EXP_BONUS = 0.05; // +5% per visit
+export const AREA_FAMILIARITY_CAP = 5; // max 5 stacks = +25%
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -161,6 +164,7 @@ export class EncounterEngine {
   private waveRemaining = 0; // C146: fights left in current wave
   private killCount = 0; // C148: total kills for milestone tracking
   private killMilestones = 0; // C148: number of milestones reached
+  private areaVisits: Map<string, number> = new Map(); // C151: area familiarity
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -326,7 +330,11 @@ export class EncounterEngine {
         : 1;
       // C146: wave bonus exp
       const waveMulExp = this.waveRemaining > 0 ? WAVE_BONUS_EXP_MUL : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp);
+      // C151: area familiarity bonus
+      const visits = this.areaVisits.get(landmarkId) ?? 0;
+      const familiarityMul = 1 + Math.min(visits, AREA_FAMILIARITY_CAP) * AREA_FAMILIARITY_EXP_BONUS;
+      this.areaVisits.set(landmarkId, visits + 1);
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;

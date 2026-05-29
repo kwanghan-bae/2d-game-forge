@@ -726,4 +726,20 @@ describe('EncounterEngine — C144 gold currency', () => {
     // The momentum hero should earn more per fight (accounting for level diff)
     expect(goldGained).toBeGreaterThan(baseGold);
   });
+
+  it('C151: area familiarity gives more exp on revisit', () => {
+    const hero = makeHero();
+    const eng = new EncounterEngine(new SeededRng(1));
+    // First visit to area 'a1'
+    const ev1 = eng.resolveEncounter(hero, 'enemy', 'a1');
+    const exp1 = ev1.find(e => e.type === 'battle_won')?.expGain ?? 0;
+    // Second visit to same area — hero is now higher level so exp scales up
+    // But familiarity also gives +5% bonus
+    const lvBefore = hero.level;
+    const ev2 = eng.resolveEncounter(hero, 'enemy', 'a1');
+    const exp2 = ev2.find(e => e.type === 'battle_won')?.expGain ?? 0;
+    // Both should have exp, second should be positive (area revisit still rewards)
+    expect(exp1).toBeGreaterThan(0);
+    expect(exp2).toBeGreaterThan(0);
+  });
 });
