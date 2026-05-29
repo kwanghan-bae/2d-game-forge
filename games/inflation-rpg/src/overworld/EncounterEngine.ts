@@ -251,6 +251,8 @@ export const EXP_CHAIN_BONUS = 0.25; // +25% exp if chained enough kills
 export const BERSERKER_HP_THRESHOLD = 0.25; // below 25% HP
 export const BERSERKER_ATK_BONUS = 0.40; // +40% ATK
 export const BERSERKER_CRIT_BONUS = 0.20; // +20% crit chance
+// C225: gold interest scaling
+export const GOLD_INTEREST_PRESTIGE_BONUS = 0.01; // +1% per prestige
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -988,7 +990,9 @@ export class EncounterEngine {
         events.push({ type: 'village_shop_purchase', cost: VILLAGE_SHOP_COST, effect: 'hp_shield' });
       }
       // C168: gold interest
-      const interest = Math.floor(hero.gold * VILLAGE_GOLD_INTEREST_RATE);
+      // C225: interest scales with prestige
+      const interestRate = VILLAGE_GOLD_INTEREST_RATE + this.prestigeCount * GOLD_INTEREST_PRESTIGE_BONUS;
+      const interest = Math.floor(hero.gold * interestRate);
       if (interest > 0) hero.gold += interest;
       // C201: village gold fountain
       hero.gold += VILLAGE_GOLD_FOUNTAIN;
