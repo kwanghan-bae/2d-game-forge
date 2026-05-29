@@ -134,6 +134,10 @@ export const CLOSE_CALL_EXP_BONUS = 0.50; // +50% exp
 export const VILLAGE_GOLD_INTEREST_RATE = 0.02; // 2% interest per village visit
 // C169: multi-kill bonus during wave
 export const WAVE_MULTI_KILL_ATK_BONUS = 1; // +1 permanent ATK per wave clear
+// C170: greed mode — high gold penalizes exp but boosts gold
+export const GREED_MODE_GOLD_THRESHOLD = 1000;
+export const GREED_MODE_EXP_PENALTY = 0.20; // -20% exp
+export const GREED_MODE_GOLD_BONUS = 1.0; // +100% gold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -401,7 +405,9 @@ export class EncounterEngine {
       // C167: close call exp bonus — low HP after fight
       const closeCallMul = (!hero.staggered && hero.hp < hero.hpMax * CLOSE_CALL_HP_THRESHOLD && tookDamage)
         ? (1 + CLOSE_CALL_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul);
+      // C170: greed mode — high gold penalizes exp
+      const greedExpMul = hero.gold >= GREED_MODE_GOLD_THRESHOLD ? (1 - GREED_MODE_EXP_PENALTY) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
@@ -451,7 +457,9 @@ export class EncounterEngine {
       const overkillGoldMul = isOverkill ? (1 + OVERKILL_GOLD_BONUS) : 1;
       // C161: crit gold bonus
       const critGoldMul = didCrit ? (1 + CRIT_GOLD_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul);
+      // C170: greed mode — high gold boosts gold gains
+      const greedGoldMul = hero.gold >= GREED_MODE_GOLD_THRESHOLD ? (1 + GREED_MODE_GOLD_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul);
       hero.gold += goldEarned;
       // C157: boss vault — lump sum gold bonus for boss kills
       if (isBoss) {
