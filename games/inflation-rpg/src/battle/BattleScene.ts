@@ -359,6 +359,9 @@ export class BattleScene extends Phaser.Scene {
     if (attackProcs.magicBurstDamage > 0) logParts.push(' (마법 폭발!)');
     this.logText?.setText(logParts.join(''));
 
+    // Floating damage number
+    this.showFloatingDamage(totalEnemyDmg, crit);
+
     const ratio = this.enemyHP / this.enemyMaxHP;
     this.animateHpBar(ratio);
 
@@ -708,6 +711,29 @@ export class BattleScene extends Phaser.Scene {
           onComplete: () => text.destroy(),
         });
       },
+    });
+  }
+
+  private showFloatingDamage(amount: number, isCrit: boolean) {
+    const x = 270 + (Math.random() - 0.5) * 30;
+    const y = 170;
+    const label = amount >= 1_000_000
+      ? `${(amount / 1_000_000).toFixed(1)}M`
+      : amount >= 1_000
+        ? `${(amount / 1_000).toFixed(1)}K`
+        : `${amount}`;
+    const text = this.add.text(x, y, label, {
+      fontSize: isCrit ? '18px' : '14px',
+      color: isCrit ? '#ff4444' : '#ffffff',
+      fontStyle: isCrit ? 'bold' : 'normal',
+    }).setOrigin(0.5).setAlpha(1);
+    this.tweens.add({
+      targets: text,
+      y: y - 40,
+      alpha: 0,
+      duration: 600,
+      ease: 'Cubic.easeOut',
+      onComplete: () => text.destroy(),
     });
   }
 
