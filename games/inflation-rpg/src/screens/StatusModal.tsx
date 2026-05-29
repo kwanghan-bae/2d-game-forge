@@ -6,6 +6,7 @@ import { findRealm } from '../data/realms';
 import { getEquipmentBase } from '../data/equipment';
 import { findSkillById } from '../data/heroSkills';
 import { getBackstory } from '../data/characterBackstories';
+import { EQUIPMENT_FLAVOR } from '../data/equipmentFlavor';
 
 interface Props {
   onClose: () => void;
@@ -167,11 +168,19 @@ export function StatusModal({ onClose }: Props) {
                 const name = base?.name ?? item.baseId;
                 const enhanceSuffix =
                   item.enhanceLv > 0 ? ` +${item.enhanceLv}` : '';
+                const flavor = EQUIPMENT_FLAVOR[item.baseId];
                 return (
-                  <div key={item.instanceId} style={{ fontSize: 13 }}>
-                    {name}
-                    {enhanceSuffix}
-                    {base ? ` (${base.slot})` : ''}
+                  <div key={item.instanceId} style={{ marginBottom: 4 }}>
+                    <div style={{ fontSize: 13 }}>
+                      {name}
+                      {enhanceSuffix}
+                      {base ? ` (${base.slot})` : ''}
+                    </div>
+                    {flavor && (
+                      <div style={{ fontSize: 10, fontStyle: 'italic', color: '#6b7280', marginLeft: 8 }}>
+                        {flavor}
+                      </div>
+                    )}
                   </div>
                 );
               })
