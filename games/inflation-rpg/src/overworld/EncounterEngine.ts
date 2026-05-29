@@ -220,6 +220,9 @@ export const PRESTIGE_LEVEL_REQUIREMENT = 200;
 export const PRESTIGE_STAT_BONUS = 0.10; // +10% all stats per prestige
 // C213: multi-prestige scaling
 export const PRESTIGE_LEVEL_INCREMENT = 50; // each prestige requires 50 more levels
+// C214: treasure hunter
+export const TREASURE_HUNTER_CAVE_INTERVAL = 5;
+export const TREASURE_HUNTER_GOLD_BONUS = 0.10; // +10% gold per tier
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -347,6 +350,7 @@ export class EncounterEngine {
   private investFightsRemaining = 0; // C205: fights until payout
   private achievementMilestones = 0; // C210: number of kill milestones reached
   private arenaActive = false; // C212: next fight is arena
+  private caveVisits = 0; // C214: total cave visits
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -705,7 +709,9 @@ export class EncounterEngine {
       if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
       // C212: arena reward multiplier
       const arenaMul = this.arenaActive ? ARENA_REWARD_MUL : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul);
+      // C214: treasure hunter gold bonus
+      const treasureHunterMul = 1 + Math.floor(this.caveVisits / TREASURE_HUNTER_CAVE_INTERVAL) * TREASURE_HUNTER_GOLD_BONUS;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT, PASSIVE_GOLD_CAP);
@@ -956,6 +962,8 @@ export class EncounterEngine {
         this.shrineTithes++;
       }
     } else if (kind === 'cave') {
+      // C214: track cave visits for treasure hunter bonus
+      this.caveVisits++;
       // C187: cave treasure room — 30% chance for gold instead of moral choice
       if (this.rng.chance(CAVE_TREASURE_CHANCE)) {
         const treasureGold = CAVE_TREASURE_MIN + this.rng.int(CAVE_TREASURE_MAX - CAVE_TREASURE_MIN + 1);
