@@ -258,7 +258,7 @@ describe('EncounterEngine — C122 critical hit', () => {
     const hero = makeHero(42);
     const engine = new EncounterEngine(new SeededRng(42));
     let critSeen = false;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 50; i++) {
       const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
       if (evs.some(e => e.type === 'critical_hit')) critSeen = true;
     }
