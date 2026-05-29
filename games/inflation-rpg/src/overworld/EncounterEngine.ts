@@ -367,6 +367,9 @@ export const ELITE_GOLD_BONUS = 0.50; // +50% gold from elites
 export const GOLD_FORGE_COST = 500;
 export const GOLD_FORGE_THRESHOLD = 1000;
 export const GOLD_FORGE_ATK_FLAT = 5; // +5 permanent ATK
+// C272: combo break consolation
+export const COMBO_BREAK_THRESHOLD = 30; // lost combo must be >= this
+export const COMBO_BREAK_EXP_BONUS = 0.50; // +50% exp on next fight
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -513,6 +516,7 @@ export class EncounterEngine {
   private deathInsuranceUsed = false; // C260: first death insurance
   private consecutiveOneHits = 0; // C261: consecutive one-hit kills
   private shrineBlessingRemaining = 0; // C265: shrine exp blessing
+  private comboBreakBonus = false; // C272: consolation exp boost
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -833,6 +837,8 @@ export class EncounterEngine {
       }
       // C120: combo streak — no-damage kills in a row grant bonus exp
       if (tookDamage) {
+        // C272: combo break consolation
+        if (this.comboStreak >= COMBO_BREAK_THRESHOLD) this.comboBreakBonus = true;
         this.comboStreak = 0;
       } else {
         this.comboStreak++;
@@ -905,7 +911,10 @@ export class EncounterEngine {
       const revengeExpMul = this.revengeGoldRemaining > 0 ? (1 + REVENGE_EXP_BONUS) : 1;
       // C269: low HP exp bonus
       const lowHpExpMul = hero.hp < hero.hpMax * LOW_HP_EXP_THRESHOLD ? (1 + LOW_HP_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul);
+      // C272: combo break consolation
+      const comboBreakMul = this.comboBreakBonus ? (1 + COMBO_BREAK_EXP_BONUS) : 1;
+      if (this.comboBreakBonus) this.comboBreakBonus = false;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
