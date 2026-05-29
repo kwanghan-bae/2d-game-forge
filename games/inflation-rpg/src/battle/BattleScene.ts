@@ -384,7 +384,7 @@ export class BattleScene extends Phaser.Scene {
         playSfx('boss-victory');
         this.showBossVictoryText();
       } else {
-        playSfx('hit');
+        playSfx('hit', 0.9 + Math.random() * 0.2);
       }
 
       const expGain = Math.floor(10 * Math.pow(run.level, 2.0) * pb.expBoostMult);
@@ -482,7 +482,7 @@ export class BattleScene extends Phaser.Scene {
     // Passive dodge — skip enemy attack entirely
     if (this.passiveBonuses.dodgeRateBonus > 0 && Math.random() < this.passiveBonuses.dodgeRateBonus) {
       this.logText?.setText('회피!');
-      playSfx('dodge');
+      playSfx('dodge', 0.8 + Math.random() * 0.5);
       // Dodge animation: hero sidesteps left and returns
       if (this.heroSprite) {
         this.tweens.add({
@@ -514,7 +514,7 @@ export class BattleScene extends Phaser.Scene {
     }
     // Phase Realms — apply damage to run.playerHp and check defeat.
     useGameStore.getState().applyDamageToPlayer(finalDmgTaken);
-    playSfx('player-hit');
+    playSfx('player-hit', 0.85 + Math.random() * 0.3);
     // Hero hit flash — red tint for 100ms
     if (this.heroSprite) {
       this.heroSprite.setTint(0xff4444);
