@@ -323,6 +323,9 @@ export const CHAIN_LIGHTNING_COMBO = 20; // combo streak needed
 export const CHAIN_LIGHTNING_DMG_RATE = 0.20; // 20% of hero ATK as bonus
 // C253: prestige gold bonus
 export const PRESTIGE_GOLD_BONUS_PER_LEVEL = 5; // gold per level at prestige time
+// C255: lucky crit
+export const LUCKY_CRIT_CHANCE = 0.05; // 5% chance for super crit
+export const LUCKY_CRIT_MUL = 3.0; // x3 damage instead of x2
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -615,7 +618,7 @@ export class EncounterEngine {
         const isCrit = canCrit && (guaranteedCrit || this.rng.chance(CRIT_CHANCE * weatherCritMul + berserkerCrit));
         if (isCrit) { this.critStreak++; } else { this.critStreak = 0; }
         if (guaranteedCrit) this.critStreak = 0; // consume guarantee
-        const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
+        const heroAtk = isCrit ? baseHeroAtk * (this.rng.chance(LUCKY_CRIT_CHANCE) ? LUCKY_CRIT_MUL : CRIT_DAMAGE_MUL) : baseHeroAtk;
         if (isCrit) { didCrit = true; this.totalCrits++; }
         // C192: boss rage reset on crit
         if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
