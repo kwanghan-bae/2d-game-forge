@@ -3,6 +3,7 @@ import type { CycleCombatStats } from '../overworld/cycleSliceV2';
 import { InflationCurveChart } from './InflationCurveChart';
 import { useGameStore } from '../store/gameStore';
 import { getVictoryQuote } from '../data/victoryQuotes';
+import { formatCompact } from '../systems/numberFormat';
 
 interface Props {
   onBackToMenu: () => void;
@@ -96,11 +97,11 @@ function CombatStatsPanel({ stats }: { stats: CycleCombatStats }) {
       <div style={{ gridColumn: '1 / -1', fontWeight: 'bold', marginBottom: 4, fontSize: 14, color: '#fbbf24' }}>
         ⚔ 전투 기록
       </div>
-      <div>💀 처치: {stats.kills}</div>
+      <div>💀 처치: {formatCompact(stats.kills)}</div>
       <div>👑 보스: {stats.bossKills}</div>
       <div>📦 드랍: {stats.drops}</div>
-      <div>⭐ 최고 레벨: {stats.maxLevel}</div>
-      <div style={{ gridColumn: '1 / -1' }}>💰 획득 골드: {stats.goldEarned}</div>
+      <div>⭐ 최고 레벨: {formatCompact(stats.maxLevel)}</div>
+      <div style={{ gridColumn: '1 / -1' }}>💰 획득 골드: {formatCompact(stats.goldEarned)}</div>
     </div>
   );
 }
