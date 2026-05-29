@@ -345,6 +345,8 @@ export const MULTI_KILL_THRESHOLD = 3; // 3 consecutive one-hit kills
 export const MULTI_KILL_EXP_BONUS = 0.40; // +40% exp on qualifying kill
 // C262: gold interest cap scaling
 export const GOLD_INTEREST_CAP_PER_PRESTIGE = 5; // extra cap per prestige
+// C263: critical heal
+export const CRIT_HEAL_RATE = 0.02; // 2% max HP on crit
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -644,7 +646,7 @@ export class EncounterEngine {
         if (isCrit) { this.critStreak++; } else { this.critStreak = 0; }
         if (guaranteedCrit) this.critStreak = 0; // consume guarantee
         const heroAtk = isCrit ? baseHeroAtk * (this.rng.chance(LUCKY_CRIT_CHANCE) ? LUCKY_CRIT_MUL : CRIT_DAMAGE_MUL) : baseHeroAtk;
-        if (isCrit) { didCrit = true; this.totalCrits++; }
+        if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * CRIT_HEAL_RATE))); }
         // C192: boss rage reset on crit
         if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
         hitCount++;
