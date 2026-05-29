@@ -1,13 +1,13 @@
 # RESUME
 
-- Cycle: 78 | Era: 4 | Target: 100
-- Vitest: 1742 | E2E: 60 | Persist: v27
+- Cycle: 79 | Era: 4 | Target: 100
+- Vitest: 1747 | E2E: 60 | Persist: v27
 - Last commit: (pending)
-- Phase: DONE → next cycle 79, Phase A
-- Category lock: vis×18 bal×15 sys×15 narr×15 sound×15
-- Visual maturity: 19/30
+- Phase: DONE → next cycle 80, Phase A
+- Category lock: vis×19 bal×15 sys×15 narr×15 sound×15
+- Visual maturity: 20/30
 - Carry-over: (empty)
-- Budget: visual 18/78 sys 15/78 narr 15/78 sound 15/78 balance 15/78
+- Budget: visual 19/79 sys 15/79 narr 15/79 sound 15/79 balance 15/79
 - Era 3 summary: docs/superpowers/evolution/v4/era-3-summary.md
 - Era 2 summary: docs/superpowers/evolution/v4/era-2-summary.md
 
@@ -17,7 +17,7 @@
 |------|------|------|
 | 캐릭터 | 1 | Kenney 16px sprite, characterId별 매핑 |
 | 몬스터 | 2 | 10종 프레임 해시 + 보스 2종 + spawn bounce + boss gold tint |
-| 이펙트 | 3 | hit flash + HP bar tween + death particle burst |
+| 이펙트 | 3 | hit flash + HP tween + death particles + floating reward numbers |
 | 배경 | 2 | zone rect + realm gradient (canvas texture) |
 | 아이콘 | 1 | Kenney UI icons 기본 |
 | 전환 | 2 | 300ms opacity + slide-up + enemy spawn 3-style variety |
