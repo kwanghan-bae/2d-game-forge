@@ -1001,6 +1001,27 @@ export class BattleScene extends Phaser.Scene {
       },
     });
 
+    // Celebration confetti burst
+    const confettiColors = [0xffd700, 0xff4488, 0x44ff88, 0x4488ff, 0xff8844];
+    const count = this.cachedBossType === 'final' ? 30 : 12;
+    for (let i = 0; i < count; i++) {
+      const cx = Phaser.Math.Between(40, 320);
+      const color = confettiColors[i % confettiColors.length]!;
+      const size = Phaser.Math.Between(3, 6);
+      const confetti = this.add.rectangle(cx, -10, size, size * 2, color, 0.9);
+      this.tweens.add({
+        targets: confetti,
+        y: Phaser.Math.Between(200, 550),
+        x: cx + Phaser.Math.Between(-30, 30),
+        angle: Phaser.Math.Between(180, 720),
+        alpha: 0,
+        duration: Phaser.Math.Between(1000, 2000),
+        delay: Phaser.Math.Between(0, 400),
+        ease: 'Quad.easeIn',
+        onComplete: () => confetti.destroy(),
+      });
+    }
+
     // Boss last words — subtle italic line below victory text
     const lastWords = getBossLastWords(this.bossId ?? '');
     if (lastWords) {
