@@ -555,8 +555,17 @@ export class BattleScene extends Phaser.Scene {
             playSfx('milestone', 1.0);
             this.time.delayedCall(80, () => playSfx('milestone', 1.2));
             this.time.delayedCall(160, () => playSfx('milestone', 1.5));
+            // Golden flash for milestone
+            this.cameras.main.flash(400, 255, 215, 0, false);
           } else {
             playSfx('levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
+            // White flash for normal level-up
+            this.cameras.main.flash(200, 255, 255, 255, false);
+          }
+          // Hero glow pulse on level-up
+          if (this.heroSprite) {
+            this.heroSprite.setTint(0xffffaa);
+            this.time.delayedCall(300, () => this.heroSprite?.clearTint());
           }
           this.callbacks.onLevelUp(newLevel);
         } else {
