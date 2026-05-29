@@ -113,6 +113,9 @@ export const NEAR_DEATH_HP_THRESHOLD = 0.10; // below 10% HP
 export const NEAR_DEATH_ATK_MUL = 1.5; // ×1.5 ATK when near death
 // C159: double-or-nothing — chance to keep gold on death
 export const GOLD_SAVE_CHANCE = 0.25; // 25% chance to not lose gold
+// C160: combo exp escalation — high combo gives escalating exp
+export const COMBO_EXP_THRESHOLD = 10;
+export const COMBO_EXP_BONUS_PER = 0.10; // +10% per combo above threshold
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -371,7 +374,11 @@ export class EncounterEngine {
       const visits = this.areaVisits.get(landmarkId) ?? 0;
       const familiarityMul = 1 + Math.min(visits, AREA_FAMILIARITY_CAP) * AREA_FAMILIARITY_EXP_BONUS;
       this.areaVisits.set(landmarkId, visits + 1);
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul);
+      // C160: combo exp escalation
+      const comboExpMul = this.comboStreak >= COMBO_EXP_THRESHOLD
+        ? 1 + (this.comboStreak - COMBO_EXP_THRESHOLD) * COMBO_EXP_BONUS_PER
+        : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
