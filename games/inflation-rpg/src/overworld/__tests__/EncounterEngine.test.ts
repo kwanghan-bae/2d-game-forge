@@ -261,3 +261,21 @@ describe('EncounterEngine — C122 critical hit', () => {
     expect(critSeen).toBe(true);
   });
 });
+
+describe('EncounterEngine — C123 overkill', () => {
+  it('overkill event fires when hero one-shots enemy', () => {
+    // heroAtkBase=100000 guarantees one-shot at lv1
+    const hero = makeHero(1);
+    const engine = new EncounterEngine(new SeededRng(1));
+    const evs = engine.resolveEncounter(hero, 'enemy', 'e_0');
+    expect(evs.some(e => e.type === 'overkill')).toBe(true);
+  });
+
+  it('overkill does not fire when fight takes multiple hits', () => {
+    // Very weak hero that needs multiple hits
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 99999, heroAtkBase: 1 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    const evs = engine.resolveEncounter(hero, 'enemy', 'e_weak');
+    expect(evs.some(e => e.type === 'overkill')).toBe(false);
+  });
+});

@@ -31,6 +31,8 @@ export const MILESTONE_LEVELS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100
 export const CRIT_STREAK_THRESHOLD = 5; // combo >= 5 to unlock crit chance
 export const CRIT_CHANCE = 0.20; // 20% per attack to crit
 export const CRIT_DAMAGE_MUL = 2; // x2 damage on crit
+// C123: overkill — one-hit kills get bonus drop rate
+export const OVERKILL_DROP_BONUS = 0.15; // +15% drop chance on one-hit kills
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -151,14 +153,17 @@ export class EncounterEngine {
       const hpBefore = hero.hp;
       let eHp = enemyHp;
       let didCrit = false;
+      let hitCount = 0;
       while (eHp > 0 && !hero.staggered) {
         const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
         if (isCrit) didCrit = true;
+        hitCount++;
         eHp -= heroAtk;
         if (eHp > 0) hero.takeDamage(enemyAtk);
       }
       const tookDamage = hero.hp < hpBefore;
+      const isOverkill = hitCount === 1 && !hero.staggered;
       if (hero.staggered) {
         // C120: combo streak resets on death
         this.comboStreak = 0;
@@ -196,7 +201,9 @@ export class EncounterEngine {
       const baseDropOdds = isBoss ? 0.96 : DROP_RATE; // V3-H F2: boss 0.8→0.96 (+20%)
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
-      const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0) + introDropBonus);
+      // C123: overkill bonus — one-hit kills get +15% drop rate
+      const overkillDropBonus = isOverkill ? OVERKILL_DROP_BONUS : 0;
+      const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0) + introDropBonus + overkillDropBonus);
       const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss) : null;
       if (dropId) hero.addEquipment(dropId);
 
@@ -209,6 +216,9 @@ export class EncounterEngine {
       }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      if (isOverkill) {
+        events.push({ type: 'overkill', enemyId: landmarkId });
+      }
       if (didCrit) {
         events.push({ type: 'critical_hit', streak: this.comboStreak });
       }
