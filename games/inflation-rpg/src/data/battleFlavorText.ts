@@ -411,3 +411,54 @@ export function getAchievementMessage(seed: number): string {
 export function getLuckyFindMessage(seed: number): string {
   return LUCKY_FIND_MESSAGES[seed % LUCKY_FIND_MESSAGES.length];
 }
+
+// C233: flavor text expansion 8
+const BERSERKER_MESSAGES = [
+  '광전사의 분노! 한계를 넘는다!',
+  '피가 끓어오른다!',
+  '죽음 앞에서 더 강해진다!',
+];
+
+const WEATHER_RAIN_MESSAGES = [
+  '비가 시야를 가린다...',
+  '빗속의 전투! 불리하다!',
+  '젖은 손잡이가 미끄럽다!',
+];
+
+const WEATHER_WIND_MESSAGES = [
+  '순풍이 경험을 실어온다!',
+  '바람이 등을 밀어준다!',
+  '상쾌한 바람에 집중력 상승!',
+];
+
+const BOUNTY_MESSAGES = [
+  '현상금 수령!',
+  '25마리 처치 보상!',
+  '의뢰 완수! 금화를 받았다!',
+];
+
+const BANK_MESSAGES = [
+  '은행에 금화를 맡겼다!',
+  '저축은 미래의 투자!',
+  '안전하게 보관됐다!',
+];
+
+export function getBerserkerMessage(seed: number): string {
+  return BERSERKER_MESSAGES[seed % BERSERKER_MESSAGES.length];
+}
+
+export function getWeatherRainMessage(seed: number): string {
+  return WEATHER_RAIN_MESSAGES[seed % WEATHER_RAIN_MESSAGES.length];
+}
+
+export function getWeatherWindMessage(seed: number): string {
+  return WEATHER_WIND_MESSAGES[seed % WEATHER_WIND_MESSAGES.length];
+}
+
+export function getBountyMessage(seed: number): string {
+  return BOUNTY_MESSAGES[seed % BOUNTY_MESSAGES.length];
+}
+
+export function getBankMessage(seed: number): string {
+  return BANK_MESSAGES[seed % BANK_MESSAGES.length];
+}
