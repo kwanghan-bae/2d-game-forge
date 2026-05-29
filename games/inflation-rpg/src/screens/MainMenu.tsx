@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { HallScreen } from './HallScreen';
 import { SeasonPassScreen } from './SeasonPassScreen';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
 import { getClaimerTier, nextTierThreshold, getClaimerTierProgress } from '../data/claimerTier';
+import { getIdleMusing } from '../data/idleMusings';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
@@ -17,6 +18,20 @@ export function MainMenu() {
   const heroSnapshot = useGameStore(s => s.run.heroSnapshot);
   const [hallOpen, setHallOpen] = useState(false);
   const [seasonPassOpen, setSeasonPassOpen] = useState(false);
+
+  // Idle musing ticker — rotates character quips every 15s
+  const CHAR_IDS = ['hwarang','mudang','choeui','geomgaek','tiger_hunter','dosa','yacha','gungsu','uinyeo','jangsu','seungbyeong','geosa','cheongwan','yongnyeo','gwisin','seonin'];
+  const [musing, setMusing] = useState<string | null>(() => {
+    const id = CHAR_IDS[Math.floor(Math.random() * CHAR_IDS.length)]!;
+    return getIdleMusing(id);
+  });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const id = CHAR_IDS[Math.floor(Math.random() * CHAR_IDS.length)]!;
+      setMusing(getIdleMusing(id));
+    }, 15_000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div data-testid="main-menu" style={{ padding: 24, color: '#eee', textAlign: 'center' }}>
@@ -32,6 +47,11 @@ export function MainMenu() {
       `}</style>
       <h1 style={{ marginBottom: 8 }}>조선 인플레이션 RPG</h1>
       <p style={{ opacity: 0.7, marginBottom: 8 }}>신이 되어 용사의 일대기를 후원하라</p>
+      {musing && (
+        <p data-testid="idle-musing" style={{ fontSize: 12, opacity: 0.6, fontStyle: 'italic', marginBottom: 12, minHeight: 18, transition: 'opacity 0.5s' }}>
+          💭 {musing}
+        </p>
+      )}
       {totalClaims > 0 && (() => {
         // Cycle 193 — nextTier 까지 남은 횟수 표시 (mm-claimer-tier 아래 추가).
         // Cycle 195 — progress bar wire (cycle 194 getClaimerTierProgress).
