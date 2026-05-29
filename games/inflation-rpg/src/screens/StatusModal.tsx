@@ -5,6 +5,7 @@ import { BUFF_CATALOG } from '../buff/catalog';
 import { findRealm } from '../data/realms';
 import { getEquipmentBase } from '../data/equipment';
 import { findSkillById } from '../data/heroSkills';
+import { getBackstory } from '../data/characterBackstories';
 
 interface Props {
   onClose: () => void;
@@ -89,6 +90,11 @@ export function StatusModal({ onClose }: Props) {
           <strong>
             {hero.emoji} {hero.name}
           </strong>
+          {run.characterId && getBackstory(run.characterId) && (
+            <span data-testid="hero-backstory" style={{ fontSize: 11, fontStyle: 'italic', color: '#94a3b8', marginLeft: 8, opacity: 0.8 }}>
+              {getBackstory(run.characterId)}
+            </span>
+          )}
           <button
             type="button"
             data-testid="status-modal-close"
