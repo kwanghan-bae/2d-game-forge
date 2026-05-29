@@ -39,6 +39,8 @@ export const CLOSE_CALL_HEAL = 0.05; // heal 5% of max HP
 // C125: battle momentum — consecutive fights without village boost ATK
 export const MOMENTUM_ATK_BONUS = 0.02; // +2% ATK per stack
 export const MOMENTUM_CAP = 20; // max 20 stacks = +40% ATK
+// C126: drop streak — consecutive drops upgrade the next one
+export const DROP_STREAK_THRESHOLD = 3; // 3 drops in a row → next is upgraded
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -102,6 +104,7 @@ export interface EncounterEngineOpts {
 export class EncounterEngine {
   private comboStreak = 0;
   private battleMomentum = 0;
+  private dropStreak = 0;
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -112,6 +115,7 @@ export class EncounterEngine {
   getComboStreak(): number { return this.comboStreak; }
   resetComboStreak(): void { this.comboStreak = 0; }
   getBattleMomentum(): number { return this.battleMomentum; }
+  getDropStreak(): number { return this.dropStreak; }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
@@ -214,8 +218,19 @@ export class EncounterEngine {
       // C123: overkill bonus — one-hit kills get +15% drop rate
       const overkillDropBonus = isOverkill ? OVERKILL_DROP_BONUS : 0;
       const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0) + introDropBonus + overkillDropBonus);
-      const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss) : null;
-      if (dropId) hero.addEquipment(dropId);
+      // C126: drop streak — 3 consecutive drops upgrades next to boss pool
+      const upgradePool = !isBoss && this.dropStreak >= DROP_STREAK_THRESHOLD;
+      const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss || upgradePool) : null;
+      if (dropId) {
+        this.dropStreak++;
+        hero.addEquipment(dropId);
+        if (upgradePool) {
+          events.push({ type: 'drop_upgraded', dropId });
+          this.dropStreak = 0; // reset after upgrade
+        }
+      } else {
+        this.dropStreak = 0;
+      }
 
       const { leveled } = hero.gainExp(expGain);
 
