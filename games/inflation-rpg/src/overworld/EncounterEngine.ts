@@ -394,6 +394,32 @@ export const PRESTIGE_EXP_BONUS = 0.05;
 // C280: lucky gold drop — 5% chance for bonus gold
 export const LUCKY_GOLD_CHANCE = 0.05;
 export const LUCKY_GOLD_PER_LEVEL = 10;
+// C281: kill momentum exp — faster kills give more exp
+export const KILL_MOMENTUM_EXP_BONUS = 0.02; // +2% per win streak (max 10 = +20%)
+export const KILL_MOMENTUM_EXP_CAP = 10;
+// C282: village shield — village grants 1-hit damage immunity
+export const VILLAGE_SHIELD_DURATION = 1; // absorbs 1 hit
+// C283: gold per boss multiplier — each boss killed = +2% gold permanently
+export const GOLD_PER_BOSS_BONUS = 0.02;
+// C284: exp drought breaker — 20+ fights without level-up = +30% exp
+export const EXP_DROUGHT_THRESHOLD = 20;
+export const EXP_DROUGHT_BONUS = 0.30;
+// C285: village training — village grants +5% ATK for 5 fights
+export const VILLAGE_TRAINING_ATK_BONUS = 0.05;
+export const VILLAGE_TRAINING_DURATION = 5;
+// C286: survivor's grit — survive at <5% HP = +50% exp next fight
+export const SURVIVOR_GRIT_HP_THRESHOLD = 0.05;
+export const SURVIVOR_GRIT_EXP_BONUS = 0.50;
+// C287: gold per level milestone — every 10 levels, +5g flat income
+export const GOLD_LEVEL_MILESTONE = 10;
+export const GOLD_LEVEL_MILESTONE_BONUS = 5;
+// C288: survival exp multiplier — scales with current survival streak
+export const SURVIVAL_EXP_SCALE = 0.01; // +1% per streak (cap 20%)
+export const SURVIVAL_EXP_SCALE_CAP = 0.20;
+// C289: prestige ATK scaling — +2% ATK per prestige (stacks with specMul)
+export const PRESTIGE_ATK_BONUS_PER = 0.02;
+// C290: enemy gold scaling — enemies in higher danger zones give more gold
+export const DANGER_GOLD_SCALE = 0.15; // +15% gold per danger zone level
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -543,6 +569,9 @@ export class EncounterEngine {
   private comboBreakBonus = false; // C272: consolation exp boost
   private villageBlessingRemaining = 0; // C276: gold blessing duration
   private fightsSinceLastDeath = 0; // C276: deathless streak
+  private villageShieldActive = false; // C282: 1-hit shield
+  private villageTrainingRemaining = 0; // C285: ATK buff duration
+  private survivorGritActive = false; // C286: survived at low HP
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -682,7 +711,12 @@ export class EncounterEngine {
       const bossKillAtkMul = 1 + Math.floor(this.bossesKilled / BOSS_KILL_ATK_INTERVAL) * BOSS_KILL_ATK_BONUS;
       // C275: adrenaline rush
       const adrenalineMul = hero.hp < hero.hpMax * ADRENALINE_HP_THRESHOLD ? (1 + ADRENALINE_ATK_BONUS) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul));
+      // C285: village training ATK buff
+      const trainingMul = this.villageTrainingRemaining > 0 ? (1 + VILLAGE_TRAINING_ATK_BONUS) : 1;
+      if (this.villageTrainingRemaining > 0) this.villageTrainingRemaining--;
+      // C289: prestige ATK scaling
+      const prestigeAtkMul = 1 + this.prestigeCount * PRESTIGE_ATK_BONUS_PER;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -762,7 +796,12 @@ export class EncounterEngine {
           // C258: village vigor damage reduction
           const vigorMul = this.villageRestRemaining > 0 ? (1 - VILLAGE_VIGOR_HP_BONUS) : 1;
           const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul * vigorMul));
-          hero.takeDamage(incomingDmg);
+          // C282: village shield absorbs first hit
+          if (this.villageShieldActive) {
+            this.villageShieldActive = false;
+          } else {
+            hero.takeDamage(incomingDmg);
+          }
           // C206: damage reflection
           eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
           // C142: lucky dodge — survive fatal hit with 10% chance
@@ -950,7 +989,16 @@ export class EncounterEngine {
       const expCascadeMul = this.consecutiveOneHits >= GOLD_CASCADE_THRESHOLD ? (1 + EXP_CASCADE_BONUS) : 1;
       // C279: prestige exp scaling
       const prestigeExpMul = 1 + this.prestigeCount * PRESTIGE_EXP_BONUS;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul);
+      // C281: kill momentum exp
+      const killMomentumExp = 1 + Math.min(KILL_MOMENTUM_EXP_CAP, this.survivalStreak) * KILL_MOMENTUM_EXP_BONUS;
+      // C284: exp drought breaker
+      const expDroughtMul = this.killsSinceLevelUp >= EXP_DROUGHT_THRESHOLD ? (1 + EXP_DROUGHT_BONUS) : 1;
+      // C286: survivor's grit
+      const survivorGritMul = this.survivorGritActive ? (1 + SURVIVOR_GRIT_EXP_BONUS) : 1;
+      if (this.survivorGritActive) this.survivorGritActive = false;
+      // C288: survival exp scale
+      const survivalScaleMul = 1 + Math.min(SURVIVAL_EXP_SCALE_CAP, this.survivalStreak * SURVIVAL_EXP_SCALE);
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -1031,10 +1079,16 @@ export class EncounterEngine {
       // C276: village blessing gold
       const villageBlessMul = this.villageBlessingRemaining > 0 ? (1 + VILLAGE_BLESSING_GOLD_BONUS) : 1;
       if (this.villageBlessingRemaining > 0) this.villageBlessingRemaining--;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul);
+      // C283: gold per boss killed
+      const bossGoldMul = 1 + this.bossesKilled * GOLD_PER_BOSS_BONUS;
+      // C287: gold per level milestone
+      const levelMilestoneGold = Math.floor(hero.level / GOLD_LEVEL_MILESTONE) * GOLD_LEVEL_MILESTONE_BONUS;
+      // C290: danger zone gold scale
+      const dangerScaleMul = 1 + this.dangerStreak * DANGER_GOLD_SCALE;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul) + levelMilestoneGold;
       hero.gold += goldEarned;
       // C280: lucky gold drop
-      if (this.rng() < LUCKY_GOLD_CHANCE) {
+      if (this.rng.chance(LUCKY_GOLD_CHANCE)) {
         hero.gold += hero.level * LUCKY_GOLD_PER_LEVEL;
       }
       // C208: passive gold income based on village visits
@@ -1066,6 +1120,10 @@ export class EncounterEngine {
       this.consecutiveDeaths = 0;
       // C276: deathless streak increment
       this.fightsSinceLastDeath++;
+      // C286: survivor's grit — trigger if survived at very low HP
+      if (hero.hp > 0 && hero.hp < hero.hpMax * SURVIVOR_GRIT_HP_THRESHOLD) {
+        this.survivorGritActive = true;
+      }
       // C217: HP regen scaling based on kills
       const regenBonus = Math.min(REGEN_SCALE_CAP, Math.floor(this.totalWins / 50) * REGEN_SCALE_PER_50_KILLS);
       const regenAmount = Math.max(1, Math.floor(hero.hpMax * (WIN_HP_REGEN_RATE + regenBonus)));
@@ -1286,6 +1344,10 @@ export class EncounterEngine {
       this.villageRestRemaining = VILLAGE_VIGOR_DURATION;
       // C260: reset death insurance at village
       this.deathInsuranceUsed = false;
+      // C282: village shield
+      this.villageShieldActive = true;
+      // C285: village training ATK buff
+      this.villageTrainingRemaining = VILLAGE_TRAINING_DURATION;
       // C276: village blessing for deathless streak
       if (this.fightsSinceLastDeath >= VILLAGE_BLESSING_STREAK) {
         this.villageBlessingRemaining = VILLAGE_BLESSING_DURATION;
