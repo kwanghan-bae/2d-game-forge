@@ -41,6 +41,8 @@ export const MOMENTUM_ATK_BONUS = 0.02; // +2% ATK per stack
 export const MOMENTUM_CAP = 20; // max 20 stacks = +40% ATK
 // C126: drop streak — consecutive drops upgrade the next one
 export const DROP_STREAK_THRESHOLD = 3; // 3 drops in a row → next is upgraded
+// C132: boss rage — boss ATK escalates per combat turn
+export const BOSS_RAGE_ATK_PER_TURN = 0.10; // +10% base ATK per turn
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -168,13 +170,21 @@ export class EncounterEngine {
       let eHp = enemyHp;
       let didCrit = false;
       let hitCount = 0;
+      let rageTurn = 0;
       while (eHp > 0 && !hero.staggered) {
         const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
         if (isCrit) didCrit = true;
         hitCount++;
         eHp -= heroAtk;
-        if (eHp > 0) hero.takeDamage(enemyAtk);
+        if (eHp > 0) {
+          // C132: boss rage — boss ATK escalates each turn the fight lasts
+          const rageAtk = isBoss
+            ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN))
+            : enemyAtk;
+          hero.takeDamage(rageAtk);
+          rageTurn++;
+        }
       }
       const tookDamage = hero.hp < hpBefore;
       const isOverkill = hitCount === 1 && !hero.staggered;
@@ -241,6 +251,10 @@ export class EncounterEngine {
       }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      // C132: boss rage event — notify when boss fight lasted multiple turns
+      if (isBoss && rageTurn > 0) {
+        events.push({ type: 'boss_rage', turns: rageTurn, atkMultiplier: 1 + rageTurn * BOSS_RAGE_ATK_PER_TURN });
+      }
       // C125: battle momentum — consecutive fights without village give ATK bonus
       this.battleMomentum = Math.min(this.battleMomentum + 1, MOMENTUM_CAP);
       if (isOverkill) {

@@ -364,3 +364,35 @@ describe('EncounterEngine — C126 drop streak', () => {
     expect(upgraded).toBe(true);
   });
 });
+
+describe('EncounterEngine — C132 boss rage', () => {
+  it('boss rage event emits when boss fight lasts multiple turns', () => {
+    // Weak hero vs boss = multi-turn fight
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 10000, heroAtkBase: 10 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    const events = engine.resolveEncounter(hero, 'boss', 'boss_0');
+    const rage = events.find(e => e.type === 'boss_rage');
+    // Boss should take multiple turns to kill with ATK=10
+    if (events.some(e => e.type === 'battle_won')) {
+      expect(rage).toBeDefined();
+      expect(rage!.type === 'boss_rage' && rage!.turns).toBeGreaterThan(0);
+      expect(rage!.type === 'boss_rage' && rage!.atkMultiplier).toBeGreaterThan(1);
+    }
+  });
+
+  it('no boss_rage event for one-shot boss kills', () => {
+    // Overpowered hero one-shots boss
+    const hero = makeHero(1); // ATK=100000
+    const engine = new EncounterEngine(new SeededRng(1));
+    const events = engine.resolveEncounter(hero, 'boss', 'boss_0');
+    expect(events.some(e => e.type === 'boss_rage')).toBe(false);
+  });
+
+  it('boss rage does not affect regular enemies', () => {
+    // Weak hero vs regular enemy — takes multiple turns but no rage
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 10000, heroAtkBase: 5 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    const events = engine.resolveEncounter(hero, 'enemy', 'e_0');
+    expect(events.some(e => e.type === 'boss_rage')).toBe(false);
+  });
+});
