@@ -132,6 +132,8 @@ export const CLOSE_CALL_HP_THRESHOLD = 0.20; // below 20% HP after fight
 export const CLOSE_CALL_EXP_BONUS = 0.50; // +50% exp
 // C168: gold interest at village
 export const VILLAGE_GOLD_INTEREST_RATE = 0.02; // 2% interest per village visit
+// C169: multi-kill bonus during wave
+export const WAVE_MULTI_KILL_ATK_BONUS = 1; // +1 permanent ATK per wave clear
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -483,6 +485,9 @@ export class EncounterEngine {
         this.waveRemaining--;
         if (this.waveRemaining === 0) {
           events.push({ type: 'wave_complete', totalWins: this.totalWins });
+          // C169: multi-kill ATK bonus on wave clear
+          hero.atkBase += WAVE_MULTI_KILL_ATK_BONUS;
+          hero.recomputeStats();
         }
       } else if (this.totalWins % WAVE_INTERVAL === 0) {
         this.waveRemaining = WAVE_SIZE;
