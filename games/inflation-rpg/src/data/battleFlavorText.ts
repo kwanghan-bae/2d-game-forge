@@ -257,3 +257,55 @@ export function getLifestealMessage(seed: number): string {
 export function getShrineTitheMessage(seed: number): string {
   return SHRINE_TITHE_MESSAGES[seed % SHRINE_TITHE_MESSAGES.length];
 }
+
+// C191: Flavor text expansion 5 — treasure, cave, revenge, shield break, gold armor
+
+const LUCKY_TREASURE_MESSAGES = [
+  '반짝이는 보물 상자를 발견했다!',
+  '전리품이 쏟아진다!',
+  '운이 좋다! 숨겨진 금화를 찾았다.',
+] as const;
+
+const CAVE_TREASURE_MESSAGES = [
+  '동굴 깊은 곳에서 보물을 발견했다!',
+  '잊혀진 금은보화가 가득하다.',
+  '탐험의 보상이 기다리고 있었다.',
+] as const;
+
+const REVENGE_GOLD_MESSAGES = [
+  '복수의 불꽃이 금화로 돌아온다!',
+  '쓰러진 자의 분노가 보상을 부른다.',
+  '패배의 대가를 되찾는다!',
+] as const;
+
+const SHIELD_BREAK_MESSAGES = [
+  '방패가 폭발하며 에너지를 방출한다!',
+  '깨진 방패의 파편이 적을 관통한다!',
+  '보호막이 산산조각, 충격파가 퍼진다!',
+] as const;
+
+const GOLD_ARMOR_MESSAGES = [
+  '금화가 갑옷처럼 빛나고 있다.',
+  '부의 무게가 방어가 된다.',
+  '금으로 뒤덮인 피부가 단단하다.',
+] as const;
+
+export function getLuckyTreasureMessage(seed: number): string {
+  return LUCKY_TREASURE_MESSAGES[seed % LUCKY_TREASURE_MESSAGES.length];
+}
+
+export function getCaveTreasureMessage(seed: number): string {
+  return CAVE_TREASURE_MESSAGES[seed % CAVE_TREASURE_MESSAGES.length];
+}
+
+export function getRevengeGoldMessage(seed: number): string {
+  return REVENGE_GOLD_MESSAGES[seed % REVENGE_GOLD_MESSAGES.length];
+}
+
+export function getShieldBreakMessage(seed: number): string {
+  return SHIELD_BREAK_MESSAGES[seed % SHIELD_BREAK_MESSAGES.length];
+}
+
+export function getGoldArmorMessage(seed: number): string {
+  return GOLD_ARMOR_MESSAGES[seed % GOLD_ARMOR_MESSAGES.length];
+}
