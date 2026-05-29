@@ -1,20 +1,20 @@
 # RESUME
 
-- Cycle: 42 | Era: 2 | Target: 100
+- Cycle: 43 | Era: 2 | Target: 100
 - Vitest: 1673 | E2E: 60 | Persist: v27
-- Last commit: db5c2cb
-- Phase: DONE → next cycle 43, Phase A
-- Category lock: vis×10 bal×8 sys×8 narr×8 sound×8
-- Visual maturity: 12/30
+- Last commit: a8f0a68
+- Phase: DONE → next cycle 44, Phase A
+- Category lock: vis×11 bal×8 sys×8 narr×8 sound×8
+- Visual maturity: 13/30
 - Carry-over: (empty)
-- Budget: visual 10/42 sys 8/42 narr 8/42 sound 8/42 balance 8/42
+- Budget: visual 11/43 sys 8/43 narr 8/43 sound 8/43 balance 8/43
 
 ## 비주얼 성숙도 상세 (0-3 × 10영역)
 
 | 영역 | 점수 | 비고 |
 |------|------|------|
 | 캐릭터 | 1 | Kenney 16px sprite, characterId별 매핑 |
-| 몬스터 | 1 | 10종 프레임 해시 매핑 + 보스 2종 |
+| 몬스터 | 2 | 10종 프레임 해시 + 보스 2종 + spawn bounce |
 | 이펙트 | 3 | hit flash + HP bar tween + death particle burst |
 | 배경 | 2 | zone rect + realm gradient (canvas texture) |
 | 아이콘 | 1 | Kenney UI icons 기본 |
