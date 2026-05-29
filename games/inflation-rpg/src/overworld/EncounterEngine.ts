@@ -281,6 +281,9 @@ export const CRIT_GOLD_SCALE_CAP = 0.50; // max +50% additional
 export const OVERKILL_HEAL_RATE = 0.05; // 5% max HP restored on one-hit kill
 // C237: exp overflow
 export const EXP_OVERFLOW_BONUS = 0.50; // 50% bonus on carried-over exp
+// C238: darkness curse
+export const DARKNESS_CURSE_DEATHS = 3; // consecutive deaths to trigger curse
+export const DARKNESS_CURSE_ATK_PENALTY = 0.20; // -20% ATK while cursed
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -417,6 +420,8 @@ export class EncounterEngine {
   private totalDangerFights = 0; // C226: total danger zone fights
   private bankGold = 0; // C231: gold stored in village bank
   private totalCrits = 0; // C235: total critical hits landed
+  private consecutiveDeaths = 0; // C238: consecutive death counter
+  private darknessCursed = false; // C238: curse active flag
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -537,7 +542,9 @@ export class EncounterEngine {
       const deathAtkMul = 1 + Math.min(DEATH_ATK_CAP, this.totalDeaths * DEATH_ATK_BONUS);
       // C224: berserker mode — low HP gives massive ATK
       const berserkerMul = hero.hp < hero.hpMax * BERSERKER_HP_THRESHOLD ? (1 + BERSERKER_ATK_BONUS) : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul));
+      // C238: darkness curse ATK penalty
+      const curseMul = this.darknessCursed ? (1 - DARKNESS_CURSE_ATK_PENALTY) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -658,6 +665,11 @@ export class EncounterEngine {
         this.deathStreak++;
         // C219: total death counter
         this.totalDeaths++;
+        // C238: darkness curse — consecutive deaths trigger penalty
+        this.consecutiveDeaths++;
+        if (this.consecutiveDeaths >= DARKNESS_CURSE_DEATHS) {
+          this.darknessCursed = true;
+        }
         // C188: revenge gold — next 3 wins give bonus gold
         this.revengeGoldRemaining = REVENGE_GOLD_FIGHTS;
         if (this.deathStreak >= DEATH_STREAK_THRESHOLD) {
@@ -843,6 +855,8 @@ export class EncounterEngine {
         events.push({ type: 'boss_vault', gold: vaultGold });
       }
       // C156: HP regen on win
+      // C238: reset consecutive deaths on win
+      this.consecutiveDeaths = 0;
       // C217: HP regen scaling based on kills
       const regenBonus = Math.min(REGEN_SCALE_CAP, Math.floor(this.totalWins / 50) * REGEN_SCALE_PER_50_KILLS);
       const regenAmount = Math.max(1, Math.floor(hero.hpMax * (WIN_HP_REGEN_RATE + regenBonus)));
@@ -1100,6 +1114,8 @@ export class EncounterEngine {
         hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
         const healed = hero.hp - before;
         events.push({ type: 'shrine_visited', landmarkId, healed });
+        // C238: shrine lifts darkness curse
+        this.darknessCursed = false;
         if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
           const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
           if (learn) {
