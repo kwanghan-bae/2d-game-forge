@@ -336,6 +336,8 @@ export const STAMINA_PENALTY_CAP = 0.20; // max -20% ATK
 // C258: village vigor
 export const VILLAGE_VIGOR_HP_BONUS = 0.10; // +10% max HP temp
 export const VILLAGE_VIGOR_DURATION = 5; // lasts 5 fights
+// C259: gold magnet prestige scaling
+export const GOLD_MAGNET_PRESTIGE_BONUS = 1; // +1 passive gold per prestige
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -926,7 +928,8 @@ export class EncounterEngine {
       const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
-      hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT, PASSIVE_GOLD_CAP);
+      // C259: gold magnet prestige scaling
+      hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT + this.prestigeCount * GOLD_MAGNET_PRESTIGE_BONUS, PASSIVE_GOLD_CAP);
       // C193: gold tax at high levels (C202: exempt during danger streak)
       if (hero.level >= GOLD_TAX_LEVEL_THRESHOLD && !(DANGER_TAX_IMMUNITY && isDangerZone)) {
         const tax = Math.floor(hero.gold * GOLD_TAX_RATE);
