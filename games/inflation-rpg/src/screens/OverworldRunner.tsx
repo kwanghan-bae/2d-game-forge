@@ -6,7 +6,7 @@ import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import { REALM_CATALOG } from '../data/realms';
 import { getRealmLore } from '../data/realmLore';
 import { formatCompact } from '../systems/numberFormat';
-import { getOverkillMessage, getDangerZoneMessage, getCloseCallMessage, getCriticalHitMessage } from '../data/battleFlavorText';
+import { getOverkillMessage, getDangerZoneMessage, getCloseCallMessage, getCriticalHitMessage, getBossRageMessage, getEliteMessage, getVillageRestMessage } from '../data/battleFlavorText';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { getNpcKindEmoji } from '../data/npcs';
 import type { NpcEntity } from '../types';
@@ -246,6 +246,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             evs.some(e => e.type === 'overkill') ? getOverkillMessage(tick) :
             evs.some(e => e.type === 'close_call') ? getCloseCallMessage(tick) :
             evs.some(e => e.type === 'critical_hit') ? getCriticalHitMessage(tick) :
+            evs.some(e => e.type === 'boss_rage') ? getBossRageMessage(tick) :
+            evs.some(e => e.type === 'elite_spawned') ? getEliteMessage(tick) :
+            evs.some(e => e.type === 'village_rest_bonus') ? getVillageRestMessage(tick) :
             evs.some(e => e.type === 'danger_zone_entered') ? getDangerZoneMessage(tick) :
             null;
           if (flavor) {

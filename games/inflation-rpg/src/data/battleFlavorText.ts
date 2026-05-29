@@ -37,6 +37,25 @@ const COMBO_MESSAGES: Record<number, string> = {
   20: '전설의 연격!',
 };
 
+// C135: boss rage + elite flavor messages
+const BOSS_RAGE_MESSAGES = [
+  '보스가 분노하고 있다!',
+  '적의 공격이 거세진다!',
+  '더 이상 지체할 수 없다!',
+] as const;
+
+const ELITE_MESSAGES = [
+  '정예 몬스터 출현!',
+  '강화된 적이 나타났다!',
+  '특별한 기운을 가진 적이다!',
+] as const;
+
+const VILLAGE_REST_MESSAGES = [
+  '깊은 휴식... 체력이 강해졌다.',
+  '상처가 아물며 몸이 단단해진다.',
+  '고된 전투의 보상이 찾아왔다.',
+] as const;
+
 export function getOverkillMessage(seed: number): string {
   return OVERKILL_MESSAGES[seed % OVERKILL_MESSAGES.length];
 }
@@ -60,4 +79,16 @@ export function getComboMessage(streak: number): string | null {
     if (streak >= t) return COMBO_MESSAGES[t];
   }
   return null;
+}
+
+export function getBossRageMessage(seed: number): string {
+  return BOSS_RAGE_MESSAGES[seed % BOSS_RAGE_MESSAGES.length];
+}
+
+export function getEliteMessage(seed: number): string {
+  return ELITE_MESSAGES[seed % ELITE_MESSAGES.length];
+}
+
+export function getVillageRestMessage(seed: number): string {
+  return VILLAGE_REST_MESSAGES[seed % VILLAGE_REST_MESSAGES.length];
 }
