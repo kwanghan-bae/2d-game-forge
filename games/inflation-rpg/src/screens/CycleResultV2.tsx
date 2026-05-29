@@ -42,7 +42,7 @@ export function CycleResultV2({ onBackToMenu }: Props) {
       <div data-testid="result-final-stats" style={{ background:'#111827', padding:12, borderRadius:6, marginTop:16, fontSize:13 }}>
         <div>최종 나이: {saga.hero.finalAge}세</div>
         <div>최종 직업: {saga.hero.finalJob}</div>
-        <div>최종 레벨: {saga.hero.finalLevel}</div>
+        <div>최종 레벨: {formatCompact(saga.hero.finalLevel)}</div>
         <div style={{marginTop:6, fontSize:12, opacity:0.7}}>
           도덕성: 선 {saga.hero.finalPersonality.moral} / 신중 {saga.hero.finalPersonality.prudent} /
           영웅 {saga.hero.finalPersonality.heroic} / 자비 {saga.hero.finalPersonality.merciful} /
