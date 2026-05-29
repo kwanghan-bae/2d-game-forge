@@ -56,6 +56,31 @@ const VILLAGE_REST_MESSAGES = [
   '고된 전투의 보상이 찾아왔다.',
 ] as const;
 
+// C143: additional flavor messages
+const FIRST_BLOOD_MESSAGES = [
+  '첫 전투 승리! 행운의 시작이다!',
+  '여정의 첫 발걸음을 내디뎠다!',
+  '강한 출발! 보상을 획득했다.',
+] as const;
+
+const REVENGE_KILL_MESSAGES = [
+  '복수 완료! 원한을 갚았다!',
+  '설욕전 승리! 이번엔 내가 이겼다!',
+  '되갚아줬다!',
+] as const;
+
+const LUCKY_DODGE_MESSAGES = [
+  '기적적으로 회피했다!',
+  '운명이 아직 포기하지 않았다!',
+  '죽음을 피했다... 아슬아슬하게!',
+] as const;
+
+const MERCY_MESSAGES = [
+  '수호의 가호가 내렸다.',
+  '잠시 동안 받는 피해가 줄어든다.',
+  '연패의 아픔이 방어력이 되었다.',
+] as const;
+
 export function getOverkillMessage(seed: number): string {
   return OVERKILL_MESSAGES[seed % OVERKILL_MESSAGES.length];
 }
@@ -91,4 +116,20 @@ export function getEliteMessage(seed: number): string {
 
 export function getVillageRestMessage(seed: number): string {
   return VILLAGE_REST_MESSAGES[seed % VILLAGE_REST_MESSAGES.length];
+}
+
+export function getFirstBloodMessage(seed: number): string {
+  return FIRST_BLOOD_MESSAGES[seed % FIRST_BLOOD_MESSAGES.length];
+}
+
+export function getRevengeKillMessage(seed: number): string {
+  return REVENGE_KILL_MESSAGES[seed % REVENGE_KILL_MESSAGES.length];
+}
+
+export function getLuckyDodgeMessage(seed: number): string {
+  return LUCKY_DODGE_MESSAGES[seed % LUCKY_DODGE_MESSAGES.length];
+}
+
+export function getMercyMessage(seed: number): string {
+  return MERCY_MESSAGES[seed % MERCY_MESSAGES.length];
 }
