@@ -481,7 +481,14 @@ export class BattleScene extends Phaser.Scene {
         if (spGained > 0) {
           this.consecutiveLevelUps++;
           const isMilestone = newLevel % 10 === 0;
-          playSfx(isMilestone ? 'milestone' : 'levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
+          if (isMilestone) {
+            // Ascending 3-note arpeggio for milestone levels
+            playSfx('milestone', 1.0);
+            this.time.delayedCall(80, () => playSfx('milestone', 1.2));
+            this.time.delayedCall(160, () => playSfx('milestone', 1.5));
+          } else {
+            playSfx('levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
+          }
           this.callbacks.onLevelUp(newLevel);
         } else {
           this.consecutiveLevelUps = 0;
@@ -534,7 +541,13 @@ export class BattleScene extends Phaser.Scene {
       if (spGained > 0) {
         this.consecutiveLevelUps++;
         const isMilestone = newLevel % 10 === 0;
-        playSfx(isMilestone ? 'milestone' : 'levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
+        if (isMilestone) {
+          playSfx('milestone', 1.0);
+          this.time.delayedCall(80, () => playSfx('milestone', 1.2));
+          this.time.delayedCall(160, () => playSfx('milestone', 1.5));
+        } else {
+          playSfx('levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
+        }
         this.callbacks.onLevelUp(newLevel);
       } else {
         stopAmbient();
