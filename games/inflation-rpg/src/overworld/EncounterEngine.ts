@@ -222,6 +222,8 @@ export const PRESTIGE_STAT_BONUS = 0.10; // +10% all stats per prestige
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
 export const DANGER_TAX_IMMUNITY = true;
+// C203: critical hit streak
+export const CRIT_STREAK_GUARANTEE_THRESHOLD = 3; // 3 crits → next guaranteed
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -313,6 +315,7 @@ export class EncounterEngine {
   private fightsSinceDeath = 0; // C197: fights without dying
   private comboBreakerReady = false; // C198: ATK bonus after combo break
   private prestigeCount = 0; // C200: number of prestiges
+  private critStreak = 0; // C203: consecutive crits
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -422,7 +425,11 @@ export class EncounterEngine {
       let totalDamageDealt = 0; // C174: track for lifesteal
       let goldHealUsed = false; // C195: once per fight
       while (eHp > 0 && !hero.staggered) {
-        const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
+        // C203: crit streak — guaranteed crit after 3 consecutive crits
+        const guaranteedCrit = this.critStreak >= CRIT_STREAK_GUARANTEE_THRESHOLD;
+        const isCrit = canCrit && (guaranteedCrit || this.rng.chance(CRIT_CHANCE));
+        if (isCrit) { this.critStreak++; } else { this.critStreak = 0; }
+        if (guaranteedCrit) this.critStreak = 0; // consume guarantee
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
         if (isCrit) didCrit = true;
         // C192: boss rage reset on crit
