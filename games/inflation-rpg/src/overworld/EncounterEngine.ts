@@ -192,6 +192,8 @@ export const SHRINE_MASTERY_MEDITATION_CHANCE = 0.40; // up from 20%
 // C190: gold armor — reduce damage when rich
 export const GOLD_ARMOR_THRESHOLD = 500;
 export const GOLD_ARMOR_REDUCTION = 0.10; // -10% damage
+// C192: boss rage reset on crit
+export const BOSS_RAGE_RESET_ON_CRIT = true;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -384,6 +386,8 @@ export class EncounterEngine {
         const isCrit = canCrit && this.rng.chance(CRIT_CHANCE);
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
         if (isCrit) didCrit = true;
+        // C192: boss rage reset on crit
+        if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
         hitCount++;
         totalDamageDealt += heroAtk;
         eHp -= heroAtk;
