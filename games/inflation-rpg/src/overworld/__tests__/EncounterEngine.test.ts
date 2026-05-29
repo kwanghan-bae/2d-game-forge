@@ -453,3 +453,31 @@ describe('EncounterEngine — C134 village rest bonus', () => {
     expect(events.some(e => e.type === 'village_rest_bonus')).toBe(false);
   });
 });
+
+describe('EncounterEngine — C136 shrine meditation buff', () => {
+  it('meditation grants ATK buff that lasts 5 fights', () => {
+    // Find a seed that triggers meditation (20% chance)
+    let medSeed = -1;
+    for (let seed = 0; seed < 200; seed++) {
+      const hero = HeroEntity.create({ seed, heroHpMax: 100, heroAtkBase: 10 });
+      const engine = new EncounterEngine(new SeededRng(seed));
+      const events = engine.resolveEncounter(hero, 'shrine', 's_0');
+      if (events.some(e => e.type === 'meditation_done')) {
+        medSeed = seed;
+        break;
+      }
+    }
+    expect(medSeed).toBeGreaterThanOrEqual(0);
+
+    const hero = HeroEntity.create({ seed: medSeed, heroHpMax: 100, heroAtkBase: 10 });
+    const engine = new EncounterEngine(new SeededRng(medSeed));
+    engine.resolveEncounter(hero, 'shrine', 's_0');
+    expect(engine.getShrineBuffRemaining()).toBe(5);
+
+    // Fight 5 times — buff should decrement
+    for (let i = 0; i < 5; i++) {
+      engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+    }
+    expect(engine.getShrineBuffRemaining()).toBe(0);
+  });
+});

@@ -50,6 +50,9 @@ export const ELITE_EXP_MUL = 2.5;
 // C134: village rest bonus — arrive with low HP → permanent max HP boost
 export const VILLAGE_REST_HP_THRESHOLD = 0.30; // < 30% HP to trigger
 export const VILLAGE_REST_HP_BOOST = 0.01; // +1% max HP permanently
+// C136: shrine meditation buff — temp ATK boost lasting N fights
+export const SHRINE_MEDITATION_ATK_BUFF = 0.25; // +25% ATK
+export const SHRINE_MEDITATION_BUFF_DURATION = 5; // lasts 5 fights
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -114,6 +117,7 @@ export class EncounterEngine {
   private comboStreak = 0;
   private battleMomentum = 0;
   private dropStreak = 0;
+  private shrineBuffRemaining = 0; // C136: fights remaining with shrine ATK buff
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -125,6 +129,7 @@ export class EncounterEngine {
   resetComboStreak(): void { this.comboStreak = 0; }
   getBattleMomentum(): number { return this.battleMomentum; }
   getDropStreak(): number { return this.dropStreak; }
+  getShrineBuffRemaining(): number { return this.shrineBuffRemaining; }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
@@ -176,7 +181,9 @@ export class EncounterEngine {
       const realmAtkMul = this.opts.getRealmForkAtkMul?.() ?? 1.0;
       // C125: momentum ATK bonus = +2% per momentum stack (capped at 20 = +40%)
       const momentumMul = 1 + this.battleMomentum * MOMENTUM_ATK_BONUS;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul));
+      // C136: shrine meditation buff — +25% ATK for duration
+      const shrineMul = this.shrineBuffRemaining > 0 ? 1 + SHRINE_MEDITATION_ATK_BUFF : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -266,6 +273,8 @@ export class EncounterEngine {
       }
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      // C136: decrement shrine buff after each fight
+      if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
       // C132: boss rage event — notify when boss fight lasted multiple turns
       if (isBoss && rageTurn > 0) {
         events.push({ type: 'boss_rage', turns: rageTurn, atkMultiplier: 1 + rageTurn * BOSS_RAGE_ATK_PER_TURN });
@@ -340,7 +349,10 @@ export class EncounterEngine {
         hero.personality.adjust('pious', 3);
         hero.heal(hero.hpMax); // 완전 회복
         hero.tickAge(0.5);     // 명상에 소요되는 시간
+        // C136: shrine meditation grants temporary ATK buff
+        this.shrineBuffRemaining = SHRINE_MEDITATION_BUFF_DURATION;
         events.push({ type: 'meditation_done', landmarkId });
+        events.push({ type: 'shrine_buff_granted', duration: SHRINE_MEDITATION_BUFF_DURATION });
       } else {
         const before = hero.hp;
         hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
