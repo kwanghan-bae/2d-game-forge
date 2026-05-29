@@ -253,6 +253,9 @@ export const BERSERKER_ATK_BONUS = 0.40; // +40% ATK
 export const BERSERKER_CRIT_BONUS = 0.20; // +20% crit chance
 // C225: gold interest scaling
 export const GOLD_INTEREST_PRESTIGE_BONUS = 0.01; // +1% per prestige
+// C226: danger magnet
+export const DANGER_MAGNET_THRESHOLD = 10; // danger fights to activate
+export const DANGER_MAGNET_SPAWN_BONUS = 0.10; // +10% danger zone spawn
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -386,6 +389,7 @@ export class EncounterEngine {
   private fightsSinceSpend = 0; // C218: fights without spending gold
   private totalDeaths = 0; // C219: total death count
   private killsSinceLevelUp = 0; // C223: kills since last level-up
+  private totalDangerFights = 0; // C226: total danger zone fights
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -405,7 +409,9 @@ export class EncounterEngine {
     if (kind === 'enemy' || kind === 'boss') {
       const isBoss = kind === 'boss';
       // C119: danger zone — 15% chance on regular enemies. ×1.5 stats, ×3 exp.
-      const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE);
+      // C226: danger magnet — increased danger zone spawn after enough fights
+      const dangerMagnetBonus = this.totalDangerFights >= DANGER_MAGNET_THRESHOLD ? DANGER_MAGNET_SPAWN_BONUS : 0;
+      const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE + dangerMagnetBonus);
       // C178: danger streak tracking
       if (isDangerZone) { this.dangerStreak++; } else { this.dangerStreak = 0; }
       // C133: elite enemy — 5% chance on non-boss, non-danger encounters. ×2 HP, guaranteed drop, ×2.5 exp.
@@ -447,6 +453,7 @@ export class EncounterEngine {
 
       if (isDangerZone) {
         events.push({ type: 'danger_zone_entered', enemyId: landmarkId });
+        this.totalDangerFights++; // C226
       }
       if (isElite) {
         events.push({ type: 'elite_spawned', enemyId: landmarkId });
