@@ -6,6 +6,7 @@ import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import { REALM_CATALOG } from '../data/realms';
 import { getRealmLore } from '../data/realmLore';
 import { formatCompact } from '../systems/numberFormat';
+import { getOverkillMessage, getDangerZoneMessage, getCloseCallMessage, getCriticalHitMessage } from '../data/battleFlavorText';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { getNpcKindEmoji } from '../data/npcs';
 import type { NpcEntity } from '../types';
@@ -108,6 +109,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const milestoneFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [comboDisplay, setComboDisplay] = useState<number>(0);
   const [momentumDisplay, setMomentumDisplay] = useState<number>(0);
+  const [battleFlavor, setBattleFlavor] = useState<string | null>(null);
+  const battleFlavorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [realmOverlay, setRealmOverlay] = useState<{ realmId: import('../types').RealmId; key: number } | null>(null);
   type LightFloat = { id: string; amount: number; createdAt: number };
   const FADE_MS = 1500;
@@ -236,6 +239,22 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           }
           if (event.landmarkKind === 'village') {
             setMomentumDisplay(0);
+          }
+          // C131: battle flavor text float
+          const tick = Date.now();
+          const flavor =
+            evs.some(e => e.type === 'overkill') ? getOverkillMessage(tick) :
+            evs.some(e => e.type === 'close_call') ? getCloseCallMessage(tick) :
+            evs.some(e => e.type === 'critical_hit') ? getCriticalHitMessage(tick) :
+            evs.some(e => e.type === 'danger_zone_entered') ? getDangerZoneMessage(tick) :
+            null;
+          if (flavor) {
+            setBattleFlavor(flavor);
+            if (battleFlavorTimerRef.current) clearTimeout(battleFlavorTimerRef.current);
+            battleFlavorTimerRef.current = setTimeout(() => {
+              setBattleFlavor(null);
+              battleFlavorTimerRef.current = null;
+            }, 1500);
           }
           const transition = evs.find(e => e.type === 'chapter_transition');
           if (transition && transition.type === 'chapter_transition') {
@@ -734,6 +753,15 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           color: '#fff', fontSize: 11, fontWeight: 600, zIndex: 15,
         }} data-testid="momentum-hud">
           ⚡ ATK +{momentumDisplay * 2}%
+        </div>
+      )}
+      {battleFlavor && (
+        <div style={{
+          position: 'absolute', bottom: '15%', left: '50%', transform: 'translateX(-50%)',
+          color: '#eee', fontSize: 14, fontWeight: 600, fontStyle: 'italic',
+          textShadow: '0 1px 4px rgba(0,0,0,0.8)', pointerEvents: 'none', zIndex: 18,
+        }} data-testid="battle-flavor">
+          {battleFlavor}
         </div>
       )}
       {dangerFlash && (
