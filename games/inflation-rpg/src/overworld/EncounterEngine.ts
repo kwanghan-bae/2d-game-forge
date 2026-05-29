@@ -274,6 +274,9 @@ export const BANK_DEPOSIT_RATE = 0.30; // deposit 30% of gold
 export const FIRST_HIT_DAMAGE_MUL = 1.5;
 // C234: heal on level-up
 export const LEVEL_UP_HEAL_RATE = 0.50; // restore 50% HP on level-up
+// C235: crit gold scaling
+export const CRIT_GOLD_SCALE_PER_100 = 0.10; // +10% crit gold per 100 crits
+export const CRIT_GOLD_SCALE_CAP = 0.50; // max +50% additional
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -409,6 +412,7 @@ export class EncounterEngine {
   private killsSinceLevelUp = 0; // C223: kills since last level-up
   private totalDangerFights = 0; // C226: total danger zone fights
   private bankGold = 0; // C231: gold stored in village bank
+  private totalCrits = 0; // C235: total critical hits landed
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -550,7 +554,7 @@ export class EncounterEngine {
         if (isCrit) { this.critStreak++; } else { this.critStreak = 0; }
         if (guaranteedCrit) this.critStreak = 0; // consume guarantee
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
-        if (isCrit) didCrit = true;
+        if (isCrit) { didCrit = true; this.totalCrits++; }
         // C192: boss rage reset on crit
         if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
         hitCount++;
@@ -795,7 +799,9 @@ export class EncounterEngine {
       // C155: overkill gold bonus
       const overkillGoldMul = isOverkill ? (1 + OVERKILL_GOLD_BONUS) : 1;
       // C161: crit gold bonus
-      const critGoldMul = didCrit ? (1 + CRIT_GOLD_BONUS) : 1;
+      // C235: crit gold scaling based on total crits
+      const critGoldScale = Math.min(CRIT_GOLD_SCALE_CAP, Math.floor(this.totalCrits / 100) * CRIT_GOLD_SCALE_PER_100);
+      const critGoldMul = didCrit ? (1 + CRIT_GOLD_BONUS + critGoldScale) : 1;
       // C170: greed mode — high gold boosts gold gains
       const greedGoldMul = hero.gold >= GREED_MODE_GOLD_THRESHOLD ? (1 + GREED_MODE_GOLD_BONUS) : 1;
       // C188: revenge gold bonus
