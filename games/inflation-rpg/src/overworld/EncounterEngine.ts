@@ -81,6 +81,9 @@ export const WAVE_BONUS_EXP_MUL = 2.0; // ×2 exp for wave fights
 export const WAVE_BONUS_GOLD_MUL = 3.0; // ×3 gold for wave fights
 // C147: gold penalty on death
 export const GOLD_DEATH_PENALTY = 0.10; // lose 10% gold on death
+// C148: kill counter milestones — every N kills = permanent ATK bonus
+export const KILL_MILESTONE_INTERVAL = 50;
+export const KILL_MILESTONE_ATK_BONUS = 0.01; // +1% ATK per milestone
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -153,6 +156,8 @@ export class EncounterEngine {
   private survivalStreak = 0; // C141: consecutive fights without death
   private totalWins = 0; // C146: total wins for wave trigger
   private waveRemaining = 0; // C146: fights left in current wave
+  private killCount = 0; // C148: total kills for milestone tracking
+  private killMilestones = 0; // C148: number of milestones reached
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -221,7 +226,9 @@ export class EncounterEngine {
       const shrineMul = this.shrineBuffRemaining > 0 ? 1 + SHRINE_MEDITATION_ATK_BUFF : 1;
       // C140: revenge bonus — +50% ATK against enemy that last killed you
       const revengeMul = this.lastDeathEnemyId === landmarkId ? 1 + REVENGE_ATK_BONUS : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul));
+      // C148: kill milestone ATK bonus
+      const milestoneMul = 1 + this.killMilestones * KILL_MILESTONE_ATK_BONUS;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -362,6 +369,12 @@ export class EncounterEngine {
       this.survivalStreak++;
       // C146: wave tracking
       this.totalWins++;
+      // C148: kill counter milestone
+      this.killCount++;
+      if (this.killCount % KILL_MILESTONE_INTERVAL === 0) {
+        this.killMilestones++;
+        events.push({ type: 'milestone_kill', killCount: this.killCount, milestones: this.killMilestones });
+      }
       if (this.waveRemaining > 0) {
         this.waveRemaining--;
         if (this.waveRemaining === 0) {
