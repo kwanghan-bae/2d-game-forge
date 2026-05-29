@@ -165,6 +165,10 @@ export const GOLD_MAGNET_COMBO_THRESHOLD = 7;
 export const GOLD_MAGNET_GOBLIN_MUL = 2.0; // double goblin spawn rate
 // C181: max HP decay on death
 export const DEATH_HP_DECAY_RATE = 0.01; // -1% max HP per death
+// C182: village heal scaling
+export const VILLAGE_HEAL_BASE = 0.25;
+export const VILLAGE_HEAL_PER_VISIT = 0.01; // +1% per visit
+export const VILLAGE_HEAL_CAP = 0.40;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -246,6 +250,7 @@ export class EncounterEngine {
   private shrineTithes = 0; // C175: number of gold tithes at shrines
   private dangerStreak = 0; // C178: consecutive danger zone fights
   private shieldBreakReady = false; // C179: shield just expired → next fight bonus
+  private villageVisits = 0; // C182: total village visits for heal scaling
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -668,7 +673,10 @@ export class EncounterEngine {
       // C168: gold interest
       const interest = Math.floor(hero.gold * VILLAGE_GOLD_INTEREST_RATE);
       if (interest > 0) hero.gold += interest;
-      const healAmount = Math.floor(hero.hpMax * 0.25);
+      // C182: village heal scaling
+      this.villageVisits++;
+      const healRate = Math.min(VILLAGE_HEAL_CAP, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT);
+      const healAmount = Math.floor(hero.hpMax * healRate);
       hero.heal(healAmount);
     } else if (kind === 'shrine') {
       if (this.rng.chance(0.2)) {
