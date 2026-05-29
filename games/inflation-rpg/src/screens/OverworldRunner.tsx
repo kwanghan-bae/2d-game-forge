@@ -5,6 +5,7 @@ import { computeLightDelta } from '../overworld/lightEmit';
 import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import { REALM_CATALOG } from '../data/realms';
 import { getRealmLore } from '../data/realmLore';
+import { formatCompact } from '../systems/numberFormat';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { getNpcKindEmoji } from '../data/npcs';
 import type { NpcEntity } from '../types';
@@ -431,8 +432,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         <div data-testid="hud-row-identity" style={hudRowStyle(13)}>
           <span data-testid="hud-name" style={hudChipStyle}>{hero.emoji} {hero.name}</span>
           <span data-testid="hud-age" style={hudChipStyle}>{hero.age}세 · {hero.chapter}</span>
-          <span data-testid="hud-job-lv" style={hudChipStyle}>{hero.job} · LV {hero.level}</span>
-          <span data-testid="hud-hp" style={hudChipStyle}>HP {hero.hp}/{hero.hpMax}</span>
+          <span data-testid="hud-job-lv" style={hudChipStyle}>{hero.job} · LV {formatCompact(hero.level)}</span>
+          <span data-testid="hud-hp" style={hudChipStyle}>HP {formatCompact(hero.hp)}/{formatCompact(hero.hpMax)}</span>
         </div>
         {/* Row 2: 자원 — 빛 / 재생 / 계절 / 지역 */}
         <div data-testid="hud-row-resource" style={hudRowStyle(12)}>
