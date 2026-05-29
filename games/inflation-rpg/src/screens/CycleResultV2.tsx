@@ -1,6 +1,8 @@
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import type { CycleCombatStats } from '../overworld/cycleSliceV2';
 import { InflationCurveChart } from './InflationCurveChart';
+import { useGameStore } from '../store/gameStore';
+import { getVictoryQuote } from '../data/victoryQuotes';
 
 interface Props {
   onBackToMenu: () => void;
@@ -10,6 +12,8 @@ export function CycleResultV2({ onBackToMenu }: Props) {
   const saga = useCycleStoreV2(s => s.lastSaga);
   const combatStats = useCycleStoreV2(s => s.lastCycleStats);
   const reset = useCycleStoreV2(s => s.reset);
+  const characterId = useGameStore(s => s.run.characterId);
+  const victoryQuote = characterId ? getVictoryQuote(characterId) : null;
 
   if (!saga) {
     return <div style={{ padding: 24, color: '#eee' }}>결과가 없습니다.</div>;
@@ -28,6 +32,11 @@ export function CycleResultV2({ onBackToMenu }: Props) {
       <p data-testid="result-hero-name" style={{ marginTop: 0, fontSize: 16, opacity: 0.85 }}>
         {saga.hero.name} — {saga.hero.cause}
       </p>
+      {victoryQuote && (
+        <p data-testid="victory-quote" style={{ fontSize: 13, fontStyle: 'italic', color: '#ffd700', borderLeft: '3px solid #ffd700', paddingLeft: 10, margin: '12px 0', opacity: 0.9 }}>
+          &ldquo;{victoryQuote}&rdquo;
+        </p>
+      )}
 
       <div data-testid="result-final-stats" style={{ background:'#111827', padding:12, borderRadius:6, marginTop:16, fontSize:13 }}>
         <div>최종 나이: {saga.hero.finalAge}세</div>
