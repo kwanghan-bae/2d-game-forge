@@ -270,6 +270,8 @@ export const COMBO_GOLD_THRESHOLD = 10; // combo streak >= 10
 export const COMBO_GOLD_MUL_BONUS = 0.30; // +30% gold
 // C231: village bank
 export const BANK_DEPOSIT_RATE = 0.30; // deposit 30% of gold
+// C232: first hit advantage
+export const FIRST_HIT_DAMAGE_MUL = 1.5;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -552,7 +554,9 @@ export class EncounterEngine {
         hitCount++;
         // C209: boss immunity phase — boss takes 0 damage every Nth turn
         const bossImmune = isBoss && hitCount % BOSS_IMMUNITY_INTERVAL === 0;
-        const effectiveAtk = bossImmune ? 0 : heroAtk;
+        // C232: first hit advantage
+        const firstHitMul = hitCount === 1 ? FIRST_HIT_DAMAGE_MUL : 1;
+        const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul);
         totalDamageDealt += effectiveAtk;
         eHp -= effectiveAtk;
         // C194: double hit — 10% chance for extra strike after 200 kills
