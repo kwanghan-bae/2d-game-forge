@@ -347,6 +347,9 @@ export const MULTI_KILL_EXP_BONUS = 0.40; // +40% exp on qualifying kill
 export const GOLD_INTEREST_CAP_PER_PRESTIGE = 5; // extra cap per prestige
 // C263: critical heal
 export const CRIT_HEAL_RATE = 0.02; // 2% max HP on crit
+// C265: shrine blessing
+export const SHRINE_BLESSING_EXP_BONUS = 0.20; // +20% exp
+export const SHRINE_BLESSING_DURATION = 5; // lasts 5 fights
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -492,6 +495,7 @@ export class EncounterEngine {
   private villageRestRemaining = 0; // C258: rest bonus from village
   private deathInsuranceUsed = false; // C260: first death insurance
   private consecutiveOneHits = 0; // C261: consecutive one-hit kills
+  private shrineBlessingRemaining = 0; // C265: shrine exp blessing
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -872,7 +876,9 @@ export class EncounterEngine {
       const bossSlayerMul = this.bossSlayerRemaining > 0 ? (1 + BOSS_SLAYER_EXP_BONUS) : 1;
       // C261: multi-kill bonus
       const multiKillMul = this.consecutiveOneHits >= MULTI_KILL_THRESHOLD ? (1 + MULTI_KILL_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul);
+      // C265: shrine blessing exp bonus
+      const shrineBlessMul = this.shrineBlessingRemaining > 0 ? (1 + SHRINE_BLESSING_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -1029,6 +1035,8 @@ export class EncounterEngine {
       if (this.bossSlayerRemaining > 0) this.bossSlayerRemaining--;
       // C258: decrement village vigor
       if (this.villageRestRemaining > 0) this.villageRestRemaining--;
+      // C265: decrement shrine blessing
+      if (this.shrineBlessingRemaining > 0) this.shrineBlessingRemaining--;
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
       if (this.mercyRemaining > 0) this.mercyRemaining--;
@@ -1261,6 +1269,8 @@ export class EncounterEngine {
         events.push({ type: 'shrine_visited', landmarkId, healed });
         // C238: shrine lifts darkness curse
         this.darknessCursed = false;
+        // C265: shrine blessing
+        this.shrineBlessingRemaining = SHRINE_BLESSING_DURATION;
         if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
           const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
           if (learn) {
