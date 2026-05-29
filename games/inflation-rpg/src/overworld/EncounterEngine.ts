@@ -293,6 +293,10 @@ export const TIME_PRESSURE_CAP = 1.00; // max +100% enemy HP
 // C241: companion buff
 export const COMPANION_UNLOCK_WINS = 50; // wins needed to unlock companion
 export const COMPANION_EXP_BONUS = 0.15; // +15% exp with companion
+// C242: village armor purchase
+export const ARMOR_BUY_COST = 300;
+export const ARMOR_REDUCTION = 0.10; // -10% damage taken
+export const ARMOR_DURATION = 10; // lasts 10 fights
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -432,6 +436,7 @@ export class EncounterEngine {
   private consecutiveDeaths = 0; // C238: consecutive death counter
   private darknessCursed = false; // C238: curse active flag
   private bossesKilled = 0; // C239: boss kill counter for loot table
+  private armorRemaining = 0; // C242: armor buff fights remaining
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -621,7 +626,9 @@ export class EncounterEngine {
           const goldArmorMul = hero.gold >= GOLD_ARMOR_THRESHOLD ? (1 - GOLD_ARMOR_REDUCTION) : 1;
           // C220: night mode enemy damage boost
           const nightDmgMul = isNight ? NIGHT_ENEMY_DMG_MUL : 1;
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul));
+          // C242: armor reduction
+          const armorMul = this.armorRemaining > 0 ? (1 - ARMOR_REDUCTION) : 1;
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul));
           hero.takeDamage(incomingDmg);
           // C206: damage reflection
           eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
@@ -916,6 +923,8 @@ export class EncounterEngine {
         // C179: shield break — when shield expires, next fight gets bonus
         if (this.shopShieldRemaining === 0) this.shieldBreakReady = true;
       }
+      // C242: decrement armor after each fight
+      if (this.armorRemaining > 0) this.armorRemaining--;
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
       if (this.mercyRemaining > 0) this.mercyRemaining--;
@@ -1078,6 +1087,12 @@ export class EncounterEngine {
         hero.gold -= VILLAGE_SHOP_COST;
         this.shopShieldRemaining = VILLAGE_SHOP_SHIELD_DURATION;
         events.push({ type: 'village_shop_purchase', cost: VILLAGE_SHOP_COST, effect: 'hp_shield' });
+      }
+      // C242: village armor purchase
+      if (hero.gold >= ARMOR_BUY_COST) {
+        hero.gold -= ARMOR_BUY_COST;
+        this.armorRemaining = ARMOR_DURATION;
+        events.push({ type: 'village_shop_purchase', cost: ARMOR_BUY_COST, effect: 'armor' });
       }
       // C168: gold interest
       // C225: interest scales with prestige
