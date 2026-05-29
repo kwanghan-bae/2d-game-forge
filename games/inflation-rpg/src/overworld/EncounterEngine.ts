@@ -573,6 +573,26 @@ export const BOSS_FRENZY_CAP = 3;
 // C350: gold surge every N fights
 export const GOLD_SURGE_INTERVAL = 25;
 export const GOLD_SURGE_AMOUNT = 0.10; // 10% of current gold
+// C351: revenge gold multiplier
+export const REVENGE_GOLD_MUL = 3.0;
+// C352: combo exp overflow to gold
+export const COMBO_EXP_OVERFLOW_RATIO = 200;
+// C353: shield break gold burst
+export const SHIELD_BREAK_GOLD = 50;
+// C354: prestige ATK surge — first fight after prestige
+export const PRESTIGE_SURGE_ATK_MUL = 5.0;
+// C355: elite loot upgrade (use boss pool)
+export const ELITE_LOOT_UPGRADE = true;
+// C356: village defense immunity
+export const VILLAGE_DEFENSE_FIGHTS = 1;
+// C357: danger exp chain compound
+export const DANGER_EXP_CHAIN_MUL = 0.05;
+// C358: gold per hit bonus
+export const GOLD_PER_HIT_BONUS = 2;
+// C359: boss enrage exp bonus
+export const BOSS_ENRAGE_EXP_BONUS = 0.50;
+// C360: combo prestige synergy flat ATK
+export const COMBO_PRESTIGE_ATK_FLAT = 5;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -734,6 +754,9 @@ export class EncounterEngine {
   private dangerCascadeRemaining = 0; // C336: danger cascade duration
   private consecutiveBossKills = 0; // C349: boss frenzy tracking
   private fightsSinceVillage = 0; // C345: fatigue recovery tracking
+  private prestigeSurgeReady = false; // C354: first fight after prestige
+  private villageDefenseRemaining = 0; // C356: village temp immunity
+  private dangerChainCount = 0; // C357: consecutive danger kills
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -895,7 +918,12 @@ export class EncounterEngine {
       const finalStandMul = hero.hp === FINAL_STAND_HP ? FINAL_STAND_DMG_MUL : 1;
       // C335: boss trophy ATK
       const bossTrophyMul = 1 + this.uniqueBossKills * BOSS_TROPHY_ATK_BONUS;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul));
+      // C354: prestige ATK surge — first fight after prestige
+      const prestigeSurgeMul = this.prestigeSurgeReady ? PRESTIGE_SURGE_ATK_MUL : 1;
+      if (this.prestigeSurgeReady) this.prestigeSurgeReady = false;
+      // C360: combo prestige synergy flat ATK
+      const comboPrestigeFlat = this.comboStreak * this.prestigeCount * COMBO_PRESTIGE_ATK_FLAT;
+      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -938,6 +966,10 @@ export class EncounterEngine {
         // C327: boss weakness — boss takes +15% if hero full HP
         const bossWeakMul = (isBoss && hero.hp >= hero.hpMax) ? (1 + BOSS_WEAKNESS_BONUS) : 1;
         const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul * (1 + dodgeAtkBonus) * armorBreakMul * focusStrikeMul * bossWeakMul);
+        // C353: shield break gold — hit landing after immunity phase
+        if (!bossImmune && isBoss && hitCount > 1 && (hitCount - 1) % BOSS_IMMUNITY_INTERVAL === 0) {
+          hero.gold += SHIELD_BREAK_GOLD;
+        }
         totalDamageDealt += effectiveAtk;
         eHp -= effectiveAtk;
         // C306: lifesteal — every 10th hit
@@ -1002,6 +1034,12 @@ export class EncounterEngine {
           // C340: combo shield — high combo reduces damage
           const comboShieldMul = this.comboStreak >= COMBO_SHIELD_THRESHOLD ? (1 - COMBO_SHIELD_REDUCTION) : 1;
           const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul * vigorMul * goldShieldMul * comboShieldMul));
+          // C356: village defense immunity
+          if (this.villageDefenseRemaining > 0) {
+            this.villageDefenseRemaining--;
+            rageTurn++;
+            continue;
+          }
           // C282: village shield absorbs first hit
           if (this.villageShieldActive) {
             this.villageShieldActive = false;
@@ -1233,7 +1271,12 @@ export class EncounterEngine {
       const waveSurvivalMul = (this.waveRemaining > 0 && !tookDamage) ? WAVE_SURVIVAL_EXP_MUL : 1;
       // C336: danger exp cascade
       const dangerCascadeExpMul = this.dangerCascadeRemaining > 0 ? DANGER_CASCADE_MUL : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul);
+      // C357: danger exp chain compound — consecutive danger kills
+      if (isDangerZone) { this.dangerChainCount++; } else { this.dangerChainCount = 0; }
+      const dangerChainMul = 1 + this.dangerChainCount * DANGER_EXP_CHAIN_MUL;
+      // C359: boss enrage exp — if boss fight lasted multiple turns (rageTurn > 0)
+      const bossEnrageMul = (isBoss && rageTurn > 2) ? (1 + BOSS_ENRAGE_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -1244,7 +1287,9 @@ export class EncounterEngine {
       const dropOdds = Math.min(1, baseDropOdds + (this.opts.dropChanceBonus ?? 0) + introDropBonus + overkillDropBonus);
       // C126: drop streak — 3 consecutive drops upgrades next to boss pool
       const upgradePool = !isBoss && this.dropStreak >= DROP_STREAK_THRESHOLD;
-      const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss || upgradePool) : null;
+      // C355: elite loot upgrade — elites use boss pool
+      const eliteLootUpgrade = isElite && ELITE_LOOT_UPGRADE;
+      const dropId = this.rng.chance(dropOdds) ? this.rollDrop(isBoss || upgradePool || eliteLootUpgrade) : null;
       if (dropId) {
         this.dropStreak++;
         hero.addEquipment(dropId);
@@ -1265,6 +1310,10 @@ export class EncounterEngine {
       // C343: exp theft on crit
       const expTheft = didCrit ? Math.floor(expGain * EXP_THEFT_RATE) : 0;
       const { leveled } = hero.gainExp(expGain + expTheft);
+      // C352: combo exp overflow to gold — high combo converts some exp to gold
+      if (this.comboStreak >= COMBO_STREAK_THRESHOLD && expGain > COMBO_EXP_OVERFLOW_RATIO) {
+        hero.gold += Math.floor(expGain / COMBO_EXP_OVERFLOW_RATIO);
+      }
       // C336: danger zone kill sets cascade for next fights
       if (isDangerZone) this.dangerCascadeRemaining = DANGER_CASCADE_DURATION;
       // C237: exp overflow bonus — leftover exp after level-up boosted by 50%
@@ -1354,6 +1403,8 @@ export class EncounterEngine {
       // C328: combo gold floor
       const goldFloor = this.comboStreak >= COMBO_GOLD_FLOOR_THRESHOLD ? hero.level * COMBO_GOLD_FLOOR_PER_LEVEL : 0;
       hero.gold += Math.max(goldEarned, goldFloor);
+      // C358: gold per hit bonus — multi-hit fights give extra
+      if (hitCount > 1) hero.gold += hitCount * GOLD_PER_HIT_BONUS;
       // C280: lucky gold drop
       if (this.rng.chance(LUCKY_GOLD_CHANCE)) {
         hero.gold += hero.level * LUCKY_GOLD_PER_LEVEL;
@@ -1554,6 +1605,8 @@ export class EncounterEngine {
       // C140: clear revenge target on successful kill
       if (this.lastDeathEnemyId === landmarkId) {
         events.push({ type: 'revenge_kill', enemyId: landmarkId });
+        // C351: revenge gold multiplier on revenge kill
+        hero.gold += Math.floor(hero.gold * (REVENGE_GOLD_MUL - 1) * 0.1);
         this.lastDeathEnemyId = null;
       }
       // C132: boss rage event — notify when boss fight lasted multiple turns
@@ -1636,6 +1689,8 @@ export class EncounterEngine {
         const prestigeGoldBonus = hero.level * PRESTIGE_GOLD_BONUS_PER_LEVEL;
         hero.gold += prestigeGoldBonus;
         this.prestigeCount++;
+        // C354: prestige surge — first fight after prestige has mega ATK
+        this.prestigeSurgeReady = true;
         hero.level = 1;
         hero.exp = 0;
         hero.recomputeStats();
@@ -1654,6 +1709,8 @@ export class EncounterEngine {
       this.deathInsuranceUsed = false;
       // C282: village shield
       this.villageShieldActive = true;
+      // C356: village defense immunity
+      this.villageDefenseRemaining = VILLAGE_DEFENSE_FIGHTS;
       // C285: village training ATK buff
       // C347: extended training duration
       this.villageTrainingRemaining = VILLAGE_TRAINING_DURATION + TRAINING_EXTENDED_DURATION;
