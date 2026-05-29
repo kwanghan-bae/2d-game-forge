@@ -151,6 +151,10 @@ export const LIFESTEAL_RATE = 0.01; // 1% of damage dealt → HP
 // C175: shrine gold tithe
 export const SHRINE_TITHE_RATE = 0.10; // sacrifice 10% gold
 export const SHRINE_TITHE_ATK_BONUS = 0.02; // gain +2% permanent ATK per tithe
+// C177: lucky treasure drop
+export const LUCKY_TREASURE_CHANCE = 0.05; // 5%
+export const LUCKY_TREASURE_MIN = 50;
+export const LUCKY_TREASURE_MAX = 200;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -506,6 +510,12 @@ export class EncounterEngine {
       hero.heal(lifestealHeal);
 
       events.push({ type: 'battle_won', enemyId: landmarkId, expGain, dropId });
+      // C177: lucky treasure — random gold bonus
+      if (this.rng.chance(LUCKY_TREASURE_CHANCE)) {
+        const treasureGold = LUCKY_TREASURE_MIN + this.rng.int(LUCKY_TREASURE_MAX - LUCKY_TREASURE_MIN + 1);
+        hero.gold += treasureGold;
+        events.push({ type: 'lucky_treasure', gold: treasureGold });
+      }
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
       // C154: decrement shop shield after each fight
