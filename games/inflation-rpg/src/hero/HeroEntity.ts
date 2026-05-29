@@ -54,6 +54,7 @@ export interface HeroSnapshot {
   staggered?: boolean;
   /** Cycle 281 — HeroDecisionAI Sub-phase σ T1: trait auto-roll 의 누적 traits. */
   traits?: TraitId[];
+  gold?: number; // C144
   seed: number;
 }
 
@@ -81,6 +82,8 @@ export class HeroEntity {
   unlockedJobId: string | null = null;
   unlockedMilestones: Set<JobMilestone> = new Set();
   learnedSkillIds: Set<string> = new Set();
+  /** C144: gold currency — earned from battles */
+  gold: number = 0;
   /** Cycle 281 — HeroDecisionAI Sub-phase σ T1: trait auto-roll 의 누적 traits. */
   private traits: TraitId[] = [];
   private agingAccum: number = 0;
@@ -267,6 +270,7 @@ export class HeroEntity {
       learnedSkillIds: [...this.learnedSkillIds],
       staggered: this.staggered,
       traits: [...this.traits],
+      gold: this.gold,
       seed,
     };
   }
@@ -295,6 +299,7 @@ export class HeroEntity {
     h.personality = PersonalityState.fromTraitPriors(snap.personality);
     h.staggered = snap.staggered ?? false;
     h.traits = snap.traits ? [...snap.traits] : [];
+    h.gold = snap.gold ?? 0;
     h.recomputeStats();
     // Restore HP within new hpMax bounds
     h.hp = Math.min(snap.hp, h.hpMax);

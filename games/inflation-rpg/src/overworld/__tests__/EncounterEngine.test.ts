@@ -642,3 +642,23 @@ describe('EncounterEngine — C142 lucky dodge', () => {
     expect(dodgeFound).toBe(true);
   });
 });
+
+describe('EncounterEngine — C144 gold currency', () => {
+  it('hero earns gold from enemy kills', () => {
+    const hero = makeHero(1);
+    expect(hero.gold).toBe(0);
+    const engine = new EncounterEngine(new SeededRng(1));
+    engine.resolveEncounter(hero, 'enemy', 'e_0');
+    expect(hero.gold).toBeGreaterThan(0);
+  });
+
+  it('boss kills give more gold', () => {
+    const hero1 = makeHero(1);
+    const hero2 = makeHero(1);
+    const eng1 = new EncounterEngine(new SeededRng(1));
+    const eng2 = new EncounterEngine(new SeededRng(1));
+    eng1.resolveEncounter(hero1, 'enemy', 'e_0');
+    eng2.resolveEncounter(hero2, 'boss', 'b_0');
+    expect(hero2.gold).toBeGreaterThan(hero1.gold);
+  });
+});
