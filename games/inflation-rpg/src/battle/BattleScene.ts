@@ -461,6 +461,16 @@ export class BattleScene extends Phaser.Scene {
     if (this.passiveBonuses.dodgeRateBonus > 0 && Math.random() < this.passiveBonuses.dodgeRateBonus) {
       this.logText?.setText('회피!');
       playSfx('dodge');
+      // Dodge animation: hero sidesteps left and returns
+      if (this.heroSprite) {
+        this.tweens.add({
+          targets: this.heroSprite,
+          x: this.heroSprite.x - 20,
+          duration: 80,
+          yoyo: true,
+          ease: 'Quad.easeOut',
+        });
+      }
       return;
     }
     const debuffMult = getDebuffStatMultiplier(this.effectsState, 'enemy');
