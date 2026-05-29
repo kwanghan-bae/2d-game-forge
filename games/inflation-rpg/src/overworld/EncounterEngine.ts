@@ -220,6 +220,8 @@ export const PRESTIGE_LEVEL_REQUIREMENT = 200;
 export const PRESTIGE_STAT_BONUS = 0.10; // +10% all stats per prestige
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
+// C202: danger zone gold tax immunity
+export const DANGER_TAX_IMMUNITY = true;
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -643,7 +645,8 @@ export class EncounterEngine {
       const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul);
       hero.gold += goldEarned;
       // C193: gold tax at high levels
-      if (hero.level >= GOLD_TAX_LEVEL_THRESHOLD) {
+      // C193: gold tax at high levels (C202: exempt during danger streak)
+      if (hero.level >= GOLD_TAX_LEVEL_THRESHOLD && !(DANGER_TAX_IMMUNITY && isDangerZone)) {
         const tax = Math.floor(hero.gold * GOLD_TAX_RATE);
         hero.gold -= tax;
       }
