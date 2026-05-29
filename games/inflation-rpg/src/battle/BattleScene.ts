@@ -280,6 +280,15 @@ export class BattleScene extends Phaser.Scene {
     // Entity sprites — hero (left) and enemy (right)
     const heroFrame = getHeroFrame(run.characterId);
     this.heroSprite = createDungeonSprite(this, 90, 250, heroFrame, 4);
+    // Hero idle breathing animation
+    this.tweens.add({
+      targets: this.heroSprite,
+      scaleY: 4.1,
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
     const enemyFrame = getMonsterFrame(
       this.isBoss ? (this.bossId ?? '') : this.currentMonsterId,
       this.isBoss,
