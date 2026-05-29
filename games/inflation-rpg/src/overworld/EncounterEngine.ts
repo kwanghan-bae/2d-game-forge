@@ -343,6 +343,8 @@ export const DEATH_INSURANCE_PENALTY = 0.05; // first death only -5% level
 // C261: multi-kill bonus
 export const MULTI_KILL_THRESHOLD = 3; // 3 consecutive one-hit kills
 export const MULTI_KILL_EXP_BONUS = 0.40; // +40% exp on qualifying kill
+// C262: gold interest cap scaling
+export const GOLD_INTEREST_CAP_PER_PRESTIGE = 5; // extra cap per prestige
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1204,7 +1206,9 @@ export class EncounterEngine {
       // C168: gold interest
       // C225: interest scales with prestige
       const interestRate = VILLAGE_GOLD_INTEREST_RATE + this.prestigeCount * GOLD_INTEREST_PRESTIGE_BONUS;
-      const interest = Math.floor(hero.gold * interestRate);
+      // C262: interest cap scales with prestige
+      const interestCap = 50 + this.prestigeCount * GOLD_INTEREST_CAP_PER_PRESTIGE;
+      const interest = Math.min(interestCap, Math.floor(hero.gold * interestRate));
       if (interest > 0) hero.gold += interest;
       // C201: village gold fountain
       hero.gold += VILLAGE_GOLD_FOUNTAIN;
