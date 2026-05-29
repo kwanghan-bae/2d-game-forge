@@ -204,6 +204,10 @@ export const DOUBLE_HIT_CHANCE = 0.10; // 10%
 export const GOLD_HEAL_HP_THRESHOLD = 0.20; // trigger below 20% HP
 export const GOLD_HEAL_COST = 100;
 export const GOLD_HEAL_AMOUNT = 0.30; // heal 30% max HP
+// C196: exp decay at high levels
+export const EXP_DECAY_LEVEL_START = 100;
+export const EXP_DECAY_PER_LEVEL = 0.01; // -1% per level above 100
+export const EXP_DECAY_CAP = 0.50; // max -50%
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -551,7 +555,11 @@ export class EncounterEngine {
       if (this.levelUpMomentum) this.levelUpMomentum = false;
       // C185: elite bounty board exp bonus
       const eliteBountyMul = 1 + this.eliteBountyMilestones * ELITE_BOUNTY_EXP_BONUS;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul);
+      // C196: exp decay at high levels
+      const expDecayMul = hero.level > EXP_DECAY_LEVEL_START
+        ? Math.max(1 - EXP_DECAY_CAP, 1 - (hero.level - EXP_DECAY_LEVEL_START) * EXP_DECAY_PER_LEVEL)
+        : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
