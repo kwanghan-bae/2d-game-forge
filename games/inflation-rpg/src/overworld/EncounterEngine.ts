@@ -231,6 +231,9 @@ export const ELITE_COMBO_DROP_GUARANTEE = true;
 // C217: HP regen scaling
 export const REGEN_SCALE_PER_50_KILLS = 0.001; // +0.1% regen per 50 kills
 export const REGEN_SCALE_CAP = 0.05; // max +5% extra regen
+// C218: gold streak
+export const GOLD_STREAK_THRESHOLD = 5; // fights without spending
+export const GOLD_STREAK_BONUS = 0.5; // +50% gold
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -361,6 +364,7 @@ export class EncounterEngine {
   private caveVisits = 0; // C214: total cave visits
   private expShieldUsed = false; // C215: one-time exp preservation
   private eliteCombo = 0; // C216: consecutive elite kills
+  private fightsSinceSpend = 0; // C218: fights without spending gold
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -728,7 +732,9 @@ export class EncounterEngine {
       if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
       // C214: treasure hunter gold bonus
       const treasureHunterMul = 1 + Math.floor(this.caveVisits / TREASURE_HUNTER_CAVE_INTERVAL) * TREASURE_HUNTER_GOLD_BONUS;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul);
+      // C218: gold streak bonus
+      const goldStreakMul = this.fightsSinceSpend >= GOLD_STREAK_THRESHOLD ? (1 + GOLD_STREAK_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT, PASSIVE_GOLD_CAP);
@@ -792,6 +798,8 @@ export class EncounterEngine {
       if (eliteComboGuarantee) this.eliteCombo = 0; // consumed
       // C146: wave tracking
       this.totalWins++;
+      // C218: gold streak counter
+      this.fightsSinceSpend++;
       // C210: check kill milestones
       const nextMilestone = ACHIEVEMENT_KILL_THRESHOLDS[this.achievementMilestones];
       if (nextMilestone !== undefined && this.totalWins >= nextMilestone) {
@@ -918,6 +926,8 @@ export class EncounterEngine {
       this.battleMomentum = 0;
       // C173: reset exhaustion
       this.fightsSinceVillage = 0;
+      // C218: reset gold streak (village spends gold)
+      this.fightsSinceSpend = 0;
       // C134: village rest bonus — arrive with low HP → permanent max HP boost
       if (hero.hp < hero.hpMax * VILLAGE_REST_HP_THRESHOLD) {
         const hpBoost = Math.max(1, Math.floor(hero.hpMax * VILLAGE_REST_HP_BOOST));
