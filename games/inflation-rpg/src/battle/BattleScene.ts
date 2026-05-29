@@ -149,6 +149,24 @@ export class BattleScene extends Phaser.Scene {
     }
     this.add.image(0, 0, bgKey).setOrigin(0);
 
+    // Ambient floating particles based on realm
+    const particleColor = Phaser.Display.Color.HexStringToColor(realmColors.accent).color;
+    for (let i = 0; i < 6; i++) {
+      const px = Phaser.Math.Between(20, 340);
+      const py = Phaser.Math.Between(100, 550);
+      const dot = this.add.circle(px, py, Phaser.Math.Between(1, 3), particleColor, 0.3);
+      this.tweens.add({
+        targets: dot,
+        y: py - Phaser.Math.Between(40, 80),
+        alpha: 0,
+        duration: Phaser.Math.Between(3000, 6000),
+        ease: 'Sine.easeIn',
+        repeat: -1,
+        delay: Phaser.Math.Between(0, 2000),
+        onRepeat: () => { dot.y = py; dot.alpha = 0.3; },
+      });
+    }
+
     // 신 flow only — currentDungeonId is invariant non-null at this point.
     const dungeon = getDungeonById(run.currentDungeonId!);
     const info = getFloorInfo(run.currentDungeonId!, run.currentFloor);
