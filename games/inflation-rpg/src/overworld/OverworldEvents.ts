@@ -28,6 +28,7 @@ export type OverworldEvent =
   | { type: 'boss_vault'; gold: number }
   | { type: 'gold_saved' }
   | { type: 'lucky_treasure'; gold: number }
+  | { type: 'prestige'; count: number }
   | { type: 'battle_started';  enemyId: string }
   | { type: 'battle_won';      enemyId: string; expGain: number; dropId: string | null }
   | { type: 'level_up';        from: number; to: number }
