@@ -118,6 +118,8 @@ export const COMBO_EXP_THRESHOLD = 10;
 export const COMBO_EXP_BONUS_PER = 0.10; // +10% per combo above threshold
 // C161: critical hit gold bonus
 export const CRIT_GOLD_BONUS = 0.30; // +30% gold when fight had critical hit
+// C162: danger zone gold bonus
+export const DANGER_ZONE_GOLD_MUL = 2.0; // ×2 gold in danger zones
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -411,6 +413,8 @@ export class EncounterEngine {
 
       // C144: gold earned from battle
       const goldMul = isBoss ? GOLD_BOSS_MUL : isElite ? GOLD_ELITE_MUL : isTreasureGoblin ? TREASURE_GOBLIN_GOLD_MUL : 1;
+      // C162: danger zone gold bonus
+      const dangerGoldMul = isDangerZone ? DANGER_ZONE_GOLD_MUL : 1;
       // C146: wave bonus multiplier
       const waveMul = this.waveRemaining > 0 ? WAVE_BONUS_GOLD_MUL : 1;
       // C149: momentum gold bonus
@@ -423,7 +427,7 @@ export class EncounterEngine {
       const overkillGoldMul = isOverkill ? (1 + OVERKILL_GOLD_BONUS) : 1;
       // C161: crit gold bonus
       const critGoldMul = didCrit ? (1 + CRIT_GOLD_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul);
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * (1 + hero.level * 0.1) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul);
       hero.gold += goldEarned;
       // C157: boss vault — lump sum gold bonus for boss kills
       if (isBoss) {
