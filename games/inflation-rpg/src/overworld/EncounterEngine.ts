@@ -226,6 +226,10 @@ export const DANGER_TAX_IMMUNITY = true;
 export const CRIT_STREAK_GUARANTEE_THRESHOLD = 3; // 3 crits → next guaranteed
 // C204: boss kill exp burst
 export const BOSS_KILL_EXP_MUL = 3.0; // ×3 exp for boss kills
+// C205: gold investment
+export const GOLD_INVEST_LOCK_FIGHTS = 10;
+export const GOLD_INVEST_RETURN_MUL = 3;
+export const GOLD_INVEST_MIN = 100; // minimum gold to invest
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -318,6 +322,8 @@ export class EncounterEngine {
   private comboBreakerReady = false; // C198: ATK bonus after combo break
   private prestigeCount = 0; // C200: number of prestiges
   private critStreak = 0; // C203: consecutive crits
+  private goldInvested = 0; // C205: locked gold
+  private investFightsRemaining = 0; // C205: fights until payout
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -688,6 +694,14 @@ export class EncounterEngine {
       }
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
+      // C205: gold investment payout
+      if (this.investFightsRemaining > 0) {
+        this.investFightsRemaining--;
+        if (this.investFightsRemaining === 0 && this.goldInvested > 0) {
+          hero.gold += this.goldInvested * GOLD_INVEST_RETURN_MUL;
+          this.goldInvested = 0;
+        }
+      }
       // C154: decrement shop shield after each fight
       if (this.shopShieldRemaining > 0) {
         this.shopShieldRemaining--;
@@ -837,6 +851,13 @@ export class EncounterEngine {
       if (interest > 0) hero.gold += interest;
       // C201: village gold fountain
       hero.gold += VILLAGE_GOLD_FOUNTAIN;
+      // C205: gold investment — lock gold for GOLD_INVEST_LOCK_FIGHTS fights, get ×3 return
+      if (this.investFightsRemaining <= 0 && hero.gold >= GOLD_INVEST_MIN) {
+        const investAmount = Math.floor(hero.gold * 0.5); // invest half
+        hero.gold -= investAmount;
+        this.goldInvested = investAmount;
+        this.investFightsRemaining = GOLD_INVEST_LOCK_FIGHTS;
+      }
       // C182: village heal scaling
       this.villageVisits++;
       const healRate = Math.min(VILLAGE_HEAL_CAP, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT);
