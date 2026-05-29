@@ -41,6 +41,7 @@ import { getBossVictoryMessage } from '../data/bossVictoryMessages';
 import { getDeathQuote } from '../data/deathQuotes';
 import { getBossLastWords } from '../data/bossLastWords';
 import { getAreaWarning } from '../data/areaWarnings';
+import { getFloorClearQuote } from '../data/floorClearQuotes';
 
 import { REALM_ACCENTS } from '../systems/realmAccent';
 
@@ -600,6 +601,9 @@ export class BattleScene extends Phaser.Scene {
         stateAfterKill.markDungeonProgress(dungeonId, nextFloor);
         stateAfterKill.setCurrentFloor(nextFloor);
         this.showBattleStats();
+        // Floor clear character quote
+        const clearQuote = getFloorClearQuote(run.characterId);
+        if (clearQuote) this.pushLog(clearQuote);
         stateAfterKill.setScreen('main-menu');
         return;
       }
