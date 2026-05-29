@@ -3,7 +3,7 @@ import { resolveForgeTheme } from '@forge/core';
 import { useGameStore } from '../store/gameStore';
 import { calcFinalStat, calcDamageReduction, calcCritChance } from '../systems/stats';
 import { applyExpGain } from '../systems/experience';
-import { playSfx, playBgm } from '../systems/sound';
+import { playSfx, playBgm, playAmbient, stopAmbient } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedInstances } from '../systems/equipment';
 import { getCharacterById } from '../data/characters';
@@ -121,6 +121,7 @@ export class BattleScene extends Phaser.Scene {
     const theme = resolveForgeTheme();
     const { run } = useGameStore.getState();
     playBgm('battle');
+    playAmbient(run.currentRealmId);
 
     // Gradient background based on current realm
     const realmColors = REALM_ACCENTS[run.currentRealmId] ?? REALM_ACCENTS.base;
@@ -519,6 +520,7 @@ export class BattleScene extends Phaser.Scene {
         playSfx(isMilestone ? 'milestone' : 'levelup', 1 + Math.min(this.consecutiveLevelUps - 1, 5) * 0.1);
         this.callbacks.onLevelUp(newLevel);
       } else {
+        stopAmbient();
         this.callbacks.onBattleEnd(true);
       }
       return;
@@ -592,7 +594,7 @@ export class BattleScene extends Phaser.Scene {
 
       this.combatTimer?.remove();
       playSfx('defeat');
-      // Show death quote
+      stopAmbient();
       const { run: defeatRun } = useGameStore.getState();
       const deathQuote = getDeathQuote(defeatRun.characterId);
       this.add.text(180, 280, deathQuote, {
@@ -612,6 +614,7 @@ export class BattleScene extends Phaser.Scene {
       if (isRunOver(newBP)) {
         useGameStore.getState().endRun();
       } else {
+        stopAmbient();
         this.callbacks.onBattleEnd(false);
       }
     }

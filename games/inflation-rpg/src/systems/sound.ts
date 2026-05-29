@@ -129,4 +129,45 @@ export function _resetSoundForTest(): void {
   musicVolume = 0.5;
   sfxVolume = 0.7;
   muted = false;
+  stopAmbient();
+}
+
+// --- Realm Ambient Loop ---
+// Plays a quiet looping ambient sound layered under BGM during battle.
+// Each realm has a distinct ambient id mapped to /sounds/ambient/{id}.ogg.
+// Volume is 30% of sfxVolume for subtle layering.
+
+const REALM_AMBIENT: Record<string, string> = {
+  base: 'wind',
+  sea: 'waves',
+  volcano: 'lava',
+  underworld: 'whispers',
+  heaven: 'chimes',
+  chaos: 'static',
+};
+
+let ambientAudio: HTMLAudioElement | null = null;
+let ambientRealmId: string | null = null;
+
+export function playAmbient(realmId: string): void {
+  if (!isBrowser() || muted) return;
+  const id = REALM_AMBIENT[realmId] ?? REALM_AMBIENT.base;
+  if (id === ambientRealmId && ambientAudio && !ambientAudio.paused) return;
+  stopAmbient();
+  ambientRealmId = id;
+  try {
+    const audio = new Audio(`${SOUNDS_BASE}/ambient/${id}.ogg`);
+    audio.loop = true;
+    audio.volume = muted ? 0 : sfxVolume * 0.3;
+    audio.play().catch(() => { /* silent — file missing */ });
+    ambientAudio = audio;
+  } catch { /* silent */ }
+}
+
+export function stopAmbient(): void {
+  if (ambientAudio) {
+    ambientAudio.pause();
+    ambientAudio = null;
+  }
+  ambientRealmId = null;
 }
