@@ -242,6 +242,8 @@ export const NIGHT_CYCLE_INTERVAL = 20; // night every 20 fights
 export const NIGHT_DURATION = 5; // lasts 5 fights
 export const NIGHT_EXP_MUL = 2.0; // ×2 exp at night
 export const NIGHT_ENEMY_DMG_MUL = 1.5; // enemies ×1.5 damage at night
+// C221: lucky find
+export const LUCKY_FIND_CHANCE = 0.02; // 2% chance per fight
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -792,6 +794,11 @@ export class EncounterEngine {
         const treasureGold = LUCKY_TREASURE_MIN + this.rng.int(LUCKY_TREASURE_MAX - LUCKY_TREASURE_MIN + 1);
         hero.gold += treasureGold;
         events.push({ type: 'lucky_treasure', gold: treasureGold });
+      }
+      // C221: lucky find — random free equipment
+      if (this.rng.chance(LUCKY_FIND_CHANCE)) {
+        const foundItem = this.rollDrop(false);
+        if (foundItem) hero.addEquipment(foundItem);
       }
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
