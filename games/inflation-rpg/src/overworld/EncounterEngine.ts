@@ -63,6 +63,8 @@ export const EXP_DIMINISH_FACTOR = 0.0005; // -0.05% per level above threshold
 // C139: first blood — first fight of a cycle gets bonus
 export const FIRST_BLOOD_EXP_MUL = 2.0; // ×2 exp on first fight
 export const FIRST_BLOOD_DROP_GUARANTEE = true;
+// C140: revenge bonus — ATK boost against enemy type that killed you
+export const REVENGE_ATK_BONUS = 0.50; // +50% ATK on revenge
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -131,6 +133,7 @@ export class EncounterEngine {
   private deathStreak = 0; // C137: consecutive deaths
   private mercyRemaining = 0; // C137: fights remaining with damage reduction
   private firstBloodUsed = false; // C139: has first fight bonus been consumed
+  private lastDeathEnemyId: string | null = null; // C140: revenge tracking
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -197,7 +200,9 @@ export class EncounterEngine {
       const momentumMul = 1 + this.battleMomentum * MOMENTUM_ATK_BONUS;
       // C136: shrine meditation buff — +25% ATK for duration
       const shrineMul = this.shrineBuffRemaining > 0 ? 1 + SHRINE_MEDITATION_ATK_BUFF : 1;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul));
+      // C140: revenge bonus — +50% ATK against enemy that last killed you
+      const revengeMul = this.lastDeathEnemyId === landmarkId ? 1 + REVENGE_ATK_BONUS : 1;
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -250,6 +255,8 @@ export class EncounterEngine {
         }
         // V3-H E1: hero died in battle — apply -10% level penalty and emit event.
         const { oldLevel, newLevel } = hero.applyDeathPenalty();
+        // C140: track who killed us for revenge
+        this.lastDeathEnemyId = landmarkId;
         events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
         return events;
       }
@@ -311,6 +318,11 @@ export class EncounterEngine {
       if (!this.firstBloodUsed) {
         this.firstBloodUsed = true;
         events.push({ type: 'first_blood', expGain, dropId });
+      }
+      // C140: clear revenge target on successful kill
+      if (this.lastDeathEnemyId === landmarkId) {
+        events.push({ type: 'revenge_kill', enemyId: landmarkId });
+        this.lastDeathEnemyId = null;
       }
       // C132: boss rage event — notify when boss fight lasted multiple turns
       if (isBoss && rageTurn > 0) {

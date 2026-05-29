@@ -576,3 +576,29 @@ describe('EncounterEngine — C139 first blood', () => {
     expect(evs2.some(e => e.type === 'first_blood')).toBe(false);
   });
 });
+
+describe('EncounterEngine — C140 revenge kill', () => {
+  it('revenge_kill event after dying to and defeating same enemy', () => {
+    // Weak hero dies to enemy
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 1, heroAtkBase: 1 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    const deathEvs = engine.resolveEncounter(hero, 'enemy', 'wolf_1');
+    expect(deathEvs.some(e => e.type === 'hero_died')).toBe(true);
+
+    // Now make hero strong and fight same enemy
+    hero.recoverFromStagger();
+    const strongHero = HeroEntity.create({ seed: 1, heroHpMax: 100000, heroAtkBase: 100000 });
+    const revengeEvs = engine.resolveEncounter(strongHero, 'enemy', 'wolf_1');
+    expect(revengeEvs.some(e => e.type === 'revenge_kill')).toBe(true);
+  });
+
+  it('no revenge_kill against different enemy', () => {
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 1, heroAtkBase: 1 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    engine.resolveEncounter(hero, 'enemy', 'wolf_1');
+
+    const strongHero = HeroEntity.create({ seed: 1, heroHpMax: 100000, heroAtkBase: 100000 });
+    const evs = engine.resolveEncounter(strongHero, 'enemy', 'different_enemy');
+    expect(evs.some(e => e.type === 'revenge_kill')).toBe(false);
+  });
+});
