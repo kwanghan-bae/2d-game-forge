@@ -391,6 +391,9 @@ export const BATTLE_HARDEN_HP_BONUS = 0.01; // +1% max HP
 export const BATTLE_HARDEN_CAP = 0.10; // max +10%
 // C279: prestige exp scaling — +5% exp per prestige
 export const PRESTIGE_EXP_BONUS = 0.05;
+// C280: lucky gold drop — 5% chance for bonus gold
+export const LUCKY_GOLD_CHANCE = 0.05;
+export const LUCKY_GOLD_PER_LEVEL = 10;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1030,6 +1033,10 @@ export class EncounterEngine {
       if (this.villageBlessingRemaining > 0) this.villageBlessingRemaining--;
       const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul);
       hero.gold += goldEarned;
+      // C280: lucky gold drop
+      if (this.rng() < LUCKY_GOLD_CHANCE) {
+        hero.gold += hero.level * LUCKY_GOLD_PER_LEVEL;
+      }
       // C208: passive gold income based on village visits
       // C259: gold magnet prestige scaling
       hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT + this.prestigeCount * GOLD_MAGNET_PRESTIGE_BONUS, PASSIVE_GOLD_CAP);
