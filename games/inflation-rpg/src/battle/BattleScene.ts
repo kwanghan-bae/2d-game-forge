@@ -36,6 +36,7 @@ import { getHeroFrame, getMonsterFrame } from '../sprites/spriteFrames';
 import { getPassiveBonuses, type PassiveBonuses } from '../systems/passives';
 import { getAtmosphereText } from '../data/realmAtmosphere';
 import { getBattleQuote } from '../data/battleQuotes';
+import { getBossBattleQuote } from '../data/bossBattleQuotes';
 import { getBossVictoryMessage } from '../data/bossVictoryMessages';
 
 import { REALM_ACCENTS } from '../systems/realmAccent';
@@ -224,10 +225,12 @@ export class BattleScene extends Phaser.Scene {
       ease: 'Back.easeOut',
     });
 
-    // Boss entrance SFX + screen flash
+    // Boss entrance SFX + screen flash + special quote
     if (this.isBoss) {
       playSfx('boss-appear');
       this.cameras.main.flash(300, 255, 200, 100, false);
+      const bossQuote = getBossBattleQuote(run.characterId);
+      if (bossQuote && this.logText) this.logText.setText(bossQuote);
     }
 
     void this.enemyText; void this.hpBarBg;
