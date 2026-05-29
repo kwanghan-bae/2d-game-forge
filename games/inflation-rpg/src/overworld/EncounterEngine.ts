@@ -172,6 +172,8 @@ export const VILLAGE_HEAL_CAP = 0.40;
 // C183: overkill streak → invincibility
 export const OVERKILL_STREAK_THRESHOLD = 3;
 export const OVERKILL_INVINCIBILITY_FIGHTS = 1;
+// C184: level-up momentum
+export const LEVEL_UP_EXP_BONUS = 1.0; // +100% exp on next fight after leveling
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -256,6 +258,7 @@ export class EncounterEngine {
   private villageVisits = 0; // C182: total village visits for heal scaling
   private overkillStreak = 0; // C183: consecutive 1-hit kills
   private invincibleFights = 0; // C183: fights remaining with invincibility
+  private levelUpMomentum = false; // C184: next fight gets exp bonus after level-up
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -492,7 +495,10 @@ export class EncounterEngine {
         ? (1 + CLOSE_CALL_EXP_BONUS) : 1;
       // C170: greed mode — high gold penalizes exp
       const greedExpMul = hero.gold >= GREED_MODE_GOLD_THRESHOLD ? (1 - GREED_MODE_EXP_PENALTY) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul);
+      // C184: level-up momentum
+      const lvUpMul = this.levelUpMomentum ? (1 + LEVEL_UP_EXP_BONUS) : 1;
+      if (this.levelUpMomentum) this.levelUpMomentum = false;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
@@ -675,6 +681,8 @@ export class EncounterEngine {
           }
         }
       }
+      // C184: level-up momentum — flag for next fight exp bonus
+      if (leveled.length > 0) this.levelUpMomentum = true;
     } else if (kind === 'village') {
       // C125: village visit resets battle momentum
       this.battleMomentum = 0;
