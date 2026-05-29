@@ -186,6 +186,9 @@ export const CAVE_TREASURE_MAX = 500;
 // C188: revenge gold after death
 export const REVENGE_GOLD_FIGHTS = 3;
 export const REVENGE_GOLD_BONUS = 0.50; // +50% gold
+// C189: shrine mastery — increased meditation chance
+export const SHRINE_MASTERY_THRESHOLD = 5; // tithes needed
+export const SHRINE_MASTERY_MEDITATION_CHANCE = 0.40; // up from 20%
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -740,7 +743,10 @@ export class EncounterEngine {
       const healAmount = Math.floor(hero.hpMax * healRate);
       hero.heal(healAmount);
     } else if (kind === 'shrine') {
-      if (this.rng.chance(0.2)) {
+      // C189: shrine mastery — increased meditation chance after enough tithes
+      const meditationChance = this.shrineTithes >= SHRINE_MASTERY_THRESHOLD
+        ? SHRINE_MASTERY_MEDITATION_CHANCE : 0.2;
+      if (this.rng.chance(meditationChance)) {
         // V3-H F4: meditation 변형 (20%) — pious +3, 완전 회복, 추가 aging 0.5 tick
         hero.personality.adjust('pious', 3);
         hero.heal(hero.hpMax); // 완전 회복
