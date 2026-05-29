@@ -265,6 +265,9 @@ export const BOUNTY_GOLD_REWARD = 100; // flat gold reward
 // C229: boss enrage timer
 export const BOSS_ENRAGE_TIMER_TURN = 10; // boss enrages after 10 hits
 export const BOSS_ENRAGE_TIMER_MUL = 2.0; // boss ATK doubles
+// C230: combo gold multiplier
+export const COMBO_GOLD_THRESHOLD = 10; // combo streak >= 10
+export const COMBO_GOLD_MUL_BONUS = 0.30; // +30% gold
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -793,7 +796,9 @@ export class EncounterEngine {
       const treasureHunterMul = 1 + Math.floor(this.caveVisits / TREASURE_HUNTER_CAVE_INTERVAL) * TREASURE_HUNTER_GOLD_BONUS;
       // C218: gold streak bonus
       const goldStreakMul = this.fightsSinceSpend >= GOLD_STREAK_THRESHOLD ? (1 + GOLD_STREAK_BONUS) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul);
+      // C230: combo gold multiplier
+      const comboGoldMul2 = this.comboStreak >= COMBO_GOLD_THRESHOLD ? (1 + COMBO_GOLD_MUL_BONUS) : 1;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2);
       hero.gold += goldEarned;
       // C208: passive gold income based on village visits
       hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT, PASSIVE_GOLD_CAP);
