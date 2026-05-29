@@ -38,6 +38,7 @@ import { getAtmosphereText } from '../data/realmAtmosphere';
 import { getBattleQuote } from '../data/battleQuotes';
 import { getBossBattleQuote } from '../data/bossBattleQuotes';
 import { getBossVictoryMessage } from '../data/bossVictoryMessages';
+import { getDeathQuote } from '../data/deathQuotes';
 
 import { REALM_ACCENTS } from '../systems/realmAccent';
 
@@ -591,6 +592,15 @@ export class BattleScene extends Phaser.Scene {
 
       this.combatTimer?.remove();
       playSfx('defeat');
+      // Show death quote
+      const { run: defeatRun } = useGameStore.getState();
+      const deathQuote = getDeathQuote(defeatRun.characterId);
+      this.add.text(180, 280, deathQuote, {
+        fontSize: '13px', color: '#ffcccc', fontStyle: 'italic',
+        wordWrap: { width: 280 }, align: 'center',
+      }).setOrigin(0.5).setAlpha(0).setDepth(100);
+      const qt = this.children.list[this.children.list.length - 1] as Phaser.GameObjects.Text;
+      this.tweens.add({ targets: qt, alpha: 1, duration: 400, ease: 'Sine.easeIn' });
       const monsterLevel = this.cachedMonsterLevel;
       // Phase E — undead_coin (no_death_loss): skip BP loss but defeat still ends the run.
       const newBP = relicNoDeathLoss(meta)
