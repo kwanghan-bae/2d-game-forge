@@ -7,6 +7,7 @@ import { getEquipmentBase } from '../data/equipment';
 import { findSkillById } from '../data/heroSkills';
 import { getBackstory } from '../data/characterBackstories';
 import { EQUIPMENT_FLAVOR } from '../data/equipmentFlavor';
+import { formatCompact } from '../systems/numberFormat';
 
 interface Props {
   onClose: () => void;
@@ -150,9 +151,9 @@ export function StatusModal({ onClose }: Props) {
               스탯
             </div>
             <div style={{ fontSize: 13 }}>
-              HP: {hero.hp} / {hero.hpMax}
+              HP: {formatCompact(hero.hp)} / {formatCompact(hero.hpMax)}
             </div>
-            <div style={{ fontSize: 13 }}>ATK: {hero.atk}</div>
+            <div style={{ fontSize: 13 }}>ATK: {formatCompact(hero.atk)}</div>
           </section>
 
           {/* 장비 */}
