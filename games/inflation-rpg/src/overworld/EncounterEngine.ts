@@ -163,6 +163,8 @@ export const SHIELD_BREAK_ATK_MUL = 1.5; // ×1.5 ATK on fight after shield expi
 // C180: gold magnet — combo boosts treasure goblin rate
 export const GOLD_MAGNET_COMBO_THRESHOLD = 7;
 export const GOLD_MAGNET_GOBLIN_MUL = 2.0; // double goblin spawn rate
+// C181: max HP decay on death
+export const DEATH_HP_DECAY_RATE = 0.01; // -1% max HP per death
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -392,6 +394,9 @@ export class EncounterEngine {
         } else {
           events.push({ type: 'gold_saved' });
         }
+        // C181: max HP decay on death
+        const hpDecay = Math.max(1, Math.floor(hero.hpMax * DEATH_HP_DECAY_RATE));
+        hero.hpMax = Math.max(1, hero.hpMax - hpDecay);
         // C137: death streak tracking
         this.deathStreak++;
         if (this.deathStreak >= DEATH_STREAK_THRESHOLD) {
