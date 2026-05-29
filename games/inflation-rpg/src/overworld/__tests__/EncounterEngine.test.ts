@@ -692,4 +692,15 @@ describe('EncounterEngine — C144 gold currency', () => {
     expect(hero.staggered).toBe(true);
     expect(hero.gold).toBe(900);
   });
+
+  it('C148: kill milestone fires every 50 kills', () => {
+    const hero = makeHero();
+    const eng = new EncounterEngine(new SeededRng(1));
+    let milestoneCount = 0;
+    for (let i = 0; i < 50; i++) {
+      const events = eng.resolveEncounter(hero, 'enemy', `e_${i}`);
+      if (events.some(e => e.type === 'milestone_kill')) milestoneCount++;
+    }
+    expect(milestoneCount).toBe(1);
+  });
 });
