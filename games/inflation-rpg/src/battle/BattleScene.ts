@@ -994,7 +994,12 @@ export class BattleScene extends Phaser.Scene {
       : this.totalDamageDealt >= 1_000
         ? `${(this.totalDamageDealt / 1_000).toFixed(1)}K`
         : `${this.totalDamageDealt}`;
-    const stats = `⚔${dmgStr} | ⟳${this.roundCount} | 💀${this.killCount} | ✦${this.skillUseCount}`;
+    const elapsed = Math.max(1, Math.floor((Date.now() - this.battleStartTime) / 1000));
+    const dps = this.totalDamageDealt / elapsed;
+    const dpsStr = dps >= 1_000_000 ? `${(dps / 1_000_000).toFixed(1)}M`
+      : dps >= 1_000 ? `${(dps / 1_000).toFixed(1)}K`
+      : `${Math.floor(dps)}`;
+    const stats = `⚔${dmgStr} | DPS:${dpsStr} | ⟳${this.roundCount} | 💀${this.killCount}`;
     if (this.logText) this.logText.setText(stats);
   }
 
