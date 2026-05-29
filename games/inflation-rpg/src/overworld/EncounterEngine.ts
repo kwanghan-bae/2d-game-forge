@@ -237,6 +237,11 @@ export const GOLD_STREAK_BONUS = 0.5; // +50% gold
 // C219: death counter ATK
 export const DEATH_ATK_BONUS = 0.01; // +1% per death
 export const DEATH_ATK_CAP = 0.20; // max +20%
+// C220: night mode
+export const NIGHT_CYCLE_INTERVAL = 20; // night every 20 fights
+export const NIGHT_DURATION = 5; // lasts 5 fights
+export const NIGHT_EXP_MUL = 2.0; // ×2 exp at night
+export const NIGHT_ENEMY_DMG_MUL = 1.5; // enemies ×1.5 damage at night
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -449,6 +454,10 @@ export class EncounterEngine {
       const weatherAtkMul = weather === 'rain' ? (1 - WEATHER_RAIN_ATK_PENALTY) : 1;
       const weatherCritMul = weather === 'fog' ? WEATHER_FOG_CRIT_PENALTY : 1;
 
+      // C220: night mode — every 20 fights, 5 night fights
+      const fightInCycle = this.totalWins % NIGHT_CYCLE_INTERVAL;
+      const isNight = fightInCycle >= (NIGHT_CYCLE_INTERVAL - NIGHT_DURATION);
+
       const damping = this.opts.damping ?? 1.0;
       const bossAtkMul = isBoss ? (this.opts.getBossIntroAtkMul?.() ?? 1.0) : 1.0;
       // Cycle 110 F1: realm fork atk mul applies to both enemy + boss combat
@@ -537,7 +546,9 @@ export class EncounterEngine {
           }
           // C190: gold armor — reduce damage when gold > threshold
           const goldArmorMul = hero.gold >= GOLD_ARMOR_THRESHOLD ? (1 - GOLD_ARMOR_REDUCTION) : 1;
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul));
+          // C220: night mode enemy damage boost
+          const nightDmgMul = isNight ? NIGHT_ENEMY_DMG_MUL : 1;
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul));
           hero.takeDamage(incomingDmg);
           // C206: damage reflection
           eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
@@ -681,7 +692,9 @@ export class EncounterEngine {
       const weatherExpMul = weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1;
       // C212: arena reward multiplier (used for both exp and gold)
       const arenaMul = this.arenaActive ? ARENA_REWARD_MUL : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul);
+      // C220: night exp bonus
+      const nightExpMul = isNight ? NIGHT_EXP_MUL : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
