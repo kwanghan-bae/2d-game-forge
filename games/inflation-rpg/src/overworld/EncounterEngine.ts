@@ -333,6 +333,9 @@ export const DANGER_EXP_SCALE_CAP = 0.30; // max +30%
 export const STAMINA_FIGHTS_PER_PENALTY = 30; // every 30 fights without village
 export const STAMINA_ATK_PENALTY = 0.05; // -5% ATK per threshold
 export const STAMINA_PENALTY_CAP = 0.20; // max -20% ATK
+// C258: village vigor
+export const VILLAGE_VIGOR_HP_BONUS = 0.10; // +10% max HP temp
+export const VILLAGE_VIGOR_DURATION = 5; // lasts 5 fights
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -475,6 +478,7 @@ export class EncounterEngine {
   private armorRemaining = 0; // C242: armor buff fights remaining
   private sacrificeFuryRemaining = 0; // C248: fury buff from sacrifice
   private bossSlayerRemaining = 0; // C251: exp buff from boss kill
+  private villageRestRemaining = 0; // C258: rest bonus from village
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -681,7 +685,9 @@ export class EncounterEngine {
           const nightDmgMul = isNight ? NIGHT_ENEMY_DMG_MUL : 1;
           // C242: armor reduction
           const armorMul = this.armorRemaining > 0 ? (1 - ARMOR_REDUCTION) : 1;
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul));
+          // C258: village vigor damage reduction
+          const vigorMul = this.villageRestRemaining > 0 ? (1 - VILLAGE_VIGOR_HP_BONUS) : 1;
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul * vigorMul));
           hero.takeDamage(incomingDmg);
           // C206: damage reflection
           eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
@@ -997,6 +1003,8 @@ export class EncounterEngine {
       if (this.sacrificeFuryRemaining > 0) this.sacrificeFuryRemaining--;
       // C251: decrement boss slayer
       if (this.bossSlayerRemaining > 0) this.bossSlayerRemaining--;
+      // C258: decrement village vigor
+      if (this.villageRestRemaining > 0) this.villageRestRemaining--;
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
       if (this.mercyRemaining > 0) this.mercyRemaining--;
@@ -1149,6 +1157,8 @@ export class EncounterEngine {
       this.battleMomentum = 0;
       // C173: reset exhaustion
       this.fightsSinceVillage = 0;
+      // C258: village vigor — temp HP bonus
+      this.villageRestRemaining = VILLAGE_VIGOR_DURATION;
       // C218: reset gold streak (village spends gold)
       this.fightsSinceSpend = 0;
       // C134: village rest bonus — arrive with low HP → permanent max HP boost
