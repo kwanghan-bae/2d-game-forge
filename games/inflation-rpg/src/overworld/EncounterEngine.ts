@@ -240,6 +240,11 @@ export const BOSS_IMMUNITY_INTERVAL = 3; // immune every 3rd turn
 // C210: achievement kill milestones
 export const ACHIEVEMENT_KILL_THRESHOLDS = [100, 500, 1000];
 export const ACHIEVEMENT_ATK_BONUS = 0.05; // +5% ATK per milestone
+// C211: weather system
+export const WEATHER_CHANCE = 0.3; // 30% chance of non-normal weather
+export const WEATHER_RAIN_ATK_PENALTY = 0.1; // -10% ATK in rain
+export const WEATHER_WIND_EXP_BONUS = 0.2; // +20% exp in wind
+export const WEATHER_FOG_CRIT_PENALTY = 0.5; // halved crit chance in fog
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -405,6 +410,16 @@ export class EncounterEngine {
       }
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
+      // C211: weather system
+      type Weather = 'normal' | 'rain' | 'wind' | 'fog';
+      let weather: Weather = 'normal';
+      if (this.rng.chance(WEATHER_CHANCE)) {
+        const roll = this.rng.int(3);
+        weather = (['rain', 'wind', 'fog'] as const)[roll];
+      }
+      const weatherAtkMul = weather === 'rain' ? (1 - WEATHER_RAIN_ATK_PENALTY) : 1;
+      const weatherCritMul = weather === 'fog' ? WEATHER_FOG_CRIT_PENALTY : 1;
+
       const damping = this.opts.damping ?? 1.0;
       const bossAtkMul = isBoss ? (this.opts.getBossIntroAtkMul?.() ?? 1.0) : 1.0;
       // Cycle 110 F1: realm fork atk mul applies to both enemy + boss combat
@@ -434,7 +449,7 @@ export class EncounterEngine {
       const prestigeMul = 1 + this.prestigeCount * PRESTIGE_STAT_BONUS;
       // C210: achievement kill milestone ATK bonus
       const achieveMul = 1 + this.achievementMilestones * ACHIEVEMENT_ATK_BONUS;
-      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul));
+      const baseHeroAtk = Math.max(1, Math.floor(hero.atk * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       const canCrit = this.comboStreak >= CRIT_STREAK_THRESHOLD;
       const hpBefore = hero.hp;
@@ -448,7 +463,7 @@ export class EncounterEngine {
       while (eHp > 0 && !hero.staggered) {
         // C203: crit streak — guaranteed crit after 3 consecutive crits
         const guaranteedCrit = this.critStreak >= CRIT_STREAK_GUARANTEE_THRESHOLD;
-        const isCrit = canCrit && (guaranteedCrit || this.rng.chance(CRIT_CHANCE));
+        const isCrit = canCrit && (guaranteedCrit || this.rng.chance(CRIT_CHANCE * weatherCritMul));
         if (isCrit) { this.critStreak++; } else { this.critStreak = 0; }
         if (guaranteedCrit) this.critStreak = 0; // consume guarantee
         const heroAtk = isCrit ? baseHeroAtk * CRIT_DAMAGE_MUL : baseHeroAtk;
@@ -623,7 +638,9 @@ export class EncounterEngine {
         : 1;
       // C204: boss kill exp burst
       const bossExpMul = isBoss ? BOSS_KILL_EXP_MUL : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul);
+      // C211: wind weather exp bonus
+      const weatherExpMul = weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul);
       const baseDropOdds = isBoss ? 0.96 : isElite ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
       // Cycle 109 F1: boss intro drop_bonus adds onto V3-C drop_chance buff.
       const introDropBonus = isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0;
