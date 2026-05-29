@@ -208,6 +208,9 @@ export const GOLD_HEAL_AMOUNT = 0.30; // heal 30% max HP
 export const EXP_DECAY_LEVEL_START = 100;
 export const EXP_DECAY_PER_LEVEL = 0.01; // -1% per level above 100
 export const EXP_DECAY_CAP = 0.50; // max -50%
+// C197: survivor bonus
+export const SURVIVOR_THRESHOLD = 100; // fights without dying
+export const SURVIVOR_HP_BONUS = 0.10; // +10% max HP
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -296,6 +299,7 @@ export class EncounterEngine {
   private eliteKills = 0; // C185: total elite kills for bounty board
   private eliteBountyMilestones = 0; // C185: milestones reached
   private revengeGoldRemaining = 0; // C188: fights with revenge gold bonus
+  private fightsSinceDeath = 0; // C197: fights without dying
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -470,6 +474,8 @@ export class EncounterEngine {
         this.comboStreak = 0;
         // C141: survival streak resets on death
         this.survivalStreak = 0;
+        // C197: reset survivor counter
+        this.fightsSinceDeath = 0;
         // C147: gold loss on death — lose 10% (C159: 25% chance to save)
         if (!this.rng.chance(GOLD_SAVE_CHANCE)) {
           const goldLost = Math.floor(hero.gold * GOLD_DEATH_PENALTY);
@@ -663,6 +669,12 @@ export class EncounterEngine {
       this.totalWins++;
       // C173: exhaustion counter
       this.fightsSinceVillage++;
+      // C197: survivor counter
+      this.fightsSinceDeath++;
+      if (this.fightsSinceDeath % SURVIVOR_THRESHOLD === 0) {
+        const hpBonus = Math.max(1, Math.floor(hero.hpMax * SURVIVOR_HP_BONUS));
+        hero.hpMax += hpBonus;
+      }
       // C148: kill counter milestone
       this.killCount++;
       // C185: elite bounty tracking
