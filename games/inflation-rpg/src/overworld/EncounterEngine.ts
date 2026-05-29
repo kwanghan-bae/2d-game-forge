@@ -230,6 +230,8 @@ export const BOSS_KILL_EXP_MUL = 3.0; // ×3 exp for boss kills
 export const GOLD_INVEST_LOCK_FIGHTS = 10;
 export const GOLD_INVEST_RETURN_MUL = 3;
 export const GOLD_INVEST_MIN = 100; // minimum gold to invest
+// C206: damage reflection
+export const DAMAGE_REFLECT_RATE = 0.05; // 5% of damage taken reflected
 export const SHRINE_SKILL_GRANT_RATE = 0.20; // cycle 1 F1: was 0.48 (V3-H F2) — skill saturation 해소
 const SHRINE_HEAL_FRACTION = 0.4;
 // Cycle 28 (cycle 3 D5 carry-over) — spare_enemy moral saturation 70.4% 완화: 0.10 → 0.07.
@@ -474,7 +476,10 @@ export class EncounterEngine {
           }
           // C190: gold armor — reduce damage when gold > threshold
           const goldArmorMul = hero.gold >= GOLD_ARMOR_THRESHOLD ? (1 - GOLD_ARMOR_REDUCTION) : 1;
-          hero.takeDamage(Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul)));
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul));
+          hero.takeDamage(incomingDmg);
+          // C206: damage reflection
+          eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
           // C142: lucky dodge — survive fatal hit with 10% chance
           if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
             hero.staggered = false;
