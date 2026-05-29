@@ -208,6 +208,16 @@ export class BattleScene extends Phaser.Scene {
     );
     this.enemySprite = createDungeonSprite(this, 270, 200, enemyFrame, this.isBoss ? 5 : 4);
 
+    // Enemy spawn bounce animation
+    this.enemySprite.setScale(0);
+    this.tweens.add({
+      targets: this.enemySprite,
+      scaleX: this.isBoss ? 5 : 4,
+      scaleY: this.isBoss ? 5 : 4,
+      duration: 300,
+      ease: 'Back.easeOut',
+    });
+
     // Boss entrance SFX + screen flash
     if (this.isBoss) {
       playSfx('boss-appear');
