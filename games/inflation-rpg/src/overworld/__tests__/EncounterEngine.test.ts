@@ -209,3 +209,33 @@ describe('EncounterEngine — C120 combo streak', () => {
     }
   });
 });
+
+describe('EncounterEngine — C121 milestone fanfare', () => {
+  it('emits milestone_reached when hero crosses a milestone level', () => {
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 9999, heroAtkBase: 999999 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    const milestoneEvents: number[] = [];
+    for (let i = 0; i < 500; i++) {
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      for (const e of evs) {
+        if (e.type === 'milestone_reached') milestoneEvents.push(e.level);
+      }
+      if (hero.level >= 10) break;
+    }
+    expect(milestoneEvents).toContain(10);
+  });
+
+  it('does not emit milestone_reached for non-milestone levels', () => {
+    const hero = HeroEntity.create({ seed: 5, heroHpMax: 9999, heroAtkBase: 999999 });
+    const engine = new EncounterEngine(new SeededRng(5));
+    const milestoneEvents: number[] = [];
+    for (let i = 0; i < 50; i++) {
+      const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      for (const e of evs) {
+        if (e.type === 'milestone_reached') milestoneEvents.push(e.level);
+      }
+      if (hero.level >= 5 && hero.level < 10) break;
+    }
+    expect(milestoneEvents.filter(l => l < 10)).toHaveLength(0);
+  });
+});
