@@ -304,7 +304,7 @@ export class EncounterEngine {
       hero.recomputeStats();
       hero.staggered = false;
       hero.hp = hero.hpMax;
-      this.prestigeShieldRemaining += 1;
+      // C608: removed prestigeShieldRemaining += 1 (was recharging too freely)
       this.totalSacrifices++;
       this.levelSacrificeCooldown = 50;
     }
@@ -953,14 +953,7 @@ export class EncounterEngine {
         }
       } else {
         this.comboStreak++;
-        // C419: combo shield regen — reaching combo milestone regens shield
-        if (this.comboStreak > 0 && this.comboStreak % COMBO_SHIELD_REGEN_THRESHOLD === 0) {
-          if (this.prestigeShieldRemaining < 3) this.prestigeShieldRemaining++;
-        }
-        // C472: combo shield regen boost — very high combo regens shield faster
-        if (this.comboStreak >= COMBO_SHIELD_REGEN_THRESHOLD && this.comboStreak % (COMBO_SHIELD_REGEN_THRESHOLD * 2) === 0) {
-          if (this.prestigeShieldRemaining < 3) this.prestigeShieldRemaining++;
-        }
+        // C608: removed C419/C472 combo shield regen (prestige shield = prestige-only)
         // C367: combo milestone — every 10 combo grants permanent ATK bonus
         if (this.comboStreak > this.maxComboReached) {
           const oldMilestones = Math.floor(this.maxComboReached / COMBO_ATK_MILESTONE_INTERVAL);
@@ -1500,10 +1493,7 @@ export class EncounterEngine {
       if (this.fightsSinceDeath > 0 && this.fightsSinceDeath % SURVIVAL_GOLD_THRESHOLD === 0) {
         hero.gold += hero.level * SURVIVAL_GOLD_PER_LEVEL;
       }
-      // C447: danger shield — surviving danger gives temp shield
-      if (isDangerZone && !hero.staggered && this.rng.chance(DANGER_SHIELD_GRANT_CHANCE)) {
-        if (this.prestigeShieldRemaining < 3) this.prestigeShieldRemaining++;
-      }
+      // C447: danger shield — C608: removed prestige shield recharge from danger survival
       // C208: passive gold income based on village visits
       // C259: gold magnet prestige scaling
       // C378: danger zone raises gold cap
@@ -2124,13 +2114,7 @@ export class EncounterEngine {
       // C403: exp fountain — village grants exp based on total fights
       hero.gainExp(Math.floor((this.totalWins + this.totalDeaths) / 100) * EXP_FOUNTAIN_PER_100_FIGHTS);
       // C404: shield regen — regenerate 1 shield charge per 5 fights
-      if (this.totalWins > 0 && this.totalWins % SHIELD_REGEN_INTERVAL === 0) {
-        if (this.prestigeShieldRemaining < 3) this.prestigeShieldRemaining++;
-      }
-      // C458: village shield upgrade — village restores more shield
-      if (this.prestigeShieldRemaining < 3) {
-        this.prestigeShieldRemaining = Math.min(3, this.prestigeShieldRemaining + VILLAGE_SHIELD_RESTORE);
-      }
+      // C608: removed SHIELD_REGEN_INTERVAL + village shield upgrade recharges
       // C409: prestige momentum — prestige count boosts momentum
       if (this.prestigeCount > 0) this.waveMomentumRemaining += Math.floor(this.prestigeCount * PRESTIGE_MOMENTUM_BONUS * 10);
       // C416: village training exp — prestige grants training exp
