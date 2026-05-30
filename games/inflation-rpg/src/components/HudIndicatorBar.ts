@@ -28,6 +28,7 @@ export interface ActiveEventState {
   abyssalConvergenceRemaining: number;
   temporalFissureRemaining: number;
   titanArenaRemaining: number;
+  crimsonTitheRemaining: number;
   goldCrucibleRemaining: number;
   astralParadoxRemaining: number;
   eventMomentumAtkRemaining: number;
@@ -53,6 +54,7 @@ const EVENT_BADGE_REGISTRY: Array<{ key: keyof ActiveEventState; icon: string; l
   { key: 'abyssalConvergenceRemaining', icon: '🌊', label: '심연 수렴' },
   { key: 'temporalFissureRemaining', icon: '⏳', label: '시간 균열' },
   { key: 'titanArenaRemaining', icon: '🏛️', label: '타이탄 투기장' },
+  { key: 'crimsonTitheRemaining', icon: '🩸', label: '피의 십일조' },
   { key: 'goldCrucibleRemaining', icon: '🔥', label: '황금 도가니' },
   { key: 'astralParadoxRemaining', icon: '⭐', label: '별의 역설' },
   { key: 'eventMomentumAtkRemaining', icon: '🔥', label: '기세 ATK' },

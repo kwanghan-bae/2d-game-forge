@@ -271,11 +271,17 @@ export const TITAN_ARENA_ENEMY_ATK_MUL = 1.2; // C802: reduced from 1.3 (collab 
 export const TITAN_ARENA_EXP_MUL = 2.0;
 
 // C800: Gold Crucible — gold sink event (fight 350+)
-export const GOLD_CRUCIBLE_DURATION = 15;
+export const GOLD_CRUCIBLE_DURATION = 12; // C803: reduced from 15 (collab consensus)
 export const GOLD_CRUCIBLE_GOLD_COST_RATE = 0.30; // burns 30% of current gold on accept
-export const GOLD_CRUCIBLE_ATK_FLAT = 50; // +50 flat ATK for duration
+export const GOLD_CRUCIBLE_ATK_RATE = 0.12; // C803: 12% of burned gold → flat ATK (replaces fixed 50)
 
 // C800: Astral Paradox — high-risk EXP event (fight 400+)
 export const ASTRAL_PARADOX_DURATION = 5;
 export const ASTRAL_PARADOX_EXP_MUL = 2.5;
 export const ASTRAL_PARADOX_ENEMY_ATK_MUL = 1.8;
+
+// C803: Crimson Tithe — HP investment event (fight 325+)
+export const CRIMSON_TITHE_DURATION = 6;
+export const CRIMSON_TITHE_HP_COST = 0.25; // 25% current HP on accept
+export const CRIMSON_TITHE_EXP_MUL = 1.8;
+export const CRIMSON_TITHE_LIFESTEAL = 0.08; // 8% lifesteal during event
