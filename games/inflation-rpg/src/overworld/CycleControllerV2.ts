@@ -873,6 +873,7 @@ export class CycleControllerV2 {
   getCombatSummary() { return this.encounter.getCombatSummary(); }
   hasPendingShrineChoice() { return this.encounter.hasPendingShrineChoice(); }
   setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }
+  getTotalDeaths() { return this.encounter.getTotalDeaths(); }
 
   /** Most recent saga events (already batched + narrative-formatted) for the
    *  live OverworldRunner log overlay. */
