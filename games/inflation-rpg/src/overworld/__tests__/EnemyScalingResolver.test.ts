@@ -8,20 +8,20 @@ describe('EnemyScalingResolver', () => {
     expect(result.atkMul).toBe(1.0);
   });
 
-  it('C684: compound HP scaling at prestige 5 (1.12^5 ≈ 1.76)', () => {
+  it('C684: compound HP scaling at prestige 5 (1.14^5 ≈ 1.93)', () => {
     const result = computeEnemyPrestigeScale(5);
-    expect(result.hpMul).toBeCloseTo(Math.pow(1.12, 5), 1);
+    expect(result.hpMul).toBeCloseTo(Math.pow(1.14, 5), 1);
   });
 
-  it('C684: compound HP scaling at prestige 10 (1.12^10 ≈ 3.11)', () => {
+  it('C684: compound HP scaling at prestige 10 (1.14^10 ≈ 3.71)', () => {
     const result = computeEnemyPrestigeScale(10);
-    expect(result.hpMul).toBeCloseTo(Math.pow(1.12, 10), 1);
+    expect(result.hpMul).toBeCloseTo(Math.pow(1.14, 10), 1);
   });
 
   it('C684: HP scaling caps at prestige 20', () => {
     const result20 = computeEnemyPrestigeScale(20);
     const result25 = computeEnemyPrestigeScale(25);
-    expect(result20.hpMul).toBeCloseTo(Math.pow(1.12, 20), 1);
+    expect(result20.hpMul).toBeCloseTo(Math.pow(1.14, 20), 1);
     expect(result25.hpMul).toBeCloseTo(result20.hpMul, 2);
   });
 
