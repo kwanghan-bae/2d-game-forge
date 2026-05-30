@@ -37,25 +37,27 @@ export interface PostCombatHealResult {
   totalHeal: number;
 }
 
+export const HEAL_FLAT_FLOOR = 3; // C718: minimum heal per source (early-game fix)
+
 export function computePostCombatHeal(ctx: PostCombatHealContext): PostCombatHealResult {
   // Base regen + kill-scaling
   const regenBonus = Math.min(REGEN_SCALE_CAP, Math.floor(ctx.totalWins / 50) * REGEN_SCALE_PER_50_KILLS);
-  const regenBase = Math.max(1, Math.floor(ctx.heroHpMax * (WIN_HP_REGEN_RATE + regenBonus)));
+  const regenBase = Math.max(HEAL_FLAT_FLOOR, Math.floor(ctx.heroHpMax * (WIN_HP_REGEN_RATE + regenBonus)));
   const regenBuffMul = ctx.villageVisits >= REGEN_BUFF_VILLAGE_THRESHOLD ? REGEN_BUFF_MUL : 1;
   const regenHeal = Math.floor(regenBase * regenBuffMul);
 
   // Lifesteal
   const prestigeHealMul = 1 + ctx.prestigeCount * PRESTIGE_HEAL_BOOST;
-  const lifestealHeal = Math.max(1, Math.floor(ctx.totalDamageDealt * LIFESTEAL_RATE * prestigeHealMul));
+  const lifestealHeal = Math.max(HEAL_FLAT_FLOOR, Math.floor(ctx.totalDamageDealt * LIFESTEAL_RATE * prestigeHealMul));
 
   // Overkill heal
   const overkillHeal = ctx.isOverkill
-    ? Math.max(1, Math.floor(ctx.heroHpMax * OVERKILL_HEAL_RATE))
+    ? Math.max(HEAL_FLAT_FLOOR, Math.floor(ctx.heroHpMax * OVERKILL_HEAL_RATE))
     : 0;
 
   // Survival heal
   const survivalHeal = ctx.survivalStreak >= SURVIVAL_HEAL_THRESHOLD
-    ? Math.max(1, Math.floor(ctx.heroHpMax * SURVIVAL_HEAL_RATE))
+    ? Math.max(HEAL_FLAT_FLOOR, Math.floor(ctx.heroHpMax * SURVIVAL_HEAL_RATE))
     : 0;
 
   return {
