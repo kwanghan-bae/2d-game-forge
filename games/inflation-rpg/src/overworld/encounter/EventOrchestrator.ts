@@ -26,6 +26,8 @@ import {
   ASTRAL_PARADOX_DURATION,
   CRIMSON_TITHE_DURATION,
   CRIMSON_TITHE_HP_COST,
+  SOUL_FORGE_DURATION,
+  SOUL_FORGE_COMBO_COST,
 } from './constants';
 
 export type EventId =
@@ -33,7 +35,7 @@ export type EventId =
   | 'rain_sanctuary' | 'fog_ambush' | 'wind_gale'
   | 'snow_drift' | 'void_rift' | 'abyssal_convergence'
   | 'temporal_fissure' | 'titan_arena'
-  | 'crimson_tithe' | 'gold_crucible' | 'astral_paradox';
+  | 'crimson_tithe' | 'gold_crucible' | 'astral_paradox' | 'soul_forge';
 
 export interface EventAcceptEffects {
   colosseumRemaining: number;
@@ -54,6 +56,8 @@ export interface EventAcceptEffects {
   goldCrucibleRemaining: number;
   goldCrucibleGoldBurned: number;
   astralParadoxRemaining: number;
+  soulForgeRemaining: number;
+  soulForgeComboCost: number;
   declineGold: number;
 }
 
@@ -64,7 +68,7 @@ const EMPTY_EFFECTS: EventAcceptEffects = {
   snowDriftRemaining: 0, abyssalConvergenceRemaining: 0, temporalFissureRemaining: 0,
   titanArenaRemaining: 0, crimsonTitheRemaining: 0, crimsonTitheHpCost: 0,
   goldCrucibleRemaining: 0, goldCrucibleGoldBurned: 0,
-  astralParadoxRemaining: 0, declineGold: 0,
+  astralParadoxRemaining: 0, soulForgeRemaining: 0, soulForgeComboCost: 0, declineGold: 0,
 };
 
 export interface EventOrchestratorCtx {
@@ -98,6 +102,7 @@ export class EventOrchestrator {
     this.sm.register('crimson_tithe', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('gold_crucible', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('astral_paradox', { onAccept: () => {}, onDecline: () => {} });
+    this.sm.register('soul_forge', { onAccept: () => {}, onDecline: () => {} });
   }
 
   trigger(id: EventId): void { this.sm.trigger(id); }
@@ -147,6 +152,10 @@ export class EventOrchestrator {
           this.lastEffects.goldCrucibleGoldBurned = Math.floor(ctx.heroGold * GOLD_CRUCIBLE_GOLD_COST_RATE);
           break;
         case 'astral_paradox': this.lastEffects.astralParadoxRemaining = ASTRAL_PARADOX_DURATION; break;
+        case 'soul_forge':
+          this.lastEffects.soulForgeRemaining = SOUL_FORGE_DURATION;
+          this.lastEffects.soulForgeComboCost = Math.min(ctx.comboStreak, SOUL_FORGE_COMBO_COST);
+          break;
       }
     } else {
       this.lastEffects.declineGold = Math.min(EVENT_DECLINE_GOLD_CAP,

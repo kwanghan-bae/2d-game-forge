@@ -48,6 +48,7 @@ const LATE_EVENT_REGISTRY: Record<string, (r: LateEventResult) => void> = {
   event_crimson_tithe: (r) => { r.crimsonTithePending = true; },
   event_gold_crucible: (r) => { r.goldCruciblePending = true; },
   event_astral_paradox: (r) => { r.astralParadoxPending = true; },
+  event_soul_forge: (r) => { r.soulForgePending = true; },
 };
 
 export interface PostCombatContext {
@@ -111,6 +112,7 @@ export interface PostCombatResult {
   crimsonTithePending: boolean; // C803
   goldCruciblePending: boolean; // C800
   astralParadoxPending: boolean; // C800
+  soulForgePending: boolean; // C806
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   eventMomentumTier: number; // C793: 0=none, 2=ATK buff, 3=density boost
@@ -154,6 +156,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     crimsonTithePending: false,
     goldCruciblePending: false,
     astralParadoxPending: false,
+    soulForgePending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     eventMomentumTier: 0,

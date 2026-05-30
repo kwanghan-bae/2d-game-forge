@@ -1,15 +1,19 @@
 /**
- * C804: DeclineStack — tracks consecutive event declines and provides
+ * C804/C806: DeclineStack — tracks consecutive event declines and provides
  * scaling rewards when the player finally accepts.
  *
  * Pure logic module. No side-effects.
+ * C806: Linear scaling gradient — more stacks = bigger reward.
  */
 import {
   DECLINE_STACK_REWARD_THRESHOLD,
   DECLINE_STACK_FORCE_THRESHOLD,
-  DECLINE_STACK_REWARD_MUL,
   DECLINE_STACK_MAX,
 } from './constants-events';
+
+// C806: per-stack bonus (2→×1.5, 3→×1.75, 4→×2.0, 5→×2.25, 6→×2.5)
+const DECLINE_STACK_BASE_MUL = 1.0;
+const DECLINE_STACK_PER_STACK = 0.25;
 
 export interface DeclineStackState {
   stacks: number;
@@ -25,9 +29,14 @@ export function pushDecline(state: DeclineStackState): number {
   return state.stacks;
 }
 
-/** Call when player accepts an event. Consumes stacks and returns EXP multiplier bonus. */
+/** Call when player accepts an event. Consumes stacks and returns EXP multiplier.
+ *  C806: linear scaling — each stack beyond threshold adds +0.25 */
 export function consumeDeclineStack(state: DeclineStackState): number {
-  const mul = state.stacks >= DECLINE_STACK_REWARD_THRESHOLD ? DECLINE_STACK_REWARD_MUL : 1;
+  if (state.stacks < DECLINE_STACK_REWARD_THRESHOLD) {
+    state.stacks = 0;
+    return 1;
+  }
+  const mul = DECLINE_STACK_BASE_MUL + state.stacks * DECLINE_STACK_PER_STACK;
   state.stacks = 0;
   return mul;
 }
