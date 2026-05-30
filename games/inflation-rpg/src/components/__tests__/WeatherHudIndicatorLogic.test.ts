@@ -30,4 +30,24 @@ describe('WeatherHudIndicatorLogic', () => {
     expect(result!.icon).toBe('🌫️');
     expect(result!.label).toContain('ATK');
   });
+
+  // C735: Night indicator tests
+  it('returns night icon and EXP mul when isNight=true, weather=normal', () => {
+    const result = getWeatherDisplay({ weather: 'normal', isNight: true });
+    expect(result).not.toBeNull();
+    expect(result!.icon).toBe('🌙');
+    expect(result!.label).toContain('Night');
+    expect(result!.label).toContain('EXP');
+  });
+
+  it('returns weather display (not night) when weather is active', () => {
+    // Weather takes priority; night is secondary
+    const result = getWeatherDisplay({ weather: 'rain', isNight: true });
+    expect(result).not.toBeNull();
+    expect(result!.icon).toBe('🌧️');
+  });
+
+  it('returns null for normal weather with isNight=false', () => {
+    expect(getWeatherDisplay({ weather: 'normal', isNight: false })).toBeNull();
+  });
 });
