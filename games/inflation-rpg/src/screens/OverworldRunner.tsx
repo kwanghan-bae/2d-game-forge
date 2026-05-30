@@ -22,6 +22,8 @@ import { DamageFloaterLogic } from '../components/DamageFloaterLogic';
 import { BattleOutcomeBadge } from '../components/BattleOutcomeBadge';
 import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
 import { ComboStreakBadge } from '../components/ComboStreakBadge';
+import { StatDeltaPopup } from '../components/StatDeltaPopup';
+import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
 import { ShrineChoiceModal } from '../components/ShrineChoiceModal';
 import { DangerChoiceModal } from '../components/DangerChoiceModal';
 import { FateRollModal } from './FateRollModal';
@@ -128,6 +130,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [lightFloats, setLightFloats] = useState<LightFloat[]>([]);
   const damageFloaterRef = useRef(new DamageFloaterLogic({ duration: 800 }));
   const [badgeInput, setBadgeInput] = useState<BattleOutcomeInput | null>(null);
+  const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -274,6 +277,12 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
               didCrit: !!critEv,
               wasCloseCall: !!closeCallEv,
             });
+          }
+          // C682: StatDeltaPopup wiring
+          const deltas = computeStatDeltas(evs);
+          if (deltas.length > 0) {
+            setStatDeltaEntries(deltas);
+            setTimeout(() => setStatDeltaEntries([]), 1500);
           }
           if (event.landmarkKind === 'village') {
             setMomentumDisplay(0);
@@ -643,6 +652,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
+      <StatDeltaPopup entries={statDeltaEntries} />
       <ComboStreakBadge combo={momentumDisplay} />
       <div style={{ position: 'absolute', left: 8, bottom: 80, zIndex: 10 }}>
         <RelicPanel />
