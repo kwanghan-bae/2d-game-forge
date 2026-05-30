@@ -200,7 +200,7 @@ export const COLOSSEUM_EXP_MUL = 2.0;
 export const COLOSSEUM_ENEMY_ATK_MUL = 1.5; // C771: tuned from 1.3 (meaningful risk)
 // C762: Trial Grounds constants
 export const TRIAL_GROUNDS_EXP_MUL = 1.50; // C766: tuned from 1.35
-export const TRIAL_GROUNDS_LEVEL_MUL = 1.10; // C769: multiplicative 10% (replaces flat offset)
+export const TRIAL_GROUNDS_LEVEL_MUL = 1.20; // C774: tuned from 1.10 (R:R 1:5→1:2.5, meaningful decision)
 export const TRIAL_GROUNDS_DURATION = 3;
 
 export const STORM_NEXUS_ATK_MUL = 1.40; // C770: Storm Nexus ATK buff
