@@ -1,30 +1,30 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 735
+- Cycle: 743
 - Target: 600+ (연속 진화)
-- Last commit: C735 Night indicator in WeatherHudIndicator
-- Vitest: 2139 pass / 0 fail
+- Last commit: C743 Healer/Echo events + night dmg revert
+- Vitest: 2165 pass / 0 fail
 - E2E: 60 passed
 - EncounterEngine: ~1830 lines
 
-## 레이어 카운터 (C705-C735 era)
-- 시스템: 5 (C710 PostCombatHealCalc, C718 pity-trap fix, C723 AI BET_HIGH + Weather dodge/speed, C727 EnemyTurnCalc, C731 chooseEncounterNode trait-weighted)
-- 구조: 3 (C711 DropResolver, C719 HeroTurnCalc, C733 RelicEffectResolver)
-- UI/UX: 6 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant, C725 WeatherHudIndicator, C729 DestinationBadge, C735 Night indicator)
-- 밸런스: 8 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish, C722 EXP+drop cap tuning, C726 fog crit+AI ratio, C730 boss enrage+BET_HIGH 12, C734 boss_hunter 1.3+difficulty gate)
-- 콜라보: 9 (C705, C709, C713, C717, C721, C724, C728, C732, C736)
+## 레이어 카운터 (C737-C743 era)
+- 시스템: 3 (C737 realm-based difficulty, C741 heroLevel pipeline, C742 Storm/Snow)
+- 구조: 0
+- UI/UX: 1 (C739 TraitInfluenceBadge)
+- 밸런스: 2 (C738 night tuning, C743 Healer/Echo events)
+- 콜라보: 2 (C740, C744)
 
 ## 제약
-- cycles_since_collab: 0 (C736 is collab NOW)
-- Next collab: C739
+- cycles_since_collab: 0 (C744 is collab NOW)
+- Next collab: C747
 - EncounterEngine: ~1830 lines
 - Layer lock: collab (current)
 
-## 다음 3사이클 (C736 협의에서 확정 예정)
-1. [collab] C736: critic + planner + level-designer
-2. C737 [system] TBD
-3. C738 [balance] TBD
+## 다음 3사이클 (C744 협의에서 확정 예정)
+1. [collab] C744: critic + planner + level-designer
+2. C745 [system] TBD
+3. C746 [structure] TBD
 
 ## 달성 사항 (C705-C716)
 - C705 [collab]: critic(6/5/4/5) + planner + level-designer

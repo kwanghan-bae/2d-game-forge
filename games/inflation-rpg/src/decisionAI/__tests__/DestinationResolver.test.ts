@@ -260,5 +260,23 @@ describe('DestinationResolver', () => {
       expect(result).not.toBeNull();
       expect(result!.influencingTraits).toEqual([]);
     });
+
+    // C745: difficultyGateApplied flag
+    it('difficultyGateApplied = true when chosen candidate exceeds heroLevel×1.5', () => {
+      // Only high-difficulty boss available
+      const highBoss: LandmarkCandidate[] = [{ id: 'hard', kind: 'boss', difficulty: 50 }];
+      const r = new DestinationResolver(new SeededRng(1));
+      const ctx = { traits: [] as TraitId[], personality: new PersonalityState(), heroLevel: 10 };
+      const result = r.chooseWithInfluence(highBoss, ctx);
+      expect(result!.difficultyGateApplied).toBe(true);
+    });
+
+    it('difficultyGateApplied = false when candidate is within hero level', () => {
+      const easyBoss: LandmarkCandidate[] = [{ id: 'easy', kind: 'boss', difficulty: 5 }];
+      const r = new DestinationResolver(new SeededRng(1));
+      const ctx = { traits: [] as TraitId[], personality: new PersonalityState(), heroLevel: 10 };
+      const result = r.chooseWithInfluence(easyBoss, ctx);
+      expect(result!.difficultyGateApplied).toBe(false);
+    });
   });
 });
