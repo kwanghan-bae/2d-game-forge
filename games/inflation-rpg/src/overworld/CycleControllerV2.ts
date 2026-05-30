@@ -918,6 +918,8 @@ export class CycleControllerV2 {
   resolveTitanArena(accept: boolean) { this.encounter.resolveTitanArena(accept); this.recordEventChoice('titan_arena', accept); }
   getEventMomentumAtkRemaining() { return this.encounter.getEventMomentumAtkRemaining(); }
   getEventMomentumDensityRemaining() { return this.encounter.getEventMomentumDensityRemaining(); }
+  // C798: Aggregate accessor
+  getActiveEventState() { return this.encounter.getActiveEventState(); }
 
   /** Most recent saga events (already batched + narrative-formatted) for the
    *  live OverworldRunner log overlay. */
