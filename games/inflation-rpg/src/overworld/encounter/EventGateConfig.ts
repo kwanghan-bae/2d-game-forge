@@ -10,6 +10,15 @@ export interface EventGateDef {
   description: string;
 }
 
+export const MID_GAME_EVENTS: readonly EventGateDef[] = [
+  {
+    id: 'event_trial_grounds',
+    minTotalFights: 90,
+    chance: 0.025,
+    description: 'Trial Grounds — enemies +1 level, EXP×1.35 for next 3 fights',
+  },
+];
+
 export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
   {
     id: 'event_ancient_colosseum',
@@ -24,6 +33,13 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     description: 'Void Rift — teleport to random higher-tier area, gain relic shard',
   },
 ];
+
+/**
+ * Returns mid-game events available at given totalFights.
+ */
+export function getAvailableMidEvents(totalFights: number): readonly EventGateDef[] {
+  return MID_GAME_EVENTS.filter(e => totalFights >= e.minTotalFights);
+}
 
 /**
  * Returns late-game events available at given totalFights.

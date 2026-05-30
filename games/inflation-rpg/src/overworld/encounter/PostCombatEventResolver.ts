@@ -34,7 +34,8 @@ import {
   INSPIRATION_EVENT_CHANCE,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
-import { getAvailableLateEvents } from './EventGateConfig';
+import { getAvailableLateEvents, getAvailableMidEvents } from './EventGateConfig';
+import { TRIAL_GROUNDS_DURATION } from './constants-events';
 
 export interface PostCombatContext {
   totalFights: number;
@@ -81,6 +82,7 @@ export interface PostCombatResult {
   newPrestigeEchoRemaining: number;
   newInspirationRemaining: number;
   newColosseumRemaining: number;
+  newTrialGroundsRemaining: number;
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
@@ -109,6 +111,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newPrestigeEchoRemaining: 0,
     newInspirationRemaining: 0,
     newColosseumRemaining: 0,
+    newTrialGroundsRemaining: 0,
     voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
@@ -226,6 +229,21 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     result.newInspirationRemaining = inspConfig.duration;
     result.eventType = 'event_inspiration';
     eventTriggered = true;
+  }
+
+  // C762: Mid-game exclusive events (Trial Grounds)
+  if (eventsEnabled && !eventTriggered) {
+    const midEvents = getAvailableMidEvents(ctx.totalFights);
+    for (const me of midEvents) {
+      if (rngOrPity(me.chance)) {
+        if (me.id === 'event_trial_grounds') {
+          result.newTrialGroundsRemaining = TRIAL_GROUNDS_DURATION;
+          result.eventType = 'event_trial_grounds';
+        }
+        eventTriggered = true;
+        break;
+      }
+    }
   }
 
   // C755: Late-game exclusive events

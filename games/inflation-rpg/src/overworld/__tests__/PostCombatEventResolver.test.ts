@@ -159,8 +159,8 @@ describe('PostCombatEventResolver', () => {
   // C755: Late-game exclusive events
   it('triggers ancient_colosseum after 150 fights', () => {
     let callIdx = 0;
-    // Skip all prior events (11 false), then ancient_colosseum rng hits (true)
-    const chances = [false, false, false, false, false, false, false, false, false, false, false, true];
+    // Skip all prior events (11 false), skip trial_grounds (false), then ancient_colosseum rng hits (true)
+    const chances = [false, false, false, false, false, false, false, false, false, false, false, false, true];
     const result = resolvePostCombatEvent(makeCtx({
       heroLevel: 10,
       totalFights: 160,
@@ -182,8 +182,8 @@ describe('PostCombatEventResolver', () => {
 
   it('triggers void_rift after 200 fights', () => {
     let callIdx = 0;
-    // Skip all prior events (11 false), skip ancient_colosseum (false), void_rift hits (true)
-    const chances = [false, false, false, false, false, false, false, false, false, false, false, false, true];
+    // Skip all prior events (11 false), skip trial_grounds (false), skip ancient_colosseum (false), void_rift hits (true)
+    const chances = [false, false, false, false, false, false, false, false, false, false, false, false, false, true];
     const result = resolvePostCombatEvent(makeCtx({
       heroLevel: 10,
       totalFights: 250,

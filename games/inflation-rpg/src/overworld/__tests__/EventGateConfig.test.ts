@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAvailableLateEvents, LATE_GAME_EVENTS } from '../encounter/EventGateConfig';
+import { getAvailableLateEvents, getAvailableMidEvents, LATE_GAME_EVENTS, MID_GAME_EVENTS } from '../encounter/EventGateConfig';
 
 describe('EventGateConfig — C754', () => {
   it('returns empty when totalFights below all gates', () => {
@@ -59,5 +59,18 @@ describe('EventGateConfig — C754', () => {
   it('colosseum gate (150) > inspiration gate (30-40) — proper late-game', () => {
     const colosseumGate = LATE_GAME_EVENTS.find(e => e.id === 'event_ancient_colosseum')!.minTotalFights;
     expect(colosseumGate).toBeGreaterThanOrEqual(150);
+  });
+
+  it('C762: trial_grounds available after 90 fights', () => {
+    expect(getAvailableMidEvents(89)).toEqual([]);
+    const events = getAvailableMidEvents(90);
+    expect(events.length).toBe(1);
+    expect(events[0].id).toBe('event_trial_grounds');
+  });
+
+  it('C762: trial_grounds gate < colosseum gate (mid < late)', () => {
+    const trialGate = MID_GAME_EVENTS.find(e => e.id === 'event_trial_grounds')!.minTotalFights;
+    const colosseumGate = LATE_GAME_EVENTS.find(e => e.id === 'event_ancient_colosseum')!.minTotalFights;
+    expect(trialGate).toBeLessThan(colosseumGate);
   });
 });
