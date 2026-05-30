@@ -1037,12 +1037,12 @@ describe('C651: characterization snapshot (golden master)', () => {
       expect((engine as any).getAtkCap()).toBe(20);
     });
 
-    it('prestige 15 — ATK cap maxes at 30 (hard ceiling)', () => {
+    it('prestige 15 — ATK cap reaches 40 (under max 50)', () => {
       const hero = makeHero();
       const engine = new EncounterEngine(new SeededRng(99));
       (engine as any).prestigeCount = 15;
-      // 10 + 15*2 = 40 but max is 30
-      expect((engine as any).getAtkCap()).toBe(30);
+      // 10 + 15*2 = 40, max is 50 so uncapped
+      expect((engine as any).getAtkCap()).toBe(40);
     });
   });
 
