@@ -31,6 +31,7 @@ export interface PostCombatContext {
   heroHpMax: number;
   heroGold: number;
   heroAtk: number;
+  heroLevel: number;
   isElite: boolean;
   isBoss: boolean;
   cursedAltarRemaining: number;
@@ -42,6 +43,10 @@ export interface PostCombatContext {
   eventChainCount: number;
   consecutiveEliteKills2: number;
   goldenHourRemaining: number;
+  strategyRestShrine: boolean;
+  strategyGambler: boolean;
+  strategyBlacksmith: boolean;
+  strategyCursedAltar: boolean;
   rngChance: (rate: number) => boolean;
   rngInt: (n: number) => number;
   hasPendingShrineChoice: () => boolean;
@@ -61,6 +66,10 @@ export interface PostCombatResult {
   newRelics: number[];
   newRelicLevels: number[];
   eventChainReward: boolean;
+  comboReset: boolean;
+  shrinePending: boolean;
+  shrineChoice: 'gold' | 'exp' | 'heal' | null;
+  gamblerWon: boolean | null;
 }
 
 export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult {
@@ -78,6 +87,10 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newRelics: [...ctx.relics],
     newRelicLevels: [...ctx.relicLevels],
     eventChainReward: false,
+    comboReset: false,
+    shrinePending: false,
+    shrineChoice: null,
+    gamblerWon: null,
   };
 
   if (result.newCursedAltarRemaining === 0 && ctx.cursedAltarRemaining > 0) {
@@ -103,51 +116,56 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
-  // Treasure shrine (simplified — full shrine choice logic stays in engine)
+  // Treasure shrine
   if (eventsEnabled && !eventTriggered && ctx.rngChance(TREASURE_SHRINE_CHANCE)) {
     if (!ctx.hasPendingShrineChoice()) {
+      result.shrinePending = true;
       result.eventType = 'event_treasure_shrine_pending';
     } else {
-      result.heroGoldDelta = Math.max(SHRINE_GOLD_BURST, ctx.heroHp); // simplified
+      // Shrine already resolved by choice engine — signal gold reward
+      result.shrineChoice = 'gold'; // engine overrides with actual choice
       result.eventType = 'event_treasure_shrine';
     }
     eventTriggered = true;
   }
 
   // Rest shrine
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(REST_SHRINE_CHANCE) && ctx.heroHp < ctx.heroHpMax * 0.3) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyRestShrine && ctx.rngChance(REST_SHRINE_CHANCE) && ctx.heroHp < ctx.heroHpMax * 0.3) {
     result.heroHpDelta = ctx.heroHpMax - ctx.heroHp;
+    result.comboReset = true;
     result.eventType = 'event_rest_shrine';
     eventTriggered = true;
   }
 
   // Gambler
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(GAMBLER_CHANCE) && ctx.heroGold >= 50) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyGambler && ctx.rngChance(GAMBLER_CHANCE) && ctx.heroGold >= 50) {
     if (ctx.rngChance(GAMBLER_WIN_RATE)) {
-      result.heroGoldDelta = ctx.heroGold; // double
+      result.heroGoldDelta = ctx.heroGold; // double (engine: hero.gold *= 2)
+      result.gamblerWon = true;
     } else {
       result.heroGoldDelta = -Math.floor(ctx.heroGold * 0.5);
+      result.gamblerWon = false;
     }
     result.eventType = 'event_gambler';
     eventTriggered = true;
   }
 
   // Blacksmith
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(BLACKSMITH_CHANCE)) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyBlacksmith && ctx.rngChance(BLACKSMITH_CHANCE)) {
     result.heroAtkDelta = BLACKSMITH_BOOST;
     result.eventType = 'event_blacksmith';
     eventTriggered = true;
   }
 
   // Cursed altar
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(CURSED_ALTAR_CHANCE) && !ctx.cursedAltarAtkBuff) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyCursedAltar && ctx.rngChance(CURSED_ALTAR_CHANCE) && !ctx.cursedAltarAtkBuff) {
     result.newCursedAltarAtkBuff = true;
     result.newCursedAltarRemaining = CURSED_ALTAR_DURATION;
     result.eventType = 'event_cursed_altar';
     eventTriggered = true;
   }
 
-  // Fairy
+  // Fairy blessing
   if (eventsEnabled && !eventTriggered && ctx.rngChance(FAIRY_CHANCE)) {
     result.newFairyBlessingRemaining = FAIRY_DURATION;
     result.eventType = 'event_fairy';
@@ -161,7 +179,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
-  // Merchant
+  // Wandering Merchant
   if (!eventTriggered && !ctx.isElite && !ctx.isBoss && ctx.rngChance(MERCHANT_EVENT_CHANCE) && ctx.heroGold >= 200 && ctx.relics.length < 3) {
     const available = [0, 1, 2, 3, 4, 5].filter(id => !ctx.relics.includes(id));
     if (available.length > 0) {
