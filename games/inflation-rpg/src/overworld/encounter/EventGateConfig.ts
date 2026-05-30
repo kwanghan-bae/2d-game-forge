@@ -19,6 +19,20 @@ export const MID_GAME_EVENTS: readonly EventGateDef[] = [
     description: 'Trial Grounds — enemies ×1.10 level, EXP×1.50 for next 3 fights',
   },
   {
+    id: 'event_rain_sanctuary',
+    minTotalFights: 95,
+    chance: 0.02,
+    weatherCondition: 'rain',
+    description: 'Rain Sanctuary — heal 20% HP, gold×0.7 for 3 fights (rain only)',
+  },
+  {
+    id: 'event_fog_ambush',
+    minTotalFights: 100,
+    chance: 0.02,
+    weatherCondition: 'fog',
+    description: 'Fog Ambush — enemy ATK×1.2, EXP×1.3 for 2 fights (fog only)',
+  },
+  {
     id: 'event_storm_nexus',
     minTotalFights: 110,
     chance: 0.02,

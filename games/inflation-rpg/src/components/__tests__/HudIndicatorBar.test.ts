@@ -78,7 +78,7 @@ describe('HudIndicatorBar', () => {
       isNight: false,
       influencingTraits: [],
       inspirationRemaining: 0,
-      activeEvents: { trialGroundsRemaining: 2, colosseumRemaining: 0, voidRiftRemaining: 1, stormNexusRemaining: 0 },
+      activeEvents: { trialGroundsRemaining: 2, colosseumRemaining: 0, voidRiftRemaining: 1, stormNexusRemaining: 0, rainSanctuaryRemaining: 0, fogAmbushRemaining: 0 },
     });
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({ type: 'event', icon: '⚔️', label: '시련장 (2)' });
@@ -91,7 +91,7 @@ describe('HudIndicatorBar', () => {
       isNight: false,
       influencingTraits: [],
       inspirationRemaining: 0,
-      activeEvents: { trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0, stormNexusRemaining: 0 },
+      activeEvents: { trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0, stormNexusRemaining: 0, rainSanctuaryRemaining: 0, fogAmbushRemaining: 0 },
     });
     expect(result).toHaveLength(0);
   });

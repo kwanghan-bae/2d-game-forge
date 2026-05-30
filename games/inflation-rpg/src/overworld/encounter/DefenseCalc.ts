@@ -15,6 +15,7 @@ import {
   GOLD_THRESHOLD_DEF_BONUS,
   CURSED_ALTAR_DAMAGE_MUL,
   COLOSSEUM_ENEMY_ATK_MUL,
+  FOG_AMBUSH_ENEMY_ATK_MUL,
 } from './constants';
 
 export interface DefenseContext {
@@ -33,6 +34,7 @@ export interface DefenseContext {
   cursedAltarAtkBuff: boolean;
   isNight: boolean;
   colosseumActive: boolean;
+  fogAmbushActive: boolean;
 }
 
 /**
@@ -59,10 +61,11 @@ export function computeDamageReduction(ctx: DefenseContext): number {
     : 1;
   const cursedAltarDmgMul = ctx.cursedAltarAtkBuff ? CURSED_ALTAR_DAMAGE_MUL : 1;
   const colosseumDmgMul = ctx.colosseumActive ? COLOSSEUM_ENEMY_ATK_MUL : 1;
+  const fogAmbushDmgMul = ctx.fogAmbushActive ? FOG_AMBUSH_ENEMY_ATK_MUL : 1;
 
   const drDefenseMuls = mercyMul * shieldMul * armorMul * goldArmorMul * vigorMul;
   const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
-  const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul * colosseumDmgMul;
+  const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul * colosseumDmgMul * fogAmbushDmgMul;
 
   return Math.max(0.30, drDefenseMuls * drShieldMuls * drContextMuls);
 }

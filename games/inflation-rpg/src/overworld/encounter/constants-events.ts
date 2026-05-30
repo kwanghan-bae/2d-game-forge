@@ -208,3 +208,13 @@ export const STORM_NEXUS_HP_DRAIN_RATE = 0.05; // C770: 5% HP drain per fight
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
 
 export const VOID_RIFT_SCALE_PER_TIER = 0.05; // C771: 5% per tier (lv200: +5%, lv800: +15%)
+
+// C773: Rain Sanctuary — heal + gold penalty tradeoff (rain-only)
+export const RAIN_SANCTUARY_HEAL_RATE = 0.20; // 20% hpMax instant heal
+export const RAIN_SANCTUARY_GOLD_MUL = 0.70; // gold ×0.7 during duration
+export const RAIN_SANCTUARY_DURATION = 3; // 3 fights
+
+// C773: Fog Ambush — consecutive fights with ATK penalty, EXP reward (fog-only)
+export const FOG_AMBUSH_ENEMY_ATK_MUL = 1.20; // enemies hit 20% harder
+export const FOG_AMBUSH_EXP_MUL = 1.30; // +30% EXP reward
+export const FOG_AMBUSH_DURATION = 2; // 2 consecutive fights

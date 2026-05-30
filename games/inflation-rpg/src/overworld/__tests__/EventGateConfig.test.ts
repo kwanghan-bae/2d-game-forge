@@ -111,4 +111,26 @@ describe('EventGateConfig — C754', () => {
     const events = getAvailableMidEvents(100, 'storm');
     expect(events.some(e => e.id === 'event_storm_nexus')).toBe(false);
   });
+
+  it('C773: rain_sanctuary available only during rain after 95 fights', () => {
+    const eventsRain = getAvailableMidEvents(100, 'rain');
+    expect(eventsRain.some(e => e.id === 'event_rain_sanctuary')).toBe(true);
+    const eventsNormal = getAvailableMidEvents(100, 'normal');
+    expect(eventsNormal.some(e => e.id === 'event_rain_sanctuary')).toBe(false);
+    const eventsBefore = getAvailableMidEvents(90, 'rain');
+    expect(eventsBefore.some(e => e.id === 'event_rain_sanctuary')).toBe(false);
+  });
+
+  it('C773: fog_ambush available only during fog after 100 fights', () => {
+    const eventsFog = getAvailableMidEvents(110, 'fog');
+    expect(eventsFog.some(e => e.id === 'event_fog_ambush')).toBe(true);
+    const eventsNormal = getAvailableMidEvents(110, 'normal');
+    expect(eventsNormal.some(e => e.id === 'event_fog_ambush')).toBe(false);
+    const eventsBefore = getAvailableMidEvents(95, 'fog');
+    expect(eventsBefore.some(e => e.id === 'event_fog_ambush')).toBe(false);
+  });
+
+  it('C773: mid-game events pool now has 4 events', () => {
+    expect(MID_GAME_EVENTS).toHaveLength(4);
+  });
 });

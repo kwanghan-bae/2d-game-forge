@@ -886,6 +886,14 @@ export class CycleControllerV2 {
   getStormNexusRemaining() { return this.encounter.getStormNexusRemaining(); }
   getStormNexusPending() { return this.encounter.getStormNexusPending(); }
   resolveStormNexus(accept: boolean) { this.encounter.resolveStormNexus(accept); }
+  // C773: Rain Sanctuary proxies
+  getRainSanctuaryRemaining() { return this.encounter.getRainSanctuaryRemaining(); }
+  getRainSanctuaryPending() { return this.encounter.getRainSanctuaryPending(); }
+  resolveRainSanctuary(accept: boolean) { this.encounter.resolveRainSanctuary(accept); }
+  // C773: Fog Ambush proxies
+  getFogAmbushRemaining() { return this.encounter.getFogAmbushRemaining(); }
+  getFogAmbushPending() { return this.encounter.getFogAmbushPending(); }
+  resolveFogAmbush(accept: boolean) { this.encounter.resolveFogAmbush(accept); }
   getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
