@@ -22,7 +22,7 @@ import {
   EVENT_CHAIN_REWARD_EXP,
   EVENT_CHAIN_REWARD_GOLD,
 } from './constants-combat';
-import { TRAP_AVOID_COMBO } from './constants-events';
+import { TRAP_AVOID_COMBO, EVENT_PITY_THRESHOLD } from './constants-events';
 
 export interface PostCombatContext {
   totalFights: number;
@@ -43,6 +43,7 @@ export interface PostCombatContext {
   eventChainCount: number;
   consecutiveEliteKills2: number;
   goldenHourRemaining: number;
+  fightsSinceEvent: number; // C714: pity timer
   strategyRestShrine: boolean;
   strategyGambler: boolean;
   strategyBlacksmith: boolean;
@@ -105,9 +106,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
 
   const eventsEnabled = ctx.totalFights > 20;
   let eventTriggered = false;
+  // C714: pity timer — force event if N fights without one
+  const pityActive = eventsEnabled && ctx.fightsSinceEvent >= EVENT_PITY_THRESHOLD;
+  const rngOrPity = (rate: number) => pityActive || ctx.rngChance(rate);
 
   // Trap
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(TRAP_CHANCE)) {
+  if (eventsEnabled && !eventTriggered && rngOrPity(TRAP_CHANCE)) {
     if (ctx.comboStreak >= TRAP_AVOID_COMBO) {
       result.eventType = 'event_trap_avoided';
     } else {
@@ -123,7 +127,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   }
 
   // Treasure shrine
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(TREASURE_SHRINE_CHANCE)) {
+  if (eventsEnabled && !eventTriggered && rngOrPity(TREASURE_SHRINE_CHANCE)) {
     if (!ctx.hasPendingShrineChoice()) {
       result.shrinePending = true;
       result.eventType = 'event_treasure_shrine_pending';
@@ -136,7 +140,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   }
 
   // Rest shrine
-  if (eventsEnabled && !eventTriggered && ctx.strategyRestShrine && ctx.rngChance(REST_SHRINE_CHANCE) && ctx.heroHp < ctx.heroHpMax * 0.3) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyRestShrine && rngOrPity(REST_SHRINE_CHANCE) && ctx.heroHp < ctx.heroHpMax * 0.3) {
     result.heroHpDelta = ctx.heroHpMax - ctx.heroHp;
     result.comboReset = true;
     result.eventType = 'event_rest_shrine';
@@ -144,7 +148,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   }
 
   // Wandering Merchant — set pending for player choice (C704: priority raised from last)
-  if (eventsEnabled && !eventTriggered && !ctx.isElite && !ctx.isBoss && ctx.rngChance(MERCHANT_EVENT_CHANCE) && ctx.heroGold >= 200 && ctx.relics.length < 3) {
+  if (eventsEnabled && !eventTriggered && !ctx.isElite && !ctx.isBoss && rngOrPity(MERCHANT_EVENT_CHANCE) && ctx.heroGold >= 200 && ctx.relics.length < 3) {
     const available = [0, 1, 2, 3, 4, 5].filter(id => !ctx.relics.includes(id));
     if (available.length > 0) {
       result.merchantPending = true;
@@ -154,35 +158,35 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   }
 
   // Gambler — set pending for player choice
-  if (eventsEnabled && !eventTriggered && ctx.strategyGambler && ctx.rngChance(GAMBLER_CHANCE) && ctx.heroGold >= 50) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyGambler && rngOrPity(GAMBLER_CHANCE) && ctx.heroGold >= 50) {
     result.gamblerPending = true;
     result.eventType = 'event_gambler';
     eventTriggered = true;
   }
 
   // Blacksmith
-  if (eventsEnabled && !eventTriggered && ctx.strategyBlacksmith && ctx.rngChance(BLACKSMITH_CHANCE)) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyBlacksmith && rngOrPity(BLACKSMITH_CHANCE)) {
     result.heroAtkDelta = BLACKSMITH_BOOST;
     result.eventType = 'event_blacksmith';
     eventTriggered = true;
   }
 
   // Cursed altar — set pending for player choice
-  if (eventsEnabled && !eventTriggered && ctx.strategyCursedAltar && ctx.rngChance(CURSED_ALTAR_CHANCE) && !ctx.cursedAltarAtkBuff) {
+  if (eventsEnabled && !eventTriggered && ctx.strategyCursedAltar && rngOrPity(CURSED_ALTAR_CHANCE) && !ctx.cursedAltarAtkBuff) {
     result.altarPending = true;
     result.eventType = 'event_cursed_altar';
     eventTriggered = true;
   }
 
   // Fairy blessing
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(FAIRY_CHANCE)) {
+  if (eventsEnabled && !eventTriggered && rngOrPity(FAIRY_CHANCE)) {
     result.newFairyBlessingRemaining = FAIRY_DURATION;
     result.eventType = 'event_fairy';
     eventTriggered = true;
   }
 
   // Time rift
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(TIME_RIFT_CHANCE) && ctx.fightsSinceVillage > 50) {
+  if (eventsEnabled && !eventTriggered && rngOrPity(TIME_RIFT_CHANCE) && ctx.fightsSinceVillage > 50) {
     result.newFightsSinceVillage = 0;
     result.eventType = 'event_time_rift';
     eventTriggered = true;

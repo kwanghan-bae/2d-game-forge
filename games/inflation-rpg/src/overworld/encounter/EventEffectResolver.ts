@@ -2,6 +2,9 @@ import { MerchantChoice, GamblerChoice, AltarChoice } from './EventChoiceEngine'
 import {
   MERCHANT_PRICE_MUL,
   GAMBLER_WIN_RATE,
+  GAMBLER_BET_HIGH_REWARD_MUL,
+  GAMBLER_BET_HIGH_LOSS_RATE,
+  GAMBLER_BET_LOW_LOSS_RATE,
   CURSED_ALTAR_DAMAGE_MUL,
   CURSED_ALTAR_HP_THRESHOLD,
 } from './constants-events';
@@ -89,16 +92,19 @@ function resolveGambler(choice: GamblerChoice, ctx: EventEffectContext): EventEf
   if (choice === GamblerChoice.WALK_AWAY) {
     return { ...EMPTY_RESULT, eventSubType: 'event_gambler_walk' };
   }
-  const betRate = choice === GamblerChoice.BET_HIGH ? GAMBLER_WIN_RATE : GAMBLER_WIN_RATE + 0.15;
+  const betRate = choice === GamblerChoice.BET_HIGH ? GAMBLER_WIN_RATE : GAMBLER_WIN_RATE + 0.20;
   const won = ctx.rngChance(betRate);
   if (won) {
-    const winAmount = choice === GamblerChoice.BET_HIGH ? ctx.heroGold : Math.floor(ctx.heroGold * 0.5);
+    // C714: BET_HIGH 3x gold, BET_LOW 1.5x gold
+    const winAmount = choice === GamblerChoice.BET_HIGH
+      ? Math.floor(ctx.heroGold * (GAMBLER_BET_HIGH_REWARD_MUL - 1))
+      : Math.floor(ctx.heroGold * 0.5);
     return { ...EMPTY_RESULT, goldDelta: winAmount, eventSubType: 'event_gambler_win' };
   }
-  // C709: BET_HIGH loses 80% (floor prevents geometric ruin), BET_LOW loses 25%
+  // C714: BET_HIGH loses 60%, BET_LOW loses 25%
   const loseAmount = choice === GamblerChoice.BET_HIGH
-    ? Math.floor(ctx.heroGold * 0.80)
-    : Math.floor(ctx.heroGold * 0.25);
+    ? Math.floor(ctx.heroGold * GAMBLER_BET_HIGH_LOSS_RATE)
+    : Math.floor(ctx.heroGold * GAMBLER_BET_LOW_LOSS_RATE);
   const loseSubType = choice === GamblerChoice.BET_HIGH ? 'event_gambler_lose_high' : 'event_gambler_lose_low';
   return { ...EMPTY_RESULT, goldDelta: -loseAmount, eventSubType: loseSubType };
 }

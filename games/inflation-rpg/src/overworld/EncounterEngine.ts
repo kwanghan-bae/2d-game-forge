@@ -227,6 +227,7 @@ export class EncounterEngine {
   private cursedAltarAtkBuff = false; // C567: ATK buff active
   private fairyBlessingRemaining = 0; // C568: guaranteed drops
   private eventChainCount = 0; // C570: consecutive events
+  private fightsSinceEvent = 0; // C714: pity timer counter
   private readonly choiceEngine = new EventChoiceEngine();
   private landmarkResolver: LandmarkResolver | null = null;
 
@@ -1770,6 +1771,7 @@ export class EncounterEngine {
       eventChainCount: this.eventChainCount,
       consecutiveEliteKills2: this.consecutiveEliteKills2,
       goldenHourRemaining: this.goldenHourRemaining,
+      fightsSinceEvent: this.fightsSinceEvent,
       strategyRestShrine: getStrategyEnabled('restShrine'),
       strategyGambler: getStrategyEnabled('gambler'),
       strategyBlacksmith: getStrategyEnabled('blacksmith'),
@@ -1790,6 +1792,12 @@ export class EncounterEngine {
     this.relics = r.newRelics;
     this.relicLevels = r.newRelicLevels;
     if (r.comboReset) this.comboStreak = 0;
+    // C714: pity timer — reset on event, increment otherwise
+    if (r.eventType) {
+      this.fightsSinceEvent = 0;
+    } else {
+      this.fightsSinceEvent++;
+    }
 
     // Apply hero deltas
     if (r.heroHpDelta !== 0) hero.hp = Math.max(1, hero.hp + r.heroHpDelta);
