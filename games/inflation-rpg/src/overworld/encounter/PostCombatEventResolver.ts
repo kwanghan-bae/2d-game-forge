@@ -107,11 +107,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   const eventsEnabled = ctx.totalFights > 20;
   let eventTriggered = false;
   // C714: pity timer — force event if N fights without one
+  // C718: pity skips negative events (trap) — only positive events benefit
   const pityActive = eventsEnabled && ctx.fightsSinceEvent >= EVENT_PITY_THRESHOLD;
   const rngOrPity = (rate: number) => pityActive || ctx.rngChance(rate);
 
-  // Trap
-  if (eventsEnabled && !eventTriggered && rngOrPity(TRAP_CHANCE)) {
+  // Trap — NOT pity-eligible (negative event)
+  if (eventsEnabled && !eventTriggered && ctx.rngChance(TRAP_CHANCE)) {
     if (ctx.comboStreak >= TRAP_AVOID_COMBO) {
       result.eventType = 'event_trap_avoided';
     } else {

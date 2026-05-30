@@ -65,4 +65,25 @@ describe('PostCombatEventResolver', () => {
     }));
     expect(result.newEventChainCount).toBe(1);
   });
+
+  it('pity timer does NOT force trap — skips to positive event', () => {
+    // When fightsSinceEvent >= 20, pity activates. Trap uses rngChance (not pity).
+    // rngChance always returns false → trap won't fire.
+    // But pity forces the NEXT eligible positive event (treasure shrine).
+    const result = resolvePostCombatEvent(makeCtx({
+      fightsSinceEvent: 25,
+      rngChance: () => false, // never natural trigger
+    }));
+    // Should NOT be trap; should be a positive event (treasure shrine is first positive)
+    expect(result.eventType).not.toBe('event_trap');
+    expect(result.eventType).not.toBeNull();
+  });
+
+  it('pity timer forces positive event (treasure shrine first)', () => {
+    const result = resolvePostCombatEvent(makeCtx({
+      fightsSinceEvent: 20,
+      rngChance: () => false,
+    }));
+    expect(result.eventType).toBe('event_treasure_shrine_pending');
+  });
 });
