@@ -37,6 +37,15 @@ import { getInspirationConfig } from './ConstantPhaseProfile';
 import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
 import { TRIAL_GROUNDS_DURATION } from './constants-events';
 
+// C792: Declarative late-event registry — add new events here (1 line each)
+type LateEventResult = { [K: string]: unknown };
+const LATE_EVENT_REGISTRY: Record<string, (r: LateEventResult) => void> = {
+  event_ancient_colosseum: (r) => { r.colosseumPending = true; },
+  event_void_rift: (r) => { r.voidRiftTriggered = true; },
+  event_abyssal_convergence: (r) => { r.abyssalConvergencePending = true; },
+  event_temporal_fissure: (r) => { r.temporalFissurePending = true; },
+};
+
 export interface PostCombatContext {
   totalFights: number;
   comboStreak: number;
@@ -280,25 +289,15 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     }
   }
 
-  // C755: Late-game exclusive events (C789: density scaling after threshold)
+  // C792: Config-driven late-game event dispatch (replaces if-else chain)
   if (eventsEnabled && !eventTriggered) {
     const lateEvents = getAvailableLateEvents(ctx.totalFights);
     const densityMul = getLateGameDensityMul(ctx.totalFights);
     for (const le of lateEvents) {
       if (rngOrPity(le.chance * densityMul)) {
-        if (le.id === 'event_ancient_colosseum') {
-          result.colosseumPending = true;
-          result.eventType = 'event_ancient_colosseum';
-        } else if (le.id === 'event_void_rift') {
-          result.voidRiftTriggered = true;
-          result.eventType = 'event_void_rift';
-        } else if (le.id === 'event_abyssal_convergence') {
-          result.abyssalConvergencePending = true;
-          result.eventType = 'event_abyssal_convergence';
-        } else if (le.id === 'event_temporal_fissure') {
-          result.temporalFissurePending = true;
-          result.eventType = 'event_temporal_fissure';
-        }
+        const handler = LATE_EVENT_REGISTRY[le.id];
+        if (handler) handler(result);
+        result.eventType = le.id;
         eventTriggered = true;
         break;
       }
