@@ -145,6 +145,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [healResult, setHealResult] = useState<PostCombatHealResult | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [currentWeather, setCurrentWeather] = useState<Weather>('normal');
+  const [isNight, setIsNight] = useState(false);
   const [currentDestination, setCurrentDestination] = useState<import('../data/landmarks').LandmarkKind | null>(null);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -310,6 +311,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           if (cachedHeal && cachedHeal.totalHeal > 0) setHealResult(cachedHeal);
           // C725: WeatherHudIndicator wiring
           setCurrentWeather(engineRef.current?.getWeather?.() ?? 'normal');
+          // C735: Night indicator wiring
+          setIsNight(engineRef.current?.getIsNight?.() ?? false);
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||
@@ -684,7 +687,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
-      <WeatherHudIndicator weather={currentWeather} />
+      <WeatherHudIndicator weather={currentWeather} isNight={isNight} />
       <DestinationBadge kind={currentDestination} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />

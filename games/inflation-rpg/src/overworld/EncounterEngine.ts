@@ -312,6 +312,8 @@ export class EncounterEngine {
   getAtkBreakdownInput() { return this.lastAtkBreakdownInput; }
   getExpBreakdown() { return this.lastExpBreakdown; }
   getWeather() { return this.lastWeather; }
+  // C735: expose night state for UI
+  getIsNight(): boolean { return computeNight(this.totalWins).isNight; }
   getHealResult() { return this.lastHealResult; }
   getEventChainCount(): number { return this.eventChainCount; }
   getTotalDeaths(): number { return this.totalDeaths; }

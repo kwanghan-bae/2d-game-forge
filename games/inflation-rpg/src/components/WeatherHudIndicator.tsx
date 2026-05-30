@@ -1,16 +1,17 @@
 /**
- * C725: WeatherHudIndicator — shows current weather as a pill badge.
- * Only displays when weather is not normal.
+ * C725: WeatherHudIndicator — shows current weather/night as a pill badge.
+ * Only displays when weather is not normal or during night.
  */
 import { getWeatherDisplay } from './WeatherHudIndicatorLogic';
 import type { Weather } from '../overworld/encounter/WeatherSystem';
 
 interface WeatherHudIndicatorProps {
   weather: Weather;
+  isNight?: boolean;
 }
 
-export function WeatherHudIndicator({ weather }: WeatherHudIndicatorProps) {
-  const display = getWeatherDisplay({ weather });
+export function WeatherHudIndicator({ weather, isNight }: WeatherHudIndicatorProps) {
+  const display = getWeatherDisplay({ weather, isNight });
   if (!display) return null;
 
   return (
