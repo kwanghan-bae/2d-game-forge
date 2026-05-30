@@ -782,20 +782,24 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           />
         );
       })()}
-      {comboDisplay >= 3 && (
+      {comboDisplay >= 1 && (
         <div style={{
-          position: 'absolute', top: 8, right: 8, padding: '4px 8px',
-          background: 'rgba(255,150,0,0.85)', borderRadius: 6,
-          color: '#fff', fontSize: 12, fontWeight: 700, zIndex: 15,
+          position: 'absolute', top: 8, right: 8, padding: '6px 12px',
+          background: comboDisplay >= 10 ? 'rgba(255,80,0,0.92)' : 'rgba(255,150,0,0.85)',
+          borderRadius: 8,
+          color: '#fff', fontSize: comboDisplay >= 10 ? 15 : 13, fontWeight: 700, zIndex: 15,
+          transition: 'all 0.2s ease',
+          boxShadow: comboDisplay >= 10 ? '0 0 8px rgba(255,100,0,0.6)' : 'none',
         }} data-testid="combo-hud">
-          🔥 {comboDisplay} Combo
+          🔥 ×{comboDisplay} {comboDisplay >= 10 ? 'COMBO!' : 'combo'}
         </div>
       )}
-      {momentumDisplay >= 3 && (
+      {momentumDisplay >= 1 && (
         <div style={{
-          position: 'absolute', top: comboDisplay >= 3 ? 34 : 8, right: 8, padding: '4px 8px',
-          background: 'rgba(100,180,255,0.85)', borderRadius: 6,
-          color: '#fff', fontSize: 11, fontWeight: 600, zIndex: 15,
+          position: 'absolute', top: comboDisplay >= 1 ? 42 : 8, right: 8, padding: '5px 10px',
+          background: 'rgba(100,180,255,0.85)', borderRadius: 8,
+          color: '#fff', fontSize: 12, fontWeight: 600, zIndex: 15,
+          transition: 'all 0.2s ease',
         }} data-testid="momentum-hud">
           ⚡ ATK +{momentumDisplay * 2}%
         </div>
