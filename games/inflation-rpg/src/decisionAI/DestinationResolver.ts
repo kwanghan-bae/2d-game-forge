@@ -43,6 +43,7 @@ const WEIGHT_BASE: Record<LandmarkKind, number> = {
 export interface InfluenceResult {
   chosen: LandmarkCandidate;
   influencingTraits: TraitId[];
+  difficultyGateApplied: boolean;
 }
 
 export class DestinationResolver {
@@ -136,17 +137,18 @@ export class DestinationResolver {
       if (c.kind === 'holy_ruin' && t_terminal_genius) { w *= 1.6; influences.push('t_terminal_genius'); }
       if (c.kind === 'shrine' && t_terminal_genius) { w *= 1.4; influences.push('t_terminal_genius'); }
       // C734: difficulty gate — penalize landmarks far above hero level
-      if (ctx.heroLevel != null && c.difficulty > ctx.heroLevel * 1.5) w *= 0.3;
-      return { candidate: c, weight: Math.max(0.1, w), influences };
+      const gateApplied = ctx.heroLevel != null && c.difficulty > ctx.heroLevel * 1.5;
+      if (gateApplied) w *= 0.3;
+      return { candidate: c, weight: Math.max(0.1, w), influences, gateApplied };
     });
 
     const totalW = weighted.reduce((a, b) => a + b.weight, 0);
     let r = this.rng.next() * totalW;
     for (const item of weighted) {
       r -= item.weight;
-      if (r <= 0) return { chosen: item.candidate, influencingTraits: item.influences };
+      if (r <= 0) return { chosen: item.candidate, influencingTraits: item.influences, difficultyGateApplied: item.gateApplied };
     }
     const last = weighted[weighted.length - 1]!;
-    return { chosen: last.candidate, influencingTraits: last.influences };
+    return { chosen: last.candidate, influencingTraits: last.influences, difficultyGateApplied: last.gateApplied };
   }
 }

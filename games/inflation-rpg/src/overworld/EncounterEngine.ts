@@ -1817,6 +1817,8 @@ export class EncounterEngine {
     this.fightsSinceVillage = r.newFightsSinceVillage;
     this.relics = r.newRelics;
     this.relicLevels = r.newRelicLevels;
+    // C745: wire Echo event → prestige echo duration
+    if (r.newPrestigeEchoRemaining > 0) this.prestigeEchoRemaining = r.newPrestigeEchoRemaining;
     if (r.comboReset) this.comboStreak = 0;
     // C714: pity timer — reset on event, increment otherwise
     if (r.eventType) {
