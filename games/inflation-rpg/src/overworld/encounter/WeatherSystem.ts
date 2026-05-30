@@ -88,3 +88,42 @@ export function computeEnvironment(
   return { weather, ...night };
 }
 
+
+/**
+ * C807: WeatherSubsystem — stateful wrapper for weather duration + re-roll logic.
+ * Extracts weather state management from EncounterEngine.
+ */
+export class WeatherSubsystem {
+  private current: Weather = 'normal';
+  private remaining = 0;
+
+  /** Advance weather state for one fight. Returns current weather result. */
+  advance(
+    chance: (rate: number) => boolean,
+    rollInt: (n: number) => number,
+    durationMin: number,
+    durationMax: number,
+  ): WeatherResult {
+    if (this.remaining > 0) {
+      this.remaining--;
+      // Return current weather's effects
+      return rollWeather(() => true, () => (['rain', 'wind', 'fog', 'storm', 'snow'] as const).indexOf(this.current as any));
+    }
+    // Roll new weather
+    const result = rollWeather(chance, rollInt);
+    this.current = result.weather;
+    if (result.weather !== 'normal') {
+      this.remaining = durationMin + rollInt(durationMax - durationMin + 1) - 1;
+    }
+    return result;
+  }
+
+  getCurrent(): Weather { return this.current; }
+  getRemaining(): number { return this.remaining; }
+
+  /** Reset on death or run end */
+  reset(): void {
+    this.current = 'normal';
+    this.remaining = 0;
+  }
+}
