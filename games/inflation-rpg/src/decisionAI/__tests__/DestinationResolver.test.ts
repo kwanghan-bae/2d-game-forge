@@ -161,4 +161,66 @@ describe('DestinationResolver', () => {
     // pious=8 → holy_ruin gets +6.4 on top of base 3 → >50% expected
     expect(holyPicks).toBeGreaterThan(15);
   });
+
+  describe('C734: boss_hunter weight reduction + difficulty gate', () => {
+    it('boss_hunter multiplier 1.3 (reduced from 1.5)', () => {
+      // With boss_hunter, boss selection rate should be lower than with 1.5×
+      // boss base=5, enemy base=10, shrine=4, village=5 → total base=24
+      // With boss_hunter 1.3×: boss = 5×1.3 = 6.5 → selection ~27%
+      // (Previously with 1.5×: boss = 7.5 → ~31%)
+      let bossPicks = 0;
+      for (let seed = 0; seed < 100; seed++) {
+        const r = new DestinationResolver(new SeededRng(seed));
+        const chosen = r.choose(candidates(), {
+          traits: ['t_boss_hunter'] as TraitId[],
+          personality: new PersonalityState(),
+        });
+        if (chosen?.kind === 'boss') bossPicks++;
+      }
+      // With 1.3×: expect ~25-30%, NOT >30% (which was old 1.5× behavior)
+      expect(bossPicks).toBeLessThan(35);
+      expect(bossPicks).toBeGreaterThan(15);
+    });
+
+    it('difficulty gate penalizes boss when difficulty > heroLevel × 1.5', () => {
+      // Hero level passed via context; overleveled boss should be penalized
+      const hardBoss: LandmarkCandidate[] = [
+        { id: 'easy_enemy', kind: 'enemy', difficulty: 5 },
+        { id: 'hard_boss', kind: 'boss', difficulty: 50 }, // way above heroLevel 10
+        { id: 'safe_shrine', kind: 'shrine', difficulty: 0 },
+      ];
+      let bossPicks = 0;
+      for (let seed = 0; seed < 100; seed++) {
+        const r = new DestinationResolver(new SeededRng(seed));
+        const chosen = r.choose(hardBoss, {
+          traits: ['t_boss_hunter'] as TraitId[],
+          personality: new PersonalityState(),
+          heroLevel: 10, // difficulty 50 > 10*1.5=15 → penalized
+        });
+        if (chosen?.kind === 'boss') bossPicks++;
+      }
+      // With penalty (w*=0.3), boss should rarely be picked
+      expect(bossPicks).toBeLessThanOrEqual(15);
+    });
+
+    it('difficulty gate does NOT apply when boss difficulty is within range', () => {
+      const fairBoss: LandmarkCandidate[] = [
+        { id: 'enemy_1', kind: 'enemy', difficulty: 5 },
+        { id: 'fair_boss', kind: 'boss', difficulty: 10 }, // within heroLevel 10 × 1.5 = 15
+        { id: 'shrine_1', kind: 'shrine', difficulty: 0 },
+      ];
+      let bossPicks = 0;
+      for (let seed = 0; seed < 100; seed++) {
+        const r = new DestinationResolver(new SeededRng(seed));
+        const chosen = r.choose(fairBoss, {
+          traits: ['t_boss_hunter'] as TraitId[],
+          personality: new PersonalityState(),
+          heroLevel: 10,
+        });
+        if (chosen?.kind === 'boss') bossPicks++;
+      }
+      // Fair boss should be selected at boss_hunter rate (~25%+)
+      expect(bossPicks).toBeGreaterThan(15);
+    });
+  });
 });
