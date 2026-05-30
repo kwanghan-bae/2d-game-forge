@@ -6,8 +6,8 @@ import { OVERKILL_DROP_BONUS, DROP_STREAK_THRESHOLD, ELITE_COMBO_THRESHOLD } fro
 import { ELITE_BOSS_SYNERGY_DROP_BONUS } from './constants-progression';
 
 const DROP_RATE = 0.36;
-const DROP_DIMINISH_PER_100_LEVELS = 0.03;
-const DROP_DIMINISH_CAP = 0.25;
+const DROP_DIMINISH_PER_100_LEVELS = 0.015;
+const DROP_DIMINISH_CAP = 0.40;
 
 export interface DropChanceContext {
   isBoss: boolean;
