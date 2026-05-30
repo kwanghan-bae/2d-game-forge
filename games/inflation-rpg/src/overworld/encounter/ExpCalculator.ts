@@ -102,6 +102,20 @@ export interface ExpMultiplierContext {
  * No side-effects — engine applies side-effects separately.
  */
 export function computeExpMultiplier(ctx: ExpMultiplierContext): number {
+  return computeExpMultiplierWithBreakdown(ctx).multiplier;
+}
+
+export interface ExpBreakdownEntry {
+  name: string;
+  value: number;
+}
+
+export interface ExpMultiplierWithBreakdown {
+  multiplier: number;
+  breakdown: ExpBreakdownEntry[];
+}
+
+export function computeExpMultiplierWithBreakdown(ctx: ExpMultiplierContext): ExpMultiplierWithBreakdown {
   const comboBonus = ctx.comboStreak >= COMBO_STREAK_THRESHOLD
     ? 1 + (ctx.comboStreak - COMBO_STREAK_THRESHOLD + 1) * COMBO_STREAK_EXP_BONUS
     : 1;
@@ -190,14 +204,21 @@ export function computeExpMultiplier(ctx: ExpMultiplierContext): number {
   const elderWisdomExpMul = ctx.elderWisdomActive ? ELDER_WISDOM_EXP_MUL : 1;
   const scholarLensExpMul = ctx.hasScholarLens ? SCHOLAR_LENS_EXP_MUL : 1;
 
-  // Group into categories
-  const expCoreMuls = dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul;
-  const expComboMuls = comboBonus * comboExpMul * comboBreakMul * comboFinisherMul * comboExpCascadeMul * comboAccelExpMul * comboExpVelocityMul;
-  const expCombatMuls = firstBloodMul * closeCallMul * quickKillMul * multiKillMul * revengeExpMul * critChainExpMul * critExpChainMul2;
-  const expProgressMuls = diminish * lvUpMul * expDecayMul * expChainMul * expChainFightMul * killMomentumExp * familiarityMul * finalMasteryMul * finalMasteryMul2;
-  const expDangerMuls = dangerCascadeExpMul * dangerChainMul * dangerExpMasteryMul * dangerExpSurgeMul * deepDangerExpMul * eliteDangerMul * waveDangerMul;
-  const expPrestigeMuls = prestigeExpMul * prestigeAllExpMul * prestigeExpScaleMul * prestigeReadyExpMul;
-  const expMiscMuls = survivalBonus * waveMulExp * greedExpMul * eliteBountyMul * bossExpMul * companionMul * bossSlayerMul * shrineBlessMul * lowHpExpMul * expCascadeMul * expDroughtMul * survivorGritMul * survivalScaleMul * eliteExpMul2 * villageExpMul * waveSurvivalMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * bossExpMasteryMul * eliteMasteryMul * survivalCompoundMul * eliteVillageBurstMul * waveExpCompoundMul * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * waveExpMasteryMul * greedGambitExpMul * riskRewardExpMul;
+  const categories: { name: string; value: number }[] = [
+    { name: 'core', value: dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul },
+    { name: 'combo', value: comboBonus * comboExpMul * comboBreakMul * comboFinisherMul * comboExpCascadeMul * comboAccelExpMul * comboExpVelocityMul },
+    { name: 'combat', value: firstBloodMul * closeCallMul * quickKillMul * multiKillMul * revengeExpMul * critChainExpMul * critExpChainMul2 },
+    { name: 'progress', value: diminish * lvUpMul * expDecayMul * expChainMul * expChainFightMul * killMomentumExp * familiarityMul * finalMasteryMul * finalMasteryMul2 },
+    { name: 'danger', value: dangerCascadeExpMul * dangerChainMul * dangerExpMasteryMul * dangerExpSurgeMul * deepDangerExpMul * eliteDangerMul * waveDangerMul },
+    { name: 'prestige', value: prestigeExpMul * prestigeAllExpMul * prestigeExpScaleMul * prestigeReadyExpMul },
+    { name: 'misc', value: survivalBonus * waveMulExp * greedExpMul * eliteBountyMul * bossExpMul * companionMul * bossSlayerMul * shrineBlessMul * lowHpExpMul * expCascadeMul * expDroughtMul * survivorGritMul * survivalScaleMul * eliteExpMul2 * villageExpMul * waveSurvivalMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * bossExpMasteryMul * eliteMasteryMul * survivalCompoundMul * eliteVillageBurstMul * waveExpCompoundMul * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * waveExpMasteryMul * greedGambitExpMul * riskRewardExpMul },
+  ];
 
-  return expCoreMuls * expComboMuls * expCombatMuls * expProgressMuls * expDangerMuls * expPrestigeMuls * expMiscMuls;
+  const multiplier = categories.reduce((acc, c) => acc * c.value, 1);
+  const sorted = [...categories].sort((a, b) => b.value - a.value);
+
+  return {
+    multiplier,
+    breakdown: sorted.slice(0, 3),
+  };
 }
