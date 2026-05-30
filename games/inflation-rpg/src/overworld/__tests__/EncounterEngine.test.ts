@@ -479,7 +479,7 @@ describe('EncounterEngine — C136 shrine meditation buff', () => {
     }
     expect(medSeed).toBeGreaterThanOrEqual(0);
 
-    const hero = HeroEntity.create({ seed: medSeed, heroHpMax: 100, heroAtkBase: 10 });
+    const hero = HeroEntity.create({ seed: medSeed, heroHpMax: 100, heroAtkBase: 100 });
     const engine = new EncounterEngine(new SeededRng(medSeed));
     engine.resolveEncounter(hero, 'shrine', 's_0');
     expect(engine.getShrineBuffRemaining()).toBe(5);
@@ -835,6 +835,22 @@ describe('EncounterEngine — C617 death rate verification', () => {
     let deaths = 0;
 
     for (let i = 0; i < 50; i++) {
+      const events = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      if (events.some(e => e.type === 'hero_died')) {
+        deaths++;
+        hero.recoverFromStagger();
+      }
+    }
+
+    expect(deaths).toBeGreaterThan(0);
+  });
+
+  it('moderate hero (ATK 20, HP 50) has non-zero death rate in 100 fights', () => {
+    const hero = HeroEntity.create({ seed: 7, heroHpMax: 50, heroAtkBase: 20 });
+    const engine = new EncounterEngine(new SeededRng(99));
+    let deaths = 0;
+
+    for (let i = 0; i < 100; i++) {
       const events = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
       if (events.some(e => e.type === 'hero_died')) {
         deaths++;
