@@ -20,6 +20,7 @@ describe('PostCombatEventResolver', () => {
       relicLevels: [],
       fightsSinceVillage: 10,
       eventChainCount: 0,
+      eventMomentumDensityActive: false,
       consecutiveEliteKills2: 0,
       goldenHourRemaining: 0,
       strategyRestShrine: true,
@@ -62,6 +63,7 @@ describe('PostCombatEventResolver', () => {
       rngChance: () => { callCount++; return callCount === 1; },
       comboStreak: 100,
       eventChainCount: 0,
+      eventMomentumDensityActive: false,
     }));
     expect(result.newEventChainCount).toBe(1);
   });

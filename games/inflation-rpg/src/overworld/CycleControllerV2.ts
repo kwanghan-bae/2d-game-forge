@@ -907,6 +907,10 @@ export class CycleControllerV2 {
   resolveVoidRift(accept: boolean) { this.encounter.resolveVoidRift(accept); this.recordEventChoice('void_rift', accept); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
+  getAbyssalConvergenceRemaining() { return this.encounter.getAbyssalConvergenceRemaining(); }
+  getTemporalFissureRemaining() { return this.encounter.getTemporalFissureRemaining(); }
+  getEventMomentumAtkRemaining() { return this.encounter.getEventMomentumAtkRemaining(); }
+  getEventMomentumDensityRemaining() { return this.encounter.getEventMomentumDensityRemaining(); }
 
   /** Most recent saga events (already batched + narrative-formatted) for the
    *  live OverworldRunner log overlay. */

@@ -35,7 +35,7 @@ import {
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
 import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
-import { TRIAL_GROUNDS_DURATION } from './constants-events';
+import { TRIAL_GROUNDS_DURATION, EVENT_MOMENTUM_TIER2_THRESHOLD, EVENT_MOMENTUM_TIER3_THRESHOLD, EVENT_MOMENTUM_TIER3_DENSITY_MUL } from './constants-events';
 
 // C792: Declarative late-event registry — add new events here (1 line each)
 type LateEventResult = { [K: string]: unknown };
@@ -63,6 +63,7 @@ export interface PostCombatContext {
   relicLevels: number[];
   fightsSinceVillage: number;
   eventChainCount: number;
+  eventMomentumDensityActive: boolean; // C793
   consecutiveEliteKills2: number;
   goldenHourRemaining: number;
   fightsSinceEvent: number; // C714: pity timer
@@ -104,6 +105,7 @@ export interface PostCombatResult {
   temporalFissurePending: boolean; // C791
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
+  eventMomentumTier: number; // C793: 0=none, 2=ATK buff, 3=density boost
   comboReset: boolean;
   shrinePending: boolean;
   shrineChoice: 'gold' | 'exp' | 'heal' | null;
@@ -142,6 +144,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     temporalFissurePending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
+    eventMomentumTier: 0,
     comboReset: false,
     shrinePending: false,
     shrineChoice: null,
@@ -292,7 +295,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   // C792: Config-driven late-game event dispatch (replaces if-else chain)
   if (eventsEnabled && !eventTriggered) {
     const lateEvents = getAvailableLateEvents(ctx.totalFights);
-    const densityMul = getLateGameDensityMul(ctx.totalFights);
+    const densityMul = getLateGameDensityMul(ctx.totalFights) * (ctx.eventMomentumDensityActive ? EVENT_MOMENTUM_TIER3_DENSITY_MUL : 1);
     for (const le of lateEvents) {
       if (rngOrPity(le.chance * densityMul)) {
         const handler = LATE_EVENT_REGISTRY[le.id];
@@ -311,14 +314,24 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
-  // Event chain
+  // Event chain + C793: Event Momentum tiers
   if (eventTriggered) {
     result.newEventChainCount = ctx.eventChainCount + 1;
-    if (result.newEventChainCount >= EVENT_CHAIN_THRESHOLD) {
+    if (result.newEventChainCount >= EVENT_MOMENTUM_TIER3_THRESHOLD) {
+      result.heroExpDelta += EVENT_CHAIN_REWARD_EXP * 3;
+      result.heroGoldDelta += EVENT_CHAIN_REWARD_GOLD * 3;
+      result.eventChainReward = true;
+      result.eventMomentumTier = 3;
+      result.newEventChainCount = 0;
+    } else if (result.newEventChainCount >= EVENT_MOMENTUM_TIER2_THRESHOLD) {
+      result.heroExpDelta += EVENT_CHAIN_REWARD_EXP * 2;
+      result.heroGoldDelta += EVENT_CHAIN_REWARD_GOLD * 2;
+      result.eventChainReward = true;
+      result.eventMomentumTier = 2;
+    } else if (result.newEventChainCount >= EVENT_CHAIN_THRESHOLD) {
       result.heroExpDelta += EVENT_CHAIN_REWARD_EXP;
       result.heroGoldDelta += EVENT_CHAIN_REWARD_GOLD;
       result.eventChainReward = true;
-      result.newEventChainCount = 0;
     }
   } else {
     result.newEventChainCount = 0;

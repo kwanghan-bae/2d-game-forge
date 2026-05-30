@@ -173,6 +173,13 @@ export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
 export const EVENT_CHAIN_REWARD_GOLD = 2000;
+// C793: Event Momentum — escalating tiers
+export const EVENT_MOMENTUM_TIER2_THRESHOLD = 5; // tier 2: ATK buff
+export const EVENT_MOMENTUM_TIER2_ATK_BONUS = 0.15; // +15% ATK for 10 fights
+export const EVENT_MOMENTUM_TIER2_DURATION = 10;
+export const EVENT_MOMENTUM_TIER3_THRESHOLD = 8; // tier 3: next event chance ×2
+export const EVENT_MOMENTUM_TIER3_DENSITY_MUL = 2.0; // stacks with density ramp
+export const EVENT_MOMENTUM_TIER3_DURATION = 20;
 export const VILLAGE_GOLD_FOUNTAIN = 25;
 export const DANGER_TAX_IMMUNITY = true;
 export const CRIT_STREAK_GUARANTEE_THRESHOLD = 3;

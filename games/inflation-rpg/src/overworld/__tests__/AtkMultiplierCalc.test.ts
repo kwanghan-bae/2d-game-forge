@@ -77,6 +77,7 @@ function baseCtx(): AtkMultiplierContext {
     emberCrownStacks: 0,
     hasScholarLens: false,
     cursedAltarAtkBuff: false,
+    eventMomentumAtkActive: false,
     inspirationActive: false,
     comboPrestigeFlat: 0,
     comboMilestoneBonus: 0,
