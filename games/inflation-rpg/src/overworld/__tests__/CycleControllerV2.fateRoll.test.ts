@@ -68,6 +68,8 @@ describe('EncounterEngine fate roll intercept', () => {
     const engine = new EncounterEngine(new SeededRng(1), {
       isFateRollEligible: () => true,
     });
+    // Disable level sacrifice so it doesn't fire before fate_roll intercept
+    (engine as any).levelSacrificeCooldown = 50;
     const events = engine.resolveEncounter(hero, 'enemy', 'wolf_1');
     const fr = events.find(e => e.type === 'fate_roll_required');
     expect(fr).toBeDefined();
@@ -181,6 +183,8 @@ describe('resolveFateRoll decline path', () => {
     ctrl.getHero().level = 50;
     ctrl.getHero().recomputeStats();
     ctrl.getHero().hp = 1;
+    // Disable level sacrifice so it doesn't fire before fate_roll intercept
+    (ctrl as any).encounter.levelSacrificeCooldown = 50;
     ctrl.handleArrival('enemy', 'wolf_1');
 
     const events = ctrl.resolveFateRoll('decline');

@@ -213,7 +213,7 @@ export function runSimV2Chained(opts: SimV2Options): SimV2Output {
     meta: {
       ...s.meta,
       sagaHistory: [],
-      unlockedRealms: ['base'],
+      unlockedRealms: s.meta.unlockedRealms ?? ['base'],
       sponsorGold: 0,
       atkBaseBonus: opts.atkBonus ?? 0,
       hpBaseBonus: opts.hpBonus ?? 0,
