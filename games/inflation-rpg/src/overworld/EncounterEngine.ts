@@ -735,15 +735,17 @@ export class EncounterEngine {
           }
           // C206: damage reflection
           eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
-          // C142: lucky dodge — survive fatal hit with 10% chance (primary death save)
-          if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
+          // C584: cursed altar disables death prevention (real trade-off)
+          const deathSaveBlocked = this.cursedAltarAtkBuff;
+          // C142: lucky dodge — survive fatal hit with 5% chance (primary death save)
+          if (hero.staggered && !deathSaveBlocked && this.rng.chance(LUCKY_DODGE_CHANCE)) {
             hero.staggered = false;
             hero.hp = 1;
             luckyDodge = true;
           }
           // C581: removed C296 death defiance + C439 prestige defiance (redundant layers)
           // C522: level sacrifice — sacrifice 25% levels to survive (once per 50 fights)
-          if (hero.staggered && !luckyDodge && hero.level > 10 && this.levelSacrificeCooldown <= 0) {
+          if (hero.staggered && !luckyDodge && !deathSaveBlocked && hero.level > 10 && this.levelSacrificeCooldown <= 0) {
             const levelsLost = Math.max(1, Math.floor(hero.level * LEVEL_SACRIFICE_RATE));
             hero.level -= levelsLost;
             hero.recomputeStats();
