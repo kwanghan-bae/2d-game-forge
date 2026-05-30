@@ -18,14 +18,18 @@ describe('WeatherSystem', () => {
     expect(result.atkMul).toBe(1);
     expect(result.critMul).toBe(1);
     expect(result.expMul).toBe(1);
+    expect(result.dodgeMul).toBe(1);
+    expect(result.speedMul).toBe(1);
   });
 
-  test('rain reduces ATK multiplier', () => {
+  test('rain reduces ATK multiplier and boosts dodge', () => {
     const result = rollWeather(() => true, () => 0); // rain = index 0
     expect(result.weather).toBe('rain');
     expect(result.atkMul).toBeCloseTo(1 - WEATHER_RAIN_ATK_PENALTY);
+    expect(result.dodgeMul).toBeCloseTo(1.05);
     expect(result.critMul).toBe(1);
     expect(result.expMul).toBe(1);
+    expect(result.speedMul).toBe(1);
   });
 
   test('wind increases EXP multiplier', () => {
@@ -34,14 +38,18 @@ describe('WeatherSystem', () => {
     expect(result.atkMul).toBe(1);
     expect(result.expMul).toBeCloseTo(1 + WEATHER_WIND_EXP_BONUS);
     expect(result.critMul).toBe(1);
+    expect(result.dodgeMul).toBe(1);
+    expect(result.speedMul).toBe(1);
   });
 
-  test('fog reduces crit multiplier', () => {
+  test('fog reduces crit multiplier and speed', () => {
     const result = rollWeather(() => true, () => 2); // fog = index 2
     expect(result.weather).toBe('fog');
     expect(result.critMul).toBe(WEATHER_FOG_CRIT_PENALTY);
+    expect(result.speedMul).toBeCloseTo(0.90);
     expect(result.atkMul).toBe(1);
     expect(result.expMul).toBe(1);
+    expect(result.dodgeMul).toBe(1);
   });
 });
 
