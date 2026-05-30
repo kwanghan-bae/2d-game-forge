@@ -763,6 +763,30 @@ export const DEATH_COUNT_ATK_CAP = 15;
 export const PRESTIGE_SHIELD_BLOCK_BONUS = 0.05;
 // C430: boss gold vault scaling — vault gold scales with prestige
 export const BOSS_VAULT_PRESTIGE_SCALE = 0.10;
+// C431: combo exp finisher bonus — ending high combo gives burst exp
+export const COMBO_END_EXP_THRESHOLD = 12;
+export const COMBO_END_EXP_PER_COMBO = 2;
+// C432: danger streak gold compound — long danger streaks compound gold
+export const DANGER_STREAK_GOLD_COMPOUND = 0.04;
+export const DANGER_STREAK_COMPOUND_THRESHOLD = 3;
+// C433: elite chain ATK — consecutive elites boost ATK temporarily
+export const ELITE_CHAIN_ATK_BONUS = 0.08;
+export const ELITE_CHAIN_ATK_DURATION = 3;
+// C434: prestige heal boost — prestige increases all healing
+export const PRESTIGE_HEAL_BOOST = 0.03;
+// C435: wave completion gold bonus — wave clear gives flat gold
+export const WAVE_COMPLETE_GOLD_BONUS = 5;
+// C436: boss fury ATK scaling — boss fury buff scales with kills
+export const BOSS_FURY_ATK_SCALE = 0.02;
+// C437: crit chain exp — consecutive crits boost exp
+export const CRIT_CHAIN_EXP_BONUS = 0.04;
+// C438: village gold fountain upgrade — village gold scales with visits
+export const VILLAGE_GOLD_FOUNTAIN_SCALE = 0.5;
+// C439: death defiance — cooldown-based survival chance
+export const DEATH_DEFIANCE_PRESTIGE_CHANCE = 0.08;
+export const DEATH_DEFIANCE_PRESTIGE_COOLDOWN = 10;
+// C440: combo prestige synergy — combo multipliers scale with prestige
+export const COMBO_PRESTIGE_SCALE = 0.02;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -942,6 +966,8 @@ export class EncounterEngine {
   private consecutiveWaveClears = 0; // C410: consecutive wave completions
   private dangerFights = 0; // C405: track total danger zone fights
   private overkillChain = 0; // C421: consecutive overkills
+  private eliteChainAtkRemaining = 0; // C433: elite chain ATK buff duration
+  private deathDefianceCooldown = 0; // C439: death defiance cooldown
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -988,6 +1014,8 @@ export class EncounterEngine {
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale);
 
       if (hero.staggered) return events;
+      // C439: decrement death defiance cooldown
+      if (this.deathDefianceCooldown > 0) this.deathDefianceCooldown--;
 
       // Cycle 109 F1: boss intro intercept (before battle_started).
       // PRD §F1.동작(8) opt-(a): controller emits boss_intro_offered, modal
@@ -1098,7 +1126,8 @@ export class EncounterEngine {
       const dangerComboBonus = isDangerZone && this.comboStreak > 0 ? DANGER_COMBO_ATK_BONUS : 0;
       const dangerAtkMul = isDangerZone ? (1 + DANGER_ZONE_ATK_BONUS + this.dangerChainCount * DANGER_ATK_CHAIN_BONUS + dangerComboBonus) : 1;
       // C321: boss fury ATK buff
-      const bossFuryMul = this.bossFuryRemaining > 0 ? (1 + BOSS_FURY_ATK_BONUS) : 1;
+      // C436: boss fury ATK scaling — fury scales with boss kills
+      const bossFuryMul = this.bossFuryRemaining > 0 ? (1 + BOSS_FURY_ATK_BONUS + this.consecutiveBossKills * BOSS_FURY_ATK_SCALE) : 1;
       if (this.bossFuryRemaining > 0) this.bossFuryRemaining--;
       // C330: final stand — at 1 HP, ×2 damage
       const finalStandMul = hero.hp === FINAL_STAND_HP ? FINAL_STAND_DMG_MUL : 1;
@@ -1124,7 +1153,12 @@ export class EncounterEngine {
       const combatMastery = Math.min(COMBAT_MASTERY_CAP, Math.floor((this.totalWins + this.totalDeaths) / 100) * COMBAT_MASTERY_PER_100);
       // C428: death count ATK — total deaths boost ATK permanently
       const deathCountAtk = Math.min(DEATH_COUNT_ATK_CAP, Math.floor(this.totalDeaths / 10) * DEATH_COUNT_ATK_PER_10);
-      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul));
+      // C433: elite chain ATK — consecutive elites boost ATK temporarily
+      const eliteChainAtkMul = this.eliteChainAtkRemaining > 0 ? (1 + ELITE_CHAIN_ATK_BONUS * this.eliteCombo) : 1;
+      if (this.eliteChainAtkRemaining > 0) this.eliteChainAtkRemaining--;
+      // C440: combo prestige synergy — combo multipliers scale with prestige
+      const comboPrestigeSynergyMul = this.comboStreak > 0 ? (1 + this.prestigeCount * COMBO_PRESTIGE_SCALE) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -1285,6 +1319,12 @@ export class EncounterEngine {
             hero.staggered = false;
             hero.hp = 1;
           }
+          // C439: death defiance prestige — cooldown-based survival
+          if (hero.staggered && this.deathDefianceCooldown <= 0 && this.prestigeCount > 0 && this.rng.chance(DEATH_DEFIANCE_PRESTIGE_CHANCE)) {
+            hero.staggered = false;
+            hero.hp = 1;
+            this.deathDefianceCooldown = DEATH_DEFIANCE_PRESTIGE_COOLDOWN;
+          }
           // C195: gold sacrifice heal — auto-heal when low HP (once per fight)
           if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= GOLD_HEAL_COST && !goldHealUsed) {
             hero.gold -= GOLD_HEAL_COST;
@@ -1322,6 +1362,10 @@ export class EncounterEngine {
         // C120: combo streak resets on death
         // C198: combo breaker — if had high combo, grant ATK bonus
         if (this.comboStreak >= 3) this.comboBreakerReady = true;
+        // C431: combo exp finisher — ending high combo gives burst exp
+        if (this.comboStreak >= COMBO_END_EXP_THRESHOLD) {
+          hero.gainExp(this.comboStreak * COMBO_END_EXP_PER_COMBO);
+        }
         // C406: combo persistence — keep 25% of combo on death
         this.comboStreak = Math.floor(this.comboStreak * COMBO_PERSIST_RATE);
         // C401: revenge streak — dying builds ATK bonus
@@ -1554,7 +1598,9 @@ export class EncounterEngine {
       const survivalCompoundMul = this.fightsSinceDeath >= SURVIVAL_COMPOUND_THRESHOLD ? (1 + SURVIVAL_COMPOUND_EXP_MUL) : 1;
       // C427: wave danger bonus — waves in danger zone get extra exp
       const waveDangerMul = (isDangerZone && this.waveRemaining > 0) ? (1 + WAVE_DANGER_EXP_BONUS) : 1;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul);
+      // C437: crit chain exp — consecutive crits boost exp
+      const critChainExpMul = this.consecutiveCrits > 0 ? (1 + this.consecutiveCrits * CRIT_CHAIN_EXP_BONUS) : 1;
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul * critChainExpMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -1700,6 +1746,8 @@ export class EncounterEngine {
       const dangerMasteryMul = 1 + Math.min(DANGER_MASTERY_CAP, Math.floor(this.dangerFights / 50) * DANGER_MASTERY_PER_50);
       // C412: danger gold streak — consecutive danger wins multiply gold
       const dangerGoldStreakMul = isDangerZone ? (1 + this.dangerStreak * DANGER_GOLD_STREAK_BONUS) : 1;
+      // C432: danger streak gold compound — long danger streaks compound gold
+      const dangerStreakCompoundMul = (isDangerZone && this.dangerStreak >= DANGER_STREAK_COMPOUND_THRESHOLD) ? (1 + (this.dangerStreak - DANGER_STREAK_COMPOUND_THRESHOLD) * DANGER_STREAK_GOLD_COMPOUND) : 1;
       // C415: elite gold chain — consecutive elites escalate gold
       const eliteGoldChainMul = isElite && this.eliteCombo > 1 ? (1 + (this.eliteCombo - 1) * ELITE_GOLD_CHAIN_BONUS) : 1;
       // C407: boss trophy gold — unique bosses add flat gold
@@ -1708,7 +1756,7 @@ export class EncounterEngine {
       const waveAccumulatorMul = (this.waveRemaining > 0 && this.waveRemaining === 1) ? (1 + WAVE_GOLD_ACCUMULATOR_MUL * WAVE_SIZE) : 1;
       // C421: overkill chain extra gold
       const overkillChainExtraMul = 1 + Math.min(OVERKILL_CHAIN_EXTRA_CAP, this.overkillChain) * OVERKILL_CHAIN_EXTRA_MUL;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul * waveGoldCascadeMul * comboGoldEscMul * dangerMasteryMul * dangerGoldStreakMul * eliteGoldChainMul * waveAccumulatorMul * overkillChainExtraMul) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul * waveGoldCascadeMul * comboGoldEscMul * dangerMasteryMul * dangerGoldStreakMul * dangerStreakCompoundMul * eliteGoldChainMul * waveAccumulatorMul * overkillChainExtraMul) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
       // C328: combo gold floor
       const goldFloor = this.comboStreak >= COMBO_GOLD_FLOOR_THRESHOLD ? hero.level * COMBO_GOLD_FLOOR_PER_LEVEL : 0;
       hero.gold += Math.max(goldEarned, goldFloor);
@@ -1733,6 +1781,8 @@ export class EncounterEngine {
       // C378: danger zone raises gold cap
       const effectiveGoldCap = PASSIVE_GOLD_CAP + (isDangerZone ? this.dangerStreak * DANGER_GOLD_CAP_PER_STREAK : 0);
       hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT + this.prestigeCount * GOLD_MAGNET_PRESTIGE_BONUS, effectiveGoldCap);
+      // C438: village gold fountain upgrade — village gold scales with visits
+      hero.gold += Math.floor(this.villageVisits * VILLAGE_GOLD_FOUNTAIN_SCALE);
       // C388: bank interest — banked gold grows each fight
       // C424: prestige bank interest bonus
       if (this.bankGold > 0) {
@@ -1813,7 +1863,9 @@ export class EncounterEngine {
       const regenBuffMul = this.villageVisits >= REGEN_BUFF_VILLAGE_THRESHOLD ? REGEN_BUFF_MUL : 1;
       hero.heal(Math.floor(regenAmount * regenBuffMul));
       // C174: lifesteal — heal based on damage dealt
-      const lifestealHeal = Math.max(1, Math.floor(totalDamageDealt * LIFESTEAL_RATE));
+      // C434: prestige heal boost — prestige increases all healing
+      const prestigeHealMul = 1 + this.prestigeCount * PRESTIGE_HEAL_BOOST;
+      const lifestealHeal = Math.max(1, Math.floor(totalDamageDealt * LIFESTEAL_RATE * prestigeHealMul));
       hero.heal(lifestealHeal);
       // C236: overkill heal
       if (isOverkill) {
@@ -1872,7 +1924,7 @@ export class EncounterEngine {
       // C141: survival streak increments on win
       this.survivalStreak++;
       // C216: elite combo tracking
-      if (isElite) { this.eliteCombo++; } else { this.eliteCombo = 0; }
+      if (isElite) { this.eliteCombo++; this.eliteChainAtkRemaining = ELITE_CHAIN_ATK_DURATION; } else { this.eliteCombo = 0; }
       if (eliteComboGuarantee) this.eliteCombo = 0; // consumed
       // C370: elite chain reward — consecutive elite kills give flat gold bonus
       if (isElite && this.eliteCombo >= ELITE_CHAIN_THRESHOLD) {
@@ -1952,6 +2004,8 @@ export class EncounterEngine {
           this.waveMomentumRemaining = WAVE_MOMENTUM_ATK_DURATION;
          // C410: wave chain — consecutive wave clears boost ATK
          this.consecutiveWaveClears++;
+         // C435: wave completion gold bonus
+         hero.gold += WAVE_COMPLETE_GOLD_BONUS * hero.level;
         }
       } else if (this.totalWins % WAVE_INTERVAL === 0) {
         this.waveRemaining = WAVE_SIZE;
