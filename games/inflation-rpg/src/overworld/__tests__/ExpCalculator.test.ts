@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeExpMultiplier, type ExpMultiplierContext } from '../encounter/ExpCalculator';
+import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from '../encounter/ExpCalculator';
 
 function makeCtx(overrides: Partial<ExpMultiplierContext> = {}): ExpMultiplierContext {
   return {
@@ -97,5 +97,25 @@ describe('ExpCalculator', () => {
     const day = computeExpMultiplier(makeCtx({ isNight: false }));
     const night = computeExpMultiplier(makeCtx({ isNight: true }));
     expect(night).toBeGreaterThan(day);
+  });
+});
+
+describe('computeExpMultiplierWithBreakdown', () => {
+  it('returns multiplier matching legacy function', () => {
+    const ctx = makeCtx({ isElite: true, isDangerZone: true, comboStreak: 30 });
+    const legacy = computeExpMultiplier(ctx);
+    const result = computeExpMultiplierWithBreakdown(ctx);
+    expect(result.multiplier).toBeCloseTo(legacy, 10);
+  });
+
+  it('returns top-3 breakdown sorted by contribution descending', () => {
+    const ctx = makeCtx({ isElite: true, isDangerZone: true, comboStreak: 30 });
+    const result = computeExpMultiplierWithBreakdown(ctx);
+    expect(result.breakdown).toHaveLength(3);
+    expect(result.breakdown[0].value).toBeGreaterThanOrEqual(result.breakdown[1].value);
+    expect(result.breakdown[1].value).toBeGreaterThanOrEqual(result.breakdown[2].value);
+    // Each entry has name and value
+    expect(result.breakdown[0]).toHaveProperty('name');
+    expect(result.breakdown[0]).toHaveProperty('value');
   });
 });
