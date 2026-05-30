@@ -77,6 +77,7 @@ function baseCtx(): AtkMultiplierContext {
     emberCrownStacks: 0,
     hasScholarLens: false,
     cursedAltarAtkBuff: false,
+    inspirationActive: false,
     comboPrestigeFlat: 0,
     comboMilestoneBonus: 0,
     combatMastery: 0,
@@ -114,5 +115,17 @@ describe('AtkMultiplierCalc', () => {
     const ctx = { ...baseCtx(), weather: 'rain' as const };
     const result = computeAtkMultipliers(ctx);
     expect(result.conditionMuls).toBeLessThan(1.0);
+  });
+
+  it('C749: inspiration active applies +15% to progressMuls', () => {
+    const base = computeAtkMultipliers({ ...baseCtx(), heroHp: 50 });
+    const inspired = computeAtkMultipliers({ ...baseCtx(), heroHp: 50, inspirationActive: true });
+    expect(inspired.progressMuls).toBeCloseTo(base.progressMuls * 1.15, 5);
+  });
+
+  it('C749: inspiration inactive has no effect on progressMuls', () => {
+    const base = computeAtkMultipliers({ ...baseCtx(), heroHp: 50 });
+    const notInspired = computeAtkMultipliers({ ...baseCtx(), heroHp: 50, inspirationActive: false });
+    expect(notInspired.progressMuls).toEqual(base.progressMuls);
   });
 });

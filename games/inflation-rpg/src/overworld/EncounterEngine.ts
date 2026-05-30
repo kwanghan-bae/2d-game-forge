@@ -190,6 +190,7 @@ export class EncounterEngine {
   private villageAtkTrainingRemaining = 0; // C488: village ATK training duration
   private bossShieldRemaining = 0; // C494: boss shield remaining
   private prestigeEchoRemaining = 0; // C508: prestige echo duration
+  private inspirationRemaining = 0; // C749: inspiration ATK buff duration
   private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
@@ -523,6 +524,9 @@ export class EncounterEngine {
       const hadPrestigeEcho = this.prestigeEchoRemaining > 0;
       const prestigeEchoDecay = hadPrestigeEcho ? (PRESTIGE_ECHO_DURATION - this.prestigeEchoRemaining) : 0;
       if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
+      // C749: Inspiration buff
+      const inspirationActive = this.inspirationRemaining > 0;
+      if (this.inspirationRemaining > 0) this.inspirationRemaining--;
       // Wave exhaustion
       const hadWaveExhaustion = this.waveExhaustionRemaining > 0;
       if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
@@ -628,6 +632,7 @@ export class EncounterEngine {
         emberCrownStacks: this.emberCrownStacks,
         hasScholarLens: this.hasRelic(5),
         cursedAltarAtkBuff: this.cursedAltarAtkBuff,
+        inspirationActive,
         comboPrestigeFlat,
         comboMilestoneBonus: this.comboMilestoneBonus,
         combatMastery: combatMasteryVal,
@@ -1819,6 +1824,8 @@ export class EncounterEngine {
     this.relicLevels = r.newRelicLevels;
     // C745: wire Echo event → prestige echo duration
     if (r.newPrestigeEchoRemaining > 0) this.prestigeEchoRemaining = r.newPrestigeEchoRemaining;
+    // C749: wire Inspiration event → ATK buff duration
+    if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
     if (r.comboReset) this.comboStreak = 0;
     // C714: pity timer — reset on event, increment otherwise
     if (r.eventType) {
