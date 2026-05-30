@@ -202,7 +202,7 @@ export const MERCIFUL_PROC_RATE = 0.04;
 export const COLOSSEUM_EXP_MUL = 2.0;
 export const COLOSSEUM_ENEMY_ATK_MUL = 1.5; // C771: tuned from 1.3 (meaningful risk)
 // C762: Trial Grounds constants
-export const TRIAL_GROUNDS_EXP_MUL = 1.50; // C766: tuned from 1.35
+export const TRIAL_GROUNDS_EXP_MUL = 1.40; // C779: tuned from 1.50 (R:R 2.80→2.25, meaningful decision)
 export const TRIAL_GROUNDS_LEVEL_MUL = 1.20; // C774: tuned from 1.10 (R:R 1:5→1:2.5, meaningful decision)
 export const TRIAL_GROUNDS_DURATION = 3;
 
@@ -211,7 +211,7 @@ export const STORM_NEXUS_HP_DRAIN_RATE = 0.05; // C770: 5% HP drain per fight
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
 
 export const VOID_RIFT_SCALE_PER_TIER = 0.05; // C771: 5% per tier (lv200: +5%, lv800: +15%)
-export const VOID_RIFT_EXP_PER_TIER = 0.04; // C775: EXP reward per tier (lv200: +4%, lv10000: +28%)
+export const VOID_RIFT_EXP_PER_TIER = 0.06; // C779: tuned from 0.04 (R:R 0.89→1.34, viable decision)
 
 // C773: Rain Sanctuary — heal + gold penalty tradeoff (rain-only)
 export const RAIN_SANCTUARY_HEAL_RATE = 0.20; // 20% hpMax instant heal

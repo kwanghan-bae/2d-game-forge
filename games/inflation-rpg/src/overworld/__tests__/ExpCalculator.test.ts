@@ -138,9 +138,9 @@ describe('computeExpMultiplierWithBreakdown', () => {
     expect(colosseum).toBeCloseTo(base * 2.0, 5);
   });
 
-  it('C766: trial grounds applies 1.50x EXP multiplier', () => {
+  it('C779: trial grounds applies 1.40x EXP multiplier', () => {
     const base = computeExpMultiplier(makeCtx());
     const trial = computeExpMultiplier(makeCtx({ trialGroundsActive: true }));
-    expect(trial).toBeCloseTo(base * 1.50, 5);
+    expect(trial).toBeCloseTo(base * 1.40, 5);
   });
 });
