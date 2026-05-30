@@ -1067,6 +1067,31 @@ export const TIME_LOCK_DEPOSIT_RATE = 0.1;
 export const TEMPORAL_PRESTIGE_FAST_THRESHOLD = 100;
 export const TEMPORAL_PRESTIGE_FAST_BONUS = 0.2;
 export const TEMPORAL_PRESTIGE_SLOW_BONUS = 0.1;
+// C541: blood fury synergy — blood pact + low HP fury = ×1.5 extra
+export const BLOOD_FURY_SYNERGY_MUL = 1.5;
+// C542: wealth sacrifice synergy — full HP fortune + gold burn = burn efficiency ×2
+export const WEALTH_SACRIFICE_EFFICIENCY = 2.0;
+// C543: temporal combo synergy — golden hour + combo ≥ 30 = combo requirement halved for gates
+export const TEMPORAL_COMBO_DISCOUNT = 0.5;
+// C544: elder wisdom synergy — aging ≥ 5 + prestige ≥ 3 = exp ×1.5
+export const ELDER_WISDOM_AGE = 5;
+export const ELDER_WISDOM_PRESTIGE = 3;
+export const ELDER_WISDOM_EXP_MUL = 1.5;
+// C545: desperate trade synergy — low HP fury + shield break burst = crit ×3
+export const DESPERATE_TRADE_CRIT_MUL = 3.0;
+// C546: synergy count bonus — each active synergy gives +5% global
+export const SYNERGY_COUNT_BONUS = 0.05;
+export const SYNERGY_COUNT_CAP = 0.3; // max 6 synergies = +30%
+// C547: synergy tier — 3/5 simultaneous synergies give tier bonus
+export const SYNERGY_TIER_3_BONUS = 0.1;
+export const SYNERGY_TIER_5_BONUS = 0.25;
+// C548: anti-synergy — fatigue + accumulator = both weakened
+export const ANTI_SYNERGY_PENALTY = 0.5;
+// C549: synergy prestige — discovered synergies at prestige = permanent bonus
+export const SYNERGY_PRESTIGE_RATE = 0.02;
+export const SYNERGY_PRESTIGE_CAP = 0.3;
+// C550: synergy discovery — track unique synergies triggered
+export const TOTAL_SYNERGIES = 8; // number of possible synergies
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1276,6 +1301,8 @@ export class EncounterEngine {
   private timeLockTimer = 0; // C539: fights until vault matures
   private fightsSincePrestige = 0; // C536/C540: fights in current prestige cycle
   private temporalPrestigeBonus = 0; // C540: bonus from last prestige speed
+  private synergiesDiscovered = 0; // C550: unique synergies triggered (bitmask)
+  private synergyPrestigeBonus = 0; // C549: permanent bonus from synergy discovery
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -1285,6 +1312,12 @@ export class EncounterEngine {
 
   private getPrestigeThreshold(): number {
     return PRESTIGE_LEVEL_REQUIREMENT + this.prestigeCount * PRESTIGE_LEVEL_INCREMENT;
+  }
+
+  private countBits(n: number): number {
+    let count = 0;
+    while (n) { count += n & 1; n >>>= 1; }
+    return count;
   }
 
   getComboStreak(): number { return this.comboStreak; }
@@ -1538,7 +1571,32 @@ export class EncounterEngine {
       if (this.dangerStreak >= DEEP_DANGER_THRESHOLD) activeConditions++; // C518 active
       if (hero.level >= this.getPrestigeThreshold()) activeConditions++; // C519 active
       const conditionalStackMul = 1 + Math.min(CONDITIONAL_STACK_CAP, activeConditions * CONDITIONAL_STACK_BONUS);
-      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul * sacrificePrestigeMul * fatigueMul * accumulatorMul * agingAtkMul * temporalPrestigeMul));
+      // C541-C550: Synergy Web — detect active synergies
+      let activeSynergies = 0;
+      // C541: blood fury synergy — blood pact + low HP fury
+      const bloodFurySynergy = (bloodPactMul > 1 && lowHpFuryMul > 1) ? BLOOD_FURY_SYNERGY_MUL : 1;
+      if (bloodPactMul > 1 && lowHpFuryMul > 1) { activeSynergies++; this.synergiesDiscovered |= 1; }
+      // C544: elder wisdom synergy — aging + prestige
+      const elderWisdomActive = this.heroAge >= ELDER_WISDOM_AGE && this.prestigeCount >= ELDER_WISDOM_PRESTIGE;
+      if (elderWisdomActive) { activeSynergies++; this.synergiesDiscovered |= 2; }
+      // C545: desperate trade synergy — low HP fury + shield break burst active
+      const desperateTradeActive = lowHpFuryMul > 1 && this.shieldBreakBurstRemaining > 0;
+      if (desperateTradeActive) { activeSynergies++; this.synergiesDiscovered |= 4; }
+      // C548: anti-synergy — fatigue + accumulator both active weakens both
+      const antiSynergyActive = fatigueMul < 1 && accumulatorMul > 1;
+      const antiSynergyPenalty = antiSynergyActive ? ANTI_SYNERGY_PENALTY : 1;
+      if (antiSynergyActive) { this.synergiesDiscovered |= 8; }
+      // C543: temporal combo synergy — golden hour + high combo
+      if (this.goldenHourRemaining > 0 && this.comboStreak >= 30) { activeSynergies++; this.synergiesDiscovered |= 16; }
+      // C542: wealth sacrifice synergy detected (applied in gold burn section)
+      if (hero.hp >= hero.hpMax && this.goldBurnCooldown <= 5) { activeSynergies++; this.synergiesDiscovered |= 32; }
+      // C546: synergy count bonus
+      const synergyCountMul = 1 + Math.min(SYNERGY_COUNT_CAP, activeSynergies * SYNERGY_COUNT_BONUS);
+      // C547: synergy tier bonus
+      const synergyTierMul = activeSynergies >= 5 ? (1 + SYNERGY_TIER_5_BONUS) : activeSynergies >= 3 ? (1 + SYNERGY_TIER_3_BONUS) : 1;
+      // C549: synergy prestige permanent bonus
+      const synergyPrestigeMul = 1 + this.synergyPrestigeBonus;
+      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul * sacrificePrestigeMul * fatigueMul * accumulatorMul * agingAtkMul * temporalPrestigeMul * bloodFurySynergy * antiSynergyPenalty * synergyCountMul * synergyTierMul * synergyPrestigeMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -1576,7 +1634,9 @@ export class EncounterEngine {
         const dangerCritBonus = (isCrit && isDangerZone) ? (1 + DANGER_CRIT_BONUS) : 1;
         // C489: crit combo synergy — crits during combo deal more
         const critComboSynergy = (isCrit && this.comboStreak >= CRIT_COMBO_SYNERGY_THRESHOLD) ? (1 + CRIT_COMBO_SYNERGY_BONUS) : 1;
-        const heroAtk = Math.floor(baseCritAtk * comboCritBonus * dangerCritBonus * critComboSynergy);
+        // C545: desperate trade synergy — low HP + shield burst = crit ×3
+        const desperateTradeCritMul = (isCrit && desperateTradeActive) ? DESPERATE_TRADE_CRIT_MUL : 1;
+        const heroAtk = Math.floor(baseCritAtk * comboCritBonus * dangerCritBonus * critComboSynergy * desperateTradeCritMul);
         // C395: crit heal scaling — crit heal grows with total crits
         const critHealScale = Math.min(CRIT_HEAL_SCALE_CAP, Math.floor(this.totalCrits / 100) * CRIT_HEAL_SCALE_PER_100);
         if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * (CRIT_HEAL_RATE + critHealScale)))); this.critExpChain++; }
@@ -2070,7 +2130,9 @@ export class EncounterEngine {
       const rushHourExpMul = rushHourActive ? RUSH_HOUR_EXP_MUL : 1;
       // C537: aging — elderly heroes gain more exp
       const agingExpMul = 1 + this.heroAge * AGING_EXP_BONUS;
-      const expGainRaw = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul * critChainExpMul * dangerExpMasteryMul * eliteVillageBurstMul * comboAccelExpMul * comboExpVelocityMul * waveExpCompoundMul * critExpChainMul2 * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * dangerExpSurgeMul * waveExpMasteryMul * finalMasteryMul2 * greedGambitExpMul * riskRewardExpMul * deepDangerExpMul * prestigeReadyExpMul * rushHourExpMul * agingExpMul);
+      // C544: elder wisdom synergy — aging + prestige = exp ×1.5
+      const elderWisdomExpMul = elderWisdomActive ? ELDER_WISDOM_EXP_MUL : 1;
+      const expGainRaw = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul * critChainExpMul * dangerExpMasteryMul * eliteVillageBurstMul * comboAccelExpMul * comboExpVelocityMul * waveExpCompoundMul * critExpChainMul2 * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * dangerExpSurgeMul * waveExpMasteryMul * finalMasteryMul2 * greedGambitExpMul * riskRewardExpMul * deepDangerExpMul * prestigeReadyExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul);
       // Safety cap: prevent exp overflow causing infinite level-up loops
       const expGain = Math.min(expGainRaw, hero.level * 2500);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
@@ -2793,6 +2855,9 @@ export class EncounterEngine {
         this.fightsSincePrestige = 0;
         // C519: reset prestige ready bonus
         this.prestigeReadyBonus = 0;
+        // C549: synergy prestige — discovered synergies → permanent bonus
+        const discoveredCount = this.countBits(this.synergiesDiscovered);
+        this.synergyPrestigeBonus = Math.min(SYNERGY_PRESTIGE_CAP, discoveredCount * SYNERGY_PRESTIGE_RATE);
         events.push({ type: 'prestige', count: this.prestigeCount });
       }
     } else if (kind === 'village') {
