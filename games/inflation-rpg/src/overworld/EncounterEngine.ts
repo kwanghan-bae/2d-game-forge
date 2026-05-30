@@ -191,6 +191,7 @@ export class EncounterEngine {
   private bossShieldRemaining = 0; // C494: boss shield remaining
   private prestigeEchoRemaining = 0; // C508: prestige echo duration
   private inspirationRemaining = 0; // C749: inspiration ATK buff duration
+  private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
   private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
@@ -315,6 +316,8 @@ export class EncounterEngine {
   getWeather() { return this.lastWeather; }
   // C753: expose inspiration remaining for HUD
   getInspirationRemaining(): number { return this.inspirationRemaining; }
+  // C757: expose colosseum state for UI
+  getColosseumRemaining(): number { return this.colosseumRemaining; }
   // C735: expose night state for UI
   getIsNight(): boolean { return computeNight(this.totalWins).isNight; }
   getHealResult() { return this.lastHealResult; }
@@ -529,6 +532,8 @@ export class EncounterEngine {
       // C749: Inspiration buff
       const inspirationActive = this.inspirationRemaining > 0;
       if (this.inspirationRemaining > 0) this.inspirationRemaining--;
+      // C757: Colosseum duration decrement
+      if (this.colosseumRemaining > 0) this.colosseumRemaining--;
       // Wave exhaustion
       const hadWaveExhaustion = this.waveExhaustionRemaining > 0;
       if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
@@ -801,6 +806,7 @@ export class EncounterEngine {
             heroLevel: hero.level,
             cursedAltarAtkBuff: this.cursedAltarAtkBuff,
             isNight,
+            colosseumActive: this.colosseumRemaining > 0,
           });
           const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul));
           // C380: prestige shield blocks hits
@@ -1046,6 +1052,7 @@ export class EncounterEngine {
         hasScholarLens: this.hasRelic(5),
         critExpChain: this.critExpChain,
         baseExpGain,
+        colosseumActive: this.colosseumRemaining > 0,
       });
       this.lastExpBreakdown = expBreakdownResult;
       if (this.survivorGritActive) this.survivorGritActive = false;
@@ -1828,6 +1835,8 @@ export class EncounterEngine {
     if (r.newPrestigeEchoRemaining > 0) this.prestigeEchoRemaining = r.newPrestigeEchoRemaining;
     // C749: wire Inspiration event → ATK buff duration
     if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
+    // C757: wire Colosseum event → EXP×2 + enemy ATK×1.3
+    if (r.newColosseumRemaining > 0) this.colosseumRemaining = r.newColosseumRemaining;
     if (r.comboReset) this.comboStreak = 0;
     // C714: pity timer — reset on event, increment otherwise
     if (r.eventType) {

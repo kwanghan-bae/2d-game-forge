@@ -17,6 +17,7 @@ function makeCtx(overrides: Partial<DefenseContext> = {}): DefenseContext {
     heroLevel: 10,
     cursedAltarAtkBuff: false,
     isNight: false,
+    colosseumActive: false,
     ...overrides,
   };
 }
@@ -76,5 +77,11 @@ describe('DefenseCalc', () => {
     const noPrestige = computeDamageReduction(makeCtx({ isDangerZone: true, prestigeCount: 0 }));
     const withPrestige = computeDamageReduction(makeCtx({ isDangerZone: true, prestigeCount: 5 }));
     expect(withPrestige).toBeLessThan(noPrestige);
+  });
+
+  it('C757: colosseum increases incoming damage by 1.3×', () => {
+    const base = computeDamageReduction(makeCtx());
+    const colosseum = computeDamageReduction(makeCtx({ colosseumActive: true }));
+    expect(colosseum).toBeCloseTo(base * 1.3, 5);
   });
 });
