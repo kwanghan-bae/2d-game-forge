@@ -91,8 +91,8 @@ describe('PostCombatEventResolver', () => {
 
   // C743: Healer event (C809: updated for weighted pool)
   it('triggers healer event with HP recovery', () => {
-    // Pool: trap(0.04), shrine(0.08), fairy(0.02), healer(0.03), inspiration(0.025)
-    // rngInt=7500 → roll lands in healer slice (cumulative 0.14-0.17)
+    // Pool: trap(0.04), shrine(0.08), fairy(0.02), mentor(0.03), healer(0.03), inspiration(0.025)
+    // rngInt=8000 → roll lands in healer slice (cumulative 0.17-0.20)
     const result = resolvePostCombatEvent(makeCtx({
       heroHp: 50,
       heroHpMax: 100,
@@ -104,7 +104,7 @@ describe('PostCombatEventResolver', () => {
       strategyCursedAltar: false,
       strategyRestShrine: false,
       rngChance: () => true,
-      rngInt: (n: number) => n === 10000 ? 7500 : 0,
+      rngInt: (n: number) => n === 10000 ? 8000 : 0,
     }));
     expect(result.eventType).toBe('event_healer');
     expect(result.heroHpDelta).toBe(25); // 0.25 * 100 = 25

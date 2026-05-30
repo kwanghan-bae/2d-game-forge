@@ -169,6 +169,12 @@ export const CURSED_ALTAR_DURATION = 20; // C709: was 30, early-snowball prevent
 export const CURSED_ALTAR_HP_THRESHOLD = 0.40; // C702: sacrifice blocked if HP ratio below this
 export const FAIRY_CHANCE = 0.02;
 export const FAIRY_DURATION = 5;
+// C812: Wandering Mentor — early-game EXP buff (fights 25-99)
+export const MENTOR_CHANCE = 0.03;
+export const MENTOR_MIN_FIGHTS = 25;
+export const MENTOR_MAX_FIGHTS = 99;
+export const MENTOR_EXP_MUL = 0.15; // +15% EXP
+export const MENTOR_DURATION = 4;
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;

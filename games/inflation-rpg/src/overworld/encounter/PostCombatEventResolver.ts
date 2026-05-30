@@ -19,6 +19,10 @@ import {
   CURSED_ALTAR_CHANCE,
   FAIRY_CHANCE,
   FAIRY_DURATION,
+  MENTOR_CHANCE,
+  MENTOR_MIN_FIGHTS,
+  MENTOR_MAX_FIGHTS,
+  MENTOR_DURATION,
   TIME_RIFT_CHANCE,
   MERCHANT_EVENT_CHANCE,
   EVENT_CHAIN_THRESHOLD,
@@ -92,6 +96,7 @@ export interface PostCombatResult {
   newRelicLevels: number[];
   newPrestigeEchoRemaining: number;
   newInspirationRemaining: number;
+  newMentorRemaining: number; // C812: Wandering Mentor EXP buff
   newColosseumRemaining: number;
   colosseumPending: boolean;
   newTrialGroundsRemaining: number;
@@ -136,6 +141,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newRelicLevels: [...ctx.relicLevels],
     newPrestigeEchoRemaining: 0,
     newInspirationRemaining: 0,
+    newMentorRemaining: 0,
     newColosseumRemaining: 0,
     colosseumPending: false,
     newTrialGroundsRemaining: 0,
@@ -261,6 +267,14 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       id: 'fairy', weight: FAIRY_CHANCE, pityEligible: true,
       apply: (r) => { r.newFairyBlessingRemaining = FAIRY_DURATION; r.eventType = 'event_fairy'; },
     });
+
+    // C812: Wandering Mentor — early-game EXP buff (fights 25-99 only)
+    if (ctx.totalFights >= MENTOR_MIN_FIGHTS && ctx.totalFights <= MENTOR_MAX_FIGHTS) {
+      candidates.push({
+        id: 'mentor', weight: MENTOR_CHANCE, pityEligible: true,
+        apply: (r) => { r.newMentorRemaining = MENTOR_DURATION; r.eventType = 'event_mentor'; },
+      });
+    }
 
     // Healer
     if (ctx.totalFights >= HEALER_MIN_FIGHTS) {
