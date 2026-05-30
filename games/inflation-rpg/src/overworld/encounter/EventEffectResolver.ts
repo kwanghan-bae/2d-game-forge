@@ -95,7 +95,7 @@ function resolveGambler(choice: GamblerChoice, ctx: EventEffectContext): EventEf
     const winAmount = choice === GamblerChoice.BET_HIGH ? ctx.heroGold : Math.floor(ctx.heroGold * 0.5);
     return { ...EMPTY_RESULT, goldDelta: winAmount, eventSubType: 'event_gambler_win' };
   }
-  const loseAmount = choice === GamblerChoice.BET_HIGH ? Math.floor(ctx.heroGold * 0.5) : Math.floor(ctx.heroGold * 0.25);
+  const loseAmount = choice === GamblerChoice.BET_HIGH ? ctx.heroGold : Math.floor(ctx.heroGold * 0.25);
   return { ...EMPTY_RESULT, goldDelta: -loseAmount, eventSubType: 'event_gambler_lose' };
 }
 
