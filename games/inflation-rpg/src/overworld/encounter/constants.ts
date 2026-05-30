@@ -1,6 +1,6 @@
 export const DANGER_ZONE_RATE = 0.15;
 export const DANGER_ZONE_STAT_MUL = 1.5;
-export const DANGER_ZONE_EXP_MUL = 3;
+export const DANGER_ZONE_EXP_MUL = 4; // C598: was 3
 export const COMBO_STREAK_THRESHOLD = 3;
 export const COMBO_STREAK_EXP_BONUS = 0.1;
 export const MILESTONE_LEVELS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000];
@@ -64,7 +64,7 @@ export const GOLD_SAVE_CHANCE = 0.25;
 export const COMBO_EXP_THRESHOLD = 10;
 export const COMBO_EXP_BONUS_PER = 0.10;
 export const CRIT_GOLD_BONUS = 0.30;
-export const DANGER_ZONE_GOLD_MUL = 2.0;
+export const DANGER_ZONE_GOLD_MUL = 3.0; // C598: was 2.0
 export const GOLD_LEVEL_POWER = 1.2;
 export const BOSS_ENRAGE_HP_THRESHOLD = 0.5;
 export const BOSS_ENRAGE_ATK_MUL = 2.0;
