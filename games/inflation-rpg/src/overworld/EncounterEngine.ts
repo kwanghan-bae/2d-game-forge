@@ -665,6 +665,32 @@ export const PRESTIGE_ALL_EXP_BONUS = 0.05;
 // C390: combat mastery — total fights increase base ATK
 export const COMBAT_MASTERY_PER_100 = 1;
 export const COMBAT_MASTERY_CAP = 20;
+// C391: survival gold bonus — staying alive long gives gold per 10 fights
+export const SURVIVAL_GOLD_THRESHOLD = 10;
+export const SURVIVAL_GOLD_PER_LEVEL = 2;
+// C392: prestige danger immunity — first danger fight after prestige takes no damage
+export const PRESTIGE_DANGER_IMMUNE_FIGHTS = 2;
+// C393: wave gold cascade — each wave fight gives more gold than last
+export const WAVE_GOLD_CASCADE_PER_FIGHT = 0.08;
+// C394: boss exp mastery — unique bosses give permanent exp bonus
+export const BOSS_EXP_MASTERY_PER_UNIQUE = 0.01;
+export const BOSS_EXP_MASTERY_CAP = 0.30;
+// C395: crit heal scaling — crit heal grows with total crits
+export const CRIT_HEAL_SCALE_PER_100 = 0.01;
+export const CRIT_HEAL_SCALE_CAP = 0.10;
+// C396: combo gold escalation — gold formula grows faster at high combo
+export const COMBO_GOLD_ESCALATION_THRESHOLD = 20;
+export const COMBO_GOLD_ESCALATION_BONUS = 0.03;
+// C397: elite danger synergy — elite in danger zone = double exp bonus
+export const ELITE_DANGER_EXP_BONUS = 0.50;
+// C398: village prestige compound — village heal improves with prestige
+export const VILLAGE_PRESTIGE_HEAL_BONUS = 0.02;
+// C399: death gold protection — save portion of gold on death based on prestige
+export const DEATH_GOLD_PROTECT_PER_PRESTIGE = 0.05;
+export const DEATH_GOLD_PROTECT_CAP = 0.50;
+// C400: final mastery — all multipliers get small boost based on total playtime
+export const FINAL_MASTERY_PER_1000_FIGHTS = 0.02;
+export const FINAL_MASTERY_CAP = 0.20;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -837,6 +863,7 @@ export class EncounterEngine {
   private villageRestAtkRemaining = 0; // C377: village rest ATK buff
   private prestigeShieldRemaining = 0; // C380: hits blocked after prestige
   private waveMomentumRemaining = 0; // C385: wave momentum ATK buff
+  private prestigeDangerImmune = 0; // C392: immune to danger damage after prestige
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -1042,7 +1069,9 @@ export class EncounterEngine {
         // C384: combo crit synergy — high combo + crit = extra damage
         const comboCritBonus = (isCrit && this.comboStreak >= COMBO_CRIT_SYNERGY_THRESHOLD) ? (1 + COMBO_CRIT_DMG_BONUS) : 1;
         const heroAtk = Math.floor(baseCritAtk * comboCritBonus);
-        if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * CRIT_HEAL_RATE))); }
+        // C395: crit heal scaling — crit heal grows with total crits
+        const critHealScale = Math.min(CRIT_HEAL_SCALE_CAP, Math.floor(this.totalCrits / 100) * CRIT_HEAL_SCALE_PER_100);
+        if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * (CRIT_HEAL_RATE + critHealScale)))); }
         // C192: boss rage reset on crit
         if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
         hitCount++;
@@ -1136,6 +1165,12 @@ export class EncounterEngine {
             rageTurn++;
             continue;
           }
+          // C392: prestige danger immunity
+          if (isDangerZone && this.prestigeDangerImmune > 0) {
+            this.prestigeDangerImmune--;
+            rageTurn++;
+            continue;
+          }
           // C356: village defense immunity
           if (this.villageDefenseRemaining > 0) {
             this.villageDefenseRemaining--;
@@ -1202,8 +1237,10 @@ export class EncounterEngine {
         // C197: reset survivor counter
         this.fightsSinceDeath = 0;
         // C147: gold loss on death — lose 10% (C159: 25% chance to save)
+        // C399: death gold protection — prestige protects portion of gold
+        const goldProtectRate = Math.min(DEATH_GOLD_PROTECT_CAP, this.prestigeCount * DEATH_GOLD_PROTECT_PER_PRESTIGE);
         if (!this.rng.chance(GOLD_SAVE_CHANCE)) {
-          const goldLost = Math.floor(hero.gold * GOLD_DEATH_PENALTY);
+          const goldLost = Math.floor(hero.gold * GOLD_DEATH_PENALTY * (1 - goldProtectRate));
           hero.gold -= goldLost;
         } else {
           events.push({ type: 'gold_saved' });
@@ -1397,7 +1434,13 @@ export class EncounterEngine {
       const eliteExpChainMul = isElite && this.eliteCombo > 1 ? (1 + (this.eliteCombo - 1) * ELITE_EXP_CHAIN_BONUS) : 1;
       // C389: prestige exp multiplier
       const prestigeAllExpMul = 1 + this.prestigeCount * PRESTIGE_ALL_EXP_BONUS;
-      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul);
+      // C394: boss exp mastery — unique bosses give permanent exp bonus
+      const bossExpMasteryMul = 1 + Math.min(BOSS_EXP_MASTERY_CAP, this.uniqueBossKills * BOSS_EXP_MASTERY_PER_UNIQUE);
+      // C397: elite danger synergy — elite in danger zone = double exp bonus
+      const eliteDangerMul = (isElite && isDangerZone) ? (1 + ELITE_DANGER_EXP_BONUS) : 1;
+      // C400: final mastery — all multipliers get small boost based on total playtime
+      const finalMasteryMul = 1 + Math.min(FINAL_MASTERY_CAP, Math.floor((this.totalWins + this.totalDeaths) / 1000) * FINAL_MASTERY_PER_1000_FIGHTS);
+      const expGain = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
@@ -1527,13 +1570,17 @@ export class EncounterEngine {
       const critGoldBonusMul = didCrit ? CRIT_GOLD_BONUS_MUL : 1;
       // C361: wave gold surge
       const waveGoldSurgeMul = this.waveRemaining > 0 ? (1 + (WAVE_SIZE - this.waveRemaining) * WAVE_GOLD_SURGE_PER_KILL) : 1;
+      // C393: wave gold cascade — each wave fight gives more gold
+      const waveGoldCascadeMul = this.waveRemaining > 0 ? (1 + (WAVE_SIZE - this.waveRemaining) * WAVE_GOLD_CASCADE_PER_FIGHT) : 1;
+      // C396: combo gold escalation — gold grows faster at high combo
+      const comboGoldEscMul = this.comboStreak >= COMBO_GOLD_ESCALATION_THRESHOLD ? (1 + (this.comboStreak - COMBO_GOLD_ESCALATION_THRESHOLD) * COMBO_GOLD_ESCALATION_BONUS) : 1;
       // C363: crit chain gold
       const critChainGoldMul = this.consecutiveCrits > 0 ? (1 + this.consecutiveCrits * CRIT_CHAIN_GOLD_BONUS) : 1;
       // C371: prestige gold multiplier
       const prestigeGoldMul3 = 1 + this.prestigeCount * PRESTIGE_GOLD_PER_COUNT;
       // C382: danger prestige gold bonus
       const dangerPrestigeMul = (isDangerZone && this.prestigeCount > 0) ? (1 + this.prestigeCount * DANGER_PRESTIGE_GOLD_MUL) : 1;
-      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul) + levelMilestoneGold + critGoldFlat;
+      const goldEarned = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul * waveGoldCascadeMul * comboGoldEscMul) + levelMilestoneGold + critGoldFlat;
       // C328: combo gold floor
       const goldFloor = this.comboStreak >= COMBO_GOLD_FLOOR_THRESHOLD ? hero.level * COMBO_GOLD_FLOOR_PER_LEVEL : 0;
       hero.gold += Math.max(goldEarned, goldFloor);
@@ -1545,6 +1592,10 @@ export class EncounterEngine {
       }
       // C375: combo breaker gold — surviving enemy rage and winning gives gold
       if (rageTurn > 0) hero.gold += hero.level * COMBO_BREAK_GOLD_PER_LEVEL;
+      // C391: survival gold bonus — staying alive gives gold per 10 fights
+      if (this.fightsSinceDeath > 0 && this.fightsSinceDeath % SURVIVAL_GOLD_THRESHOLD === 0) {
+        hero.gold += hero.level * SURVIVAL_GOLD_PER_LEVEL;
+      }
       // C208: passive gold income based on village visits
       // C259: gold magnet prestige scaling
       // C378: danger zone raises gold cap
@@ -1857,6 +1908,8 @@ export class EncounterEngine {
         this.prestigeSurgeReady = true;
         // C380: prestige shield — block first N hits after prestige
         this.prestigeShieldRemaining = PRESTIGE_SHIELD_HITS;
+        // C392: prestige danger immunity
+        this.prestigeDangerImmune = PRESTIGE_DANGER_IMMUNE_FIGHTS;
         hero.level = 1;
         hero.exp = 0;
         hero.recomputeStats();
@@ -1952,7 +2005,9 @@ export class EncounterEngine {
       this.villageVisits++;
       // C364: village forge visit discount — each visit cheapens next shop/forge interaction
       this.forgeDiscount = Math.min(0.5, this.villageVisits * FORGE_VISIT_DISCOUNT);
-      const healRate = Math.min(VILLAGE_HEAL_CAP, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT);
+      // C398: village prestige compound — village heal improves with prestige
+      const prestigeHealBonus = this.prestigeCount * VILLAGE_PRESTIGE_HEAL_BONUS;
+      const healRate = Math.min(VILLAGE_HEAL_CAP + prestigeHealBonus, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT + prestigeHealBonus);
       const healAmount = Math.floor(hero.hpMax * healRate);
       hero.heal(healAmount);
       // C377: village rest ATK bonus — full heal grants temp ATK boost
