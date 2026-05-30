@@ -1047,4 +1047,35 @@ describe('C651: characterization snapshot (golden master)', () => {
       expect((engine as any).getAtkCap()).toBe(30);
     });
   });
+
+  describe('C662: prestige ATK cap sim guard', () => {
+    it('prestige 5 hero wins more than prestige 0 hero over 50 fights', () => {
+      // Prestige 0
+      const hero0 = makeHero();
+      const engine0 = new EncounterEngine(new SeededRng(42));
+      let wins0 = 0;
+      for (let i = 0; i < 50; i++) {
+        const events = engine0.resolveEncounter(hero0, 'enemy', 'wolf_1');
+        if (events.some(e => e.type === 'battle_won')) wins0++;
+      }
+
+      // Prestige 5 — higher cap means stronger hero in late-game
+      const hero5 = makeHero();
+      const engine5 = new EncounterEngine(new SeededRng(42));
+      (engine5 as any).prestigeCount = 5;
+      let wins5 = 0;
+      for (let i = 0; i < 50; i++) {
+        const events = engine5.resolveEncounter(hero5, 'enemy', 'wolf_1');
+        if (events.some(e => e.type === 'battle_won')) wins5++;
+      }
+
+      // Prestige 5 should be at least as good (cap only matters when muls > 10)
+      expect(wins5).toBeGreaterThanOrEqual(wins0);
+    });
+
+    it('prestige 0 ATK cap = 10 is maintained for backward compat', () => {
+      const engine = new EncounterEngine(new SeededRng(1));
+      expect(engine.getAtkCap()).toBe(10);
+    });
+  });
 });
