@@ -151,7 +151,7 @@ export const BLACKSMITH_BOOST = 5;
 export const CURSED_ALTAR_CHANCE = 0.025; // C696: was 0.015, more frequent
 export const CURSED_ALTAR_ATK_BUFF = 1.8; // C704: was 1.5, burst value up for boss threshold
 export const CURSED_ALTAR_DAMAGE_MUL = 1.5; // C704: was 2.0, sacrifice EV now marginal-positive
-export const CURSED_ALTAR_DURATION = 30; // C708: was 10, longer buff = meaningful trade
+export const CURSED_ALTAR_DURATION = 20; // C709: was 30, early-snowball prevention
 export const CURSED_ALTAR_HP_THRESHOLD = 0.40; // C702: sacrifice blocked if HP ratio below this
 export const FAIRY_CHANCE = 0.02;
 export const FAIRY_DURATION = 5;

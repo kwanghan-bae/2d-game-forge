@@ -79,10 +79,11 @@ describe('resolveEventEffects', () => {
     expect(result.goldDelta).toBe(500); // double = +current
   });
 
-  test('gambler BET_HIGH lose: full gold loss', () => {
+  test('gambler BET_HIGH lose: 80% gold loss', () => {
     const ctx = makeCtx({ heroGold: 500, rngChance: () => false });
     const result = resolveEventEffects('gambler', GamblerChoice.BET_HIGH, ctx);
-    expect(result.goldDelta).toBe(-500); // C708: full loss
+    expect(result.goldDelta).toBe(-400); // C709: 80% loss floor
+    expect(result.eventSubType).toBe('event_gambler_lose_high');
   });
 
   test('altar SACRIFICE: HP cost + ATK buff activation', () => {
