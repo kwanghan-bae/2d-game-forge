@@ -24,6 +24,8 @@ import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
 import { ComboStreakBadge } from '../components/ComboStreakBadge';
 import { StatDeltaPopup } from '../components/StatDeltaPopup';
 import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
+import { AtkBreakdownTooltip } from '../components/AtkBreakdownTooltip';
+import { computeAtkBreakdown } from '../components/AtkBreakdownLogic';
 import { ShrineChoiceModal } from '../components/ShrineChoiceModal';
 import { DangerChoiceModal } from '../components/DangerChoiceModal';
 import { FateRollModal } from './FateRollModal';
@@ -131,6 +133,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const damageFloaterRef = useRef(new DamageFloaterLogic({ duration: 800 }));
   const [badgeInput, setBadgeInput] = useState<BattleOutcomeInput | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
+  const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -559,7 +562,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         <div data-testid="hud-row-identity" style={hudRowStyle(13)}>
           <span data-testid="hud-name" style={hudChipStyle}>{hero.emoji} {hero.name}</span>
           <span data-testid="hud-age" style={hudChipStyle}>{hero.age}세 · {hero.chapter}</span>
-          <span data-testid="hud-job-lv" style={hudChipStyle}>{hero.job} · LV {formatCompact(hero.level)}</span>
+          <span data-testid="hud-job-lv" style={{...hudChipStyle, cursor: 'pointer'}} onClick={() => setShowAtkBreakdown(v => !v)}>{hero.job} · LV {formatCompact(hero.level)}</span>
           <span data-testid="hud-hp" style={{...hudChipStyle, color: hero.hp < hero.hpMax * 0.25 ? '#f44' : hero.hp < hero.hpMax * 0.5 ? '#fa0' : '#8f8'}}>HP {formatCompact(hero.hp)}/{formatCompact(hero.hpMax)}</span>
         </div>
         {/* Row 2: 자원 — 빛 / 재생 / 계절 / 지역 */}
@@ -653,6 +656,11 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
       <StatDeltaPopup entries={statDeltaEntries} />
+      {showAtkBreakdown && (
+        <div style={{ position: 'absolute', top: 60, left: 8, zIndex: 20 }}>
+          <AtkBreakdownTooltip breakdown={controller.getAtkBreakdownInput() ? computeAtkBreakdown(controller.getAtkBreakdownInput()!) : null} />
+        </div>
+      )}
       <ComboStreakBadge combo={momentumDisplay} />
       <div style={{ position: 'absolute', left: 8, bottom: 80, zIndex: 10 }}>
         <RelicPanel />
