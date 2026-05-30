@@ -14,7 +14,8 @@ import { findEncounterForKind, selectBranch } from '../data/personalityEncounter
 import { EventChoiceEngine, ShrineChoice, DangerChoice } from './encounter/EventChoiceEngine';
 import { LandmarkResolver } from './encounter/LandmarkResolver';
 import { VillageResolver } from './encounter/VillageResolver';
-import { computeHeroAtk, computeFlatAtk } from './encounter/CombatCalculator';
+import { computeHeroAtk } from './encounter/CombatCalculator';
+import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
@@ -467,214 +468,163 @@ export class EncounterEngine {
       const fightInCycle = this.totalWins % NIGHT_CYCLE_INTERVAL;
       const isNight = fightInCycle >= (NIGHT_CYCLE_INTERVAL - NIGHT_DURATION);
 
-      const damping = this.opts.damping ?? 1.0;
-      const bossAtkMul = isBoss ? (this.opts.getBossIntroAtkMul?.() ?? 1.0) : 1.0;
-      // Cycle 110 F1: realm fork atk mul applies to both enemy + boss combat
-      // (vs boss intro which is boss-only). Separate channel, multiply both.
-      const realmAtkMul = this.opts.getRealmForkAtkMul?.() ?? 1.0;
-      // C125: momentum ATK bonus = +2% per momentum stack (capped at 20 = +40%)
-      const momentumMul = 1 + this.battleMomentum * MOMENTUM_ATK_BONUS;
-      // C136: shrine meditation buff — +25% ATK for duration
-      const shrineMul = this.shrineBuffRemaining > 0 ? 1 + SHRINE_MEDITATION_ATK_BUFF : 1;
-      // C140: revenge bonus — +50% ATK against enemy that last killed you
-      const revengeMul = this.lastDeathEnemyId === landmarkId ? 1 + REVENGE_ATK_BONUS : 1;
-      // C148: kill milestone ATK bonus (C640: capped at 50% = 50 milestones)
-      const milestoneMul = 1 + Math.min(this.killMilestones, 50) * KILL_MILESTONE_ATK_BONUS;
-      // C158: near-death power surge
-      const nearDeathMul = hero.hp < hero.hpMax * NEAR_DEATH_HP_THRESHOLD ? NEAR_DEATH_ATK_MUL : 1;
-      // C173: exhaustion debuff
-      const exhaustionMul = this.fightsSinceVillage >= EXHAUSTION_THRESHOLD ? (1 - EXHAUSTION_ATK_PENALTY) : 1;
-      // C175: shrine tithe ATK bonus
-      const titheMul = 1 + this.shrineTithes * SHRINE_TITHE_ATK_BONUS;
-      // C179: shield break counter-attack
-      const shieldBreakMul = this.shieldBreakReady ? SHIELD_BREAK_ATK_MUL : 1;
+      // === C690: ATK section — side effects + delegated pure computation ===
+      // Phase 1: Side effects — capture "had" values, decrement timers
+      const hadShieldBreak = this.shieldBreakReady;
       if (this.shieldBreakReady) this.shieldBreakReady = false;
-      // C198: combo breaker ATK bonus
-      const comboBreakerMul = this.comboBreakerReady ? (1 + COMBO_BREAKER_ATK_BONUS) : 1;
+      const hadComboBreaker = this.comboBreakerReady;
       if (this.comboBreakerReady) this.comboBreakerReady = false;
-      // C200: prestige stat bonus
-      const prestigeMul = 1 + this.prestigeCount * PRESTIGE_STAT_BONUS;
-      // C210: achievement kill milestone ATK bonus
-      const achieveMul = 1 + this.achievementMilestones * ACHIEVEMENT_ATK_BONUS;
-      // C219: death counter ATK bonus
-      const deathAtkMul = 1 + Math.min(DEATH_ATK_CAP, this.totalDeaths * DEATH_ATK_BONUS);
-      // C224: berserker mode — low HP gives massive ATK
-      const berserkerMul = hero.hp < hero.hpMax * BERSERKER_HP_THRESHOLD ? (1 + BERSERKER_ATK_BONUS) : 1;
-      // C238: darkness curse ATK penalty
-      const curseMul = this.darknessCursed ? (1 - DARKNESS_CURSE_ATK_PENALTY) : 1;
-      // C243: hero specialization — permanent ATK bonus after first prestige
-      const specMul = this.prestigeCount > 0 ? (1 + SPEC_ATK_BONUS) : 1;
-      // C246: elemental weakness
-      const elementalMul = (hero.level % ELEMENTAL_LEVEL_MOD === 0) ? (1 + ELEMENTAL_DMG_BONUS) : 1;
-      // C248: sacrifice fury ATK bonus
-      const furyMul = this.sacrificeFuryRemaining > 0 ? (1 + SACRIFICE_FURY_ATK_BONUS) : 1;
-      // C257: stamina penalty
-      const staminaPenalty = Math.min(STAMINA_PENALTY_CAP, Math.floor(this.fightsSinceVillage / STAMINA_FIGHTS_PER_PENALTY) * STAMINA_ATK_PENALTY);
-      const staminaMul = 1 - staminaPenalty;
-      // C266: gold hoard ATK bonus
-      const goldHoardMul = hero.gold >= GOLD_HOARD_THRESHOLD ? (1 + GOLD_HOARD_ATK_BONUS) : 1;
-      // C273: boss kill counter ATK
-      const bossKillAtkMul = 1 + Math.floor(this.bossesKilled / BOSS_KILL_ATK_INTERVAL) * BOSS_KILL_ATK_BONUS;
-      // C275: adrenaline rush
-      const adrenalineMul = hero.hp < hero.hpMax * ADRENALINE_HP_THRESHOLD ? (1 + ADRENALINE_ATK_BONUS) : 1;
-      // C285: village training ATK buff
-      const trainingMul = this.villageTrainingRemaining > 0 ? (1 + VILLAGE_TRAINING_ATK_BONUS) : 1;
+      const hadVillageTraining = this.villageTrainingRemaining > 0;
       if (this.villageTrainingRemaining > 0) this.villageTrainingRemaining--;
-      // C289: prestige ATK scaling
-      const prestigeAtkMul = 1 + this.prestigeCount * PRESTIGE_ATK_BONUS_PER;
-      // C291: vengeful spirit — consecutive deaths (danger streak) = bonus ATK
-      const vengefulMul = this.consecutiveDeaths >= VENGEFUL_SPIRIT_THRESHOLD ? (1 + VENGEFUL_SPIRIT_ATK_BONUS) : 1;
-      // C311: crit chain ATK bonus
-      const critChainMul = 1 + Math.min(CRIT_CHAIN_CAP, this.consecutiveCrits * CRIT_CHAIN_ATK_BONUS);
-      // C320: danger zone ATK bonus
-      const dangerComboBonus = isDangerZone && this.comboStreak > 0 ? DANGER_COMBO_ATK_BONUS : 0;
-      const dangerAtkMul = isDangerZone ? (1 + DANGER_ZONE_ATK_BONUS + this.dangerChainCount * DANGER_ATK_CHAIN_BONUS + dangerComboBonus) : 1;
-      // C321: boss fury ATK buff
-      // C436: boss fury ATK scaling — fury scales with boss kills
-      const bossFuryMul = this.bossFuryRemaining > 0 ? (1 + BOSS_FURY_ATK_BONUS + this.consecutiveBossKills * BOSS_FURY_ATK_SCALE) : 1;
+      const hadBossFury = this.bossFuryRemaining > 0;
       if (this.bossFuryRemaining > 0) this.bossFuryRemaining--;
-      // C330: final stand — at 1 HP, ×2 damage
-      const finalStandMul = hero.hp === FINAL_STAND_HP ? FINAL_STAND_DMG_MUL : 1;
-      // C335: boss trophy ATK
-      const bossTrophyMul = 1 + this.uniqueBossKills * BOSS_TROPHY_ATK_BONUS;
-      // C354: prestige ATK surge — first fight after prestige
-      const prestigeSurgeMul = this.prestigeSurgeReady ? PRESTIGE_SURGE_ATK_MUL : 1;
+      const hadPrestigeSurge = this.prestigeSurgeReady;
       if (this.prestigeSurgeReady) this.prestigeSurgeReady = false;
-      // C360: combo prestige synergy flat ATK
-      const comboPrestigeFlat = this.comboStreak * this.prestigeCount * COMBO_PRESTIGE_ATK_FLAT;
-      // C377: village rest ATK buff
-      const villageRestAtkMul = this.villageRestAtkRemaining > 0 ? (1 + VILLAGE_REST_ATK_BONUS) : 1;
+      const hadVillageRestAtk = this.villageRestAtkRemaining > 0;
       if (this.villageRestAtkRemaining > 0) this.villageRestAtkRemaining--;
-      // C385: wave momentum ATK
-      const waveMomentumAtkMul = this.waveMomentumRemaining > 0 ? (1 + WAVE_MOMENTUM_ATK_MUL) : 1;
+      const hadWaveMomentum = this.waveMomentumRemaining > 0;
       if (this.waveMomentumRemaining > 0) this.waveMomentumRemaining--;
-      // C401: revenge streak ATK multiplier
-      const revengeStreakMul = this.revengeStreakRemaining > 0 ? (1 + this.revengeStreakPower) : 1;
+      const hadRevengeStreak = this.revengeStreakRemaining > 0;
       if (this.revengeStreakRemaining > 0) this.revengeStreakRemaining--;
-      // C410: wave chain ATK bonus
-      const waveChainAtk = Math.min(WAVE_CHAIN_CAP, this.consecutiveWaveClears) * WAVE_CHAIN_ATK_PER_WAVE;
-      // C390: combat mastery — total fights increase base ATK
-      const combatMastery = Math.min(COMBAT_MASTERY_CAP, Math.floor((this.totalWins + this.totalDeaths) / 100) * COMBAT_MASTERY_PER_100);
-      // C428: death count ATK — total deaths boost ATK permanently
-      const deathCountAtk = Math.min(DEATH_COUNT_ATK_CAP, Math.floor(this.totalDeaths / 10) * DEATH_COUNT_ATK_PER_10);
-      // C433: elite chain ATK — consecutive elites boost ATK temporarily
-      const eliteChainAtkMul = this.eliteChainAtkRemaining > 0 ? (1 + ELITE_CHAIN_ATK_BONUS * this.eliteCombo) : 1;
+      const hadEliteChainAtk = this.eliteChainAtkRemaining > 0;
       if (this.eliteChainAtkRemaining > 0) this.eliteChainAtkRemaining--;
+      // deathAtkSurge: original code decrements BEFORE reading multiplier
       if (this.deathAtkSurgeRemaining > 0) this.deathAtkSurgeRemaining--;
-      // C440: combo prestige synergy — combo multipliers scale with prestige
-      const comboPrestigeSynergyMul = this.comboStreak > 0 ? (1 + this.prestigeCount * COMBO_PRESTIGE_SCALE) : 1;
-      // C464: boss ATK fury chain — consecutive boss kills boost ATK
-      const bossFuryChainMul = 1 + Math.min(BOSS_ATK_FURY_CHAIN_CAP, this.consecutiveBossKills * BOSS_ATK_FURY_CHAIN_BONUS);
-      // C467: death ATK surge — temp ATK boost after death
-      const deathAtkSurgeMul = this.deathAtkSurgeRemaining > 0 ? (1 + DEATH_ATK_SURGE_BONUS) : 1;
-      // C471: danger ATK scaling — danger zone fights permanently boost ATK
-      const dangerAtkScaleMul = 1 + Math.min(DANGER_ATK_SCALING_CAP - 1, this.dangerFights * DANGER_ATK_SCALING_RATE);
-      // C475: wave ATK compound — consecutive waves compound ATK
-      const waveAtkCompoundMul = 1 + Math.min(WAVE_ATK_COMPOUND_CAP - 1, this.consecutiveWaveClears * WAVE_ATK_COMPOUND_BONUS);
-      // C481: danger combo synergy — danger + combo gives flat ATK
-      const dangerComboAtk = (isDangerZone && this.comboStreak >= DANGER_COMBO_THRESHOLD) ? DANGER_COMBO_ATK_FLAT * Math.floor(this.comboStreak / DANGER_COMBO_THRESHOLD) : 0;
-      // C485: combo ATK milestone — every 20 combo grants flat ATK
-      const comboAtkMilestone = Math.floor(this.comboStreak / COMBO_ATK_MILESTONE2_INTERVAL) * COMBO_ATK_MILESTONE2_BONUS;
-      // C488: village ATK training — temp ATK after village
-      const villageAtkTrainingMul = this.villageAtkTrainingRemaining > 0 ? (1 + VILLAGE_ATK_TRAINING_BONUS) : 1;
+      const hadDeathAtkSurge = this.deathAtkSurgeRemaining > 0;
+      const hadVillageAtkTraining = this.villageAtkTrainingRemaining > 0;
       if (this.villageAtkTrainingRemaining > 0) this.villageAtkTrainingRemaining--;
-      // C491: prestige ATK momentum — prestige boosts ATK over time
-      const prestigeAtkMomentumMul = 1 + Math.min(PRESTIGE_ATK_MOMENTUM_CAP - 1, this.prestigeCount * this.totalWins * PRESTIGE_ATK_MOMENTUM_RATE / 100);
-      // C496: elite ATK chain — consecutive elites grant ATK
-      const eliteAtkChainMul2 = isElite ? (1 + Math.min(ELITE_ATK_CHAIN_CAP2 - 1, this.eliteCombo * ELITE_ATK_CHAIN_BONUS2)) : 1;
-      // C501: blood pact — below 50% HP, sacrifice HP for ATK
-      const bloodPactRelicBonus = this.hasRelic(4) ? BLOOD_PACT_RELIC_EFFICIENCY : 1;
-      const bloodPactMul = (hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD) ? (1 + BLOOD_PACT_ATK_BONUS * bloodPactRelicBonus) : 1;
-      if (hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD) hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * BLOOD_PACT_HP_COST * (this.hasRelic(4) ? BLOOD_PACT_RELIC_HP_PENALTY : 1)));
-      // C503: adrenaline rush — very low HP gives massive ATK but no healing this fight
-      const adrenalineRushMul = (hero.hp < hero.hpMax * ADRENALINE_RUSH_HP_THRESHOLD) ? (1 + ADRENALINE_RUSH_ATK_BONUS) : 1;
-      // C506: shield sacrifice — chance to consume shield for massive ATK
-      let shieldSacrificeMul = 1;
+      // Blood pact HP check BEFORE cost applied
+      const hpBelowBloodPact = hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD;
+      if (hpBelowBloodPact) hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * BLOOD_PACT_HP_COST * (this.hasRelic(4) ? BLOOD_PACT_RELIC_HP_PENALTY : 1)));
+      // Shield sacrifice — RNG + state mutation
+      let hadShieldSacrifice = false;
       if (this.prestigeShieldRemaining > 0 && this.rng.chance(SHIELD_SACRIFICE_CHANCE)) {
         this.prestigeShieldRemaining--;
-        shieldSacrificeMul = SHIELD_SACRIFICE_ATK_MUL;
-        // C525: shield break burst — destroying shield also gives extended ATK boost
+        hadShieldSacrifice = true;
         this.shieldBreakBurstRemaining = SHIELD_BREAK_BURST_DURATION;
         this.totalSacrifices++;
       }
-      // C508: prestige echo — recent prestige gives decaying bonus
-      const prestigeEchoMul = this.prestigeEchoRemaining > 0 ? (1 + PRESTIGE_ECHO_BONUS - (PRESTIGE_ECHO_DURATION - this.prestigeEchoRemaining) * PRESTIGE_ECHO_DECAY) : 1;
+      // Prestige echo
+      const hadPrestigeEcho = this.prestigeEchoRemaining > 0;
+      const prestigeEchoDecay = hadPrestigeEcho ? (PRESTIGE_ECHO_DURATION - this.prestigeEchoRemaining) : 0;
       if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
-      // C510: wave exhaustion — temp ATK penalty after wave complete
-      const waveExhaustionMul = this.waveExhaustionRemaining > 0 ? (1 - WAVE_EXHAUSTION_ATK_PENALTY) : 1;
+      // Wave exhaustion
+      const hadWaveExhaustion = this.waveExhaustionRemaining > 0;
       if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
-      // C525: shield break burst — temp ×3 ATK after destroying own shield
-      const shieldBreakBurstMul = this.shieldBreakBurstRemaining > 0 ? SHIELD_BREAK_BURST_MUL : 1;
+      // Shield break burst (may have been set by shield sacrifice above)
+      const hadShieldBreakBurst = this.shieldBreakBurstRemaining > 0;
       if (this.shieldBreakBurstRemaining > 0) this.shieldBreakBurstRemaining--;
-      // C526: danger bet lock — locked-in multiplier during bet
-      const dangerBetMul = this.dangerBetRemaining > 0 ? DANGER_BET_LOCK_MUL : 1;
-      // C530: sacrifice prestige — total sacrifices boost power
-      const sacrificePrestigeMul = 1 + Math.min(SACRIFICE_PRESTIGE_CAP, this.totalSacrifices * SACRIFICE_PRESTIGE_RATE);
-      // C533: fatigue — ATK penalty after 100 consecutive fights without village
-      const fatigueMul = this.fightsSinceVillage > FATIGUE_ONSET ? (1 - Math.min(FATIGUE_CAP, (this.fightsSinceVillage - FATIGUE_ONSET) * FATIGUE_ATK_PENALTY_PER_FIGHT)) : 1;
-      // C534: accumulator — burst from clean fights
-      const accumulatorMul = 1 + this.accumulatorBonus;
-      // C537: aging — elderly heroes have less ATK
-      const agingAtkMul = 1 - Math.min(AGING_CAP * AGING_ATK_PENALTY, this.heroAge * AGING_ATK_PENALTY);
-      // C540: temporal prestige — bonus from previous prestige speed
-      const temporalPrestigeMul = 1 + this.temporalPrestigeBonus;
-      // C511: low HP fury — ATK ×2 when HP ≤ 20%
-      const lowHpFuryMul = hero.hp <= hero.hpMax * LOW_HP_FURY_THRESHOLD ? LOW_HP_FURY_ATK_MUL : 1;
-      // C516: boss conditional — all multipliers +20% during boss fights
-      const bossConditionalMul = kind === 'boss' ? BOSS_CONDITIONAL_MUL : 1;
-      // C520: conditional stack — count active conditions for global bonus
-      let activeConditions = 0;
-      if (lowHpFuryMul > 1) activeConditions++;
-      if (hero.hp >= hero.hpMax) activeConditions++; // C512 active
-      if (kind === 'boss') activeConditions++; // C516 active
-      if (this.deathProximityCrit > 0) activeConditions++; // C515 active
-      if (this.dangerStreak >= DEEP_DANGER_THRESHOLD) activeConditions++; // C518 active
-      if (hero.level >= this.getPrestigeThreshold()) activeConditions++; // C519 active
-      const conditionalStackMul = 1 + Math.min(CONDITIONAL_STACK_CAP, activeConditions * CONDITIONAL_STACK_BONUS);
-      // C541-C550: Synergy Web — detect active synergies
-      let activeSynergies = 0;
-      // C541: blood fury synergy — blood pact + low HP fury
-      const bloodFurySynergy = (bloodPactMul > 1 && lowHpFuryMul > 1) ? BLOOD_FURY_SYNERGY_MUL : 1;
-      if (bloodPactMul > 1 && lowHpFuryMul > 1) { activeSynergies++; this.synergiesDiscovered |= 1; }
-      // C544: elder wisdom synergy — aging + prestige
-      const elderWisdomActive = this.heroAge >= ELDER_WISDOM_AGE && this.prestigeCount >= ELDER_WISDOM_PRESTIGE;
-      if (elderWisdomActive) { activeSynergies++; this.synergiesDiscovered |= 2; }
-      // C545: desperate trade synergy — low HP fury + shield break burst active
-      const desperateTradeActive = lowHpFuryMul > 1 && this.shieldBreakBurstRemaining > 0;
-      if (desperateTradeActive) { activeSynergies++; this.synergiesDiscovered |= 4; }
-      // C548: anti-synergy — fatigue + accumulator both active weakens both
-      const antiSynergyActive = fatigueMul < 1 && accumulatorMul > 1;
-      const antiSynergyPenalty = antiSynergyActive ? ANTI_SYNERGY_PENALTY : 1;
-      if (antiSynergyActive) { this.synergiesDiscovered |= 8; }
-      // C543: temporal combo synergy — golden hour + high combo
-      if (this.goldenHourRemaining > 0 && this.comboStreak >= 30) { activeSynergies++; this.synergiesDiscovered |= 16; }
-      // C542: wealth sacrifice synergy detected (applied in gold burn section)
-      if (hero.hp >= hero.hpMax && this.goldBurnCooldown <= 5) { activeSynergies++; this.synergiesDiscovered |= 32; }
-      // C546: synergy count bonus
-      const synergyCountMul = 1 + Math.min(SYNERGY_COUNT_CAP, activeSynergies * SYNERGY_COUNT_BONUS);
-      // C547: synergy tier bonus
-      const synergyTierMul = activeSynergies >= 5 ? (1 + SYNERGY_TIER_5_BONUS) : activeSynergies >= 3 ? (1 + SYNERGY_TIER_3_BONUS) : 1;
-      // C549: synergy prestige permanent bonus
-      const synergyPrestigeMul = 1 + this.synergyPrestigeBonus;
-      // C553: Ember Crown relic — stacked crit ATK bonus
-      const emberCrownMul = this.hasRelic(0) ? (1 + Math.min(EMBER_CROWN_CAP, this.emberCrownStacks * EMBER_CROWN_ATK_PER_CRIT)) : 1;
-      // C558: Scholar's Lens relic — ATK penalty
-      const scholarLensMul = this.hasRelic(5) ? (1 - SCHOLAR_LENS_ATK_PENALTY) : 1;
-      // C576: cursed altar ATK buff
-      const cursedAltarMul = this.cursedAltarAtkBuff ? CURSED_ALTAR_ATK_BUFF : 1;
 
-      // C583: group multipliers by category for readability (no gameplay change)
-      // C661: flat ATK now computed via CombatCalculator pure function
-      const flatAtk = computeFlatAtk({ heroAtk: hero.atk, comboPrestigeFlat, comboMilestoneBonus: this.comboMilestoneBonus, combatMastery, waveChainAtk, deathCountAtk, dangerComboAtk, comboAtkMilestone });
-      const coreMuls = damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * prestigeMul * achieveMul;
-      const conditionMuls = nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * fatigueMul;
-      const goldMuls = goldHoardMul * adrenalineMul;
-      const combatMuls = bossKillAtkMul * trainingMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * dangerAtkScaleMul;
-      const progressMuls = prestigeAtkMul * prestigeSurgeMul * prestigeAtkMomentumMul * prestigeEchoMul * sacrificePrestigeMul * temporalPrestigeMul;
-      const chainMuls = villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * waveAtkCompoundMul * villageAtkTrainingMul * eliteAtkChainMul2;
-      const tradeoffMuls = bloodPactMul * adrenalineRushMul * shieldSacrificeMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul;
-      const systemMuls = accumulatorMul * agingAtkMul * bloodFurySynergy * antiSynergyPenalty * synergyCountMul * synergyTierMul * synergyPrestigeMul * emberCrownMul * scholarLensMul * cursedAltarMul;
-      // C657: ATK multiplier ceiling — prestige-linked cap replaces hard 10x
+      // Phase 2: Synergy detection (side effects on synergiesDiscovered)
+      const lowHpFury = hero.hp <= hero.hpMax * LOW_HP_FURY_THRESHOLD;
+      const bloodFurySynergyActive = hpBelowBloodPact && lowHpFury;
+      if (bloodFurySynergyActive) this.synergiesDiscovered |= 1;
+      const elderWisdomActive = this.heroAge >= ELDER_WISDOM_AGE && this.prestigeCount >= ELDER_WISDOM_PRESTIGE;
+      if (elderWisdomActive) this.synergiesDiscovered |= 2;
+      const desperateTradeActive = lowHpFury && hadShieldBreakBurst;
+      if (desperateTradeActive) this.synergiesDiscovered |= 4;
+      const antiSynergyActive = (this.fightsSinceVillage > FATIGUE_ONSET) && (this.accumulatorBonus > 0);
+      if (antiSynergyActive) this.synergiesDiscovered |= 8;
+      const goldenHourHighCombo = this.goldenHourRemaining > 0 && this.comboStreak >= 30;
+      if (goldenHourHighCombo) this.synergiesDiscovered |= 16;
+      const wealthSacrificeActive = hero.hp >= hero.hpMax && this.goldBurnCooldown <= 5;
+      if (wealthSacrificeActive) this.synergiesDiscovered |= 32;
+
+      // Phase 3: Build context + delegate to pure AtkMultiplierCalc
+      const comboPrestigeFlat = this.comboStreak * this.prestigeCount * COMBO_PRESTIGE_ATK_FLAT;
+      const waveChainAtk = Math.min(WAVE_CHAIN_CAP, this.consecutiveWaveClears) * WAVE_CHAIN_ATK_PER_WAVE;
+      const combatMasteryVal = Math.min(COMBAT_MASTERY_CAP, Math.floor((this.totalWins + this.totalDeaths) / 100) * COMBAT_MASTERY_PER_100);
+      const deathCountAtk = Math.min(DEATH_COUNT_ATK_CAP, Math.floor(this.totalDeaths / 10) * DEATH_COUNT_ATK_PER_10);
+      const dangerComboAtk = (isDangerZone && this.comboStreak >= DANGER_COMBO_THRESHOLD) ? DANGER_COMBO_ATK_FLAT * Math.floor(this.comboStreak / DANGER_COMBO_THRESHOLD) : 0;
+      const comboAtkMilestone = Math.floor(this.comboStreak / COMBO_ATK_MILESTONE2_INTERVAL) * COMBO_ATK_MILESTONE2_BONUS;
+
+      const atkResult = computeAtkMultipliers({
+        damping: this.opts.damping ?? 1.0,
+        bossAtkMul: isBoss ? (this.opts.getBossIntroAtkMul?.() ?? 1.0) : 1.0,
+        realmAtkMul: this.opts.getRealmForkAtkMul?.() ?? 1.0,
+        battleMomentum: this.battleMomentum,
+        shrineBuffActive: this.shrineBuffRemaining > 0,
+        isRevengeFight: this.lastDeathEnemyId === landmarkId,
+        killMilestones: this.killMilestones,
+        hpRatio: hero.hp / hero.hpMax,
+        fightsSinceVillage: this.fightsSinceVillage,
+        shrineTithes: this.shrineTithes,
+        hadShieldBreak,
+        hadComboBreaker,
+        prestigeCount: this.prestigeCount,
+        achievementMilestones: this.achievementMilestones,
+        totalDeaths: this.totalDeaths,
+        darknessCursed: this.darknessCursed,
+        heroLevel: hero.level,
+        sacrificeFuryActive: this.sacrificeFuryRemaining > 0,
+        heroGold: hero.gold,
+        bossesKilled: this.bossesKilled,
+        hpBelowAdrenaline: hero.hp < hero.hpMax * ADRENALINE_HP_THRESHOLD,
+        hadVillageTraining,
+        consecutiveDeaths: this.consecutiveDeaths,
+        consecutiveCrits: this.consecutiveCrits,
+        isDangerZone,
+        comboStreak: this.comboStreak,
+        dangerChainCount: this.dangerChainCount,
+        hadBossFury,
+        consecutiveBossKills: this.consecutiveBossKills,
+        heroHp: hero.hp,
+        heroHpMax: hero.hpMax,
+        uniqueBossKills: this.uniqueBossKills,
+        hadPrestigeSurge,
+        hadVillageRestAtk,
+        hadWaveMomentum,
+        hadRevengeStreak,
+        revengeStreakPower: this.revengeStreakPower,
+        consecutiveWaveClears: this.consecutiveWaveClears,
+        totalWins: this.totalWins,
+        totalFights: this.totalWins + this.totalDeaths,
+        hadEliteChainAtk,
+        eliteCombo: this.eliteCombo,
+        hadDeathAtkSurge,
+        dangerFights: this.dangerFights,
+        hadVillageAtkTraining,
+        hadPrestigeEcho,
+        prestigeEchoDecay,
+        hadWaveExhaustion,
+        isElite,
+        hpBelowBloodPact,
+        hpBelowAdrenalineRush: hero.hp < hero.hpMax * ADRENALINE_RUSH_HP_THRESHOLD,
+        hadShieldSacrifice,
+        hadShieldBreakBurst,
+        dangerBetActive: this.dangerBetRemaining > 0,
+        totalSacrifices: this.totalSacrifices,
+        accumulatorBonus: this.accumulatorBonus,
+        heroAge: this.heroAge,
+        temporalPrestigeBonus: this.temporalPrestigeBonus,
+        lowHpFury,
+        kind,
+        deathProximityCrit: this.deathProximityCrit,
+        dangerStreak: this.dangerStreak,
+        isPrestigeReady: hero.level >= this.getPrestigeThreshold(),
+        activeSynergiesFromBloodFury: bloodFurySynergyActive,
+        activeSynergiesFromElderWisdom: elderWisdomActive,
+        activeSynergiesFromDesperateTrade: desperateTradeActive,
+        antiSynergyActive,
+        goldenHourHighCombo,
+        wealthSacrificeActive,
+        synergyPrestigeBonus: this.synergyPrestigeBonus,
+        hasEmberCrown: this.hasRelic(0),
+        emberCrownStacks: this.emberCrownStacks,
+        hasScholarLens: this.hasRelic(5),
+        cursedAltarAtkBuff: this.cursedAltarAtkBuff,
+        comboPrestigeFlat,
+        comboMilestoneBonus: this.comboMilestoneBonus,
+        combatMastery: combatMasteryVal,
+        waveChainAtk,
+        deathCountAtk,
+        dangerComboAtk,
+        comboAtkMilestone,
+        heroAtk: hero.atk,
+        weather,
+        hasBloodPactRelic: this.hasRelic(4),
+      });
+      const { flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls } = atkResult;
       const atkInput = { flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls, atkCap: this.getAtkCap() };
       this.lastAtkBreakdownInput = atkInput;
       const baseHeroAtk = computeHeroAtk(atkInput);
