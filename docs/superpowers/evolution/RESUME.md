@@ -1,23 +1,24 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 653
+- Cycle: 656
 - Target: 680 (이번 세션 목표)
-- Last commit: b976b22 (C653 improve combo/momentum HUD visibility)
-- Vitest: 1889 passed (6 pre-existing failures) | E2E: 60 passed
+- Last commit: 39eced5 (C656 LandmarkResolver extraction)
+- Vitest: 1895+ passed (6 pre-existing failures) | E2E: 60 passed
 
-## 레이어 카운터 (이번 6-cycle era: C651~C656)
-- 구조: 2 (C651, C652)
-- 시스템: 0
+## 레이어 카운터 (이번 6-cycle era: C651~C656 — COMPLETE)
+- 구조: 3 (C651, C652, C656)
+- 시스템: 1 (C654)
 - UI/UX: 1 (C653)
-- 비주얼: 0
+- 비주얼: 1 (C655)
 - 밸런스: 0
 - Era start: C651
 
 ## 제약
-- Layer lock: UI (다음은 UI 외 레이어)
-- cycles_since_collab: 0 (C654 협의 완료)
-- File budget (6-cycle): {EncounterEngine.test.ts: 1, EncounterContext.ts: 1, OverworldRunner.tsx: 1, CombatOverlay.tsx: 1}
+- cycles_since_collab: 3 (→ 다음 C657은 협의 사이클)
+- Next era: C657~C662
+- File budget (completed era): {EncounterEngine.test.ts, EncounterContext.ts, EventChoiceEngine.ts+test, OverworldRunner.tsx, CombatOverlay.tsx, DamageFloaterLogic.ts+test+component, LandmarkResolver.ts+test}
+- EncounterEngine: 2229→2213 lines (net -16, 구조적으로 3개 모듈 분리됨)
 
 ## 다음 3사이클 (C651 협의에서 확정)
 1. [구조] Characterization snapshot + combo 5경로 test + milestone cap test
