@@ -223,6 +223,8 @@ export class EncounterEngine {
   private lastAtkBreakdownInput: import('../components/AtkBreakdownLogic').AtkBreakdownInput | null = null;
   // C707: cached EXP breakdown for badge display
   private lastExpBreakdown: Array<{ name: string; value: number }> | null = null;
+  // C725: cached weather for HUD display
+  private lastWeather: import('./encounter/WeatherSystem').Weather = 'normal';
   private lastHealResult: import('./encounter/PostCombatHealCalc').PostCombatHealResult | null = null;
   // C561-C570: Event state
   private cursedAltarRemaining = 0; // C567: cursed altar duration
@@ -307,6 +309,7 @@ export class EncounterEngine {
   getAtkCap(): number { return Math.min(ATK_CAP_BASE + this.prestigeCount * ATK_CAP_PER_PRESTIGE, ATK_CAP_MAX); }
   getAtkBreakdownInput() { return this.lastAtkBreakdownInput; }
   getExpBreakdown() { return this.lastExpBreakdown; }
+  getWeather() { return this.lastWeather; }
   getHealResult() { return this.lastHealResult; }
   getEventChainCount(): number { return this.eventChainCount; }
   getTotalDeaths(): number { return this.totalDeaths; }
@@ -472,6 +475,7 @@ export class EncounterEngine {
         (rate) => this.rng.chance(rate),
         (n) => this.rng.int(n),
       );
+      this.lastWeather = weather;
 
       // C220: night mode (C706: extracted to WeatherSystem)
       const { isNight } = computeNight(this.totalWins);
