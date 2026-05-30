@@ -32,9 +32,8 @@ import {
   ECHO_DURATION,
   ECHO_MIN_LEVEL,
   INSPIRATION_EVENT_CHANCE,
-  INSPIRATION_DURATION,
-  INSPIRATION_MIN_FIGHTS,
 } from './constants-events';
+import { getInspirationConfig } from './ConstantPhaseProfile';
 
 export interface PostCombatContext {
   totalFights: number;
@@ -217,8 +216,10 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   }
 
   // C747: Inspiration event — ATK buff for mid-game
-  if (eventsEnabled && !eventTriggered && ctx.totalFights >= INSPIRATION_MIN_FIGHTS && rngOrPity(INSPIRATION_EVENT_CHANCE)) {
-    result.newInspirationRemaining = INSPIRATION_DURATION;
+  // C747+C751: Inspiration event — phase-aware ATK buff
+  const inspConfig = getInspirationConfig(ctx.totalFights);
+  if (eventsEnabled && !eventTriggered && ctx.totalFights >= inspConfig.minFights && rngOrPity(INSPIRATION_EVENT_CHANCE)) {
+    result.newInspirationRemaining = inspConfig.duration;
     result.eventType = 'event_inspiration';
     eventTriggered = true;
   }

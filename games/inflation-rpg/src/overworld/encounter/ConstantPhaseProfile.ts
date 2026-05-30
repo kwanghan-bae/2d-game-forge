@@ -19,6 +19,10 @@ const PHASE_MAP: Record<string, PhaseProfile> = {
   ECHO_MIN_LEVEL: 'mid',
   ECHO_EVENT_CHANCE: 'mid',
   ECHO_DURATION: 'mid',
+  INSPIRATION_EVENT_CHANCE: 'mid',
+  INSPIRATION_ATK_BONUS: 'mid',
+  INSPIRATION_DURATION: 'mid',
+  INSPIRATION_MIN_FIGHTS: 'mid',
   GOLDEN_HOUR_INTERVAL: 'mid',
   FATIGUE_ONSET: 'mid',
 
@@ -44,4 +48,22 @@ const PHASE_MAP: Record<string, PhaseProfile> = {
 
 export function getConstantProfile(name: string): PhaseProfile {
   return PHASE_MAP[name] ?? 'unknown';
+}
+
+/**
+ * C751: Phase-aware inspiration configuration.
+ * Returns duration and min-fights gate based on current totalFights bracket.
+ */
+export interface InspirationPhaseConfig {
+  duration: number;
+  minFights: number;
+}
+
+export function getInspirationConfig(totalFights: number): InspirationPhaseConfig {
+  // Late-game (200+ fights): longer buff, same gate
+  if (totalFights >= 200) return { duration: 10, minFights: 40 };
+  // Mid-game (80+ fights): standard
+  if (totalFights >= 80) return { duration: 8, minFights: 40 };
+  // Early-mid (< 80 fights): shorter buff, lower gate
+  return { duration: 6, minFights: 30 };
 }
