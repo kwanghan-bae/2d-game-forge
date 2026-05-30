@@ -38,7 +38,7 @@ import {
   GREED_GAMBIT_EXP_BONUS, RISK_REWARD_DANGER_EXP, DEEP_DANGER_THRESHOLD,
   DEEP_DANGER_EXP_MUL, RUSH_HOUR_EXP_MUL, AGING_EXP_BONUS,
   ELDER_WISDOM_EXP_MUL, SCHOLAR_LENS_EXP_MUL, COLOSSEUM_EXP_MUL, TRIAL_GROUNDS_EXP_MUL,
-  FOG_AMBUSH_EXP_MUL,
+  FOG_AMBUSH_EXP_MUL, VOID_RIFT_EXP_PER_TIER,
 } from './constants';
 
 export interface ExpMultiplierContext {
@@ -99,6 +99,7 @@ export interface ExpMultiplierContext {
   colosseumActive: boolean;
   trialGroundsActive: boolean;
   fogAmbushActive: boolean;
+  voidRiftTier: number; // C775: 0 if inactive, else tier number for EXP bonus
 }
 
 /**
@@ -210,9 +211,10 @@ export function computeExpMultiplierWithBreakdown(ctx: ExpMultiplierContext): Ex
   const colosseumExpMul = ctx.colosseumActive ? COLOSSEUM_EXP_MUL : 1;
   const trialGroundsExpMul = ctx.trialGroundsActive ? TRIAL_GROUNDS_EXP_MUL : 1;
   const fogAmbushExpMul = ctx.fogAmbushActive ? FOG_AMBUSH_EXP_MUL : 1;
+  const voidRiftExpMul = ctx.voidRiftTier > 0 ? (1 + VOID_RIFT_EXP_PER_TIER * ctx.voidRiftTier) : 1;
 
   const categories: { name: string; value: number }[] = [
-    { name: 'core', value: dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul * colosseumExpMul * trialGroundsExpMul * fogAmbushExpMul },
+    { name: 'core', value: dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul * colosseumExpMul * trialGroundsExpMul * fogAmbushExpMul * voidRiftExpMul },
     { name: 'combo', value: comboBonus * comboExpMul * comboBreakMul * comboFinisherMul * comboExpCascadeMul * comboAccelExpMul * comboExpVelocityMul },
     { name: 'combat', value: firstBloodMul * closeCallMul * quickKillMul * multiKillMul * revengeExpMul * critChainExpMul * critExpChainMul2 },
     { name: 'progress', value: diminish * lvUpMul * expDecayMul * expChainMul * expChainFightMul * killMomentumExp * familiarityMul * finalMasteryMul * finalMasteryMul2 },
