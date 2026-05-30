@@ -262,7 +262,7 @@ export class EncounterEngine {
   setShrineChoice(choice: 0 | 1 | 2): void { this.pendingShrineChoice = choice; }
 
   // C578: combat stats summary for visual overlay
-  getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number } {
+  getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean } {
     const activeBuffs: string[] = [];
     if (this.shrineBuffRemaining > 0) activeBuffs.push('명상');
     if (this.sacrificeFuryRemaining > 0) activeBuffs.push('분노');
@@ -271,12 +271,15 @@ export class EncounterEngine {
     if (this.villageShieldActive) activeBuffs.push('마을 방패');
     if (this.fairyBlessingRemaining > 0) activeBuffs.push('요정 축복');
     if (this.goldenHourRemaining > 0) activeBuffs.push('황금 시간');
+    const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
-    if (this.rng) deathPrevention++; // lucky dodge (always available)
-    if (this.levelSacrificeCooldown <= 0) deathPrevention++; // level sacrifice ready
-    if (this.hasRelic(2) && !this.phoenixFeatherUsed) deathPrevention++; // phoenix
+    if (!deathSaveBlocked) {
+      if (this.rng) deathPrevention++; // lucky dodge
+      if (this.levelSacrificeCooldown <= 0) deathPrevention++; // level sacrifice ready
+    }
+    if (this.hasRelic(2) && !this.phoenixFeatherUsed) deathPrevention++; // phoenix (always works)
     const dangerLevel = Math.min(10, Math.floor(this.dangerStreak / 5));
-    return { activeBuffs, deathPrevention, dangerLevel };
+    return { activeBuffs, deathPrevention, dangerLevel, deathSaveBlocked };
   }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {

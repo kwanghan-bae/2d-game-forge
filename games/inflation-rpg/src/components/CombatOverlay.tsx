@@ -31,6 +31,11 @@ export function CombatOverlay() {
           방어막 ×{summary.deathPrevention}
         </div>
       )}
+      {summary.deathSaveBlocked && (
+        <div style={{ marginBottom: 4, color: '#f44' }}>
+          ⚠️ 저주: 사망방지 차단
+        </div>
+      )}
       {summary.dangerLevel > 0 && (
         <div>
           <span style={{ color: '#f88' }}>{'🔥'.repeat(Math.min(summary.dangerLevel, 5))}</span>{' '}
