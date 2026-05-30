@@ -19,6 +19,8 @@ import { StrategyPanel } from '../components/StrategyPanel';
 import { CombatOverlay } from '../components/CombatOverlay';
 import { DamageFloater } from '../components/DamageFloater';
 import { DamageFloaterLogic } from '../components/DamageFloaterLogic';
+import { BattleOutcomeBadge } from '../components/BattleOutcomeBadge';
+import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
 import { ShrineChoiceModal } from '../components/ShrineChoiceModal';
 import { DangerChoiceModal } from '../components/DangerChoiceModal';
 import { FateRollModal } from './FateRollModal';
@@ -124,6 +126,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const MAX_FLOATS = 3;
   const [lightFloats, setLightFloats] = useState<LightFloat[]>([]);
   const damageFloaterRef = useRef(new DamageFloaterLogic({ duration: 800 }));
+  const [badgeInput, setBadgeInput] = useState<BattleOutcomeInput | null>(null);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -262,6 +265,14 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           const closeCallEv = evs.find(e => e.type === 'close_call');
           if (closeCallEv && closeCallEv.type === 'close_call') {
             damageFloaterRef.current.addEntry({ value: closeCallEv.healed, type: 'heal' });
+          }
+          // C663: BattleOutcomeBadge integration
+          if (evs.some(e => e.type === 'battle_won')) {
+            setBadgeInput({
+              turnCount: momentumDisplay + 1,
+              didCrit: !!critEv,
+              wasCloseCall: !!closeCallEv,
+            });
           }
           if (event.landmarkKind === 'village') {
             setMomentumDisplay(0);
@@ -630,6 +641,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
+      <BattleOutcomeBadge input={badgeInput} />
       <div style={{ position: 'absolute', left: 8, bottom: 80, zIndex: 10 }}>
         <RelicPanel />
       </div>
