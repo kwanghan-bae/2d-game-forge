@@ -70,6 +70,9 @@ export interface PostCombatResult {
   shrinePending: boolean;
   shrineChoice: 'gold' | 'exp' | 'heal' | null;
   gamblerWon: boolean | null;
+  merchantPending: boolean;
+  gamblerPending: boolean;
+  altarPending: boolean;
 }
 
 export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult {
@@ -91,6 +94,9 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     shrinePending: false,
     shrineChoice: null,
     gamblerWon: null,
+    merchantPending: false,
+    gamblerPending: false,
+    altarPending: false,
   };
 
   if (result.newCursedAltarRemaining === 0 && ctx.cursedAltarRemaining > 0) {
@@ -137,15 +143,9 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
-  // Gambler
+  // Gambler — set pending for player choice
   if (eventsEnabled && !eventTriggered && ctx.strategyGambler && ctx.rngChance(GAMBLER_CHANCE) && ctx.heroGold >= 50) {
-    if (ctx.rngChance(GAMBLER_WIN_RATE)) {
-      result.heroGoldDelta = ctx.heroGold; // double (engine: hero.gold *= 2)
-      result.gamblerWon = true;
-    } else {
-      result.heroGoldDelta = -Math.floor(ctx.heroGold * 0.5);
-      result.gamblerWon = false;
-    }
+    result.gamblerPending = true;
     result.eventType = 'event_gambler';
     eventTriggered = true;
   }
@@ -157,10 +157,9 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
-  // Cursed altar
+  // Cursed altar — set pending for player choice
   if (eventsEnabled && !eventTriggered && ctx.strategyCursedAltar && ctx.rngChance(CURSED_ALTAR_CHANCE) && !ctx.cursedAltarAtkBuff) {
-    result.newCursedAltarAtkBuff = true;
-    result.newCursedAltarRemaining = CURSED_ALTAR_DURATION;
+    result.altarPending = true;
     result.eventType = 'event_cursed_altar';
     eventTriggered = true;
   }
@@ -179,19 +178,13 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
-  // Wandering Merchant
+  // Wandering Merchant — set pending for player choice
   if (!eventTriggered && !ctx.isElite && !ctx.isBoss && ctx.rngChance(MERCHANT_EVENT_CHANCE) && ctx.heroGold >= 200 && ctx.relics.length < 3) {
     const available = [0, 1, 2, 3, 4, 5].filter(id => !ctx.relics.includes(id));
     if (available.length > 0) {
-      const offered = available[ctx.rngInt(available.length)];
-      const cost = 200 * MERCHANT_PRICE_MUL;
-      if (ctx.heroGold >= cost) {
-        result.heroGoldDelta = -cost;
-        result.newRelics = [...ctx.relics, offered];
-        result.newRelicLevels = [...ctx.relicLevels, 1];
-        result.eventType = 'event_merchant';
-        eventTriggered = true;
-      }
+      result.merchantPending = true;
+      result.eventType = 'event_merchant';
+      eventTriggered = true;
     }
   }
 
