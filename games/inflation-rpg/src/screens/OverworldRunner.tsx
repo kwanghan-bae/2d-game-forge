@@ -32,6 +32,7 @@ import { WeatherHudIndicator } from '../components/WeatherHudIndicator';
 import { HudIndicatorBarComponent } from '../components/HudIndicatorBarComponent';
 import { DestinationBadge } from '../components/DestinationBadge';
 import type { Weather } from '../overworld/encounter/WeatherSystem';
+import type { TraitId } from '../cycle/traits';
 import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
 import { AtkBreakdownTooltip } from '../components/AtkBreakdownTooltip';
 import { computeAtkBreakdown } from '../components/AtkBreakdownLogic';
@@ -76,6 +77,7 @@ async function bootPhaser(
   setCurrentRealm: (r: import('../types').RealmId) => void;
   setSeason: (s: import('../types').SeasonId) => void;
   setCosmeticTintOverride: (hex: string | null) => void;
+  getScene: () => { getLastInfluencingTraits?: () => readonly string[] } | null;
 }> {
   const [Phaser, { OverworldScene, GRID_H }] = await Promise.all([
     import('phaser'),
@@ -108,7 +110,7 @@ async function bootPhaser(
   const setCosmeticTintOverride = (hex: string | null) => {
     getScene()?.setCosmeticTintOverride(hex);
   };
-  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setCurrentRealm, setSeason, setCosmeticTintOverride };
+  return { destroy: () => game.destroy(true), setSpeed, setUnlockedRealms, setCurrentRealm, setSeason, setCosmeticTintOverride, getScene };
 }
 
 const SPEED_PRESETS = [1, 2, 5, 10] as const;
@@ -148,6 +150,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [currentWeather, setCurrentWeather] = useState<Weather>('normal');
   const [isNight, setIsNight] = useState(false);
   const [inspirationRemaining, setInspirationRemaining] = useState(0);
+  const [influencingTraits, setInfluencingTraits] = useState<TraitId[]>([]);
   const [currentDestination, setCurrentDestination] = useState<import('../data/landmarks').LandmarkKind | null>(null);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -180,6 +183,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const setSceneSeasonRef = useRef<((s: import('../types').SeasonId) => void) | null>(null);
   // Cycle 177 — SeasonalModifier cosmeticTint override ref (wire chain 7/n).
   const setSceneCosmeticTintRef = useRef<((hex: string | null) => void) | null>(null);
+  // C761: scene accessor for trait badge wiring
+  const getSceneRef = useRef<(() => { getLastInfluencingTraits?: () => readonly string[] } | null) | null>(null);
   const endedRef = useRef(false);
   const chapterOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -317,6 +322,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           setIsNight(engineRef.current?.getIsNight?.() ?? false);
           // C753: Inspiration badge wiring
           setInspirationRemaining(engineRef.current?.getInspirationRemaining?.() ?? 0);
+          // C761: Trait influence badge wiring
+          setInfluencingTraits([...(getSceneRef.current?.()?.getLastInfluencingTraits?.() ?? [])] as TraitId[]);
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||
@@ -538,6 +545,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       setSceneCurrentRealmRef.current = g.setCurrentRealm;
       setSceneSeasonRef.current = g.setSeason;
       setSceneCosmeticTintRef.current = g.setCosmeticTintOverride;
+      getSceneRef.current = g.getScene;
     });
 
     return () => {
@@ -546,6 +554,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       setSceneCurrentRealmRef.current = null;
       setSceneSeasonRef.current = null;
       setSceneCosmeticTintRef.current = null;
+      getSceneRef.current = null;
       if (chapterOverlayTimerRef.current) {
         clearTimeout(chapterOverlayTimerRef.current);
         chapterOverlayTimerRef.current = null;
@@ -691,7 +700,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
-      <HudIndicatorBarComponent weather={currentWeather} isNight={isNight} influencingTraits={[]} inspirationRemaining={inspirationRemaining} />
+      <HudIndicatorBarComponent weather={currentWeather} isNight={isNight} influencingTraits={influencingTraits} inspirationRemaining={inspirationRemaining} />
       <DestinationBadge kind={currentDestination} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />

@@ -1,7 +1,7 @@
 import type { HeroEntity } from '../hero/HeroEntity';
 import type { TraitId } from '../cycle/traits';
 import { SeededRng } from '../cycle/SeededRng';
-import { DestinationResolver, type LandmarkCandidate } from './DestinationResolver';
+import { DestinationResolver, type LandmarkCandidate, type InfluenceResult } from './DestinationResolver';
 import type { RealmId } from '../types';
 
 export interface HeroDecisionAIOpts {
@@ -24,6 +24,20 @@ export class HeroDecisionAI {
     extras?: { currentRealm?: RealmId; unlockedRealms?: readonly RealmId[]; heroLevel?: number },
   ): LandmarkCandidate | null {
     return this.resolver.choose(candidates, {
+      traits: this.opts.traits,
+      personality: this.hero.personality,
+      currentRealm: extras?.currentRealm,
+      unlockedRealms: extras?.unlockedRealms,
+      heroLevel: extras?.heroLevel ?? this.hero.level,
+    });
+  }
+
+  // C761: expose influencing traits for HUD badge
+  chooseDestinationWithInfluence(
+    candidates: readonly LandmarkCandidate[],
+    extras?: { currentRealm?: RealmId; unlockedRealms?: readonly RealmId[]; heroLevel?: number },
+  ): InfluenceResult | null {
+    return this.resolver.chooseWithInfluence(candidates, {
       traits: this.opts.traits,
       personality: this.hero.personality,
       currentRealm: extras?.currentRealm,
