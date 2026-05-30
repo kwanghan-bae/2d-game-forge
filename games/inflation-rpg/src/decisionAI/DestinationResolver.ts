@@ -16,6 +16,7 @@ export interface DecisionContext {
   personality: PersonalityState;
   currentRealm?: RealmId;
   unlockedRealms?: readonly RealmId[];
+  heroLevel?: number;
 }
 
 const WEIGHT_BASE: Record<LandmarkKind, number> = {
@@ -98,7 +99,7 @@ export class DestinationResolver {
       // crossroads: moral drift → base weight 만 (moral 은 +/- 다 valid)
       // Cycle 284 — trait wire (multiplicative on landmark kind).
       if (c.kind === 'boss'  && t_challenge)   w *= 1.3;
-      if (c.kind === 'boss'  && t_boss_hunter) w *= 1.5;
+      if (c.kind === 'boss'  && t_boss_hunter) w *= 1.3;
       if (c.kind === 'enemy' && t_challenge)   w *= 1.2;
       if (c.kind === 'shrine' && t_zealot)     w *= 1.4;
       if (c.kind === 'exit'  && t_swift)       w *= 1.4;
@@ -123,6 +124,8 @@ export class DestinationResolver {
       if (c.kind === 'sightseeing' && t_genius) w *= 1.3; // 천재: 관찰
       if (c.kind === 'holy_ruin' && t_terminal_genius) w *= 1.6; // 말기 천재: 강한 boost
       if (c.kind === 'shrine' && t_terminal_genius) w *= 1.4;
+      // C734: difficulty gate — penalize landmarks far above hero level
+      if (ctx.heroLevel != null && c.difficulty > ctx.heroLevel * 1.5) w *= 0.3;
       return { candidate: c, weight: Math.max(0.1, w) };
     });
 
