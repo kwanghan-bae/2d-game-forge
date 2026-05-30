@@ -17,6 +17,8 @@ import { StatusModal } from './StatusModal';
 import { RelicPanel } from '../components/RelicPanel';
 import { StrategyPanel } from '../components/StrategyPanel';
 import { CombatOverlay } from '../components/CombatOverlay';
+import { DamageFloater } from '../components/DamageFloater';
+import { DamageFloaterLogic } from '../components/DamageFloaterLogic';
 import { ShrineChoiceModal } from '../components/ShrineChoiceModal';
 import { DangerChoiceModal } from '../components/DangerChoiceModal';
 import { FateRollModal } from './FateRollModal';
@@ -121,6 +123,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const FADE_MS = 1500;
   const MAX_FLOATS = 3;
   const [lightFloats, setLightFloats] = useState<LightFloat[]>([]);
+  const damageFloaterRef = useRef(new DamageFloaterLogic({ duration: 800 }));
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -244,6 +247,21 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           // C129: momentum display — track battles since village
           if (evs.some(e => e.type === 'battle_won')) {
             setMomentumDisplay(m => Math.min(m + 1, 20));
+            const wonEv = evs.find(e => e.type === 'battle_won');
+            if (wonEv && wonEv.type === 'battle_won' && wonEv.expGain > 0) {
+              damageFloaterRef.current.addEntry({ value: wonEv.expGain, type: 'exp' });
+            }
+          }
+          if (evs.some(e => e.type === 'hero_died')) {
+            damageFloaterRef.current.addEntry({ value: 0, type: 'damage' });
+          }
+          const critEv = evs.find(e => e.type === 'critical_hit');
+          if (critEv && critEv.type === 'critical_hit') {
+            damageFloaterRef.current.addEntry({ value: critEv.damage, type: 'critical' });
+          }
+          const closeCallEv = evs.find(e => e.type === 'close_call');
+          if (closeCallEv && closeCallEv.type === 'close_call') {
+            damageFloaterRef.current.addEntry({ value: closeCallEv.healed, type: 'heal' });
           }
           if (event.landmarkKind === 'village') {
             setMomentumDisplay(0);
@@ -611,6 +629,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
       <CombatOverlay />
+      <DamageFloater logic={damageFloaterRef.current} />
       <div style={{ position: 'absolute', left: 8, bottom: 80, zIndex: 10 }}>
         <RelicPanel />
       </div>
