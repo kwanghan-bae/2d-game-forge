@@ -95,8 +95,12 @@ function resolveGambler(choice: GamblerChoice, ctx: EventEffectContext): EventEf
     const winAmount = choice === GamblerChoice.BET_HIGH ? ctx.heroGold : Math.floor(ctx.heroGold * 0.5);
     return { ...EMPTY_RESULT, goldDelta: winAmount, eventSubType: 'event_gambler_win' };
   }
-  const loseAmount = choice === GamblerChoice.BET_HIGH ? ctx.heroGold : Math.floor(ctx.heroGold * 0.25);
-  return { ...EMPTY_RESULT, goldDelta: -loseAmount, eventSubType: 'event_gambler_lose' };
+  // C709: BET_HIGH loses 80% (floor prevents geometric ruin), BET_LOW loses 25%
+  const loseAmount = choice === GamblerChoice.BET_HIGH
+    ? Math.floor(ctx.heroGold * 0.80)
+    : Math.floor(ctx.heroGold * 0.25);
+  const loseSubType = choice === GamblerChoice.BET_HIGH ? 'event_gambler_lose_high' : 'event_gambler_lose_low';
+  return { ...EMPTY_RESULT, goldDelta: -loseAmount, eventSubType: loseSubType };
 }
 
 function resolveAltar(choice: AltarChoice, ctx: EventEffectContext): EventEffectResult {
