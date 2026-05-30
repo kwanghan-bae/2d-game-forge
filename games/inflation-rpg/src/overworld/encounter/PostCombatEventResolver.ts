@@ -27,6 +27,9 @@ import {
   MENTOR_MIN_FIGHTS,
   MENTOR_MAX_FIGHTS,
   MENTOR_DURATION,
+  RISK_GAMBIT_CHANCE,
+  RISK_GAMBIT_MIN_FIGHTS,
+  RISK_GAMBIT_MAX_FIGHTS,
   TIME_RIFT_CHANCE,
   MERCHANT_EVENT_CHANCE,
   EVENT_CHAIN_THRESHOLD,
@@ -127,6 +130,7 @@ export interface PostCombatResult {
   merchantPending: boolean;
   gamblerPending: boolean;
   altarPending: boolean;
+  riskGambitPending: boolean;
 }
 
 export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult {
@@ -172,6 +176,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     merchantPending: false,
     gamblerPending: false,
     altarPending: false,
+    riskGambitPending: false,
   };
 
   if (result.newCursedAltarRemaining === 0 && ctx.cursedAltarRemaining > 0) {
@@ -277,6 +282,14 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       candidates.push({
         id: 'mentor', weight: MENTOR_CHANCE, pityEligible: true,
         apply: (r) => { r.newMentorRemaining = MENTOR_DURATION; r.eventType = 'event_mentor'; },
+      });
+    }
+
+    // C826: Risk Gambit — early-game decision (fights 40-90, risk HP for gold)
+    if (ctx.totalFights >= RISK_GAMBIT_MIN_FIGHTS && ctx.totalFights <= RISK_GAMBIT_MAX_FIGHTS) {
+      candidates.push({
+        id: 'risk_gambit', weight: RISK_GAMBIT_CHANCE, pityEligible: false,
+        apply: (r) => { r.riskGambitPending = true; r.eventType = 'event_risk_gambit'; },
       });
     }
 
