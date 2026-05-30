@@ -871,6 +871,8 @@ export class CycleControllerV2 {
   getImprintedRelic() { return this.encounter.getImprintedRelic(); }
   getPrestigeCount() { return this.encounter.getPrestigeCount(); }
   getCombatSummary() { return this.encounter.getCombatSummary(); }
+  hasPendingShrineChoice() { return this.encounter.hasPendingShrineChoice(); }
+  setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }
 
   /** Most recent saga events (already batched + narrative-formatted) for the
    *  live OverworldRunner log overlay. */
