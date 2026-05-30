@@ -777,7 +777,9 @@ export class EncounterEngine {
           const drDefenseMuls = mercyReduction * shieldReduction * armorMul * goldArmorMul * vigorMul;
           const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
           const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul;
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * drDefenseMuls * drShieldMuls * drContextMuls));
+          // C624: DR floor — total reduction capped at 70% (min 30% damage always gets through)
+          const totalDrMul = Math.max(0.30, drDefenseMuls * drShieldMuls * drContextMuls);
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul));
           // C380: prestige shield blocks hits
           if (this.prestigeShieldRemaining > 0) {
             this.prestigeShieldRemaining--;
