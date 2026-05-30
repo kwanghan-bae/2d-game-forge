@@ -24,7 +24,9 @@ import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
 import { ComboStreakBadge } from '../components/ComboStreakBadge';
 import { ExpBreakdownBadge } from '../components/ExpBreakdownBadge';
 import { EventChoiceToast } from '../components/EventChoiceToast';
+import { HealBreakdownBadge } from '../components/HealBreakdownBadge';
 import type { ExpBreakdownEntry } from '../components/ExpBreakdownBadgeLogic';
+import type { PostCombatHealResult } from '../overworld/encounter/PostCombatHealCalc';
 import { StatDeltaPopup } from '../components/StatDeltaPopup';
 import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
 import { AtkBreakdownTooltip } from '../components/AtkBreakdownTooltip';
@@ -137,6 +139,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [badgeInput, setBadgeInput] = useState<BattleOutcomeInput | null>(null);
   const [expBreakdown, setExpBreakdown] = useState<ExpBreakdownEntry[] | null>(null);
   const [eventSubType, setEventSubType] = useState<string | null>(null);
+  const [healResult, setHealResult] = useState<PostCombatHealResult | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -295,6 +298,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           // C707: ExpBreakdownBadge + EventChoiceToast wiring
           const cachedBreakdown = engineRef.current?.getExpBreakdown?.() ?? null;
           if (cachedBreakdown) setExpBreakdown(cachedBreakdown);
+          // C712: HealBreakdownBadge wiring
+          const cachedHeal = engineRef.current?.getHealResult?.() ?? null;
+          if (cachedHeal && cachedHeal.totalHeal > 0) setHealResult(cachedHeal);
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||
@@ -671,6 +677,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <BattleOutcomeBadge input={badgeInput} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />
+      <HealBreakdownBadge healResult={healResult} />
       <EventChoiceToast eventSubType={eventSubType} onDone={() => setEventSubType(null)} />
       {showAtkBreakdown && (
         <div style={{ position: 'absolute', top: 60, left: 8, zIndex: 20 }}>
