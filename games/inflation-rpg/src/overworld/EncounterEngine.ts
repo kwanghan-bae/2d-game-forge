@@ -207,6 +207,7 @@ export class EncounterEngine {
   private cursedAltarAtkBuff = false; // C567: ATK buff active
   private fairyBlessingRemaining = 0; // C568: guaranteed drops
   private eventChainCount = 0; // C570: consecutive events
+  private pendingShrineChoice = -1; // C579: -1 = no pending, 0=gold, 1=exp, 2=heal
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -254,6 +255,10 @@ export class EncounterEngine {
   }
   getPrestigeCount(): number { return this.prestigeCount; }
   getEventChainCount(): number { return this.eventChainCount; }
+
+  // C579: treasure shrine player choice
+  hasPendingShrineChoice(): boolean { return this.pendingShrineChoice >= 0; }
+  setShrineChoice(choice: 0 | 1 | 2): void { this.pendingShrineChoice = choice; }
 
   // C578: combat stats summary for visual overlay
   getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number } {
@@ -1608,13 +1613,20 @@ export class EncounterEngine {
         }
         eventTriggered = true;
       }
-      // C562: Treasure shrine
+      // C562: Treasure shrine (C579: player choice if strategy enabled)
       if (eventsEnabled && !eventTriggered && this.rng.chance(TREASURE_SHRINE_CHANCE)) {
-        const choice = this.rng.int(3);
-        if (choice === 0) hero.gold += SHRINE_GOLD_BURST;
-        else if (choice === 1) hero.gainExp(SHRINE_EXP_BURST);
-        else hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_AMOUNT));
-        events.push({ type: 'event_treasure_shrine', choice });
+        if (this.pendingShrineChoice === -1) {
+          // Signal pending choice — will be resolved next encounter
+          this.pendingShrineChoice = 0; // default to gold if not chosen
+          events.push({ type: 'event_treasure_shrine_pending' });
+        } else {
+          const choice = this.pendingShrineChoice;
+          this.pendingShrineChoice = -1;
+          if (choice === 0) hero.gold += SHRINE_GOLD_BURST;
+          else if (choice === 1) hero.gainExp(SHRINE_EXP_BURST);
+          else hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_AMOUNT));
+          events.push({ type: 'event_treasure_shrine', choice });
+        }
         eventTriggered = true;
       }
       // C564: Rest shrine — full heal but reset combo (C575: player toggle)
