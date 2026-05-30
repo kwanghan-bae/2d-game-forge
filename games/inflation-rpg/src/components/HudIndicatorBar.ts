@@ -27,6 +27,7 @@ export interface ActiveEventState {
   snowDriftRemaining: number;
   abyssalConvergenceRemaining: number;
   temporalFissureRemaining: number;
+  titanArenaRemaining: number;
   eventMomentumAtkRemaining: number;
   eventMomentumDensityRemaining: number;
 }
@@ -49,6 +50,7 @@ const EVENT_BADGE_REGISTRY: Array<{ key: keyof ActiveEventState; icon: string; l
   { key: 'snowDriftRemaining', icon: '❄️', label: '눈보라' },
   { key: 'abyssalConvergenceRemaining', icon: '🌊', label: '심연 수렴' },
   { key: 'temporalFissureRemaining', icon: '⏳', label: '시간 균열' },
+  { key: 'titanArenaRemaining', icon: '🏛️', label: '타이탄 투기장' },
   { key: 'eventMomentumAtkRemaining', icon: '🔥', label: '기세 ATK' },
   { key: 'eventMomentumDensityRemaining', icon: '🌀', label: '기세 밀도' },
 ];

@@ -908,7 +908,14 @@ export class CycleControllerV2 {
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
   getAbyssalConvergenceRemaining() { return this.encounter.getAbyssalConvergenceRemaining(); }
+  getAbyssalConvergencePending() { return this.encounter.getAbyssalConvergencePending(); }
+  resolveAbyssalConvergence(accept: boolean) { this.encounter.resolveAbyssalConvergence(accept); this.recordEventChoice('abyssal_convergence', accept); }
   getTemporalFissureRemaining() { return this.encounter.getTemporalFissureRemaining(); }
+  getTemporalFissurePending() { return this.encounter.getTemporalFissurePending(); }
+  resolveTemporalFissure(accept: boolean) { this.encounter.resolveTemporalFissure(accept); this.recordEventChoice('temporal_fissure', accept); }
+  getTitanArenaRemaining() { return this.encounter.getTitanArenaRemaining(); }
+  getTitanArenaPending() { return this.encounter.getTitanArenaPending(); }
+  resolveTitanArena(accept: boolean) { this.encounter.resolveTitanArena(accept); this.recordEventChoice('titan_arena', accept); }
   getEventMomentumAtkRemaining() { return this.encounter.getEventMomentumAtkRemaining(); }
   getEventMomentumDensityRemaining() { return this.encounter.getEventMomentumDensityRemaining(); }
 

@@ -17,6 +17,7 @@ import {
   COLOSSEUM_ENEMY_ATK_MUL,
   FOG_AMBUSH_ENEMY_ATK_MUL,
   SNOW_DRIFT_DMG_MUL,
+  TITAN_ARENA_ENEMY_ATK_MUL,
 } from './constants';
 
 export interface DefenseContext {
@@ -38,6 +39,7 @@ export interface DefenseContext {
   fogAmbushActive: boolean;
   windGaleActive: boolean; // C782: no defense effect (dodge is in engine)
   snowDriftActive: boolean; // C782: reduces enemy ATK
+  titanArenaActive: boolean; // C797: enemy ATK×1.3
 }
 
 /**
@@ -66,10 +68,11 @@ export function computeDamageReduction(ctx: DefenseContext): number {
   const colosseumDmgMul = ctx.colosseumActive ? COLOSSEUM_ENEMY_ATK_MUL : 1;
   const fogAmbushDmgMul = ctx.fogAmbushActive ? FOG_AMBUSH_ENEMY_ATK_MUL : 1;
   const snowDriftDmgMul = ctx.snowDriftActive ? SNOW_DRIFT_DMG_MUL : 1; // C785: separated SPD≠DMG
+  const titanArenaDmgMul = ctx.titanArenaActive ? TITAN_ARENA_ENEMY_ATK_MUL : 1; // C797
 
   const drDefenseMuls = mercyMul * shieldMul * armorMul * goldArmorMul * vigorMul;
   const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
-  const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul * colosseumDmgMul * fogAmbushDmgMul * snowDriftDmgMul;
+  const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul * colosseumDmgMul * fogAmbushDmgMul * snowDriftDmgMul * titanArenaDmgMul;
 
   return Math.max(0.30, drDefenseMuls * drShieldMuls * drContextMuls);
 }

@@ -44,6 +44,7 @@ const LATE_EVENT_REGISTRY: Record<string, (r: LateEventResult) => void> = {
   event_void_rift: (r) => { r.voidRiftTriggered = true; },
   event_abyssal_convergence: (r) => { r.abyssalConvergencePending = true; },
   event_temporal_fissure: (r) => { r.temporalFissurePending = true; },
+  event_titan_arena: (r) => { r.titanArenaPending = true; },
 };
 
 export interface PostCombatContext {
@@ -103,6 +104,7 @@ export interface PostCombatResult {
   snowDriftPending: boolean; // C782
   abyssalConvergencePending: boolean; // C789
   temporalFissurePending: boolean; // C791
+  titanArenaPending: boolean; // C797
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   eventMomentumTier: number; // C793: 0=none, 2=ATK buff, 3=density boost
@@ -142,6 +144,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     snowDriftPending: false,
     abyssalConvergencePending: false,
     temporalFissurePending: false,
+    titanArenaPending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     eventMomentumTier: 0,

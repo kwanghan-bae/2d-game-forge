@@ -60,4 +60,9 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
     accept: '시간에 경험을 맡긴다. 5전투 후 두 배로 돌아올 것이다.',
     decline: '시간을 건드리는 건 위험하다. 지나친다.',
   },
+  titan_arena: {
+    trigger: '타이탄의 투기장이 나타났다. 강한 적과 싸워 큰 경험을 얻을 수 있다.',
+    accept: '타이탄의 도전을 받아들인다. 4전투 동안 적 HP×1.5, ATK×1.3, EXP×2.0!',
+    decline: '타이탄의 도전을 거부한다. 아직은 이르다.',
+  },
 };

@@ -40,6 +40,7 @@ import {
   ELDER_WISDOM_EXP_MUL, SCHOLAR_LENS_EXP_MUL, COLOSSEUM_EXP_MUL, TRIAL_GROUNDS_EXP_MUL,
   FOG_AMBUSH_EXP_MUL, WIND_GALE_EXP_MUL, VOID_RIFT_EXP_PER_TIER,
   ABYSSAL_CONVERGENCE_EXP_MUL, SNOW_DRIFT_EXP_MUL,
+  TITAN_ARENA_EXP_MUL,
 } from './constants';
 
 export interface ExpMultiplierContext {
@@ -104,6 +105,7 @@ export interface ExpMultiplierContext {
   snowDriftActive: boolean; // C790: now has EXP×1.10 reward
   abyssalConvergenceActive: boolean; // C789
   voidRiftTier: number; // C775: 0 if inactive, else tier number for EXP bonus
+  titanArenaActive: boolean; // C797: Titan Arena EXP×2.0
 }
 
 /**
@@ -219,9 +221,10 @@ export function computeExpMultiplierWithBreakdown(ctx: ExpMultiplierContext): Ex
   const snowDriftExpMul = ctx.snowDriftActive ? SNOW_DRIFT_EXP_MUL : 1; // C790
   const abyssalExpMul = ctx.abyssalConvergenceActive ? ABYSSAL_CONVERGENCE_EXP_MUL : 1; // C789
   const voidRiftExpMul = ctx.voidRiftTier > 0 ? (1 + VOID_RIFT_EXP_PER_TIER * ctx.voidRiftTier) : 1;
+  const titanArenaExpMul = ctx.titanArenaActive ? TITAN_ARENA_EXP_MUL : 1; // C797
 
   const categories: { name: string; value: number }[] = [
-    { name: 'core', value: dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul * colosseumExpMul * trialGroundsExpMul * fogAmbushExpMul * windGaleExpMul * snowDriftExpMul * abyssalExpMul * voidRiftExpMul },
+    { name: 'core', value: dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul * colosseumExpMul * trialGroundsExpMul * fogAmbushExpMul * windGaleExpMul * snowDriftExpMul * abyssalExpMul * voidRiftExpMul * titanArenaExpMul },
     { name: 'combo', value: comboBonus * comboExpMul * comboBreakMul * comboFinisherMul * comboExpCascadeMul * comboAccelExpMul * comboExpVelocityMul },
     { name: 'combat', value: firstBloodMul * closeCallMul * quickKillMul * multiKillMul * revengeExpMul * critChainExpMul * critExpChainMul2 },
     { name: 'progress', value: diminish * lvUpMul * expDecayMul * expChainMul * expChainFightMul * killMomentumExp * familiarityMul * finalMasteryMul * finalMasteryMul2 },

@@ -264,3 +264,8 @@ export const TEMPORAL_FISSURE_DURATION = 5; // store EXP for 5 fights
 export const TEMPORAL_FISSURE_STORE_RATE = 0.50; // store 50% of earned EXP
 export const TEMPORAL_FISSURE_PAYBACK_MUL = 2.0; // pay back stored ×2.0 at end
 
+// C797: Titan Arena — high-risk combat spike (fight 300+)
+export const TITAN_ARENA_DURATION = 4;
+export const TITAN_ARENA_ENEMY_HP_MUL = 1.5;
+export const TITAN_ARENA_ENEMY_ATK_MUL = 1.3;
+export const TITAN_ARENA_EXP_MUL = 2.0;
