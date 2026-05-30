@@ -454,8 +454,9 @@ export class EncounterEngine {
       const adaptiveAtkMul = 1 + 0.01 * Math.min(this.comboStreak, 50); // cap +50%
       // C669: enemy prestige scaling — enemies scale with hero prestige
       const { hpMul: enemyPrestigeHpMul, atkMul: enemyPrestigeAtkMul } = computeEnemyPrestigeScale(this.prestigeCount);
-      // C758: Void Rift tier offset — enemies use hero.level + 2 for N fights
-      const effectiveEnemyLevel = hero.level + (this.voidRiftRemaining > 0 ? 2 : 0) + (this.trialGroundsRemaining > 0 ? TRIAL_GROUNDS_ENEMY_LEVEL_OFFSET : 0);
+      // C767: Void Rift logarithmic tier offset — scales with hero level
+      const voidRiftOffset = this.voidRiftRemaining > 0 ? Math.ceil(Math.log2(Math.max(hero.level, 200) / 200) + 1) : 0;
+      const effectiveEnemyLevel = hero.level + voidRiftOffset + (this.trialGroundsRemaining > 0 ? TRIAL_GROUNDS_ENEMY_LEVEL_OFFSET : 0);
       const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, effectiveEnemyLevel, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * adaptiveHpMul * enemyPrestigeHpMul));
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, effectiveEnemyLevel, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul * enemyPrestigeAtkMul);
 
