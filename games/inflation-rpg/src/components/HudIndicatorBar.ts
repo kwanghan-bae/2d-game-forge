@@ -26,6 +26,7 @@ export interface ActiveEventState {
   windGaleRemaining: number;
   snowDriftRemaining: number;
   abyssalConvergenceRemaining: number;
+  temporalFissureRemaining: number;
 }
 
 export interface HudBadge {
@@ -63,7 +64,7 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
 
   // Active gated events
   if (input.activeEvents) {
-    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining, rainSanctuaryRemaining, fogAmbushRemaining, windGaleRemaining, snowDriftRemaining, abyssalConvergenceRemaining } = input.activeEvents;
+    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining, rainSanctuaryRemaining, fogAmbushRemaining, windGaleRemaining, snowDriftRemaining, abyssalConvergenceRemaining, temporalFissureRemaining } = input.activeEvents;
     if (trialGroundsRemaining > 0) {
       badges.push({ type: 'event', icon: '⚔️', label: `시련장 (${trialGroundsRemaining})` });
     }
@@ -90,6 +91,9 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
     }
     if (abyssalConvergenceRemaining > 0) {
       badges.push({ type: 'event', icon: '🌊', label: `심연 수렴 (${abyssalConvergenceRemaining})` });
+    }
+    if (temporalFissureRemaining > 0) {
+      badges.push({ type: 'event', icon: '⏳', label: `시간 균열 (${temporalFissureRemaining})` });
     }
   }
 

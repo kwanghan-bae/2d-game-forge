@@ -92,6 +92,7 @@ export interface PostCombatResult {
   windGalePending: boolean; // C782
   snowDriftPending: boolean; // C782
   abyssalConvergencePending: boolean; // C789
+  temporalFissurePending: boolean; // C791
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
@@ -129,6 +130,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     windGalePending: false,
     snowDriftPending: false,
     abyssalConvergencePending: false,
+    temporalFissurePending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
@@ -293,6 +295,9 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
         } else if (le.id === 'event_abyssal_convergence') {
           result.abyssalConvergencePending = true;
           result.eventType = 'event_abyssal_convergence';
+        } else if (le.id === 'event_temporal_fissure') {
+          result.temporalFissurePending = true;
+          result.eventType = 'event_temporal_fissure';
         }
         eventTriggered = true;
         break;

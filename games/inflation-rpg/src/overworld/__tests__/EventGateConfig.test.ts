@@ -13,11 +13,12 @@ describe('EventGateConfig — C754', () => {
     expect(events[0].id).toBe('event_ancient_colosseum');
   });
 
-  it('returns both events after 200 fights', () => {
+  it('returns all events after 200 fights (colosseum + void_rift + temporal_fissure)', () => {
     const events = getAvailableLateEvents(200);
-    expect(events).toHaveLength(2);
+    expect(events).toHaveLength(3);
     expect(events.map(e => e.id)).toContain('event_ancient_colosseum');
     expect(events.map(e => e.id)).toContain('event_void_rift');
+    expect(events.map(e => e.id)).toContain('event_temporal_fissure');
   });
 
   it('all late events have minTotalFights >= 100 (hard gate)', () => {

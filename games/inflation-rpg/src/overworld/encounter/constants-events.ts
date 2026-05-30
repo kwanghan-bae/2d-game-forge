@@ -250,3 +250,8 @@ export const ABYSSAL_CONVERGENCE_EXP_MUL = 1.50; // EXP ×1.50
 export const ABYSSAL_CONVERGENCE_ENEMY_ATK_MUL = 1.60; // enemy ATK ×1.60
 export const ABYSSAL_CONVERGENCE_HP_DRAIN_RATE = 0.03; // 3% HP drain per fight
 
+// C791: Temporal Fissure — delayed EXP gratification
+export const TEMPORAL_FISSURE_DURATION = 5; // store EXP for 5 fights
+export const TEMPORAL_FISSURE_STORE_RATE = 0.50; // store 50% of earned EXP
+export const TEMPORAL_FISSURE_PAYBACK_MUL = 2.0; // pay back stored ×2.0 at end
+
