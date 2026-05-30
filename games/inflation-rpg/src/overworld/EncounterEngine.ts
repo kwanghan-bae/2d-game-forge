@@ -773,7 +773,11 @@ export class EncounterEngine {
           const goldThresholdDefMul = hero.gold > hero.level * GOLD_THRESHOLD_DEF_MUL ? (1 - GOLD_THRESHOLD_DEF_BONUS) : 1;
           // C576: cursed altar damage multiplier
           const cursedAltarDmgMul = this.cursedAltarAtkBuff ? CURSED_ALTAR_DAMAGE_MUL : 1;
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * mercyReduction * shieldReduction * goldArmorMul * nightDmgMul * armorMul * vigorMul * goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul));
+          // C622: group DR multipliers for readability
+          const drDefenseMuls = mercyReduction * shieldReduction * armorMul * goldArmorMul * vigorMul;
+          const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
+          const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul;
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * drDefenseMuls * drShieldMuls * drContextMuls));
           // C380: prestige shield blocks hits
           if (this.prestigeShieldRemaining > 0) {
             this.prestigeShieldRemaining--;
