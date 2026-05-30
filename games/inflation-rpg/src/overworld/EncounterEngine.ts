@@ -2206,13 +2206,7 @@ export class EncounterEngine {
     if (r.merchantPending) {
       this.choiceEngine.triggerMerchant();
       const choice = this.choiceEngine.resolveMerchantChoice();
-      const fx = resolveEventEffects('merchant', choice, {
-        heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,
-        heroAtk: hero.atk, heroLevel: hero.level,
-        relics: this.relics, relicLevels: this.relicLevels,
-        rngChance: (rate: number) => this.rng.chance(rate),
-        rngInt: (n: number) => this.rng.int(n),
-      });
+      const fx = resolveEventEffects('merchant', choice, this.makeEffectCtx(hero));
       hero.gold = Math.max(0, hero.gold + fx.goldDelta);
       this.relics = fx.newRelics;
       this.relicLevels = fx.newRelicLevels;
@@ -2228,13 +2222,7 @@ export class EncounterEngine {
         this.choiceEngine.setGamblerChoice(GamblerChoice.BET_HIGH);
       }
       const choice = this.choiceEngine.resolveGamblerChoice();
-      const fx = resolveEventEffects('gambler', choice, {
-        heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,
-        heroAtk: hero.atk, heroLevel: hero.level,
-        relics: this.relics, relicLevels: this.relicLevels,
-        rngChance: (rate: number) => this.rng.chance(rate),
-        rngInt: (n: number) => this.rng.int(n),
-      });
+      const fx = resolveEventEffects('gambler', choice, this.makeEffectCtx(hero));
       hero.gold = Math.max(0, hero.gold + fx.goldDelta);
       if (fx.eventSubType) events.push({ type: fx.eventSubType });
     }
@@ -2243,13 +2231,7 @@ export class EncounterEngine {
     if (r.altarPending) {
       this.choiceEngine.triggerAltar();
       const choice = this.choiceEngine.resolveAltarChoice();
-      const fx = resolveEventEffects('altar', choice, {
-        heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,
-        heroAtk: hero.atk, heroLevel: hero.level,
-        relics: this.relics, relicLevels: this.relicLevels,
-        rngChance: (rate: number) => this.rng.chance(rate),
-        rngInt: (n: number) => this.rng.int(n),
-      });
+      const fx = resolveEventEffects('altar', choice, this.makeEffectCtx(hero));
       hero.hp = Math.max(1, hero.hp + fx.hpDelta);
       if (fx.cursedAltarActivated) {
         this.cursedAltarAtkBuff = true;
@@ -2267,5 +2249,16 @@ export class EncounterEngine {
   private rollDrop(isBoss: boolean): string {
     const pool = isBoss ? BOSS_DROPS : ENEMY_DROPS;
     return pool[this.rng.int(pool.length)].id;
+  }
+
+  // C813: Shared context builder for resolveEventEffects calls
+  private makeEffectCtx(hero: HeroEntity) {
+    return {
+      heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,
+      heroAtk: hero.atk, heroLevel: hero.level,
+      relics: this.relics, relicLevels: this.relicLevels,
+      rngChance: (rate: number) => this.rng.chance(rate),
+      rngInt: (n: number) => this.rng.int(n),
+    };
   }
 }
