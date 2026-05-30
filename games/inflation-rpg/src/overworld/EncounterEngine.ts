@@ -1449,53 +1449,8 @@ export class EncounterEngine {
       hero.gainExp(goldResult.sacrificeExp);
       hero.gold -= goldResult.comboTaxGold;
       hero.gainExp(goldResult.comboTaxExp);
-      // C521: gold burn — sacrifice 25% gold for permanent ATK (with cooldown)
-      if (this.goldBurnCooldown <= 0 && this.sacrificeAltarCooldown <= 0 && hero.gold > 200) {
-        const burnAmount = Math.floor(hero.gold * GOLD_BURN_RATE * this.sacrificeDiminish);
-        hero.gold -= burnAmount;
-        this.goldBurnTotal += burnAmount;
-        hero.atkBase += Math.max(1, Math.floor(burnAmount / 100) * GOLD_BURN_ATK_PER_100);
-        hero.recomputeStats();
-        this.goldBurnCooldown = GOLD_BURN_COOLDOWN;
-        this.totalSacrifices++;
-        this.sacrificeDiminish = Math.max(SACRIFICE_DIMINISH_CAP, this.sacrificeDiminish * SACRIFICE_DIMINISH_RATE);
-      }
-      if (this.goldBurnCooldown > 0) this.goldBurnCooldown--;
-      // C523: combo reset trade — when combo ≥ 30, reset for gold burst
-      if (this.comboStreak >= 30 && this.sacrificeAltarCooldown <= 0 && this.rng.chance(0.1)) {
-        const comboGold = this.comboStreak * COMBO_RESET_GOLD_PER_COMBO * hero.level;
-        hero.gold += Math.floor(comboGold * this.sacrificeDiminish);
-        this.comboStreak = 0;
-        this.totalSacrifices++;
-        this.sacrificeDiminish = Math.max(SACRIFICE_DIMINISH_CAP, this.sacrificeDiminish * SACRIFICE_DIMINISH_RATE);
-        this.sacrificeAltarCooldown = SACRIFICE_ALTAR_COOLDOWN;
-      }
-      // C524: exp offering — sacrifice exp near prestige for boss boost
-      if (hero.level >= this.getPrestigeThreshold() - 20 && !this.expOfferingActive && hero.exp > 0) {
-        hero.exp = Math.floor(hero.exp * (1 - EXP_OFFERING_RATE));
-        this.expOfferingActive = true;
-        this.totalSacrifices++;
-      }
-      // C526: danger bet — in danger zone, increase danger for locked multiplier
-      if (isDangerZone && this.dangerBetRemaining <= 0 && this.dangerStreak >= 5 && this.rng.chance(0.15)) {
-        this.dangerStreak += DANGER_BET_INCREASE;
-        this.dangerBetRemaining = DANGER_BET_DURATION;
-      }
-      if (this.dangerBetRemaining > 0) this.dangerBetRemaining--;
-      // C527: health tax — permanent HP reduction for passive gold (one-time)
-      if (!this.healthTaxApplied && hero.level >= 50 && this.totalWins >= 100) {
-        hero.hpBase = Math.floor(hero.hpBase * (1 - HEALTH_TAX_HP_COST));
-        hero.recomputeStats();
-        this.healthTaxApplied = true;
-        this.totalSacrifices++;
-      }
-      // C527: health tax passive gold per fight
-      if (this.healthTaxApplied) {
-        hero.gold += HEALTH_TAX_GOLD_PER_FIGHT;
-      }
-      // C528: sacrifice altar cooldown tick
-      if (this.sacrificeAltarCooldown > 0) this.sacrificeAltarCooldown--;
-      if (this.levelSacrificeCooldown > 0) this.levelSacrificeCooldown--;
+      // C521-C528: sacrifice subsystem (gold burn, combo reset, exp offering, danger bet, health tax)
+      this.tickSacrificeSubsystem(hero, isDangerZone);
       // C531-C538: temporal systems (momentum decay, golden hour, fatigue, accumulator, season, aging)
       this.tickTemporalSystems(hero, tookDamage);
       // C539: time lock vault — deposit and mature
@@ -2250,6 +2205,56 @@ export class EncounterEngine {
       hadPrestigeSurge, hadVillageRestAtk, hadWaveMomentum, hadRevengeStreak,
       hadEliteChainAtk, hadDeathAtkSurge, hadVillageAtkTraining,
     };
+  }
+
+  // C828: Sacrifice subsystem — gold burn, combo reset, exp offering, danger bet, health tax
+  private tickSacrificeSubsystem(hero: HeroEntity, isDangerZone: boolean): void {
+    // C521: gold burn
+    if (this.goldBurnCooldown <= 0 && this.sacrificeAltarCooldown <= 0 && hero.gold > 200) {
+      const burnAmount = Math.floor(hero.gold * GOLD_BURN_RATE * this.sacrificeDiminish);
+      hero.gold -= burnAmount;
+      this.goldBurnTotal += burnAmount;
+      hero.atkBase += Math.max(1, Math.floor(burnAmount / 100) * GOLD_BURN_ATK_PER_100);
+      hero.recomputeStats();
+      this.goldBurnCooldown = GOLD_BURN_COOLDOWN;
+      this.totalSacrifices++;
+      this.sacrificeDiminish = Math.max(SACRIFICE_DIMINISH_CAP, this.sacrificeDiminish * SACRIFICE_DIMINISH_RATE);
+    }
+    if (this.goldBurnCooldown > 0) this.goldBurnCooldown--;
+    // C523: combo reset trade
+    if (this.comboStreak >= 30 && this.sacrificeAltarCooldown <= 0 && this.rng.chance(0.1)) {
+      const comboGold = this.comboStreak * COMBO_RESET_GOLD_PER_COMBO * hero.level;
+      hero.gold += Math.floor(comboGold * this.sacrificeDiminish);
+      this.comboStreak = 0;
+      this.totalSacrifices++;
+      this.sacrificeDiminish = Math.max(SACRIFICE_DIMINISH_CAP, this.sacrificeDiminish * SACRIFICE_DIMINISH_RATE);
+      this.sacrificeAltarCooldown = SACRIFICE_ALTAR_COOLDOWN;
+    }
+    // C524: exp offering
+    if (hero.level >= this.getPrestigeThreshold() - 20 && !this.expOfferingActive && hero.exp > 0) {
+      hero.exp = Math.floor(hero.exp * (1 - EXP_OFFERING_RATE));
+      this.expOfferingActive = true;
+      this.totalSacrifices++;
+    }
+    // C526: danger bet
+    if (isDangerZone && this.dangerBetRemaining <= 0 && this.dangerStreak >= 5 && this.rng.chance(0.15)) {
+      this.dangerStreak += DANGER_BET_INCREASE;
+      this.dangerBetRemaining = DANGER_BET_DURATION;
+    }
+    if (this.dangerBetRemaining > 0) this.dangerBetRemaining--;
+    // C527: health tax
+    if (!this.healthTaxApplied && hero.level >= 50 && this.totalWins >= 100) {
+      hero.hpBase = Math.floor(hero.hpBase * (1 - HEALTH_TAX_HP_COST));
+      hero.recomputeStats();
+      this.healthTaxApplied = true;
+      this.totalSacrifices++;
+    }
+    if (this.healthTaxApplied) {
+      hero.gold += HEALTH_TAX_GOLD_PER_FIGHT;
+    }
+    // C528: cooldown ticks
+    if (this.sacrificeAltarCooldown > 0) this.sacrificeAltarCooldown--;
+    if (this.levelSacrificeCooldown > 0) this.levelSacrificeCooldown--;
   }
 
   // C825: Temporal systems — momentum decay, golden hour, fatigue, accumulator, season, aging
