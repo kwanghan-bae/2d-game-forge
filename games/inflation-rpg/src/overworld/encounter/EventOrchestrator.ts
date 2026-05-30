@@ -18,6 +18,7 @@ import {
   EVENT_DECLINE_GOLD_CAP,
   ABYSSAL_CONVERGENCE_DURATION,
   TEMPORAL_FISSURE_DURATION,
+  COLOSSEUM_DURATION,
 } from './constants';
 
 export type EventId =
@@ -89,7 +90,7 @@ export class EventOrchestrator {
     this.lastEffects = { ...EMPTY_EFFECTS };
     if (accept) {
       switch (id) {
-        case 'colosseum': this.lastEffects.colosseumRemaining = 5; break;
+        case 'colosseum': this.lastEffects.colosseumRemaining = COLOSSEUM_DURATION; break;
         case 'void_rift': {
           this.lastEffects.voidRiftRemaining = 3;
           if (ctx.relicLevels.length > 0) {

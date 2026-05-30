@@ -107,5 +107,5 @@ export function getAvailableLateEvents(totalFights: number): readonly EventGateD
  */
 export function getLateGameDensityMul(totalFights: number): number {
   if (totalFights <= 150) return 1.0;
-  return Math.min(2.0, 1.0 + (totalFights - 150) / 200);
+  return Math.min(2.5, 1.0 + (totalFights - 150) / 200); // C795: cap 2.0→2.5
 }

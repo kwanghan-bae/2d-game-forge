@@ -17,7 +17,7 @@ describe('EventOrchestrator', () => {
     const orch = new EventOrchestrator();
     orch.trigger('colosseum');
     const effects = orch.resolve('colosseum', true, makeCtx());
-    expect(effects.colosseumRemaining).toBe(5);
+    expect(effects.colosseumRemaining).toBe(3);
     expect(orch.getPending('colosseum')).toBe(false);
   });
 

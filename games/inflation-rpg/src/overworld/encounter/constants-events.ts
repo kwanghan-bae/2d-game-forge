@@ -206,7 +206,8 @@ export const ARENA_ENEMY_HP_MUL = 3;
 export const SHRINE_SKILL_GRANT_RATE = 0.20;
 export const MERCIFUL_PROC_RATE = 0.04;
 // C757: Ancient Colosseum constants
-export const COLOSSEUM_EXP_MUL = 2.0;
+export const COLOSSEUM_EXP_MUL = 2.8; // C795: tuned from 2.0 (compensates shorter duration)
+export const COLOSSEUM_DURATION = 3; // C795: tuned from 5 (shorter, punchier)
 export const COLOSSEUM_ENEMY_ATK_MUL = 1.7; // C790: tuned from 1.5 (bracket separation from Abyssal 1.60)
 // C762: Trial Grounds constants
 export const TRIAL_GROUNDS_EXP_MUL = 1.40; // C779: tuned from 1.50 (R:R 2.80→2.25, meaningful decision)
@@ -253,9 +254,10 @@ export const LATE_GAME_DENSITY_MUL = 1.5; // ×1.5 event chance after threshold
 
 // C789: Abyssal Convergence event (late-game, fight 250+)
 export const ABYSSAL_CONVERGENCE_DURATION = 5; // 5 fights
-export const ABYSSAL_CONVERGENCE_EXP_MUL = 1.50; // EXP ×1.50
+export const ABYSSAL_CONVERGENCE_EXP_MUL = 1.70; // C795: tuned from 1.50
 export const ABYSSAL_CONVERGENCE_ENEMY_ATK_MUL = 1.60; // enemy ATK ×1.60
 export const ABYSSAL_CONVERGENCE_HP_DRAIN_RATE = 0.03; // 3% HP drain per fight
+export const ABYSSAL_CONVERGENCE_GOLD_MUL = 0.50; // C795: gold penalty during convergence
 
 // C791: Temporal Fissure — delayed EXP gratification
 export const TEMPORAL_FISSURE_DURATION = 5; // store EXP for 5 fights
