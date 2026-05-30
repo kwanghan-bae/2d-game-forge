@@ -437,8 +437,8 @@ export class EncounterEngine {
       const shrineMul = this.shrineBuffRemaining > 0 ? 1 + SHRINE_MEDITATION_ATK_BUFF : 1;
       // C140: revenge bonus — +50% ATK against enemy that last killed you
       const revengeMul = this.lastDeathEnemyId === landmarkId ? 1 + REVENGE_ATK_BONUS : 1;
-      // C148: kill milestone ATK bonus
-      const milestoneMul = 1 + this.killMilestones * KILL_MILESTONE_ATK_BONUS;
+      // C148: kill milestone ATK bonus (C640: capped at 50% = 50 milestones)
+      const milestoneMul = 1 + Math.min(this.killMilestones, 50) * KILL_MILESTONE_ATK_BONUS;
       // C158: near-death power surge
       const nearDeathMul = hero.hp < hero.hpMax * NEAR_DEATH_HP_THRESHOLD ? NEAR_DEATH_ATK_MUL : 1;
       // C173: exhaustion debuff
@@ -953,7 +953,8 @@ export class EncounterEngine {
         if (!(isDangerZone && DANGER_COMBO_PRESERVE)) {
           // C272: combo break consolation
           if (this.comboStreak >= COMBO_BREAK_THRESHOLD) this.comboBreakBonus = true;
-          this.comboStreak = 0;
+          // C639: soft combo decay — halve instead of full reset
+          this.comboStreak = Math.floor(this.comboStreak * 0.5);
         }
       } else {
         this.comboStreak++;
