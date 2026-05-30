@@ -28,6 +28,7 @@ import { RelicEffectResolver } from './encounter/RelicEffectResolver';
 import { computeNight, WeatherSubsystem } from './encounter/WeatherSystem';
 import { EventOrchestrator, type EventId } from './encounter/EventOrchestrator';
 import { createDeclineStack, pushDecline, consumeDeclineStack, shouldForceRareEvent, type DeclineStackState } from './encounter/DeclineStack';
+import { dispatchPendingTriggers } from './encounter/EventTriggerMap';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
 import { computePostCombatHeal } from './encounter/PostCombatHealCalc';
@@ -2155,22 +2156,8 @@ export class EncounterEngine {
     if (r.newPrestigeEchoRemaining > 0) this.prestigeEchoRemaining = r.newPrestigeEchoRemaining;
     // C749: wire Inspiration event → ATK buff duration
     if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
-    // C788: Event pending triggers via EventOrchestrator
-    if (r.colosseumPending) this.eventOrch.trigger('colosseum');
-    if (r.trialGroundsPending) this.eventOrch.trigger('trial_grounds');
-    if (r.stormNexusPending) this.eventOrch.trigger('storm_nexus');
-    if (r.rainSanctuaryPending) this.eventOrch.trigger('rain_sanctuary');
-    if (r.fogAmbushPending) this.eventOrch.trigger('fog_ambush');
-    if (r.windGalePending) this.eventOrch.trigger('wind_gale');
-    if (r.snowDriftPending) this.eventOrch.trigger('snow_drift');
-    if (r.abyssalConvergencePending) this.eventOrch.trigger('abyssal_convergence');
-    if (r.temporalFissurePending) this.eventOrch.trigger('temporal_fissure');
-    if (r.titanArenaPending) this.eventOrch.trigger('titan_arena');
-    if (r.crimsonTithePending) this.eventOrch.trigger('crimson_tithe');
-    if (r.goldCruciblePending) this.eventOrch.trigger('gold_crucible');
-    if (r.astralParadoxPending) this.eventOrch.trigger('astral_paradox');
-    if (r.soulForgePending) this.eventOrch.trigger('soul_forge');
-    if (r.voidRiftTriggered) this.eventOrch.trigger('void_rift');
+    // C810: Data-driven event trigger dispatch
+    dispatchPendingTriggers(r, (id) => this.eventOrch.trigger(id));
     // C804: DeclineStack force — if 4+ declines, guarantee rare event trigger
     if (!r.eventType && shouldForceRareEvent(this.declineStack)) {
       const lateEvents: EventId[] = ['titan_arena', 'crimson_tithe', 'gold_crucible', 'astral_paradox', 'soul_forge'];
