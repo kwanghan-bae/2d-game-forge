@@ -1,30 +1,30 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 727
+- Cycle: 731
 - Target: 600+ (연속 진화)
-- Last commit: C727 EnemyTurnCalc extraction
-- Vitest: 2103 pass / 0 fail
+- Last commit: C731 chooseEncounterNode trait-weighted
+- Vitest: 2113 pass / 0 fail
 - E2E: 60 passed
 - EncounterEngine: ~1832 lines
 
-## 레이어 카운터 (C705-C727 era)
-- 시스템: 4 (C710 PostCombatHealCalc, C718 pity-trap fix, C723 AI BET_HIGH + Weather dodge/speed, C727 EnemyTurnCalc)
+## 레이어 카운터 (C705-C731 era)
+- 시스템: 5 (C710 PostCombatHealCalc, C718 pity-trap fix, C723 AI BET_HIGH + Weather dodge/speed, C727 EnemyTurnCalc, C731 chooseEncounterNode trait-weighted)
 - 구조: 2 (C711 DropResolver, C719 HeroTurnCalc)
-- UI/UX: 4 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant, C725 WeatherHudIndicator)
-- 밸런스: 6 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish, C722 EXP+drop cap tuning, C726 fog crit+AI ratio)
-- 콜라보: 6 (C705, C709, C713, C717, C721, C724)
+- UI/UX: 5 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant, C725 WeatherHudIndicator, C729 DestinationBadge)
+- 밸런스: 7 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish, C722 EXP+drop cap tuning, C726 fog crit+AI ratio, C730 boss enrage+BET_HIGH 12)
+- 콜라보: 8 (C705, C709, C713, C717, C721, C724, C728, C732)
 
 ## 제약
-- cycles_since_collab: 0 (C728 is collab NOW)
-- Next collab: C731
+- cycles_since_collab: 0 (C732 is collab NOW)
+- Next collab: C735
 - EncounterEngine: ~1832 lines
 - Layer lock: collab (current)
 
-## 다음 3사이클 (C728 협의에서 확정 예정)
-1. [collab] C728: critic + planner + level-designer
-2. C729 TBD
-3. C730 TBD
+## 다음 3사이클 (C732 협의에서 확정 예정)
+1. [collab] C732: critic + planner + level-designer
+2. C733 [structure] TBD
+3. C734 [balance] TBD
 
 ## 달성 사항 (C705-C716)
 - C705 [collab]: critic(6/5/4/5) + planner + level-designer
@@ -50,6 +50,11 @@
 - C725 [UI/UX]: WeatherHudIndicator pill badge + engine.getWeather() getter
 - C726 [balance]: Fog crit 0.50→0.70, AI BET_HIGH ratio 3→5 (threshold 5000)
 - C727 [system]: EnemyTurnCalc 순수 함수 추출 (boss rage/enrage/timer)
+- C728 [collab]: fog crit 완화 합의, boss timer 완화 + BET_HIGH ratio, chooseEncounterNode 우선
+- C729 [UI/UX]: DestinationBadge pill badge (landmark 도착 표시)
+- C730 [balance]: Boss enrage timer 10→15 / mul 2.0→1.5, AI BET_HIGH ratio 5→12
+- C731 [system]: chooseEncounterNode stub→trait-weighted (DestinationResolver 위임)
+- C732 [collab]: 평가 진행 중
 
 ## 캐리오버 (미완료)
 - [x] EXP breakdown badge wire into OverworldRunner — DONE C707
@@ -68,6 +73,7 @@
 - [ ] RelicEffectResolver extraction
 - [ ] AI BET_HIGH 조건부 로직
 - [ ] Constants phase profile 분류 (740개)
+- [x] chooseEncounterNode trait-weighted — DONE C731
 - [ ] CombatLoop enemy turn 추출
 - [ ] FeedbackDispatcher (crit sound/haptic) — backlog
 
