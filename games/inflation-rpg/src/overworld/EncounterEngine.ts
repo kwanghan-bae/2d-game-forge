@@ -367,15 +367,13 @@ export class EncounterEngine {
       const bossStreakScale = isBoss ? (1 + this.bossStreak * BOSS_STREAK_STAT_SCALE) : 1;
       // C240: time pressure — enemies get tougher over total fights
       const timePressureMul = 1 + Math.min(TIME_PRESSURE_CAP, Math.floor(this.totalWins / 100) * TIME_PRESSURE_PER_100);
-      // C317: enemy weakening — kills reduce enemy HP
-      const enemyWeakenMul = 1 - Math.min(ENEMY_WEAKEN_CAP, Math.floor(this.killCount / ENEMY_WEAKEN_INTERVAL) * ENEMY_WEAKEN_RATE);
       // C589: adaptive enemy HP scaling — enemies get tougher during kill streaks
       // C627: increased adaptive scaling (was 0.02 cap 100)
       const adaptiveHpMul = 1 + 0.04 * Math.min(this.comboStreak, 50); // +4% per combo, cap +200%
       // C606: adaptive enemy ATK — death pressure increases with combo
       // C627: increased (was 0.005 cap 50)
       const adaptiveAtkMul = 1 + 0.01 * Math.min(this.comboStreak, 50); // cap +50%
-      const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * enemyWeakenMul * adaptiveHpMul));
+      const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * adaptiveHpMul));
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul);
 
       if (hero.staggered) return events;
