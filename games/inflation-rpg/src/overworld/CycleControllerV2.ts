@@ -881,6 +881,8 @@ export class CycleControllerV2 {
   getTrialGroundsPending() { return this.encounter.getTrialGroundsPending(); }
   resolveTrialGrounds(accept: boolean) { this.encounter.resolveTrialGrounds(accept); }
   getColosseumRemaining() { return this.encounter.getColosseumRemaining(); }
+  getColosseumPending() { return this.encounter.getColosseumPending(); }
+  resolveColosseum(accept: boolean) { this.encounter.resolveColosseum(accept); }
   getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }

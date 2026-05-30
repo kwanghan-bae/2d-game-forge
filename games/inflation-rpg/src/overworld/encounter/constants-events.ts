@@ -200,5 +200,5 @@ export const COLOSSEUM_EXP_MUL = 2.0;
 export const COLOSSEUM_ENEMY_ATK_MUL = 1.3;
 // C762: Trial Grounds constants
 export const TRIAL_GROUNDS_EXP_MUL = 1.50; // C766: tuned from 1.35
-export const TRIAL_GROUNDS_ENEMY_LEVEL_OFFSET = 3; // C766: tuned from 1
+export const TRIAL_GROUNDS_LEVEL_MUL = 1.10; // C769: multiplicative 10% (replaces flat offset)
 export const TRIAL_GROUNDS_DURATION = 3;
