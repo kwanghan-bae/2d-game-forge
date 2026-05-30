@@ -370,10 +370,11 @@ export class EncounterEngine {
       // C317: enemy weakening — kills reduce enemy HP
       const enemyWeakenMul = 1 - Math.min(ENEMY_WEAKEN_CAP, Math.floor(this.killCount / ENEMY_WEAKEN_INTERVAL) * ENEMY_WEAKEN_RATE);
       // C589: adaptive enemy HP scaling — enemies get tougher during kill streaks
-      // C589: adaptive enemy HP scaling — enemies get tougher during kill streaks
-      const adaptiveHpMul = 1 + 0.02 * Math.min(this.comboStreak, 100); // C606: was 0.01/cap50
+      // C627: increased adaptive scaling (was 0.02 cap 100)
+      const adaptiveHpMul = 1 + 0.04 * Math.min(this.comboStreak, 50); // +4% per combo, cap +200%
       // C606: adaptive enemy ATK — death pressure increases with combo
-      const adaptiveAtkMul = 1 + 0.005 * Math.min(this.comboStreak, 50); // cap +25%
+      // C627: increased (was 0.005 cap 50)
+      const adaptiveAtkMul = 1 + 0.01 * Math.min(this.comboStreak, 50); // cap +50%
       const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * enemyWeakenMul * adaptiveHpMul));
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul);
 
@@ -1155,8 +1156,8 @@ export class EncounterEngine {
       const expPrestigeMuls = prestigeExpMul * prestigeAllExpMul * prestigeExpScaleMul * prestigeReadyExpMul;
       const expMiscMuls = survivalBonus * waveMulExp * greedExpMul * eliteBountyMul * bossExpMul * companionMul * bossSlayerMul * shrineBlessMul * lowHpExpMul * expCascadeMul * expDroughtMul * survivorGritMul * survivalScaleMul * eliteExpMul2 * villageExpMul * waveSurvivalMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * bossExpMasteryMul * eliteMasteryMul * survivalCompoundMul * eliteVillageBurstMul * waveExpCompoundMul * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * waveExpMasteryMul * greedGambitExpMul * riskRewardExpMul;
       const expGainRaw = Math.floor(baseExpGain * expCoreMuls * expComboMuls * expCombatMuls * expProgressMuls * expDangerMuls * expPrestigeMuls * expMiscMuls);
-      // Safety cap: prevent exp overflow causing infinite level-up loops
-      const expGain = Math.min(expGainRaw, hero.level * 2500);
+      // C627: EXP safety cap — reduced from level×2500 to level×500
+      const expGain = Math.min(expGainRaw, hero.level * 500);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const baseDropOdds = isBoss ? 0.96 : (isElite || eliteComboGuarantee) ? 1.0 : !this.firstBloodUsed ? 1.0 : DROP_RATE; // C139: first blood = guaranteed drop
