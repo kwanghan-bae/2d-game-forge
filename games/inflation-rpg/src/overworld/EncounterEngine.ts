@@ -23,6 +23,7 @@ import { computeDamageReduction } from './encounter/DefenseCalc';
 import { computeHeroTurn } from './encounter/HeroTurnCalc';
 import { chooseGamblerBet } from './encounter/HeroDecisionAI';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
+import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
@@ -745,14 +746,14 @@ export class EncounterEngine {
           eHp -= lightningDmg;
         }
         if (eHp > 0) {
-          // C132: boss rage — boss ATK escalates each turn the fight lasts
-          // C165: boss enrage — ×2 ATK when below 50% HP
-          const enrageMul = isBoss && eHp < enemyHp * BOSS_ENRAGE_HP_THRESHOLD ? BOSS_ENRAGE_ATK_MUL : 1;
-          // C229: boss enrage timer — additional multiplier after 10 hits
-          const timerEnrageMul = isBoss && rageTurn >= BOSS_ENRAGE_TIMER_TURN ? BOSS_ENRAGE_TIMER_MUL : 1;
-          const rageAtk = isBoss
-            ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN) * enrageMul * timerEnrageMul)
-            : enemyAtk;
+          // C727: enemy turn ATK via pure EnemyTurnCalc module
+          const { rageAtk } = computeEnemyTurnAtk({
+            baseEnemyAtk: enemyAtk,
+            isBoss,
+            rageTurn,
+            currentEnemyHp: eHp,
+            maxEnemyHp: enemyHp,
+          });
           // C137: mercy damage reduction after death streak
           // C171: dodge chance based on kill count
           // C723: rain weather boosts dodge chance
