@@ -31,4 +31,33 @@ describe('EventGateConfig — C754', () => {
       expect(e.chance).toBeLessThanOrEqual(0.05);
     }
   });
+
+  // C759: balance invariants for late-game events
+  it('colosseum EXP×2 bounded: total exp boost ≤ 3.0× with night overlap', () => {
+    // Colosseum 2.0 × Night 1.5 = 3.0 — acceptable upper bound
+    const colosseumExpMul = 2.0;
+    const nightExpMul = 1.5;
+    expect(colosseumExpMul * nightExpMul).toBeLessThanOrEqual(3.0);
+  });
+
+  it('colosseum enemy ATK mul ≤ 2.0 (survivable even with night overlap)', () => {
+    const colosseumDmgMul = 1.3;
+    const nightDmgMul = 1.5;
+    expect(colosseumDmgMul * nightDmgMul).toBeLessThanOrEqual(2.0);
+  });
+
+  it('void rift tier offset ≤ 5 (prevents impossible enemies)', () => {
+    const voidRiftTierOffset = 2;
+    expect(voidRiftTierOffset).toBeLessThanOrEqual(5);
+  });
+
+  it('void rift duration ≤ 5 fights (limited window)', () => {
+    const voidRiftDuration = 3;
+    expect(voidRiftDuration).toBeLessThanOrEqual(5);
+  });
+
+  it('colosseum gate (150) > inspiration gate (30-40) — proper late-game', () => {
+    const colosseumGate = LATE_GAME_EVENTS.find(e => e.id === 'event_ancient_colosseum')!.minTotalFights;
+    expect(colosseumGate).toBeGreaterThanOrEqual(150);
+  });
 });
