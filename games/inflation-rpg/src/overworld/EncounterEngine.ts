@@ -19,6 +19,7 @@ import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
 import { resolveEventEffects } from './encounter/EventEffectResolver';
+import { computeDamageReduction } from './encounter/DefenseCalc';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, type ExpMultiplierContext } from './encounter/ExpCalculator';
@@ -728,9 +729,6 @@ export class EncounterEngine {
             ? Math.floor(enemyAtk * (1 + rageTurn * BOSS_RAGE_ATK_PER_TURN) * enrageMul * timerEnrageMul)
             : enemyAtk;
           // C137: mercy damage reduction after death streak
-          const mercyReduction = this.mercyRemaining > 0 ? (1 - MERCY_DAMAGE_REDUCTION) : 1;
-          // C154: shop shield damage reduction
-          const shieldReduction = this.shopShieldRemaining > 0 ? (1 - VILLAGE_SHOP_SHIELD_MUL) : 1;
           // C171: dodge chance based on kill count
           const dodgeChance = Math.min(DODGE_CAP, Math.floor(this.killCount / 100) * DODGE_PER_100_KILLS);
           if (dodgeChance > 0 && this.rng.chance(dodgeChance)) {
@@ -743,37 +741,30 @@ export class EncounterEngine {
             rageTurn++;
             continue;
           }
-          // C190: gold armor — reduce damage when gold > threshold
-          const goldArmorMul = hero.gold >= GOLD_ARMOR_THRESHOLD ? (1 - GOLD_ARMOR_REDUCTION) : 1;
-          // C220: night mode enemy damage boost
-          const nightDmgMul = isNight ? NIGHT_ENEMY_DMG_MUL : 1;
-          // C242: armor reduction
-          const armorMul = this.armorRemaining > 0 ? (1 - ARMOR_REDUCTION) : 1;
-          // C258: village vigor damage reduction
-          const vigorMul = this.villageRestRemaining > 0 ? (1 - VILLAGE_VIGOR_HP_BONUS) : 1;
-          // C307: gold shield damage reduction
-          const goldShieldMul = this.goldShieldRemaining > 0 ? (1 - GOLD_SHIELD_REDUCTION) : 1;
+          // C622: DR computation via pure DefenseCalc module
+          const goldShieldWasActive = this.goldShieldRemaining > 0;
+          const goldOverflowWasActive = this.goldOverflowShieldRemaining > 0;
+          const bossShieldWasActive = this.bossShieldRemaining > 0;
+          // Side effects: decrement shield counters after reading
           if (this.goldShieldRemaining > 0) this.goldShieldRemaining--;
-          // C340: combo shield — high combo reduces damage
-          const comboShieldMul = this.comboStreak >= COMBO_SHIELD_THRESHOLD ? (1 - COMBO_SHIELD_REDUCTION) : 1;
-          // C368: gold overflow shield damage reduction
-          const goldOverflowMul = this.goldOverflowShieldRemaining > 0 ? (1 - GOLD_OVERFLOW_SHIELD_REDUCTION) : 1;
           if (this.goldOverflowShieldRemaining > 0) this.goldOverflowShieldRemaining--;
-          // C494: boss shield damage reduction
-          const bossShieldMul = this.bossShieldRemaining > 0 ? 0.7 : 1;
           if (this.bossShieldRemaining > 0) this.bossShieldRemaining--;
-          // C486: prestige danger mastery — prestige reduces danger damage
-          const prestigeDangerMasteryMul = (isDangerZone && this.prestigeCount > 0) ? (1 - Math.min(0.3, this.prestigeCount * PRESTIGE_DANGER_MASTERY_RATE)) : 1;
-          // C514: gold threshold defense — defense +50% when gold > level×100
-          const goldThresholdDefMul = hero.gold > hero.level * GOLD_THRESHOLD_DEF_MUL ? (1 - GOLD_THRESHOLD_DEF_BONUS) : 1;
-          // C576: cursed altar damage multiplier
-          const cursedAltarDmgMul = this.cursedAltarAtkBuff ? CURSED_ALTAR_DAMAGE_MUL : 1;
-          // C622: group DR multipliers for readability
-          const drDefenseMuls = mercyReduction * shieldReduction * armorMul * goldArmorMul * vigorMul;
-          const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
-          const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul;
-          // C624: DR floor — total reduction capped at 70% (min 30% damage always gets through)
-          const totalDrMul = Math.max(0.30, drDefenseMuls * drShieldMuls * drContextMuls);
+          const totalDrMul = computeDamageReduction({
+            mercyRemaining: this.mercyRemaining,
+            shopShieldRemaining: this.shopShieldRemaining,
+            armorRemaining: this.armorRemaining,
+            villageRestRemaining: this.villageRestRemaining,
+            goldShieldActive: goldShieldWasActive,
+            comboStreak: this.comboStreak,
+            goldOverflowShieldActive: goldOverflowWasActive,
+            bossShieldActive: bossShieldWasActive,
+            prestigeCount: this.prestigeCount,
+            isDangerZone,
+            heroGold: hero.gold,
+            heroLevel: hero.level,
+            cursedAltarAtkBuff: this.cursedAltarAtkBuff,
+            isNight,
+          });
           const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul));
           // C380: prestige shield blocks hits
           if (this.prestigeShieldRemaining > 0) {
