@@ -272,6 +272,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             evs.some(e => e.type === 'mercy_activated') ? getMercyMessage(tick) :
             evs.some(e => e.type === 'village_rest_bonus') ? getVillageRestMessage(tick) :
             evs.some(e => e.type === 'danger_zone_entered') ? getDangerZoneMessage(tick) :
+            evs.some(e => e.type === 'danger_retreat') ? '🏃 위험지대 회피! (-50G, 콤보 초기화)' :
             null;
           if (flavor) {
             setBattleFlavor(flavor);
