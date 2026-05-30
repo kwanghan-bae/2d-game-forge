@@ -23,6 +23,10 @@ export function getWeatherDisplay(input: WeatherDisplayInput): WeatherDisplayRes
       return { icon: '💨', label: 'EXP +10%' };
     case 'fog':
       return { icon: '🌫️', label: 'ATK −10%, Crit −30%' };
+    case 'storm':
+      return { icon: '⛈️', label: 'Crit −40%' };
+    case 'snow':
+      return { icon: '❄️', label: 'Speed −15%' };
     case 'normal':
     default:
       // C735: Night indicator when no active weather
