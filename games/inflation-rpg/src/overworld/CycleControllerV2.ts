@@ -8,6 +8,7 @@ import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import { tiersCrossed, presetForTier, type MilestoneTier } from '../data/milestones';
 import { lookupDrop } from './dropTable';
 import { findRealm } from '../data/realms';
+import { EVENT_NARRATION } from './encounter/EventNarration';
 import type { TraitId } from '../cycle/traits';
 import type { CycleSaga, DeathCause, SagaEvent } from '../saga/SagaTypes';
 import type { OverworldEvent } from './OverworldEvents';
@@ -879,31 +880,31 @@ export class CycleControllerV2 {
   // C765: active event state for HUD badges
   getTrialGroundsRemaining() { return this.encounter.getTrialGroundsRemaining(); }
   getTrialGroundsPending() { return this.encounter.getTrialGroundsPending(); }
-  resolveTrialGrounds(accept: boolean) { this.encounter.resolveTrialGrounds(accept); }
+  resolveTrialGrounds(accept: boolean) { this.encounter.resolveTrialGrounds(accept); this.recordEventChoice('trial_grounds', accept); }
   getColosseumRemaining() { return this.encounter.getColosseumRemaining(); }
   getColosseumPending() { return this.encounter.getColosseumPending(); }
-  resolveColosseum(accept: boolean) { this.encounter.resolveColosseum(accept); }
+  resolveColosseum(accept: boolean) { this.encounter.resolveColosseum(accept); this.recordEventChoice('colosseum', accept); }
   getStormNexusRemaining() { return this.encounter.getStormNexusRemaining(); }
   getStormNexusPending() { return this.encounter.getStormNexusPending(); }
-  resolveStormNexus(accept: boolean) { this.encounter.resolveStormNexus(accept); }
+  resolveStormNexus(accept: boolean) { this.encounter.resolveStormNexus(accept); this.recordEventChoice('storm_nexus', accept); }
   // C773: Rain Sanctuary proxies
   getRainSanctuaryRemaining() { return this.encounter.getRainSanctuaryRemaining(); }
   getRainSanctuaryPending() { return this.encounter.getRainSanctuaryPending(); }
-  resolveRainSanctuary(accept: boolean) { this.encounter.resolveRainSanctuary(accept); }
+  resolveRainSanctuary(accept: boolean) { this.encounter.resolveRainSanctuary(accept); this.recordEventChoice('rain_sanctuary', accept); }
   // C773: Fog Ambush proxies
   getFogAmbushRemaining() { return this.encounter.getFogAmbushRemaining(); }
   getFogAmbushPending() { return this.encounter.getFogAmbushPending(); }
-  resolveFogAmbush(accept: boolean) { this.encounter.resolveFogAmbush(accept); }
+  resolveFogAmbush(accept: boolean) { this.encounter.resolveFogAmbush(accept); this.recordEventChoice('fog_ambush', accept); }
   // C782: Wind Gale + Snow Drift
   getWindGaleRemaining() { return this.encounter.getWindGaleRemaining(); }
   getWindGalePending() { return this.encounter.getWindGalePending(); }
-  resolveWindGale(accept: boolean) { this.encounter.resolveWindGale(accept); }
+  resolveWindGale(accept: boolean) { this.encounter.resolveWindGale(accept); this.recordEventChoice('wind_gale', accept); }
   getSnowDriftRemaining() { return this.encounter.getSnowDriftRemaining(); }
   getSnowDriftPending() { return this.encounter.getSnowDriftPending(); }
-  resolveSnowDrift(accept: boolean) { this.encounter.resolveSnowDrift(accept); }
+  resolveSnowDrift(accept: boolean) { this.encounter.resolveSnowDrift(accept); this.recordEventChoice('snow_drift', accept); }
   getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
   getVoidRiftPending() { return this.encounter.getVoidRiftPending(); }
-  resolveVoidRift(accept: boolean) { this.encounter.resolveVoidRift(accept); }
+  resolveVoidRift(accept: boolean) { this.encounter.resolveVoidRift(accept); this.recordEventChoice('void_rift', accept); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
 
@@ -1571,6 +1572,19 @@ export class CycleControllerV2 {
   private recordToStore(event: SagaEvent): void {
     this.saga.record(event);
     useGameStore.getState().recordSagaEvent(event, this.hero.chapter);
+  }
+
+  // C786: Record event choice to saga with flavor narration
+  private recordEventChoice(eventId: string, accept: boolean): void {
+    const narration = EVENT_NARRATION[eventId];
+    if (!narration) return;
+    const text = accept ? narration.accept : narration.decline;
+    this.recordToStore({
+      age: this.hero.age,
+      type: 'eventChoice',
+      narrativeText: text,
+      payload: { eventId, action: accept ? 'accept' : 'decline' },
+    });
   }
 
   finalize(): CycleSaga {
