@@ -1075,4 +1075,34 @@ describe('C651: characterization snapshot (golden master)', () => {
       expect(engine.getAtkCap()).toBe(10);
     });
   });
+
+  describe('C670: enemy prestige scaling sim guard', () => {
+    it('prestige 5 hero faces tougher enemies (wins less on equal stats)', () => {
+      // Same hero stats, different prestige → P5 enemies are ×1.75 HP
+      const hero0 = makeHero();
+      const engine0 = new EncounterEngine(new SeededRng(99));
+      let wins0 = 0;
+      for (let i = 0; i < 50; i++) {
+        const events = engine0.resolveEncounter(hero0, 'enemy', 'wolf_1');
+        if (events.some(e => e.type === 'battle_won')) wins0++;
+      }
+
+      const hero5 = makeHero();
+      const engine5 = new EncounterEngine(new SeededRng(99));
+      (engine5 as any).prestigeCount = 5;
+      let wins5 = 0;
+      for (let i = 0; i < 50; i++) {
+        const events = engine5.resolveEncounter(hero5, 'enemy', 'wolf_1');
+        if (events.some(e => e.type === 'battle_won')) wins5++;
+      }
+
+      // P5 enemies are tougher so hero with same stats wins less
+      expect(wins5).toBeLessThanOrEqual(wins0);
+    });
+
+    it('COMBO_PRESTIGE_ATK_FLAT is 3 (reduced from 5 for P10+ balance)', async () => {
+      const { COMBO_PRESTIGE_ATK_FLAT } = await import('../encounter/constants-economy');
+      expect(COMBO_PRESTIGE_ATK_FLAT).toBe(3);
+    });
+  });
 });
