@@ -310,7 +310,9 @@ export class EncounterEngine {
       const timePressureMul = 1 + Math.min(TIME_PRESSURE_CAP, Math.floor(this.totalWins / 100) * TIME_PRESSURE_PER_100);
       // C317: enemy weakening — kills reduce enemy HP
       const enemyWeakenMul = 1 - Math.min(ENEMY_WEAKEN_CAP, Math.floor(this.killCount / ENEMY_WEAKEN_INTERVAL) * ENEMY_WEAKEN_RATE);
-      const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * enemyWeakenMul));
+      // C589: adaptive enemy HP scaling — enemies get tougher during kill streaks
+      const adaptiveHpMul = 1 + 0.01 * Math.min(this.comboStreak, 50);
+      const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * enemyWeakenMul * adaptiveHpMul));
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale);
 
       if (hero.staggered) return events;
