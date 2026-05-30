@@ -62,7 +62,7 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
   },
   titan_arena: {
     trigger: '타이탄의 투기장이 나타났다. 강한 적과 싸워 큰 경험을 얻을 수 있다.',
-    accept: '타이탄의 도전을 받아들인다. 4전투 동안 적 HP×1.5, ATK×1.3, EXP×2.0!',
+    accept: '타이탄의 도전을 받아들인다. 4전투 동안 적 HP×1.5, ATK×1.2, EXP×2.0!',
     decline: '타이탄의 도전을 거부한다. 아직은 이르다.',
   },
   gold_crucible: {
