@@ -23,6 +23,8 @@ export interface ActiveEventState {
   stormNexusRemaining: number;
   rainSanctuaryRemaining: number;
   fogAmbushRemaining: number;
+  windGaleRemaining: number;
+  snowDriftRemaining: number;
 }
 
 export interface HudBadge {
@@ -60,7 +62,7 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
 
   // Active gated events
   if (input.activeEvents) {
-    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining, rainSanctuaryRemaining, fogAmbushRemaining } = input.activeEvents;
+    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining, rainSanctuaryRemaining, fogAmbushRemaining, windGaleRemaining, snowDriftRemaining } = input.activeEvents;
     if (trialGroundsRemaining > 0) {
       badges.push({ type: 'event', icon: '⚔️', label: `시련장 (${trialGroundsRemaining})` });
     }
@@ -78,6 +80,12 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
     }
     if (fogAmbushRemaining > 0) {
       badges.push({ type: 'event', icon: '🌫️', label: `안개 매복 (${fogAmbushRemaining})` });
+    }
+    if (windGaleRemaining > 0) {
+      badges.push({ type: 'event', icon: '🌬️', label: `질풍 (${windGaleRemaining})` });
+    }
+    if (snowDriftRemaining > 0) {
+      badges.push({ type: 'event', icon: '❄️', label: `눈보라 (${snowDriftRemaining})` });
     }
   }
 
