@@ -96,9 +96,10 @@ export function getAvailableLateEvents(totalFights: number): readonly EventGateD
 }
 
 /**
- * C789: Late-game density multiplier for event chances.
- * After LATE_GAME_DENSITY_THRESHOLD fights, events trigger ×1.5 more often.
+ * C790: Late-game density ramp (was step function in C789).
+ * Linear ramp from fight 150 (×1.0) to fight 350 (×2.0), capped at ×2.0.
  */
 export function getLateGameDensityMul(totalFights: number): number {
-  return totalFights >= LATE_GAME_DENSITY_THRESHOLD ? LATE_GAME_DENSITY_MUL : 1.0;
+  if (totalFights <= 150) return 1.0;
+  return Math.min(2.0, 1.0 + (totalFights - 150) / 200);
 }

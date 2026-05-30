@@ -200,7 +200,7 @@ export const SHRINE_SKILL_GRANT_RATE = 0.20;
 export const MERCIFUL_PROC_RATE = 0.04;
 // C757: Ancient Colosseum constants
 export const COLOSSEUM_EXP_MUL = 2.0;
-export const COLOSSEUM_ENEMY_ATK_MUL = 1.5; // C771: tuned from 1.3 (meaningful risk)
+export const COLOSSEUM_ENEMY_ATK_MUL = 1.7; // C790: tuned from 1.5 (bracket separation from Abyssal 1.60)
 // C762: Trial Grounds constants
 export const TRIAL_GROUNDS_EXP_MUL = 1.40; // C779: tuned from 1.50 (R:R 2.80→2.25, meaningful decision)
 export const TRIAL_GROUNDS_LEVEL_MUL = 1.20; // C774: tuned from 1.10 (R:R 1:5→1:2.5, meaningful decision)
@@ -224,7 +224,7 @@ export const FOG_AMBUSH_EXP_MUL = 1.30; // +30% EXP reward
 export const FOG_AMBUSH_DURATION = 2; // 2 consecutive fights
 
 // C782→C785: Wind Gale — EXP boost + dodge bonus, gold penalty (wind-only)
-export const WIND_GALE_EXP_MUL = 1.20; // +20% EXP (was 1.25)
+export const WIND_GALE_EXP_MUL = 1.15; // C790: tuned from 1.20 (low-risk event)
 export const WIND_GALE_DODGE_BONUS = 0.10; // +10% dodge chance (was 0.15)
 export const WIND_GALE_GOLD_PENALTY = 0.60; // gold income ×0.60 during gale
 export const WIND_GALE_DURATION = 3; // 3 fights
@@ -232,8 +232,9 @@ export const WIND_GALE_DURATION = 3; // 3 fights
 // C782→C785: Snow Drift — defensive event: enemy damage reduction + hero ATK penalty (snow-only)
 export const SNOW_DRIFT_ENEMY_SPD_MUL = 0.80; // enemy speed -20% (was 0.70)
 export const SNOW_DRIFT_DMG_MUL = 0.85; // actual damage reduction (SPD≠DMG)
-export const SNOW_DRIFT_ATK_PENALTY = 0.92; // hero ATK ×0.92 (was 0.90)
-export const SNOW_DRIFT_DURATION = 3; // 3 fights
+export const SNOW_DRIFT_ATK_PENALTY = 0.80; // C790: hero ATK ×0.80 (was 0.92, R:R was auto-accept)
+export const SNOW_DRIFT_DURATION = 4; // C790: 4 fights (was 3, defensive events need longer)
+export const SNOW_DRIFT_EXP_MUL = 1.10; // C790: +10% EXP reward for meaningful choice
 
 // C775: Event decline consolation
 export const EVENT_DECLINE_GOLD_RATE = 0.02; // gold × 0.02 × comboStreak
