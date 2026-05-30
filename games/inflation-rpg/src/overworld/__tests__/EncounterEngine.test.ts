@@ -880,3 +880,21 @@ describe('EncounterEngine — C617 death rate verification', () => {
     expect(deaths).toBeGreaterThan(0);
   });
 });
+
+describe('C639: soft combo decay', () => {
+  it('halves combo on damage instead of full reset', () => {
+    const engine = new EncounterEngine(new SeededRng(99));
+    // Set combo directly
+    (engine as unknown as { comboStreak: number }).comboStreak = 20;
+    // Create a weak hero that will take damage (ATK 1 vs enemy HP 60)
+    const weakHero = HeroEntity.create({ seed: 1, heroHpMax: 500, heroAtkBase: 1 });
+    // Run multiple encounters to ensure at least one is combat
+    for (let i = 0; i < 10; i++) {
+      engine.resolveEncounter(weakHero, 'plains', false, false);
+    }
+    const comboAfter = (engine as unknown as { comboStreak: number }).comboStreak;
+    // Should NOT be 0 (old behavior) — soft decay means some combo preserved
+    // With ATK 1 hero will lose/take damage, but combo only halves each time
+    expect(comboAfter).toBeGreaterThan(0);
+  });
+});
