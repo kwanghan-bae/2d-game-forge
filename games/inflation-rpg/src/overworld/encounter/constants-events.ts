@@ -285,3 +285,9 @@ export const CRIMSON_TITHE_DURATION = 6;
 export const CRIMSON_TITHE_HP_COST = 0.25; // 25% current HP on accept
 export const CRIMSON_TITHE_EXP_MUL = 1.8;
 export const CRIMSON_TITHE_LIFESTEAL = 0.08; // 8% lifesteal during event
+
+// C804: DeclineStack system — declining events builds stacks for future rewards
+export const DECLINE_STACK_REWARD_THRESHOLD = 2; // 2 declines → next event reward ×1.5
+export const DECLINE_STACK_FORCE_THRESHOLD = 4; // 4 declines → force a rare event next trigger
+export const DECLINE_STACK_REWARD_MUL = 1.5; // EXP multiplier for stacked accept
+export const DECLINE_STACK_MAX = 6; // cap stacks at 6

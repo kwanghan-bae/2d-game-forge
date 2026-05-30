@@ -27,6 +27,7 @@ import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
 import { RelicEffectResolver } from './encounter/RelicEffectResolver';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
 import { EventOrchestrator, type EventId } from './encounter/EventOrchestrator';
+import { createDeclineStack, pushDecline, consumeDeclineStack, shouldForceRareEvent, type DeclineStackState } from './encounter/DeclineStack';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
 import { computePostCombatHeal } from './encounter/PostCombatHealCalc';
@@ -212,6 +213,9 @@ export class EncounterEngine {
   private astralParadoxRemaining = 0; // C800: Astral Paradox (EXP×2.5, enemy ATK×1.8)
   // C788: EventOrchestrator replaces EventStateMachine + accept/decline logic
   private readonly eventOrch = new EventOrchestrator();
+  private readonly declineStack: DeclineStackState = createDeclineStack(); // C804
+  private declineStackExpMul = 1; // C804: bonus EXP from stacked declines
+  private declineStackExpDuration = 0; // C804: fights remaining for bonus
   private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
@@ -422,6 +426,20 @@ export class EncounterEngine {
       relicLevels: this.relicLevels,
     });
     if (accept) {
+      // C804: consume decline stack — stacked bonus applied in EXP calculator
+      const dsMul = consumeDeclineStack(this.declineStack);
+      if (dsMul > 1) {
+        this.declineStackExpMul = dsMul;
+        // Find the accepted event's duration
+        const dur = effects.colosseumRemaining || effects.voidRiftRemaining ||
+          effects.trialGroundsRemaining || effects.stormNexusRemaining ||
+          effects.rainSanctuaryRemaining || effects.fogAmbushRemaining ||
+          effects.windGaleRemaining || effects.snowDriftRemaining ||
+          effects.abyssalConvergenceRemaining || effects.temporalFissureRemaining ||
+          effects.titanArenaRemaining || effects.crimsonTitheRemaining ||
+          effects.goldCrucibleRemaining || effects.astralParadoxRemaining || 5;
+        this.declineStackExpDuration = dur;
+      }
       if (effects.colosseumRemaining) this.colosseumRemaining = effects.colosseumRemaining;
       if (effects.voidRiftRemaining) this.voidRiftRemaining = effects.voidRiftRemaining;
       if (effects.voidRiftRelicLevels) this.relicLevels = effects.voidRiftRelicLevels;
@@ -451,6 +469,8 @@ export class EncounterEngine {
       }
       if (effects.astralParadoxRemaining) this.astralParadoxRemaining = effects.astralParadoxRemaining;
     } else {
+      // C804: push decline stack
+      pushDecline(this.declineStack);
       if (effects.declineGold) this.hero.gold += effects.declineGold;
     }
   }
@@ -458,6 +478,7 @@ export class EncounterEngine {
   getIsNight(): boolean { return computeNight(this.totalWins).isNight; }
   getHealResult() { return this.lastHealResult; }
   getEventChainCount(): number { return this.eventChainCount; }
+  getDeclineStacks(): number { return this.declineStack.stacks; } // C804
   getEventMomentumAtkRemaining(): number { return this.eventMomentumAtkRemaining; }
   getEventMomentumDensityRemaining(): number { return this.eventMomentumDensityRemaining; }
   // C798: Aggregate accessor for HUD — replaces N individual getter calls
@@ -1318,7 +1339,10 @@ export class EncounterEngine {
       this.lastExpBreakdown = expBreakdownResult;
       if (this.survivorGritActive) this.survivorGritActive = false;
 
-      const expGainRaw = Math.floor(baseExpGain * expMul);
+      // C804: decline stack EXP bonus for event duration
+      const dsm = this.declineStackExpDuration > 0 ? this.declineStackExpMul : 1;
+      if (this.declineStackExpDuration > 0) this.declineStackExpDuration--;
+      const expGainRaw = Math.floor(baseExpGain * expMul * dsm);
       // C627: EXP safety cap — reduced from level×2500 to level×500
       const expGain = Math.min(expGainRaw, hero.level * 500);
       // C711: drop chance via extracted pure function
@@ -2139,6 +2163,13 @@ export class EncounterEngine {
     if (r.goldCruciblePending) this.eventOrch.trigger('gold_crucible');
     if (r.astralParadoxPending) this.eventOrch.trigger('astral_paradox');
     if (r.voidRiftTriggered) this.eventOrch.trigger('void_rift');
+    // C804: DeclineStack force — if 4+ declines, guarantee rare event trigger
+    if (!r.eventType && shouldForceRareEvent(this.declineStack)) {
+      const lateEvents: EventId[] = ['titan_arena', 'crimson_tithe', 'gold_crucible', 'astral_paradox'];
+      const forced = lateEvents[this.rng.int(lateEvents.length)];
+      this.eventOrch.trigger(forced);
+      this.fightsSinceEvent = 0;
+    }
     if (r.comboReset) this.comboStreak = 0;
     // C714: pity timer — reset on event, increment otherwise
     if (r.eventType) {
