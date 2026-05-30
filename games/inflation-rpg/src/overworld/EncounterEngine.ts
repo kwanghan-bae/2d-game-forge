@@ -1371,8 +1371,8 @@ export class EncounterEngine {
       const goldPrestigeMuls = prestigeGoldMul2 * prestigeGoldMul3 * prestigeGoldCascadeMul * prestigeGoldMomentumMul * finalMasteryGoldMul;
       const goldMiscMuls = greedGoldMul * treasureHunterMul * fullHpGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * treasureHoardMul2 * goldHarvestMul * waveFinisherMul * doubleGoldMul * waveGoldSurgeMul * waveGoldCascadeMul * waveAccumulatorMul * bossGoldCascadeMul * deathGoldCompoundMul * waveGoldSurgeScale * fullHpFortuneMul * waveAccumulatorMul;
       const goldEarnedRaw = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldCoreMuls * goldComboMuls * goldCombatMuls * goldProgressMuls * goldDangerMuls * goldPrestigeMuls * goldMiscMuls) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
-      // C630: safety cap tightened (was level×5000)
-      const goldEarned = Math.min(goldEarnedRaw, hero.level * 1000);
+      // C637: gold cap loosened (was 1000, before that 5000). Allows stacked moments to feel rewarding.
+      const goldEarned = Math.min(goldEarnedRaw, hero.level * 2500);
       // C328: combo gold floor
       const goldFloor = this.comboStreak >= COMBO_GOLD_FLOOR_THRESHOLD ? hero.level * COMBO_GOLD_FLOOR_PER_LEVEL : 0;
       hero.gold += Math.max(goldEarned, goldFloor);
