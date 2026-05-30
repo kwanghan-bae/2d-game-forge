@@ -192,6 +192,7 @@ export class EncounterEngine {
   private prestigeEchoRemaining = 0; // C508: prestige echo duration
   private inspirationRemaining = 0; // C749: inspiration ATK buff duration
   private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
+  private voidRiftRemaining = 0; // C758: void rift tier+2 offset duration
   private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
@@ -318,6 +319,8 @@ export class EncounterEngine {
   getInspirationRemaining(): number { return this.inspirationRemaining; }
   // C757: expose colosseum state for UI
   getColosseumRemaining(): number { return this.colosseumRemaining; }
+  // C758: expose void rift state for UI
+  getVoidRiftRemaining(): number { return this.voidRiftRemaining; }
   // C735: expose night state for UI
   getIsNight(): boolean { return computeNight(this.totalWins).isNight; }
   getHealResult() { return this.lastHealResult; }
@@ -440,8 +443,10 @@ export class EncounterEngine {
       const adaptiveAtkMul = 1 + 0.01 * Math.min(this.comboStreak, 50); // cap +50%
       // C669: enemy prestige scaling — enemies scale with hero prestige
       const { hpMul: enemyPrestigeHpMul, atkMul: enemyPrestigeAtkMul } = computeEnemyPrestigeScale(this.prestigeCount);
-      const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * adaptiveHpMul * enemyPrestigeHpMul));
-      const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul * enemyPrestigeAtkMul);
+      // C758: Void Rift tier offset — enemies use hero.level + 2 for N fights
+      const effectiveEnemyLevel = hero.level + (this.voidRiftRemaining > 0 ? 2 : 0);
+      const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, effectiveEnemyLevel, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * adaptiveHpMul * enemyPrestigeHpMul));
+      const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, effectiveEnemyLevel, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul * enemyPrestigeAtkMul);
 
       if (hero.staggered) return events;
       // C439: decrement death defiance cooldown
@@ -534,6 +539,8 @@ export class EncounterEngine {
       if (this.inspirationRemaining > 0) this.inspirationRemaining--;
       // C757: Colosseum duration decrement
       if (this.colosseumRemaining > 0) this.colosseumRemaining--;
+      // C758: Void Rift tier offset decrement
+      if (this.voidRiftRemaining > 0) this.voidRiftRemaining--;
       // Wave exhaustion
       const hadWaveExhaustion = this.waveExhaustionRemaining > 0;
       if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
@@ -1837,6 +1844,16 @@ export class EncounterEngine {
     if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
     // C757: wire Colosseum event → EXP×2 + enemy ATK×1.3
     if (r.newColosseumRemaining > 0) this.colosseumRemaining = r.newColosseumRemaining;
+    // C758: wire Void Rift — tier+2 offset for 3 fights + random relic level+1
+    if (r.voidRiftTriggered) {
+      this.voidRiftRemaining = 3;
+      if (this.relicLevels.length > 0) {
+        const idx = Math.floor(Math.random() * this.relicLevels.length);
+        const levels = [...this.relicLevels];
+        levels[idx] = (levels[idx] || 1) + 1;
+        this.relicLevels = levels;
+      }
+    }
     if (r.comboReset) this.comboStreak = 0;
     // C714: pity timer — reset on event, increment otherwise
     if (r.eventType) {
