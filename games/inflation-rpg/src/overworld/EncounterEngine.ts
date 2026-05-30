@@ -1002,6 +1002,35 @@ export const PRESTIGE_READY_BONUS_CAP = 0.5;
 // C520: conditional stack — simultaneous active conditions × global bonus
 export const CONDITIONAL_STACK_BONUS = 0.05;
 export const CONDITIONAL_STACK_CAP = 0.5;
+// C521: gold burn — sacrifice 25% gold for permanent ATK
+export const GOLD_BURN_RATE = 0.25;
+export const GOLD_BURN_ATK_PER_100 = 1; // +1 ATK per 100 gold burned
+export const GOLD_BURN_COOLDOWN = 10; // fights between burns
+// C522: level sacrifice — lose 10% level for prestige shield
+export const LEVEL_SACRIFICE_RATE = 0.1;
+// C523: combo reset trade — reset combo for instant gold
+export const COMBO_RESET_GOLD_PER_COMBO = 10;
+// C524: exp offering — sacrifice 50% exp → next boss ×3 reward
+export const EXP_OFFERING_RATE = 0.5;
+export const EXP_OFFERING_BOSS_MUL = 3.0;
+// C525: shield break burst — destroy shield for temp ×3 ATK (5 fights)
+export const SHIELD_BREAK_BURST_MUL = 3.0;
+export const SHIELD_BREAK_BURST_DURATION = 5;
+// C526: danger bet — voluntarily add +3 danger for locked-in multipliers
+export const DANGER_BET_INCREASE = 3;
+export const DANGER_BET_LOCK_MUL = 1.5;
+export const DANGER_BET_DURATION = 10;
+// C527: health tax — permanent -20% maxHP for passive gold/fight
+export const HEALTH_TAX_HP_COST = 0.2;
+export const HEALTH_TAX_GOLD_PER_FIGHT = 50;
+// C528: sacrifice altar cooldown (shared cooldown for sacrifice mechanics)
+export const SACRIFICE_ALTAR_COOLDOWN = 15;
+// C529: diminishing returns on repeated sacrifices
+export const SACRIFICE_DIMINISH_RATE = 0.9; // 10% less effective each time
+export const SACRIFICE_DIMINISH_CAP = 0.5; // min 50% effectiveness
+// C530: sacrifice prestige — total sacrifices → prestige bonus
+export const SACRIFICE_PRESTIGE_RATE = 0.01; // +1% per sacrifice at prestige
+export const SACRIFICE_PRESTIGE_CAP = 0.5; // max +50%
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1195,6 +1224,15 @@ export class EncounterEngine {
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
   private consecutiveEliteKills2 = 0; // C517: elite hunter streak
   private prestigeReadyBonus = 0; // C519: bonus from fighting past prestige threshold
+  private goldBurnCooldown = 0; // C521: gold burn cooldown
+  private goldBurnTotal = 0; // C521: total gold burned (for ATK calc)
+  private expOfferingActive = false; // C524: next boss gets ×3
+  private shieldBreakBurstRemaining = 0; // C525: burst ATK duration
+  private dangerBetRemaining = 0; // C526: danger bet lock duration
+  private healthTaxApplied = false; // C527: whether health tax taken
+  private sacrificeAltarCooldown = 0; // C528: shared cooldown
+  private totalSacrifices = 0; // C530: total sacrifice count
+  private sacrificeDiminish = 1.0; // C529: diminishing effectiveness
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -1419,6 +1457,9 @@ export class EncounterEngine {
       if (this.prestigeShieldRemaining > 0 && this.rng.chance(SHIELD_SACRIFICE_CHANCE)) {
         this.prestigeShieldRemaining--;
         shieldSacrificeMul = SHIELD_SACRIFICE_ATK_MUL;
+        // C525: shield break burst — destroying shield also gives extended ATK boost
+        this.shieldBreakBurstRemaining = SHIELD_BREAK_BURST_DURATION;
+        this.totalSacrifices++;
       }
       // C508: prestige echo — recent prestige gives decaying bonus
       const prestigeEchoMul = this.prestigeEchoRemaining > 0 ? (1 + PRESTIGE_ECHO_BONUS - (PRESTIGE_ECHO_DURATION - this.prestigeEchoRemaining) * PRESTIGE_ECHO_DECAY) : 1;
@@ -1426,6 +1467,13 @@ export class EncounterEngine {
       // C510: wave exhaustion — temp ATK penalty after wave complete
       const waveExhaustionMul = this.waveExhaustionRemaining > 0 ? (1 - WAVE_EXHAUSTION_ATK_PENALTY) : 1;
       if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
+      // C525: shield break burst — temp ×3 ATK after destroying own shield
+      const shieldBreakBurstMul = this.shieldBreakBurstRemaining > 0 ? SHIELD_BREAK_BURST_MUL : 1;
+      if (this.shieldBreakBurstRemaining > 0) this.shieldBreakBurstRemaining--;
+      // C526: danger bet lock — locked-in multiplier during bet
+      const dangerBetMul = this.dangerBetRemaining > 0 ? DANGER_BET_LOCK_MUL : 1;
+      // C530: sacrifice prestige — total sacrifices boost power
+      const sacrificePrestigeMul = 1 + Math.min(SACRIFICE_PRESTIGE_CAP, this.totalSacrifices * SACRIFICE_PRESTIGE_RATE);
       // C511: low HP fury — ATK ×2 when HP ≤ 20%
       const lowHpFuryMul = hero.hp <= hero.hpMax * LOW_HP_FURY_THRESHOLD ? LOW_HP_FURY_ATK_MUL : 1;
       // C516: boss conditional — all multipliers +20% during boss fights
@@ -1439,7 +1487,7 @@ export class EncounterEngine {
       if (this.dangerStreak >= DEEP_DANGER_THRESHOLD) activeConditions++; // C518 active
       if (hero.level >= this.getPrestigeThreshold()) activeConditions++; // C519 active
       const conditionalStackMul = 1 + Math.min(CONDITIONAL_STACK_CAP, activeConditions * CONDITIONAL_STACK_BONUS);
-      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul));
+      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul * sacrificePrestigeMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -1620,6 +1668,16 @@ export class EncounterEngine {
             hero.staggered = false;
             hero.hp = 1;
             this.deathDefianceCooldown = DEATH_DEFIANCE_PRESTIGE_COOLDOWN;
+          }
+          // C522: level sacrifice — sacrifice 10% levels to survive and gain shield
+          if (hero.staggered && hero.level > 10) {
+            const levelsLost = Math.max(1, Math.floor(hero.level * LEVEL_SACRIFICE_RATE));
+            hero.level -= levelsLost;
+            hero.recomputeStats();
+            hero.staggered = false;
+            hero.hp = hero.hpMax;
+            this.prestigeShieldRemaining += 1;
+            this.totalSacrifices++;
           }
           // C195: gold sacrifice heal — auto-heal when low HP (once per fight)
           if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= GOLD_HEAL_COST && !goldHealUsed) {
@@ -2180,6 +2238,52 @@ export class EncounterEngine {
         hero.gold -= comboTax;
         hero.gainExp(Math.floor(comboTax * COMBO_TAX_REWARD_MUL * 10));
       }
+      // C521: gold burn — sacrifice 25% gold for permanent ATK (with cooldown)
+      if (this.goldBurnCooldown <= 0 && this.sacrificeAltarCooldown <= 0 && hero.gold > 200) {
+        const burnAmount = Math.floor(hero.gold * GOLD_BURN_RATE * this.sacrificeDiminish);
+        hero.gold -= burnAmount;
+        this.goldBurnTotal += burnAmount;
+        hero.atkBase += Math.max(1, Math.floor(burnAmount / 100) * GOLD_BURN_ATK_PER_100);
+        hero.recomputeStats();
+        this.goldBurnCooldown = GOLD_BURN_COOLDOWN;
+        this.totalSacrifices++;
+        this.sacrificeDiminish = Math.max(SACRIFICE_DIMINISH_CAP, this.sacrificeDiminish * SACRIFICE_DIMINISH_RATE);
+      }
+      if (this.goldBurnCooldown > 0) this.goldBurnCooldown--;
+      // C523: combo reset trade — when combo ≥ 30, reset for gold burst
+      if (this.comboStreak >= 30 && this.sacrificeAltarCooldown <= 0 && this.rng.chance(0.1)) {
+        const comboGold = this.comboStreak * COMBO_RESET_GOLD_PER_COMBO * hero.level;
+        hero.gold += Math.floor(comboGold * this.sacrificeDiminish);
+        this.comboStreak = 0;
+        this.totalSacrifices++;
+        this.sacrificeDiminish = Math.max(SACRIFICE_DIMINISH_CAP, this.sacrificeDiminish * SACRIFICE_DIMINISH_RATE);
+        this.sacrificeAltarCooldown = SACRIFICE_ALTAR_COOLDOWN;
+      }
+      // C524: exp offering — sacrifice exp near prestige for boss boost
+      if (hero.level >= this.getPrestigeThreshold() - 20 && !this.expOfferingActive && hero.exp > 0) {
+        hero.exp = Math.floor(hero.exp * (1 - EXP_OFFERING_RATE));
+        this.expOfferingActive = true;
+        this.totalSacrifices++;
+      }
+      // C526: danger bet — in danger zone, increase danger for locked multiplier
+      if (isDangerZone && this.dangerBetRemaining <= 0 && this.dangerStreak >= 5 && this.rng.chance(0.15)) {
+        this.dangerStreak += DANGER_BET_INCREASE;
+        this.dangerBetRemaining = DANGER_BET_DURATION;
+      }
+      if (this.dangerBetRemaining > 0) this.dangerBetRemaining--;
+      // C527: health tax — permanent HP reduction for passive gold (one-time)
+      if (!this.healthTaxApplied && hero.level >= 50 && this.totalWins >= 100) {
+        hero.hpBase = Math.floor(hero.hpBase * (1 - HEALTH_TAX_HP_COST));
+        hero.recomputeStats();
+        this.healthTaxApplied = true;
+        this.totalSacrifices++;
+      }
+      // C527: health tax passive gold per fight
+      if (this.healthTaxApplied) {
+        hero.gold += HEALTH_TAX_GOLD_PER_FIGHT;
+      }
+      // C528: sacrifice altar cooldown tick
+      if (this.sacrificeAltarCooldown > 0) this.sacrificeAltarCooldown--;
       // C426: combo gold milestone — every 15 combo grants flat gold
       if (this.comboStreak > 0 && this.comboStreak % COMBO_GOLD_MILESTONE_INTERVAL === 0) {
         hero.gold += COMBO_GOLD_MILESTONE_AMOUNT * hero.level;
@@ -2246,7 +2350,10 @@ export class EncounterEngine {
         const bossVaultCompound = 1 + this.consecutiveBossKills * BOSS_VAULT_COMPOUND_BONUS;
         // C509: boss enrage trade — chance of enraged boss giving 3x vault
         const bossEnrageMul2 = this.rng.chance(BOSS_ENRAGE_CHANCE) ? BOSS_ENRAGE_REWARD_MUL : 1;
-        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul * bossLootMul * bossVaultPrestigeMul * bossVaultPrestigeScale * bossVaultCompound * bossEnrageMul2);
+        // C524: exp offering — if active, boss rewards ×3
+        const expOfferingMul = this.expOfferingActive ? EXP_OFFERING_BOSS_MUL : 1;
+        if (this.expOfferingActive) this.expOfferingActive = false;
+        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul * bossLootMul * bossVaultPrestigeMul * bossVaultPrestigeScale * bossVaultCompound * bossEnrageMul2 * expOfferingMul);
         hero.gold += vaultGold;
         // C383: boss chain gold — consecutive bosses give escalating gold
         if (this.consecutiveBossKills > 0) {
