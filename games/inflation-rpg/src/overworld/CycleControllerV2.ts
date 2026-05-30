@@ -870,6 +870,7 @@ export class CycleControllerV2 {
   getRelics() { return this.encounter.getRelics(); }
   getImprintedRelic() { return this.encounter.getImprintedRelic(); }
   getPrestigeCount() { return this.encounter.getPrestigeCount(); }
+  getCombatSummary() { return this.encounter.getCombatSummary(); }
 
   /** Most recent saga events (already batched + narrative-formatted) for the
    *  live OverworldRunner log overlay. */
