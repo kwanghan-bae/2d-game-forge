@@ -22,6 +22,9 @@ import { DamageFloaterLogic } from '../components/DamageFloaterLogic';
 import { BattleOutcomeBadge } from '../components/BattleOutcomeBadge';
 import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
 import { ComboStreakBadge } from '../components/ComboStreakBadge';
+import { ExpBreakdownBadge } from '../components/ExpBreakdownBadge';
+import { EventChoiceToast } from '../components/EventChoiceToast';
+import type { ExpBreakdownEntry } from '../components/ExpBreakdownBadgeLogic';
 import { StatDeltaPopup } from '../components/StatDeltaPopup';
 import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
 import { AtkBreakdownTooltip } from '../components/AtkBreakdownTooltip';
@@ -132,6 +135,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [lightFloats, setLightFloats] = useState<LightFloat[]>([]);
   const damageFloaterRef = useRef(new DamageFloaterLogic({ duration: 800 }));
   const [badgeInput, setBadgeInput] = useState<BattleOutcomeInput | null>(null);
+  const [expBreakdown, setExpBreakdown] = useState<ExpBreakdownEntry[] | null>(null);
+  const [eventSubType, setEventSubType] = useState<string | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -287,6 +292,15 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             setStatDeltaEntries(deltas);
             setTimeout(() => setStatDeltaEntries([]), 1500);
           }
+          // C707: ExpBreakdownBadge + EventChoiceToast wiring
+          const cachedBreakdown = engineRef.current?.getExpBreakdown?.() ?? null;
+          if (cachedBreakdown) setExpBreakdown(cachedBreakdown);
+          const eventSubTypeEv = evs.find(e =>
+            e.type.startsWith('event_merchant_') ||
+            e.type.startsWith('event_gambler_') ||
+            e.type.startsWith('event_altar_')
+          );
+          if (eventSubTypeEv) setEventSubType(eventSubTypeEv.type);
           if (event.landmarkKind === 'village') {
             setMomentumDisplay(0);
           }
@@ -656,6 +670,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
       <StatDeltaPopup entries={statDeltaEntries} />
+      <ExpBreakdownBadge breakdown={expBreakdown} />
+      <EventChoiceToast eventSubType={eventSubType} onDone={() => setEventSubType(null)} />
       {showAtkBreakdown && (
         <div style={{ position: 'absolute', top: 60, left: 8, zIndex: 20 }}>
           <AtkBreakdownTooltip breakdown={controller.getAtkBreakdownInput() ? computeAtkBreakdown(controller.getAtkBreakdownInput()!) : null} />
