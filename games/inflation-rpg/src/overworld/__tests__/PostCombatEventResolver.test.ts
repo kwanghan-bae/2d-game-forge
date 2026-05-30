@@ -167,7 +167,7 @@ describe('PostCombatEventResolver', () => {
       rngChance: () => { return chances[callIdx++] ?? false; },
     }));
     expect(result.eventType).toBe('event_ancient_colosseum');
-    expect(result.newColosseumRemaining).toBe(5);
+    expect(result.colosseumPending).toBe(true);
   });
 
   it('does not trigger ancient_colosseum before 150 fights', () => {

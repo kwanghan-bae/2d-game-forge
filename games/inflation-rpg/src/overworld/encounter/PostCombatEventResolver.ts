@@ -82,6 +82,7 @@ export interface PostCombatResult {
   newPrestigeEchoRemaining: number;
   newInspirationRemaining: number;
   newColosseumRemaining: number;
+  colosseumPending: boolean;
   newTrialGroundsRemaining: number;
   trialGroundsPending: boolean;
   voidRiftTriggered: boolean;
@@ -112,6 +113,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newPrestigeEchoRemaining: 0,
     newInspirationRemaining: 0,
     newColosseumRemaining: 0,
+    colosseumPending: false,
     newTrialGroundsRemaining: 0,
     trialGroundsPending: false,
     voidRiftTriggered: false,
@@ -254,7 +256,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     for (const le of lateEvents) {
       if (rngOrPity(le.chance)) {
         if (le.id === 'event_ancient_colosseum') {
-          result.newColosseumRemaining = 5;
+          result.colosseumPending = true;
           result.eventType = 'event_ancient_colosseum';
         } else if (le.id === 'event_void_rift') {
           result.voidRiftTriggered = true;
