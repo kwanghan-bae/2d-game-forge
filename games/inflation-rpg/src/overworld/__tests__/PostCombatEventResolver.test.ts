@@ -155,4 +155,41 @@ describe('PostCombatEventResolver', () => {
     }));
     expect(result.eventType).not.toBe('event_inspiration');
   });
+
+  // C755: Late-game exclusive events
+  it('triggers ancient_colosseum after 150 fights', () => {
+    let callIdx = 0;
+    // Skip all prior events (11 false), then ancient_colosseum rng hits (true)
+    const chances = [false, false, false, false, false, false, false, false, false, false, false, true];
+    const result = resolvePostCombatEvent(makeCtx({
+      heroLevel: 10,
+      totalFights: 160,
+      rngChance: () => { return chances[callIdx++] ?? false; },
+    }));
+    expect(result.eventType).toBe('event_ancient_colosseum');
+    expect(result.newColosseumRemaining).toBe(5);
+  });
+
+  it('does not trigger ancient_colosseum before 150 fights', () => {
+    const result = resolvePostCombatEvent(makeCtx({
+      totalFights: 100,
+      rngChance: () => true,
+    }));
+    // At 100 fights, ancient_colosseum is not available (gate=150)
+    // Other events will trigger first
+    expect(result.eventType).not.toBe('event_ancient_colosseum');
+  });
+
+  it('triggers void_rift after 200 fights', () => {
+    let callIdx = 0;
+    // Skip all prior events (11 false), skip ancient_colosseum (false), void_rift hits (true)
+    const chances = [false, false, false, false, false, false, false, false, false, false, false, false, true];
+    const result = resolvePostCombatEvent(makeCtx({
+      heroLevel: 10,
+      totalFights: 250,
+      rngChance: () => { return chances[callIdx++] ?? false; },
+    }));
+    expect(result.eventType).toBe('event_void_rift');
+    expect(result.voidRiftTriggered).toBe(true);
+  });
 });

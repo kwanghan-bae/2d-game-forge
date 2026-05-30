@@ -34,6 +34,7 @@ import {
   INSPIRATION_EVENT_CHANCE,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
+import { getAvailableLateEvents } from './EventGateConfig';
 
 export interface PostCombatContext {
   totalFights: number;
@@ -79,6 +80,8 @@ export interface PostCombatResult {
   newRelicLevels: number[];
   newPrestigeEchoRemaining: number;
   newInspirationRemaining: number;
+  newColosseumRemaining: number;
+  voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
   shrinePending: boolean;
@@ -105,6 +108,8 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newRelicLevels: [...ctx.relicLevels],
     newPrestigeEchoRemaining: 0,
     newInspirationRemaining: 0,
+    newColosseumRemaining: 0,
+    voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
     shrinePending: false,
@@ -215,13 +220,30 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
-  // C747: Inspiration event — ATK buff for mid-game
-  // C747+C751: Inspiration event — phase-aware ATK buff
+  // C751: Inspiration event — phase-aware ATK buff
   const inspConfig = getInspirationConfig(ctx.totalFights);
   if (eventsEnabled && !eventTriggered && ctx.totalFights >= inspConfig.minFights && rngOrPity(INSPIRATION_EVENT_CHANCE)) {
     result.newInspirationRemaining = inspConfig.duration;
     result.eventType = 'event_inspiration';
     eventTriggered = true;
+  }
+
+  // C755: Late-game exclusive events
+  if (eventsEnabled && !eventTriggered) {
+    const lateEvents = getAvailableLateEvents(ctx.totalFights);
+    for (const le of lateEvents) {
+      if (rngOrPity(le.chance)) {
+        if (le.id === 'event_ancient_colosseum') {
+          result.newColosseumRemaining = 5;
+          result.eventType = 'event_ancient_colosseum';
+        } else if (le.id === 'event_void_rift') {
+          result.voidRiftTriggered = true;
+          result.eventType = 'event_void_rift';
+        }
+        eventTriggered = true;
+        break;
+      }
+    }
   }
 
   // Time rift
