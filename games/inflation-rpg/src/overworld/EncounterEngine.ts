@@ -788,12 +788,7 @@ export class EncounterEngine {
             rageTurn++;
             continue;
           }
-          // C356: village defense immunity
-          if (this.villageDefenseRemaining > 0) {
-            this.villageDefenseRemaining--;
-            rageTurn++;
-            continue;
-          }
+          // C356: village defense immunity — C616: REMOVED (free immunity layer)
           // C282: village shield absorbs first hit
           if (this.villageShieldActive) {
             this.villageShieldActive = false;
@@ -2033,8 +2028,7 @@ export class EncounterEngine {
       this.deathInsuranceUsed = false;
       // C282: village shield
       this.villageShieldActive = true;
-      // C356: village defense immunity
-      this.villageDefenseRemaining = VILLAGE_DEFENSE_FIGHTS;
+      // C616: villageDefenseRemaining removed (was free immunity)
       // C285: village training ATK buff
       // C347: extended training duration
       this.villageTrainingRemaining = VILLAGE_TRAINING_DURATION + TRAINING_EXTENDED_DURATION;
