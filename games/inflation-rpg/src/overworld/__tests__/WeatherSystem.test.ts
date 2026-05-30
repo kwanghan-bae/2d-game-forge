@@ -1,10 +1,14 @@
 import { describe, test, expect } from 'vitest';
-import { rollWeather, type Weather } from '../encounter/WeatherSystem';
+import { rollWeather, computeNight, type Weather } from '../encounter/WeatherSystem';
 import {
   WEATHER_CHANCE,
   WEATHER_RAIN_ATK_PENALTY,
   WEATHER_WIND_EXP_BONUS,
   WEATHER_FOG_CRIT_PENALTY,
+  NIGHT_CYCLE_INTERVAL,
+  NIGHT_DURATION,
+  NIGHT_EXP_MUL,
+  NIGHT_ENEMY_DMG_MUL,
 } from '../encounter/constants';
 
 describe('WeatherSystem', () => {
@@ -38,5 +42,27 @@ describe('WeatherSystem', () => {
     expect(result.critMul).toBe(WEATHER_FOG_CRIT_PENALTY);
     expect(result.atkMul).toBe(1);
     expect(result.expMul).toBe(1);
+  });
+});
+
+describe('computeNight', () => {
+  test('daytime when fight is early in cycle', () => {
+    const result = computeNight(5); // 5 % 20 = 5, < 15 threshold
+    expect(result.isNight).toBe(false);
+    expect(result.nightExpMul).toBe(1);
+    expect(result.nightDmgMul).toBe(1);
+  });
+
+  test('night when fight is late in cycle', () => {
+    // NIGHT_CYCLE_INTERVAL=20, NIGHT_DURATION=5 → night starts at fight 15 in cycle
+    const result = computeNight(NIGHT_CYCLE_INTERVAL - NIGHT_DURATION); // fight 15
+    expect(result.isNight).toBe(true);
+    expect(result.nightExpMul).toBe(NIGHT_EXP_MUL);
+    expect(result.nightDmgMul).toBe(NIGHT_ENEMY_DMG_MUL);
+  });
+
+  test('night wraps correctly at cycle boundary', () => {
+    const result = computeNight(NIGHT_CYCLE_INTERVAL); // fight 20 → 20%20=0 → daytime
+    expect(result.isNight).toBe(false);
   });
 });

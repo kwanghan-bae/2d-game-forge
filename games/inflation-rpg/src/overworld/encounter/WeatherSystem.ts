@@ -1,12 +1,17 @@
 /**
  * C703: WeatherSystem — pure weather roll and multiplier computation.
- * Extracted from EncounterEngine L459-467.
+ * C706: Added NightSystem (isNight check) for environment context.
+ * Extracted from EncounterEngine L459-468.
  */
 import {
   WEATHER_CHANCE,
   WEATHER_RAIN_ATK_PENALTY,
   WEATHER_WIND_EXP_BONUS,
   WEATHER_FOG_CRIT_PENALTY,
+  NIGHT_CYCLE_INTERVAL,
+  NIGHT_DURATION,
+  NIGHT_EXP_MUL,
+  NIGHT_ENEMY_DMG_MUL,
 } from './constants';
 
 export type Weather = 'normal' | 'rain' | 'wind' | 'fog';
@@ -18,10 +23,15 @@ export interface WeatherResult {
   expMul: number;
 }
 
+export interface EnvironmentResult {
+  weather: WeatherResult;
+  isNight: boolean;
+  nightExpMul: number;
+  nightDmgMul: number;
+}
+
 /**
  * Roll weather for a fight.
- * @param chance - rng function returning true/false for WEATHER_CHANCE
- * @param rollInt - rng function returning 0-2 for weather type
  */
 export function rollWeather(
   chance: (rate: number) => boolean,
@@ -38,3 +48,30 @@ export function rollWeather(
     expMul: weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1,
   };
 }
+
+/**
+ * Compute night mode status based on total wins.
+ */
+export function computeNight(totalWins: number): { isNight: boolean; nightExpMul: number; nightDmgMul: number } {
+  const fightInCycle = totalWins % NIGHT_CYCLE_INTERVAL;
+  const isNight = fightInCycle >= (NIGHT_CYCLE_INTERVAL - NIGHT_DURATION);
+  return {
+    isNight,
+    nightExpMul: isNight ? NIGHT_EXP_MUL : 1,
+    nightDmgMul: isNight ? NIGHT_ENEMY_DMG_MUL : 1,
+  };
+}
+
+/**
+ * Compute full environment state (weather + night) for a fight.
+ */
+export function computeEnvironment(
+  totalWins: number,
+  chance: (rate: number) => boolean,
+  rollInt: (n: number) => number,
+): EnvironmentResult {
+  const weather = rollWeather(chance, rollInt);
+  const night = computeNight(totalWins);
+  return { weather, ...night };
+}
+
