@@ -333,7 +333,7 @@ export class EncounterEngine {
         this.pendingDangerChoice = -1;
         const retreatCost = Math.max(50, hero.level * 3);
         hero.gold -= Math.min(hero.gold, retreatCost);
-        this.comboStreak = 0;
+        this.comboStreak = Math.floor(this.comboStreak * 0.5); // C605: halve instead of reset
         this.dangerStreak = 0;
         events.push({ type: 'danger_retreat', cost: retreatCost });
         return events;
