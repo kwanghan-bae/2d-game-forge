@@ -50,6 +50,8 @@ export class OverworldScene extends Phaser.Scene {
   private currentRealm: RealmId | undefined;
   private unlockedRealms: readonly RealmId[] | undefined;
   private currentSeason: SeasonId = 'spring';
+  /** C761: last influencing traits from destination choice */
+  private lastInfluencingTraits: string[] = [];
   /** Cycle 175 — SeasonalModifier cosmeticTint override. null = base season tint. */
   private cosmeticTintOverride: string | null = null;
   /** Cycle-7 F4: count of times pathfinder columnBounds fallback fired.
@@ -77,6 +79,11 @@ export class OverworldScene extends Phaser.Scene {
    *  event so DestinationResolver.choose can see the new exit landmark. */
   setUnlockedRealms(realms: readonly RealmId[]): void {
     this.unlockedRealms = realms;
+  }
+
+  // C761: expose last influencing traits for HUD
+  getLastInfluencingTraits(): readonly string[] {
+    return this.lastInfluencingTraits;
   }
 
   /** Cycle-8 C1: sync the scene's currentRealm copy after a realm_entered
@@ -257,16 +264,18 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
 
-    const chosenCandidate = this.ai.chooseDestination(candidates.map(c => c.candidate), {
+    const influenceResult = this.ai.chooseDestinationWithInfluence(candidates.map(c => c.candidate), {
       currentRealm: this.currentRealm,
       unlockedRealms: this.unlockedRealms,
     });
-    if (!chosenCandidate) {
+    if (!influenceResult) {
       // Cycle-5 F3: AI picked nothing despite candidates — same exit-lost
       // condition; emit '무위' for parity.
       this.onEvent({ type: 'cycle_ended', cause: '무위' });
       return;
     }
+    const chosenCandidate = influenceResult.chosen;
+    this.lastInfluencingTraits = influenceResult.influencingTraits;
 
     const target = candidates.find(c => c.candidate.id === chosenCandidate.id)!.landmark;
     // Cycle-9 R1: expand columnBounds to always include hero start AND target
