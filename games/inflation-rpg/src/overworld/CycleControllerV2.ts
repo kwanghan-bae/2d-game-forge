@@ -883,6 +883,9 @@ export class CycleControllerV2 {
   getColosseumRemaining() { return this.encounter.getColosseumRemaining(); }
   getColosseumPending() { return this.encounter.getColosseumPending(); }
   resolveColosseum(accept: boolean) { this.encounter.resolveColosseum(accept); }
+  getStormNexusRemaining() { return this.encounter.getStormNexusRemaining(); }
+  getStormNexusPending() { return this.encounter.getStormNexusPending(); }
+  resolveStormNexus(accept: boolean) { this.encounter.resolveStormNexus(accept); }
   getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
