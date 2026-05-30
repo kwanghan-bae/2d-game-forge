@@ -1,60 +1,47 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 751
+- Cycle: 800
 - Target: 600+ (연속 진화)
-- Last commit: C751 phase-aware Inspiration duration & gate
-- Vitest: 2192 pass / 0 fail
+- Last commit: C800 Gold Crucible + Astral Paradox late-game events
+- Vitest: 2234 pass / 0 fail
 - E2E: 60 passed
-- EncounterEngine: ~1840 lines
+- EncounterEngine: ~2150 lines
 
-## 레이어 카운터 (C737-C751 era)
-- 시스템: 5 (C737, C741, C742, C745, C749)
-- 구조: 2 (C746, C750)
-- UI/UX: 1 (C739)
-- 밸런스: 4 (C738, C743, C747, C751)
-- 콜라보: 3 (C740, C744, C748)
+## 레이어 카운터 (C797-C800 era)
+- 시스템: 2 (C797, C800)
+- 구조: 1 (C798)
+- 밸런스: 1 (C799)
+- 콜라보: 1 (C799)
 
 ## 제약
-- cycles_since_collab: 3 (C749-C751)
-- Next collab: C752 (NOW)
-- EncounterEngine: ~1840 lines
-- Layer lock: collab (current)
+- cycles_since_collab: 1 (C800)
+- Next collab: C802
+- EncounterEngine: ~2150 lines
+- Layer rotation: system → structure → balance (C800=system, C801=structure, C802=balance+collab)
 
-## 다음 3사이클 (C752 협의에서 확정)
-1. [collab] C752: critic + planner + level-designer
-2. C753 [system] TBD
-3. C754 [structure] TBD
+## 다음 3사이클
+1. C801 [structure]: EventDurationTracker extraction from EncounterEngine
+2. C802 [balance+collab]: Titan Arena ATK 1.3→1.2 + late bracket density + collab round
+3. C803 [system]: TBD from C802 collab
 
-## 달성 사항 (C737-C751)
-- C737 [system]: Realm-based landmark difficulty pipeline
-- C738 [balance]: Night interval 25, dmg ×1.6
-- C739 [UI/UX]: TraitInfluenceBadge (chooseWithInfluence + badge logic)
-- C740 [collab]: 28/40. heroLevel pipeline critical fix identified
-- C741 [system]: heroLevel pipeline + enemy difficulty floor
-- C742 [system]: Storm/Snow weather types
-- C743 [balance]: Healer/Echo events + night dmg 1.6→1.5
-- C744 [collab]: 31/40. Echo dead code found, inspiration priority chain
-- C745 [system]: Echo event wiring + difficultyGateApplied
-- C746 [structure]: ConstantPhaseProfile classifier
-- C747 [balance]: Inspiration event (ATK +15%, 8 fights, gate 40)
-- C748 [collab]: 27/40 (re-calibrated). Inspiration dead code critical
-- C749 [system]: Inspiration wired into EncounterEngine + AtkMultiplierCalc
-- C750 [structure]: HudIndicatorBar view-model (weather+trait+inspiration)
-- C751 [balance]: Phase-aware Inspiration (6/8/10 duration, 30/40 gate)
+## 달성 사항 (C797-C800)
+- C797 [system]: Titan Arena event (fight 300+, 3%: +30% EXP + HP ×2.5 + ATK ×1.3)
+- C798 [structure]: getActiveEventState() aggregate accessor
+- C799 [balance]: TF death penalty 100%→70%, Colosseum duration 3→4
+- C800 [system]: Gold Crucible (30% gold→+50 ATK flat, 15 fights) + Astral Paradox (EXP×2.5 + enemy ATK×1.8, 5 fights)
 
 ## 캐리오버 (미완료)
-- [x] Inspiration wiring — DONE C749
-- [x] HudIndicatorBar view-model — DONE C750
-- [x] Phase-aware inspiration config — DONE C751
+- [ ] EventDurationTracker extraction (reduce EncounterEngine size)
 - [ ] HudIndicatorBar wiring to React/screen
 - [ ] TraitInfluenceBadge actual HUD rendering
 - [ ] Storm/snow VFX overlay
-- [ ] Late-game exclusive events
 - [ ] BattleOutcomeBadge + StatDelta gold display
 - [ ] FeedbackDispatcher (crit sound/haptic) — backlog
+- [ ] Decision-space events (player choice beyond accept/reject)
 
 ## 알려진 기술 부채
-- EncounterEngine.ts: ~1840 lines (manageable, pure-module extractions ongoing)
+- EncounterEngine.ts: ~2150 lines (EventDurationTracker extraction planned)
 - Constants 분할이 line-number 기반 (semantic 재배치 필요)
 - forge-ui 미사용 (OverworldRunner 100% inline style)
+- 7개 late-game events 의 duration logic 중복 패턴

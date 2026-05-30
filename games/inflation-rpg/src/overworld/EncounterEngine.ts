@@ -26,7 +26,7 @@ import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
 import { RelicEffectResolver } from './encounter/RelicEffectResolver';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
-import { EventOrchestrator } from './encounter/EventOrchestrator';
+import { EventOrchestrator, type EventId } from './encounter/EventOrchestrator';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
 import { computePostCombatHeal } from './encounter/PostCombatHealCalc';
@@ -386,6 +386,26 @@ export class EncounterEngine {
   getAstralParadoxRemaining(): number { return this.astralParadoxRemaining; }
   getAstralParadoxPending(): boolean { return this.eventOrch.getPending('astral_paradox'); }
   resolveAstralParadox(accept: boolean): void { this.applyEventResolve('astral_paradox', accept); }
+
+  // C801: Generic event accessors — replaces per-event boilerplate in controllers
+  private readonly eventRemainingMap: Record<EventId, () => number> = {
+    colosseum: () => this.colosseumRemaining,
+    void_rift: () => this.voidRiftRemaining,
+    trial_grounds: () => this.trialGroundsRemaining,
+    storm_nexus: () => this.stormNexusRemaining,
+    rain_sanctuary: () => this.rainSanctuaryRemaining,
+    fog_ambush: () => this.fogAmbushRemaining,
+    wind_gale: () => this.windGaleRemaining,
+    snow_drift: () => this.snowDriftRemaining,
+    abyssal_convergence: () => this.abyssalConvergenceRemaining,
+    temporal_fissure: () => this.temporalFissureRemaining,
+    titan_arena: () => this.titanArenaRemaining,
+    gold_crucible: () => this.goldCrucibleRemaining,
+    astral_paradox: () => this.astralParadoxRemaining,
+  };
+  getEventRemaining(id: EventId): number { return this.eventRemainingMap[id](); }
+  getEventPending(id: EventId): boolean { return this.eventOrch.getPending(id); }
+  resolveEvent(id: EventId, accept: boolean): void { this.applyEventResolve(id, accept); }
   // C788: Apply resolve effects from orchestrator to local state
   private applyEventResolve(id: 'colosseum' | 'trial_grounds' | 'storm_nexus' | 'rain_sanctuary' | 'fog_ambush' | 'wind_gale' | 'snow_drift' | 'void_rift' | 'abyssal_convergence' | 'temporal_fissure' | 'titan_arena' | 'gold_crucible' | 'astral_paradox', accept: boolean): void {
     const effects = this.eventOrch.resolve(id, accept, {
