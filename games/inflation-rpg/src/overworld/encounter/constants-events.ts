@@ -151,7 +151,7 @@ export const GAMBLER_BET_HIGH_REWARD_MUL = 3; // C714: was 2 (implicit), 3x gold
 export const GAMBLER_BET_HIGH_LOSS_RATE = 0.60; // C714: was 0.80, recovery time reduction
 export const GAMBLER_BET_LOW_LOSS_RATE = 0.25;
 export const EVENT_PITY_THRESHOLD = 18; // C743: was 20, slightly more frequent events
-export const HEALER_EVENT_CHANCE = 0.03; // C743: mid-game healer
+export const HEALER_EVENT_CHANCE = 0.06; // C814: doubled (was 0.03) — prevents utility death in late-game pool
 export const HEALER_HEAL_RATE = 0.25; // heals 25% of max HP
 export const HEALER_MIN_FIGHTS = 30; // only triggers after 30 fights
 export const ECHO_EVENT_CHANCE = 0.02; // C743: prestige echo event
@@ -184,7 +184,7 @@ export const EVENT_MOMENTUM_TIER2_THRESHOLD = 5; // tier 2: ATK buff
 export const EVENT_MOMENTUM_TIER2_ATK_BONUS = 0.15; // +15% ATK for 10 fights
 export const EVENT_MOMENTUM_TIER2_DURATION = 10;
 export const EVENT_MOMENTUM_TIER3_THRESHOLD = 8; // tier 3: next event chance ×2
-export const EVENT_MOMENTUM_TIER3_DENSITY_MUL = 1.5; // C811: was 2.0, reduced to prevent overflow (max 3.5×1.5=5.25)
+export const EVENT_MOMENTUM_TIER3_DENSITY_MUL = 1.3; // C814: was 1.5, further reduced (max 2.5×1.3=3.25 < cap 4.0)
 export const EVENT_MOMENTUM_TIER3_DURATION = 20;
 export const VILLAGE_GOLD_FOUNTAIN = 25;
 export const DANGER_TAX_IMMUNITY = true;
