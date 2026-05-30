@@ -1,43 +1,43 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 688
+- Cycle: 692
 - Target: 706 (이번 세션 목표)
-- Last commit: 8bc1845 (C688 ATK_CAP_MAX 30→50 + TRAP_AVOID_COMBO 15→12)
-- Vitest: 1992 pass / 0 fail
+- Last commit: 704b5cd (C692 ENEMY_PRESTIGE_HP_COMPOUND 1.14 + TRAP 20)
+- Vitest: 2004 pass / 0 fail
 - E2E: 60 passed
-- EncounterEngine: 1882 lines
+- EncounterEngine: 1833 lines
 
-## 레이어 카운터 (C673-C688 era — IN PROGRESS)
-- 구조: 3 (C674 GoldCalc extract, C680 GoldCalc wiring, C683 ExpCalc wiring)
-- 시스템: 2 (C675 PostCombatEventResolver, C687 AtkMultiplierCalc module)
-- UI/UX: 2 (C676 AtkBreakdownLogic, C682 StatDeltaPopup wiring)
-- 밸런스: 3 (C678 test fix, C684 compound scaling, C688 cap+trap)
-- 비주얼: 2 (C679 StatDeltaPopupLogic, C686 AtkBreakdownTooltip)
-- 콜라보: 4 (C673, C677, C681, C685)
+## 레이어 카운터 (C673-C692 era — IN PROGRESS)
+- 구조: 4 (C674 GoldCalc, C680 wiring, C683 ExpCalc, C690 AtkMultiplierCalc wiring)
+- 시스템: 2 (C675 PostCombatEvent, C687 AtkMultiplierCalc module)
+- UI/UX: 3 (C676 AtkBreakdownLogic, C682 StatDelta, C691 EventChoice expansion)
+- 밸런스: 4 (C678 test fix, C684 compound, C688 cap+trap, C692 HP compound+trap)
+- 비주얼: 2 (C679 StatDeltaPopup, C686 AtkBreakdownTooltip)
+- 콜라보: 5 (C673, C677, C681, C685, C689)
 
 ## 제약
-- cycles_since_collab: 3 (C686, C687, C688 since C685)
-- Next collab: C689 (NOW DUE)
-- EncounterEngine: 1882 lines
+- cycles_since_collab: 3 (C690, C691, C692 since C689)
+- Next collab: C693 (NOW DUE)
+- EncounterEngine: 1833 lines
 - Layer lock: collab (next)
 
-## 다음 3사이클 (C689 협의에서 확정 예정)
-1. [collab] C689: critic + planner + level-designer
+## 다음 3사이클 (C693 협의에서 확정 예정)
+1. [collab] C693: critic + planner + level-designer
 2. TBD
 3. TBD
 
-## 달성 사항 (C685-C688)
-- C685 [collab]: critic(6/7/7/5) + ATK_CAP_MAX ceiling 발견 + plan C686-C688
-- C686 [visual]: AtkBreakdownTooltip React component (4 tests) + HUD tap wiring
-- C687 [system]: AtkMultiplierCalc pure module (106 constants, 3 tests, not wired)
-- C688 [balance]: ATK_CAP_MAX 30→50 + TRAP_AVOID_COMBO 15→12
+## 달성 사항 (C689-C692)
+- C689 [collab]: critic(4/6/7/3) agency crisis + plan C690-C692
+- C690 [structure]: Wire AtkMultiplierCalc into EncounterEngine (-49 lines)
+- C691 [UI-UX]: EventChoiceEngine Merchant/Gambler/Altar (12 tests, 5→14 decision points)
+- C692 [balance]: ENEMY_PRESTIGE_HP_COMPOUND 1.12→1.14 + TRAP_AVOID_COMBO 12→20
 
 ## 캐리오버 (미완료)
-- [x] AtkBreakdownLogic React tooltip — DONE C686
-- [x] TRAP_AVOID_COMBO 15→12 — DONE C688
-- [ ] AtkMultiplierCalc engine wiring (module exists, not delegated yet)
+- [x] AtkMultiplierCalc engine wiring — DONE C690
 - [ ] ExpCalculator breakdown return (top3 contributors for UI)
+- [ ] Wire Merchant/Gambler/Altar triggers into EncounterEngine event flow
+- [ ] BattleOutcomeBadge + StatDelta gold display (planner C689 suggestion)
 - [ ] StatDeltaPopup: show gold from regular kills
 - [ ] BattleOutcomeBadge 실데이터 연결
 - [ ] FeedbackDispatcher (crit sound/haptic) — backlog
