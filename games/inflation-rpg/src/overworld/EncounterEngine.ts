@@ -24,6 +24,7 @@ import { computeHeroTurn } from './encounter/HeroTurnCalc';
 import { chooseGamblerBet } from './encounter/HeroDecisionAI';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
+import { RelicEffectResolver } from './encounter/RelicEffectResolver';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
@@ -213,13 +214,19 @@ export class EncounterEngine {
   private temporalPrestigeBonus = 0; // C540: bonus from last prestige speed
   private synergiesDiscovered = 0; // C550: unique synergies triggered (bitmask)
   private synergyPrestigeBonus = 0; // C549: permanent bonus from synergy discovery
-  // C551-C560: Relic system state
-  private relics: number[] = []; // equipped relic IDs (max 3)
-  private relicLevels: number[] = []; // upgrade levels (1=base, 2=★★)
+  // C551-C560: Relic system state (C733: delegated to RelicEffectResolver)
+  private relicResolver = new RelicEffectResolver({ relics: [], relicLevels: [], imprintedRelic: -1, imprintedRelicLevel: 0 });
   private emberCrownStacks = 0; // C553: ATK stacks from crits
   private phoenixFeatherUsed = false; // C555: one-shot survival
-  private imprintedRelic = -1; // C560: prestige-imprinted relic ID
-  private imprintedRelicLevel = 0; // C560: imprinted relic strength
+  // C733: compatibility accessors for external functions that read/write relic arrays
+  private get relics(): number[] { return this.relicResolver.snapshot().relics; }
+  private set relics(v: number[]) { this.relicResolver = new RelicEffectResolver({ ...this.relicResolver.snapshot(), relics: v }); }
+  private get relicLevels(): number[] { return this.relicResolver.snapshot().relicLevels; }
+  private set relicLevels(v: number[]) { this.relicResolver = new RelicEffectResolver({ ...this.relicResolver.snapshot(), relicLevels: v }); }
+  private get imprintedRelic(): number { return this.relicResolver.snapshot().imprintedRelic; }
+  private set imprintedRelic(v: number) { this.relicResolver = new RelicEffectResolver({ ...this.relicResolver.snapshot(), imprintedRelic: v }); }
+  private get imprintedRelicLevel(): number { return this.relicResolver.snapshot().imprintedRelicLevel; }
+  private set imprintedRelicLevel(v: number) { this.relicResolver = new RelicEffectResolver({ ...this.relicResolver.snapshot(), imprintedRelicLevel: v }); }
   // C686: cached ATK breakdown for tooltip display
   private lastAtkBreakdownInput: import('../components/AtkBreakdownLogic').AtkBreakdownInput | null = null;
   // C707: cached EXP breakdown for badge display
@@ -278,14 +285,11 @@ export class EncounterEngine {
   }
 
   private hasRelic(id: number): boolean {
-    return this.relics.includes(id) || this.imprintedRelic === id;
+    return this.relicResolver.hasRelic(id);
   }
 
   private getRelicPower(id: number): number {
-    const idx = this.relics.indexOf(id);
-    if (idx >= 0) return (this.relicLevels[idx] ?? 1) * (1 + (this.relicLevels[idx] > 1 ? RELIC_UPGRADE_BONUS : 0));
-    if (this.imprintedRelic === id) return RELIC_PRESTIGE_RETENTION * this.imprintedRelicLevel;
-    return 0;
+    return this.relicResolver.getRelicPower(id);
   }
 
   getComboStreak(): number { return this.comboStreak; }
@@ -295,15 +299,12 @@ export class EncounterEngine {
   getShrineBuffRemaining(): number { return this.shrineBuffRemaining; }
   getMercyRemaining(): number { return this.mercyRemaining; }
 
-  // C572: expose relic state for UI
+  // C572: expose relic state for UI (C733: delegated)
   getRelics(): { id: number; level: number; name: string }[] {
-    const RELIC_NAMES = ['Ember Crown', "Miser's Pouch", 'Phoenix Feather', 'Hourglass', 'Blood Pact', "Scholar's Lens"];
-    return this.relics.map((id, i) => ({ id, level: this.relicLevels[i] || 1, name: RELIC_NAMES[id] || 'Unknown' }));
+    return this.relicResolver.getRelicsDisplay();
   }
   getImprintedRelic(): { id: number; name: string } | null {
-    if (this.imprintedRelic < 0) return null;
-    const RELIC_NAMES = ['Ember Crown', "Miser's Pouch", 'Phoenix Feather', 'Hourglass', 'Blood Pact', "Scholar's Lens"];
-    return { id: this.imprintedRelic, name: RELIC_NAMES[this.imprintedRelic] || 'Unknown' };
+    return this.relicResolver.getImprintedRelicDisplay();
   }
   getPrestigeCount(): number { return this.prestigeCount; }
   // C657: ATK cap scales with prestige (10 base + 2 per prestige, max 30)
@@ -372,8 +373,7 @@ export class EncounterEngine {
       hero.staggered = false;
       hero.hp = hero.hpMax;
       this.phoenixFeatherUsed = true;
-      const featherIdx = this.relics.indexOf(2);
-      if (featherIdx >= 0) { this.relics.splice(featherIdx, 1); this.relicLevels.splice(featherIdx, 1); }
+      this.relicResolver.consumePhoenixFeather();
     }
     return { luckyDodge };
   }
@@ -1207,8 +1207,8 @@ export class EncounterEngine {
       // C532: golden hour — trigger/decrement
       this.fightsSincePrestige++;
       if (this.fightsSincePrestige % GOLDEN_HOUR_INTERVAL === 0) {
-        // C556: Hourglass relic doubles temporal durations
-        this.goldenHourRemaining = GOLDEN_HOUR_DURATION * (this.hasRelic(3) ? HOURGLASS_DURATION_MUL : 1);
+        // C556: Hourglass relic doubles temporal durations (C733: via resolver)
+        this.goldenHourRemaining = GOLDEN_HOUR_DURATION * this.relicResolver.hourglassDurationMul();
       }
       if (this.goldenHourRemaining > 0) this.goldenHourRemaining--;
       // C533: fatigue counter
@@ -1389,22 +1389,21 @@ export class EncounterEngine {
         const foundItem = this.rollDrop(false);
         if (foundItem) hero.addEquipment(foundItem);
       }
-      // C551-C552: Relic drop — chance after elite/boss kills
-      if (this.relics.length < 3) {
+      // C551-C552: Relic drop — chance after elite/boss kills (C733: via resolver)
+      if (this.relicResolver.count < 3) {
         const relicChance = isElite ? RELIC_DROP_CHANCE_ELITE : (isBoss ? RELIC_DROP_CHANCE_BOSS : 0);
         if (relicChance > 0 && this.rng.chance(relicChance)) {
-          const available = [0, 1, 2, 3, 4, 5].filter(id => !this.relics.includes(id));
+          const available = [0, 1, 2, 3, 4, 5].filter(id => !this.relicResolver.hasRelic(id));
           if (available.length > 0) {
             const newRelic = available[this.rng.int(available.length)];
-            this.relics.push(newRelic);
-            this.relicLevels.push(1);
+            this.relicResolver.dropRelic(newRelic);
           }
         }
       }
-      // C557: Relic upgrade — duplicate drops upgrade existing relic
-      if (this.relics.length >= 3 && isElite && this.rng.chance(RELIC_UPGRADE_CHANCE)) {
-        const upgradeIdx = this.rng.int(this.relics.length);
-        this.relicLevels[upgradeIdx] = Math.min((this.relicLevels[upgradeIdx] || 1) + 1, 5);
+      // C557: Relic upgrade — duplicate drops upgrade existing relic (C733: via resolver)
+      if (this.relicResolver.count >= 3 && isElite && this.rng.chance(RELIC_UPGRADE_CHANCE)) {
+        const upgradeIdx = this.rng.int(this.relicResolver.count);
+        this.relicResolver.upgradeRelic(upgradeIdx);
       }
       // C628: extracted post-combat event encounters
       this.resolvePostCombatEvents(hero, events, isElite, isBoss);
