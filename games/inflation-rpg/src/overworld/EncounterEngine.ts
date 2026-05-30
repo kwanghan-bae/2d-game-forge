@@ -1820,7 +1820,20 @@ export class EncounterEngine {
       return;
     }
 
-    // Gambler special: the delta approach already handles it (goldDelta = heroGold for win)
+    // Merchant pending → trigger choice engine
+    if (r.merchantPending) {
+      this.choiceEngine.triggerMerchant();
+    }
+
+    // Gambler pending → trigger choice engine
+    if (r.gamblerPending) {
+      this.choiceEngine.triggerGambler();
+    }
+
+    // Altar pending → trigger choice engine
+    if (r.altarPending) {
+      this.choiceEngine.triggerAltar();
+    }
 
     if (r.eventType) events.push({ type: r.eventType });
     if (r.eventChainReward) events.push({ type: 'event_chain_reward' });
