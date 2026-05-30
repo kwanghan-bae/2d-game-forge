@@ -45,6 +45,7 @@ const LATE_EVENT_REGISTRY: Record<string, (r: LateEventResult) => void> = {
   event_abyssal_convergence: (r) => { r.abyssalConvergencePending = true; },
   event_temporal_fissure: (r) => { r.temporalFissurePending = true; },
   event_titan_arena: (r) => { r.titanArenaPending = true; },
+  event_crimson_tithe: (r) => { r.crimsonTithePending = true; },
   event_gold_crucible: (r) => { r.goldCruciblePending = true; },
   event_astral_paradox: (r) => { r.astralParadoxPending = true; },
 };
@@ -107,6 +108,7 @@ export interface PostCombatResult {
   abyssalConvergencePending: boolean; // C789
   temporalFissurePending: boolean; // C791
   titanArenaPending: boolean; // C797
+  crimsonTithePending: boolean; // C803
   goldCruciblePending: boolean; // C800
   astralParadoxPending: boolean; // C800
   voidRiftTriggered: boolean;
@@ -149,6 +151,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     abyssalConvergencePending: false,
     temporalFissurePending: false,
     titanArenaPending: false,
+    crimsonTithePending: false,
     goldCruciblePending: false,
     astralParadoxPending: false,
     voidRiftTriggered: false,

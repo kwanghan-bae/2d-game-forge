@@ -67,8 +67,13 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
   },
   gold_crucible: {
     trigger: '황금 도가니가 나타났다. 금을 태워 힘을 얻을 수 있다.',
-    accept: '금의 30%를 소각한다. 15전투간 ATK +50!',
+    accept: '금의 30%를 소각한다. 12전투간 ATK 강화!',
     decline: '지금은 금이 아깝다. 지나친다.',
+  },
+  crimson_tithe: {
+    trigger: '피의 십일조 — 피를 바치면 강력한 경험을 얻을 수 있다.',
+    accept: 'HP 25%를 바친다. 6전투간 EXP×1.8 + 흡혈!',
+    decline: 'HP가 아깝다. 피의 제단을 무시한다.',
   },
   astral_paradox: {
     trigger: '별의 역설이 열렸다. 위험하지만 막대한 경험을 얻을 수 있다.',
