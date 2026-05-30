@@ -207,7 +207,7 @@ export const SHRINE_SKILL_GRANT_RATE = 0.20;
 export const MERCIFUL_PROC_RATE = 0.04;
 // C757: Ancient Colosseum constants
 export const COLOSSEUM_EXP_MUL = 2.8; // C795: tuned from 2.0 (compensates shorter duration)
-export const COLOSSEUM_DURATION = 3; // C795: tuned from 5 (shorter, punchier)
+export const COLOSSEUM_DURATION = 4; // C799: tuned from 3 (slightly longer for better reward feel)
 export const COLOSSEUM_ENEMY_ATK_MUL = 1.7; // C790: tuned from 1.5 (bracket separation from Abyssal 1.60)
 // C762: Trial Grounds constants
 export const TRIAL_GROUNDS_EXP_MUL = 1.40; // C779: tuned from 1.50 (R:R 2.80→2.25, meaningful decision)

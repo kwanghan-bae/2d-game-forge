@@ -1091,9 +1091,9 @@ export class EncounterEngine {
         this.consecutiveWaveClears = 0;
         this.fightsSinceDeath = 0;
         this.fightsSinceLastDeath = 0;
-        // C793: Temporal Fissure stored EXP lost on death
+        // C799: Temporal Fissure — death forfeits 70% of stored EXP (was 100% in C793)
         this.temporalFissureRemaining = 0;
-        this.temporalFissureStoredExp = 0;
+        this.temporalFissureStoredExp = Math.floor(this.temporalFissureStoredExp * 0.30);
         // C797: Titan Arena lost on death
         this.titanArenaRemaining = 0;
         // C793: Event Momentum buffs lost on death
