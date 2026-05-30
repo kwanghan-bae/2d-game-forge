@@ -1017,4 +1017,34 @@ describe('C651: characterization snapshot (golden master)', () => {
 
     expect(results).toEqual(results2);
   });
+
+  describe('C657: ATK cap prestige scaling', () => {
+    it('prestige 0 — ATK cap remains at base (10)', () => {
+      const hero = makeHero();
+      const engine = new EncounterEngine(new SeededRng(99));
+      // Force massive multipliers by giving huge combo + gold
+      (engine as any).comboStreak = 500;
+      (engine as any).goldStreak = 1000;
+      (engine as any).consecutiveWins = 200;
+      (engine as any).prestigeCount = 0;
+      // The cap should still be 10 at prestige 0
+      expect(engine.getAtkCap()).toBe(10);
+    });
+
+    it('prestige 5 — ATK cap grows to 10 + 5*2 = 20', () => {
+      const hero = makeHero();
+      const engine = new EncounterEngine(new SeededRng(99));
+      (engine as any).prestigeCount = 5;
+      // Engine should expose a higher cap
+      expect((engine as any).getAtkCap()).toBe(20);
+    });
+
+    it('prestige 15 — ATK cap maxes at 30 (hard ceiling)', () => {
+      const hero = makeHero();
+      const engine = new EncounterEngine(new SeededRng(99));
+      (engine as any).prestigeCount = 15;
+      // 10 + 15*2 = 40 but max is 30
+      expect((engine as any).getAtkCap()).toBe(30);
+    });
+  });
 });
