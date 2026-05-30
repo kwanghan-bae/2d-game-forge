@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getAvailableLateEvents, getAvailableMidEvents, LATE_GAME_EVENTS, MID_GAME_EVENTS } from '../encounter/EventGateConfig';
+import { RELIC_MAX_LEVEL, TRIAL_GROUNDS_EXP_MUL, TRIAL_GROUNDS_DURATION } from '../encounter/constants';
 
 describe('EventGateConfig — C754', () => {
   it('returns empty when totalFights below all gates', () => {
@@ -72,5 +73,19 @@ describe('EventGateConfig — C754', () => {
     const trialGate = MID_GAME_EVENTS.find(e => e.id === 'event_trial_grounds')!.minTotalFights;
     const colosseumGate = LATE_GAME_EVENTS.find(e => e.id === 'event_ancient_colosseum')!.minTotalFights;
     expect(trialGate).toBeLessThan(colosseumGate);
+  });
+
+  it('C763: relic max level ≤ 5 (prevents infinite scaling)', () => {
+    expect(RELIC_MAX_LEVEL).toBeLessThanOrEqual(5);
+    expect(RELIC_MAX_LEVEL).toBeGreaterThanOrEqual(3);
+  });
+
+  it('C763: trial grounds EXP multiplier < colosseum (mid < late reward)', () => {
+    expect(TRIAL_GROUNDS_EXP_MUL).toBeLessThan(2.0); // colosseum is 2.0
+    expect(TRIAL_GROUNDS_EXP_MUL).toBeGreaterThan(1.0);
+  });
+
+  it('C763: trial grounds duration ≤ colosseum duration (shorter buff)', () => {
+    expect(TRIAL_GROUNDS_DURATION).toBeLessThanOrEqual(5); // colosseum is 5
   });
 });

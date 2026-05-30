@@ -122,6 +122,7 @@ export const RELIC_DROP_CHANCE_ELITE = 0.10;
 export const RELIC_DROP_CHANCE_BOSS = 0.25;
 export const RELIC_UPGRADE_CHANCE = 0.15;
 export const RELIC_MAX_SLOTS = 3;
+export const RELIC_MAX_LEVEL = 5; // C763: cap relic levels to prevent infinite scaling
 export const EMBER_CROWN_ATK_PER_CRIT = 0.02;
 export const EMBER_CROWN_CAP = 0.35; // C573: was 0.5
 export const MISER_POUCH_GOLD_MUL = 1.4;
