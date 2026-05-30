@@ -256,6 +256,7 @@ export class EncounterEngine {
   getPrestigeCount(): number { return this.prestigeCount; }
   getEventChainCount(): number { return this.eventChainCount; }
   getTotalDeaths(): number { return this.totalDeaths; }
+  getTotalFights(): number { return this.totalWins + this.totalDeaths; }
 
   // C579: treasure shrine player choice
   hasPendingShrineChoice(): boolean { return this.pendingShrineChoice >= 0; }
