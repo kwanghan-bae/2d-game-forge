@@ -71,6 +71,24 @@ const EMPTY_EFFECTS: EventAcceptEffects = {
   astralParadoxRemaining: 0, soulForgeRemaining: 0, soulForgeComboCost: 0, declineGold: 0,
 };
 
+// C816: Duration keys for data-driven lookup (avoids brittle || chain)
+const DURATION_KEYS: ReadonlyArray<keyof EventAcceptEffects> = [
+  'colosseumRemaining', 'voidRiftRemaining', 'trialGroundsRemaining',
+  'stormNexusRemaining', 'rainSanctuaryRemaining', 'fogAmbushRemaining',
+  'windGaleRemaining', 'snowDriftRemaining', 'abyssalConvergenceRemaining',
+  'temporalFissureRemaining', 'titanArenaRemaining', 'crimsonTitheRemaining',
+  'goldCrucibleRemaining', 'astralParadoxRemaining', 'soulForgeRemaining',
+];
+
+/** C816: Find the active event duration from effects (first non-zero), or default. */
+export function findEffectDuration(effects: EventAcceptEffects, fallback = 5): number {
+  for (const key of DURATION_KEYS) {
+    const val = effects[key];
+    if (typeof val === 'number' && val > 0) return val;
+  }
+  return fallback;
+}
+
 export interface EventOrchestratorCtx {
   heroHpMax: number;
   heroHp: number;

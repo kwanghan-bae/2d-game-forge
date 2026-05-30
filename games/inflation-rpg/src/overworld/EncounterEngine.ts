@@ -27,6 +27,7 @@ import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
 import { RelicEffectResolver } from './encounter/RelicEffectResolver';
 import { computeNight, WeatherSubsystem } from './encounter/WeatherSystem';
 import { EventOrchestrator, type EventId } from './encounter/EventOrchestrator';
+import { findEffectDuration } from './encounter/EventOrchestrator';
 import { createDeclineStack, pushDecline, consumeDeclineStack, shouldForceRareEvent, type DeclineStackState } from './encounter/DeclineStack';
 import { dispatchPendingTriggers } from './encounter/EventTriggerMap';
 import { rollChainEvent } from './encounter/EventChainConfig';
@@ -438,15 +439,8 @@ export class EncounterEngine {
       const dsMul = consumeDeclineStack(this.declineStack);
       if (dsMul > 1) {
         this.declineStackExpMul = dsMul;
-        // Find the accepted event's duration
-        const dur = effects.colosseumRemaining || effects.voidRiftRemaining ||
-          effects.trialGroundsRemaining || effects.stormNexusRemaining ||
-          effects.rainSanctuaryRemaining || effects.fogAmbushRemaining ||
-          effects.windGaleRemaining || effects.snowDriftRemaining ||
-          effects.abyssalConvergenceRemaining || effects.temporalFissureRemaining ||
-          effects.titanArenaRemaining || effects.crimsonTitheRemaining ||
-          effects.goldCrucibleRemaining || effects.astralParadoxRemaining || 5;
-        this.declineStackExpDuration = dur;
+        // C816: data-driven duration lookup (replaces brittle || chain)
+        this.declineStackExpDuration = findEffectDuration(effects);
       }
       if (effects.colosseumRemaining) this.colosseumRemaining = effects.colosseumRemaining;
       if (effects.voidRiftRemaining) this.voidRiftRemaining = effects.voidRiftRemaining;
