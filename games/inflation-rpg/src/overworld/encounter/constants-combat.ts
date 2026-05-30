@@ -179,4 +179,4 @@ export const COMPANION_EXP_BONUS = 0.15;
 export const ARMOR_BUY_COST = 300;
 export const ARMOR_REDUCTION = 0.10;
 export const ARMOR_DURATION = 10;
-export const SPEC_ATK_BONUS = 0.25;
+export const SPEC_ATK_BONUS = 0.15; // C648: was 0.25
