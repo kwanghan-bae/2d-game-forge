@@ -28,6 +28,8 @@ import { HealBreakdownBadge } from '../components/HealBreakdownBadge';
 import type { ExpBreakdownEntry } from '../components/ExpBreakdownBadgeLogic';
 import type { PostCombatHealResult } from '../overworld/encounter/PostCombatHealCalc';
 import { StatDeltaPopup } from '../components/StatDeltaPopup';
+import { WeatherHudIndicator } from '../components/WeatherHudIndicator';
+import type { Weather } from '../overworld/encounter/WeatherSystem';
 import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
 import { AtkBreakdownTooltip } from '../components/AtkBreakdownTooltip';
 import { computeAtkBreakdown } from '../components/AtkBreakdownLogic';
@@ -141,6 +143,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [eventSubType, setEventSubType] = useState<string | null>(null);
   const [healResult, setHealResult] = useState<PostCombatHealResult | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
+  const [currentWeather, setCurrentWeather] = useState<Weather>('normal');
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
@@ -301,6 +304,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           // C712: HealBreakdownBadge wiring
           const cachedHeal = engineRef.current?.getHealResult?.() ?? null;
           if (cachedHeal && cachedHeal.totalHeal > 0) setHealResult(cachedHeal);
+          // C725: WeatherHudIndicator wiring
+          setCurrentWeather(engineRef.current?.getWeather?.() ?? 'normal');
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||
@@ -675,6 +680,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
+      <WeatherHudIndicator weather={currentWeather} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />
       <HealBreakdownBadge healResult={healResult} heroHpMax={hero.hpMax} />
