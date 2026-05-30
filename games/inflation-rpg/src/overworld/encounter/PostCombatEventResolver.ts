@@ -34,7 +34,7 @@ import {
   INSPIRATION_EVENT_CHANCE,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
-import { getAvailableLateEvents, getAvailableMidEvents } from './EventGateConfig';
+import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
 import { TRIAL_GROUNDS_DURATION } from './constants-events';
 
 export interface PostCombatContext {
@@ -91,6 +91,7 @@ export interface PostCombatResult {
   fogAmbushPending: boolean;
   windGalePending: boolean; // C782
   snowDriftPending: boolean; // C782
+  abyssalConvergencePending: boolean; // C789
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
@@ -127,6 +128,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     fogAmbushPending: false,
     windGalePending: false,
     snowDriftPending: false,
+    abyssalConvergencePending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
@@ -276,17 +278,21 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     }
   }
 
-  // C755: Late-game exclusive events
+  // C755: Late-game exclusive events (C789: density scaling after threshold)
   if (eventsEnabled && !eventTriggered) {
     const lateEvents = getAvailableLateEvents(ctx.totalFights);
+    const densityMul = getLateGameDensityMul(ctx.totalFights);
     for (const le of lateEvents) {
-      if (rngOrPity(le.chance)) {
+      if (rngOrPity(le.chance * densityMul)) {
         if (le.id === 'event_ancient_colosseum') {
           result.colosseumPending = true;
           result.eventType = 'event_ancient_colosseum';
         } else if (le.id === 'event_void_rift') {
           result.voidRiftTriggered = true;
           result.eventType = 'event_void_rift';
+        } else if (le.id === 'event_abyssal_convergence') {
+          result.abyssalConvergencePending = true;
+          result.eventType = 'event_abyssal_convergence';
         }
         eventTriggered = true;
         break;
