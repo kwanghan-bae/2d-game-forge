@@ -556,7 +556,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         {/* Row 2: 자원 — 빛 / 재생 / 계절 / 지역 */}
         <div data-testid="hud-row-resource" style={hudRowStyle(12)}>
           <span data-testid="hud-gold" style={hudChipStyle}>💰 {formatCompact(hero.gold)}</span>
-          <span data-testid="hud-fights" style={hudChipStyle}>⚔️ {formatCompact(ctrl.getTotalFights())}</span>
+          <span data-testid="hud-fights" style={hudChipStyle}>⚔️ {formatCompact(controller.getTotalFights())}</span>
           <span data-testid="hud-light" style={hudChipStyle}>빛 {Math.floor(meta.light ?? 0)}</span>
           <span data-testid="hud-rejuvenation" style={hudChipStyle}>재생 #{hero.rejuvenationCount}</span>
           <span data-testid="hud-season" style={hudChipStyle}>{seasonEmoji(meta.season.current)} {seasonNameKR(meta.season.current)}</span>
