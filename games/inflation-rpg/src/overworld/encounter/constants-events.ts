@@ -173,8 +173,8 @@ export const CURSED_ALTAR_DAMAGE_MUL = 1.5; // C704: was 2.0, sacrifice EV now m
 export const CURSED_ALTAR_DURATION = 20; // C709: was 30, early-snowball prevention
 export const CURSED_ALTAR_HP_THRESHOLD = 0.40; // C702: sacrifice blocked if HP ratio below this
 export const FAIRY_CHANCE = 0.02;
-export const FAIRY_LATE_CHANCE = 0.035; // C823: fight 350+ scaling
-export const FAIRY_LATE_THRESHOLD = 350;
+export const FAIRY_LATE_CHANCE = 0.04; // C829: 0.035→0.04 (share 3.9%→4.5% @400)
+export const FAIRY_LATE_THRESHOLD = 150; // C829: 350→150 (mid-game presence)
 export const FAIRY_DURATION = 5;
 // C812: Wandering Mentor — early-game EXP buff (fights 25-149)
 export const MENTOR_CHANCE = 0.05; // C818: was 0.03, collab consensus

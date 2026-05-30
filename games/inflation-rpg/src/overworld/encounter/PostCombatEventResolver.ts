@@ -335,9 +335,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
-    // Late-game events (with density multiplier, C814: hard cap 4.0)
+    // Late-game events (with density multiplier, C814: hard cap 4.0, C829: momentum cap 2.8)
     const lateEvents = getAvailableLateEvents(ctx.totalFights);
-    const densityMul = Math.min(4.0, getLateGameDensityMul(ctx.totalFights) * (ctx.eventMomentumDensityActive ? EVENT_MOMENTUM_TIER3_DENSITY_MUL : 1));
+    const baseDensity = getLateGameDensityMul(ctx.totalFights);
+    const densityMul = ctx.eventMomentumDensityActive
+      ? Math.min(2.8, baseDensity * EVENT_MOMENTUM_TIER3_DENSITY_MUL)
+      : Math.min(4.0, baseDensity);
     for (const le of lateEvents) {
       candidates.push({
         id: le.id, weight: le.chance * densityMul, pityEligible: true,
