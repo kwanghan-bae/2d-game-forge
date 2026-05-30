@@ -200,7 +200,7 @@ export function computeGoldReward(ctx: GoldRewardContext): GoldRewardResult {
   const goldProgressMuls = revengeGoldMul * goldStreakMul * killStreakGoldMul * eliteGoldMul * eliteGoldChainMul * eliteGoldCascadeMul2 * eliteGoldMasteryMul * eliteHunterMul;
   const goldDangerMuls = dangerScaleMul * dangerPrestigeMul * dangerMasteryMul * dangerGoldStreakMul * dangerStreakCompoundMul * dangerGoldMasteryMul * comboDangerSynergyMul * prestigeDangerGoldMul;
   const goldPrestigeMuls = prestigeGoldMul2 * prestigeGoldMul3 * prestigeGoldCascadeMul * prestigeGoldMomentumMul * finalMasteryGoldMul;
-  const goldMiscMuls = greedGoldMul * treasureHunterMul * fullHpGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * treasureHoardMul2 * goldHarvestMul * waveFinisherMul * doubleGoldMul * waveGoldSurgeMul * waveGoldCascadeMul * waveAccumulatorMul * bossGoldCascadeMul * deathGoldCompoundMul * waveGoldSurgeScale * fullHpFortuneMul * waveAccumulatorMul;
+  const goldMiscMuls = greedGoldMul * treasureHunterMul * fullHpGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * treasureHoardMul2 * goldHarvestMul * waveFinisherMul * doubleGoldMul * waveGoldSurgeMul * waveGoldCascadeMul * waveAccumulatorMul * bossGoldCascadeMul * deathGoldCompoundMul * waveGoldSurgeScale * fullHpFortuneMul;
 
   const goldEarnedRaw = Math.floor(GOLD_PER_KILL_BASE * Math.pow(heroLevel, GOLD_LEVEL_POWER) * goldCoreMuls * goldComboMuls * goldCombatMuls * goldProgressMuls * goldDangerMuls * goldPrestigeMuls * goldMiscMuls) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
   const goldCapped = Math.min(goldEarnedRaw, heroLevel * 2500);
