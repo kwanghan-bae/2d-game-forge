@@ -1,7 +1,7 @@
 import {
-  ENEMY_PRESTIGE_HP_SCALE,
+  ENEMY_PRESTIGE_HP_COMPOUND,
   ENEMY_PRESTIGE_HP_CAP,
-  ENEMY_PRESTIGE_ATK_SCALE,
+  ENEMY_PRESTIGE_ATK_COMPOUND,
   ENEMY_PRESTIGE_ATK_CAP,
 } from './constants-progression';
 
@@ -14,7 +14,7 @@ export function computeEnemyPrestigeScale(prestigeCount: number): EnemyPrestigeS
   const effectivePrestigeHp = Math.min(prestigeCount, ENEMY_PRESTIGE_HP_CAP);
   const effectivePrestigeAtk = Math.min(prestigeCount, ENEMY_PRESTIGE_ATK_CAP);
   return {
-    hpMul: 1 + effectivePrestigeHp * ENEMY_PRESTIGE_HP_SCALE,
-    atkMul: 1 + effectivePrestigeAtk * ENEMY_PRESTIGE_ATK_SCALE,
+    hpMul: Math.pow(ENEMY_PRESTIGE_HP_COMPOUND, effectivePrestigeHp),
+    atkMul: Math.pow(ENEMY_PRESTIGE_ATK_COMPOUND, effectivePrestigeAtk),
   };
 }

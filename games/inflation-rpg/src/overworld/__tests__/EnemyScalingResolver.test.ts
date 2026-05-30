@@ -8,33 +8,32 @@ describe('EnemyScalingResolver', () => {
     expect(result.atkMul).toBe(1.0);
   });
 
-  it('scales HP by 0.15/P at prestige 5 (×1.75)', () => {
+  it('C684: compound HP scaling at prestige 5 (1.12^5 ≈ 1.76)', () => {
     const result = computeEnemyPrestigeScale(5);
-    expect(result.hpMul).toBeCloseTo(1.75);
+    expect(result.hpMul).toBeCloseTo(Math.pow(1.12, 5), 1);
   });
 
-  it('scales HP by 0.15/P at prestige 10 (×2.5)', () => {
+  it('C684: compound HP scaling at prestige 10 (1.12^10 ≈ 3.11)', () => {
     const result = computeEnemyPrestigeScale(10);
-    expect(result.hpMul).toBeCloseTo(2.5);
+    expect(result.hpMul).toBeCloseTo(Math.pow(1.12, 10), 1);
   });
 
-  it('caps HP scaling at prestige 15 (×3.25)', () => {
-    const result = computeEnemyPrestigeScale(15);
-    expect(result.hpMul).toBeCloseTo(3.25);
-    // Beyond cap
+  it('C684: HP scaling caps at prestige 20', () => {
     const result20 = computeEnemyPrestigeScale(20);
-    expect(result20.hpMul).toBeCloseTo(3.25);
+    const result25 = computeEnemyPrestigeScale(25);
+    expect(result20.hpMul).toBeCloseTo(Math.pow(1.12, 20), 1);
+    expect(result25.hpMul).toBeCloseTo(result20.hpMul, 2);
   });
 
-  it('scales ATK by 0.06/P at prestige 10 (×1.6)', () => {
+  it('C684: compound ATK scaling at prestige 10 (1.06^10 ≈ 1.79)', () => {
     const result = computeEnemyPrestigeScale(10);
-    expect(result.atkMul).toBeCloseTo(1.6);
+    expect(result.atkMul).toBeCloseTo(Math.pow(1.06, 10), 1);
   });
 
-  it('caps ATK scaling at prestige 15 (×1.9)', () => {
-    const result = computeEnemyPrestigeScale(15);
-    expect(result.atkMul).toBeCloseTo(1.9);
+  it('C684: ATK scaling caps at prestige 20', () => {
     const result20 = computeEnemyPrestigeScale(20);
-    expect(result20.atkMul).toBeCloseTo(1.9);
+    const result25 = computeEnemyPrestigeScale(25);
+    expect(result20.atkMul).toBeCloseTo(Math.pow(1.06, 20), 1);
+    expect(result25.atkMul).toBeCloseTo(result20.atkMul, 2);
   });
 });
