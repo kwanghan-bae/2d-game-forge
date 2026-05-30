@@ -186,13 +186,13 @@ export const PASSIVE_GOLD_CAP = 10;
 export const BOSS_IMMUNITY_INTERVAL = 3;
 export const ACHIEVEMENT_KILL_THRESHOLDS = [100, 500, 1000];
 export const ACHIEVEMENT_ATK_BONUS = 0.05;
-export const WEATHER_CHANCE = 0.3;
+export const WEATHER_CHANCE = 0.20; // C781: tuned from 0.30 (uptime 70%→53%, weather stays "special")
 // C777: weather duration — once weather occurs it persists for multiple fights
 export const WEATHER_DURATION_MIN = 3;
 export const WEATHER_DURATION_MAX = 8;
 export const WEATHER_RAIN_ATK_PENALTY = 0.1;
 export const WEATHER_WIND_EXP_BONUS = 0.2;
-export const WEATHER_FOG_CRIT_PENALTY = 0.70;
+export const WEATHER_FOG_CRIT_PENALTY = 0.80; // C781: tuned from 0.70 (crit-build nerf -30%→-20%)
 export const ARENA_COST = 200;
 export const ARENA_REWARD_MUL = 5;
 export const ARENA_ENEMY_HP_MUL = 3;
@@ -211,7 +211,7 @@ export const STORM_NEXUS_HP_DRAIN_RATE = 0.05; // C770: 5% HP drain per fight
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
 
 export const VOID_RIFT_SCALE_PER_TIER = 0.05; // C771: 5% per tier (lv200: +5%, lv800: +15%)
-export const VOID_RIFT_EXP_PER_TIER = 0.06; // C779: tuned from 0.04 (R:R 0.89→1.34, viable decision)
+export const VOID_RIFT_EXP_PER_TIER = 0.09; // C781: tuned from 0.06 (R:R 1.20→1.80, meaningful accept)
 
 // C773: Rain Sanctuary — heal + gold penalty tradeoff (rain-only)
 export const RAIN_SANCTUARY_HEAL_RATE = 0.20; // 20% hpMax instant heal
