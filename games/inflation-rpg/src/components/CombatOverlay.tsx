@@ -16,8 +16,10 @@ export function CombatOverlay() {
   return (
     <div style={{
       position: 'absolute', top: 8, right: 8,
-      background: 'rgba(0,0,0,0.7)', borderRadius: 6, padding: '6px 10px',
+      background: summary.deathSaveBlocked ? 'rgba(80,0,0,0.85)' : 'rgba(0,0,0,0.7)',
+      borderRadius: 6, padding: '6px 10px',
       fontSize: 11, color: '#ddd', minWidth: 100, pointerEvents: 'none',
+      border: summary.dangerLevel >= 5 ? '1px solid #f44' : undefined,
     }}>
       {summary.activeBuffs.length > 0 && (
         <div style={{ marginBottom: 4 }}>
