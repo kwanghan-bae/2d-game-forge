@@ -51,6 +51,11 @@ describe('WeatherSystem', () => {
     expect(result.expMul).toBe(1);
     expect(result.dodgeMul).toBe(1);
   });
+
+  // C726: fog crit penalty relaxed 0.50 → 0.70
+  test('fog crit penalty is 0.70 (C726 rebalance)', () => {
+    expect(WEATHER_FOG_CRIT_PENALTY).toBeCloseTo(0.70);
+  });
 });
 
 describe('computeNight', () => {
