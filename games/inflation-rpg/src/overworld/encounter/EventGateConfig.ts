@@ -70,6 +70,12 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     description: 'Void Rift — teleport to random higher-tier area, gain relic shard',
   },
   {
+    id: 'event_temporal_fissure',
+    minTotalFights: 200,
+    chance: 0.02,
+    description: 'Temporal Fissure — store 50% EXP for 5 fights, pay back ×2.0 at end (lost on death)',
+  },
+  {
     id: 'event_abyssal_convergence',
     minTotalFights: 250,
     chance: 0.025,

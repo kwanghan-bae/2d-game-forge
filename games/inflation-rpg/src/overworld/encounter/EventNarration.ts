@@ -55,4 +55,9 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
     accept: '심연에 뛰어든다! 적이 강해지고 생명력이 빠져나간다.',
     decline: '심연의 유혹을 뿌리친다.',
   },
+  temporal_fissure: {
+    trigger: '시간의 균열이 열렸다. 경험을 저축하면 두 배로 돌려준다고 한다.',
+    accept: '시간에 경험을 맡긴다. 5전투 후 두 배로 돌아올 것이다.',
+    decline: '시간을 건드리는 건 위험하다. 지나친다.',
+  },
 };
