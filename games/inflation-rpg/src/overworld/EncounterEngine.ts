@@ -2017,195 +2017,21 @@ export class EncounterEngine {
         }
         events.push({ type: 'prestige', count: this.prestigeCount });
       }
-    } else if (kind === 'village') {
-      // C125: village visit resets battle momentum
-      this.battleMomentum = 0;
-      // C173: reset exhaustion
-      this.fightsSinceVillage = 0;
-      // C258: village vigor — temp HP bonus
-      this.villageRestRemaining = VILLAGE_VIGOR_DURATION;
-      // C260: reset death insurance at village
-      this.deathInsuranceUsed = false;
-      // C282: village shield
-      this.villageShieldActive = true;
-      // C616: villageDefenseRemaining removed (was free immunity)
-      // C285: village training ATK buff
-      // C347: extended training duration
-      this.villageTrainingRemaining = VILLAGE_TRAINING_DURATION + TRAINING_EXTENDED_DURATION;
-      // C324: village ATK flat
-      hero.atk += VILLAGE_ATK_FLAT;
-      // C276: village blessing for deathless streak
-      if (this.fightsSinceLastDeath >= VILLAGE_BLESSING_STREAK) {
-        this.villageBlessingRemaining = VILLAGE_BLESSING_DURATION;
-      }
-      // C218: reset gold streak (village spends gold)
-      this.fightsSinceSpend = 0;
-      // C293: reset exp chain at village
-      this.fightChainCount = 0;
-      // C134: village rest bonus — arrive with low HP → permanent max HP boost
-      if (hero.hp < hero.hpMax * VILLAGE_REST_HP_THRESHOLD) {
-        const hpBoost = Math.max(1, Math.floor(hero.hpMax * VILLAGE_REST_HP_BOOST));
-        hero.hpMax += hpBoost;
-        events.push({ type: 'village_rest_bonus', hpBoost });
-      }
-      // C154: village shop — spend gold for HP shield
-      if (hero.gold >= VILLAGE_SHOP_COST) {
-        hero.gold -= VILLAGE_SHOP_COST;
-        this.shopShieldRemaining = VILLAGE_SHOP_SHIELD_DURATION;
-        events.push({ type: 'village_shop_purchase', cost: VILLAGE_SHOP_COST, effect: 'hp_shield' });
-      }
-      // C242: village armor purchase
-      if (hero.gold >= ARMOR_BUY_COST) {
-        hero.gold -= ARMOR_BUY_COST;
-        this.armorRemaining = ARMOR_DURATION;
-        events.push({ type: 'village_shop_purchase', cost: ARMOR_BUY_COST, effect: 'armor' });
-      }
-      // C271: gold forge — convert gold to permanent ATK
-      // C316: forge cost discount per prestige
-      const forgeCost = Math.max(FORGE_COST_MIN, GOLD_FORGE_COST - this.prestigeCount * FORGE_COST_PRESTIGE_DISCOUNT);
-      if (hero.gold >= GOLD_FORGE_THRESHOLD) {
-        hero.gold -= forgeCost;
-        hero.atk += GOLD_FORGE_ATK_FLAT;
-        events.push({ type: 'village_shop_purchase', cost: forgeCost, effect: 'atk_forge' });
-      }
-      // C307: gold shield from any village shop purchase
-      this.goldShieldRemaining = GOLD_SHIELD_DURATION;
-      // C168: gold interest
-      // C225: interest scales with prestige
-      const interestRate = VILLAGE_GOLD_INTEREST_RATE + this.prestigeCount * GOLD_INTEREST_PRESTIGE_BONUS + Math.floor(this.villageVisits / INTEREST_VILLAGE_INTERVAL) * INTEREST_VILLAGE_BONUS;
-      // C262: interest cap scales with prestige
-      const interestCap = 50 + this.prestigeCount * GOLD_INTEREST_CAP_PER_PRESTIGE;
-      let interest = Math.min(interestCap, Math.floor(hero.gold * interestRate));
-      // C332: compound interest — double if gold > threshold
-      if (hero.gold > GOLD_COMPOUND_THRESHOLD) interest *= 2;
-      if (interest > 0) hero.gold += interest;
-      // C201: village gold fountain
-      hero.gold += VILLAGE_GOLD_FOUNTAIN;
-      // C468: village gold scaling — village gold scales with prestige
-      hero.gold += Math.floor(VILLAGE_GOLD_FOUNTAIN * this.prestigeCount * VILLAGE_GOLD_PRESTIGE_SCALE);
-      // C337: fountain enhanced heal
-      hero.heal(Math.max(1, Math.floor(hero.hpMax * FOUNTAIN_ENHANCED_HEAL)));
-      // C342: prestige heal bonus at village
-      if (this.prestigeCount > 0) {
-        hero.heal(Math.max(1, Math.floor(hero.hpMax * this.prestigeCount * PRESTIGE_HEAL_BONUS)));
-      }
-      // C345: reset fatigue counter at village
-      this.fightsSinceVillage = 0;
-      // C304: rest exp — village grants flat exp
-      hero.exp += hero.level * REST_EXP_PER_LEVEL;
-      // C310: danger interest — danger streak boosts gold at village
-      hero.gold += Math.floor(this.dangerStreak * DANGER_INTEREST_BONUS * hero.gold);
-      // C205: gold investment — lock gold for GOLD_INVEST_LOCK_FIGHTS fights, get ×3 return
-      if (this.investFightsRemaining <= 0 && hero.gold >= GOLD_INVEST_MIN) {
-        const investAmount = Math.floor(hero.gold * 0.5); // invest half
-        hero.gold -= investAmount;
-        this.goldInvested = investAmount;
-        this.investFightsRemaining = GOLD_INVEST_LOCK_FIGHTS;
-      }
-      // C182: village heal scaling
-      this.villageVisits++;
-      // C364: village forge visit discount — each visit cheapens next shop/forge interaction
-      this.forgeDiscount = Math.min(0.5, this.villageVisits * FORGE_VISIT_DISCOUNT);
-      // C398: village prestige compound — village heal improves with prestige
-      const prestigeHealBonus = this.prestigeCount * VILLAGE_PRESTIGE_HEAL_BONUS;
-      const healRate = Math.min(VILLAGE_HEAL_CAP + prestigeHealBonus, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT + prestigeHealBonus);
-      const healAmount = Math.floor(hero.hpMax * healRate);
-      hero.heal(healAmount);
-      // C377: village rest ATK bonus — full heal grants temp ATK boost
-      if (hero.hp >= hero.hpMax) this.villageRestAtkRemaining = VILLAGE_REST_ATK_DURATION;
-      // C381: exp per village visit
-      hero.gainExp(this.villageVisits * VILLAGE_EXP_PER_VISIT);
-      // C403: exp fountain — village grants exp based on total fights
-      hero.gainExp(Math.floor((this.totalWins + this.totalDeaths) / 100) * EXP_FOUNTAIN_PER_100_FIGHTS);
-      // C404: shield regen — regenerate 1 shield charge per 5 fights
-      // C608: removed SHIELD_REGEN_INTERVAL + village shield upgrade recharges
-      // C409: prestige momentum — prestige count boosts momentum
-      if (this.prestigeCount > 0) this.waveMomentumRemaining += Math.floor(this.prestigeCount * PRESTIGE_MOMENTUM_BONUS * 10);
-      // C416: village training exp — prestige grants training exp
-      hero.gainExp(this.prestigeCount * VILLAGE_TRAINING_EXP_PER_PRESTIGE);
-      // C478: village exp scaling — village exp scales with prestige
-      hero.gainExp(Math.floor(hero.level * this.prestigeCount * VILLAGE_EXP_PRESTIGE_SCALE));
-      // C488: village ATK training — grant temp ATK boost
-      this.villageAtkTrainingRemaining = VILLAGE_ATK_TRAINING_DURATION;
-      // C497: prestige gold burst — prestige grants gold burst at village
-      hero.gold += this.prestigeCount * PRESTIGE_GOLD_BURST_PER_PRESTIGE;
-      // C499: village danger reset — village clears danger penalty
-      this.dangerFights = Math.max(0, this.dangerFights - 5);
-      // C443: elite exp burst — mark first elite after village
-      this.eliteAfterVillage = true;
-      // C231: village bank — withdraw stored gold, then deposit portion
-      if (this.bankGold > 0) {
-        hero.gold += this.bankGold;
-        this.bankGold = 0;
-      }
-      // C388: bank interest — banked gold grows each fight
-      const bankDeposit = Math.floor(hero.gold * BANK_DEPOSIT_RATE);
-      if (bankDeposit > 0) {
-        hero.gold -= bankDeposit;
-        this.bankGold += bankDeposit;
-      }
-      // C212: arena challenge — spend gold for high-reward next fight
-      if (hero.gold >= ARENA_COST) {
-        hero.gold -= ARENA_COST;
-        this.arenaActive = true;
-      }
+    } else {
+      this.resolveNonCombat(hero, kind, landmarkId, events);
+    }
+    return events;
+  }
+
+  // C619: extracted non-combat encounter resolution
+  private resolveNonCombat(hero: HeroEntity, kind: LandmarkKind, landmarkId: string, events: OverworldEvent[]): void {
+    if (kind === 'village') {
+      this.resolveVillage(hero, events);
     } else if (kind === 'shrine') {
-      // C189: shrine mastery — increased meditation chance after enough tithes
-      const meditationChance = this.shrineTithes >= SHRINE_MASTERY_THRESHOLD
-        ? SHRINE_MASTERY_MEDITATION_CHANCE : 0.2;
-      if (this.rng.chance(meditationChance)) {
-        // V3-H F4: meditation 변형 (20%) — pious +3, 완전 회복, 추가 aging 0.5 tick
-        hero.personality.adjust('pious', 3);
-        hero.heal(hero.hpMax); // 완전 회복
-        hero.tickAge(0.5);     // 명상에 소요되는 시간
-        // C136: shrine meditation grants temporary ATK buff
-        this.shrineBuffRemaining = SHRINE_MEDITATION_BUFF_DURATION;
-        events.push({ type: 'meditation_done', landmarkId });
-        events.push({ type: 'shrine_buff_granted', duration: SHRINE_MEDITATION_BUFF_DURATION });
-      } else {
-        const before = hero.hp;
-        hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
-        const healed = hero.hp - before;
-        events.push({ type: 'shrine_visited', landmarkId, healed });
-        // C238: shrine lifts darkness curse
-        this.darknessCursed = false;
-        // C265: shrine blessing
-        this.shrineBlessingRemaining = SHRINE_BLESSING_DURATION;
-        if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
-          const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
-          if (learn) {
-            events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
-          }
-        }
-      }
-      // C175: shrine gold tithe — sacrifice gold for permanent ATK boost
-      if (hero.gold > 0) {
-        const titheGold = Math.max(1, Math.floor(hero.gold * SHRINE_TITHE_RATE));
-        hero.gold -= titheGold;
-        this.shrineTithes++;
-      }
+      this.resolveShrine(hero, landmarkId, events);
     } else if (kind === 'cave') {
-      // C214: track cave visits for treasure hunter bonus
-      this.caveVisits++;
-      // C187: cave treasure room — 30% chance for gold instead of moral choice
-      if (this.rng.chance(CAVE_TREASURE_CHANCE)) {
-        const treasureGold = CAVE_TREASURE_MIN + this.rng.int(CAVE_TREASURE_MAX - CAVE_TREASURE_MIN + 1);
-        hero.gold += treasureGold;
-        events.push({ type: 'lucky_treasure', gold: treasureGold });
-      } else {
-        // 부상자 발견. 도덕적 결정.
-        const heroic = hero.personality.get('heroic');
-        const merciful = hero.personality.get('merciful');
-        if (heroic + merciful >= 0) {
-          hero.personality.adjust('moral', 1);
-          events.push({ type: 'moral_choice', choice: 'help_injured', dim: 'moral', delta: 1, nameKR: '부상자를 도와 영혼이 정화되었다' });
-        } else {
-          hero.personality.adjust('moral', -1);
-          events.push({ type: 'moral_choice', choice: 'ignore_injured', dim: 'moral', delta: -1, nameKR: '부상자를 외면하여 영혼이 어두워졌다' });
-        }
-      }
+      this.resolveCave(hero, events);
     } else if (kind === 'ruin') {
-      // 강도 만남. moral 따라 분기.
       const moral = hero.personality.get('moral');
       if (moral < 0) {
         hero.personality.adjust('moral', -2);
@@ -2215,8 +2041,6 @@ export class EncounterEngine {
         events.push({ type: 'moral_choice', choice: 'resist_bandits', dim: 'moral', delta: 2, nameKR: '강도단에 맞서 약자를 지켰다' });
       }
     } else if (kind === 'sightseeing') {
-      // V3-H F3: 절경 랜드마크 — sightseeing_arrived 를 emit; 실제 personality 조정은
-      // CycleControllerV2.handleArrival 에서 rng 기반으로 처리.
       const lmType = LANDMARK_TYPES.find(t => landmarkId.startsWith(t.id));
       events.push({
         type: 'sightseeing_arrived',
@@ -2224,10 +2048,6 @@ export class EncounterEngine {
         landmarkNameKR: lmType?.nameKR ?? '절경',
       });
     } else {
-      // V1c-1 personality drift landmarks (watchtower / treasure_cave /
-      // holy_ruin / crossroads). The catalog lookup is exhaustive for these
-      // kinds; an unknown kind is silently a no-op so the engine stays open
-      // to future LandmarkKind additions.
       const enc = findEncounterForKind(kind);
       if (enc) {
         const current = hero.personality.get(enc.dim);
@@ -2242,7 +2062,155 @@ export class EncounterEngine {
         });
       }
     }
-    return events;
+  }
+
+  private resolveVillage(hero: HeroEntity, events: OverworldEvent[]): void {
+    this.battleMomentum = 0;
+    this.fightsSinceVillage = 0;
+    this.villageRestRemaining = VILLAGE_VIGOR_DURATION;
+    this.deathInsuranceUsed = false;
+    this.villageShieldActive = true;
+    this.villageTrainingRemaining = VILLAGE_TRAINING_DURATION + TRAINING_EXTENDED_DURATION;
+    hero.atk += VILLAGE_ATK_FLAT;
+    if (this.fightsSinceLastDeath >= VILLAGE_BLESSING_STREAK) {
+      this.villageBlessingRemaining = VILLAGE_BLESSING_DURATION;
+    }
+    this.fightsSinceSpend = 0;
+    this.fightChainCount = 0;
+    // C134: village rest bonus — arrive with low HP → permanent max HP boost
+    if (hero.hp < hero.hpMax * VILLAGE_REST_HP_THRESHOLD) {
+      const hpBoost = Math.max(1, Math.floor(hero.hpMax * VILLAGE_REST_HP_BOOST));
+      hero.hpMax += hpBoost;
+      events.push({ type: 'village_rest_bonus', hpBoost });
+    }
+    // Village shop purchases
+    if (hero.gold >= VILLAGE_SHOP_COST) {
+      hero.gold -= VILLAGE_SHOP_COST;
+      this.shopShieldRemaining = VILLAGE_SHOP_SHIELD_DURATION;
+      events.push({ type: 'village_shop_purchase', cost: VILLAGE_SHOP_COST, effect: 'hp_shield' });
+    }
+    if (hero.gold >= ARMOR_BUY_COST) {
+      hero.gold -= ARMOR_BUY_COST;
+      this.armorRemaining = ARMOR_DURATION;
+      events.push({ type: 'village_shop_purchase', cost: ARMOR_BUY_COST, effect: 'armor' });
+    }
+    const forgeCost = Math.max(FORGE_COST_MIN, GOLD_FORGE_COST - this.prestigeCount * FORGE_COST_PRESTIGE_DISCOUNT);
+    if (hero.gold >= GOLD_FORGE_THRESHOLD) {
+      hero.gold -= forgeCost;
+      hero.atk += GOLD_FORGE_ATK_FLAT;
+      events.push({ type: 'village_shop_purchase', cost: forgeCost, effect: 'atk_forge' });
+    }
+    this.goldShieldRemaining = GOLD_SHIELD_DURATION;
+    // Gold interest
+    const interestRate = VILLAGE_GOLD_INTEREST_RATE + this.prestigeCount * GOLD_INTEREST_PRESTIGE_BONUS + Math.floor(this.villageVisits / INTEREST_VILLAGE_INTERVAL) * INTEREST_VILLAGE_BONUS;
+    const interestCap = 50 + this.prestigeCount * GOLD_INTEREST_CAP_PER_PRESTIGE;
+    let interest = Math.min(interestCap, Math.floor(hero.gold * interestRate));
+    if (hero.gold > GOLD_COMPOUND_THRESHOLD) interest *= 2;
+    if (interest > 0) hero.gold += interest;
+    // Gold fountains
+    hero.gold += VILLAGE_GOLD_FOUNTAIN;
+    hero.gold += Math.floor(VILLAGE_GOLD_FOUNTAIN * this.prestigeCount * VILLAGE_GOLD_PRESTIGE_SCALE);
+    // Healing
+    hero.heal(Math.max(1, Math.floor(hero.hpMax * FOUNTAIN_ENHANCED_HEAL)));
+    if (this.prestigeCount > 0) {
+      hero.heal(Math.max(1, Math.floor(hero.hpMax * this.prestigeCount * PRESTIGE_HEAL_BONUS)));
+    }
+    this.fightsSinceVillage = 0;
+    // Rest exp + danger interest
+    hero.exp += hero.level * REST_EXP_PER_LEVEL;
+    hero.gold += Math.floor(this.dangerStreak * DANGER_INTEREST_BONUS * hero.gold);
+    // Gold investment
+    if (this.investFightsRemaining <= 0 && hero.gold >= GOLD_INVEST_MIN) {
+      const investAmount = Math.floor(hero.gold * 0.5);
+      hero.gold -= investAmount;
+      this.goldInvested = investAmount;
+      this.investFightsRemaining = GOLD_INVEST_LOCK_FIGHTS;
+    }
+    // Village visits + heal scaling
+    this.villageVisits++;
+    this.forgeDiscount = Math.min(0.5, this.villageVisits * FORGE_VISIT_DISCOUNT);
+    const prestigeHealBonus = this.prestigeCount * VILLAGE_PRESTIGE_HEAL_BONUS;
+    const healRate = Math.min(VILLAGE_HEAL_CAP + prestigeHealBonus, VILLAGE_HEAL_BASE + (this.villageVisits - 1) * VILLAGE_HEAL_PER_VISIT + prestigeHealBonus);
+    const healAmount = Math.floor(hero.hpMax * healRate);
+    hero.heal(healAmount);
+    if (hero.hp >= hero.hpMax) this.villageRestAtkRemaining = VILLAGE_REST_ATK_DURATION;
+    // Exp gains
+    hero.gainExp(this.villageVisits * VILLAGE_EXP_PER_VISIT);
+    hero.gainExp(Math.floor((this.totalWins + this.totalDeaths) / 100) * EXP_FOUNTAIN_PER_100_FIGHTS);
+    if (this.prestigeCount > 0) this.waveMomentumRemaining += Math.floor(this.prestigeCount * PRESTIGE_MOMENTUM_BONUS * 10);
+    hero.gainExp(this.prestigeCount * VILLAGE_TRAINING_EXP_PER_PRESTIGE);
+    hero.gainExp(Math.floor(hero.level * this.prestigeCount * VILLAGE_EXP_PRESTIGE_SCALE));
+    // Buffs and resets
+    this.villageAtkTrainingRemaining = VILLAGE_ATK_TRAINING_DURATION;
+    hero.gold += this.prestigeCount * PRESTIGE_GOLD_BURST_PER_PRESTIGE;
+    this.dangerFights = Math.max(0, this.dangerFights - 5);
+    this.eliteAfterVillage = true;
+    // Bank
+    if (this.bankGold > 0) {
+      hero.gold += this.bankGold;
+      this.bankGold = 0;
+    }
+    const bankDeposit = Math.floor(hero.gold * BANK_DEPOSIT_RATE);
+    if (bankDeposit > 0) {
+      hero.gold -= bankDeposit;
+      this.bankGold += bankDeposit;
+    }
+    // Arena
+    if (hero.gold >= ARENA_COST) {
+      hero.gold -= ARENA_COST;
+      this.arenaActive = true;
+    }
+  }
+
+  private resolveShrine(hero: HeroEntity, landmarkId: string, events: OverworldEvent[]): void {
+    const meditationChance = this.shrineTithes >= SHRINE_MASTERY_THRESHOLD
+      ? SHRINE_MASTERY_MEDITATION_CHANCE : 0.2;
+    if (this.rng.chance(meditationChance)) {
+      hero.personality.adjust('pious', 3);
+      hero.heal(hero.hpMax);
+      hero.tickAge(0.5);
+      this.shrineBuffRemaining = SHRINE_MEDITATION_BUFF_DURATION;
+      events.push({ type: 'meditation_done', landmarkId });
+      events.push({ type: 'shrine_buff_granted', duration: SHRINE_MEDITATION_BUFF_DURATION });
+    } else {
+      const before = hero.hp;
+      hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_FRACTION));
+      const healed = hero.hp - before;
+      events.push({ type: 'shrine_visited', landmarkId, healed });
+      this.darknessCursed = false;
+      this.shrineBlessingRemaining = SHRINE_BLESSING_DURATION;
+      if (this.rng.chance(SHRINE_SKILL_GRANT_RATE)) {
+        const learn = SkillLearningSystem.tryLearn(hero, this.rng.int(1_000_000_000));
+        if (learn) {
+          events.push({ type: 'skill_learned', skillId: learn.skillId, skillNameKR: learn.skillNameKR, atkBefore: learn.atkBefore, atkAfter: learn.atkAfter });
+        }
+      }
+    }
+    // Shrine tithe
+    if (hero.gold > 0) {
+      const titheGold = Math.max(1, Math.floor(hero.gold * SHRINE_TITHE_RATE));
+      hero.gold -= titheGold;
+      this.shrineTithes++;
+    }
+  }
+
+  private resolveCave(hero: HeroEntity, events: OverworldEvent[]): void {
+    this.caveVisits++;
+    if (this.rng.chance(CAVE_TREASURE_CHANCE)) {
+      const treasureGold = CAVE_TREASURE_MIN + this.rng.int(CAVE_TREASURE_MAX - CAVE_TREASURE_MIN + 1);
+      hero.gold += treasureGold;
+      events.push({ type: 'lucky_treasure', gold: treasureGold });
+    } else {
+      const heroic = hero.personality.get('heroic');
+      const merciful = hero.personality.get('merciful');
+      if (heroic + merciful >= 0) {
+        hero.personality.adjust('moral', 1);
+        events.push({ type: 'moral_choice', choice: 'help_injured', dim: 'moral', delta: 1, nameKR: '부상자를 도와 영혼이 정화되었다' });
+      } else {
+        hero.personality.adjust('moral', -1);
+        events.push({ type: 'moral_choice', choice: 'ignore_injured', dim: 'moral', delta: -1, nameKR: '부상자를 외면하여 영혼이 어두워졌다' });
+      }
+    }
   }
 
   private rollDrop(isBoss: boolean): string {
