@@ -44,7 +44,7 @@ export function ShrineChoiceModal({ onClose }: { onClose: () => void }) {
             onClick={() => choose(2)}
             style={{ padding: '12px 16px', fontSize: 15, background: '#2a2a4a', border: '1px solid #8f8', borderRadius: 8, color: '#8f8', cursor: 'pointer' }}
           >
-            💚 치유의 축복 (HP 40% 회복)
+            💚 치유의 축복 (HP 30% 회복)
           </button>
         </div>
       </div>

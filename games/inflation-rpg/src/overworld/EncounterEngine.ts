@@ -255,6 +255,7 @@ export class EncounterEngine {
   }
   getPrestigeCount(): number { return this.prestigeCount; }
   getEventChainCount(): number { return this.eventChainCount; }
+  getTotalDeaths(): number { return this.totalDeaths; }
 
   // C579: treasure shrine player choice
   hasPendingShrineChoice(): boolean { return this.pendingShrineChoice >= 0; }
@@ -1612,8 +1613,11 @@ export class EncounterEngine {
         } else {
           const choice = this.pendingShrineChoice;
           this.pendingShrineChoice = -1;
-          if (choice === 0) hero.gold += SHRINE_GOLD_BURST;
-          else if (choice === 1) hero.gainExp(SHRINE_EXP_BURST);
+          // C582: scale shrine rewards with level (critic feedback: fixed values meaningless late-game)
+          const shrineGold = Math.max(SHRINE_GOLD_BURST, hero.level * 50);
+          const shrineExp = Math.max(SHRINE_EXP_BURST, hero.level * 30);
+          if (choice === 0) hero.gold += shrineGold;
+          else if (choice === 1) hero.gainExp(shrineExp);
           else hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_AMOUNT));
           events.push({ type: 'event_treasure_shrine', choice });
         }
