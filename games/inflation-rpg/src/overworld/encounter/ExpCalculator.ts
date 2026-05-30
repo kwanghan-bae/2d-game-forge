@@ -38,6 +38,7 @@ import {
   GREED_GAMBIT_EXP_BONUS, RISK_REWARD_DANGER_EXP, DEEP_DANGER_THRESHOLD,
   DEEP_DANGER_EXP_MUL, RUSH_HOUR_EXP_MUL, AGING_EXP_BONUS,
   ELDER_WISDOM_EXP_MUL, SCHOLAR_LENS_EXP_MUL, COLOSSEUM_EXP_MUL, TRIAL_GROUNDS_EXP_MUL,
+  FOG_AMBUSH_EXP_MUL,
 } from './constants';
 
 export interface ExpMultiplierContext {
@@ -97,6 +98,7 @@ export interface ExpMultiplierContext {
   baseExpGain: number;
   colosseumActive: boolean;
   trialGroundsActive: boolean;
+  fogAmbushActive: boolean;
 }
 
 /**
@@ -207,9 +209,10 @@ export function computeExpMultiplierWithBreakdown(ctx: ExpMultiplierContext): Ex
   const scholarLensExpMul = ctx.hasScholarLens ? SCHOLAR_LENS_EXP_MUL : 1;
   const colosseumExpMul = ctx.colosseumActive ? COLOSSEUM_EXP_MUL : 1;
   const trialGroundsExpMul = ctx.trialGroundsActive ? TRIAL_GROUNDS_EXP_MUL : 1;
+  const fogAmbushExpMul = ctx.fogAmbushActive ? FOG_AMBUSH_EXP_MUL : 1;
 
   const categories: { name: string; value: number }[] = [
-    { name: 'core', value: dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul * colosseumExpMul * trialGroundsExpMul },
+    { name: 'core', value: dangerMul2 * eliteMul * nightExpMul * arenaMul * weatherExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul * colosseumExpMul * trialGroundsExpMul * fogAmbushExpMul },
     { name: 'combo', value: comboBonus * comboExpMul * comboBreakMul * comboFinisherMul * comboExpCascadeMul * comboAccelExpMul * comboExpVelocityMul },
     { name: 'combat', value: firstBloodMul * closeCallMul * quickKillMul * multiKillMul * revengeExpMul * critChainExpMul * critExpChainMul2 },
     { name: 'progress', value: diminish * lvUpMul * expDecayMul * expChainMul * expChainFightMul * killMomentumExp * familiarityMul * finalMasteryMul * finalMasteryMul2 },

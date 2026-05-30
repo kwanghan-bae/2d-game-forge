@@ -87,6 +87,8 @@ export interface PostCombatResult {
   newTrialGroundsRemaining: number;
   trialGroundsPending: boolean;
   stormNexusPending: boolean;
+  rainSanctuaryPending: boolean;
+  fogAmbushPending: boolean;
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
@@ -119,6 +121,8 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newTrialGroundsRemaining: 0,
     trialGroundsPending: false,
     stormNexusPending: false,
+    rainSanctuaryPending: false,
+    fogAmbushPending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
@@ -249,6 +253,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
         } else if (me.id === 'event_storm_nexus') {
           result.stormNexusPending = true;
           result.eventType = 'event_storm_nexus';
+        } else if (me.id === 'event_rain_sanctuary') {
+          result.rainSanctuaryPending = true;
+          result.eventType = 'event_rain_sanctuary';
+        } else if (me.id === 'event_fog_ambush') {
+          result.fogAmbushPending = true;
+          result.eventType = 'event_fog_ambush';
         }
         eventTriggered = true;
         break;

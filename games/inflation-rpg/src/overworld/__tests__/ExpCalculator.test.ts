@@ -59,6 +59,7 @@ function makeCtx(overrides: Partial<ExpMultiplierContext> = {}): ExpMultiplierCo
     baseExpGain: 100,
     colosseumActive: false,
     trialGroundsActive: false,
+    fogAmbushActive: false,
     ...overrides,
   };
 }

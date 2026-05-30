@@ -18,6 +18,7 @@ function makeCtx(overrides: Partial<DefenseContext> = {}): DefenseContext {
     cursedAltarAtkBuff: false,
     isNight: false,
     colosseumActive: false,
+    fogAmbushActive: false,
     ...overrides,
   };
 }
