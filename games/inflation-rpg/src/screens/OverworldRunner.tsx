@@ -244,6 +244,17 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           // C131: battle flavor text float
           const tick = Date.now();
           const flavor =
+            evs.some(e => e.type === 'event_merchant') ? '🏪 상인 등장! 렐릭 구매' :
+            evs.some(e => e.type === 'event_treasure_shrine') ? '✨ 보물 제단 발견!' :
+            evs.some(e => e.type === 'event_trap_avoided') ? '⚡ 함정 회피! (높은 콤보)' :
+            evs.some(e => e.type === 'event_trap') ? '💥 함정에 걸렸다!' :
+            evs.some(e => e.type === 'event_rest_shrine') ? '🛏️ 휴식 제단 (전체 회복)' :
+            evs.some(e => e.type === 'event_gambler') ? '🎲 도박사와의 만남!' :
+            evs.some(e => e.type === 'event_blacksmith') ? '🔨 대장장이 강화!' :
+            evs.some(e => e.type === 'event_cursed_altar') ? '☠️ 저주받은 제단!' :
+            evs.some(e => e.type === 'event_fairy') ? '🧚 요정의 축복!' :
+            evs.some(e => e.type === 'event_time_rift') ? '⏳ 시간의 균열!' :
+            evs.some(e => e.type === 'event_chain_reward') ? '🎊 이벤트 체인 보상!' :
             evs.some(e => e.type === 'lucky_dodge') ? getLuckyDodgeMessage(tick) :
             evs.some(e => e.type === 'revenge_kill') ? getRevengeKillMessage(tick) :
             evs.some(e => e.type === 'first_blood') ? getFirstBloodMessage(tick) :
