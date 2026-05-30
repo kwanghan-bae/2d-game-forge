@@ -920,10 +920,8 @@ export class EncounterEngine {
         this.deathAtkSurgeRemaining = DEATH_ATK_SURGE_DURATION;
         // C487: death exp recovery — gain exp proportional to deaths
         hero.gainExp(this.totalDeaths * DEATH_EXP_RECOVERY_PER_DEATH);
-        // C498: death combo preservation — high combo partially preserved on death
-        if (this.comboStreak > 0) {
-          this.comboStreak = Math.floor(this.comboStreak * DEATH_COMBO_PRESERVE_RATE);
-        }
+        // C498: death combo preservation — removed C664 (double-application bug)
+        // COMBO_PERSIST_RATE at L889 already handles combo reduction on death
         // C137: death streak tracking
         this.deathStreak++;
         // C219: total death counter
