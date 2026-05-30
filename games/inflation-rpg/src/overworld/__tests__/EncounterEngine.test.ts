@@ -827,3 +827,21 @@ describe('EncounterEngine — C331-C340', () => {
     expect(COMBO_SHIELD_REDUCTION).toBe(0.08); // C605: nerfed
   });
 });
+
+describe('EncounterEngine — C617 death rate verification', () => {
+  it('weak hero dies at least once in 50 fights', () => {
+    const hero = HeroEntity.create({ seed: 7, heroHpMax: 10, heroAtkBase: 1 });
+    const engine = new EncounterEngine(new SeededRng(42));
+    let deaths = 0;
+
+    for (let i = 0; i < 50; i++) {
+      const events = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
+      if (events.some(e => e.type === 'hero_died')) {
+        deaths++;
+        hero.recoverFromStagger();
+      }
+    }
+
+    expect(deaths).toBeGreaterThan(0);
+  });
+});
