@@ -89,6 +89,8 @@ export interface PostCombatResult {
   stormNexusPending: boolean;
   rainSanctuaryPending: boolean;
   fogAmbushPending: boolean;
+  windGalePending: boolean; // C782
+  snowDriftPending: boolean; // C782
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
@@ -123,6 +125,8 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     stormNexusPending: false,
     rainSanctuaryPending: false,
     fogAmbushPending: false,
+    windGalePending: false,
+    snowDriftPending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
@@ -259,6 +263,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
         } else if (me.id === 'event_fog_ambush') {
           result.fogAmbushPending = true;
           result.eventType = 'event_fog_ambush';
+        } else if (me.id === 'event_wind_gale') {
+          result.windGalePending = true;
+          result.eventType = 'event_wind_gale';
+        } else if (me.id === 'event_snow_drift') {
+          result.snowDriftPending = true;
+          result.eventType = 'event_snow_drift';
         }
         eventTriggered = true;
         break;

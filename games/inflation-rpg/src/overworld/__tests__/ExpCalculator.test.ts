@@ -60,6 +60,8 @@ function makeCtx(overrides: Partial<ExpMultiplierContext> = {}): ExpMultiplierCo
     colosseumActive: false,
     trialGroundsActive: false,
     fogAmbushActive: false,
+    windGaleActive: false,
+    snowDriftActive: false,
     voidRiftTier: 0,
     ...overrides,
   };
