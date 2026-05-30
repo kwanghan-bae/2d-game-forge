@@ -1,3 +1,6 @@
+// C818: Awakening hints — 5 narrative whispers for fights 1-20
+export const AWAKENING_HINT_COUNT = 5;
+
 export const ELITE_GOLD_CASCADE_PER_ELITE = 0.01;
 export const ELITE_GOLD_CASCADE_CAP = 1.3;
 export const PRESTIGE_ATK_MOMENTUM_RATE = 0.005;
@@ -169,10 +172,10 @@ export const CURSED_ALTAR_DURATION = 20; // C709: was 30, early-snowball prevent
 export const CURSED_ALTAR_HP_THRESHOLD = 0.40; // C702: sacrifice blocked if HP ratio below this
 export const FAIRY_CHANCE = 0.02;
 export const FAIRY_DURATION = 5;
-// C812: Wandering Mentor — early-game EXP buff (fights 25-99)
-export const MENTOR_CHANCE = 0.03;
+// C812: Wandering Mentor — early-game EXP buff (fights 25-149)
+export const MENTOR_CHANCE = 0.05; // C818: was 0.03, collab consensus
 export const MENTOR_MIN_FIGHTS = 25;
-export const MENTOR_MAX_FIGHTS = 99;
+export const MENTOR_MAX_FIGHTS = 149; // C818: was 99, extend into mid transition
 export const MENTOR_EXP_MUL = 0.15; // +15% EXP
 export const MENTOR_DURATION = 4;
 export const TIME_RIFT_CHANCE = 0.01;
