@@ -241,6 +241,19 @@ export class EncounterEngine {
   getShrineBuffRemaining(): number { return this.shrineBuffRemaining; }
   getMercyRemaining(): number { return this.mercyRemaining; }
 
+  // C572: expose relic state for UI
+  getRelics(): { id: number; level: number; name: string }[] {
+    const RELIC_NAMES = ['Ember Crown', "Miser's Pouch", 'Phoenix Feather', 'Hourglass', 'Blood Pact', "Scholar's Lens"];
+    return this.relics.map((id, i) => ({ id, level: this.relicLevels[i] || 1, name: RELIC_NAMES[id] || 'Unknown' }));
+  }
+  getImprintedRelic(): { id: number; name: string } | null {
+    if (this.imprintedRelic < 0) return null;
+    const RELIC_NAMES = ['Ember Crown', "Miser's Pouch", 'Phoenix Feather', 'Hourglass', 'Blood Pact', "Scholar's Lens"];
+    return { id: this.imprintedRelic, name: RELIC_NAMES[this.imprintedRelic] || 'Unknown' };
+  }
+  getPrestigeCount(): number { return this.prestigeCount; }
+  getEventChainCount(): number { return this.eventChainCount; }
+
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
     if (kind === 'enemy' || kind === 'boss') {
