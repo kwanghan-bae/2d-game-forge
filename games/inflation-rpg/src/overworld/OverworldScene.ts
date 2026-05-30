@@ -247,7 +247,7 @@ export class OverworldScene extends Phaser.Scene {
     );
     const candidates = reachable
       .filter(l => !(l.gridX === heroPos.x && l.gridY === heroPos.y))
-      .map(l => ({ landmark: l, candidate: landmarkToCandidate(l) }));
+      .map(l => ({ landmark: l, candidate: landmarkToCandidate(l, this.currentRealm) }));
 
     if (candidates.length === 0) {
       // Cycle-5 F3: pathfinder candidates-exhausted = stuck hero. Tag cause

@@ -168,3 +168,44 @@ describe('filterCandidatesByRealm — Cycle-9 R2 cross-realm exit audit', () => 
     expect(filtered.map(l => l.instanceId)).toEqual(['chaos_enemy']);
   });
 });
+
+// C737: landmarkToCandidate realm-based difficulty
+import { landmarkToCandidate } from '../Landmark';
+
+describe('landmarkToCandidate — C737 realm-based difficulty', () => {
+  it('boss in base realm → difficulty = fieldLevelRange[0] = 1', () => {
+    const lm = mkLm(5, 'boss', 'base_boss_1');
+    const c = landmarkToCandidate(lm, 'base');
+    expect(c.difficulty).toBe(1);
+  });
+
+  it('boss in sea realm → difficulty = 50', () => {
+    const lm = mkLm(25, 'boss', 'sea_boss_1');
+    const c = landmarkToCandidate(lm, 'sea');
+    expect(c.difficulty).toBe(50);
+  });
+
+  it('boss in volcano realm → difficulty = 500', () => {
+    const lm = mkLm(45, 'boss', 'vol_boss_1');
+    const c = landmarkToCandidate(lm, 'volcano');
+    expect(c.difficulty).toBe(500);
+  });
+
+  it('enemy in sea realm → difficulty = 50 × 0.5 = 25', () => {
+    const lm = mkLm(25, 'enemy', 'sea_enemy_1');
+    const c = landmarkToCandidate(lm, 'sea');
+    expect(c.difficulty).toBe(25);
+  });
+
+  it('non-combat (shrine) → difficulty = 0 regardless of realm', () => {
+    const lm = mkLm(25, 'shrine', 'sea_shrine_1');
+    const c = landmarkToCandidate(lm, 'sea');
+    expect(c.difficulty).toBe(0);
+  });
+
+  it('fallback: no realmId → legacy hardcoded difficulty (boss=3, enemy=1)', () => {
+    const lm = mkLm(5, 'boss', 'fallback_boss');
+    const c = landmarkToCandidate(lm);
+    expect(c.difficulty).toBe(3);
+  });
+});

@@ -1,7 +1,6 @@
 import type { LandmarkType, LandmarkKind } from '../data/landmarks';
 import { findRealm } from '../data/realms';
 import type { RealmId } from '../types';
-
 export interface PlacedLandmark {
   instanceId: string;
   type: LandmarkType;
@@ -10,8 +9,18 @@ export interface PlacedLandmark {
   consumed: boolean; // enemies/bosses become consumed after defeat
 }
 
-export function landmarkToCandidate(l: PlacedLandmark): { id: string; kind: LandmarkKind; difficulty: number } {
-  // V1a: all enemies difficulty 1, bosses 3. Real difficulty in later phase.
+export function landmarkToCandidate(l: PlacedLandmark, realmId?: RealmId): { id: string; kind: LandmarkKind; difficulty: number } {
+  if (realmId) {
+    const realm = findRealm(realmId);
+    const baseLevel = realm.fieldLevelRange[0];
+    const kind = l.type.kind;
+    // C737: realm-based difficulty. Boss = realm start level, enemy = half, non-combat = 0
+    const difficulty = kind === 'boss' ? baseLevel
+      : kind === 'enemy' ? Math.floor(baseLevel * 0.5)
+      : 0;
+    return { id: l.instanceId, kind, difficulty };
+  }
+  // Legacy fallback (no realm context)
   const difficulty = l.type.kind === 'boss' ? 3 : 1;
   return { id: l.instanceId, kind: l.type.kind, difficulty };
 }
