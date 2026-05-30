@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { EventChoiceEngine, ShrineChoice, DangerChoice } from '../encounter/EventChoiceEngine';
+import { EventChoiceEngine, ShrineChoice, DangerChoice, MerchantChoice, GamblerChoice, AltarChoice } from '../encounter/EventChoiceEngine';
 
 describe('EventChoiceEngine', () => {
   describe('shrine choice', () => {
@@ -72,6 +72,94 @@ describe('EventChoiceEngine', () => {
       engine.enterDangerZone();
       engine.exitDangerZone();
       expect(engine.hasPendingDangerChoice()).toBe(false);
+    });
+  });
+
+  describe('merchant choice', () => {
+    test('starts with no pending merchant choice', () => {
+      const engine = new EventChoiceEngine();
+      expect(engine.hasPendingMerchantChoice()).toBe(false);
+    });
+
+    test('triggerMerchant makes it pending with BUY default', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerMerchant();
+      expect(engine.hasPendingMerchantChoice()).toBe(true);
+    });
+
+    test('setMerchantChoice changes to SELL', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerMerchant();
+      engine.setMerchantChoice(MerchantChoice.SELL);
+      const result = engine.resolveMerchantChoice();
+      expect(result).toBe(MerchantChoice.SELL);
+    });
+
+    test('resolveMerchantChoice returns choice and clears pending', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerMerchant();
+      engine.setMerchantChoice(MerchantChoice.IGNORE);
+      const result = engine.resolveMerchantChoice();
+      expect(result).toBe(MerchantChoice.IGNORE);
+      expect(engine.hasPendingMerchantChoice()).toBe(false);
+    });
+  });
+
+  describe('gambler choice', () => {
+    test('starts with no pending gambler choice', () => {
+      const engine = new EventChoiceEngine();
+      expect(engine.hasPendingGamblerChoice()).toBe(false);
+    });
+
+    test('triggerGambler makes it pending', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerGambler();
+      expect(engine.hasPendingGamblerChoice()).toBe(true);
+    });
+
+    test('setGamblerChoice to BET_LOW and resolve', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerGambler();
+      engine.setGamblerChoice(GamblerChoice.BET_LOW);
+      const result = engine.resolveGamblerChoice();
+      expect(result).toBe(GamblerChoice.BET_LOW);
+      expect(engine.hasPendingGamblerChoice()).toBe(false);
+    });
+
+    test('resolveGamblerChoice defaults to WALK_AWAY', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerGambler();
+      const result = engine.resolveGamblerChoice();
+      expect(result).toBe(GamblerChoice.WALK_AWAY);
+    });
+  });
+
+  describe('altar choice', () => {
+    test('starts with no pending altar choice', () => {
+      const engine = new EventChoiceEngine();
+      expect(engine.hasPendingAltarChoice()).toBe(false);
+    });
+
+    test('triggerAltar makes it pending', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerAltar();
+      expect(engine.hasPendingAltarChoice()).toBe(true);
+    });
+
+    test('setAltarChoice to SACRIFICE and resolve', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerAltar();
+      engine.setAltarChoice(AltarChoice.SACRIFICE);
+      const result = engine.resolveAltarChoice();
+      expect(result).toBe(AltarChoice.SACRIFICE);
+      expect(engine.hasPendingAltarChoice()).toBe(false);
+    });
+
+    test('resolveAltarChoice defaults to LEAVE', () => {
+      const engine = new EventChoiceEngine();
+      engine.triggerAltar();
+      const result = engine.resolveAltarChoice();
+      expect(result).toBe(AltarChoice.LEAVE);
     });
   });
 });

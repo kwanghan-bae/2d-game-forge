@@ -11,7 +11,7 @@ import {
 } from '../cycle/inflationCurve';
 import { SkillLearningSystem, isSkillMilestoneLevel } from '../hero/SkillLearningSystem';
 import { findEncounterForKind, selectBranch } from '../data/personalityEncounters';
-import { EventChoiceEngine, ShrineChoice, DangerChoice } from './encounter/EventChoiceEngine';
+import { EventChoiceEngine, ShrineChoice, DangerChoice, MerchantChoice, GamblerChoice, AltarChoice } from './encounter/EventChoiceEngine';
 import { LandmarkResolver } from './encounter/LandmarkResolver';
 import { VillageResolver } from './encounter/VillageResolver';
 import { computeHeroAtk } from './encounter/CombatCalculator';
