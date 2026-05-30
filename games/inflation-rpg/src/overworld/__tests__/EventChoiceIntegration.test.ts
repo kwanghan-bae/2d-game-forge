@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { EventChoiceEngine, MerchantChoice, GamblerChoice, AltarChoice } from '../encounter/EventChoiceEngine';
+import { resolveEventEffects, type EventEffectContext } from '../encounter/EventEffectResolver';
 
 /**
  * C694: Integration tests — EventChoiceEngine triggers are invoked
@@ -9,10 +10,8 @@ import { EventChoiceEngine, MerchantChoice, GamblerChoice, AltarChoice } from '.
 describe('EventChoiceEngine integration with PostCombatEventResolver', () => {
   test('merchant event triggers pending choice when event fires', () => {
     const engine = new EventChoiceEngine();
-    // Simulate: PostCombatResult signals merchant event
     engine.triggerMerchant();
     expect(engine.hasPendingMerchantChoice()).toBe(true);
-    // Player picks SELL
     engine.setMerchantChoice(MerchantChoice.SELL);
     const result = engine.resolveMerchantChoice();
     expect(result).toBe(MerchantChoice.SELL);
@@ -23,7 +22,6 @@ describe('EventChoiceEngine integration with PostCombatEventResolver', () => {
     const engine = new EventChoiceEngine();
     engine.triggerGambler();
     expect(engine.hasPendingGamblerChoice()).toBe(true);
-    // Player picks BET_HIGH
     engine.setGamblerChoice(GamblerChoice.BET_HIGH);
     const result = engine.resolveGamblerChoice();
     expect(result).toBe(GamblerChoice.BET_HIGH);
@@ -34,10 +32,70 @@ describe('EventChoiceEngine integration with PostCombatEventResolver', () => {
     const engine = new EventChoiceEngine();
     engine.triggerAltar();
     expect(engine.hasPendingAltarChoice()).toBe(true);
-    // Player picks SACRIFICE
     engine.setAltarChoice(AltarChoice.SACRIFICE);
     const result = engine.resolveAltarChoice();
     expect(result).toBe(AltarChoice.SACRIFICE);
     expect(engine.hasPendingAltarChoice()).toBe(false);
+  });
+});
+
+/**
+ * C698: Tests for resolve effects — verify hero state changes
+ * based on player choice for each event type.
+ */
+describe('resolveEventEffects', () => {
+  function makeCtx(overrides: Partial<EventEffectContext> = {}): EventEffectContext {
+    return {
+      heroGold: 1000,
+      heroHp: 500,
+      heroHpMax: 500,
+      heroAtk: 100,
+      heroLevel: 50,
+      relics: [],
+      relicLevels: [],
+      rngChance: () => true,
+      rngInt: (n: number) => 0,
+      ...overrides,
+    };
+  }
+
+  test('merchant BUY: spend gold, gain relic', () => {
+    const ctx = makeCtx({ heroGold: 1000, relics: [0], relicLevels: [1] });
+    const result = resolveEventEffects('merchant', MerchantChoice.BUY, ctx);
+    expect(result.goldDelta).toBeLessThan(0);
+    expect(result.newRelics.length).toBe(2);
+  });
+
+  test('merchant IGNORE: no changes', () => {
+    const ctx = makeCtx();
+    const result = resolveEventEffects('merchant', MerchantChoice.IGNORE, ctx);
+    expect(result.goldDelta).toBe(0);
+    expect(result.newRelics).toEqual([]);
+  });
+
+  test('gambler BET_HIGH win: gold doubles', () => {
+    const ctx = makeCtx({ heroGold: 500, rngChance: () => true });
+    const result = resolveEventEffects('gambler', GamblerChoice.BET_HIGH, ctx);
+    expect(result.goldDelta).toBe(500); // double = +current
+  });
+
+  test('gambler BET_HIGH lose: gold halved', () => {
+    const ctx = makeCtx({ heroGold: 500, rngChance: () => false });
+    const result = resolveEventEffects('gambler', GamblerChoice.BET_HIGH, ctx);
+    expect(result.goldDelta).toBe(-250); // lose half
+  });
+
+  test('altar SACRIFICE: HP cost + ATK buff activation', () => {
+    const ctx = makeCtx({ heroHp: 500, heroHpMax: 500 });
+    const result = resolveEventEffects('altar', AltarChoice.SACRIFICE, ctx);
+    expect(result.hpDelta).toBeLessThan(0);
+    expect(result.cursedAltarActivated).toBe(true);
+  });
+
+  test('altar LEAVE: no changes', () => {
+    const ctx = makeCtx();
+    const result = resolveEventEffects('altar', AltarChoice.LEAVE, ctx);
+    expect(result.hpDelta).toBe(0);
+    expect(result.cursedAltarActivated).toBe(false);
   });
 });
