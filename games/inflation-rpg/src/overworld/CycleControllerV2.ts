@@ -875,6 +875,8 @@ export class CycleControllerV2 {
   setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }
   getTotalDeaths() { return this.encounter.getTotalDeaths(); }
   getTotalFights() { return this.encounter.getTotalFights(); }
+  hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
+  setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
 
   /** Most recent saga events (already batched + narrative-formatted) for the
    *  live OverworldRunner log overlay. */

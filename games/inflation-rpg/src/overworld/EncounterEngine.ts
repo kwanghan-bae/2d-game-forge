@@ -208,6 +208,7 @@ export class EncounterEngine {
   private fairyBlessingRemaining = 0; // C568: guaranteed drops
   private eventChainCount = 0; // C570: consecutive events
   private pendingShrineChoice = -1; // C579: -1 = no pending, 0=gold, 1=exp, 2=heal
+  private pendingDangerChoice = -1; // C603: -1 = none, 0=fight(default), 1=retreat
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -261,6 +262,10 @@ export class EncounterEngine {
   // C579: treasure shrine player choice
   hasPendingShrineChoice(): boolean { return this.pendingShrineChoice >= 0; }
   setShrineChoice(choice: 0 | 1 | 2): void { this.pendingShrineChoice = choice; }
+
+  // C603: danger zone fight/retreat real-time choice
+  hasPendingDangerChoice(): boolean { return this.pendingDangerChoice === 0; }
+  setDangerChoice(retreat: boolean): void { this.pendingDangerChoice = retreat ? 1 : 0; }
 
   // C578: combat stats summary for visual overlay
   getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean } {
@@ -322,13 +327,25 @@ export class EncounterEngine {
       // C226: danger magnet — increased danger zone spawn after enough fights
       const dangerMagnetBonus = this.totalDangerFights >= DANGER_MAGNET_THRESHOLD ? DANGER_MAGNET_SPAWN_BONUS : 0;
       const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE + dangerMagnetBonus);
-      // C595: danger retreat — player choice to flee danger zones (costs gold, resets combo)
-      if (isDangerZone && getStrategyEnabled('dangerRetreat') && hero.gold >= 50) {
-        hero.gold -= 50;
+      // C603: danger retreat — real-time choice (pending system like shrine)
+      if (isDangerZone && this.pendingDangerChoice === 1) {
+        // Player chose to retreat
+        this.pendingDangerChoice = -1;
+        const retreatCost = Math.max(50, hero.level * 3);
+        hero.gold -= Math.min(hero.gold, retreatCost);
         this.comboStreak = 0;
         this.dangerStreak = 0;
-        events.push({ type: 'danger_retreat' });
+        events.push({ type: 'danger_retreat', cost: retreatCost });
         return events;
+      }
+      if (isDangerZone && this.pendingDangerChoice === -1) {
+        // First encounter: signal pending choice
+        this.pendingDangerChoice = 0; // 0 = fight (default), 1 = retreat
+        events.push({ type: 'danger_zone_choice' });
+        // Continue with fight (default) — if player picks retreat, next encounter resolves it
+      }
+      if (this.pendingDangerChoice >= 0 && !isDangerZone) {
+        this.pendingDangerChoice = -1; // clear if no danger
       }
       // C178: danger streak tracking
       if (isDangerZone) { this.dangerStreak++; this.dangerFights++; } else { this.dangerStreak = 0; }

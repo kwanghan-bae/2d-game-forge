@@ -14,7 +14,6 @@ const EVENT_TOGGLES: EventToggle[] = [
   { id: 'merchant', label: '상인', emoji: '🏪', description: '렐릭 구매 (600G)' },
   { id: 'restShrine', label: '휴식 제단', emoji: '🛏️', description: '전체 회복, 콤보 초기화' },
   { id: 'blacksmith', label: '대장장이', emoji: '🔨', description: '영구 ATK +5' },
-  { id: 'dangerRetreat', label: '위험지대 회피', emoji: '🏃', description: '위험지대 진입 시 50G로 도주 (전투 회피)' },
 ];
 
 // Global strategy state — persists during the run
@@ -24,7 +23,6 @@ let strategyState: Record<string, boolean> = {
   merchant: true,
   restShrine: true,
   blacksmith: true,
-  dangerRetreat: false,
 };
 
 export function getStrategyEnabled(id: string): boolean {
@@ -32,7 +30,7 @@ export function getStrategyEnabled(id: string): boolean {
 }
 
 export function resetStrategy(): void {
-  strategyState = { gambler: true, cursedAltar: true, merchant: true, restShrine: true, blacksmith: true, dangerRetreat: false };
+  strategyState = { gambler: true, cursedAltar: true, merchant: true, restShrine: true, blacksmith: true };
 }
 
 interface Props {
