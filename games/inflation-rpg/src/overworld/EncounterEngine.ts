@@ -633,7 +633,9 @@ export class EncounterEngine {
       const chainMuls = villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * waveAtkCompoundMul * villageAtkTrainingMul * eliteAtkChainMul2;
       const tradeoffMuls = bloodPactMul * adrenalineRushMul * shieldSacrificeMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul;
       const systemMuls = accumulatorMul * agingAtkMul * bloodFurySynergy * antiSynergyPenalty * synergyCountMul * synergyTierMul * synergyPrestigeMul * emberCrownMul * scholarLensMul * cursedAltarMul;
-      const baseHeroAtk = Math.max(1, Math.floor(flatAtk * coreMuls * conditionMuls * goldMuls * combatMuls * progressMuls * chainMuls * tradeoffMuls * systemMuls));
+      // C626: ATK multiplier ceiling — cap total bonus multipliers at 10x to limit snowball
+      const totalAtkMuls = Math.min(10, coreMuls * conditionMuls * goldMuls * combatMuls * progressMuls * chainMuls * tradeoffMuls * systemMuls);
+      const baseHeroAtk = Math.max(1, Math.floor(flatAtk * totalAtkMuls));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
