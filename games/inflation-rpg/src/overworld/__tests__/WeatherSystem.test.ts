@@ -79,3 +79,18 @@ describe('computeNight', () => {
     expect(result.isNight).toBe(false);
   });
 });
+
+// C738: Night balance tuning — interval 20→25 (20% uptime), dmg 1.5→1.6
+describe('C738 night balance constants', () => {
+  test('NIGHT_CYCLE_INTERVAL = 25 (was 20)', () => {
+    expect(NIGHT_CYCLE_INTERVAL).toBe(25);
+  });
+
+  test('NIGHT_ENEMY_DMG_MUL = 1.6 (was 1.5)', () => {
+    expect(NIGHT_ENEMY_DMG_MUL).toBe(1.6);
+  });
+
+  test('night uptime = NIGHT_DURATION / NIGHT_CYCLE_INTERVAL = 20%', () => {
+    expect(NIGHT_DURATION / NIGHT_CYCLE_INTERVAL).toBeCloseTo(0.2, 2);
+  });
+});
