@@ -58,6 +58,7 @@ function makeCtx(overrides: Partial<ExpMultiplierContext> = {}): ExpMultiplierCo
     critExpChain: 0,
     baseExpGain: 100,
     colosseumActive: false,
+    trialGroundsActive: false,
     ...overrides,
   };
 }
@@ -133,5 +134,11 @@ describe('computeExpMultiplierWithBreakdown', () => {
     const base = computeExpMultiplier(makeCtx());
     const colosseum = computeExpMultiplier(makeCtx({ colosseumActive: true }));
     expect(colosseum).toBeCloseTo(base * 2.0, 5);
+  });
+
+  it('C762: trial grounds applies 1.35x EXP multiplier', () => {
+    const base = computeExpMultiplier(makeCtx());
+    const trial = computeExpMultiplier(makeCtx({ trialGroundsActive: true }));
+    expect(trial).toBeCloseTo(base * 1.35, 5);
   });
 });
