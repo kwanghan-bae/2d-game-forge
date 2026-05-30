@@ -518,7 +518,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           <span data-testid="hud-name" style={hudChipStyle}>{hero.emoji} {hero.name}</span>
           <span data-testid="hud-age" style={hudChipStyle}>{hero.age}세 · {hero.chapter}</span>
           <span data-testid="hud-job-lv" style={hudChipStyle}>{hero.job} · LV {formatCompact(hero.level)}</span>
-          <span data-testid="hud-hp" style={hudChipStyle}>HP {formatCompact(hero.hp)}/{formatCompact(hero.hpMax)}</span>
+          <span data-testid="hud-hp" style={{...hudChipStyle, color: hero.hp < hero.hpMax * 0.25 ? '#f44' : hero.hp < hero.hpMax * 0.5 ? '#fa0' : '#8f8'}}>HP {formatCompact(hero.hp)}/{formatCompact(hero.hpMax)}</span>
         </div>
         {/* Row 2: 자원 — 빛 / 재생 / 계절 / 지역 */}
         <div data-testid="hud-row-resource" style={hudRowStyle(12)}>
