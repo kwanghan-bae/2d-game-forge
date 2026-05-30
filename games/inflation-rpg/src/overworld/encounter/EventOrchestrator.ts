@@ -19,13 +19,14 @@ import {
   ABYSSAL_CONVERGENCE_DURATION,
   TEMPORAL_FISSURE_DURATION,
   COLOSSEUM_DURATION,
+  TITAN_ARENA_DURATION,
 } from './constants';
 
 export type EventId =
   | 'colosseum' | 'trial_grounds' | 'storm_nexus'
   | 'rain_sanctuary' | 'fog_ambush' | 'wind_gale'
   | 'snow_drift' | 'void_rift' | 'abyssal_convergence'
-  | 'temporal_fissure';
+  | 'temporal_fissure' | 'titan_arena';
 
 export interface EventAcceptEffects {
   colosseumRemaining: number;
@@ -40,6 +41,7 @@ export interface EventAcceptEffects {
   snowDriftRemaining: number;
   abyssalConvergenceRemaining: number;
   temporalFissureRemaining: number;
+  titanArenaRemaining: number;
   declineGold: number;
 }
 
@@ -47,7 +49,8 @@ const EMPTY_EFFECTS: EventAcceptEffects = {
   colosseumRemaining: 0, voidRiftRemaining: 0, voidRiftRelicLevels: null,
   trialGroundsRemaining: 0, stormNexusRemaining: 0, rainSanctuaryRemaining: 0,
   rainSanctuaryHeal: 0, fogAmbushRemaining: 0, windGaleRemaining: 0,
-  snowDriftRemaining: 0, abyssalConvergenceRemaining: 0, temporalFissureRemaining: 0, declineGold: 0,
+  snowDriftRemaining: 0, abyssalConvergenceRemaining: 0, temporalFissureRemaining: 0,
+  titanArenaRemaining: 0, declineGold: 0,
 };
 
 export interface EventOrchestratorCtx {
@@ -76,6 +79,7 @@ export class EventOrchestrator {
     this.sm.register('snow_drift', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('abyssal_convergence', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('temporal_fissure', { onAccept: () => {}, onDecline: () => {} });
+    this.sm.register('titan_arena', { onAccept: () => {}, onDecline: () => {} });
   }
 
   trigger(id: EventId): void { this.sm.trigger(id); }
@@ -115,6 +119,7 @@ export class EventOrchestrator {
         case 'snow_drift': this.lastEffects.snowDriftRemaining = SNOW_DRIFT_DURATION; break;
         case 'abyssal_convergence': this.lastEffects.abyssalConvergenceRemaining = ABYSSAL_CONVERGENCE_DURATION; break;
         case 'temporal_fissure': this.lastEffects.temporalFissureRemaining = TEMPORAL_FISSURE_DURATION; break;
+        case 'titan_arena': this.lastEffects.titanArenaRemaining = TITAN_ARENA_DURATION; break;
       }
     } else {
       this.lastEffects.declineGold = Math.min(EVENT_DECLINE_GOLD_CAP,

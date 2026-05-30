@@ -79,7 +79,13 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     id: 'event_abyssal_convergence',
     minTotalFights: 250,
     chance: 0.025,
-    description: 'Abyssal Convergence — EXP×1.50, enemy ATK×1.60, 3% HP drain, 5 fights',
+    description: 'Abyssal Convergence — EXP×1.70, enemy ATK×1.60, 3% HP drain, gold×0.5, 5 fights',
+  },
+  {
+    id: 'event_titan_arena',
+    minTotalFights: 300,
+    chance: 0.02,
+    description: 'Titan Arena — enemy HP×1.5, ATK×1.3, EXP×2.0 for 4 fights',
   },
 ];
 
