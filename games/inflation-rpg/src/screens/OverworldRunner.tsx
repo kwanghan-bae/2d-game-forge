@@ -326,22 +326,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           setInspirationRemaining(engineRef.current?.getInspirationRemaining?.() ?? 0);
           // C761: Trait influence badge wiring
           setInfluencingTraits([...(getSceneRef.current?.()?.getLastInfluencingTraits?.() ?? [])] as TraitId[]);
-          // C765: Active event badges
-          setActiveEvents({
-            trialGroundsRemaining: controller.getTrialGroundsRemaining(),
-            colosseumRemaining: controller.getColosseumRemaining(),
-            voidRiftRemaining: controller.getVoidRiftRemaining(),
-            stormNexusRemaining: controller.getStormNexusRemaining(),
-            rainSanctuaryRemaining: controller.getRainSanctuaryRemaining(),
-            fogAmbushRemaining: controller.getFogAmbushRemaining(),
-            windGaleRemaining: controller.getWindGaleRemaining(),
-            snowDriftRemaining: controller.getSnowDriftRemaining(),
-            abyssalConvergenceRemaining: controller.getAbyssalConvergenceRemaining(),
-            temporalFissureRemaining: controller.getTemporalFissureRemaining(),
-            titanArenaRemaining: controller.getTitanArenaRemaining(),
-            eventMomentumAtkRemaining: controller.getEventMomentumAtkRemaining(),
-            eventMomentumDensityRemaining: controller.getEventMomentumDensityRemaining(),
-          });
+          // C798: Active event badges (aggregate accessor)
+          setActiveEvents(controller.getActiveEventState());
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||

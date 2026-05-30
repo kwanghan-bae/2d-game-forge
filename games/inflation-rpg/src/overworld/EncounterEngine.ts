@@ -410,6 +410,24 @@ export class EncounterEngine {
   getEventChainCount(): number { return this.eventChainCount; }
   getEventMomentumAtkRemaining(): number { return this.eventMomentumAtkRemaining; }
   getEventMomentumDensityRemaining(): number { return this.eventMomentumDensityRemaining; }
+  // C798: Aggregate accessor for HUD — replaces N individual getter calls
+  getActiveEventState() {
+    return {
+      trialGroundsRemaining: this.trialGroundsRemaining,
+      colosseumRemaining: this.colosseumRemaining,
+      voidRiftRemaining: this.voidRiftRemaining,
+      stormNexusRemaining: this.stormNexusRemaining,
+      rainSanctuaryRemaining: this.rainSanctuaryRemaining,
+      fogAmbushRemaining: this.fogAmbushRemaining,
+      windGaleRemaining: this.windGaleRemaining,
+      snowDriftRemaining: this.snowDriftRemaining,
+      abyssalConvergenceRemaining: this.abyssalConvergenceRemaining,
+      temporalFissureRemaining: this.temporalFissureRemaining,
+      titanArenaRemaining: this.titanArenaRemaining,
+      eventMomentumAtkRemaining: this.eventMomentumAtkRemaining,
+      eventMomentumDensityRemaining: this.eventMomentumDensityRemaining,
+    };
+  }
   getTotalDeaths(): number { return this.totalDeaths; }
   getTotalFights(): number { return this.totalWins + this.totalDeaths; }
 
