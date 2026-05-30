@@ -37,6 +37,22 @@ export interface HudBadge {
   label: string;
 }
 
+// C794: Declarative event badge registry — add new events here (1 line each)
+const EVENT_BADGE_REGISTRY: Array<{ key: keyof ActiveEventState; icon: string; label: string }> = [
+  { key: 'trialGroundsRemaining', icon: '⚔️', label: '시련장' },
+  { key: 'colosseumRemaining', icon: '🏟️', label: '투기장' },
+  { key: 'voidRiftRemaining', icon: '🌀', label: '공허균열' },
+  { key: 'stormNexusRemaining', icon: '⛈️', label: '폭풍핵' },
+  { key: 'rainSanctuaryRemaining', icon: '🌧️', label: '비의 성소' },
+  { key: 'fogAmbushRemaining', icon: '🌫️', label: '안개 매복' },
+  { key: 'windGaleRemaining', icon: '🌬️', label: '질풍' },
+  { key: 'snowDriftRemaining', icon: '❄️', label: '눈보라' },
+  { key: 'abyssalConvergenceRemaining', icon: '🌊', label: '심연 수렴' },
+  { key: 'temporalFissureRemaining', icon: '⏳', label: '시간 균열' },
+  { key: 'eventMomentumAtkRemaining', icon: '🔥', label: '기세 ATK' },
+  { key: 'eventMomentumDensityRemaining', icon: '🌀', label: '기세 밀도' },
+];
+
 export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
   const badges: HudBadge[] = [];
 
@@ -64,44 +80,13 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
     });
   }
 
-  // Active gated events
+  // Active gated events — data-driven
   if (input.activeEvents) {
-    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining, rainSanctuaryRemaining, fogAmbushRemaining, windGaleRemaining, snowDriftRemaining, abyssalConvergenceRemaining, temporalFissureRemaining, eventMomentumAtkRemaining, eventMomentumDensityRemaining } = input.activeEvents;
-    if (trialGroundsRemaining > 0) {
-      badges.push({ type: 'event', icon: '⚔️', label: `시련장 (${trialGroundsRemaining})` });
-    }
-    if (colosseumRemaining > 0) {
-      badges.push({ type: 'event', icon: '🏟️', label: `투기장 (${colosseumRemaining})` });
-    }
-    if (voidRiftRemaining > 0) {
-      badges.push({ type: 'event', icon: '🌀', label: `공허균열 (${voidRiftRemaining})` });
-    }
-    if (stormNexusRemaining > 0) {
-      badges.push({ type: 'event', icon: '⛈️', label: `폭풍핵 (${stormNexusRemaining})` });
-    }
-    if (rainSanctuaryRemaining > 0) {
-      badges.push({ type: 'event', icon: '🌧️', label: `비의 성소 (${rainSanctuaryRemaining})` });
-    }
-    if (fogAmbushRemaining > 0) {
-      badges.push({ type: 'event', icon: '🌫️', label: `안개 매복 (${fogAmbushRemaining})` });
-    }
-    if (windGaleRemaining > 0) {
-      badges.push({ type: 'event', icon: '🌬️', label: `질풍 (${windGaleRemaining})` });
-    }
-    if (snowDriftRemaining > 0) {
-      badges.push({ type: 'event', icon: '❄️', label: `눈보라 (${snowDriftRemaining})` });
-    }
-    if (abyssalConvergenceRemaining > 0) {
-      badges.push({ type: 'event', icon: '🌊', label: `심연 수렴 (${abyssalConvergenceRemaining})` });
-    }
-    if (temporalFissureRemaining > 0) {
-      badges.push({ type: 'event', icon: '⏳', label: `시간 균열 (${temporalFissureRemaining})` });
-    }
-    if (eventMomentumAtkRemaining > 0) {
-      badges.push({ type: 'event', icon: '🔥', label: `기세 ATK (${eventMomentumAtkRemaining})` });
-    }
-    if (eventMomentumDensityRemaining > 0) {
-      badges.push({ type: 'event', icon: '🌀', label: `기세 밀도 (${eventMomentumDensityRemaining})` });
+    for (const entry of EVENT_BADGE_REGISTRY) {
+      const remaining = input.activeEvents[entry.key];
+      if (remaining > 0) {
+        badges.push({ type: 'event', icon: entry.icon, label: `${entry.label} (${remaining})` });
+      }
     }
   }
 
