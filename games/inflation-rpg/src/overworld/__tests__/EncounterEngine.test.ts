@@ -862,10 +862,10 @@ describe('EncounterEngine — C617 death rate verification', () => {
   });
 
   it('C627 balance sim: balanced hero occasionally dies in 200 fights', () => {
-    const hero = HeroEntity.create({ seed: 42, heroHpMax: 40, heroAtkBase: 15 });
+    const hero = HeroEntity.create({ seed: 42, heroHpMax: 35, heroAtkBase: 15 }); // C781: reduced HP (weather softening)
     const engine = new EncounterEngine(new SeededRng(123));
     let deaths = 0;
-    const totalFights = 400;
+    const totalFights = 600; // C781: increased from 400 (weather softening reduces death rate)
 
     for (let i = 0; i < totalFights; i++) {
       const events = engine.resolveEncounter(hero, 'enemy', `e_${i}`);

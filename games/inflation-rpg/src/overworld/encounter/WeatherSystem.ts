@@ -36,7 +36,7 @@ export interface EnvironmentResult {
 const WEATHER_RAIN_DODGE_BONUS = 0.05;
 const WEATHER_FOG_SPEED_PENALTY = 0.10;
 // C742: storm/snow effects
-const WEATHER_STORM_CRIT_PENALTY = 0.60;
+const WEATHER_STORM_CRIT_PENALTY = 0.75; // C781: tuned from 0.60 (crit-build nerf -40%→-25%)
 const WEATHER_SNOW_SPEED_PENALTY = 0.15;
 
 /**
