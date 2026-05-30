@@ -313,6 +313,8 @@ export class EncounterEngine {
   getAtkBreakdownInput() { return this.lastAtkBreakdownInput; }
   getExpBreakdown() { return this.lastExpBreakdown; }
   getWeather() { return this.lastWeather; }
+  // C753: expose inspiration remaining for HUD
+  getInspirationRemaining(): number { return this.inspirationRemaining; }
   // C735: expose night state for UI
   getIsNight(): boolean { return computeNight(this.totalWins).isNight; }
   getHealResult() { return this.lastHealResult; }

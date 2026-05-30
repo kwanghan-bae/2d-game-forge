@@ -158,8 +158,7 @@ export const ECHO_DURATION = 10; // shorter than full prestige echo (20)
 export const ECHO_MIN_LEVEL = 5; // only for mid-game heroes
 export const INSPIRATION_EVENT_CHANCE = 0.025; // C747: ATK buff event
 export const INSPIRATION_ATK_BONUS = 0.15; // +15% ATK for duration
-export const INSPIRATION_DURATION = 8; // fights
-export const INSPIRATION_MIN_FIGHTS = 40; // mid-game gate
+// C753: INSPIRATION_DURATION and INSPIRATION_MIN_FIGHTS removed — replaced by getInspirationConfig() in ConstantPhaseProfile.ts
 export const BLACKSMITH_CHANCE = 0.02;
 export const BLACKSMITH_BOOST = 5;
 export const CURSED_ALTAR_CHANCE = 0.025; // C696: was 0.015, more frequent

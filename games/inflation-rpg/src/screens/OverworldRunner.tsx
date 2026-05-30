@@ -29,6 +29,7 @@ import type { ExpBreakdownEntry } from '../components/ExpBreakdownBadgeLogic';
 import type { PostCombatHealResult } from '../overworld/encounter/PostCombatHealCalc';
 import { StatDeltaPopup } from '../components/StatDeltaPopup';
 import { WeatherHudIndicator } from '../components/WeatherHudIndicator';
+import { HudIndicatorBarComponent } from '../components/HudIndicatorBarComponent';
 import { DestinationBadge } from '../components/DestinationBadge';
 import type { Weather } from '../overworld/encounter/WeatherSystem';
 import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
@@ -146,6 +147,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [currentWeather, setCurrentWeather] = useState<Weather>('normal');
   const [isNight, setIsNight] = useState(false);
+  const [inspirationRemaining, setInspirationRemaining] = useState(0);
   const [currentDestination, setCurrentDestination] = useState<import('../data/landmarks').LandmarkKind | null>(null);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -313,6 +315,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           setCurrentWeather(engineRef.current?.getWeather?.() ?? 'normal');
           // C735: Night indicator wiring
           setIsNight(engineRef.current?.getIsNight?.() ?? false);
+          // C753: Inspiration badge wiring
+          setInspirationRemaining(engineRef.current?.getInspirationRemaining?.() ?? 0);
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||
@@ -687,7 +691,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
-      <WeatherHudIndicator weather={currentWeather} isNight={isNight} />
+      <HudIndicatorBarComponent weather={currentWeather} isNight={isNight} influencingTraits={[]} inspirationRemaining={inspirationRemaining} />
       <DestinationBadge kind={currentDestination} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />
