@@ -507,7 +507,7 @@ describe('EncounterEngine — C137 death streak mercy', () => {
     }
 
     // After 3rd death, mercy should be granted
-    expect(engine.getMercyRemaining()).toBe(3);
+    expect(engine.getMercyRemaining()).toBe(2); // C611: duration nerfed 3→2
   });
 
   it('mercy decrements on wins and resets death streak', () => {
@@ -519,12 +519,12 @@ describe('EncounterEngine — C137 death streak mercy', () => {
       hero.recoverFromStagger();
       engine.resolveEncounter(hero, 'enemy', `e_${i}`);
     }
-    expect(engine.getMercyRemaining()).toBe(3);
+    expect(engine.getMercyRemaining()).toBe(2); // C611: duration nerfed 3→2
 
     // Now give hero enough power to win
     const strongHero = HeroEntity.create({ seed: 1, heroHpMax: 10000, heroAtkBase: 100000 });
     engine.resolveEncounter(strongHero, 'enemy', 'e_win');
-    expect(engine.getMercyRemaining()).toBe(2);
+    expect(engine.getMercyRemaining()).toBe(1); // C611: starts at 2, decremented to 1
   });
 });
 
