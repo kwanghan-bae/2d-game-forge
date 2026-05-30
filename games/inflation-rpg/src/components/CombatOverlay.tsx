@@ -9,7 +9,7 @@ export function CombatOverlay() {
   if (!controller) return null;
 
   const summary = controller.getCombatSummary();
-  if (summary.activeBuffs.length === 0 && summary.deathPrevention === 0 && summary.dangerLevel === 0) {
+  if (summary.activeBuffs.length === 0 && summary.deathPrevention === 0 && summary.dangerLevel === 0 && summary.adaptivePressure === 0) {
     return null;
   }
 
@@ -42,6 +42,11 @@ export function CombatOverlay() {
         <div>
           <span style={{ color: '#f88' }}>{'🔥'.repeat(Math.min(summary.dangerLevel, 5))}</span>{' '}
           위험 Lv{summary.dangerLevel}
+        </div>
+      )}
+      {summary.adaptivePressure > 10 && (
+        <div style={{ marginTop: 4, fontSize: 10, color: summary.adaptivePressure > 50 ? '#f88' : '#aaa' }}>
+          압력 {summary.adaptivePressure}%
         </div>
       )}
     </div>

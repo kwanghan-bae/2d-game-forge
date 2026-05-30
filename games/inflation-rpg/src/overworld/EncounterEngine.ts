@@ -268,7 +268,7 @@ export class EncounterEngine {
   setDangerChoice(retreat: boolean): void { this.pendingDangerChoice = retreat ? 1 : 0; }
 
   // C578: combat stats summary for visual overlay
-  getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean } {
+  getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean; adaptivePressure: number } {
     const activeBuffs: string[] = [];
     if (this.shrineBuffRemaining > 0) activeBuffs.push('명상');
     if (this.sacrificeFuryRemaining > 0) activeBuffs.push('분노');
@@ -285,7 +285,9 @@ export class EncounterEngine {
     }
     if (this.hasRelic(2) && !this.phoenixFeatherUsed) deathPrevention++; // phoenix (always works)
     const dangerLevel = Math.min(10, Math.floor(this.dangerStreak / 5));
-    return { activeBuffs, deathPrevention, dangerLevel, deathSaveBlocked };
+    // C612: adaptive pressure indicator (0-100%)
+    const adaptivePressure = Math.min(100, Math.round(this.comboStreak * 2));
+    return { activeBuffs, deathPrevention, dangerLevel, deathSaveBlocked, adaptivePressure };
   }
 
   // C594: extracted death prevention logic
