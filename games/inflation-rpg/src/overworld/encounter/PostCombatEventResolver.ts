@@ -332,8 +332,8 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
-    // Time rift
-    if (ctx.fightsSinceVillage > 50) {
+    // Time rift — C820: excluded from pool after fight 300 (dead weight in late-game)
+    if (ctx.fightsSinceVillage > 50 && ctx.totalFights < 300) {
       candidates.push({
         id: 'time_rift', weight: TIME_RIFT_CHANCE, pityEligible: true,
         apply: (r) => { r.newFightsSinceVillage = 0; r.eventType = 'event_time_rift'; },
