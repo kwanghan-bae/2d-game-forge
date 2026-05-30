@@ -126,11 +126,11 @@ describe('EventChoiceEngine', () => {
       expect(engine.hasPendingGamblerChoice()).toBe(false);
     });
 
-    test('resolveGamblerChoice defaults to WALK_AWAY', () => {
+    test('resolveGamblerChoice defaults to BET_LOW', () => {
       const engine = new EventChoiceEngine();
       engine.triggerGambler();
       const result = engine.resolveGamblerChoice();
-      expect(result).toBe(GamblerChoice.WALK_AWAY);
+      expect(result).toBe(GamblerChoice.BET_LOW);
     });
   });
 
@@ -155,11 +155,11 @@ describe('EventChoiceEngine', () => {
       expect(engine.hasPendingAltarChoice()).toBe(false);
     });
 
-    test('resolveAltarChoice defaults to LEAVE', () => {
+    test('resolveAltarChoice defaults to SACRIFICE', () => {
       const engine = new EventChoiceEngine();
       engine.triggerAltar();
       const result = engine.resolveAltarChoice();
-      expect(result).toBe(AltarChoice.LEAVE);
+      expect(result).toBe(AltarChoice.SACRIFICE);
     });
   });
 });
