@@ -877,53 +877,57 @@ export class CycleControllerV2 {
   setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }
   getTotalDeaths() { return this.encounter.getTotalDeaths(); }
   getTotalFights() { return this.encounter.getTotalFights(); }
-  // C765: active event state for HUD badges
-  getTrialGroundsRemaining() { return this.encounter.getTrialGroundsRemaining(); }
-  getTrialGroundsPending() { return this.encounter.getTrialGroundsPending(); }
-  resolveTrialGrounds(accept: boolean) { this.encounter.resolveTrialGrounds(accept); this.recordEventChoice('trial_grounds', accept); }
-  getColosseumRemaining() { return this.encounter.getColosseumRemaining(); }
-  getColosseumPending() { return this.encounter.getColosseumPending(); }
-  resolveColosseum(accept: boolean) { this.encounter.resolveColosseum(accept); this.recordEventChoice('colosseum', accept); }
-  getStormNexusRemaining() { return this.encounter.getStormNexusRemaining(); }
-  getStormNexusPending() { return this.encounter.getStormNexusPending(); }
-  resolveStormNexus(accept: boolean) { this.encounter.resolveStormNexus(accept); this.recordEventChoice('storm_nexus', accept); }
-  // C773: Rain Sanctuary proxies
-  getRainSanctuaryRemaining() { return this.encounter.getRainSanctuaryRemaining(); }
-  getRainSanctuaryPending() { return this.encounter.getRainSanctuaryPending(); }
-  resolveRainSanctuary(accept: boolean) { this.encounter.resolveRainSanctuary(accept); this.recordEventChoice('rain_sanctuary', accept); }
-  // C773: Fog Ambush proxies
-  getFogAmbushRemaining() { return this.encounter.getFogAmbushRemaining(); }
-  getFogAmbushPending() { return this.encounter.getFogAmbushPending(); }
-  resolveFogAmbush(accept: boolean) { this.encounter.resolveFogAmbush(accept); this.recordEventChoice('fog_ambush', accept); }
-  // C782: Wind Gale + Snow Drift
-  getWindGaleRemaining() { return this.encounter.getWindGaleRemaining(); }
-  getWindGalePending() { return this.encounter.getWindGalePending(); }
-  resolveWindGale(accept: boolean) { this.encounter.resolveWindGale(accept); this.recordEventChoice('wind_gale', accept); }
-  getSnowDriftRemaining() { return this.encounter.getSnowDriftRemaining(); }
-  getSnowDriftPending() { return this.encounter.getSnowDriftPending(); }
-  resolveSnowDrift(accept: boolean) { this.encounter.resolveSnowDrift(accept); this.recordEventChoice('snow_drift', accept); }
-  getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
-  getVoidRiftPending() { return this.encounter.getVoidRiftPending(); }
-  resolveVoidRift(accept: boolean) { this.encounter.resolveVoidRift(accept); this.recordEventChoice('void_rift', accept); }
+  // C801: Generic event accessors — all per-event methods delegate here
+  private resolveEventGeneric(id: import('./encounter/EventOrchestrator').EventId, accept: boolean) {
+    this.encounter.resolveEvent(id, accept);
+    this.recordEventChoice(id, accept);
+  }
+  getEventRemaining(id: import('./encounter/EventOrchestrator').EventId) { return this.encounter.getEventRemaining(id); }
+  getEventPending(id: import('./encounter/EventOrchestrator').EventId) { return this.encounter.getEventPending(id); }
+  resolveEvent(id: import('./encounter/EventOrchestrator').EventId, accept: boolean) { this.resolveEventGeneric(id, accept); }
+
+  // Legacy per-event accessors (kept for existing callers)
+  getTrialGroundsRemaining() { return this.encounter.getEventRemaining('trial_grounds'); }
+  getTrialGroundsPending() { return this.encounter.getEventPending('trial_grounds'); }
+  resolveTrialGrounds(accept: boolean) { this.resolveEventGeneric('trial_grounds', accept); }
+  getColosseumRemaining() { return this.encounter.getEventRemaining('colosseum'); }
+  getColosseumPending() { return this.encounter.getEventPending('colosseum'); }
+  resolveColosseum(accept: boolean) { this.resolveEventGeneric('colosseum', accept); }
+  getStormNexusRemaining() { return this.encounter.getEventRemaining('storm_nexus'); }
+  getStormNexusPending() { return this.encounter.getEventPending('storm_nexus'); }
+  resolveStormNexus(accept: boolean) { this.resolveEventGeneric('storm_nexus', accept); }
+  getRainSanctuaryRemaining() { return this.encounter.getEventRemaining('rain_sanctuary'); }
+  getRainSanctuaryPending() { return this.encounter.getEventPending('rain_sanctuary'); }
+  resolveRainSanctuary(accept: boolean) { this.resolveEventGeneric('rain_sanctuary', accept); }
+  getFogAmbushRemaining() { return this.encounter.getEventRemaining('fog_ambush'); }
+  getFogAmbushPending() { return this.encounter.getEventPending('fog_ambush'); }
+  resolveFogAmbush(accept: boolean) { this.resolveEventGeneric('fog_ambush', accept); }
+  getWindGaleRemaining() { return this.encounter.getEventRemaining('wind_gale'); }
+  getWindGalePending() { return this.encounter.getEventPending('wind_gale'); }
+  resolveWindGale(accept: boolean) { this.resolveEventGeneric('wind_gale', accept); }
+  getSnowDriftRemaining() { return this.encounter.getEventRemaining('snow_drift'); }
+  getSnowDriftPending() { return this.encounter.getEventPending('snow_drift'); }
+  resolveSnowDrift(accept: boolean) { this.resolveEventGeneric('snow_drift', accept); }
+  getVoidRiftRemaining() { return this.encounter.getEventRemaining('void_rift'); }
+  getVoidRiftPending() { return this.encounter.getEventPending('void_rift'); }
+  resolveVoidRift(accept: boolean) { this.resolveEventGeneric('void_rift', accept); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
-  getAbyssalConvergenceRemaining() { return this.encounter.getAbyssalConvergenceRemaining(); }
-  getAbyssalConvergencePending() { return this.encounter.getAbyssalConvergencePending(); }
-  resolveAbyssalConvergence(accept: boolean) { this.encounter.resolveAbyssalConvergence(accept); this.recordEventChoice('abyssal_convergence', accept); }
-  getTemporalFissureRemaining() { return this.encounter.getTemporalFissureRemaining(); }
-  getTemporalFissurePending() { return this.encounter.getTemporalFissurePending(); }
-  resolveTemporalFissure(accept: boolean) { this.encounter.resolveTemporalFissure(accept); this.recordEventChoice('temporal_fissure', accept); }
-  getTitanArenaRemaining() { return this.encounter.getTitanArenaRemaining(); }
-  getTitanArenaPending() { return this.encounter.getTitanArenaPending(); }
-  resolveTitanArena(accept: boolean) { this.encounter.resolveTitanArena(accept); this.recordEventChoice('titan_arena', accept); }
-  // C800: Gold Crucible
-  getGoldCrucibleRemaining() { return this.encounter.getGoldCrucibleRemaining(); }
-  getGoldCruciblePending() { return this.encounter.getGoldCruciblePending(); }
-  resolveGoldCrucible(accept: boolean) { this.encounter.resolveGoldCrucible(accept); this.recordEventChoice('gold_crucible', accept); }
-  // C800: Astral Paradox
-  getAstralParadoxRemaining() { return this.encounter.getAstralParadoxRemaining(); }
-  getAstralParadoxPending() { return this.encounter.getAstralParadoxPending(); }
-  resolveAstralParadox(accept: boolean) { this.encounter.resolveAstralParadox(accept); this.recordEventChoice('astral_paradox', accept); }
+  getAbyssalConvergenceRemaining() { return this.encounter.getEventRemaining('abyssal_convergence'); }
+  getAbyssalConvergencePending() { return this.encounter.getEventPending('abyssal_convergence'); }
+  resolveAbyssalConvergence(accept: boolean) { this.resolveEventGeneric('abyssal_convergence', accept); }
+  getTemporalFissureRemaining() { return this.encounter.getEventRemaining('temporal_fissure'); }
+  getTemporalFissurePending() { return this.encounter.getEventPending('temporal_fissure'); }
+  resolveTemporalFissure(accept: boolean) { this.resolveEventGeneric('temporal_fissure', accept); }
+  getTitanArenaRemaining() { return this.encounter.getEventRemaining('titan_arena'); }
+  getTitanArenaPending() { return this.encounter.getEventPending('titan_arena'); }
+  resolveTitanArena(accept: boolean) { this.resolveEventGeneric('titan_arena', accept); }
+  getGoldCrucibleRemaining() { return this.encounter.getEventRemaining('gold_crucible'); }
+  getGoldCruciblePending() { return this.encounter.getEventPending('gold_crucible'); }
+  resolveGoldCrucible(accept: boolean) { this.resolveEventGeneric('gold_crucible', accept); }
+  getAstralParadoxRemaining() { return this.encounter.getEventRemaining('astral_paradox'); }
+  getAstralParadoxPending() { return this.encounter.getEventPending('astral_paradox'); }
+  resolveAstralParadox(accept: boolean) { this.resolveEventGeneric('astral_paradox', accept); }
   getEventMomentumAtkRemaining() { return this.encounter.getEventMomentumAtkRemaining(); }
   getEventMomentumDensityRemaining() { return this.encounter.getEventMomentumDensityRemaining(); }
   // C798: Aggregate accessor
