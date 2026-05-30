@@ -83,6 +83,7 @@ export interface PostCombatResult {
   newInspirationRemaining: number;
   newColosseumRemaining: number;
   newTrialGroundsRemaining: number;
+  trialGroundsPending: boolean;
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
@@ -112,6 +113,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newInspirationRemaining: 0,
     newColosseumRemaining: 0,
     newTrialGroundsRemaining: 0,
+    trialGroundsPending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
@@ -237,7 +239,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     for (const me of midEvents) {
       if (rngOrPity(me.chance)) {
         if (me.id === 'event_trial_grounds') {
-          result.newTrialGroundsRemaining = TRIAL_GROUNDS_DURATION;
+          result.trialGroundsPending = true;
           result.eventType = 'event_trial_grounds';
         }
         eventTriggered = true;

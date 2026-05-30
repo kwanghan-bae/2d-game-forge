@@ -876,6 +876,12 @@ export class CycleControllerV2 {
   setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }
   getTotalDeaths() { return this.encounter.getTotalDeaths(); }
   getTotalFights() { return this.encounter.getTotalFights(); }
+  // C765: active event state for HUD badges
+  getTrialGroundsRemaining() { return this.encounter.getTrialGroundsRemaining(); }
+  getTrialGroundsPending() { return this.encounter.getTrialGroundsPending(); }
+  resolveTrialGrounds(accept: boolean) { this.encounter.resolveTrialGrounds(accept); }
+  getColosseumRemaining() { return this.encounter.getColosseumRemaining(); }
+  getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
 
