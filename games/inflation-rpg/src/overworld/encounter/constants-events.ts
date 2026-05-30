@@ -246,7 +246,7 @@ export const SNOW_DRIFT_EXP_MUL = 1.10; // C790: +10% EXP reward for meaningful 
 
 // C775: Event decline consolation
 export const EVENT_DECLINE_GOLD_RATE = 0.02; // gold × 0.02 × comboStreak
-export const EVENT_DECLINE_GOLD_CAP = 50; // max 50 gold consolation
+export const EVENT_DECLINE_GOLD_CAP = 80; // max 80 gold consolation (C805: buffed from 50)
 
 // C789: Late-game density scaling
 export const LATE_GAME_DENSITY_THRESHOLD = 200; // fights after which event chance increases
@@ -278,7 +278,7 @@ export const GOLD_CRUCIBLE_ATK_RATE = 0.12; // C803: 12% of burned gold → flat
 // C800: Astral Paradox — high-risk EXP event (fight 400+)
 export const ASTRAL_PARADOX_DURATION = 5;
 export const ASTRAL_PARADOX_EXP_MUL = 2.5;
-export const ASTRAL_PARADOX_ENEMY_ATK_MUL = 1.8;
+export const ASTRAL_PARADOX_ENEMY_ATK_MUL = 2.0;
 
 // C803: Crimson Tithe — HP investment event (fight 325+)
 export const CRIMSON_TITHE_DURATION = 6;
