@@ -784,8 +784,10 @@ export class EncounterEngine {
           const { luckyDodge: ld } = this.applyDeathPrevention(hero, luckyDodge);
           luckyDodge = ld;
           // C195: gold sacrifice heal — auto-heal when low HP (once per fight)
-          if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= GOLD_HEAL_COST && !goldHealUsed) {
-            hero.gold -= GOLD_HEAL_COST;
+          // C602: cost scales with level to prevent free healing at high levels
+          const goldHealCost = Math.max(GOLD_HEAL_COST, hero.level * 5);
+          if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= goldHealCost && !goldHealUsed) {
+            hero.gold -= goldHealCost;
             hero.heal(Math.floor(hero.hpMax * GOLD_HEAL_AMOUNT));
             goldHealUsed = true;
             // C248: sacrifice fury — gain ATK buff
