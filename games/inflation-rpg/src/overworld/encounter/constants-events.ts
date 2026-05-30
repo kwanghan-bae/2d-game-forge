@@ -187,6 +187,9 @@ export const BOSS_IMMUNITY_INTERVAL = 3;
 export const ACHIEVEMENT_KILL_THRESHOLDS = [100, 500, 1000];
 export const ACHIEVEMENT_ATK_BONUS = 0.05;
 export const WEATHER_CHANCE = 0.3;
+// C777: weather duration — once weather occurs it persists for multiple fights
+export const WEATHER_DURATION_MIN = 3;
+export const WEATHER_DURATION_MAX = 8;
 export const WEATHER_RAIN_ATK_PENALTY = 0.1;
 export const WEATHER_WIND_EXP_BONUS = 0.2;
 export const WEATHER_FOG_CRIT_PENALTY = 0.70;

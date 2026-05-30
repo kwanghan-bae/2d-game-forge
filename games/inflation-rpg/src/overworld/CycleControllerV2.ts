@@ -895,6 +895,8 @@ export class CycleControllerV2 {
   getFogAmbushPending() { return this.encounter.getFogAmbushPending(); }
   resolveFogAmbush(accept: boolean) { this.encounter.resolveFogAmbush(accept); }
   getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
+  getVoidRiftPending() { return this.encounter.getVoidRiftPending(); }
+  resolveVoidRift(accept: boolean) { this.encounter.resolveVoidRift(accept); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
 
