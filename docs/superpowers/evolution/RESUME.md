@@ -1,30 +1,30 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 723
+- Cycle: 727
 - Target: 600+ (연속 진화)
-- Last commit: C723 AI BET_HIGH + WeatherSystem dodge/speed
-- Vitest: 2088 pass / 0 fail
+- Last commit: C727 EnemyTurnCalc extraction
+- Vitest: 2103 pass / 0 fail
 - E2E: 60 passed
-- EncounterEngine: ~1835 lines
+- EncounterEngine: ~1832 lines
 
-## 레이어 카운터 (C705-C723 era)
-- 시스템: 3 (C710 PostCombatHealCalc, C718 pity-trap fix, C723 AI BET_HIGH + Weather dodge/speed)
+## 레이어 카운터 (C705-C727 era)
+- 시스템: 4 (C710 PostCombatHealCalc, C718 pity-trap fix, C723 AI BET_HIGH + Weather dodge/speed, C727 EnemyTurnCalc)
 - 구조: 2 (C711 DropResolver, C719 HeroTurnCalc)
-- UI/UX: 3 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant)
-- 밸런스: 5 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish, C722 EXP+drop cap tuning)
-- 콜라보: 5 (C705, C709, C713, C717, C721)
+- UI/UX: 4 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant, C725 WeatherHudIndicator)
+- 밸런스: 6 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish, C722 EXP+drop cap tuning, C726 fog crit+AI ratio)
+- 콜라보: 6 (C705, C709, C713, C717, C721, C724)
 
 ## 제약
-- cycles_since_collab: 3 (C722, C723, — since C721)
-- Next collab: C724 (NOW)
-- EncounterEngine: ~1835 lines
+- cycles_since_collab: 0 (C728 is collab NOW)
+- Next collab: C731
+- EncounterEngine: ~1832 lines
 - Layer lock: collab (current)
 
-## 다음 3사이클 (C724 협의에서 확정 예정)
-1. [collab] C724: critic + planner + level-designer
-2. C725 TBD
-3. C726 TBD
+## 다음 3사이클 (C728 협의에서 확정 예정)
+1. [collab] C728: critic + planner + level-designer
+2. C729 TBD
+3. C730 TBD
 
 ## 달성 사항 (C705-C716)
 - C705 [collab]: critic(6/5/4/5) + planner + level-designer
@@ -46,6 +46,10 @@
 - C721 [collab]: EXP grind wall 발견, drop diminish cap 조기, AI BET_HIGH 합의
 - C722 [balance]: EXP_DECAY 0.005/0.35 + DROP_DIMINISH 0.015/0.40 (grind wall 해소)
 - C723 [system]: AI BET_HIGH (gold>3×threshold) + Weather dodge(rain+5%)/speed(fog-10%)
+- C724 [collab]: WeatherHud 필수, fog crit 완화 합의, AI ratio 상향, EnemyTurnCalc 로드맵
+- C725 [UI/UX]: WeatherHudIndicator pill badge + engine.getWeather() getter
+- C726 [balance]: Fog crit 0.50→0.70, AI BET_HIGH ratio 3→5 (threshold 5000)
+- C727 [system]: EnemyTurnCalc 순수 함수 추출 (boss rage/enrage/timer)
 
 ## 캐리오버 (미완료)
 - [x] EXP breakdown badge wire into OverworldRunner — DONE C707

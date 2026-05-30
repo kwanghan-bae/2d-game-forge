@@ -29,6 +29,7 @@ import type { ExpBreakdownEntry } from '../components/ExpBreakdownBadgeLogic';
 import type { PostCombatHealResult } from '../overworld/encounter/PostCombatHealCalc';
 import { StatDeltaPopup } from '../components/StatDeltaPopup';
 import { WeatherHudIndicator } from '../components/WeatherHudIndicator';
+import { DestinationBadge } from '../components/DestinationBadge';
 import type { Weather } from '../overworld/encounter/WeatherSystem';
 import { computeStatDeltas } from '../components/StatDeltaPopupLogic';
 import { AtkBreakdownTooltip } from '../components/AtkBreakdownTooltip';
@@ -144,6 +145,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [healResult, setHealResult] = useState<PostCombatHealResult | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [currentWeather, setCurrentWeather] = useState<Weather>('normal');
+  const [currentDestination, setCurrentDestination] = useState<import('../data/landmarks').LandmarkKind | null>(null);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
@@ -223,6 +225,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       containerRef.current,
       (event) => {
         if (event.type === 'arrived_at') {
+          // C729: DestinationBadge wiring
+          setCurrentDestination(event.landmarkKind);
           const evs = controller.handleArrival(event.landmarkKind, event.landmarkId);
           const { delta: rawDelta } = computeLightDelta(evs, event.landmarkKind);
           if (rawDelta > 0) {
@@ -681,6 +685,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
       <WeatherHudIndicator weather={currentWeather} />
+      <DestinationBadge kind={currentDestination} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />
       <HealBreakdownBadge healResult={healResult} heroHpMax={hero.hpMax} />
