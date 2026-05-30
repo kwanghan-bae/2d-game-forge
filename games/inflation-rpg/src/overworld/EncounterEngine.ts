@@ -368,9 +368,12 @@ export class EncounterEngine {
       // C317: enemy weakening — kills reduce enemy HP
       const enemyWeakenMul = 1 - Math.min(ENEMY_WEAKEN_CAP, Math.floor(this.killCount / ENEMY_WEAKEN_INTERVAL) * ENEMY_WEAKEN_RATE);
       // C589: adaptive enemy HP scaling — enemies get tougher during kill streaks
-      const adaptiveHpMul = 1 + 0.01 * Math.min(this.comboStreak, 50);
+      // C589: adaptive enemy HP scaling — enemies get tougher during kill streaks
+      const adaptiveHpMul = 1 + 0.02 * Math.min(this.comboStreak, 100); // C606: was 0.01/cap50
+      // C606: adaptive enemy ATK — death pressure increases with combo
+      const adaptiveAtkMul = 1 + 0.005 * Math.min(this.comboStreak, 50); // cap +25%
       const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, hero.level, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * enemyWeakenMul * adaptiveHpMul));
-      const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale);
+      const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, hero.level, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul);
 
       if (hero.staggered) return events;
       // C439: decrement death defiance cooldown
