@@ -114,6 +114,7 @@ import {
   BLOOD_PACT_RELIC_EFFICIENCY,
   BLOOD_PACT_ATK_BONUS,
   BLOOD_PACT_THRESHOLD,
+  INSPIRATION_ATK_BONUS,
 } from './constants';
 
 export interface AtkMultiplierContext {
@@ -193,6 +194,7 @@ export interface AtkMultiplierContext {
   emberCrownStacks: number;
   hasScholarLens: boolean;
   cursedAltarAtkBuff: boolean;
+  inspirationActive: boolean;
   // Flat ATK inputs
   comboPrestigeFlat: number;
   comboMilestoneBonus: number;
@@ -270,6 +272,7 @@ export function computeAtkMultipliers(ctx: AtkMultiplierContext): AtkMultiplierR
   const adrenalineRushMul = ctx.hpBelowAdrenalineRush ? (1 + ADRENALINE_RUSH_ATK_BONUS) : 1;
   const shieldSacrificeMul = ctx.hadShieldSacrifice ? SHIELD_SACRIFICE_ATK_MUL : 1;
   const prestigeEchoMul = ctx.hadPrestigeEcho ? (1 + PRESTIGE_ECHO_BONUS - ctx.prestigeEchoDecay * PRESTIGE_ECHO_DECAY) : 1;
+  const inspirationMul = ctx.inspirationActive ? (1 + INSPIRATION_ATK_BONUS) : 1;
   const waveExhaustionMul = ctx.hadWaveExhaustion ? (1 - WAVE_EXHAUSTION_ATK_PENALTY) : 1;
   const shieldBreakBurstMul = ctx.hadShieldBreakBurst ? SHIELD_BREAK_BURST_MUL : 1;
   const dangerBetMul = ctx.dangerBetActive ? DANGER_BET_LOCK_MUL : 1;
@@ -315,7 +318,7 @@ export function computeAtkMultipliers(ctx: AtkMultiplierContext): AtkMultiplierR
   const conditionMuls = nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * fatigueMul;
   const goldMuls = goldHoardMul * adrenalineMul;
   const combatMuls = bossKillAtkMul * trainingMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * dangerAtkScaleMul;
-  const progressMuls = prestigeAtkMul * prestigeSurgeMul * prestigeAtkMomentumMul * prestigeEchoMul * sacrificePrestigeMul * temporalPrestigeMul;
+  const progressMuls = prestigeAtkMul * prestigeSurgeMul * prestigeAtkMomentumMul * prestigeEchoMul * inspirationMul * sacrificePrestigeMul * temporalPrestigeMul;
   const chainMuls = villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * waveAtkCompoundMul * villageAtkTrainingMul * eliteAtkChainMul2;
   const tradeoffMuls = bloodPactMul * adrenalineRushMul * shieldSacrificeMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul;
   const systemMuls = accumulatorMul * agingAtkMul * bloodFurySynergy * antiSynergyPenalty * synergyCountMul * synergyTierMul * synergyPrestigeMul * emberCrownMul * scholarLensMul * cursedAltarMulVal;
