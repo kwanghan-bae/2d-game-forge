@@ -910,16 +910,15 @@ describe('C651: combo decay paths completeness', () => {
     expect(priv.comboStreak).toBe(0);
   });
 
-  it('death applies COMBO_PERSIST_RATE (0.25) on stagger (path: L858)', () => {
+  it('death applies COMBO_PERSIST_RATE (0.35) on stagger (path: L858)', () => {
     const engine = new EncounterEngine(new SeededRng(42));
     const priv = engine as unknown as { comboStreak: number };
     priv.comboStreak = 20;
     // Hero with 1 HP will die immediately
     const hero = HeroEntity.create({ seed: 1, heroHpMax: 1, heroAtkBase: 1 });
     engine.resolveEncounter(hero, 'enemy', 'wolf_1');
-    // C664 fix: only COMBO_PERSIST_RATE (0.25) applies once: floor(20*0.25) = 5
-    // Double-application bug removed (was also applying DEATH_COMBO_PRESERVE_RATE)
-    expect(priv.comboStreak).toBe(5);
+    // C665: COMBO_PERSIST_RATE raised to 0.35: floor(20*0.35) = 7
+    expect(priv.comboStreak).toBe(7);
   });
 
   it('combat win increments combo (path: L960 combo++)', () => {
