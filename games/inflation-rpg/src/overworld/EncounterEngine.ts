@@ -741,25 +741,14 @@ export class EncounterEngine {
       const eventMomentumAtkActive = this.eventMomentumAtkRemaining > 0;
       if (this.eventMomentumAtkRemaining > 0) this.eventMomentumAtkRemaining--;
       if (this.eventMomentumDensityRemaining > 0) this.eventMomentumDensityRemaining--;
-      // C757: Colosseum duration decrement
-      if (this.colosseumRemaining > 0) this.colosseumRemaining--;
-      // C758: Void Rift tier offset decrement
-      if (this.voidRiftRemaining > 0) this.voidRiftRemaining--;
-      // C762: Trial Grounds decrement
-      if (this.trialGroundsRemaining > 0) this.trialGroundsRemaining--;
+      // C819: Simple event duration decrements (no side effects)
+      this.tickSimpleDurations();
       // C770: Storm Nexus decrement + HP drain + ATK buff
       if (this.stormNexusRemaining > 0) {
         hero.hp -= Math.floor(hero.hpMax * STORM_NEXUS_HP_DRAIN_RATE);
         if (hero.hp < 1) hero.hp = 1;
         this.stormNexusRemaining--;
       }
-      // C773: Rain Sanctuary decrement (gold penalty applied in gold calc)
-      if (this.rainSanctuaryRemaining > 0) this.rainSanctuaryRemaining--;
-      // C773: Fog Ambush decrement (enemy ATK + EXP applied in respective calcs)
-      if (this.fogAmbushRemaining > 0) this.fogAmbushRemaining--;
-      // C782: Wind Gale + Snow Drift decrements
-      if (this.windGaleRemaining > 0) this.windGaleRemaining--;
-      if (this.snowDriftRemaining > 0) this.snowDriftRemaining--;
       // C789: Abyssal Convergence decrement + HP drain
       if (this.abyssalConvergenceRemaining > 0) {
         hero.hp -= Math.floor(hero.hpMax * ABYSSAL_CONVERGENCE_HP_DRAIN_RATE);
@@ -774,19 +763,11 @@ export class EncounterEngine {
           this.temporalFissureStoredExp = 0;
         }
       }
-      // C797: Titan Arena duration
-      if (this.titanArenaRemaining > 0) this.titanArenaRemaining--;
-      // C803: Crimson Tithe duration + lifesteal
-      if (this.crimsonTitheRemaining > 0) {
-        this.crimsonTitheRemaining--;
-      }
-      // C800: Gold Crucible + Astral Paradox duration
+      // C800: Gold Crucible (resets atkFlat on expiry)
       if (this.goldCrucibleRemaining > 0) {
         this.goldCrucibleRemaining--;
         if (this.goldCrucibleRemaining === 0) this.goldCrucibleAtkFlat = 0;
       }
-      if (this.astralParadoxRemaining > 0) this.astralParadoxRemaining--;
-      if (this.soulForgeRemaining > 0) this.soulForgeRemaining--;
       // Wave exhaustion
       const hadWaveExhaustion = this.waveExhaustionRemaining > 0;
       if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
@@ -2251,6 +2232,21 @@ export class EncounterEngine {
   private rollDrop(isBoss: boolean): string {
     const pool = isBoss ? BOSS_DROPS : ENEMY_DROPS;
     return pool[this.rng.int(pool.length)].id;
+  }
+
+  // C819: Batch decrement for simple duration counters (no side effects)
+  private tickSimpleDurations(): void {
+    if (this.colosseumRemaining > 0) this.colosseumRemaining--;
+    if (this.voidRiftRemaining > 0) this.voidRiftRemaining--;
+    if (this.trialGroundsRemaining > 0) this.trialGroundsRemaining--;
+    if (this.rainSanctuaryRemaining > 0) this.rainSanctuaryRemaining--;
+    if (this.fogAmbushRemaining > 0) this.fogAmbushRemaining--;
+    if (this.windGaleRemaining > 0) this.windGaleRemaining--;
+    if (this.snowDriftRemaining > 0) this.snowDriftRemaining--;
+    if (this.titanArenaRemaining > 0) this.titanArenaRemaining--;
+    if (this.crimsonTitheRemaining > 0) this.crimsonTitheRemaining--;
+    if (this.astralParadoxRemaining > 0) this.astralParadoxRemaining--;
+    if (this.soulForgeRemaining > 0) this.soulForgeRemaining--;
   }
 
   // C813: Shared context builder for resolveEventEffects calls
