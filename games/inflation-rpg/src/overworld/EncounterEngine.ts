@@ -20,6 +20,7 @@ import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
 import { resolveEventEffects } from './encounter/EventEffectResolver';
 import { computeDamageReduction } from './encounter/DefenseCalc';
+import { computeHeroTurn } from './encounter/HeroTurnCalc';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
@@ -650,30 +651,44 @@ export class EncounterEngine {
       let dodgeCount = 0; // C268: dodges this fight
       const MAX_COMBAT_TURNS = 500;
       while (eHp > 0 && !hero.staggered && hitCount < MAX_COMBAT_TURNS) {
-        // C203: crit streak — guaranteed crit after 3 consecutive crits
-        const guaranteedCrit = this.critStreak >= CRIT_STREAK_GUARANTEE_THRESHOLD;
-        // C224: berserker crit bonus
-        const berserkerCrit = hero.hp < hero.hpMax * BERSERKER_HP_THRESHOLD ? BERSERKER_CRIT_BONUS : 0;
-        // C331: elite fury crit bonus
-        const eliteFuryCrit = this.eliteFuryRemaining > 0 ? ELITE_FURY_CRIT_BONUS : 0;
-        // C448: boss crit bonus — boss fights increase crit chance
-        const bossCritExtra = isBoss ? BOSS_CRIT_BONUS : 0;
-        // C515: death proximity crit — guaranteed crit after surviving at 1 HP
-        const deathProxCrit = this.deathProximityCrit > 0;
+        // C719: crit resolution via HeroTurnCalc pure function
+        const deathProxCritActive = this.deathProximityCrit > 0;
         if (this.deathProximityCrit > 0) this.deathProximityCrit--;
-        const isCrit = canCrit && (guaranteedCrit || deathProxCrit || this.rng.chance(CRIT_CHANCE * weatherCritMul + berserkerCrit + eliteFuryCrit + this.critMasteryBonus + bossCritExtra));
-        if (isCrit) { this.critStreak++; this.critMasteryBonus = Math.min(CRIT_MASTERY_CAP, this.critMasteryBonus + CRIT_MASTERY_PER_CRIT); } else { this.critStreak = 0; }
-        if (guaranteedCrit) this.critStreak = 0; // consume guarantee
-        const baseCritAtk = isCrit ? baseHeroAtk * (this.rng.chance(LUCKY_CRIT_CHANCE) ? LUCKY_CRIT_MUL : CRIT_DAMAGE_MUL) * (1 + this.prestigeCount * PRESTIGE_CRIT_DMG_BONUS) : baseHeroAtk;
-        // C384: combo crit synergy — high combo + crit = extra damage
-        const comboCritBonus = (isCrit && this.comboStreak >= COMBO_CRIT_SYNERGY_THRESHOLD) ? (1 + COMBO_CRIT_DMG_BONUS) : 1;
-        // C422: danger crit bonus — crits in danger zone deal more
-        const dangerCritBonus = (isCrit && isDangerZone) ? (1 + DANGER_CRIT_BONUS) : 1;
-        // C489: crit combo synergy — crits during combo deal more
-        const critComboSynergy = (isCrit && this.comboStreak >= CRIT_COMBO_SYNERGY_THRESHOLD) ? (1 + CRIT_COMBO_SYNERGY_BONUS) : 1;
-        // C545: desperate trade synergy — low HP + shield burst = crit ×3
-        const desperateTradeCritMul = (isCrit && desperateTradeActive) ? DESPERATE_TRADE_CRIT_MUL : 1;
-        const heroAtk = Math.floor(baseCritAtk * comboCritBonus * dangerCritBonus * critComboSynergy * desperateTradeCritMul);
+        const turnResult = computeHeroTurn({
+          baseHeroAtk,
+          canCrit,
+          critStreak: this.critStreak,
+          critStreakGuaranteeThreshold: CRIT_STREAK_GUARANTEE_THRESHOLD,
+          berserkerHpThreshold: BERSERKER_HP_THRESHOLD,
+          heroHpRatio: hero.hp / hero.hpMax,
+          berserkerCritBonus: BERSERKER_CRIT_BONUS,
+          eliteFuryActive: this.eliteFuryRemaining > 0,
+          eliteFuryCritBonus: ELITE_FURY_CRIT_BONUS,
+          isBoss,
+          bossCritBonus: BOSS_CRIT_BONUS,
+          deathProxCritActive,
+          baseCritChance: CRIT_CHANCE,
+          weatherCritMul,
+          critMasteryBonus: this.critMasteryBonus,
+          rngChance: (rate: number) => this.rng.chance(rate),
+          rngLuckyCrit: () => this.rng.chance(LUCKY_CRIT_CHANCE),
+          luckyCritMul: LUCKY_CRIT_MUL,
+          critDamageMul: CRIT_DAMAGE_MUL,
+          prestigeCount: this.prestigeCount,
+          prestigeCritDmgBonus: PRESTIGE_CRIT_DMG_BONUS,
+          comboStreak: this.comboStreak,
+          comboCritSynergyThreshold: COMBO_CRIT_SYNERGY_THRESHOLD,
+          comboCritDmgBonus: COMBO_CRIT_DMG_BONUS,
+          isDangerZone,
+          dangerCritBonus: DANGER_CRIT_BONUS,
+          critComboSynergyThreshold: CRIT_COMBO_SYNERGY_THRESHOLD,
+          critComboSynergyBonus: CRIT_COMBO_SYNERGY_BONUS,
+          desperateTradeActive,
+          desperateTradeCritMul: DESPERATE_TRADE_CRIT_MUL,
+        });
+        const { isCrit, heroAtk } = turnResult;
+        this.critStreak = turnResult.newCritStreak;
+        if (isCrit) { this.critMasteryBonus = Math.min(CRIT_MASTERY_CAP, this.critMasteryBonus + CRIT_MASTERY_PER_CRIT); }
         // C395: crit heal scaling — crit heal grows with total crits
         const critHealScale = Math.min(CRIT_HEAL_SCALE_CAP, Math.floor(this.totalCrits / 100) * CRIT_HEAL_SCALE_PER_100);
         if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * (CRIT_HEAL_RATE + critHealScale) * (this.hasRelic(1) ? MISER_POUCH_HEAL_PENALTY : 1)))); this.critExpChain++; if (this.hasRelic(0)) this.emberCrownStacks++; }
