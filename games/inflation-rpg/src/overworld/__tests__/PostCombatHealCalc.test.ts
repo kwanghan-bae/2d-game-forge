@@ -14,21 +14,21 @@ describe('PostCombatHealCalc', () => {
 
   test('base regen: WIN_HP_REGEN_RATE × heroHpMax', () => {
     const result = computePostCombatHeal(baseCtx);
-    // WIN_HP_REGEN_RATE = 0.01, heroHpMax = 1000 → 10
-    expect(result.regenHeal).toBe(10);
+    // WIN_HP_REGEN_RATE = 0.015, heroHpMax = 1000 → 15
+    expect(result.regenHeal).toBe(15);
   });
 
   test('regen scales with kills (REGEN_SCALE_PER_50_KILLS)', () => {
     const result = computePostCombatHeal({ ...baseCtx, totalWins: 150 });
     // 150/50 = 3 → 3 × 0.001 = 0.003 extra
-    // total rate = 0.01 + 0.003 = 0.013 → floor(1000×0.013) = 13
-    expect(result.regenHeal).toBe(13);
+    // total rate = 0.015 + 0.003 = 0.018 → floor(1000×0.018) = 18
+    expect(result.regenHeal).toBe(18);
   });
 
-  test('regen buff doubles with 10+ village visits', () => {
+  test('regen buff ×1.5 with 10+ village visits', () => {
     const result = computePostCombatHeal({ ...baseCtx, villageVisits: 10 });
-    // 10 × 2.0 = 20
-    expect(result.regenHeal).toBe(20);
+    // 15 × 1.5 = 22.5 → floor = 22
+    expect(result.regenHeal).toBe(22);
   });
 
   test('lifesteal: totalDamageDealt × LIFESTEAL_RATE', () => {
