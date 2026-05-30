@@ -40,10 +40,20 @@ const WEIGHT_BASE: Record<LandmarkKind, number> = {
   trial:         2,
 };
 
+export interface InfluenceResult {
+  chosen: LandmarkCandidate;
+  influencingTraits: TraitId[];
+}
+
 export class DestinationResolver {
   constructor(private readonly rng: SeededRng) {}
 
   choose(candidates: readonly LandmarkCandidate[], ctx: DecisionContext): LandmarkCandidate | null {
+    const result = this.chooseWithInfluence(candidates, ctx);
+    return result ? result.chosen : null;
+  }
+
+  chooseWithInfluence(candidates: readonly LandmarkCandidate[], ctx: DecisionContext): InfluenceResult | null {
     if (candidates.length === 0) return null;
 
     // Filter out 'exit' landmarks when the next realm is not yet unlocked.
@@ -87,6 +97,7 @@ export class DestinationResolver {
 
     const weighted = filtered.map(c => {
       let w = WEIGHT_BASE[c.kind] ?? 1;
+      const influences: TraitId[] = [];
       if (c.kind === 'boss')          w += heroic * 1.5;
       if (c.kind === 'enemy')         w += heroic * 0.3;
       if (c.kind === 'shrine')        w += pious * 1.5;
@@ -98,43 +109,44 @@ export class DestinationResolver {
       if (c.kind === 'holy_ruin')     w += pious * 0.8;
       // crossroads: moral drift → base weight 만 (moral 은 +/- 다 valid)
       // Cycle 284 — trait wire (multiplicative on landmark kind).
-      if (c.kind === 'boss'  && t_challenge)   w *= 1.3;
-      if (c.kind === 'boss'  && t_boss_hunter) w *= 1.3;
-      if (c.kind === 'enemy' && t_challenge)   w *= 1.2;
-      if (c.kind === 'shrine' && t_zealot)     w *= 1.4;
-      if (c.kind === 'exit'  && t_swift)       w *= 1.4;
-      if ((c.kind === 'cave' || c.kind === 'treasure_cave' || c.kind === 'holy_ruin' || c.kind === 'ruin') && t_explorer) w *= 1.3;
+      if (c.kind === 'boss'  && t_challenge)   { w *= 1.3; influences.push('t_challenge'); }
+      if (c.kind === 'boss'  && t_boss_hunter) { w *= 1.3; influences.push('t_boss_hunter'); }
+      if (c.kind === 'enemy' && t_challenge)   { w *= 1.2; influences.push('t_challenge'); }
+      if (c.kind === 'shrine' && t_zealot)     { w *= 1.4; influences.push('t_zealot'); }
+      if (c.kind === 'exit'  && t_swift)       { w *= 1.4; influences.push('t_swift'); }
+      if ((c.kind === 'cave' || c.kind === 'treasure_cave' || c.kind === 'holy_ruin' || c.kind === 'ruin') && t_explorer) { w *= 1.3; influences.push('t_explorer'); }
       // Cycle 285 — α T2: 5 추가 trait wire.
-      if (c.kind === 'boss'  && t_timid)       w *= 0.6;  // 겁쟁이: 보스 회피
-      if (c.kind === 'village' && t_timid)     w *= 1.3;  // 겁쟁이: 마을 선호
-      if (c.kind === 'boss'  && t_thrill)      w *= 1.4;  // 스릴 추구
-      if (c.kind === 'shrine' && t_thrill)     w *= 0.7;  // 스릴 추구: 안식 회피
-      if (c.kind === 'market' && t_miser)      w *= 1.5;  // 구두쇠: 시장 선호
-      if (c.kind === 'treasure_cave' && t_fortune) w *= 1.6;  // 행운: 보물 동굴
-      if (c.kind === 'boss'  && t_fragile)     w *= 0.5;  // 약체: 보스 강한 회피
-      if (c.kind === 'shrine' && t_fragile)    w *= 1.4;  // 약체: shrine 회복
+      if (c.kind === 'boss'  && t_timid)       { w *= 0.6; influences.push('t_timid'); }
+      if (c.kind === 'village' && t_timid)     { w *= 1.3; influences.push('t_timid'); }
+      if (c.kind === 'boss'  && t_thrill)      { w *= 1.4; influences.push('t_thrill'); }
+      if (c.kind === 'shrine' && t_thrill)     { w *= 0.7; influences.push('t_thrill'); }
+      if (c.kind === 'market' && t_miser)      { w *= 1.5; influences.push('t_miser'); }
+      if (c.kind === 'treasure_cave' && t_fortune) { w *= 1.6; influences.push('t_fortune'); }
+      if (c.kind === 'boss'  && t_fragile)     { w *= 0.5; influences.push('t_fragile'); }
+      if (c.kind === 'shrine' && t_fragile)    { w *= 1.4; influences.push('t_fragile'); }
       // Cycle 286 — α T3: 6 추가 trait wire (16/16 production-consumed).
-      if (c.kind === 'enemy' && t_berserker)   w *= 1.3;  // 광전사: 일반 적
-      if (c.kind === 'boss'  && t_berserker)   w *= 1.2;  // 광전사: 보스 동등 선호
-      if (c.kind === 'trial' && t_iron)        w *= 1.5;  // 강철: 시련 선호
-      if (c.kind === 'shrine' && t_prodigy)    w *= 1.3;  // 천재: shrine 배움
-      if (c.kind === 'treasure_cave' && t_lucky) w *= 1.4;  // 행운형 (t_fortune 외 lucky)
-      if (c.kind === 'cave' && t_lucky)        w *= 1.3;  // 행운: cave 보너스
-      if (c.kind === 'holy_ruin' && t_genius)  w *= 1.4;  // 천재: 고대 지혜
-      if (c.kind === 'sightseeing' && t_genius) w *= 1.3; // 천재: 관찰
-      if (c.kind === 'holy_ruin' && t_terminal_genius) w *= 1.6; // 말기 천재: 강한 boost
-      if (c.kind === 'shrine' && t_terminal_genius) w *= 1.4;
+      if (c.kind === 'enemy' && t_berserker)   { w *= 1.3; influences.push('t_berserker'); }
+      if (c.kind === 'boss'  && t_berserker)   { w *= 1.2; influences.push('t_berserker'); }
+      if (c.kind === 'trial' && t_iron)        { w *= 1.5; influences.push('t_iron'); }
+      if (c.kind === 'shrine' && t_prodigy)    { w *= 1.3; influences.push('t_prodigy'); }
+      if (c.kind === 'treasure_cave' && t_lucky) { w *= 1.4; influences.push('t_lucky'); }
+      if (c.kind === 'cave' && t_lucky)        { w *= 1.3; influences.push('t_lucky'); }
+      if (c.kind === 'holy_ruin' && t_genius)  { w *= 1.4; influences.push('t_genius'); }
+      if (c.kind === 'sightseeing' && t_genius) { w *= 1.3; influences.push('t_genius'); }
+      if (c.kind === 'holy_ruin' && t_terminal_genius) { w *= 1.6; influences.push('t_terminal_genius'); }
+      if (c.kind === 'shrine' && t_terminal_genius) { w *= 1.4; influences.push('t_terminal_genius'); }
       // C734: difficulty gate — penalize landmarks far above hero level
       if (ctx.heroLevel != null && c.difficulty > ctx.heroLevel * 1.5) w *= 0.3;
-      return { candidate: c, weight: Math.max(0.1, w) };
+      return { candidate: c, weight: Math.max(0.1, w), influences };
     });
 
     const totalW = weighted.reduce((a, b) => a + b.weight, 0);
     let r = this.rng.next() * totalW;
     for (const item of weighted) {
       r -= item.weight;
-      if (r <= 0) return item.candidate;
+      if (r <= 0) return { chosen: item.candidate, influencingTraits: item.influences };
     }
-    return weighted[weighted.length - 1]!.candidate;
+    const last = weighted[weighted.length - 1]!;
+    return { chosen: last.candidate, influencingTraits: last.influences };
   }
 }
