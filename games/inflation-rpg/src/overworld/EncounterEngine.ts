@@ -1031,6 +1031,42 @@ export const SACRIFICE_DIMINISH_CAP = 0.5; // min 50% effectiveness
 // C530: sacrifice prestige — total sacrifices → prestige bonus
 export const SACRIFICE_PRESTIGE_RATE = 0.01; // +1% per sacrifice at prestige
 export const SACRIFICE_PRESTIGE_CAP = 0.5; // max +50%
+// C531: momentum decay — momentum buffs decay over time (use-it-or-lose-it)
+export const MOMENTUM_DECAY_RATE = 0.05; // 5% per fight
+// C532: golden hour — every 50 fights, 10-fight window of gold ×2
+export const GOLDEN_HOUR_INTERVAL = 50;
+export const GOLDEN_HOUR_DURATION = 10;
+export const GOLDEN_HOUR_GOLD_MUL = 2.0;
+// C533: fatigue system — after 100 consecutive fights, ATK decays
+export const FATIGUE_ONSET = 100;
+export const FATIGUE_ATK_PENALTY_PER_FIGHT = 0.005;
+export const FATIGUE_CAP = 0.3; // max 30% ATK reduction
+// C534: accumulator — no-damage fights build burst for next hard fight
+export const ACCUMULATOR_PER_CLEAN = 0.02;
+export const ACCUMULATOR_CAP = 1.0; // max +100% burst
+// C535: seasonal cycle — 4 seasons rotate every 25 fights
+export const SEASON_LENGTH = 25;
+// C536: rush hour — fights 200-210 of prestige cycle: gold ×3, exp ×0.5
+export const RUSH_HOUR_START = 200;
+export const RUSH_HOUR_DURATION = 10;
+export const RUSH_HOUR_GOLD_MUL = 3.0;
+export const RUSH_HOUR_EXP_MUL = 0.5;
+// C537: aging — hero ages per 50 fights, more exp less ATK
+export const AGING_INTERVAL = 50;
+export const AGING_EXP_BONUS = 0.03;
+export const AGING_ATK_PENALTY = 0.02;
+export const AGING_CAP = 10;
+// C538: rejuvenation — at max age, reset age + burst
+export const REJUVENATION_AGE = 10;
+export const REJUVENATION_EXP_BURST = 1000;
+// C539: time lock vault — deposit gold, grows after 20 fights
+export const TIME_LOCK_GROWTH = 0.5;
+export const TIME_LOCK_DURATION = 20;
+export const TIME_LOCK_DEPOSIT_RATE = 0.1;
+// C540: temporal prestige — speed of prestige affects bonus
+export const TEMPORAL_PRESTIGE_FAST_THRESHOLD = 100;
+export const TEMPORAL_PRESTIGE_FAST_BONUS = 0.2;
+export const TEMPORAL_PRESTIGE_SLOW_BONUS = 0.1;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1191,7 +1227,6 @@ export class EncounterEngine {
   private uniqueBossKills = 0; // C335: unique boss kills
   private dangerCascadeRemaining = 0; // C336: danger cascade duration
   private consecutiveBossKills = 0; // C349: boss frenzy tracking
-  private fightsSinceVillage = 0; // C345: fatigue recovery tracking
   private prestigeSurgeReady = false; // C354: first fight after prestige
   private villageDefenseRemaining = 0; // C356: village temp immunity
   private dangerChainCount = 0; // C357: consecutive danger kills
@@ -1233,6 +1268,14 @@ export class EncounterEngine {
   private sacrificeAltarCooldown = 0; // C528: shared cooldown
   private totalSacrifices = 0; // C530: total sacrifice count
   private sacrificeDiminish = 1.0; // C529: diminishing effectiveness
+  private levelSacrificeCooldown = 0; // C522: cooldown for level sacrifice
+  private goldenHourRemaining = 0; // C532: golden hour window
+  private accumulatorBonus = 0; // C534: clean fight accumulator
+  private heroAge = 0; // C537: aging system
+  private timeLockGold = 0; // C539: gold in time vault
+  private timeLockTimer = 0; // C539: fights until vault matures
+  private fightsSincePrestige = 0; // C536/C540: fights in current prestige cycle
+  private temporalPrestigeBonus = 0; // C540: bonus from last prestige speed
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -1474,6 +1517,14 @@ export class EncounterEngine {
       const dangerBetMul = this.dangerBetRemaining > 0 ? DANGER_BET_LOCK_MUL : 1;
       // C530: sacrifice prestige — total sacrifices boost power
       const sacrificePrestigeMul = 1 + Math.min(SACRIFICE_PRESTIGE_CAP, this.totalSacrifices * SACRIFICE_PRESTIGE_RATE);
+      // C533: fatigue — ATK penalty after 100 consecutive fights without village
+      const fatigueMul = this.fightsSinceVillage > FATIGUE_ONSET ? (1 - Math.min(FATIGUE_CAP, (this.fightsSinceVillage - FATIGUE_ONSET) * FATIGUE_ATK_PENALTY_PER_FIGHT)) : 1;
+      // C534: accumulator — burst from clean fights
+      const accumulatorMul = 1 + this.accumulatorBonus;
+      // C537: aging — elderly heroes have less ATK
+      const agingAtkMul = 1 - Math.min(AGING_CAP * AGING_ATK_PENALTY, this.heroAge * AGING_ATK_PENALTY);
+      // C540: temporal prestige — bonus from previous prestige speed
+      const temporalPrestigeMul = 1 + this.temporalPrestigeBonus;
       // C511: low HP fury — ATK ×2 when HP ≤ 20%
       const lowHpFuryMul = hero.hp <= hero.hpMax * LOW_HP_FURY_THRESHOLD ? LOW_HP_FURY_ATK_MUL : 1;
       // C516: boss conditional — all multipliers +20% during boss fights
@@ -1487,7 +1538,7 @@ export class EncounterEngine {
       if (this.dangerStreak >= DEEP_DANGER_THRESHOLD) activeConditions++; // C518 active
       if (hero.level >= this.getPrestigeThreshold()) activeConditions++; // C519 active
       const conditionalStackMul = 1 + Math.min(CONDITIONAL_STACK_CAP, activeConditions * CONDITIONAL_STACK_BONUS);
-      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul * sacrificePrestigeMul));
+      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul * sacrificePrestigeMul * fatigueMul * accumulatorMul * agingAtkMul * temporalPrestigeMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -1669,8 +1720,8 @@ export class EncounterEngine {
             hero.hp = 1;
             this.deathDefianceCooldown = DEATH_DEFIANCE_PRESTIGE_COOLDOWN;
           }
-          // C522: level sacrifice — sacrifice 10% levels to survive and gain shield
-          if (hero.staggered && hero.level > 10) {
+          // C522: level sacrifice — sacrifice 10% levels to survive (once per 20 fights)
+          if (hero.staggered && hero.level > 10 && this.levelSacrificeCooldown <= 0) {
             const levelsLost = Math.max(1, Math.floor(hero.level * LEVEL_SACRIFICE_RATE));
             hero.level -= levelsLost;
             hero.recomputeStats();
@@ -1678,6 +1729,7 @@ export class EncounterEngine {
             hero.hp = hero.hpMax;
             this.prestigeShieldRemaining += 1;
             this.totalSacrifices++;
+            this.levelSacrificeCooldown = 20;
           }
           // C195: gold sacrifice heal — auto-heal when low HP (once per fight)
           if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= GOLD_HEAL_COST && !goldHealUsed) {
@@ -2013,7 +2065,12 @@ export class EncounterEngine {
         this.prestigeReadyBonus = Math.min(PRESTIGE_READY_BONUS_CAP, this.prestigeReadyBonus + PRESTIGE_READY_BONUS_PER_FIGHT);
       }
       const prestigeReadyExpMul = 1 + this.prestigeReadyBonus;
-      const expGainRaw = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul * critChainExpMul * dangerExpMasteryMul * eliteVillageBurstMul * comboAccelExpMul * comboExpVelocityMul * waveExpCompoundMul * critExpChainMul2 * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * dangerExpSurgeMul * waveExpMasteryMul * finalMasteryMul2 * greedGambitExpMul * riskRewardExpMul * deepDangerExpMul * prestigeReadyExpMul);
+      // C536: rush hour — exp penalty during rush hour
+      const rushHourActive = this.fightsSincePrestige >= RUSH_HOUR_START && this.fightsSincePrestige < RUSH_HOUR_START + RUSH_HOUR_DURATION;
+      const rushHourExpMul = rushHourActive ? RUSH_HOUR_EXP_MUL : 1;
+      // C537: aging — elderly heroes gain more exp
+      const agingExpMul = 1 + this.heroAge * AGING_EXP_BONUS;
+      const expGainRaw = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul * critChainExpMul * dangerExpMasteryMul * eliteVillageBurstMul * comboAccelExpMul * comboExpVelocityMul * waveExpCompoundMul * critExpChainMul2 * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * dangerExpSurgeMul * waveExpMasteryMul * finalMasteryMul2 * greedGambitExpMul * riskRewardExpMul * deepDangerExpMul * prestigeReadyExpMul * rushHourExpMul * agingExpMul);
       // Safety cap: prevent exp overflow causing infinite level-up loops
       const expGain = Math.min(expGainRaw, hero.level * 2500);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
@@ -2216,7 +2273,11 @@ export class EncounterEngine {
       const fullHpFortuneMul = hero.hp >= hero.hpMax ? FULL_HP_FORTUNE_GOLD_MUL : 1;
       // C517: elite hunter — 3 consecutive elite kills → next elite ×3 rewards
       const eliteHunterMul = (isElite && this.consecutiveEliteKills2 >= ELITE_HUNTER_STREAK) ? ELITE_HUNTER_REWARD_MUL : 1;
-      const goldEarnedRaw = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul * waveGoldCascadeMul * comboGoldEscMul * dangerMasteryMul * dangerGoldStreakMul * dangerStreakCompoundMul * eliteGoldChainMul * waveAccumulatorMul * overkillChainExtraMul * bossGoldCascadeMul * prestigeGoldCascadeMul * deathGoldCompoundMul * comboGoldVelocityMul * prestigeDangerGoldMul * critGoldMasteryMul * comboDangerSynergyMul * dangerGoldMasteryMul * eliteGoldMasteryMul * prestigeGoldMomentumMul * critGoldCascadeMul2 * comboPrestigeGoldMul * waveGoldSurgeScale * eliteGoldCascadeMul2 * finalMasteryGoldMul * fullHpFortuneMul * eliteHunterMul) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
+      // C532: golden hour — periodic gold ×2 window
+      const goldenHourGoldMul = this.goldenHourRemaining > 0 ? GOLDEN_HOUR_GOLD_MUL : 1;
+      // C536: rush hour — gold ×3 during rush hour window
+      const rushHourGoldMul = rushHourActive ? RUSH_HOUR_GOLD_MUL : 1;
+      const goldEarnedRaw = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul * waveGoldCascadeMul * comboGoldEscMul * dangerMasteryMul * dangerGoldStreakMul * dangerStreakCompoundMul * eliteGoldChainMul * waveAccumulatorMul * overkillChainExtraMul * bossGoldCascadeMul * prestigeGoldCascadeMul * deathGoldCompoundMul * comboGoldVelocityMul * prestigeDangerGoldMul * critGoldMasteryMul * comboDangerSynergyMul * dangerGoldMasteryMul * eliteGoldMasteryMul * prestigeGoldMomentumMul * critGoldCascadeMul2 * comboPrestigeGoldMul * waveGoldSurgeScale * eliteGoldCascadeMul2 * finalMasteryGoldMul * fullHpFortuneMul * eliteHunterMul * goldenHourGoldMul * rushHourGoldMul) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
       // Safety cap: prevent gold overflow
       const goldEarned = Math.min(goldEarnedRaw, hero.level * 5000);
       // C328: combo gold floor
@@ -2284,6 +2345,52 @@ export class EncounterEngine {
       }
       // C528: sacrifice altar cooldown tick
       if (this.sacrificeAltarCooldown > 0) this.sacrificeAltarCooldown--;
+      if (this.levelSacrificeCooldown > 0) this.levelSacrificeCooldown--;
+      // C531: momentum decay — momentum decays when fatigued (over 100 fights without village)
+      if (this.battleMomentum > 0 && this.fightsSinceVillage > FATIGUE_ONSET) {
+        this.battleMomentum = Math.max(0, this.battleMomentum - 1);
+      }
+      // C532: golden hour — trigger/decrement
+      this.fightsSincePrestige++;
+      if (this.fightsSincePrestige % GOLDEN_HOUR_INTERVAL === 0) {
+        this.goldenHourRemaining = GOLDEN_HOUR_DURATION;
+      }
+      if (this.goldenHourRemaining > 0) this.goldenHourRemaining--;
+      // C533: fatigue counter
+      this.fightsSinceVillage++;
+      // C534: accumulator — build from clean fights (no damage)
+      if (!tookDamage) {
+        this.accumulatorBonus = Math.min(ACCUMULATOR_CAP, this.accumulatorBonus + ACCUMULATOR_PER_CLEAN);
+      } else {
+        this.accumulatorBonus = 0; // reset on taking damage
+      }
+      // C535: seasonal cycle (affects which stat gets bonus — implemented via season index)
+      const season = Math.floor(this.fightsSincePrestige / SEASON_LENGTH) % 4;
+      if (season === 0) hero.gold += hero.level * 2; // spring: gold
+      else if (season === 1) hero.gainExp(hero.level * 3); // summer: exp
+      // autumn (2) and winter (3): ATK/defense handled by multipliers above
+      // C537: aging — increment age
+      if (this.totalWins > 0 && this.totalWins % AGING_INTERVAL === 0 && this.heroAge < AGING_CAP) {
+        this.heroAge++;
+      }
+      // C538: rejuvenation — reset age at max
+      if (this.heroAge >= REJUVENATION_AGE) {
+        this.heroAge = 0;
+        hero.gainExp(REJUVENATION_EXP_BURST * hero.level);
+      }
+      // C539: time lock vault — deposit and mature
+      if (this.timeLockTimer > 0) {
+        this.timeLockTimer--;
+        if (this.timeLockTimer <= 0) {
+          hero.gold += Math.floor(this.timeLockGold * (1 + TIME_LOCK_GROWTH));
+          this.timeLockGold = 0;
+        }
+      } else if (hero.gold > 500 && this.rng.chance(0.05)) {
+        const deposit = Math.floor(hero.gold * TIME_LOCK_DEPOSIT_RATE);
+        hero.gold -= deposit;
+        this.timeLockGold = deposit;
+        this.timeLockTimer = TIME_LOCK_DURATION;
+      }
       // C426: combo gold milestone — every 15 combo grants flat gold
       if (this.comboStreak > 0 && this.comboStreak % COMBO_GOLD_MILESTONE_INTERVAL === 0) {
         hero.gold += COMBO_GOLD_MILESTONE_AMOUNT * hero.level;
@@ -2677,6 +2784,15 @@ export class EncounterEngine {
         hero.gainExp(this.prestigeCount * PRESTIGE_EXP_BURST_PER_PRESTIGE);
         // C508: prestige echo — activate decaying bonus
         this.prestigeEchoRemaining = PRESTIGE_ECHO_DURATION;
+        // C540: temporal prestige — speed of prestige affects next run bonus
+        if (this.fightsSincePrestige <= TEMPORAL_PRESTIGE_FAST_THRESHOLD) {
+          this.temporalPrestigeBonus = TEMPORAL_PRESTIGE_FAST_BONUS;
+        } else {
+          this.temporalPrestigeBonus = TEMPORAL_PRESTIGE_SLOW_BONUS;
+        }
+        this.fightsSincePrestige = 0;
+        // C519: reset prestige ready bonus
+        this.prestigeReadyBonus = 0;
         events.push({ type: 'prestige', count: this.prestigeCount });
       }
     } else if (kind === 'village') {
