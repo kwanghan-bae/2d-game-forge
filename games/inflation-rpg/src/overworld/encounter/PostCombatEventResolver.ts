@@ -1,28 +1,4 @@
 import {
-  TRAP_CHANCE,
-  TRAP_DAMAGE,
-  TRAP_GOLD_LOSS,
-  TREASURE_SHRINE_CHANCE,
-  SHRINE_GOLD_BURST,
-  SHRINE_EXP_BURST,
-  SHRINE_HEAL_AMOUNT,
-  REST_SHRINE_CHANCE,
-  GAMBLER_CHANCE,
-  GAMBLER_WIN_RATE,
-  BLACKSMITH_CHANCE,
-  BLACKSMITH_BOOST,
-  CURSED_ALTAR_CHANCE,
-  CURSED_ALTAR_DURATION,
-  FAIRY_CHANCE,
-  FAIRY_DURATION,
-  TIME_RIFT_CHANCE,
-  MERCHANT_EVENT_CHANCE,
-  MERCHANT_PRICE_MUL,
-  EVENT_CHAIN_THRESHOLD,
-  EVENT_CHAIN_REWARD_EXP,
-  EVENT_CHAIN_REWARD_GOLD,
-} from './constants-combat';
-import {
   TRAP_AVOID_COMBO,
   EVENT_PITY_THRESHOLD,
   HEALER_EVENT_CHANCE,
@@ -32,10 +8,29 @@ import {
   ECHO_DURATION,
   ECHO_MIN_LEVEL,
   INSPIRATION_EVENT_CHANCE,
+  TRAP_CHANCE,
+  TRAP_DAMAGE,
+  TRAP_GOLD_LOSS,
+  TREASURE_SHRINE_CHANCE,
+  REST_SHRINE_CHANCE,
+  GAMBLER_CHANCE,
+  BLACKSMITH_CHANCE,
+  BLACKSMITH_BOOST,
+  CURSED_ALTAR_CHANCE,
+  FAIRY_CHANCE,
+  FAIRY_DURATION,
+  TIME_RIFT_CHANCE,
+  MERCHANT_EVENT_CHANCE,
+  EVENT_CHAIN_THRESHOLD,
+  EVENT_CHAIN_REWARD_EXP,
+  EVENT_CHAIN_REWARD_GOLD,
+  TRIAL_GROUNDS_DURATION,
+  EVENT_MOMENTUM_TIER2_THRESHOLD,
+  EVENT_MOMENTUM_TIER3_THRESHOLD,
+  EVENT_MOMENTUM_TIER3_DENSITY_MUL,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
 import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
-import { TRIAL_GROUNDS_DURATION, EVENT_MOMENTUM_TIER2_THRESHOLD, EVENT_MOMENTUM_TIER3_THRESHOLD, EVENT_MOMENTUM_TIER3_DENSITY_MUL } from './constants-events';
 
 // C792: Declarative late-event registry — add new events here (1 line each)
 type LateEventResult = { [K: string]: unknown };
@@ -176,157 +171,177 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   const eventsEnabled = ctx.totalFights > 20;
   let eventTriggered = false;
   // C714: pity timer — force event if N fights without one
-  // C718: pity skips negative events (trap) — only positive events benefit
   const pityActive = eventsEnabled && ctx.fightsSinceEvent >= EVENT_PITY_THRESHOLD;
-  const rngOrPity = (rate: number) => pityActive || ctx.rngChance(rate);
 
-  // Trap — NOT pity-eligible (negative event)
-  if (eventsEnabled && !eventTriggered && ctx.rngChance(TRAP_CHANCE)) {
-    if (ctx.comboStreak >= TRAP_AVOID_COMBO) {
-      result.eventType = 'event_trap_avoided';
-    } else {
-      const trapChoice = ctx.rngInt(2);
-      if (trapChoice === 0) {
-        result.heroHpDelta = -Math.floor(ctx.heroHpMax * TRAP_DAMAGE);
-      } else {
-        result.heroGoldDelta = -TRAP_GOLD_LOSS;
+  // C809: Weighted event pool — replaces first-match-wins if-chain
+  if (eventsEnabled) {
+    const candidates: { id: string; weight: number; apply: (r: PostCombatResult) => void; pityEligible: boolean }[] = [];
+
+    // Trap — NOT pity-eligible (negative event)
+    candidates.push({
+      id: 'trap', weight: TRAP_CHANCE, pityEligible: false,
+      apply: (r) => {
+        if (ctx.comboStreak >= TRAP_AVOID_COMBO) {
+          r.eventType = 'event_trap_avoided';
+        } else {
+          const trapChoice = ctx.rngInt(2);
+          if (trapChoice === 0) {
+            r.heroHpDelta = -Math.floor(ctx.heroHpMax * TRAP_DAMAGE);
+          } else {
+            r.heroGoldDelta = -TRAP_GOLD_LOSS;
+          }
+          r.eventType = 'event_trap';
+        }
+      },
+    });
+
+    // Treasure shrine
+    candidates.push({
+      id: 'shrine', weight: TREASURE_SHRINE_CHANCE, pityEligible: true,
+      apply: (r) => {
+        if (!ctx.hasPendingShrineChoice()) {
+          r.shrinePending = true;
+          r.eventType = 'event_treasure_shrine_pending';
+        } else {
+          r.shrineChoice = 'gold';
+          r.eventType = 'event_treasure_shrine';
+        }
+      },
+    });
+
+    // Rest shrine
+    if (ctx.strategyRestShrine && ctx.heroHp < ctx.heroHpMax * 0.3) {
+      candidates.push({
+        id: 'rest', weight: REST_SHRINE_CHANCE, pityEligible: true,
+        apply: (r) => {
+          r.heroHpDelta = ctx.heroHpMax - ctx.heroHp;
+          r.comboReset = true;
+          r.eventType = 'event_rest_shrine';
+        },
+      });
+    }
+
+    // Wandering Merchant
+    if (!ctx.isElite && !ctx.isBoss && ctx.heroGold >= 200 && ctx.relics.length < 3) {
+      const available = [0, 1, 2, 3, 4, 5].filter(id => !ctx.relics.includes(id));
+      if (available.length > 0) {
+        candidates.push({
+          id: 'merchant', weight: MERCHANT_EVENT_CHANCE, pityEligible: true,
+          apply: (r) => { r.merchantPending = true; r.eventType = 'event_merchant'; },
+        });
       }
-      result.eventType = 'event_trap';
     }
-    eventTriggered = true;
-  }
 
-  // Treasure shrine
-  if (eventsEnabled && !eventTriggered && rngOrPity(TREASURE_SHRINE_CHANCE)) {
-    if (!ctx.hasPendingShrineChoice()) {
-      result.shrinePending = true;
-      result.eventType = 'event_treasure_shrine_pending';
-    } else {
-      // Shrine already resolved by choice engine — signal gold reward
-      result.shrineChoice = 'gold'; // engine overrides with actual choice
-      result.eventType = 'event_treasure_shrine';
+    // Gambler
+    if (ctx.strategyGambler && ctx.heroGold >= 50) {
+      candidates.push({
+        id: 'gambler', weight: GAMBLER_CHANCE, pityEligible: true,
+        apply: (r) => { r.gamblerPending = true; r.eventType = 'event_gambler'; },
+      });
     }
-    eventTriggered = true;
-  }
 
-  // Rest shrine
-  if (eventsEnabled && !eventTriggered && ctx.strategyRestShrine && rngOrPity(REST_SHRINE_CHANCE) && ctx.heroHp < ctx.heroHpMax * 0.3) {
-    result.heroHpDelta = ctx.heroHpMax - ctx.heroHp;
-    result.comboReset = true;
-    result.eventType = 'event_rest_shrine';
-    eventTriggered = true;
-  }
-
-  // Wandering Merchant — set pending for player choice (C704: priority raised from last)
-  if (eventsEnabled && !eventTriggered && !ctx.isElite && !ctx.isBoss && rngOrPity(MERCHANT_EVENT_CHANCE) && ctx.heroGold >= 200 && ctx.relics.length < 3) {
-    const available = [0, 1, 2, 3, 4, 5].filter(id => !ctx.relics.includes(id));
-    if (available.length > 0) {
-      result.merchantPending = true;
-      result.eventType = 'event_merchant';
-      eventTriggered = true;
+    // Blacksmith
+    if (ctx.strategyBlacksmith) {
+      candidates.push({
+        id: 'blacksmith', weight: BLACKSMITH_CHANCE, pityEligible: true,
+        apply: (r) => { r.heroAtkDelta = BLACKSMITH_BOOST; r.eventType = 'event_blacksmith'; },
+      });
     }
-  }
 
-  // Gambler — set pending for player choice
-  if (eventsEnabled && !eventTriggered && ctx.strategyGambler && rngOrPity(GAMBLER_CHANCE) && ctx.heroGold >= 50) {
-    result.gamblerPending = true;
-    result.eventType = 'event_gambler';
-    eventTriggered = true;
-  }
+    // Cursed altar
+    if (ctx.strategyCursedAltar && !ctx.cursedAltarAtkBuff) {
+      candidates.push({
+        id: 'altar', weight: CURSED_ALTAR_CHANCE, pityEligible: true,
+        apply: (r) => { r.altarPending = true; r.eventType = 'event_cursed_altar'; },
+      });
+    }
 
-  // Blacksmith
-  if (eventsEnabled && !eventTriggered && ctx.strategyBlacksmith && rngOrPity(BLACKSMITH_CHANCE)) {
-    result.heroAtkDelta = BLACKSMITH_BOOST;
-    result.eventType = 'event_blacksmith';
-    eventTriggered = true;
-  }
+    // Fairy blessing
+    candidates.push({
+      id: 'fairy', weight: FAIRY_CHANCE, pityEligible: true,
+      apply: (r) => { r.newFairyBlessingRemaining = FAIRY_DURATION; r.eventType = 'event_fairy'; },
+    });
 
-  // Cursed altar — set pending for player choice
-  if (eventsEnabled && !eventTriggered && ctx.strategyCursedAltar && rngOrPity(CURSED_ALTAR_CHANCE) && !ctx.cursedAltarAtkBuff) {
-    result.altarPending = true;
-    result.eventType = 'event_cursed_altar';
-    eventTriggered = true;
-  }
+    // Healer
+    if (ctx.totalFights >= HEALER_MIN_FIGHTS) {
+      candidates.push({
+        id: 'healer', weight: HEALER_EVENT_CHANCE, pityEligible: true,
+        apply: (r) => { r.heroHpDelta = Math.floor(ctx.heroHpMax * HEALER_HEAL_RATE); r.eventType = 'event_healer'; },
+      });
+    }
 
-  // Fairy blessing
-  if (eventsEnabled && !eventTriggered && rngOrPity(FAIRY_CHANCE)) {
-    result.newFairyBlessingRemaining = FAIRY_DURATION;
-    result.eventType = 'event_fairy';
-    eventTriggered = true;
-  }
+    // Echo
+    if (ctx.heroLevel >= ECHO_MIN_LEVEL) {
+      candidates.push({
+        id: 'echo', weight: ECHO_EVENT_CHANCE, pityEligible: true,
+        apply: (r) => { r.newPrestigeEchoRemaining = ECHO_DURATION; r.eventType = 'event_echo'; },
+      });
+    }
 
-  // C743: Healer event — mid-game HP recovery
-  if (eventsEnabled && !eventTriggered && ctx.totalFights >= HEALER_MIN_FIGHTS && rngOrPity(HEALER_EVENT_CHANCE)) {
-    result.heroHpDelta = Math.floor(ctx.heroHpMax * HEALER_HEAL_RATE);
-    result.eventType = 'event_healer';
-    eventTriggered = true;
-  }
+    // Inspiration
+    const inspConfig = getInspirationConfig(ctx.totalFights);
+    if (ctx.totalFights >= inspConfig.minFights) {
+      candidates.push({
+        id: 'inspiration', weight: INSPIRATION_EVENT_CHANCE, pityEligible: true,
+        apply: (r) => { r.newInspirationRemaining = inspConfig.duration; r.eventType = 'event_inspiration'; },
+      });
+    }
 
-  // C743: Echo event — grants short prestige echo
-  if (eventsEnabled && !eventTriggered && ctx.heroLevel >= ECHO_MIN_LEVEL && rngOrPity(ECHO_EVENT_CHANCE)) {
-    result.newPrestigeEchoRemaining = ECHO_DURATION;
-    result.eventType = 'event_echo';
-    eventTriggered = true;
-  }
-
-  // C751: Inspiration event — phase-aware ATK buff
-  const inspConfig = getInspirationConfig(ctx.totalFights);
-  if (eventsEnabled && !eventTriggered && ctx.totalFights >= inspConfig.minFights && rngOrPity(INSPIRATION_EVENT_CHANCE)) {
-    result.newInspirationRemaining = inspConfig.duration;
-    result.eventType = 'event_inspiration';
-    eventTriggered = true;
-  }
-
-  // C762: Mid-game exclusive events (Trial Grounds)
-  if (eventsEnabled && !eventTriggered) {
+    // Mid-game events
     const midEvents = getAvailableMidEvents(ctx.totalFights, ctx.currentWeather);
     for (const me of midEvents) {
-      if (rngOrPity(me.chance)) {
-        if (me.id === 'event_trial_grounds') {
-          result.trialGroundsPending = true;
-          result.eventType = 'event_trial_grounds';
-        } else if (me.id === 'event_storm_nexus') {
-          result.stormNexusPending = true;
-          result.eventType = 'event_storm_nexus';
-        } else if (me.id === 'event_rain_sanctuary') {
-          result.rainSanctuaryPending = true;
-          result.eventType = 'event_rain_sanctuary';
-        } else if (me.id === 'event_fog_ambush') {
-          result.fogAmbushPending = true;
-          result.eventType = 'event_fog_ambush';
-        } else if (me.id === 'event_wind_gale') {
-          result.windGalePending = true;
-          result.eventType = 'event_wind_gale';
-        } else if (me.id === 'event_snow_drift') {
-          result.snowDriftPending = true;
-          result.eventType = 'event_snow_drift';
-        }
-        eventTriggered = true;
-        break;
-      }
+      candidates.push({
+        id: me.id, weight: me.chance, pityEligible: true,
+        apply: (r) => {
+          if (me.id === 'event_trial_grounds') { r.trialGroundsPending = true; }
+          else if (me.id === 'event_storm_nexus') { r.stormNexusPending = true; }
+          else if (me.id === 'event_rain_sanctuary') { r.rainSanctuaryPending = true; }
+          else if (me.id === 'event_fog_ambush') { r.fogAmbushPending = true; }
+          else if (me.id === 'event_wind_gale') { r.windGalePending = true; }
+          else if (me.id === 'event_snow_drift') { r.snowDriftPending = true; }
+          r.eventType = me.id;
+        },
+      });
     }
-  }
 
-  // C792: Config-driven late-game event dispatch (replaces if-else chain)
-  if (eventsEnabled && !eventTriggered) {
+    // Late-game events (with density multiplier)
     const lateEvents = getAvailableLateEvents(ctx.totalFights);
     const densityMul = getLateGameDensityMul(ctx.totalFights) * (ctx.eventMomentumDensityActive ? EVENT_MOMENTUM_TIER3_DENSITY_MUL : 1);
     for (const le of lateEvents) {
-      if (rngOrPity(le.chance * densityMul)) {
-        const handler = LATE_EVENT_REGISTRY[le.id];
-        if (handler) handler(result);
-        result.eventType = le.id;
-        eventTriggered = true;
-        break;
-      }
+      candidates.push({
+        id: le.id, weight: le.chance * densityMul, pityEligible: true,
+        apply: (r) => {
+          const handler = LATE_EVENT_REGISTRY[le.id];
+          if (handler) handler(r);
+          r.eventType = le.id;
+        },
+      });
     }
-  }
 
-  // Time rift
-  if (eventsEnabled && !eventTriggered && rngOrPity(TIME_RIFT_CHANCE) && ctx.fightsSinceVillage > 50) {
-    result.newFightsSinceVillage = 0;
-    result.eventType = 'event_time_rift';
-    eventTriggered = true;
+    // Time rift
+    if (ctx.fightsSinceVillage > 50) {
+      candidates.push({
+        id: 'time_rift', weight: TIME_RIFT_CHANCE, pityEligible: true,
+        apply: (r) => { r.newFightsSinceVillage = 0; r.eventType = 'event_time_rift'; },
+      });
+    }
+
+    // --- Weighted selection ---
+    const pool = pityActive ? candidates.filter(c => c.pityEligible) : candidates;
+    const totalWeight = pool.reduce((sum, c) => sum + c.weight, 0);
+
+    if (totalWeight > 0 && (pityActive || ctx.rngChance(Math.min(1, totalWeight)))) {
+      // Pick one event via weighted random
+      let roll = ctx.rngInt(10000) / 10000 * totalWeight;
+      let selected: typeof candidates[number] | null = null;
+      for (const c of pool) {
+        roll -= c.weight;
+        if (roll <= 0) { selected = c; break; }
+      }
+      if (!selected) selected = pool[pool.length - 1];
+      selected.apply(result);
+      eventTriggered = true;
+    }
   }
 
   // Event chain + C793: Event Momentum tiers
