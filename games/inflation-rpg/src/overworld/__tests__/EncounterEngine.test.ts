@@ -336,13 +336,13 @@ describe('EncounterEngine — C125 battle momentum', () => {
     expect(engine.getBattleMomentum()).toBe(0);
   });
 
-  it('momentum caps at 20', () => {
+  it('momentum caps at 10', () => {
     const hero = makeHero(1);
     const engine = new EncounterEngine(new SeededRng(1));
     for (let i = 0; i < 25; i++) {
       engine.resolveEncounter(hero, 'enemy', `e_${i}`);
     }
-    expect(engine.getBattleMomentum()).toBe(20);
+    expect(engine.getBattleMomentum()).toBe(10);
   });
 });
 
