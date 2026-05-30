@@ -145,12 +145,12 @@ describe('PostCombatEventResolver', () => {
       rngChance: () => { return chances[callIdx++] ?? false; },
     }));
     expect(result.eventType).toBe('event_inspiration');
-    expect(result.newInspirationRemaining).toBe(8);
+    expect(result.newInspirationRemaining).toBe(6); // C751: early-mid phase duration
   });
 
-  it('inspiration blocked when totalFights < INSPIRATION_MIN_FIGHTS', () => {
+  it('inspiration blocked when totalFights < phase minFights', () => {
     const result = resolvePostCombatEvent(makeCtx({
-      totalFights: 35, // < 40
+      totalFights: 25, // < 30 (early-mid gate)
       rngChance: () => true,
     }));
     expect(result.eventType).not.toBe('event_inspiration');
