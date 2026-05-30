@@ -792,10 +792,10 @@ export class EncounterEngine {
             rageTurn++;
             continue;
           }
-          // C356: village defense immunity — C616: REMOVED (free immunity layer)
-          // C282: village shield absorbs first hit
+          // C282: village shield — C623: absorbs 50% of first hit (was 100%)
           if (this.villageShieldActive) {
             this.villageShieldActive = false;
+            hero.takeDamage(Math.max(1, Math.floor(incomingDmg * 0.5)));
           } else {
             hero.takeDamage(incomingDmg);
           }
