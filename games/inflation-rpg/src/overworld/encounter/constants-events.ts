@@ -183,7 +183,7 @@ export const EVENT_CHAIN_REWARD_GOLD = 2000;
 export const EVENT_MOMENTUM_TIER2_THRESHOLD = 5; // tier 2: ATK buff
 export const EVENT_MOMENTUM_TIER2_ATK_BONUS = 0.15; // +15% ATK for 10 fights
 export const EVENT_MOMENTUM_TIER2_DURATION = 10;
-export const EVENT_MOMENTUM_TIER3_THRESHOLD = 8; // tier 3: next event chance ×2
+export const EVENT_MOMENTUM_TIER3_THRESHOLD = 10; // C817: was 8, harder to reach after saturation fix
 export const EVENT_MOMENTUM_TIER3_DENSITY_MUL = 1.3; // C814: was 1.5, further reduced (max 2.5×1.3=3.25 < cap 4.0)
 export const EVENT_MOMENTUM_TIER3_DURATION = 20;
 export const VILLAGE_GOLD_FOUNTAIN = 25;

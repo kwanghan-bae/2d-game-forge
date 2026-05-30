@@ -250,7 +250,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     if (ctx.strategyBlacksmith) {
       candidates.push({
         id: 'blacksmith', weight: BLACKSMITH_CHANCE, pityEligible: true,
-        apply: (r) => { r.heroAtkDelta = BLACKSMITH_BOOST; r.eventType = 'event_blacksmith'; },
+        apply: (r) => { r.heroAtkDelta = Math.max(BLACKSMITH_BOOST, Math.floor(ctx.heroAtk * 0.03)); r.eventType = 'event_blacksmith'; },
       });
     }
 
