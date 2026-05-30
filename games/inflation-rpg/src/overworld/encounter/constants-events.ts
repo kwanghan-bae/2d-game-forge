@@ -197,7 +197,7 @@ export const SHRINE_SKILL_GRANT_RATE = 0.20;
 export const MERCIFUL_PROC_RATE = 0.04;
 // C757: Ancient Colosseum constants
 export const COLOSSEUM_EXP_MUL = 2.0;
-export const COLOSSEUM_ENEMY_ATK_MUL = 1.3;
+export const COLOSSEUM_ENEMY_ATK_MUL = 1.5; // C771: tuned from 1.3 (meaningful risk)
 // C762: Trial Grounds constants
 export const TRIAL_GROUNDS_EXP_MUL = 1.50; // C766: tuned from 1.35
 export const TRIAL_GROUNDS_LEVEL_MUL = 1.10; // C769: multiplicative 10% (replaces flat offset)
@@ -206,3 +206,5 @@ export const TRIAL_GROUNDS_DURATION = 3;
 export const STORM_NEXUS_ATK_MUL = 1.40; // C770: Storm Nexus ATK buff
 export const STORM_NEXUS_HP_DRAIN_RATE = 0.05; // C770: 5% HP drain per fight
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
+
+export const VOID_RIFT_SCALE_PER_TIER = 0.05; // C771: 5% per tier (lv200: +5%, lv800: +15%)

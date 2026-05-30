@@ -79,9 +79,9 @@ describe('DefenseCalc', () => {
     expect(withPrestige).toBeLessThan(noPrestige);
   });
 
-  it('C757: colosseum increases incoming damage by 1.3×', () => {
+  it('C771: colosseum increases incoming damage by 1.5×', () => {
     const base = computeDamageReduction(makeCtx());
     const colosseum = computeDamageReduction(makeCtx({ colosseumActive: true }));
-    expect(colosseum).toBeCloseTo(base * 1.3, 5);
+    expect(colosseum).toBeCloseTo(base * 1.5, 5);
   });
 });

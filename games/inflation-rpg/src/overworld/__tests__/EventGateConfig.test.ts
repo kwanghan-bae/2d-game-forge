@@ -89,12 +89,13 @@ describe('EventGateConfig — C754', () => {
     expect(TRIAL_GROUNDS_DURATION).toBeLessThanOrEqual(5); // colosseum is 5
   });
 
-  it('C767: void rift log scaling formula: ceil(log2(max(level,200)/200)+1)', () => {
-    const voidRiftOffset = (level: number) => Math.ceil(Math.log2(Math.max(level, 200) / 200) + 1);
-    expect(voidRiftOffset(200)).toBe(1); // log2(1)+1 = 1
-    expect(voidRiftOffset(400)).toBe(2); // log2(2)+1 = 2
-    expect(voidRiftOffset(800)).toBe(3); // log2(4)+1 = 3
-    expect(voidRiftOffset(100)).toBe(1); // clamped to 200 → same as 200
+  it('C771: void rift multiplicative scaling: 1 + 0.05 * tier', () => {
+    const voidRiftMul = (level: number) =>
+      1 + 0.05 * Math.ceil(Math.log2(Math.max(level, 200) / 200) + 1);
+    expect(voidRiftMul(200)).toBeCloseTo(1.05, 5); // tier 1: +5%
+    expect(voidRiftMul(400)).toBeCloseTo(1.10, 5); // tier 2: +10%
+    expect(voidRiftMul(800)).toBeCloseTo(1.15, 5); // tier 3: +15%
+    expect(voidRiftMul(100)).toBeCloseTo(1.05, 5); // clamped → tier 1
   });
 
   it('C770: storm_nexus available only during storm weather after 110 fights', () => {
