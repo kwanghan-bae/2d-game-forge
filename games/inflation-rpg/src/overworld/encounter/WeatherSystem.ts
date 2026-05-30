@@ -14,7 +14,7 @@ import {
   NIGHT_ENEMY_DMG_MUL,
 } from './constants';
 
-export type Weather = 'normal' | 'rain' | 'wind' | 'fog';
+export type Weather = 'normal' | 'rain' | 'wind' | 'fog' | 'storm' | 'snow';
 
 export interface WeatherResult {
   weather: Weather;
@@ -35,6 +35,9 @@ export interface EnvironmentResult {
 // C723: weather combat effects
 const WEATHER_RAIN_DODGE_BONUS = 0.05;
 const WEATHER_FOG_SPEED_PENALTY = 0.10;
+// C742: storm/snow effects
+const WEATHER_STORM_CRIT_PENALTY = 0.60;
+const WEATHER_SNOW_SPEED_PENALTY = 0.15;
 
 /**
  * Roll weather for a fight.
@@ -45,15 +48,17 @@ export function rollWeather(
 ): WeatherResult {
   let weather: Weather = 'normal';
   if (chance(WEATHER_CHANCE)) {
-    weather = (['rain', 'wind', 'fog'] as const)[rollInt(3)];
+    weather = (['rain', 'wind', 'fog', 'storm', 'snow'] as const)[rollInt(5)];
   }
   return {
     weather,
     atkMul: weather === 'rain' ? (1 - WEATHER_RAIN_ATK_PENALTY) : 1,
-    critMul: weather === 'fog' ? WEATHER_FOG_CRIT_PENALTY : 1,
+    critMul: weather === 'fog' ? WEATHER_FOG_CRIT_PENALTY
+      : weather === 'storm' ? WEATHER_STORM_CRIT_PENALTY : 1,
     expMul: weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1,
     dodgeMul: weather === 'rain' ? (1 + WEATHER_RAIN_DODGE_BONUS) : 1,
-    speedMul: weather === 'fog' ? (1 - WEATHER_FOG_SPEED_PENALTY) : 1,
+    speedMul: weather === 'fog' ? (1 - WEATHER_FOG_SPEED_PENALTY)
+      : weather === 'snow' ? (1 - WEATHER_SNOW_SPEED_PENALTY) : 1,
   };
 }
 

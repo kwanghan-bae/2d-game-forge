@@ -56,6 +56,25 @@ describe('WeatherSystem', () => {
   test('fog crit penalty is 0.70 (C726 rebalance)', () => {
     expect(WEATHER_FOG_CRIT_PENALTY).toBeCloseTo(0.70);
   });
+
+  // C742: Storm/Snow weather
+  test('storm reduces crit multiplier (index 3)', () => {
+    const result = rollWeather(() => true, () => 3);
+    expect(result.weather).toBe('storm');
+    expect(result.critMul).toBeLessThan(1);
+    expect(result.atkMul).toBe(1);
+    expect(result.expMul).toBe(1);
+    expect(result.speedMul).toBe(1);
+  });
+
+  test('snow reduces speed multiplier (index 4)', () => {
+    const result = rollWeather(() => true, () => 4);
+    expect(result.weather).toBe('snow');
+    expect(result.speedMul).toBeLessThan(1);
+    expect(result.atkMul).toBe(1);
+    expect(result.critMul).toBe(1);
+    expect(result.expMul).toBe(1);
+  });
 });
 
 describe('computeNight', () => {
