@@ -1496,39 +1496,8 @@ export class EncounterEngine {
       // C528: sacrifice altar cooldown tick
       if (this.sacrificeAltarCooldown > 0) this.sacrificeAltarCooldown--;
       if (this.levelSacrificeCooldown > 0) this.levelSacrificeCooldown--;
-      // C531: momentum decay — momentum decays when fatigued (over 100 fights without village)
-      if (this.battleMomentum > 0 && this.fightsSinceVillage > FATIGUE_ONSET) {
-        this.battleMomentum = Math.max(0, this.battleMomentum - 1);
-      }
-      // C532: golden hour — trigger/decrement
-      this.fightsSincePrestige++;
-      if (this.fightsSincePrestige % GOLDEN_HOUR_INTERVAL === 0) {
-        // C556: Hourglass relic doubles temporal durations (C733: via resolver)
-        this.goldenHourRemaining = GOLDEN_HOUR_DURATION * this.relicResolver.hourglassDurationMul();
-      }
-      if (this.goldenHourRemaining > 0) this.goldenHourRemaining--;
-      // C533: fatigue counter
-      this.fightsSinceVillage++;
-      // C534: accumulator — build from clean fights (no damage)
-      if (!tookDamage) {
-        this.accumulatorBonus = Math.min(ACCUMULATOR_CAP, this.accumulatorBonus + ACCUMULATOR_PER_CLEAN);
-      } else {
-        this.accumulatorBonus = 0; // reset on taking damage
-      }
-      // C535: seasonal cycle (affects which stat gets bonus — implemented via season index)
-      const season = Math.floor(this.fightsSincePrestige / SEASON_LENGTH) % 4;
-      if (season === 0) hero.gold += hero.level * 2; // spring: gold
-      else if (season === 1) hero.gainExp(hero.level * 3); // summer: exp
-      // autumn (2) and winter (3): ATK/defense handled by multipliers above
-      // C537: aging — increment age
-      if (this.totalWins > 0 && this.totalWins % AGING_INTERVAL === 0 && this.heroAge < AGING_CAP) {
-        this.heroAge++;
-      }
-      // C538: rejuvenation — reset age at max
-      if (this.heroAge >= REJUVENATION_AGE) {
-        this.heroAge = 0;
-        hero.gainExp(REJUVENATION_EXP_BURST * hero.level);
-      }
+      // C531-C538: temporal systems (momentum decay, golden hour, fatigue, accumulator, season, aging)
+      this.tickTemporalSystems(hero, tookDamage);
       // C539: time lock vault — deposit and mature
       if (this.timeLockTimer > 0) {
         this.timeLockTimer--;
@@ -2267,6 +2236,41 @@ export class EncounterEngine {
       hadPrestigeSurge, hadVillageRestAtk, hadWaveMomentum, hadRevengeStreak,
       hadEliteChainAtk, hadDeathAtkSurge, hadVillageAtkTraining,
     };
+  }
+
+  // C825: Temporal systems — momentum decay, golden hour, fatigue, accumulator, season, aging
+  private tickTemporalSystems(hero: HeroEntity, tookDamage: boolean): void {
+    // C531: momentum decay when fatigued
+    if (this.battleMomentum > 0 && this.fightsSinceVillage > FATIGUE_ONSET) {
+      this.battleMomentum = Math.max(0, this.battleMomentum - 1);
+    }
+    // C532: golden hour trigger/decrement
+    this.fightsSincePrestige++;
+    if (this.fightsSincePrestige % GOLDEN_HOUR_INTERVAL === 0) {
+      this.goldenHourRemaining = GOLDEN_HOUR_DURATION * this.relicResolver.hourglassDurationMul();
+    }
+    if (this.goldenHourRemaining > 0) this.goldenHourRemaining--;
+    // C533: fatigue counter
+    this.fightsSinceVillage++;
+    // C534: accumulator — clean fights build bonus
+    if (!tookDamage) {
+      this.accumulatorBonus = Math.min(ACCUMULATOR_CAP, this.accumulatorBonus + ACCUMULATOR_PER_CLEAN);
+    } else {
+      this.accumulatorBonus = 0;
+    }
+    // C535: seasonal cycle
+    const season = Math.floor(this.fightsSincePrestige / SEASON_LENGTH) % 4;
+    if (season === 0) hero.gold += hero.level * 2;
+    else if (season === 1) hero.gainExp(hero.level * 3);
+    // C537: aging
+    if (this.totalWins > 0 && this.totalWins % AGING_INTERVAL === 0 && this.heroAge < AGING_CAP) {
+      this.heroAge++;
+    }
+    // C538: rejuvenation
+    if (this.heroAge >= REJUVENATION_AGE) {
+      this.heroAge = 0;
+      hero.gainExp(REJUVENATION_EXP_BURST * hero.level);
+    }
   }
 
   // C813: Shared context builder for resolveEventEffects calls
