@@ -223,14 +223,16 @@ export const FOG_AMBUSH_ENEMY_ATK_MUL = 1.20; // enemies hit 20% harder
 export const FOG_AMBUSH_EXP_MUL = 1.30; // +30% EXP reward
 export const FOG_AMBUSH_DURATION = 2; // 2 consecutive fights
 
-// C782: Wind Gale — EXP boost + dodge bonus (wind-only)
-export const WIND_GALE_EXP_MUL = 1.25; // +25% EXP
-export const WIND_GALE_DODGE_BONUS = 0.15; // +15% dodge chance
+// C782→C785: Wind Gale — EXP boost + dodge bonus, gold penalty (wind-only)
+export const WIND_GALE_EXP_MUL = 1.20; // +20% EXP (was 1.25)
+export const WIND_GALE_DODGE_BONUS = 0.10; // +10% dodge chance (was 0.15)
+export const WIND_GALE_GOLD_PENALTY = 0.60; // gold income ×0.60 during gale
 export const WIND_GALE_DURATION = 3; // 3 fights
 
-// C782: Snow Drift — defensive event: enemy speed penalty + hero ATK penalty (snow-only)
-export const SNOW_DRIFT_ENEMY_SPD_MUL = 0.70; // enemy speed -30%
-export const SNOW_DRIFT_ATK_PENALTY = 0.90; // hero ATK ×0.90 (-10%)
+// C782→C785: Snow Drift — defensive event: enemy damage reduction + hero ATK penalty (snow-only)
+export const SNOW_DRIFT_ENEMY_SPD_MUL = 0.80; // enemy speed -20% (was 0.70)
+export const SNOW_DRIFT_DMG_MUL = 0.85; // actual damage reduction (SPD≠DMG)
+export const SNOW_DRIFT_ATK_PENALTY = 0.92; // hero ATK ×0.92 (was 0.90)
 export const SNOW_DRIFT_DURATION = 3; // 3 fights
 
 // C775: Event decline consolation

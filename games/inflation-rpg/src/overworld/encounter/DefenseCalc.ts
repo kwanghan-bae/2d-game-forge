@@ -16,7 +16,7 @@ import {
   CURSED_ALTAR_DAMAGE_MUL,
   COLOSSEUM_ENEMY_ATK_MUL,
   FOG_AMBUSH_ENEMY_ATK_MUL,
-  SNOW_DRIFT_ENEMY_SPD_MUL,
+  SNOW_DRIFT_DMG_MUL,
 } from './constants';
 
 export interface DefenseContext {
@@ -65,7 +65,7 @@ export function computeDamageReduction(ctx: DefenseContext): number {
   const cursedAltarDmgMul = ctx.cursedAltarAtkBuff ? CURSED_ALTAR_DAMAGE_MUL : 1;
   const colosseumDmgMul = ctx.colosseumActive ? COLOSSEUM_ENEMY_ATK_MUL : 1;
   const fogAmbushDmgMul = ctx.fogAmbushActive ? FOG_AMBUSH_ENEMY_ATK_MUL : 1;
-  const snowDriftDmgMul = ctx.snowDriftActive ? SNOW_DRIFT_ENEMY_SPD_MUL : 1; // C782: enemy slower → less damage
+  const snowDriftDmgMul = ctx.snowDriftActive ? SNOW_DRIFT_DMG_MUL : 1; // C785: separated SPD≠DMG
 
   const drDefenseMuls = mercyMul * shieldMul * armorMul * goldArmorMul * vigorMul;
   const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
