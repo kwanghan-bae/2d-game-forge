@@ -21,8 +21,6 @@ const PHASE_MAP: Record<string, PhaseProfile> = {
   ECHO_DURATION: 'mid',
   INSPIRATION_EVENT_CHANCE: 'mid',
   INSPIRATION_ATK_BONUS: 'mid',
-  INSPIRATION_DURATION: 'mid',
-  INSPIRATION_MIN_FIGHTS: 'mid',
   GOLDEN_HOUR_INTERVAL: 'mid',
   FATIGUE_ONSET: 'mid',
 
