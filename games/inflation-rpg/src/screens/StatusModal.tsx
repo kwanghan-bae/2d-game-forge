@@ -222,9 +222,27 @@ export function StatusModal({ onClose }: Props) {
 
           {/* C577: 유물 */}
           <RelicStatusSection />
+
+          {/* C586: 사망 카운터 */}
+          <DeathCountSection />
         </div>
       </div>
     </div>
+  );
+}
+
+function DeathCountSection() {
+  const controller = useCycleStoreV2(s => s.controller);
+  if (!controller) return null;
+  const deaths = controller.getTotalDeaths();
+  if (deaths === 0) return null;
+  return (
+    <section>
+      <div style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>전투 기록</div>
+      <div style={{ fontSize: 13, color: '#f87171' }}>
+        💀 사망 ×{deaths}
+      </div>
+    </section>
   );
 }
 
