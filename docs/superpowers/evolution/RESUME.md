@@ -1,37 +1,42 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 650
-- Target: 680 (다음 세션 목표)
-- Last commit: bd657bf (C646-C650 balance pass on ATK multipliers)
+- Cycle: 651 (협의 완료, 구현 시작 대기)
+- Target: 680 (이번 세션 목표)
+- Last commit: 3cffc9d (docs: create v7 protocol)
 - Vitest: 1882 passed (6 pre-existing failures) | E2E: 60 passed
 
-## 레이어 카운터 (이번 6-cycle era: C645~C650)
+## 레이어 카운터 (이번 6-cycle era: C651~C656)
 - 구조: 0
 - 시스템: 0
 - UI/UX: 0
 - 비주얼: 0
-- 밸런스: 6
-- Era start: C645
+- 밸런스: 0
+- Era start: C651
 
 ## 제약
-- Layer lock: 밸런스 (동일 레이어 연속 금지 — 다음은 밸런스 외 레이어)
-- cycles_since_collab: 17 (C633 이후 협의 없음 — **즉시 협의 필요**)
-- File budget (6-cycle): {constants-combat.ts: 2, constants-economy.ts: 3, constants-progression.ts: 1}
+- Layer lock: 없음 (새 era 시작)
+- cycles_since_collab: 0 (C651 협의 완료)
+- File budget (6-cycle): {} (초기화)
 
-## 다음 3사이클 (협의 미확정 — 즉시 협의 사이클 필요)
-1. [협의] 에이전트 평가 + 다음 방향 확정
-2. [미정] 협의 결과에 따라
-3. [미정] 협의 결과에 따라
+## 다음 3사이클 (C651 협의에서 확정)
+1. [구조] Characterization snapshot + combo 5경로 test + milestone cap test
+2. [구조] RewardCalculator 추출 (~220줄) + EncounterContext 타입
+3. [UI] comboDisplay/momentumDisplay HUD 렌더 + forge-gauge + CombatOverlay 가독성
 
 ## 캐리오버 (미완료)
-- [ ] EncounterEngine.ts 2215줄 → 800줄 분리 (post-win rewards 추출, gold/exp calc 추출)
-- [ ] EncounterContext/CombatOutcome 타입 도입 (메소드 간 상태 전달)
-- [ ] UI/비주얼 레이어 작업 (C571 이후 장기 미진행)
-- [ ] 시스템 레이어: 이벤트 선택 기반 전환 (자동→수동)
-- [ ] v6 "10사이클 연속 동일 파일 수정 금지" 위반 누적 — 구조 분리 우선
+- [ ] EncounterEngine.ts 2229줄 → 800줄 분리
+- [ ] ExpCalculator 추출 (~184줄)
+- [ ] GoldCalculator 추출 (~177줄)
+- [ ] CombatResolver 추출 (~173줄) — 가장 결합도 높음, 마지막
+- [ ] UI: ActiveBuffBar, DamageFloater, ProgressionHUD
+- [ ] 시스템: EventChoiceEngine (자동→수동 전환)
+- [ ] ATK cap prestige 연동 (구조 추출 완료 후)
 
 ## 알려진 기술 부채
 - 6 pre-existing test failures (fateRoll, OverworldRunner, sim-cycle-v2)
 - EncounterEngine.ts line 14: 16KB 단일 import line (barrel 경유)
 - Constants 분할이 line-number 기반 (semantic 재배치 필요)
+- combo decay 5경로 중 1개만 테스트됨
+- killMilestone cap(50) 미테스트
+- forge-ui 미사용 (OverworldRunner 100% inline style)
