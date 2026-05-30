@@ -1,30 +1,30 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 731
+- Cycle: 735
 - Target: 600+ (연속 진화)
-- Last commit: C731 chooseEncounterNode trait-weighted
-- Vitest: 2113 pass / 0 fail
+- Last commit: C735 Night indicator in WeatherHudIndicator
+- Vitest: 2139 pass / 0 fail
 - E2E: 60 passed
-- EncounterEngine: ~1832 lines
+- EncounterEngine: ~1830 lines
 
-## 레이어 카운터 (C705-C731 era)
+## 레이어 카운터 (C705-C735 era)
 - 시스템: 5 (C710 PostCombatHealCalc, C718 pity-trap fix, C723 AI BET_HIGH + Weather dodge/speed, C727 EnemyTurnCalc, C731 chooseEncounterNode trait-weighted)
-- 구조: 2 (C711 DropResolver, C719 HeroTurnCalc)
-- UI/UX: 5 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant, C725 WeatherHudIndicator, C729 DestinationBadge)
-- 밸런스: 7 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish, C722 EXP+drop cap tuning, C726 fog crit+AI ratio, C730 boss enrage+BET_HIGH 12)
-- 콜라보: 8 (C705, C709, C713, C717, C721, C724, C728, C732)
+- 구조: 3 (C711 DropResolver, C719 HeroTurnCalc, C733 RelicEffectResolver)
+- UI/UX: 6 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant, C725 WeatherHudIndicator, C729 DestinationBadge, C735 Night indicator)
+- 밸런스: 8 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish, C722 EXP+drop cap tuning, C726 fog crit+AI ratio, C730 boss enrage+BET_HIGH 12, C734 boss_hunter 1.3+difficulty gate)
+- 콜라보: 9 (C705, C709, C713, C717, C721, C724, C728, C732, C736)
 
 ## 제약
-- cycles_since_collab: 0 (C732 is collab NOW)
-- Next collab: C735
-- EncounterEngine: ~1832 lines
+- cycles_since_collab: 0 (C736 is collab NOW)
+- Next collab: C739
+- EncounterEngine: ~1830 lines
 - Layer lock: collab (current)
 
-## 다음 3사이클 (C732 협의에서 확정 예정)
-1. [collab] C732: critic + planner + level-designer
-2. C733 [structure] TBD
-3. C734 [balance] TBD
+## 다음 3사이클 (C736 협의에서 확정 예정)
+1. [collab] C736: critic + planner + level-designer
+2. C737 [system] TBD
+3. C738 [balance] TBD
 
 ## 달성 사항 (C705-C716)
 - C705 [collab]: critic(6/5/4/5) + planner + level-designer
@@ -54,7 +54,11 @@
 - C729 [UI/UX]: DestinationBadge pill badge (landmark 도착 표시)
 - C730 [balance]: Boss enrage timer 10→15 / mul 2.0→1.5, AI BET_HIGH ratio 5→12
 - C731 [system]: chooseEncounterNode stub→trait-weighted (DestinationResolver 위임)
-- C732 [collab]: 평가 진행 중
+- C732 [collab]: 25/40. Night visual 우선, boss_hunter 안전장치, RelicEffectResolver 합의
+- C733 [structure]: RelicEffectResolver extraction (relic 쿼리/뮤테이션 순수 클래스)
+- C734 [balance]: boss_hunter weight 1.5→1.3 + difficulty gate (heroLevel×1.5)
+- C735 [UI/UX]: Night indicator 🌙 (EXP ×2 표시, weather 우선)
+- C736 [collab]: 평가 진행 중
 
 ## 캐리오버 (미완료)
 - [x] EXP breakdown badge wire into OverworldRunner — DONE C707

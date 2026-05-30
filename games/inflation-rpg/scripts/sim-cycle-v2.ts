@@ -396,7 +396,7 @@ function runOneCycle(
     const unconsumed = layout.landmarks.filter(l => !l.consumed);
     const reachable = filterCandidatesByRealm(unconsumed, currentRealmId);
     if (reachable.length === 0) { endCause = '무위'; break; }
-    const chosenCandidate = ai.chooseDestination(reachable.map(landmarkToCandidate));
+    const chosenCandidate = ai.chooseDestination(reachable.map(l => landmarkToCandidate(l, currentRealmId)));
     if (!chosenCandidate) { endCause = '무위'; break; }
     const target = reachable.find(c => c.instanceId === chosenCandidate.id);
     if (!target) { endCause = 'target_not_found'; break; }
