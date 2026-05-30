@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { getHealBreakdown, type HealBreakdownEntry } from '../HealBreakdownBadgeLogic';
+import { getHealBreakdown, shouldShowHealBadge, type HealBreakdownEntry } from '../HealBreakdownBadgeLogic';
 
 describe('HealBreakdownBadgeLogic', () => {
   test('filters out zero-amount sources', () => {
@@ -64,5 +64,36 @@ describe('HealBreakdownBadgeLogic', () => {
     for (const entry of result) {
       expect(entry.icon).toBeTruthy();
     }
+  });
+
+  test('isDominant true when source > 50% of total', () => {
+    const result = getHealBreakdown({
+      regenHeal: 80,
+      lifestealHeal: 10,
+      overkillHeal: 5,
+      survivalHeal: 5,
+      totalHeal: 100,
+    });
+    expect(result[0].isDominant).toBe(true); // 80/100 = 80%
+    expect(result[1].isDominant).toBe(false); // 10/100 = 10%
+  });
+
+  test('no dominant when evenly split', () => {
+    const result = getHealBreakdown({
+      regenHeal: 25,
+      lifestealHeal: 25,
+      overkillHeal: 25,
+      survivalHeal: 25,
+      totalHeal: 100,
+    });
+    expect(result.every(e => !e.isDominant)).toBe(true);
+  });
+
+  test('shouldShowHealBadge false when heal < 5% maxHP', () => {
+    expect(shouldShowHealBadge({ regenHeal: 4, lifestealHeal: 0, overkillHeal: 0, survivalHeal: 0, totalHeal: 4 }, 1000)).toBe(false);
+  });
+
+  test('shouldShowHealBadge true when heal >= 5% maxHP', () => {
+    expect(shouldShowHealBadge({ regenHeal: 50, lifestealHeal: 0, overkillHeal: 0, survivalHeal: 0, totalHeal: 50 }, 1000)).toBe(true);
   });
 });

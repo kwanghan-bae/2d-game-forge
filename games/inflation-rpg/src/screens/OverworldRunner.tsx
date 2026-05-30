@@ -677,7 +677,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <BattleOutcomeBadge input={badgeInput} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />
-      <HealBreakdownBadge healResult={healResult} />
+      <HealBreakdownBadge healResult={healResult} heroHpMax={hero.hpMax} />
       <EventChoiceToast eventSubType={eventSubType} onDone={() => setEventSubType(null)} />
       {showAtkBreakdown && (
         <div style={{ position: 'absolute', top: 60, left: 8, zIndex: 20 }}>
