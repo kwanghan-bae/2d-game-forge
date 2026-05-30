@@ -219,8 +219,48 @@ export function StatusModal({ onClose }: Props) {
               ))
             )}
           </section>
+
+          {/* C577: 유물 */}
+          <RelicStatusSection />
         </div>
       </div>
     </div>
+  );
+}
+
+const RELIC_NAMES: Record<number, string> = {
+  0: '잔불의 왕관', 1: '구두쇠 주머니', 2: '불사조 깃털',
+  3: '모래시계', 4: '피의 서약', 5: '학자의 렌즈',
+};
+
+function RelicStatusSection() {
+  const controller = useCycleStoreV2(s => s.controller);
+  if (!controller) return null;
+  const relics = controller.getRelics();
+  const imprinted = controller.getImprintedRelic();
+  const prestige = controller.getPrestigeCount();
+  if (relics.length === 0 && !imprinted && prestige === 0) return null;
+
+  return (
+    <section>
+      <div style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>
+        유물 · 프레스티지
+      </div>
+      {prestige > 0 && (
+        <div style={{ fontSize: 13, color: '#ffd700' }}>
+          ★ 프레스티지 ×{prestige}
+        </div>
+      )}
+      {relics.map(r => (
+        <div key={r.id} style={{ fontSize: 13 }}>
+          {RELIC_NAMES[r.id] ?? r.name} Lv{r.level}
+        </div>
+      ))}
+      {imprinted != null && (
+        <div style={{ fontSize: 13, color: '#88f' }}>
+          각인: {RELIC_NAMES[imprinted.id] ?? imprinted.name}
+        </div>
+      )}
+    </section>
   );
 }
