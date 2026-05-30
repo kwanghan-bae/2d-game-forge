@@ -8,6 +8,7 @@ import {
   COMBO_SHIELD_THRESHOLD,
   COMBO_SHIELD_REDUCTION,
   GOLD_INSURANCE_PAYOUT_MUL,
+  DEATH_GOLD_INSURANCE_RATE,
 } from '../EncounterEngine';
 import { HeroEntity } from '../../hero/HeroEntity';
 import { SeededRng } from '../../cycle/SeededRng';
@@ -695,9 +696,11 @@ describe('EncounterEngine — C144 gold currency', () => {
     hero.gold = 1000;
     const eng = new EncounterEngine(new SeededRng(1));
     eng.resolveEncounter(hero, 'enemy', 'e_0');
-    // Hero should die (weak stats) and lose 10% gold (but C344 insurance adds back level*3)
+    // Hero dies: loses 10% (→900), then C477 insurance +5% (→945), then C344 payout
     expect(hero.staggered).toBe(true);
-    expect(hero.gold).toBe(900 + hero.level * GOLD_INSURANCE_PAYOUT_MUL);
+    const afterLoss = 900;
+    const afterInsurance = afterLoss + Math.floor(afterLoss * DEATH_GOLD_INSURANCE_RATE);
+    expect(hero.gold).toBe(afterInsurance + hero.level * GOLD_INSURANCE_PAYOUT_MUL);
   });
 
   it('C148: kill milestone fires every 50 kills', () => {
