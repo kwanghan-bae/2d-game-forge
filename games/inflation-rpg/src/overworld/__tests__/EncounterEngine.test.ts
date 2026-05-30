@@ -824,6 +824,6 @@ describe('EncounterEngine — C331-C340', () => {
     // Artificially build combo by fighting enemies we can't one-shot but survive
     // Instead, test the constant exists and is used
     expect(COMBO_SHIELD_THRESHOLD).toBe(10);
-    expect(COMBO_SHIELD_REDUCTION).toBe(0.15);
+    expect(COMBO_SHIELD_REDUCTION).toBe(0.08); // C605: nerfed
   });
 });
