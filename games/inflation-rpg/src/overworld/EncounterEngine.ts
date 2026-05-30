@@ -721,7 +721,7 @@ export class EncounterEngine {
             hero.hp = hero.hpMax;
             this.prestigeShieldRemaining += 1;
             this.totalSacrifices++;
-            this.levelSacrificeCooldown = 20;
+            this.levelSacrificeCooldown = 50; // C573: was 20
           }
           // C555: Phoenix Feather relic — one-time death prevention
           if (hero.staggered && this.hasRelic(2) && !this.phoenixFeatherUsed) {
