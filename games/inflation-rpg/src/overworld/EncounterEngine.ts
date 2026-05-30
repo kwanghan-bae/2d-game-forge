@@ -1047,6 +1047,7 @@ export class EncounterEngine {
         dropChanceBonus: this.opts.dropChanceBonus ?? 0,
         introDropBonus: isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0,
         dropStreak: this.dropStreak,
+        heroLevel: hero.level,
       });
       const eliteLootUpgrade = isElite && ELITE_LOOT_UPGRADE;
       const dropId = this.rng.chance(dropResult.dropOdds) ? this.rollDrop(isBoss || dropResult.upgradePool || eliteLootUpgrade) : null;
