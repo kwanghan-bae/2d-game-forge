@@ -21,6 +21,7 @@ import { DamageFloater } from '../components/DamageFloater';
 import { DamageFloaterLogic } from '../components/DamageFloaterLogic';
 import { BattleOutcomeBadge } from '../components/BattleOutcomeBadge';
 import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
+import { ComboStreakBadge } from '../components/ComboStreakBadge';
 import { ShrineChoiceModal } from '../components/ShrineChoiceModal';
 import { DangerChoiceModal } from '../components/DangerChoiceModal';
 import { FateRollModal } from './FateRollModal';
@@ -642,6 +643,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
+      <ComboStreakBadge combo={momentumDisplay} />
       <div style={{ position: 'absolute', left: 8, bottom: 80, zIndex: 10 }}>
         <RelicPanel />
       </div>
