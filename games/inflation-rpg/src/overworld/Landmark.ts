@@ -16,7 +16,7 @@ export function landmarkToCandidate(l: PlacedLandmark, realmId?: RealmId): { id:
     const kind = l.type.kind;
     // C737: realm-based difficulty. Boss = realm start level, enemy = half, non-combat = 0
     const difficulty = kind === 'boss' ? baseLevel
-      : kind === 'enemy' ? Math.floor(baseLevel * 0.5)
+      : kind === 'enemy' ? Math.max(1, Math.floor(baseLevel * 0.5))
       : 0;
     return { id: l.instanceId, kind, difficulty };
   }
