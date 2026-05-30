@@ -29,6 +29,7 @@ import { computeNight, WeatherSubsystem } from './encounter/WeatherSystem';
 import { EventOrchestrator, type EventId } from './encounter/EventOrchestrator';
 import { createDeclineStack, pushDecline, consumeDeclineStack, shouldForceRareEvent, type DeclineStackState } from './encounter/DeclineStack';
 import { dispatchPendingTriggers } from './encounter/EventTriggerMap';
+import { rollChainEvent } from './encounter/EventChainConfig';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
 import { computePostCombatHeal } from './encounter/PostCombatHealCalc';
@@ -481,6 +482,9 @@ export class EncounterEngine {
         if (this.comboStreak < 0) this.comboStreak = 0;
         this.soulForgeStacks = Math.min(this.soulForgeStacks + 1, SOUL_FORGE_MAX_STACKS);
       }
+      // C815: Event Chain — roll for follow-up event after accept
+      const chainNext = rollChainEvent(id, (rate) => this.rng.chance(rate));
+      if (chainNext) this.eventOrch.trigger(chainNext);
     } else {
       // C804: push decline stack
       pushDecline(this.declineStack);
