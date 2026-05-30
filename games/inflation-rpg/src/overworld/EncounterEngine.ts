@@ -194,6 +194,7 @@ export class EncounterEngine {
   private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
   private voidRiftRemaining = 0; // C758: void rift tier+2 offset duration
   private trialGroundsRemaining = 0; // C762: trial grounds duration (EXP×1.35, enemy +1 level)
+  private trialGroundsPending = false; // C765: event choice architecture — pending player acceptance
   private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
@@ -324,6 +325,13 @@ export class EncounterEngine {
   getVoidRiftRemaining(): number { return this.voidRiftRemaining; }
   // C762: expose trial grounds state for UI
   getTrialGroundsRemaining(): number { return this.trialGroundsRemaining; }
+  // C765: event choice architecture
+  getTrialGroundsPending(): boolean { return this.trialGroundsPending; }
+  resolveTrialGrounds(accept: boolean): void {
+    if (!this.trialGroundsPending) return;
+    this.trialGroundsPending = false;
+    if (accept) this.trialGroundsRemaining = TRIAL_GROUNDS_DURATION;
+  }
   // C735: expose night state for UI
   getIsNight(): boolean { return computeNight(this.totalWins).isNight; }
   getHealResult() { return this.lastHealResult; }
@@ -1850,8 +1858,8 @@ export class EncounterEngine {
     if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
     // C757: wire Colosseum event → EXP×2 + enemy ATK×1.3
     if (r.newColosseumRemaining > 0) this.colosseumRemaining = r.newColosseumRemaining;
-    // C762: wire Trial Grounds event → EXP×1.35 + enemy +1 level
-    if (r.newTrialGroundsRemaining > 0) this.trialGroundsRemaining = r.newTrialGroundsRemaining;
+    // C765: Trial Grounds pending → player must accept/decline
+    if (r.trialGroundsPending) this.trialGroundsPending = true;
     // C758: wire Void Rift — tier+2 offset for 3 fights + random relic level+1
     if (r.voidRiftTriggered) {
       this.voidRiftRemaining = 3;

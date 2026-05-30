@@ -71,4 +71,28 @@ describe('HudIndicatorBar', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({ type: 'weather', icon: '🌙', label: 'Night: EXP ×2' });
   });
+
+  it('shows event badges for active trial/colosseum/voidRift', () => {
+    const result = buildHudIndicators({
+      weather: 'normal',
+      isNight: false,
+      influencingTraits: [],
+      inspirationRemaining: 0,
+      activeEvents: { trialGroundsRemaining: 2, colosseumRemaining: 0, voidRiftRemaining: 1 },
+    });
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ type: 'event', icon: '⚔️', label: '시련장 (2)' });
+    expect(result[1]).toEqual({ type: 'event', icon: '🌀', label: '공허균열 (1)' });
+  });
+
+  it('shows no event badges when all events are zero', () => {
+    const result = buildHudIndicators({
+      weather: 'normal',
+      isNight: false,
+      influencingTraits: [],
+      inspirationRemaining: 0,
+      activeEvents: { trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0 },
+    });
+    expect(result).toHaveLength(0);
+  });
 });

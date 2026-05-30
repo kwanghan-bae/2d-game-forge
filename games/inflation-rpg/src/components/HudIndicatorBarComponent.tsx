@@ -2,7 +2,7 @@
  * C753: HudIndicatorBarComponent — renders weather, trait, and inspiration badges.
  * Uses buildHudIndicators() from HudIndicatorBar view-model.
  */
-import { buildHudIndicators, type HudBadge } from './HudIndicatorBar';
+import { buildHudIndicators, type HudBadge, type ActiveEventState } from './HudIndicatorBar';
 import type { Weather } from '../overworld/encounter/WeatherSystem';
 import type { TraitId } from '../cycle/traits';
 
@@ -11,16 +11,18 @@ interface HudIndicatorBarProps {
   isNight?: boolean;
   influencingTraits: readonly TraitId[];
   inspirationRemaining: number;
+  activeEvents?: ActiveEventState;
 }
 
 const BADGE_COLORS: Record<HudBadge['type'], string> = {
   weather: 'rgba(30, 60, 120, 0.7)',
   trait: 'rgba(80, 50, 120, 0.7)',
   inspiration: 'rgba(120, 90, 0, 0.7)',
+  event: 'rgba(140, 40, 40, 0.7)',
 };
 
-export function HudIndicatorBarComponent({ weather, isNight, influencingTraits, inspirationRemaining }: HudIndicatorBarProps) {
-  const badges = buildHudIndicators({ weather, isNight, influencingTraits, inspirationRemaining });
+export function HudIndicatorBarComponent({ weather, isNight, influencingTraits, inspirationRemaining, activeEvents }: HudIndicatorBarProps) {
+  const badges = buildHudIndicators({ weather, isNight, influencingTraits, inspirationRemaining, activeEvents });
   if (badges.length === 0) return null;
 
   return (

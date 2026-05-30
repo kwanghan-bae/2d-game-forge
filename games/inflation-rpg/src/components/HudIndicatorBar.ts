@@ -13,10 +13,17 @@ export interface HudIndicatorInput {
   isNight?: boolean;
   influencingTraits: readonly TraitId[];
   inspirationRemaining: number;
+  activeEvents?: ActiveEventState;
+}
+
+export interface ActiveEventState {
+  trialGroundsRemaining: number;
+  colosseumRemaining: number;
+  voidRiftRemaining: number;
 }
 
 export interface HudBadge {
-  type: 'weather' | 'trait' | 'inspiration';
+  type: 'weather' | 'trait' | 'inspiration' | 'event';
   icon: string;
   label: string;
 }
@@ -46,6 +53,20 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
       icon: '✨',
       label: `ATK +15% (${input.inspirationRemaining})`,
     });
+  }
+
+  // Active gated events
+  if (input.activeEvents) {
+    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining } = input.activeEvents;
+    if (trialGroundsRemaining > 0) {
+      badges.push({ type: 'event', icon: '⚔️', label: `시련장 (${trialGroundsRemaining})` });
+    }
+    if (colosseumRemaining > 0) {
+      badges.push({ type: 'event', icon: '🏟️', label: `투기장 (${colosseumRemaining})` });
+    }
+    if (voidRiftRemaining > 0) {
+      badges.push({ type: 'event', icon: '🌀', label: `공허균열 (${voidRiftRemaining})` });
+    }
   }
 
   return badges;

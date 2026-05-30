@@ -30,6 +30,7 @@ import type { PostCombatHealResult } from '../overworld/encounter/PostCombatHeal
 import { StatDeltaPopup } from '../components/StatDeltaPopup';
 import { WeatherHudIndicator } from '../components/WeatherHudIndicator';
 import { HudIndicatorBarComponent } from '../components/HudIndicatorBarComponent';
+import type { ActiveEventState } from '../components/HudIndicatorBar';
 import { DestinationBadge } from '../components/DestinationBadge';
 import type { Weather } from '../overworld/encounter/WeatherSystem';
 import type { TraitId } from '../cycle/traits';
@@ -151,6 +152,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [isNight, setIsNight] = useState(false);
   const [inspirationRemaining, setInspirationRemaining] = useState(0);
   const [influencingTraits, setInfluencingTraits] = useState<TraitId[]>([]);
+  const [activeEvents, setActiveEvents] = useState<ActiveEventState>({ trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0 });
   const [currentDestination, setCurrentDestination] = useState<import('../data/landmarks').LandmarkKind | null>(null);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -324,6 +326,12 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           setInspirationRemaining(engineRef.current?.getInspirationRemaining?.() ?? 0);
           // C761: Trait influence badge wiring
           setInfluencingTraits([...(getSceneRef.current?.()?.getLastInfluencingTraits?.() ?? [])] as TraitId[]);
+          // C765: Active event badges
+          setActiveEvents({
+            trialGroundsRemaining: controller.getTrialGroundsRemaining(),
+            colosseumRemaining: controller.getColosseumRemaining(),
+            voidRiftRemaining: controller.getVoidRiftRemaining(),
+          });
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||
@@ -700,7 +708,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <CombatOverlay />
       <DamageFloater logic={damageFloaterRef.current} />
       <BattleOutcomeBadge input={badgeInput} />
-      <HudIndicatorBarComponent weather={currentWeather} isNight={isNight} influencingTraits={influencingTraits} inspirationRemaining={inspirationRemaining} />
+      <HudIndicatorBarComponent weather={currentWeather} isNight={isNight} influencingTraits={influencingTraits} inspirationRemaining={inspirationRemaining} activeEvents={activeEvents} />
       <DestinationBadge kind={currentDestination} />
       <StatDeltaPopup entries={statDeltaEntries} />
       <ExpBreakdownBadge breakdown={expBreakdown} />
