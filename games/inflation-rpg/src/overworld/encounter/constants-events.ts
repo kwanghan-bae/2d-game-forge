@@ -269,3 +269,13 @@ export const TITAN_ARENA_DURATION = 4;
 export const TITAN_ARENA_ENEMY_HP_MUL = 1.5;
 export const TITAN_ARENA_ENEMY_ATK_MUL = 1.3;
 export const TITAN_ARENA_EXP_MUL = 2.0;
+
+// C800: Gold Crucible — gold sink event (fight 350+)
+export const GOLD_CRUCIBLE_DURATION = 15;
+export const GOLD_CRUCIBLE_GOLD_COST_RATE = 0.30; // burns 30% of current gold on accept
+export const GOLD_CRUCIBLE_ATK_FLAT = 50; // +50 flat ATK for duration
+
+// C800: Astral Paradox — high-risk EXP event (fight 400+)
+export const ASTRAL_PARADOX_DURATION = 5;
+export const ASTRAL_PARADOX_EXP_MUL = 2.5;
+export const ASTRAL_PARADOX_ENEMY_ATK_MUL = 1.8;

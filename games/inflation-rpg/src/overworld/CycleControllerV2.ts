@@ -916,6 +916,14 @@ export class CycleControllerV2 {
   getTitanArenaRemaining() { return this.encounter.getTitanArenaRemaining(); }
   getTitanArenaPending() { return this.encounter.getTitanArenaPending(); }
   resolveTitanArena(accept: boolean) { this.encounter.resolveTitanArena(accept); this.recordEventChoice('titan_arena', accept); }
+  // C800: Gold Crucible
+  getGoldCrucibleRemaining() { return this.encounter.getGoldCrucibleRemaining(); }
+  getGoldCruciblePending() { return this.encounter.getGoldCruciblePending(); }
+  resolveGoldCrucible(accept: boolean) { this.encounter.resolveGoldCrucible(accept); this.recordEventChoice('gold_crucible', accept); }
+  // C800: Astral Paradox
+  getAstralParadoxRemaining() { return this.encounter.getAstralParadoxRemaining(); }
+  getAstralParadoxPending() { return this.encounter.getAstralParadoxPending(); }
+  resolveAstralParadox(accept: boolean) { this.encounter.resolveAstralParadox(accept); this.recordEventChoice('astral_paradox', accept); }
   getEventMomentumAtkRemaining() { return this.encounter.getEventMomentumAtkRemaining(); }
   getEventMomentumDensityRemaining() { return this.encounter.getEventMomentumDensityRemaining(); }
   // C798: Aggregate accessor

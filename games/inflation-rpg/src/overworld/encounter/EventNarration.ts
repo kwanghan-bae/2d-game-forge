@@ -65,4 +65,14 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
     accept: '타이탄의 도전을 받아들인다. 4전투 동안 적 HP×1.5, ATK×1.3, EXP×2.0!',
     decline: '타이탄의 도전을 거부한다. 아직은 이르다.',
   },
+  gold_crucible: {
+    trigger: '황금 도가니가 나타났다. 금을 태워 힘을 얻을 수 있다.',
+    accept: '금의 30%를 소각한다. 15전투간 ATK +50!',
+    decline: '지금은 금이 아깝다. 지나친다.',
+  },
+  astral_paradox: {
+    trigger: '별의 역설이 열렸다. 위험하지만 막대한 경험을 얻을 수 있다.',
+    accept: '별의 역설에 뛰어든다. 5전투간 EXP×2.5, 적 ATK×1.8!',
+    decline: '너무 위험하다. 별의 역설을 피해간다.',
+  },
 };

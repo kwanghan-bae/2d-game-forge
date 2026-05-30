@@ -87,6 +87,18 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     chance: 0.02,
     description: 'Titan Arena — enemy HP×1.5, ATK×1.3, EXP×2.0 for 4 fights',
   },
+  {
+    id: 'event_gold_crucible',
+    minTotalFights: 350,
+    chance: 0.02,
+    description: 'Gold Crucible — burn 30% gold for +50 ATK flat for 15 fights',
+  },
+  {
+    id: 'event_astral_paradox',
+    minTotalFights: 400,
+    chance: 0.015,
+    description: 'Astral Paradox — EXP×2.5 but enemy ATK×1.8 for 5 fights',
+  },
 ];
 
 /**
