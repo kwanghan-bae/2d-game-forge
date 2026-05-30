@@ -702,30 +702,8 @@ export class EncounterEngine {
       const { isNight } = computeNight(this.totalWins);
 
       // === C690: ATK section — side effects + delegated pure computation ===
-      // Phase 1: Side effects — capture "had" values, decrement timers
-      const hadShieldBreak = this.shieldBreakReady;
-      if (this.shieldBreakReady) this.shieldBreakReady = false;
-      const hadComboBreaker = this.comboBreakerReady;
-      if (this.comboBreakerReady) this.comboBreakerReady = false;
-      const hadVillageTraining = this.villageTrainingRemaining > 0;
-      if (this.villageTrainingRemaining > 0) this.villageTrainingRemaining--;
-      const hadBossFury = this.bossFuryRemaining > 0;
-      if (this.bossFuryRemaining > 0) this.bossFuryRemaining--;
-      const hadPrestigeSurge = this.prestigeSurgeReady;
-      if (this.prestigeSurgeReady) this.prestigeSurgeReady = false;
-      const hadVillageRestAtk = this.villageRestAtkRemaining > 0;
-      if (this.villageRestAtkRemaining > 0) this.villageRestAtkRemaining--;
-      const hadWaveMomentum = this.waveMomentumRemaining > 0;
-      if (this.waveMomentumRemaining > 0) this.waveMomentumRemaining--;
-      const hadRevengeStreak = this.revengeStreakRemaining > 0;
-      if (this.revengeStreakRemaining > 0) this.revengeStreakRemaining--;
-      const hadEliteChainAtk = this.eliteChainAtkRemaining > 0;
-      if (this.eliteChainAtkRemaining > 0) this.eliteChainAtkRemaining--;
-      // deathAtkSurge: original code decrements BEFORE reading multiplier
-      if (this.deathAtkSurgeRemaining > 0) this.deathAtkSurgeRemaining--;
-      const hadDeathAtkSurge = this.deathAtkSurgeRemaining > 0;
-      const hadVillageAtkTraining = this.villageAtkTrainingRemaining > 0;
-      if (this.villageAtkTrainingRemaining > 0) this.villageAtkTrainingRemaining--;
+      // C822: Phase 1 batch — capture "had" flags + decrement combat buffs
+      const combatBuffs = this.tickCombatBuffs();
       // Blood pact HP check BEFORE cost applied
       const hpBelowBloodPact = hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD;
       if (hpBelowBloodPact) hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * BLOOD_PACT_HP_COST * (this.hasRelic(4) ? BLOOD_PACT_RELIC_HP_PENALTY : 1)));
@@ -819,8 +797,8 @@ export class EncounterEngine {
         hpRatio: hero.hp / hero.hpMax,
         fightsSinceVillage: this.fightsSinceVillage,
         shrineTithes: this.shrineTithes,
-        hadShieldBreak,
-        hadComboBreaker,
+        hadShieldBreak: combatBuffs.hadShieldBreak,
+        hadComboBreaker: combatBuffs.hadComboBreaker,
         prestigeCount: this.prestigeCount,
         achievementMilestones: this.achievementMilestones,
         totalDeaths: this.totalDeaths,
@@ -830,30 +808,30 @@ export class EncounterEngine {
         heroGold: hero.gold,
         bossesKilled: this.bossesKilled,
         hpBelowAdrenaline: hero.hp < hero.hpMax * ADRENALINE_HP_THRESHOLD,
-        hadVillageTraining,
+        hadVillageTraining: combatBuffs.hadVillageTraining,
         consecutiveDeaths: this.consecutiveDeaths,
         consecutiveCrits: this.consecutiveCrits,
         isDangerZone,
         comboStreak: this.comboStreak,
         dangerChainCount: this.dangerChainCount,
-        hadBossFury,
+        hadBossFury: combatBuffs.hadBossFury,
         consecutiveBossKills: this.consecutiveBossKills,
         heroHp: hero.hp,
         heroHpMax: hero.hpMax,
         uniqueBossKills: this.uniqueBossKills,
-        hadPrestigeSurge,
-        hadVillageRestAtk,
-        hadWaveMomentum,
-        hadRevengeStreak,
+        hadPrestigeSurge: combatBuffs.hadPrestigeSurge,
+        hadVillageRestAtk: combatBuffs.hadVillageRestAtk,
+        hadWaveMomentum: combatBuffs.hadWaveMomentum,
+        hadRevengeStreak: combatBuffs.hadRevengeStreak,
         revengeStreakPower: this.revengeStreakPower,
         consecutiveWaveClears: this.consecutiveWaveClears,
         totalWins: this.totalWins,
         totalFights: this.totalWins + this.totalDeaths,
-        hadEliteChainAtk,
+        hadEliteChainAtk: combatBuffs.hadEliteChainAtk,
         eliteCombo: this.eliteCombo,
-        hadDeathAtkSurge,
+        hadDeathAtkSurge: combatBuffs.hadDeathAtkSurge,
         dangerFights: this.dangerFights,
-        hadVillageAtkTraining,
+        hadVillageAtkTraining: combatBuffs.hadVillageAtkTraining,
         hadPrestigeEcho,
         prestigeEchoDecay,
         hadWaveExhaustion,
@@ -2257,6 +2235,38 @@ export class EncounterEngine {
     if (this.crimsonTitheRemaining > 0) this.crimsonTitheRemaining--;
     if (this.astralParadoxRemaining > 0) this.astralParadoxRemaining--;
     if (this.soulForgeRemaining > 0) this.soulForgeRemaining--;
+  }
+
+  // C822: Batch capture "had" flags + decrement combat buff timers
+  private tickCombatBuffs() {
+    const hadShieldBreak = this.shieldBreakReady;
+    if (this.shieldBreakReady) this.shieldBreakReady = false;
+    const hadComboBreaker = this.comboBreakerReady;
+    if (this.comboBreakerReady) this.comboBreakerReady = false;
+    const hadVillageTraining = this.villageTrainingRemaining > 0;
+    if (this.villageTrainingRemaining > 0) this.villageTrainingRemaining--;
+    const hadBossFury = this.bossFuryRemaining > 0;
+    if (this.bossFuryRemaining > 0) this.bossFuryRemaining--;
+    const hadPrestigeSurge = this.prestigeSurgeReady;
+    if (this.prestigeSurgeReady) this.prestigeSurgeReady = false;
+    const hadVillageRestAtk = this.villageRestAtkRemaining > 0;
+    if (this.villageRestAtkRemaining > 0) this.villageRestAtkRemaining--;
+    const hadWaveMomentum = this.waveMomentumRemaining > 0;
+    if (this.waveMomentumRemaining > 0) this.waveMomentumRemaining--;
+    const hadRevengeStreak = this.revengeStreakRemaining > 0;
+    if (this.revengeStreakRemaining > 0) this.revengeStreakRemaining--;
+    const hadEliteChainAtk = this.eliteChainAtkRemaining > 0;
+    if (this.eliteChainAtkRemaining > 0) this.eliteChainAtkRemaining--;
+    // deathAtkSurge: decrements BEFORE reading (original behavior)
+    if (this.deathAtkSurgeRemaining > 0) this.deathAtkSurgeRemaining--;
+    const hadDeathAtkSurge = this.deathAtkSurgeRemaining > 0;
+    const hadVillageAtkTraining = this.villageAtkTrainingRemaining > 0;
+    if (this.villageAtkTrainingRemaining > 0) this.villageAtkTrainingRemaining--;
+    return {
+      hadShieldBreak, hadComboBreaker, hadVillageTraining, hadBossFury,
+      hadPrestigeSurge, hadVillageRestAtk, hadWaveMomentum, hadRevengeStreak,
+      hadEliteChainAtk, hadDeathAtkSurge, hadVillageAtkTraining,
+    };
   }
 
   // C813: Shared context builder for resolveEventEffects calls
