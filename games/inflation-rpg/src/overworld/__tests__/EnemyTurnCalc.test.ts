@@ -92,4 +92,13 @@ describe('EnemyTurnCalc — computeEnemyTurnAtk', () => {
     });
     expect(result.isTimerEnraged).toBe(false);
   });
+
+  // C730: timer enrage constants rebalance regression
+  it('BOSS_ENRAGE_TIMER_TURN is 15 (C730)', () => {
+    expect(BOSS_ENRAGE_TIMER_TURN).toBe(15);
+  });
+
+  it('BOSS_ENRAGE_TIMER_MUL is 1.5 (C730)', () => {
+    expect(BOSS_ENRAGE_TIMER_MUL).toBe(1.5);
+  });
 });

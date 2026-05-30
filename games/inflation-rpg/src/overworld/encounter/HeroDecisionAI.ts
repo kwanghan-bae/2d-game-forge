@@ -5,7 +5,7 @@
 
 export type GamblerBetChoice = 'BET_HIGH' | 'BET_LOW';
 
-const AI_BET_HIGH_GOLD_RATIO = 5;
+const AI_BET_HIGH_GOLD_RATIO = 12;
 
 export function chooseGamblerBet(heroGold: number, nextUpgradeCost: number): GamblerBetChoice {
   return heroGold > AI_BET_HIGH_GOLD_RATIO * nextUpgradeCost ? 'BET_HIGH' : 'BET_LOW';
