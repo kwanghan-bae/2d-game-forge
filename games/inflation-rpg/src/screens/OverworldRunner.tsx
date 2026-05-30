@@ -16,6 +16,7 @@ import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
 import { RelicPanel } from '../components/RelicPanel';
 import { StrategyPanel } from '../components/StrategyPanel';
+import { CombatOverlay } from '../components/CombatOverlay';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -601,6 +602,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         })}
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
+      <CombatOverlay />
       <div style={{ position: 'absolute', left: 8, bottom: 80, zIndex: 10 }}>
         <RelicPanel />
       </div>

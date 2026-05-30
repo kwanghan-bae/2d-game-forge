@@ -255,6 +255,24 @@ export class EncounterEngine {
   getPrestigeCount(): number { return this.prestigeCount; }
   getEventChainCount(): number { return this.eventChainCount; }
 
+  // C578: combat stats summary for visual overlay
+  getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number } {
+    const activeBuffs: string[] = [];
+    if (this.shrineBuffRemaining > 0) activeBuffs.push('명상');
+    if (this.sacrificeFuryRemaining > 0) activeBuffs.push('분노');
+    if (this.cursedAltarAtkBuff) activeBuffs.push('저주 제단');
+    if (this.invincibleFights > 0) activeBuffs.push('무적');
+    if (this.villageShieldActive) activeBuffs.push('마을 방패');
+    if (this.fairyBlessingRemaining > 0) activeBuffs.push('요정 축복');
+    if (this.goldenHourRemaining > 0) activeBuffs.push('황금 시간');
+    let deathPrevention = 0;
+    if (this.rng) deathPrevention++; // lucky dodge (always available)
+    if (this.prestigeCount > 0) deathPrevention++; // death defiance prestige
+    if (this.hasRelic(2) && !this.phoenixFeatherUsed) deathPrevention++; // phoenix
+    const dangerLevel = Math.min(10, Math.floor(this.dangerStreak / 5));
+    return { activeBuffs, deathPrevention, dangerLevel };
+  }
+
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
     if (kind === 'enemy' || kind === 'boss') {
