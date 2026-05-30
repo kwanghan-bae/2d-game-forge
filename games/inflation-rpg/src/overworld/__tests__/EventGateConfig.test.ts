@@ -7,8 +7,8 @@ describe('EventGateConfig — C754', () => {
     expect(getAvailableLateEvents(50)).toEqual([]);
   });
 
-  it('returns ancient_colosseum after 150 fights', () => {
-    const events = getAvailableLateEvents(150);
+  it('returns ancient_colosseum after 130 fights', () => {
+    const events = getAvailableLateEvents(130);
     expect(events).toHaveLength(1);
     expect(events[0].id).toBe('event_ancient_colosseum');
   });
@@ -58,9 +58,9 @@ describe('EventGateConfig — C754', () => {
     expect(voidRiftDuration).toBeLessThanOrEqual(5);
   });
 
-  it('colosseum gate (150) > inspiration gate (30-40) — proper late-game', () => {
+  it('colosseum gate (130) > inspiration gate (30-40) — proper late-game', () => {
     const colosseumGate = LATE_GAME_EVENTS.find(e => e.id === 'event_ancient_colosseum')!.minTotalFights;
-    expect(colosseumGate).toBeGreaterThanOrEqual(150);
+    expect(colosseumGate).toBeGreaterThanOrEqual(130);
   });
 
   it('C762: trial_grounds available after 90 fights', () => {

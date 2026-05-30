@@ -59,7 +59,7 @@ export const MID_GAME_EVENTS: readonly EventGateDef[] = [
 export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
   {
     id: 'event_ancient_colosseum',
-    minTotalFights: 150,
+    minTotalFights: 130,
     chance: 0.02,
     description: 'Ancient Colosseum — double XP for next 5 fights but enemies hit 30% harder',
   },
@@ -71,7 +71,7 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
   },
   {
     id: 'event_temporal_fissure',
-    minTotalFights: 200,
+    minTotalFights: 170,
     chance: 0.02,
     description: 'Temporal Fissure — store 50% EXP for 5 fights, pay back ×2.0 at end (lost on death)',
   },
@@ -102,7 +102,7 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
   {
     id: 'event_astral_paradox',
     minTotalFights: 400,
-    chance: 0.015,
+    chance: 0.025,
     description: 'Astral Paradox — EXP×2.5 but enemy ATK×2.0 for 5 fights',
   },
   {
