@@ -282,6 +282,37 @@ export class EncounterEngine {
     return { activeBuffs, deathPrevention, dangerLevel, deathSaveBlocked };
   }
 
+  // C594: extracted death prevention logic
+  private applyDeathPrevention(hero: HeroEntity, luckyDodge: boolean): { luckyDodge: boolean } {
+    const deathSaveBlocked = this.cursedAltarAtkBuff;
+    // Lucky dodge — survive fatal hit with 5% chance
+    if (hero.staggered && !deathSaveBlocked && this.rng.chance(LUCKY_DODGE_CHANCE)) {
+      hero.staggered = false;
+      hero.hp = 1;
+      luckyDodge = true;
+    }
+    // Level sacrifice — sacrifice 25% levels to survive (once per 50 fights)
+    if (hero.staggered && !luckyDodge && !deathSaveBlocked && hero.level > 10 && this.levelSacrificeCooldown <= 0) {
+      const levelsLost = Math.max(1, Math.floor(hero.level * LEVEL_SACRIFICE_RATE));
+      hero.level -= levelsLost;
+      hero.recomputeStats();
+      hero.staggered = false;
+      hero.hp = hero.hpMax;
+      this.prestigeShieldRemaining += 1;
+      this.totalSacrifices++;
+      this.levelSacrificeCooldown = 50;
+    }
+    // Phoenix Feather relic — one-time death prevention
+    if (hero.staggered && this.hasRelic(2) && !this.phoenixFeatherUsed) {
+      hero.staggered = false;
+      hero.hp = hero.hpMax;
+      this.phoenixFeatherUsed = true;
+      const featherIdx = this.relics.indexOf(2);
+      if (featherIdx >= 0) { this.relics.splice(featherIdx, 1); this.relicLevels.splice(featherIdx, 1); }
+    }
+    return { luckyDodge };
+  }
+
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
     const events: OverworldEvent[] = [];
     if (kind === 'enemy' || kind === 'boss') {
@@ -740,34 +771,9 @@ export class EncounterEngine {
           }
           // C206: damage reflection
           eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
-          // C584: cursed altar disables death prevention (real trade-off)
-          const deathSaveBlocked = this.cursedAltarAtkBuff;
-          // C142: lucky dodge — survive fatal hit with 5% chance (primary death save)
-          if (hero.staggered && !deathSaveBlocked && this.rng.chance(LUCKY_DODGE_CHANCE)) {
-            hero.staggered = false;
-            hero.hp = 1;
-            luckyDodge = true;
-          }
-          // C581: removed C296 death defiance + C439 prestige defiance (redundant layers)
-          // C522: level sacrifice — sacrifice 25% levels to survive (once per 50 fights)
-          if (hero.staggered && !luckyDodge && !deathSaveBlocked && hero.level > 10 && this.levelSacrificeCooldown <= 0) {
-            const levelsLost = Math.max(1, Math.floor(hero.level * LEVEL_SACRIFICE_RATE));
-            hero.level -= levelsLost;
-            hero.recomputeStats();
-            hero.staggered = false;
-            hero.hp = hero.hpMax;
-            this.prestigeShieldRemaining += 1;
-            this.totalSacrifices++;
-            this.levelSacrificeCooldown = 50;
-          }
-          // C555: Phoenix Feather relic — one-time death prevention
-          if (hero.staggered && this.hasRelic(2) && !this.phoenixFeatherUsed) {
-            hero.staggered = false;
-            hero.hp = hero.hpMax;
-            this.phoenixFeatherUsed = true;
-            const featherIdx = this.relics.indexOf(2);
-            if (featherIdx >= 0) { this.relics.splice(featherIdx, 1); this.relicLevels.splice(featherIdx, 1); }
-          }
+          // C594: extracted death prevention into method
+          const { luckyDodge: ld } = this.applyDeathPrevention(hero, luckyDodge);
+          luckyDodge = ld;
           // C195: gold sacrifice heal — auto-heal when low HP (once per fight)
           if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= GOLD_HEAL_COST && !goldHealUsed) {
             hero.gold -= GOLD_HEAL_COST;
