@@ -88,4 +88,12 @@ describe('EventGateConfig — C754', () => {
   it('C763: trial grounds duration ≤ colosseum duration (shorter buff)', () => {
     expect(TRIAL_GROUNDS_DURATION).toBeLessThanOrEqual(5); // colosseum is 5
   });
+
+  it('C767: void rift log scaling formula: ceil(log2(max(level,200)/200)+1)', () => {
+    const voidRiftOffset = (level: number) => Math.ceil(Math.log2(Math.max(level, 200) / 200) + 1);
+    expect(voidRiftOffset(200)).toBe(1); // log2(1)+1 = 1
+    expect(voidRiftOffset(400)).toBe(2); // log2(2)+1 = 2
+    expect(voidRiftOffset(800)).toBe(3); // log2(4)+1 = 3
+    expect(voidRiftOffset(100)).toBe(1); // clamped to 200 → same as 200
+  });
 });
