@@ -15,43 +15,43 @@ export const MID_GAME_EVENTS: readonly EventGateDef[] = [
   {
     id: 'event_trial_grounds',
     minTotalFights: 90,
-    chance: 0.025,
+    chance: 0.020, // C785: reduced from 0.025 to balance vs weather events
     description: 'Trial Grounds — enemies ×1.10 level, EXP×1.50 for next 3 fights',
   },
   {
     id: 'event_rain_sanctuary',
     minTotalFights: 95,
-    chance: 0.02,
+    chance: 0.04, // C785: doubled from 0.02 (weather-gating already limits effective rate)
     weatherCondition: 'rain',
     description: 'Rain Sanctuary — heal 20% HP, gold×0.7 for 3 fights (rain only)',
   },
   {
     id: 'event_fog_ambush',
     minTotalFights: 100,
-    chance: 0.02,
+    chance: 0.04, // C785: doubled
     weatherCondition: 'fog',
     description: 'Fog Ambush — enemy ATK×1.2, EXP×1.3 for 2 fights (fog only)',
   },
   {
     id: 'event_storm_nexus',
     minTotalFights: 110,
-    chance: 0.02,
+    chance: 0.04, // C785: doubled
     weatherCondition: 'storm',
     description: 'Storm Nexus — ATK×1.4 + HP drain 5%/fight, 4 fights (storm only)',
   },
   {
     id: 'event_wind_gale',
     minTotalFights: 95,
-    chance: 0.02,
+    chance: 0.04, // C785: doubled
     weatherCondition: 'wind',
-    description: 'Wind Gale — EXP×1.25 + dodge +15%, 3 fights (wind only)',
+    description: 'Wind Gale — EXP×1.20 + dodge +10%, gold×0.60, 3 fights (wind only)',
   },
   {
     id: 'event_snow_drift',
     minTotalFights: 100,
-    chance: 0.02,
+    chance: 0.04, // C785: doubled
     weatherCondition: 'snow',
-    description: 'Snow Drift — enemy speed -30%, hero ATK -10%, 3 fights (snow only)',
+    description: 'Snow Drift — enemy dmg×0.85, hero ATK×0.92, 3 fights (snow only)',
   },
 ];
 
