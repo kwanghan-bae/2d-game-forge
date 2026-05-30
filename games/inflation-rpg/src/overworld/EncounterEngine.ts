@@ -1651,111 +1651,8 @@ export class EncounterEngine {
         const upgradeIdx = this.rng.int(this.relics.length);
         this.relicLevels[upgradeIdx] = Math.min((this.relicLevels[upgradeIdx] || 1) + 1, 5);
       }
-      // === C561-C570: Event Encounters (post-combat) ===
-      let eventTriggered = false;
-      const eventsEnabled = this.totalFights > 20; // events start after 20 fights
-      // C567: cursed altar tick
-      if (this.cursedAltarRemaining > 0) this.cursedAltarRemaining--;
-      if (this.cursedAltarRemaining === 0) this.cursedAltarAtkBuff = false;
-      // C568: fairy blessing tick
-      if (this.fairyBlessingRemaining > 0) this.fairyBlessingRemaining--;
-      // C563: Trap encounter
-      if (eventsEnabled && !eventTriggered && this.rng.chance(TRAP_CHANCE)) {
-        if (this.comboStreak >= TRAP_AVOID_COMBO) {
-          events.push({ type: 'event_trap_avoided' });
-        } else {
-          const trapChoice = this.rng.int(2);
-          if (trapChoice === 0) { hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * TRAP_DAMAGE)); }
-          else { hero.gold = Math.max(0, hero.gold - TRAP_GOLD_LOSS); }
-          events.push({ type: 'event_trap' });
-        }
-        eventTriggered = true;
-      }
-      // C562: Treasure shrine (C579: player choice if strategy enabled)
-      if (eventsEnabled && !eventTriggered && this.rng.chance(TREASURE_SHRINE_CHANCE)) {
-        if (this.pendingShrineChoice === -1) {
-          // Signal pending choice — will be resolved next encounter
-          this.pendingShrineChoice = 0; // default to gold if not chosen
-          events.push({ type: 'event_treasure_shrine_pending' });
-        } else {
-          const choice = this.pendingShrineChoice;
-          this.pendingShrineChoice = -1;
-          // C582: scale shrine rewards with level (critic feedback: fixed values meaningless late-game)
-          const shrineGold = Math.max(SHRINE_GOLD_BURST, hero.level * 50);
-          const shrineExp = Math.max(SHRINE_EXP_BURST, hero.level * 30);
-          if (choice === 0) hero.gold += shrineGold;
-          else if (choice === 1) hero.gainExp(shrineExp);
-          else hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_AMOUNT));
-          events.push({ type: 'event_treasure_shrine', choice });
-        }
-        eventTriggered = true;
-      }
-      // C564: Rest shrine — full heal but reset combo (C575: player toggle)
-      if (eventsEnabled && !eventTriggered && getStrategyEnabled('restShrine') && this.rng.chance(REST_SHRINE_CHANCE) && hero.hp < hero.hpMax * 0.3) {
-        hero.hp = hero.hpMax;
-        this.comboStreak = 0;
-        events.push({ type: 'event_rest_shrine' });
-        eventTriggered = true;
-      }
-      // C565: Gambler — double or nothing (C575: player toggle)
-      if (eventsEnabled && !eventTriggered && getStrategyEnabled('gambler') && this.rng.chance(GAMBLER_CHANCE) && hero.gold >= 50) {
-        if (this.rng.chance(GAMBLER_WIN_RATE)) { hero.gold *= 2; }
-        else { hero.gold = Math.floor(hero.gold * 0.5); }
-        events.push({ type: 'event_gambler' });
-        eventTriggered = true;
-      }
-      // C566: Blacksmith — boost weapon ATK (C575: player toggle)
-      if (eventsEnabled && !eventTriggered && getStrategyEnabled('blacksmith') && this.rng.chance(BLACKSMITH_CHANCE)) {
-        hero.atk += BLACKSMITH_BOOST;
-        events.push({ type: 'event_blacksmith' });
-        eventTriggered = true;
-      }
-      // C567: Cursed altar — massive ATK buff + curse (C575: player toggle)
-      if (eventsEnabled && !eventTriggered && getStrategyEnabled('cursedAltar') && this.rng.chance(CURSED_ALTAR_CHANCE) && !this.cursedAltarAtkBuff) {
-        this.cursedAltarAtkBuff = true;
-        this.cursedAltarRemaining = CURSED_ALTAR_DURATION;
-        events.push({ type: 'event_cursed_altar' });
-        eventTriggered = true;
-      }
-      // C568: Fairy blessing — guaranteed drops
-      if (eventsEnabled && !eventTriggered && this.rng.chance(FAIRY_CHANCE)) {
-        this.fairyBlessingRemaining = FAIRY_DURATION;
-        events.push({ type: 'event_fairy' });
-        eventTriggered = true;
-      }
-      // C569: Time rift — reset fatigue
-      if (eventsEnabled && !eventTriggered && this.rng.chance(TIME_RIFT_CHANCE) && this.fightsSinceVillage > 50) {
-        this.fightsSinceVillage = 0;
-        events.push({ type: 'event_time_rift' });
-        eventTriggered = true;
-      }
-      // C561: Wandering Merchant — buy a relic for gold
-      if (!eventTriggered && !isElite && !isBoss && this.rng.chance(MERCHANT_EVENT_CHANCE) && hero.gold >= 200 && this.relics.length < 3) {
-        const available = [0, 1, 2, 3, 4, 5].filter(id => !this.relics.includes(id));
-        if (available.length > 0) {
-          const offered = available[this.rng.int(available.length)];
-          const cost = 200 * MERCHANT_PRICE_MUL;
-          if (hero.gold >= cost) {
-            hero.gold -= cost;
-            this.relics.push(offered);
-            this.relicLevels.push(1);
-            events.push({ type: 'event_merchant', relicId: offered });
-            eventTriggered = true;
-          }
-        }
-      }
-      // C570: Event chain — consecutive events → mega reward
-      if (eventTriggered) {
-        this.eventChainCount++;
-        if (this.eventChainCount >= EVENT_CHAIN_THRESHOLD) {
-          hero.gainExp(EVENT_CHAIN_REWARD_EXP);
-          hero.gold += EVENT_CHAIN_REWARD_GOLD;
-          events.push({ type: 'event_chain_reward' });
-          this.eventChainCount = 0;
-        }
-      } else {
-        this.eventChainCount = 0;
-      }
+      // C628: extracted post-combat event encounters
+      this.resolvePostCombatEvents(hero, events, isElite, isBoss);
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
       // C205: gold investment payout
@@ -2219,6 +2116,110 @@ export class EncounterEngine {
         hero.personality.adjust('moral', -1);
         events.push({ type: 'moral_choice', choice: 'ignore_injured', dim: 'moral', delta: -1, nameKR: '부상자를 외면하여 영혼이 어두워졌다' });
       }
+    }
+  }
+
+  // C628: extracted post-combat event encounters
+  private resolvePostCombatEvents(hero: HeroEntity, events: OverworldEvent[], isElite: boolean, isBoss: boolean): void {
+    let eventTriggered = false;
+    const eventsEnabled = this.totalFights > 20;
+    if (this.cursedAltarRemaining > 0) this.cursedAltarRemaining--;
+    if (this.cursedAltarRemaining === 0) this.cursedAltarAtkBuff = false;
+    if (this.fairyBlessingRemaining > 0) this.fairyBlessingRemaining--;
+    // Trap
+    if (eventsEnabled && !eventTriggered && this.rng.chance(TRAP_CHANCE)) {
+      if (this.comboStreak >= TRAP_AVOID_COMBO) {
+        events.push({ type: 'event_trap_avoided' });
+      } else {
+        const trapChoice = this.rng.int(2);
+        if (trapChoice === 0) { hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * TRAP_DAMAGE)); }
+        else { hero.gold = Math.max(0, hero.gold - TRAP_GOLD_LOSS); }
+        events.push({ type: 'event_trap' });
+      }
+      eventTriggered = true;
+    }
+    // Treasure shrine
+    if (eventsEnabled && !eventTriggered && this.rng.chance(TREASURE_SHRINE_CHANCE)) {
+      if (this.pendingShrineChoice === -1) {
+        this.pendingShrineChoice = 0;
+        events.push({ type: 'event_treasure_shrine_pending' });
+      } else {
+        const choice = this.pendingShrineChoice;
+        this.pendingShrineChoice = -1;
+        const shrineGold = Math.max(SHRINE_GOLD_BURST, hero.level * 50);
+        const shrineExp = Math.max(SHRINE_EXP_BURST, hero.level * 30);
+        if (choice === 0) hero.gold += shrineGold;
+        else if (choice === 1) hero.gainExp(shrineExp);
+        else hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_AMOUNT));
+        events.push({ type: 'event_treasure_shrine', choice });
+      }
+      eventTriggered = true;
+    }
+    // Rest shrine
+    if (eventsEnabled && !eventTriggered && getStrategyEnabled('restShrine') && this.rng.chance(REST_SHRINE_CHANCE) && hero.hp < hero.hpMax * 0.3) {
+      hero.hp = hero.hpMax;
+      this.comboStreak = 0;
+      events.push({ type: 'event_rest_shrine' });
+      eventTriggered = true;
+    }
+    // Gambler
+    if (eventsEnabled && !eventTriggered && getStrategyEnabled('gambler') && this.rng.chance(GAMBLER_CHANCE) && hero.gold >= 50) {
+      if (this.rng.chance(GAMBLER_WIN_RATE)) { hero.gold *= 2; }
+      else { hero.gold = Math.floor(hero.gold * 0.5); }
+      events.push({ type: 'event_gambler' });
+      eventTriggered = true;
+    }
+    // Blacksmith
+    if (eventsEnabled && !eventTriggered && getStrategyEnabled('blacksmith') && this.rng.chance(BLACKSMITH_CHANCE)) {
+      hero.atk += BLACKSMITH_BOOST;
+      events.push({ type: 'event_blacksmith' });
+      eventTriggered = true;
+    }
+    // Cursed altar
+    if (eventsEnabled && !eventTriggered && getStrategyEnabled('cursedAltar') && this.rng.chance(CURSED_ALTAR_CHANCE) && !this.cursedAltarAtkBuff) {
+      this.cursedAltarAtkBuff = true;
+      this.cursedAltarRemaining = CURSED_ALTAR_DURATION;
+      events.push({ type: 'event_cursed_altar' });
+      eventTriggered = true;
+    }
+    // Fairy blessing
+    if (eventsEnabled && !eventTriggered && this.rng.chance(FAIRY_CHANCE)) {
+      this.fairyBlessingRemaining = FAIRY_DURATION;
+      events.push({ type: 'event_fairy' });
+      eventTriggered = true;
+    }
+    // Time rift
+    if (eventsEnabled && !eventTriggered && this.rng.chance(TIME_RIFT_CHANCE) && this.fightsSinceVillage > 50) {
+      this.fightsSinceVillage = 0;
+      events.push({ type: 'event_time_rift' });
+      eventTriggered = true;
+    }
+    // Wandering Merchant
+    if (!eventTriggered && !isElite && !isBoss && this.rng.chance(MERCHANT_EVENT_CHANCE) && hero.gold >= 200 && this.relics.length < 3) {
+      const available = [0, 1, 2, 3, 4, 5].filter(id => !this.relics.includes(id));
+      if (available.length > 0) {
+        const offered = available[this.rng.int(available.length)];
+        const cost = 200 * MERCHANT_PRICE_MUL;
+        if (hero.gold >= cost) {
+          hero.gold -= cost;
+          this.relics.push(offered);
+          this.relicLevels.push(1);
+          events.push({ type: 'event_merchant', relicId: offered });
+          eventTriggered = true;
+        }
+      }
+    }
+    // Event chain
+    if (eventTriggered) {
+      this.eventChainCount++;
+      if (this.eventChainCount >= EVENT_CHAIN_THRESHOLD) {
+        hero.gainExp(EVENT_CHAIN_REWARD_EXP);
+        hero.gold += EVENT_CHAIN_REWARD_GOLD;
+        events.push({ type: 'event_chain_reward' });
+        this.eventChainCount = 0;
+      }
+    } else {
+      this.eventChainCount = 0;
     }
   }
 
