@@ -118,4 +118,6 @@ export type OverworldEvent =
       thresholdLv: number;
       fromLv: number;
       toLv: number;
-      atAge: number };
+      atAge: number }
+  // C818: Awakening hint — narrative whisper in fights 1-20
+  | { type: 'awakening_hint'; hintIndex: number };
