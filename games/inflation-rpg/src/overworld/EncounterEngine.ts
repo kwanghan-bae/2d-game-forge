@@ -26,6 +26,7 @@ import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
 import { RelicEffectResolver } from './encounter/RelicEffectResolver';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
+import { EventStateMachine } from './encounter/EventStateMachine';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
 import { computePostCombatHeal } from './encounter/PostCombatHealCalc';
@@ -192,17 +193,13 @@ export class EncounterEngine {
   private prestigeEchoRemaining = 0; // C508: prestige echo duration
   private inspirationRemaining = 0; // C749: inspiration ATK buff duration
   private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
-  private colosseumPending = false; // C769: event choice architecture — pending player acceptance
   private voidRiftRemaining = 0; // C758: void rift tier+2 offset duration
-  private voidRiftPending = false; // C777: void rift opt-in (was auto-trigger)
   private trialGroundsRemaining = 0; // C762: trial grounds duration (EXP×1.35, enemy +1 level)
-  private trialGroundsPending = false; // C765: event choice architecture — pending player acceptance
   private stormNexusRemaining = 0; // C770: Storm Nexus duration (ATK×1.4, HP drain 5%)
-  private stormNexusPending = false; // C770: pending player acceptance
   private rainSanctuaryRemaining = 0; // C773: Rain Sanctuary duration (gold×0.7)
-  private rainSanctuaryPending = false; // C773: pending player acceptance
   private fogAmbushRemaining = 0; // C773: Fog Ambush duration (enemy ATK×1.2, EXP×1.3)
-  private fogAmbushPending = false; // C773: pending player acceptance
+  // C778: EventStateMachine replaces 6 individual pending booleans
+  private readonly eventSM = new EventStateMachine();
   private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
@@ -283,7 +280,53 @@ export class EncounterEngine {
     return this.landmarkResolver;
   }
 
-  constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
+  constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {
+    this.initEventSM();
+  }
+
+  /** C778: Register all 6 opt-in events with the state machine. */
+  private initEventSM(): void {
+    const decline = () => this.applyDeclineConsolation();
+    this.eventSM.register('colosseum', {
+      onAccept: () => { this.colosseumRemaining = 5; },
+      onDecline: decline,
+    });
+    this.eventSM.register('void_rift', {
+      onAccept: () => {
+        this.voidRiftRemaining = 3;
+        if (this.relicLevels.length > 0) {
+          const idx = Math.floor(Math.random() * this.relicLevels.length);
+          const levels = [...this.relicLevels];
+          const currentLevel = levels[idx] || 1;
+          if (currentLevel < RELIC_MAX_LEVEL) {
+            levels[idx] = currentLevel + 1;
+            this.relicLevels = levels;
+          }
+        }
+      },
+      onDecline: decline,
+    });
+    this.eventSM.register('trial_grounds', {
+      onAccept: () => { this.trialGroundsRemaining = TRIAL_GROUNDS_DURATION; },
+      onDecline: decline,
+    });
+    this.eventSM.register('storm_nexus', {
+      onAccept: () => { this.stormNexusRemaining = STORM_NEXUS_DURATION; },
+      onDecline: decline,
+    });
+    this.eventSM.register('rain_sanctuary', {
+      onAccept: () => {
+        this.rainSanctuaryRemaining = RAIN_SANCTUARY_DURATION;
+        const hero = this.hero;
+        hero.hp = Math.min(hero.hpMax, hero.hp + Math.floor(hero.hpMax * RAIN_SANCTUARY_HEAL_RATE));
+      },
+      onDecline: decline,
+    });
+    this.eventSM.register('fog_ambush', {
+      onAccept: () => { this.fogAmbushRemaining = FOG_AMBUSH_DURATION; },
+      onDecline: decline,
+    });
+  }
 
   setOpts(opts: EncounterEngineOpts): void {
     this.opts = { ...this.opts, ...opts };
@@ -331,78 +374,24 @@ export class EncounterEngine {
   getInspirationRemaining(): number { return this.inspirationRemaining; }
   // C757: expose colosseum state for UI
   getColosseumRemaining(): number { return this.colosseumRemaining; }
-  // C769: Colosseum event choice architecture
-  getColosseumPending(): boolean { return this.colosseumPending; }
-  resolveColosseum(accept: boolean): void {
-    if (!this.colosseumPending) return;
-    this.colosseumPending = false;
-    if (accept) this.colosseumRemaining = 5;
-    else this.applyDeclineConsolation();
-  }
-  // C758: expose void rift state for UI
+  // C778: All event pending/resolve now delegate to EventStateMachine
+  getColosseumPending(): boolean { return this.eventSM.getPending('colosseum'); }
+  resolveColosseum(accept: boolean): void { this.eventSM.resolve('colosseum', accept); }
   getVoidRiftRemaining(): number { return this.voidRiftRemaining; }
-  // C777: Void Rift opt-in (was auto-trigger)
-  getVoidRiftPending(): boolean { return this.voidRiftPending; }
-  resolveVoidRift(accept: boolean): void {
-    if (!this.voidRiftPending) return;
-    this.voidRiftPending = false;
-    if (accept) {
-      this.voidRiftRemaining = 3;
-      if (this.relicLevels.length > 0) {
-        const idx = Math.floor(Math.random() * this.relicLevels.length);
-        const levels = [...this.relicLevels];
-        const currentLevel = levels[idx] || 1;
-        if (currentLevel < RELIC_MAX_LEVEL) {
-          levels[idx] = currentLevel + 1;
-          this.relicLevels = levels;
-        }
-      }
-    } else {
-      this.applyDeclineConsolation();
-    }
-  }
-  // C762: expose trial grounds state for UI
+  getVoidRiftPending(): boolean { return this.eventSM.getPending('void_rift'); }
+  resolveVoidRift(accept: boolean): void { this.eventSM.resolve('void_rift', accept); }
   getTrialGroundsRemaining(): number { return this.trialGroundsRemaining; }
-  // C765: event choice architecture
-  getTrialGroundsPending(): boolean { return this.trialGroundsPending; }
-  resolveTrialGrounds(accept: boolean): void {
-    if (!this.trialGroundsPending) return;
-    this.trialGroundsPending = false;
-    if (accept) this.trialGroundsRemaining = TRIAL_GROUNDS_DURATION;
-    else this.applyDeclineConsolation();
-  }
-  // C770: Storm Nexus event choice
+  getTrialGroundsPending(): boolean { return this.eventSM.getPending('trial_grounds'); }
+  resolveTrialGrounds(accept: boolean): void { this.eventSM.resolve('trial_grounds', accept); }
   getStormNexusRemaining(): number { return this.stormNexusRemaining; }
-  getStormNexusPending(): boolean { return this.stormNexusPending; }
-  resolveStormNexus(accept: boolean): void {
-    if (!this.stormNexusPending) return;
-    this.stormNexusPending = false;
-    if (accept) this.stormNexusRemaining = STORM_NEXUS_DURATION;
-    else this.applyDeclineConsolation();
-  }
-  // C773: Rain Sanctuary event choice
+  getStormNexusPending(): boolean { return this.eventSM.getPending('storm_nexus'); }
+  resolveStormNexus(accept: boolean): void { this.eventSM.resolve('storm_nexus', accept); }
   getRainSanctuaryRemaining(): number { return this.rainSanctuaryRemaining; }
-  getRainSanctuaryPending(): boolean { return this.rainSanctuaryPending; }
-  resolveRainSanctuary(accept: boolean): void {
-    if (!this.rainSanctuaryPending) return;
-    this.rainSanctuaryPending = false;
-    if (accept) {
-      this.rainSanctuaryRemaining = RAIN_SANCTUARY_DURATION;
-      const hero = this.hero;
-      hero.hp = Math.min(hero.hpMax, hero.hp + Math.floor(hero.hpMax * RAIN_SANCTUARY_HEAL_RATE));
-    } else {
-      this.applyDeclineConsolation();
-    }
-  }
-  // C773: Fog Ambush event choice
+  getRainSanctuaryPending(): boolean { return this.eventSM.getPending('rain_sanctuary'); }
+  resolveRainSanctuary(accept: boolean): void { this.eventSM.resolve('rain_sanctuary', accept); }
   getFogAmbushRemaining(): number { return this.fogAmbushRemaining; }
-  getFogAmbushPending(): boolean { return this.fogAmbushPending; }
-  resolveFogAmbush(accept: boolean): void {
-    if (!this.fogAmbushPending) return;
-    this.fogAmbushPending = false;
-    if (accept) this.fogAmbushRemaining = FOG_AMBUSH_DURATION;
-    else this.applyDeclineConsolation();
-  }
+  getFogAmbushPending(): boolean { return this.eventSM.getPending('fog_ambush'); }
+  resolveFogAmbush(accept: boolean): void { this.eventSM.resolve('fog_ambush', accept); }
   // C775: decline consolation — small gold reward for declining events
   private applyDeclineConsolation(): void {
     const consolation = Math.min(EVENT_DECLINE_GOLD_CAP,
@@ -1968,19 +1957,13 @@ export class EncounterEngine {
     if (r.newPrestigeEchoRemaining > 0) this.prestigeEchoRemaining = r.newPrestigeEchoRemaining;
     // C749: wire Inspiration event → ATK buff duration
     if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
-    // C757: wire Colosseum event → EXP×2 + enemy ATK×1.3
-    // C769: Colosseum pending → player must accept/decline
-    if (r.colosseumPending) this.colosseumPending = true;
-    // C765: Trial Grounds pending → player must accept/decline
-    if (r.trialGroundsPending) this.trialGroundsPending = true;
-    // C770: Storm Nexus pending → player must accept/decline
-    if (r.stormNexusPending) this.stormNexusPending = true;
-    // C773: Rain Sanctuary pending → player must accept/decline
-    if (r.rainSanctuaryPending) this.rainSanctuaryPending = true;
-    // C773: Fog Ambush pending → player must accept/decline
-    if (r.fogAmbushPending) this.fogAmbushPending = true;
-    // C777: wire Void Rift as opt-in (was auto-trigger since C758)
-    if (r.voidRiftTriggered) this.voidRiftPending = true;
+    // C778: Event pending triggers via EventStateMachine
+    if (r.colosseumPending) this.eventSM.trigger('colosseum');
+    if (r.trialGroundsPending) this.eventSM.trigger('trial_grounds');
+    if (r.stormNexusPending) this.eventSM.trigger('storm_nexus');
+    if (r.rainSanctuaryPending) this.eventSM.trigger('rain_sanctuary');
+    if (r.fogAmbushPending) this.eventSM.trigger('fog_ambush');
+    if (r.voidRiftTriggered) this.eventSM.trigger('void_rift');
     if (r.comboReset) this.comboStreak = 0;
     // C714: pity timer — reset on event, increment otherwise
     if (r.eventType) {
