@@ -17,6 +17,7 @@ import { StatusModal } from './StatusModal';
 import { RelicPanel } from '../components/RelicPanel';
 import { StrategyPanel } from '../components/StrategyPanel';
 import { CombatOverlay } from '../components/CombatOverlay';
+import { ShrineChoiceModal } from '../components/ShrineChoiceModal';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -123,6 +124,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [strategyOpen, setStrategyOpen] = useState(false);
+  const [shrineModalOpen, setShrineModalOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   // Cycle 108 F1 — fate roll modal state.
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
@@ -247,8 +249,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           // C131: battle flavor text float
           const tick = Date.now();
           const flavor =
-            evs.some(e => e.type === 'event_merchant') ? '🏪 상인 등장! 렐릭 구매' :
-            evs.some(e => e.type === 'event_treasure_shrine') ? '✨ 보물 제단 발견!' :
+           evs.some(e => e.type === 'event_treasure_shrine_pending') ? (() => { setShrineModalOpen(true); return '✨ 보물 제단! 축복을 선택하세요'; })() :
+           evs.some(e => e.type === 'event_merchant') ? '🏪 상인 등장! 렐릭 구매' :
+           evs.some(e => e.type === 'event_treasure_shrine') ? '✨ 보물 제단 발견!' :
             evs.some(e => e.type === 'event_trap_avoided') ? '⚡ 함정 회피! (높은 콤보)' :
             evs.some(e => e.type === 'event_trap') ? '💥 함정에 걸렸다!' :
             evs.some(e => e.type === 'event_rest_shrine') ? '🛏️ 휴식 제단 (전체 회복)' :
@@ -611,6 +614,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
       {statusModalOpen && <StatusModal onClose={() => setStatusModalOpen(false)} />}
       {strategyOpen && <StrategyPanel onClose={() => setStrategyOpen(false)} />}
+      {shrineModalOpen && <ShrineChoiceModal onClose={() => setShrineModalOpen(false)} />}
       {fateRollModal && (
         <FateRollModal
           oldLevel={fateRollModal.oldLevel}
