@@ -1,30 +1,30 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 716
+- Cycle: 720
 - Target: 600+ (연속 진화)
-- Last commit: C716 HealBreakdownBadge conditional
-- Vitest: 2067 pass / 0 fail
+- Last commit: C720 drop diminish per 100 levels
+- Vitest: 2082 pass / 0 fail
 - E2E: 60 passed
-- EncounterEngine: ~1815 lines
+- EncounterEngine: ~1830 lines
 
-## 레이어 카운터 (C705-C716 era)
-- 시스템: 1 (C710 PostCombatHealCalc)
-- 구조: 1 (C711 DropResolver)
+## 레이어 카운터 (C705-C720 era)
+- 시스템: 2 (C710 PostCombatHealCalc, C718 pity-trap fix + heal floor)
+- 구조: 2 (C711 DropResolver, C719 HeroTurnCalc)
 - UI/UX: 3 (C707 ExpBadge+Toast wire, C712 HealBreakdownBadge, C716 conditional+dominant)
-- 밸런스: 3 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance)
-- 콜라보: 3 (C705, C709, C713)
+- 밸런스: 4 (C708 gambler+altar, C714 BET_HIGH rework+pity, C715 heal rebalance, C720 drop diminish)
+- 콜라보: 4 (C705, C709, C713, C717)
 
 ## 제약
-- cycles_since_collab: 3 (C714, C715, C716 since C713)
-- Next collab: C717 (NOW)
-- EncounterEngine: ~1815 lines
+- cycles_since_collab: 3 (C718, C719, C720 since C717)
+- Next collab: C721 (NOW)
+- EncounterEngine: ~1830 lines
 - Layer lock: collab (current)
 
-## 다음 3사이클 (C713 협의에서 확정 예정)
-1. [collab] C717: critic + planner + level-designer
-2. C718 TBD
-3. C719 TBD
+## 다음 3사이클 (C721 협의에서 확정 예정)
+1. [collab] C721: critic + planner + level-designer
+2. C722 TBD
+3. C723 TBD
 
 ## 달성 사항 (C705-C716)
 - C705 [collab]: critic(6/5/4/5) + planner + level-designer
@@ -39,6 +39,10 @@
 - C714 [balance]: BET_HIGH 3x/0.40/0.60 + EVENT_PITY_THRESHOLD=20
 - C715 [balance]: Heal rebalance (regen +50% early, -40% late ceiling)
 - C716 [UI/UX]: HealBreakdownBadge conditional (5% threshold) + dominant highlight
+- C717 [collab]: pity-trap 버그 전원 발견, heal floor 3 합의, AI BET_HIGH backlog
+- C718 [system]: pity-trap 수정 (trap은 pity 제외) + heal flat floor 1→3
+- C719 [structure]: HeroTurnCalc 순수 함수 추출 (crit 판정 + ATK 연산, 10 테스트)
+- C720 [balance]: Drop diminish -3%/100lv (cap -25%), 고레벨 gear inflation 억제
 
 ## 캐리오버 (미완료)
 - [x] EXP breakdown badge wire into OverworldRunner — DONE C707
@@ -48,10 +52,16 @@
 - [x] HealBreakdownBadge — DONE C712
 - [x] Event pity timer — DONE C714
 - [x] BET_HIGH additional reward — DONE C714 (3x rework)
-- [ ] WeatherSystem expMul 실사용 (현재 compute만 하고 미반영)
+- [x] Pity-trap 버그 — DONE C718
+- [x] Heal flat floor — DONE C718
+- [x] HeroTurnCalc extraction — DONE C719
+- [x] Drop diminish — DONE C720
+- [ ] WeatherSystem 추가 효과 (rain=dodge+, storm=crit-, snow=slow)
 - [ ] BattleOutcomeBadge + StatDelta gold display
 - [ ] RelicEffectResolver extraction
-- [ ] In-combat heal system (mid-fight)
+- [ ] AI BET_HIGH 조건부 로직
+- [ ] Constants phase profile 분류 (740개)
+- [ ] CombatLoop enemy turn 추출
 - [ ] FeedbackDispatcher (crit sound/haptic) — backlog
 
 ## 알려진 기술 부채

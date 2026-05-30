@@ -93,6 +93,15 @@ describe('ExpCalculator', () => {
     expect(high).toBeLessThan(low);
   });
 
+  it('C722: exp decay caps at 35% reduction (Lv 270+)', () => {
+    // EXP_DECAY_PER_LEVEL=0.005, CAP=0.35, START=100
+    // Lv 270: (270-100)*0.005=0.85 → capped at 0.35 → mul = 1-0.35=0.65
+    // Lv 400: same cap → mul = 0.65
+    const lv270 = computeExpMultiplier(makeCtx({ heroLevel: 270 }));
+    const lv400 = computeExpMultiplier(makeCtx({ heroLevel: 400 }));
+    expect(lv270).toBeCloseTo(lv400, 5); // both at cap
+  });
+
   it('applies night exp bonus', () => {
     const day = computeExpMultiplier(makeCtx({ isNight: false }));
     const night = computeExpMultiplier(makeCtx({ isNight: true }));
