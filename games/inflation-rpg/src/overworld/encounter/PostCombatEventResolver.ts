@@ -5,6 +5,8 @@ import {
   HEALER_HEAL_RATE,
   HEALER_MIN_FIGHTS,
   ECHO_EVENT_CHANCE,
+  ECHO_LATE_CHANCE,
+  ECHO_LATE_THRESHOLD,
   ECHO_DURATION,
   ECHO_MIN_LEVEL,
   INSPIRATION_EVENT_CHANCE,
@@ -18,6 +20,8 @@ import {
   BLACKSMITH_BOOST,
   CURSED_ALTAR_CHANCE,
   FAIRY_CHANCE,
+  FAIRY_LATE_CHANCE,
+  FAIRY_LATE_THRESHOLD,
   FAIRY_DURATION,
   MENTOR_CHANCE,
   MENTOR_MIN_FIGHTS,
@@ -262,9 +266,9 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
-    // Fairy blessing
+    // Fairy blessing — C823: late-game scaling
     candidates.push({
-      id: 'fairy', weight: FAIRY_CHANCE, pityEligible: true,
+      id: 'fairy', weight: ctx.totalFights >= FAIRY_LATE_THRESHOLD ? FAIRY_LATE_CHANCE : FAIRY_CHANCE, pityEligible: true,
       apply: (r) => { r.newFairyBlessingRemaining = FAIRY_DURATION; r.eventType = 'event_fairy'; },
     });
 
@@ -284,10 +288,10 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
-    // Echo
+    // Echo — C823: late-game scaling
     if (ctx.heroLevel >= ECHO_MIN_LEVEL) {
       candidates.push({
-        id: 'echo', weight: ECHO_EVENT_CHANCE, pityEligible: true,
+        id: 'echo', weight: ctx.totalFights >= ECHO_LATE_THRESHOLD ? ECHO_LATE_CHANCE : ECHO_EVENT_CHANCE, pityEligible: true,
         apply: (r) => { r.newPrestigeEchoRemaining = ECHO_DURATION; r.eventType = 'event_echo'; },
       });
     }

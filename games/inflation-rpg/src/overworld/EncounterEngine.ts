@@ -1761,9 +1761,9 @@ export class EncounterEngine {
       this.totalWins++;
       // C278: battle hardening — every 100 total fights, +1% max HP
       const totalFights = this.totalWins + this.totalDeaths;
-      // C818: Awakening hints — narrative whisper in fights 1-20
-      if (totalFights <= 20) {
-        events.push({ type: 'awakening_hint', hintIndex: (totalFights - 1) % AWAKENING_HINT_COUNT });
+      // C818/C823: Awakening hints — narrative whisper in fights 1-5 only (no repeat)
+      if (totalFights <= AWAKENING_HINT_COUNT) {
+        events.push({ type: 'awakening_hint', hintIndex: totalFights - 1 });
       }
       if (totalFights > 0 && totalFights % BATTLE_HARDEN_INTERVAL === 0) {
         const hardenBonus = Math.min(BATTLE_HARDEN_CAP, Math.floor(totalFights / BATTLE_HARDEN_INTERVAL) * BATTLE_HARDEN_HP_BONUS);

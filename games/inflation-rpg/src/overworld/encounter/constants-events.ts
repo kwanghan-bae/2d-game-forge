@@ -158,6 +158,8 @@ export const HEALER_EVENT_CHANCE = 0.06; // C814: doubled (was 0.03) — prevent
 export const HEALER_HEAL_RATE = 0.25; // heals 25% of max HP
 export const HEALER_MIN_FIGHTS = 30; // only triggers after 30 fights
 export const ECHO_EVENT_CHANCE = 0.02; // C743: prestige echo event
+export const ECHO_LATE_CHANCE = 0.03; // C823: fight 300+ scaling
+export const ECHO_LATE_THRESHOLD = 300;
 export const ECHO_DURATION = 10; // shorter than full prestige echo (20)
 export const ECHO_MIN_LEVEL = 5; // only for mid-game heroes
 export const INSPIRATION_EVENT_CHANCE = 0.025; // C747: ATK buff event
@@ -171,6 +173,8 @@ export const CURSED_ALTAR_DAMAGE_MUL = 1.5; // C704: was 2.0, sacrifice EV now m
 export const CURSED_ALTAR_DURATION = 20; // C709: was 30, early-snowball prevention
 export const CURSED_ALTAR_HP_THRESHOLD = 0.40; // C702: sacrifice blocked if HP ratio below this
 export const FAIRY_CHANCE = 0.02;
+export const FAIRY_LATE_CHANCE = 0.035; // C823: fight 350+ scaling
+export const FAIRY_LATE_THRESHOLD = 350;
 export const FAIRY_DURATION = 5;
 // C812: Wandering Mentor — early-game EXP buff (fights 25-149)
 export const MENTOR_CHANCE = 0.05; // C818: was 0.03, collab consensus
