@@ -184,3 +184,8 @@ export const CRIT_COMBO_SYNERGY_THRESHOLD = 5;
 export const ATK_CAP_BASE = 10;
 export const ATK_CAP_PER_PRESTIGE = 2;
 export const ATK_CAP_MAX = 30;
+// C669: enemy prestige scaling
+export const ENEMY_PRESTIGE_HP_SCALE = 0.15;
+export const ENEMY_PRESTIGE_HP_CAP = 15;
+export const ENEMY_PRESTIGE_ATK_SCALE = 0.06;
+export const ENEMY_PRESTIGE_ATK_CAP = 15;
