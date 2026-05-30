@@ -133,4 +133,26 @@ describe('PostCombatEventResolver', () => {
     }));
     expect(result.eventType).not.toBe('event_echo');
   });
+
+  // C747: Inspiration event
+  it('triggers inspiration event with ATK buff metadata', () => {
+    let callIdx = 0;
+    // inspiration comes after echo in the event chain
+    const chances = [false, false, false, false, false, false, false, false, false, false, true];
+    const result = resolvePostCombatEvent(makeCtx({
+      heroLevel: 10,
+      totalFights: 50,
+      rngChance: () => { return chances[callIdx++] ?? false; },
+    }));
+    expect(result.eventType).toBe('event_inspiration');
+    expect(result.newInspirationRemaining).toBe(8);
+  });
+
+  it('inspiration blocked when totalFights < INSPIRATION_MIN_FIGHTS', () => {
+    const result = resolvePostCombatEvent(makeCtx({
+      totalFights: 35, // < 40
+      rngChance: () => true,
+    }));
+    expect(result.eventType).not.toBe('event_inspiration');
+  });
 });

@@ -31,6 +31,9 @@ import {
   ECHO_EVENT_CHANCE,
   ECHO_DURATION,
   ECHO_MIN_LEVEL,
+  INSPIRATION_EVENT_CHANCE,
+  INSPIRATION_DURATION,
+  INSPIRATION_MIN_FIGHTS,
 } from './constants-events';
 
 export interface PostCombatContext {
@@ -76,6 +79,7 @@ export interface PostCombatResult {
   newRelics: number[];
   newRelicLevels: number[];
   newPrestigeEchoRemaining: number;
+  newInspirationRemaining: number;
   eventChainReward: boolean;
   comboReset: boolean;
   shrinePending: boolean;
@@ -101,6 +105,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newRelics: [...ctx.relics],
     newRelicLevels: [...ctx.relicLevels],
     newPrestigeEchoRemaining: 0,
+    newInspirationRemaining: 0,
     eventChainReward: false,
     comboReset: false,
     shrinePending: false,
@@ -208,6 +213,13 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   if (eventsEnabled && !eventTriggered && ctx.heroLevel >= ECHO_MIN_LEVEL && rngOrPity(ECHO_EVENT_CHANCE)) {
     result.newPrestigeEchoRemaining = ECHO_DURATION;
     result.eventType = 'event_echo';
+    eventTriggered = true;
+  }
+
+  // C747: Inspiration event — ATK buff for mid-game
+  if (eventsEnabled && !eventTriggered && ctx.totalFights >= INSPIRATION_MIN_FIGHTS && rngOrPity(INSPIRATION_EVENT_CHANCE)) {
+    result.newInspirationRemaining = INSPIRATION_DURATION;
+    result.eventType = 'event_inspiration';
     eventTriggered = true;
   }
 
