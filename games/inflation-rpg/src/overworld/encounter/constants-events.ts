@@ -208,6 +208,7 @@ export const STORM_NEXUS_HP_DRAIN_RATE = 0.05; // C770: 5% HP drain per fight
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
 
 export const VOID_RIFT_SCALE_PER_TIER = 0.05; // C771: 5% per tier (lv200: +5%, lv800: +15%)
+export const VOID_RIFT_EXP_PER_TIER = 0.04; // C775: EXP reward per tier (lv200: +4%, lv10000: +28%)
 
 // C773: Rain Sanctuary — heal + gold penalty tradeoff (rain-only)
 export const RAIN_SANCTUARY_HEAL_RATE = 0.20; // 20% hpMax instant heal
@@ -218,3 +219,7 @@ export const RAIN_SANCTUARY_DURATION = 3; // 3 fights
 export const FOG_AMBUSH_ENEMY_ATK_MUL = 1.20; // enemies hit 20% harder
 export const FOG_AMBUSH_EXP_MUL = 1.30; // +30% EXP reward
 export const FOG_AMBUSH_DURATION = 2; // 2 consecutive fights
+
+// C775: Event decline consolation
+export const EVENT_DECLINE_GOLD_RATE = 0.02; // gold × 0.02 × comboStreak
+export const EVENT_DECLINE_GOLD_CAP = 50; // max 50 gold consolation
