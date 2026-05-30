@@ -26,7 +26,7 @@ import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
 import { RelicEffectResolver } from './encounter/RelicEffectResolver';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
-import { EventStateMachine } from './encounter/EventStateMachine';
+import { EventOrchestrator } from './encounter/EventOrchestrator';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, computeExpMultiplierWithBreakdown, type ExpMultiplierContext } from './encounter/ExpCalculator';
 import { computePostCombatHeal } from './encounter/PostCombatHealCalc';
@@ -192,6 +192,8 @@ export class EncounterEngine {
   private bossShieldRemaining = 0; // C494: boss shield remaining
   private prestigeEchoRemaining = 0; // C508: prestige echo duration
   private inspirationRemaining = 0; // C749: inspiration ATK buff duration
+  // C788: hero reference for event resolve (set at start of resolveEncounter)
+  private hero!: HeroEntity;
   private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
   private voidRiftRemaining = 0; // C758: void rift tier+2 offset duration
   private trialGroundsRemaining = 0; // C762: trial grounds duration (EXP×1.35, enemy +1 level)
@@ -200,8 +202,8 @@ export class EncounterEngine {
   private fogAmbushRemaining = 0; // C773: Fog Ambush duration (enemy ATK×1.2, EXP×1.3)
   private windGaleRemaining = 0; // C782: Wind Gale duration (EXP×1.25, dodge+15%)
   private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
-  // C778: EventStateMachine replaces 6 individual pending booleans
-  private readonly eventSM = new EventStateMachine();
+  // C788: EventOrchestrator replaces EventStateMachine + accept/decline logic
+  private readonly eventOrch = new EventOrchestrator();
   private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
@@ -283,59 +285,7 @@ export class EncounterEngine {
   }
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {
-    this.initEventSM();
-  }
-
-  /** C778: Register all 6 opt-in events with the state machine. */
-  private initEventSM(): void {
-    const decline = () => this.applyDeclineConsolation();
-    this.eventSM.register('colosseum', {
-      onAccept: () => { this.colosseumRemaining = 5; },
-      onDecline: decline,
-    });
-    this.eventSM.register('void_rift', {
-      onAccept: () => {
-        this.voidRiftRemaining = 3;
-        if (this.relicLevels.length > 0) {
-          const idx = Math.floor(Math.random() * this.relicLevels.length);
-          const levels = [...this.relicLevels];
-          const currentLevel = levels[idx] || 1;
-          if (currentLevel < RELIC_MAX_LEVEL) {
-            levels[idx] = currentLevel + 1;
-            this.relicLevels = levels;
-          }
-        }
-      },
-      onDecline: decline,
-    });
-    this.eventSM.register('trial_grounds', {
-      onAccept: () => { this.trialGroundsRemaining = TRIAL_GROUNDS_DURATION; },
-      onDecline: decline,
-    });
-    this.eventSM.register('storm_nexus', {
-      onAccept: () => { this.stormNexusRemaining = STORM_NEXUS_DURATION; },
-      onDecline: decline,
-    });
-    this.eventSM.register('rain_sanctuary', {
-      onAccept: () => {
-        this.rainSanctuaryRemaining = RAIN_SANCTUARY_DURATION;
-        const hero = this.hero;
-        hero.hp = Math.min(hero.hpMax, hero.hp + Math.floor(hero.hpMax * RAIN_SANCTUARY_HEAL_RATE));
-      },
-      onDecline: decline,
-    });
-    this.eventSM.register('fog_ambush', {
-      onAccept: () => { this.fogAmbushRemaining = FOG_AMBUSH_DURATION; },
-      onDecline: decline,
-    });
-    this.eventSM.register('wind_gale', {
-      onAccept: () => { this.windGaleRemaining = WIND_GALE_DURATION; },
-      onDecline: decline,
-    });
-    this.eventSM.register('snow_drift', {
-      onAccept: () => { this.snowDriftRemaining = SNOW_DRIFT_DURATION; },
-      onDecline: decline,
-    });
+    // C788: EventOrchestrator self-initializes on construction
   }
 
   setOpts(opts: EncounterEngineOpts): void {
@@ -382,38 +332,53 @@ export class EncounterEngine {
   getWeather() { return this.lastWeather; }
   // C753: expose inspiration remaining for HUD
   getInspirationRemaining(): number { return this.inspirationRemaining; }
-  // C757: expose colosseum state for UI
+  // C788: All event pending/resolve/remaining delegate to EventOrchestrator
   getColosseumRemaining(): number { return this.colosseumRemaining; }
-  // C778: All event pending/resolve now delegate to EventStateMachine
-  getColosseumPending(): boolean { return this.eventSM.getPending('colosseum'); }
-  resolveColosseum(accept: boolean): void { this.eventSM.resolve('colosseum', accept); }
+  getColosseumPending(): boolean { return this.eventOrch.getPending('colosseum'); }
+  resolveColosseum(accept: boolean): void { this.applyEventResolve('colosseum', accept); }
   getVoidRiftRemaining(): number { return this.voidRiftRemaining; }
-  getVoidRiftPending(): boolean { return this.eventSM.getPending('void_rift'); }
-  resolveVoidRift(accept: boolean): void { this.eventSM.resolve('void_rift', accept); }
+  getVoidRiftPending(): boolean { return this.eventOrch.getPending('void_rift'); }
+  resolveVoidRift(accept: boolean): void { this.applyEventResolve('void_rift', accept); }
   getTrialGroundsRemaining(): number { return this.trialGroundsRemaining; }
-  getTrialGroundsPending(): boolean { return this.eventSM.getPending('trial_grounds'); }
-  resolveTrialGrounds(accept: boolean): void { this.eventSM.resolve('trial_grounds', accept); }
+  getTrialGroundsPending(): boolean { return this.eventOrch.getPending('trial_grounds'); }
+  resolveTrialGrounds(accept: boolean): void { this.applyEventResolve('trial_grounds', accept); }
   getStormNexusRemaining(): number { return this.stormNexusRemaining; }
-  getStormNexusPending(): boolean { return this.eventSM.getPending('storm_nexus'); }
-  resolveStormNexus(accept: boolean): void { this.eventSM.resolve('storm_nexus', accept); }
+  getStormNexusPending(): boolean { return this.eventOrch.getPending('storm_nexus'); }
+  resolveStormNexus(accept: boolean): void { this.applyEventResolve('storm_nexus', accept); }
   getRainSanctuaryRemaining(): number { return this.rainSanctuaryRemaining; }
-  getRainSanctuaryPending(): boolean { return this.eventSM.getPending('rain_sanctuary'); }
-  resolveRainSanctuary(accept: boolean): void { this.eventSM.resolve('rain_sanctuary', accept); }
+  getRainSanctuaryPending(): boolean { return this.eventOrch.getPending('rain_sanctuary'); }
+  resolveRainSanctuary(accept: boolean): void { this.applyEventResolve('rain_sanctuary', accept); }
   getFogAmbushRemaining(): number { return this.fogAmbushRemaining; }
-  getFogAmbushPending(): boolean { return this.eventSM.getPending('fog_ambush'); }
-  resolveFogAmbush(accept: boolean): void { this.eventSM.resolve('fog_ambush', accept); }
-  // C782: Wind Gale + Snow Drift
+  getFogAmbushPending(): boolean { return this.eventOrch.getPending('fog_ambush'); }
+  resolveFogAmbush(accept: boolean): void { this.applyEventResolve('fog_ambush', accept); }
   getWindGaleRemaining(): number { return this.windGaleRemaining; }
-  getWindGalePending(): boolean { return this.eventSM.getPending('wind_gale'); }
-  resolveWindGale(accept: boolean): void { this.eventSM.resolve('wind_gale', accept); }
+  getWindGalePending(): boolean { return this.eventOrch.getPending('wind_gale'); }
+  resolveWindGale(accept: boolean): void { this.applyEventResolve('wind_gale', accept); }
   getSnowDriftRemaining(): number { return this.snowDriftRemaining; }
-  getSnowDriftPending(): boolean { return this.eventSM.getPending('snow_drift'); }
-  resolveSnowDrift(accept: boolean): void { this.eventSM.resolve('snow_drift', accept); }
-  // C775: decline consolation — small gold reward for declining events
-  private applyDeclineConsolation(): void {
-    const consolation = Math.min(EVENT_DECLINE_GOLD_CAP,
-      Math.max(1, Math.floor(this.hero.gold * EVENT_DECLINE_GOLD_RATE * this.comboStreak)));
-    this.hero.gold += consolation;
+  getSnowDriftPending(): boolean { return this.eventOrch.getPending('snow_drift'); }
+  resolveSnowDrift(accept: boolean): void { this.applyEventResolve('snow_drift', accept); }
+  // C788: Apply resolve effects from orchestrator to local state
+  private applyEventResolve(id: 'colosseum' | 'trial_grounds' | 'storm_nexus' | 'rain_sanctuary' | 'fog_ambush' | 'wind_gale' | 'snow_drift' | 'void_rift', accept: boolean): void {
+    const effects = this.eventOrch.resolve(id, accept, {
+      heroHpMax: this.hero.hpMax,
+      heroGold: this.hero.gold,
+      comboStreak: this.comboStreak,
+      relicLevels: this.relicLevels,
+    });
+    if (accept) {
+      if (effects.colosseumRemaining) this.colosseumRemaining = effects.colosseumRemaining;
+      if (effects.voidRiftRemaining) this.voidRiftRemaining = effects.voidRiftRemaining;
+      if (effects.voidRiftRelicLevels) this.relicLevels = effects.voidRiftRelicLevels;
+      if (effects.trialGroundsRemaining) this.trialGroundsRemaining = effects.trialGroundsRemaining;
+      if (effects.stormNexusRemaining) this.stormNexusRemaining = effects.stormNexusRemaining;
+      if (effects.rainSanctuaryRemaining) this.rainSanctuaryRemaining = effects.rainSanctuaryRemaining;
+      if (effects.rainSanctuaryHeal) this.hero.hp = Math.min(this.hero.hpMax, this.hero.hp + effects.rainSanctuaryHeal);
+      if (effects.fogAmbushRemaining) this.fogAmbushRemaining = effects.fogAmbushRemaining;
+      if (effects.windGaleRemaining) this.windGaleRemaining = effects.windGaleRemaining;
+      if (effects.snowDriftRemaining) this.snowDriftRemaining = effects.snowDriftRemaining;
+    } else {
+      if (effects.declineGold) this.hero.gold += effects.declineGold;
+    }
   }
   // C735: expose night state for UI
   getIsNight(): boolean { return computeNight(this.totalWins).isNight; }
@@ -484,6 +449,7 @@ export class EncounterEngine {
   }
 
   resolveEncounter(hero: HeroEntity, kind: LandmarkKind, landmarkId: string): OverworldEvent[] {
+    this.hero = hero; // C788: store ref for event resolve callbacks
     const events: OverworldEvent[] = [];
     if (kind === 'enemy' || kind === 'boss') {
       const isBoss = kind === 'boss';
@@ -1986,15 +1952,15 @@ export class EncounterEngine {
     if (r.newPrestigeEchoRemaining > 0) this.prestigeEchoRemaining = r.newPrestigeEchoRemaining;
     // C749: wire Inspiration event → ATK buff duration
     if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
-    // C778: Event pending triggers via EventStateMachine
-    if (r.colosseumPending) this.eventSM.trigger('colosseum');
-    if (r.trialGroundsPending) this.eventSM.trigger('trial_grounds');
-    if (r.stormNexusPending) this.eventSM.trigger('storm_nexus');
-    if (r.rainSanctuaryPending) this.eventSM.trigger('rain_sanctuary');
-    if (r.fogAmbushPending) this.eventSM.trigger('fog_ambush');
-    if (r.windGalePending) this.eventSM.trigger('wind_gale');
-    if (r.snowDriftPending) this.eventSM.trigger('snow_drift');
-    if (r.voidRiftTriggered) this.eventSM.trigger('void_rift');
+    // C788: Event pending triggers via EventOrchestrator
+    if (r.colosseumPending) this.eventOrch.trigger('colosseum');
+    if (r.trialGroundsPending) this.eventOrch.trigger('trial_grounds');
+    if (r.stormNexusPending) this.eventOrch.trigger('storm_nexus');
+    if (r.rainSanctuaryPending) this.eventOrch.trigger('rain_sanctuary');
+    if (r.fogAmbushPending) this.eventOrch.trigger('fog_ambush');
+    if (r.windGalePending) this.eventOrch.trigger('wind_gale');
+    if (r.snowDriftPending) this.eventOrch.trigger('snow_drift');
+    if (r.voidRiftTriggered) this.eventOrch.trigger('void_rift');
     if (r.comboReset) this.comboStreak = 0;
     // C714: pity timer — reset on event, increment otherwise
     if (r.eventType) {
