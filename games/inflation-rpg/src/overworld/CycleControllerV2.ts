@@ -866,6 +866,10 @@ export class CycleControllerV2 {
   getStats(): { kills: number; bossKills: number; drops: number } {
     return { kills: this.kills, bossKills: this.bossKills, drops: this.drops };
   }
+  // C572: relay relic/prestige state for UI
+  getRelics() { return this.encounter.getRelics(); }
+  getImprintedRelic() { return this.encounter.getImprintedRelic(); }
+  getPrestigeCount() { return this.encounter.getPrestigeCount(); }
 
   /** Most recent saga events (already batched + narrative-formatted) for the
    *  live OverworldRunner log overlay. */

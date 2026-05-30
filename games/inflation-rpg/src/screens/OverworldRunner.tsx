@@ -14,6 +14,7 @@ import { SpendModal } from './SpendModal';
 import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
+import { RelicPanel } from '../components/RelicPanel';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -580,6 +581,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         })}
       </div>
       <div ref={containerRef} style={{ background: '#0a0e1a', display: 'flex', justifyContent: 'center', paddingTop: 8 }} />
+      <div style={{ position: 'absolute', left: 8, bottom: 80, zIndex: 10 }}>
+        <RelicPanel />
+      </div>
       {spendModalOpen && <SpendModal onClose={() => setSpendModalOpen(false)} />}
       {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
       {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
