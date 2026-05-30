@@ -10,7 +10,7 @@ interface EventToggle {
 
 const EVENT_TOGGLES: EventToggle[] = [
   { id: 'gambler', label: '도박사', emoji: '🎲', description: '골드 2배 또는 절반' },
-  { id: 'cursedAltar', label: '저주 제단', emoji: '☠️', description: 'ATK ×2, 받는 데미지 ×2' },
+  { id: 'cursedAltar', label: '저주 제단', emoji: '☠️', description: 'ATK ×1.5, 피해 ×3, 사망방지 차단 (15턴)' },
   { id: 'merchant', label: '상인', emoji: '🏪', description: '렐릭 구매 (600G)' },
   { id: 'restShrine', label: '휴식 제단', emoji: '🛏️', description: '전체 회복, 콤보 초기화' },
   { id: 'blacksmith', label: '대장장이', emoji: '🔨', description: '영구 ATK +5' },
