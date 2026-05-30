@@ -25,7 +25,7 @@ import { chooseGamblerBet } from './encounter/HeroDecisionAI';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { computeEnemyTurnAtk } from './encounter/EnemyTurnCalc';
 import { RelicEffectResolver } from './encounter/RelicEffectResolver';
-import { rollWeather, computeNight } from './encounter/WeatherSystem';
+import { computeNight, WeatherSubsystem } from './encounter/WeatherSystem';
 import { EventOrchestrator, type EventId } from './encounter/EventOrchestrator';
 import { createDeclineStack, pushDecline, consumeDeclineStack, shouldForceRareEvent, type DeclineStackState } from './encounter/DeclineStack';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
@@ -259,10 +259,8 @@ export class EncounterEngine {
   private lastAtkBreakdownInput: import('../components/AtkBreakdownLogic').AtkBreakdownInput | null = null;
   // C707: cached EXP breakdown for badge display
   private lastExpBreakdown: Array<{ name: string; value: number }> | null = null;
-  // C725: cached weather for HUD display
-  private lastWeather: import('./encounter/WeatherSystem').Weather = 'normal';
-  // C777: weather duration — weather persists for multiple fights
-  private weatherRemaining = 0;
+  // C807: WeatherSubsystem replaces inline lastWeather + weatherRemaining
+  private readonly weatherSub = new WeatherSubsystem();
   private lastHealResult: import('./encounter/PostCombatHealCalc').PostCombatHealResult | null = null;
   // C561-C570: Event state
   private cursedAltarRemaining = 0; // C567: cursed altar duration
@@ -345,7 +343,7 @@ export class EncounterEngine {
   getAtkCap(): number { return Math.min(ATK_CAP_BASE + this.prestigeCount * ATK_CAP_PER_PRESTIGE, ATK_CAP_MAX); }
   getAtkBreakdownInput() { return this.lastAtkBreakdownInput; }
   getExpBreakdown() { return this.lastExpBreakdown; }
-  getWeather() { return this.lastWeather; }
+  getWeather() { return this.weatherSub.getCurrent(); }
   // C753: expose inspiration remaining for HUD
   getInspirationRemaining(): number { return this.inspirationRemaining; }
   // C788: All event pending/resolve/remaining delegate to EventOrchestrator
@@ -681,23 +679,14 @@ export class EncounterEngine {
       }
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
-      // C211: weather system (C703: extracted, C777: weather duration persistence)
-      let weatherResult: ReturnType<typeof rollWeather>;
-      if (this.weatherRemaining > 0) {
-        // Weather persists — reuse current weather with its combat effects
-        weatherResult = rollWeather(() => true, () => (['rain', 'wind', 'fog', 'storm', 'snow'] as const).indexOf(this.lastWeather as any));
-        this.weatherRemaining--;
-      } else {
-        weatherResult = rollWeather(
-          (rate) => this.rng.chance(rate),
-          (n) => this.rng.int(n),
-        );
-        if (weatherResult.weather !== 'normal') {
-          this.weatherRemaining = WEATHER_DURATION_MIN + this.rng.int(WEATHER_DURATION_MAX - WEATHER_DURATION_MIN + 1) - 1;
-        }
-      }
+      // C807: weather via WeatherSubsystem
+      const weatherResult = this.weatherSub.advance(
+        (rate) => this.rng.chance(rate),
+        (n) => this.rng.int(n),
+        WEATHER_DURATION_MIN,
+        WEATHER_DURATION_MAX,
+      );
       const { weather, atkMul: weatherAtkMul, critMul: weatherCritMul, dodgeMul: weatherDodgeMul, speedMul: weatherSpeedMul } = weatherResult;
-      this.lastWeather = weather;
 
       // C220: night mode (C706: extracted to WeatherSystem)
       const { isNight } = computeNight(this.totalWins);
@@ -2139,7 +2128,7 @@ export class EncounterEngine {
       strategyGambler: getStrategyEnabled('gambler'),
       strategyBlacksmith: getStrategyEnabled('blacksmith'),
       strategyCursedAltar: getStrategyEnabled('cursedAltar'),
-      currentWeather: this.lastWeather,
+      currentWeather: this.weatherSub.getCurrent(),
       rngChance: (rate: number) => this.rng.chance(rate),
       rngInt: (n: number) => this.rng.int(n),
       hasPendingShrineChoice: () => this.choiceEngine.hasPendingShrineChoice(),
