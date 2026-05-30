@@ -1,23 +1,23 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 651 (협의 완료, 구현 시작 대기)
+- Cycle: 653
 - Target: 680 (이번 세션 목표)
-- Last commit: 3cffc9d (docs: create v7 protocol)
-- Vitest: 1882 passed (6 pre-existing failures) | E2E: 60 passed
+- Last commit: b976b22 (C653 improve combo/momentum HUD visibility)
+- Vitest: 1889 passed (6 pre-existing failures) | E2E: 60 passed
 
 ## 레이어 카운터 (이번 6-cycle era: C651~C656)
-- 구조: 0
+- 구조: 2 (C651, C652)
 - 시스템: 0
-- UI/UX: 0
+- UI/UX: 1 (C653)
 - 비주얼: 0
 - 밸런스: 0
 - Era start: C651
 
 ## 제약
-- Layer lock: 없음 (새 era 시작)
-- cycles_since_collab: 0 (C651 협의 완료)
-- File budget (6-cycle): {} (초기화)
+- Layer lock: UI (다음은 UI 외 레이어)
+- cycles_since_collab: 0 (C654 협의 완료)
+- File budget (6-cycle): {EncounterEngine.test.ts: 1, EncounterContext.ts: 1, OverworldRunner.tsx: 1, CombatOverlay.tsx: 1}
 
 ## 다음 3사이클 (C651 협의에서 확정)
 1. [구조] Characterization snapshot + combo 5경로 test + milestone cap test
