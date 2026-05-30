@@ -18,6 +18,7 @@ import { computeHeroAtk } from './encounter/CombatCalculator';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
+import { resolveEventEffects } from './encounter/EventEffectResolver';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
 import { computeExpMultiplier, type ExpMultiplierContext } from './encounter/ExpCalculator';
@@ -1820,22 +1821,60 @@ export class EncounterEngine {
       return;
     }
 
-    // Merchant pending → trigger choice engine
+    // Merchant pending → trigger + auto-resolve + apply effects
     if (r.merchantPending) {
       this.choiceEngine.triggerMerchant();
+      const choice = this.choiceEngine.resolveMerchantChoice();
+      const fx = resolveEventEffects('merchant', choice, {
+        heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,
+        heroAtk: hero.atk, heroLevel: hero.level,
+        relics: this.relics, relicLevels: this.relicLevels,
+        rngChance: (rate: number) => this.rng.chance(rate),
+        rngInt: (n: number) => this.rng.int(n),
+      });
+      hero.gold = Math.max(0, hero.gold + fx.goldDelta);
+      this.relics = fx.newRelics;
+      this.relicLevels = fx.newRelicLevels;
+      if (fx.eventSubType) events.push({ type: fx.eventSubType });
     }
 
-    // Gambler pending → trigger choice engine
+    // Gambler pending → trigger + auto-resolve + apply effects
     if (r.gamblerPending) {
       this.choiceEngine.triggerGambler();
+      const choice = this.choiceEngine.resolveGamblerChoice();
+      const fx = resolveEventEffects('gambler', choice, {
+        heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,
+        heroAtk: hero.atk, heroLevel: hero.level,
+        relics: this.relics, relicLevels: this.relicLevels,
+        rngChance: (rate: number) => this.rng.chance(rate),
+        rngInt: (n: number) => this.rng.int(n),
+      });
+      hero.gold = Math.max(0, hero.gold + fx.goldDelta);
+      if (fx.eventSubType) events.push({ type: fx.eventSubType });
     }
 
-    // Altar pending → trigger choice engine
+    // Altar pending → trigger + auto-resolve + apply effects
     if (r.altarPending) {
       this.choiceEngine.triggerAltar();
+      const choice = this.choiceEngine.resolveAltarChoice();
+      const fx = resolveEventEffects('altar', choice, {
+        heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,
+        heroAtk: hero.atk, heroLevel: hero.level,
+        relics: this.relics, relicLevels: this.relicLevels,
+        rngChance: (rate: number) => this.rng.chance(rate),
+        rngInt: (n: number) => this.rng.int(n),
+      });
+      hero.hp = Math.max(1, hero.hp + fx.hpDelta);
+      if (fx.cursedAltarActivated) {
+        this.cursedAltarAtkBuff = true;
+        this.cursedAltarRemaining = CURSED_ALTAR_DURATION;
+      }
+      if (fx.eventSubType) events.push({ type: fx.eventSubType });
     }
 
-    if (r.eventType) events.push({ type: r.eventType });
+    if (r.eventType && !r.merchantPending && !r.gamblerPending && !r.altarPending) {
+      events.push({ type: r.eventType });
+    }
     if (r.eventChainReward) events.push({ type: 'event_chain_reward' });
   }
 
