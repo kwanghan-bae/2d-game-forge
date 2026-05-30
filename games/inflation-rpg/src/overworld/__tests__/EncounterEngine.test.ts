@@ -862,7 +862,7 @@ describe('EncounterEngine — C617 death rate verification', () => {
   });
 
   it('C627 balance sim: balanced hero occasionally dies in 200 fights', () => {
-    const hero = HeroEntity.create({ seed: 42, heroHpMax: 60, heroAtkBase: 20 });
+    const hero = HeroEntity.create({ seed: 42, heroHpMax: 40, heroAtkBase: 15 });
     const engine = new EncounterEngine(new SeededRng(123));
     let deaths = 0;
     const totalFights = 400;

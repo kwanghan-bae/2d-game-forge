@@ -143,6 +143,16 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     eventTriggered = true;
   }
 
+  // Wandering Merchant — set pending for player choice (C704: priority raised from last)
+  if (eventsEnabled && !eventTriggered && !ctx.isElite && !ctx.isBoss && ctx.rngChance(MERCHANT_EVENT_CHANCE) && ctx.heroGold >= 200 && ctx.relics.length < 3) {
+    const available = [0, 1, 2, 3, 4, 5].filter(id => !ctx.relics.includes(id));
+    if (available.length > 0) {
+      result.merchantPending = true;
+      result.eventType = 'event_merchant';
+      eventTriggered = true;
+    }
+  }
+
   // Gambler — set pending for player choice
   if (eventsEnabled && !eventTriggered && ctx.strategyGambler && ctx.rngChance(GAMBLER_CHANCE) && ctx.heroGold >= 50) {
     result.gamblerPending = true;
@@ -176,16 +186,6 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     result.newFightsSinceVillage = 0;
     result.eventType = 'event_time_rift';
     eventTriggered = true;
-  }
-
-  // Wandering Merchant — set pending for player choice
-  if (!eventTriggered && !ctx.isElite && !ctx.isBoss && ctx.rngChance(MERCHANT_EVENT_CHANCE) && ctx.heroGold >= 200 && ctx.relics.length < 3) {
-    const available = [0, 1, 2, 3, 4, 5].filter(id => !ctx.relics.includes(id));
-    if (available.length > 0) {
-      result.merchantPending = true;
-      result.eventType = 'event_merchant';
-      eventTriggered = true;
-    }
   }
 
   // Event chain
