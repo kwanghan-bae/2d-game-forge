@@ -41,9 +41,9 @@ export class EventChoiceEngine {
   private dangerPending = false;
   private merchantChoice: MerchantChoice = MerchantChoice.BUY;
   private merchantPending = false;
-  private gamblerChoice: GamblerChoice = GamblerChoice.WALK_AWAY;
+  private gamblerChoice: GamblerChoice = GamblerChoice.BET_LOW;
   private gamblerPending = false;
-  private altarChoice: AltarChoice = AltarChoice.LEAVE;
+  private altarChoice: AltarChoice = AltarChoice.SACRIFICE;
   private altarPending = false;
 
   // --- Shrine ---
@@ -126,7 +126,7 @@ export class EventChoiceEngine {
 
   triggerGambler(): void {
     this.gamblerPending = true;
-    this.gamblerChoice = GamblerChoice.WALK_AWAY;
+    this.gamblerChoice = GamblerChoice.BET_LOW;
   }
 
   setGamblerChoice(choice: GamblerChoice): void {
@@ -136,7 +136,7 @@ export class EventChoiceEngine {
   resolveGamblerChoice(): GamblerChoice {
     const c = this.gamblerChoice;
     this.gamblerPending = false;
-    this.gamblerChoice = GamblerChoice.WALK_AWAY;
+    this.gamblerChoice = GamblerChoice.BET_LOW;
     return c;
   }
 
@@ -148,7 +148,7 @@ export class EventChoiceEngine {
 
   triggerAltar(): void {
     this.altarPending = true;
-    this.altarChoice = AltarChoice.LEAVE;
+    this.altarChoice = AltarChoice.SACRIFICE;
   }
 
   setAltarChoice(choice: AltarChoice): void {
@@ -158,7 +158,7 @@ export class EventChoiceEngine {
   resolveAltarChoice(): AltarChoice {
     const c = this.altarChoice;
     this.altarPending = false;
-    this.altarChoice = AltarChoice.LEAVE;
+    this.altarChoice = AltarChoice.SACRIFICE;
     return c;
   }
 }

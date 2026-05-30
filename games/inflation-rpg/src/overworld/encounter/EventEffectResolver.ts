@@ -3,6 +3,7 @@ import {
   MERCHANT_PRICE_MUL,
   GAMBLER_WIN_RATE,
   CURSED_ALTAR_DAMAGE_MUL,
+  CURSED_ALTAR_HP_THRESHOLD,
 } from './constants-events';
 
 export interface EventEffectContext {
@@ -107,7 +108,13 @@ function resolveAltar(choice: AltarChoice, ctx: EventEffectContext): EventEffect
     const healAmount = Math.floor(ctx.heroHpMax * 0.1);
     return { ...EMPTY_RESULT, hpDelta: healAmount, eventSubType: 'event_altar_pray' };
   }
-  // SACRIFICE: HP cost, activate cursed altar buff
+  // SACRIFICE: blocked if HP ratio below threshold → fallback to PRAY
+  const hpRatio = ctx.heroHp / ctx.heroHpMax;
+  if (hpRatio < CURSED_ALTAR_HP_THRESHOLD) {
+    const healAmount = Math.floor(ctx.heroHpMax * 0.1);
+    return { ...EMPTY_RESULT, hpDelta: healAmount, eventSubType: 'event_altar_pray' };
+  }
+  // HP cost, activate cursed altar buff
   const hpCost = -Math.floor(ctx.heroHpMax * (CURSED_ALTAR_DAMAGE_MUL * 0.1));
   return {
     goldDelta: 0,

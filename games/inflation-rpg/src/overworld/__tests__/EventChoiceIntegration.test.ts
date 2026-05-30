@@ -98,4 +98,13 @@ describe('resolveEventEffects', () => {
     expect(result.hpDelta).toBe(0);
     expect(result.cursedAltarActivated).toBe(false);
   });
+
+  test('altar SACRIFICE blocked by HP threshold → falls back to PRAY', () => {
+    // HP ratio 0.30 < threshold 0.40 → sacrifice denied
+    const ctx = makeCtx({ heroHp: 150, heroHpMax: 500 });
+    const result = resolveEventEffects('altar', AltarChoice.SACRIFICE, ctx);
+    expect(result.cursedAltarActivated).toBe(false);
+    expect(result.hpDelta).toBeGreaterThan(0); // heal from PRAY fallback
+    expect(result.eventSubType).toBe('event_altar_pray');
+  });
 });
