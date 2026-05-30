@@ -1373,8 +1373,8 @@ export class EncounterEngine {
       const goldPrestigeMuls = prestigeGoldMul2 * prestigeGoldMul3 * prestigeGoldCascadeMul * prestigeGoldMomentumMul * finalMasteryGoldMul;
       const goldMiscMuls = greedGoldMul * treasureHunterMul * fullHpGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * treasureHoardMul2 * goldHarvestMul * waveFinisherMul * doubleGoldMul * waveGoldSurgeMul * waveGoldCascadeMul * waveAccumulatorMul * bossGoldCascadeMul * deathGoldCompoundMul * waveGoldSurgeScale * fullHpFortuneMul * waveAccumulatorMul;
       const goldEarnedRaw = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldCoreMuls * goldComboMuls * goldCombatMuls * goldProgressMuls * goldDangerMuls * goldPrestigeMuls * goldMiscMuls) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
-      // Safety cap: prevent gold overflow
-      const goldEarned = Math.min(goldEarnedRaw, hero.level * 5000);
+      // C630: safety cap tightened (was level×5000)
+      const goldEarned = Math.min(goldEarnedRaw, hero.level * 1000);
       // C328: combo gold floor
       const goldFloor = this.comboStreak >= COMBO_GOLD_FLOOR_THRESHOLD ? hero.level * COMBO_GOLD_FLOOR_PER_LEVEL : 0;
       hero.gold += Math.max(goldEarned, goldFloor);
