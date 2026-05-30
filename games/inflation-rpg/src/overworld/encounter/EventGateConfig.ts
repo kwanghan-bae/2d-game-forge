@@ -133,11 +133,11 @@ export function getAvailableLateEvents(totalFights: number): readonly EventGateD
 
 /**
  * C790: Late-game density ramp (was step function in C789).
- * Linear ramp from fight 150 (×1.0) to fight 350 (×2.0), capped at ×2.0.
+ * C814: phase2 cap reduced 3.5→2.5 to prevent saturation (target ~80% fire@550)
  */
 export function getLateGameDensityMul(totalFights: number): number {
   if (totalFights <= 150) return 1.0;
-  // C808: extended ramp — phase 1: 150-350 (→×2.0), phase 2: 350-550 (→×3.5)
+  // C808: extended ramp — phase 1: 150-350 (→×2.0), phase 2: 350-550 (→×2.5)
   if (totalFights <= 350) return 1.0 + (totalFights - 150) / 200; // →2.0 at 350
-  return Math.min(3.5, 2.0 + (totalFights - 350) / 133); // →3.5 at ~550
+  return Math.min(2.5, 2.0 + (totalFights - 350) / 400); // →2.5 at 550
 }
