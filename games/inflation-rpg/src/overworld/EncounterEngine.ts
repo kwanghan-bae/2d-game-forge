@@ -211,6 +211,8 @@ export class EncounterEngine {
   private phoenixFeatherUsed = false; // C555: one-shot survival
   private imprintedRelic = -1; // C560: prestige-imprinted relic ID
   private imprintedRelicLevel = 0; // C560: imprinted relic strength
+  // C686: cached ATK breakdown for tooltip display
+  private lastAtkBreakdownInput: import('../components/AtkBreakdownLogic').AtkBreakdownInput | null = null;
   // C561-C570: Event state
   private cursedAltarRemaining = 0; // C567: cursed altar duration
   private cursedAltarAtkBuff = false; // C567: ATK buff active
@@ -291,6 +293,7 @@ export class EncounterEngine {
   getPrestigeCount(): number { return this.prestigeCount; }
   // C657: ATK cap scales with prestige (10 base + 2 per prestige, max 30)
   getAtkCap(): number { return Math.min(ATK_CAP_BASE + this.prestigeCount * ATK_CAP_PER_PRESTIGE, ATK_CAP_MAX); }
+  getAtkBreakdownInput() { return this.lastAtkBreakdownInput; }
   getEventChainCount(): number { return this.eventChainCount; }
   getTotalDeaths(): number { return this.totalDeaths; }
   getTotalFights(): number { return this.totalWins + this.totalDeaths; }
@@ -672,7 +675,9 @@ export class EncounterEngine {
       const tradeoffMuls = bloodPactMul * adrenalineRushMul * shieldSacrificeMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul;
       const systemMuls = accumulatorMul * agingAtkMul * bloodFurySynergy * antiSynergyPenalty * synergyCountMul * synergyTierMul * synergyPrestigeMul * emberCrownMul * scholarLensMul * cursedAltarMul;
       // C657: ATK multiplier ceiling — prestige-linked cap replaces hard 10x
-      const baseHeroAtk = computeHeroAtk({ flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls, atkCap: this.getAtkCap() });
+      const atkInput = { flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls, atkCap: this.getAtkCap() };
+      this.lastAtkBreakdownInput = atkInput;
+      const baseHeroAtk = computeHeroAtk(atkInput);
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;

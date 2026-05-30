@@ -870,6 +870,7 @@ export class CycleControllerV2 {
   getRelics() { return this.encounter.getRelics(); }
   getImprintedRelic() { return this.encounter.getImprintedRelic(); }
   getPrestigeCount() { return this.encounter.getPrestigeCount(); }
+  getAtkBreakdownInput() { return this.encounter.getAtkBreakdownInput(); }
   getCombatSummary() { return this.encounter.getCombatSummary(); }
   hasPendingShrineChoice() { return this.encounter.hasPendingShrineChoice(); }
   setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }
