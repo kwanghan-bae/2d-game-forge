@@ -24,6 +24,7 @@ import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
 import { ComboStreakBadge } from '../components/ComboStreakBadge';
 import { ExpBreakdownBadge } from '../components/ExpBreakdownBadge';
 import { EventChoiceToast } from '../components/EventChoiceToast';
+import { ChainFlavorToast } from '../components/ChainFlavorToast';
 import { HealBreakdownBadge } from '../components/HealBreakdownBadge';
 import type { ExpBreakdownEntry } from '../components/ExpBreakdownBadgeLogic';
 import type { PostCombatHealResult } from '../overworld/encounter/PostCombatHealCalc';
@@ -146,6 +147,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [badgeInput, setBadgeInput] = useState<BattleOutcomeInput | null>(null);
   const [expBreakdown, setExpBreakdown] = useState<ExpBreakdownEntry[] | null>(null);
   const [eventSubType, setEventSubType] = useState<string | null>(null);
+  const [chainFlavor, setChainFlavor] = useState<string | null>(null);
   const [healResult, setHealResult] = useState<PostCombatHealResult | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [currentWeather, setCurrentWeather] = useState<Weather>('normal');
@@ -328,6 +330,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           setInfluencingTraits([...(getSceneRef.current?.()?.getLastInfluencingTraits?.() ?? [])] as TraitId[]);
           // C798: Active event badges (aggregate accessor)
           setActiveEvents(controller.getActiveEventState());
+          // C824: Chain flavor toast wiring
+          const chainFlavorText = engineRef.current?.getLastChainFlavor?.() ?? null;
+          if (chainFlavorText) setChainFlavor(chainFlavorText);
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
             e.type.startsWith('event_gambler_') ||
@@ -710,6 +715,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <ExpBreakdownBadge breakdown={expBreakdown} />
       <HealBreakdownBadge healResult={healResult} heroHpMax={hero.hpMax} />
       <EventChoiceToast eventSubType={eventSubType} onDone={() => setEventSubType(null)} />
+      <ChainFlavorToast flavor={chainFlavor} onDone={() => setChainFlavor(null)} />
       {showAtkBreakdown && (
         <div style={{ position: 'absolute', top: 60, left: 8, zIndex: 20 }}>
           <AtkBreakdownTooltip breakdown={controller.getAtkBreakdownInput() ? computeAtkBreakdown(controller.getAtkBreakdownInput()!) : null} />
