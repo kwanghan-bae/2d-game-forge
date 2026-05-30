@@ -1,10 +1,10 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 676
-- Target: 680 (이번 세션 목표)
-- Last commit: 0bf7d8f (C676 AtkBreakdownLogic)
-- Vitest: 369 pass / 2 pre-existing fail
+- Cycle: 677
+- Target: 706 (이번 세션 목표)
+- Last commit: 8eecc8b (fix ctrl undefined in HUD)
+- Vitest: 1963 pass / 3 pre-existing fail (fateRoll×2 + sim-cycle)
 - E2E: 60 passed
 
 ## 레이어 카운터 (C673-C679 era — IN PROGRESS)
@@ -13,18 +13,25 @@
 - UI/UX: 1 (C676 AtkBreakdownLogic)
 - 밸런스: 0
 - 비주얼: 0
-- 콜라보: 1 (C673)
+- 콜라보: 2 (C673, C677)
 
 ## 제약
-- cycles_since_collab: 3 (C673 last collab)
-- Next collab: C676 (이번 cycle 이후)
+- cycles_since_collab: 0 (C677 just done)
+- Next collab: C680
 - EncounterEngine: 2107 lines (net -33 from C675 wiring)
+- Layer lock: collab (이전=C677 collab)
 
-## 달성 사항 (C673-C676)
+## 다음 3사이클 (C677 협의에서 확정)
+1. [balance] C678: fateRoll/sim 테스트 수정 + LEVEL_SACRIFICE_RATE 0.25→0.18
+2. [visual] C679: Hit-flash 이펙트 or ComboStreakBadge 연출 강화
+3. [structure] C680: GoldCalculator engine wiring (L1247-L1391 교체, -120줄)
+
+## 달성 사항 (C673-C677)
 - C673 [collab]: critic(4/10) + planner(C674-C679 era plan) + level-designer(compound HP scaling 제안)
 - C674 [structure]: GoldCalculator 추출 (6 tests, NOT wired yet)
 - C675 [system]: PostCombatEventResolver engine wiring (4 tests, -33 lines)
 - C676 [UI/UX]: AtkBreakdownLogic (3 tests, 8-category breakdown)
+- C677 [collab]: critic(4/10)+planner(C678-680 plan)+level-designer(sacrifice rate 분석)
 
 ## 캐리오버 (미완료)
 - [ ] EncounterEngine.ts 2107줄 → 1900줄 (여전히 -207 필요)
