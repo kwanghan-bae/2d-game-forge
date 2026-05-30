@@ -205,6 +205,7 @@ export interface AtkMultiplierContext {
   deathCountAtk: number;
   dangerComboAtk: number;
   comboAtkMilestone: number;
+  goldCrucibleAtkFlat: number; // C800
   heroAtk: number;
   weather: 'rain' | 'wind' | 'fog' | null;
   // Relic efficiency modifier for blood pact
@@ -314,7 +315,7 @@ export function computeAtkMultipliers(ctx: AtkMultiplierContext): AtkMultiplierR
   const cursedAltarMulVal = ctx.cursedAltarAtkBuff ? CURSED_ALTAR_ATK_BUFF : 1;
 
   // Flat ATK (delegating to same formula as CombatCalculator)
-  const flatAtk = ctx.heroAtk + ctx.comboPrestigeFlat + ctx.comboMilestoneBonus + ctx.combatMastery + ctx.waveChainAtk + ctx.deathCountAtk + ctx.dangerComboAtk + ctx.comboAtkMilestone;
+  const flatAtk = ctx.heroAtk + ctx.comboPrestigeFlat + ctx.comboMilestoneBonus + ctx.combatMastery + ctx.waveChainAtk + ctx.deathCountAtk + ctx.dangerComboAtk + ctx.comboAtkMilestone + ctx.goldCrucibleAtkFlat;
 
   // Group multipliers
   const coreMuls = ctx.damping * ctx.bossAtkMul * ctx.realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * prestigeMul * achieveMul;
