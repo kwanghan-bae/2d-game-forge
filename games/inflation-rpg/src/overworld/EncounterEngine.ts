@@ -21,6 +21,7 @@ import { resolvePostCombatEvent, type PostCombatContext } from './encounter/Post
 import { resolveEventEffects } from './encounter/EventEffectResolver';
 import { computeDamageReduction } from './encounter/DefenseCalc';
 import { computeHeroTurn } from './encounter/HeroTurnCalc';
+import { chooseGamblerBet } from './encounter/HeroDecisionAI';
 import { computeEnemyPrestigeScale } from './encounter/EnemyScalingResolver';
 import { rollWeather, computeNight } from './encounter/WeatherSystem';
 import { computeGoldReward, type GoldRewardContext } from './encounter/GoldCalculator';
@@ -467,7 +468,7 @@ export class EncounterEngine {
       events.push({ type: 'battle_started', enemyId: landmarkId });
 
       // C211: weather system (C703: extracted to WeatherSystem)
-      const { weather, atkMul: weatherAtkMul, critMul: weatherCritMul } = rollWeather(
+      const { weather, atkMul: weatherAtkMul, critMul: weatherCritMul, dodgeMul: weatherDodgeMul, speedMul: weatherSpeedMul } = rollWeather(
         (rate) => this.rng.chance(rate),
         (n) => this.rng.int(n),
       );
@@ -634,7 +635,8 @@ export class EncounterEngine {
       const { flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls } = atkResult;
       const atkInput = { flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls, atkCap: this.getAtkCap() };
       this.lastAtkBreakdownInput = atkInput;
-      const baseHeroAtk = computeHeroAtk(atkInput);
+      // C723: weatherSpeedMul (fog=0.90) reduces effective ATK (hero is slower)
+      const baseHeroAtk = Math.floor(computeHeroAtk(atkInput) * weatherSpeedMul);
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -749,7 +751,9 @@ export class EncounterEngine {
             : enemyAtk;
           // C137: mercy damage reduction after death streak
           // C171: dodge chance based on kill count
-          const dodgeChance = Math.min(DODGE_CAP, Math.floor(this.killCount / 100) * DODGE_PER_100_KILLS);
+          // C723: rain weather boosts dodge chance
+          const baseDodgeChance = Math.min(DODGE_CAP, Math.floor(this.killCount / 100) * DODGE_PER_100_KILLS);
+          const dodgeChance = Math.min(DODGE_CAP, baseDodgeChance * weatherDodgeMul);
           if (dodgeChance > 0 && this.rng.chance(dodgeChance)) {
             dodgeCount++; // C268
             rageTurn++;
@@ -1856,6 +1860,11 @@ export class EncounterEngine {
     // Gambler pending → trigger + auto-resolve + apply effects
     if (r.gamblerPending) {
       this.choiceEngine.triggerGambler();
+      // C723: AI conditionally bets high when gold surplus is large
+      const aiChoice = chooseGamblerBet(hero.gold, GOLD_FORGE_THRESHOLD);
+      if (aiChoice === 'BET_HIGH') {
+        this.choiceEngine.setGamblerChoice(GamblerChoice.BET_HIGH);
+      }
       const choice = this.choiceEngine.resolveGamblerChoice();
       const fx = resolveEventEffects('gambler', choice, {
         heroGold: hero.gold, heroHp: hero.hp, heroHpMax: hero.hpMax,

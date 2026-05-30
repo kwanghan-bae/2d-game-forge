@@ -21,6 +21,8 @@ export interface WeatherResult {
   atkMul: number;
   critMul: number;
   expMul: number;
+  dodgeMul: number;
+  speedMul: number;
 }
 
 export interface EnvironmentResult {
@@ -29,6 +31,10 @@ export interface EnvironmentResult {
   nightExpMul: number;
   nightDmgMul: number;
 }
+
+// C723: weather combat effects
+const WEATHER_RAIN_DODGE_BONUS = 0.05;
+const WEATHER_FOG_SPEED_PENALTY = 0.10;
 
 /**
  * Roll weather for a fight.
@@ -46,6 +52,8 @@ export function rollWeather(
     atkMul: weather === 'rain' ? (1 - WEATHER_RAIN_ATK_PENALTY) : 1,
     critMul: weather === 'fog' ? WEATHER_FOG_CRIT_PENALTY : 1,
     expMul: weather === 'wind' ? (1 + WEATHER_WIND_EXP_BONUS) : 1,
+    dodgeMul: weather === 'rain' ? (1 + WEATHER_RAIN_DODGE_BONUS) : 1,
+    speedMul: weather === 'fog' ? (1 - WEATHER_FOG_SPEED_PENALTY) : 1,
   };
 }
 
