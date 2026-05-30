@@ -119,5 +119,7 @@ export type OverworldEvent =
       fromLv: number;
       toLv: number;
       atAge: number }
-  // C818: Awakening hint — narrative whisper in fights 1-20
-  | { type: 'awakening_hint'; hintIndex: number };
+  // C818: Awakening hint — narrative whisper in fights 1-5
+  | { type: 'awakening_hint'; hintIndex: number }
+  // C826: Risk Gambit — early-game decision event (risk HP for gold)
+  | { type: 'event_risk_gambit'; accepted: boolean; hpCost: number; goldReward: number };

@@ -156,7 +156,7 @@ export const GAMBLER_BET_LOW_LOSS_RATE = 0.25;
 export const EVENT_PITY_THRESHOLD = 18; // C743: was 20, slightly more frequent events
 export const HEALER_EVENT_CHANCE = 0.06; // C814: doubled (was 0.03) — prevents utility death in late-game pool
 export const HEALER_HEAL_RATE = 0.25; // heals 25% of max HP
-export const HEALER_MIN_FIGHTS = 30; // only triggers after 30 fights
+export const HEALER_MIN_FIGHTS = 25; // C826: 30→25 (close fight 6-24 narrative gap)
 export const ECHO_EVENT_CHANCE = 0.02; // C743: prestige echo event
 export const ECHO_LATE_CHANCE = 0.03; // C823: fight 300+ scaling
 export const ECHO_LATE_THRESHOLD = 300;
@@ -182,6 +182,12 @@ export const MENTOR_MIN_FIGHTS = 25;
 export const MENTOR_MAX_FIGHTS = 149; // C818: was 99, extend into mid transition
 export const MENTOR_EXP_MUL = 0.15; // +15% EXP
 export const MENTOR_DURATION = 4;
+// C826: Risk Gambit — early-game decision event (fights 40-90)
+export const RISK_GAMBIT_CHANCE = 0.05;
+export const RISK_GAMBIT_MIN_FIGHTS = 40;
+export const RISK_GAMBIT_MAX_FIGHTS = 90;
+export const RISK_GAMBIT_HP_COST_RATE = 0.20; // costs 20% of current HP
+export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
