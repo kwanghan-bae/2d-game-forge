@@ -917,11 +917,9 @@ describe('C651: combo decay paths completeness', () => {
     // Hero with 1 HP will die immediately
     const hero = HeroEntity.create({ seed: 1, heroHpMax: 1, heroAtkBase: 1 });
     engine.resolveEncounter(hero, 'enemy', 'wolf_1');
-    // Death path: COMBO_PERSIST_RATE (0.25): floor(20*0.25) = 5
-    // Then DEATH_COMBO_PRESERVE_RATE (0.3): floor(5*0.3) = 1
-    // Both execute on death
-    expect(priv.comboStreak).toBeLessThanOrEqual(5);
-    expect(priv.comboStreak).toBeGreaterThanOrEqual(0);
+    // C664 fix: only COMBO_PERSIST_RATE (0.25) applies once: floor(20*0.25) = 5
+    // Double-application bug removed (was also applying DEATH_COMBO_PRESERVE_RATE)
+    expect(priv.comboStreak).toBe(5);
   });
 
   it('combat win increments combo (path: L960 combo++)', () => {
