@@ -321,6 +321,14 @@ export class EncounterEngine {
       // C226: danger magnet — increased danger zone spawn after enough fights
       const dangerMagnetBonus = this.totalDangerFights >= DANGER_MAGNET_THRESHOLD ? DANGER_MAGNET_SPAWN_BONUS : 0;
       const isDangerZone = !isBoss && this.rng.chance(DANGER_ZONE_RATE + dangerMagnetBonus);
+      // C595: danger retreat — player choice to flee danger zones (costs gold, resets combo)
+      if (isDangerZone && getStrategyEnabled('dangerRetreat') && hero.gold >= 50) {
+        hero.gold -= 50;
+        this.comboStreak = 0;
+        this.dangerStreak = 0;
+        events.push({ type: 'danger_retreat' });
+        return events;
+      }
       // C178: danger streak tracking
       if (isDangerZone) { this.dangerStreak++; this.dangerFights++; } else { this.dangerStreak = 0; }
       // C133: elite enemy — 5% chance on non-boss, non-danger encounters. ×2 HP, guaranteed drop, ×2.5 exp.
