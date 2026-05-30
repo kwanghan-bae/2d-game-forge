@@ -73,16 +73,16 @@ describe('resolveEventEffects', () => {
     expect(result.newRelics).toEqual([]);
   });
 
-  test('gambler BET_HIGH win: gold doubles', () => {
+  test('gambler BET_HIGH win: gold triples', () => {
     const ctx = makeCtx({ heroGold: 500, rngChance: () => true });
     const result = resolveEventEffects('gambler', GamblerChoice.BET_HIGH, ctx);
-    expect(result.goldDelta).toBe(500); // double = +current
+    expect(result.goldDelta).toBe(1000); // C714: 3x = +2x current
   });
 
-  test('gambler BET_HIGH lose: 80% gold loss', () => {
+  test('gambler BET_HIGH lose: 60% gold loss', () => {
     const ctx = makeCtx({ heroGold: 500, rngChance: () => false });
     const result = resolveEventEffects('gambler', GamblerChoice.BET_HIGH, ctx);
-    expect(result.goldDelta).toBe(-400); // C709: 80% loss floor
+    expect(result.goldDelta).toBe(-300); // C714: 60% loss
     expect(result.eventSubType).toBe('event_gambler_lose_high');
   });
 
