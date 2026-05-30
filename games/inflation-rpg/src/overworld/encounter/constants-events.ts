@@ -267,7 +267,7 @@ export const TEMPORAL_FISSURE_PAYBACK_MUL = 2.0; // pay back stored ×2.0 at end
 // C797: Titan Arena — high-risk combat spike (fight 300+)
 export const TITAN_ARENA_DURATION = 4;
 export const TITAN_ARENA_ENEMY_HP_MUL = 1.5;
-export const TITAN_ARENA_ENEMY_ATK_MUL = 1.3;
+export const TITAN_ARENA_ENEMY_ATK_MUL = 1.2; // C802: reduced from 1.3 (collab consensus)
 export const TITAN_ARENA_EXP_MUL = 2.0;
 
 // C800: Gold Crucible — gold sink event (fight 350+)

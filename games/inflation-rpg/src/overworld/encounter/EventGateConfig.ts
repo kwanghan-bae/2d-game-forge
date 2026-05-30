@@ -85,7 +85,7 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     id: 'event_titan_arena',
     minTotalFights: 300,
     chance: 0.02,
-    description: 'Titan Arena — enemy HP×1.5, ATK×1.3, EXP×2.0 for 4 fights',
+    description: 'Titan Arena — enemy HP×1.5, ATK×1.2, EXP×2.0 for 4 fights',
   },
   {
     id: 'event_gold_crucible',
