@@ -208,4 +208,10 @@ describe('landmarkToCandidate — C737 realm-based difficulty', () => {
     const c = landmarkToCandidate(lm);
     expect(c.difficulty).toBe(3);
   });
+
+  it('C741: enemy in base realm → difficulty = max(1, floor(1×0.5)) = 1 (floor fix)', () => {
+    const lm = mkLm(5, 'enemy', 'base_enemy_1');
+    const c = landmarkToCandidate(lm, 'base');
+    expect(c.difficulty).toBe(1);
+  });
 });

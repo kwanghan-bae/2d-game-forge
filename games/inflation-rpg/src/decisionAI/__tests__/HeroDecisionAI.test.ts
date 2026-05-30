@@ -157,4 +157,45 @@ describe('HeroDecisionAI (v2 / overworld)', () => {
       expect(ai.chooseSkillId([], { hpRatio: 1, isBossTarget: false })).toBeNull();
     });
   });
+
+  // C741: heroLevel pipeline — chooseDestination passes hero.level to resolver
+  describe('C741: heroLevel pipeline', () => {
+    it('passes heroLevel to resolver when extras.heroLevel provided', () => {
+      // With heroLevel=10, boss difficulty=50 should be penalized (50 > 10*1.5=15)
+      // All candidates are boss with high difficulty → only option left
+      const highDiffBoss: LandmarkCandidate[] = [
+        { id: 'boss_hard', kind: 'boss', difficulty: 50 },
+        { id: 'easy_enemy', kind: 'enemy', difficulty: 1 },
+      ];
+      // With heroLevel=10, boss(50) is penalized. Enemy should be chosen more often.
+      let enemyPicks = 0;
+      for (let seed = 0; seed < 50; seed++) {
+        const ai = new HeroDecisionAI(makeHero(), { seed, traits: [] });
+        const c = ai.chooseDestination(highDiffBoss, { heroLevel: 10 });
+        if (c?.id === 'easy_enemy') enemyPicks++;
+      }
+      // Without heroLevel, boss base weight=5 vs enemy=10 → ~33% boss
+      // With gate (50>15 → boss×0.3): boss=5*0.3=1.5 vs enemy=10 → ~13% boss, ~87% enemy
+      expect(enemyPicks).toBeGreaterThan(35); // should be ~43/50
+    });
+
+    it('uses hero.level from constructor when calling chooseDestination', () => {
+      // Hero starts at level 1. Boss difficulty=5 → 5 > 1*1.5=1.5 → penalized
+      const hero = makeHero(); // level 1
+      const ai = new HeroDecisionAI(hero, { seed: 1, traits: [] });
+      const candidates: LandmarkCandidate[] = [
+        { id: 'hard_boss', kind: 'boss', difficulty: 5 },
+        { id: 'village', kind: 'village', difficulty: 0 },
+      ];
+      // When heroLevel is auto-inferred from hero entity
+      let villagePicks = 0;
+      for (let seed = 0; seed < 50; seed++) {
+        const ai2 = new HeroDecisionAI(hero, { seed, traits: [] });
+        const c = ai2.chooseDestination(candidates);
+        if (c?.id === 'village') villagePicks++;
+      }
+      // With gate active: boss 5*0.3=1.5 vs village 5 → village ~77%
+      expect(villagePicks).toBeGreaterThan(30);
+    });
+  });
 });

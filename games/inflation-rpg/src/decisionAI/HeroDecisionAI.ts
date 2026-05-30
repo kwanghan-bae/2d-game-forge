@@ -21,13 +21,14 @@ export class HeroDecisionAI {
 
   chooseDestination(
     candidates: readonly LandmarkCandidate[],
-    extras?: { currentRealm?: RealmId; unlockedRealms?: readonly RealmId[] },
+    extras?: { currentRealm?: RealmId; unlockedRealms?: readonly RealmId[]; heroLevel?: number },
   ): LandmarkCandidate | null {
     return this.resolver.choose(candidates, {
       traits: this.opts.traits,
       personality: this.hero.personality,
       currentRealm: extras?.currentRealm,
       unlockedRealms: extras?.unlockedRealms,
+      heroLevel: extras?.heroLevel ?? this.hero.level,
     });
   }
 
