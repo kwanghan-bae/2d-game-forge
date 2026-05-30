@@ -61,6 +61,7 @@ export interface PostCombatContext {
   strategyGambler: boolean;
   strategyBlacksmith: boolean;
   strategyCursedAltar: boolean;
+  currentWeather?: string; // C770: for weather-conditional events
   rngChance: (rate: number) => boolean;
   rngInt: (n: number) => number;
   hasPendingShrineChoice: () => boolean;
@@ -85,6 +86,7 @@ export interface PostCombatResult {
   colosseumPending: boolean;
   newTrialGroundsRemaining: number;
   trialGroundsPending: boolean;
+  stormNexusPending: boolean;
   voidRiftTriggered: boolean;
   eventChainReward: boolean;
   comboReset: boolean;
@@ -116,6 +118,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     colosseumPending: false,
     newTrialGroundsRemaining: 0,
     trialGroundsPending: false,
+    stormNexusPending: false,
     voidRiftTriggered: false,
     eventChainReward: false,
     comboReset: false,
@@ -237,12 +240,15 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
 
   // C762: Mid-game exclusive events (Trial Grounds)
   if (eventsEnabled && !eventTriggered) {
-    const midEvents = getAvailableMidEvents(ctx.totalFights);
+    const midEvents = getAvailableMidEvents(ctx.totalFights, ctx.currentWeather);
     for (const me of midEvents) {
       if (rngOrPity(me.chance)) {
         if (me.id === 'event_trial_grounds') {
           result.trialGroundsPending = true;
           result.eventType = 'event_trial_grounds';
+        } else if (me.id === 'event_storm_nexus') {
+          result.stormNexusPending = true;
+          result.eventType = 'event_storm_nexus';
         }
         eventTriggered = true;
         break;

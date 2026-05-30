@@ -20,6 +20,7 @@ export interface ActiveEventState {
   trialGroundsRemaining: number;
   colosseumRemaining: number;
   voidRiftRemaining: number;
+  stormNexusRemaining: number;
 }
 
 export interface HudBadge {
@@ -57,7 +58,7 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
 
   // Active gated events
   if (input.activeEvents) {
-    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining } = input.activeEvents;
+    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining } = input.activeEvents;
     if (trialGroundsRemaining > 0) {
       badges.push({ type: 'event', icon: '⚔️', label: `시련장 (${trialGroundsRemaining})` });
     }
@@ -66,6 +67,9 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
     }
     if (voidRiftRemaining > 0) {
       badges.push({ type: 'event', icon: '🌀', label: `공허균열 (${voidRiftRemaining})` });
+    }
+    if (stormNexusRemaining > 0) {
+      badges.push({ type: 'event', icon: '⛈️', label: `폭풍핵 (${stormNexusRemaining})` });
     }
   }
 

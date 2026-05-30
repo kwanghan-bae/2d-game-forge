@@ -96,4 +96,18 @@ describe('EventGateConfig — C754', () => {
     expect(voidRiftOffset(800)).toBe(3); // log2(4)+1 = 3
     expect(voidRiftOffset(100)).toBe(1); // clamped to 200 → same as 200
   });
+
+  it('C770: storm_nexus available only during storm weather after 110 fights', () => {
+    const eventsStorm = getAvailableMidEvents(120, 'storm');
+    expect(eventsStorm.some(e => e.id === 'event_storm_nexus')).toBe(true);
+    const eventsNormal = getAvailableMidEvents(120, 'normal');
+    expect(eventsNormal.some(e => e.id === 'event_storm_nexus')).toBe(false);
+    const eventsNoWeather = getAvailableMidEvents(120);
+    expect(eventsNoWeather.some(e => e.id === 'event_storm_nexus')).toBe(false);
+  });
+
+  it('C770: storm_nexus not available before 110 fights', () => {
+    const events = getAvailableMidEvents(100, 'storm');
+    expect(events.some(e => e.id === 'event_storm_nexus')).toBe(false);
+  });
 });
