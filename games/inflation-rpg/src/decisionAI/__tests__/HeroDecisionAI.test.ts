@@ -35,15 +35,50 @@ describe('HeroDecisionAI (v2 / overworld)', () => {
     expect(a1?.id).toBe(a2?.id);
   });
 
-  describe('Cycle 303 — Sub-phase ε T1: chooseEncounterNode', () => {
-    it('first available 반환 (deterministic)', () => {
+  describe('C731: chooseEncounterNode — trait-weighted', () => {
+    it('returns one of the provided candidates (non-null)', () => {
       const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
-      expect(ai.chooseEncounterNode(['a', 'b', 'c'])).toBe('a');
+      const candidates: LandmarkCandidate[] = [
+        { id: 'a', kind: 'enemy', difficulty: 1 },
+        { id: 'b', kind: 'shrine', difficulty: 0 },
+        { id: 'c', kind: 'boss', difficulty: 5 },
+      ];
+      const result = ai.chooseEncounterNode(candidates);
+      expect(result).not.toBeNull();
+      expect(['a', 'b', 'c']).toContain(result!.id);
     });
 
     it('empty → null', () => {
       const ai = new HeroDecisionAI(makeHero(), { seed: 1, traits: [] });
       expect(ai.chooseEncounterNode([])).toBeNull();
+    });
+
+    it('same seed → same choice (deterministic)', () => {
+      const candidates: LandmarkCandidate[] = [
+        { id: 'a', kind: 'enemy', difficulty: 1 },
+        { id: 'b', kind: 'boss', difficulty: 5 },
+        { id: 'c', kind: 'shrine', difficulty: 0 },
+      ];
+      const r1 = new HeroDecisionAI(makeHero(), { seed: 42, traits: [] }).chooseEncounterNode(candidates);
+      const r2 = new HeroDecisionAI(makeHero(), { seed: 42, traits: [] }).chooseEncounterNode(candidates);
+      expect(r1?.id).toBe(r2?.id);
+    });
+
+    it('boss_hunter trait biases toward boss nodes', () => {
+      const candidates: LandmarkCandidate[] = [
+        { id: 'e1', kind: 'enemy', difficulty: 1 },
+        { id: 'b1', kind: 'boss', difficulty: 5 },
+        { id: 'v1', kind: 'village', difficulty: 0 },
+      ];
+      // Run multiple seeds and count boss selections
+      let bossCount = 0;
+      for (let seed = 0; seed < 50; seed++) {
+        const ai = new HeroDecisionAI(makeHero(), { seed, traits: ['t_boss_hunter'] });
+        const result = ai.chooseEncounterNode(candidates);
+        if (result?.kind === 'boss') bossCount++;
+      }
+      // With boss_hunter trait, boss should be selected significantly more than 1/3
+      expect(bossCount).toBeGreaterThan(20);
     });
   });
 

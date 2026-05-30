@@ -32,17 +32,15 @@ export class HeroDecisionAI {
   }
 
   /**
-   * Cycle 303 — Sub-phase ε T1: chooseEncounterNode method 신설.
-   * encounter branch (cave / ruin / trial 등) 의 분기 선택.
-   * v0: deterministic first available (rng 없이).
-   *
-   * Caller wire 는 cycle 304+ carry-over.
-   * 본 method = HeroDecisionAI 의 *fifth 책임* production-consumed.
-   * cycle 256 critic #2 의 4 책임 중 마지막 method 신설 = **5/5 모두 production-consumed**.
+   * C731: chooseEncounterNode — trait-weighted encounter branch selection.
+   * Upgraded from C303 stub (nodes[0]) to use DestinationResolver.
    */
-  chooseEncounterNode(nodes: readonly string[]): string | null {
+  chooseEncounterNode(nodes: readonly LandmarkCandidate[]): LandmarkCandidate | null {
     if (nodes.length === 0) return null;
-    return nodes[0] ?? null;
+    return this.resolver.choose(nodes, {
+      traits: this.opts.traits,
+      personality: this.hero.personality,
+    });
   }
 
   /**
