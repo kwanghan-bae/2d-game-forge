@@ -1116,6 +1116,42 @@ export const SCHOLAR_LENS_ATK_PENALTY = 0.2;
 export const RELIC_UPGRADE_BONUS = 0.5; // 50% stronger
 // C560: relic prestige — prestige "imprints" one relic (weakened version persists)
 export const RELIC_PRESTIGE_RETENTION = 0.3; // 30% of original effect
+// === C561-C570: Event Encounters ===
+// C561: Wandering Merchant — random event: buy relic/item at premium
+export const MERCHANT_EVENT_CHANCE = 0.03; // 3% per fight in non-danger
+export const MERCHANT_PRICE_MUL = 3; // costs 3x normal item value
+// C562: Treasure Shrine — choose: gold burst OR exp burst OR heal
+export const TREASURE_SHRINE_CHANCE = 0.02;
+export const SHRINE_GOLD_BURST = 500;
+export const SHRINE_EXP_BURST = 300;
+export const SHRINE_HEAL_AMOUNT = 0.5; // 50% maxHp
+// C563: Trap encounter — lose HP or gold, avoidable with high combo
+export const TRAP_CHANCE = 0.04;
+export const TRAP_DAMAGE = 0.2; // 20% maxHP
+export const TRAP_GOLD_LOSS = 100;
+export const TRAP_AVOID_COMBO = 15; // need 15 combo to avoid
+// C564: Rest shrine — full heal but reset combo
+export const REST_SHRINE_CHANCE = 0.02;
+// C565: Gambler — double or nothing on current gold
+export const GAMBLER_CHANCE = 0.015;
+export const GAMBLER_WIN_RATE = 0.5;
+// C566: Blacksmith — upgrade random equipped item's ATK
+export const BLACKSMITH_CHANCE = 0.02;
+export const BLACKSMITH_BOOST = 5; // flat ATK added
+// C567: Cursed altar — gain massive ATK buff but cursed (take 2x damage next 10 fights)
+export const CURSED_ALTAR_CHANCE = 0.015;
+export const CURSED_ALTAR_ATK_BUFF = 2.0; // ×2 ATK for 10 fights
+export const CURSED_ALTAR_DAMAGE_MUL = 2.0;
+export const CURSED_ALTAR_DURATION = 10;
+// C568: Fairy blessing — next 5 fights guarantee drops
+export const FAIRY_CHANCE = 0.02;
+export const FAIRY_DURATION = 5;
+// C569: Time rift — reset fight counter (removes fatigue)
+export const TIME_RIFT_CHANCE = 0.01;
+// C570: Event chain — 3 events in a row gives a mega reward
+export const EVENT_CHAIN_THRESHOLD = 3;
+export const EVENT_CHAIN_REWARD_EXP = 1000;
+export const EVENT_CHAIN_REWARD_GOLD = 2000;
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1334,6 +1370,11 @@ export class EncounterEngine {
   private phoenixFeatherUsed = false; // C555: one-shot survival
   private imprintedRelic = -1; // C560: prestige-imprinted relic ID
   private imprintedRelicLevel = 0; // C560: imprinted relic strength
+  // C561-C570: Event state
+  private cursedAltarRemaining = 0; // C567: cursed altar duration
+  private cursedAltarAtkBuff = false; // C567: ATK buff active
+  private fairyBlessingRemaining = 0; // C568: guaranteed drops
+  private eventChainCount = 0; // C570: consecutive events
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -2679,6 +2720,101 @@ export class EncounterEngine {
       if (this.relics.length >= 3 && isElite && this.rng.chance(RELIC_UPGRADE_CHANCE)) {
         const upgradeIdx = this.rng.int(this.relics.length);
         this.relicLevels[upgradeIdx] = Math.min((this.relicLevels[upgradeIdx] || 1) + 1, 5);
+      }
+      // === C561-C570: Event Encounters (post-combat) ===
+      let eventTriggered = false;
+      const eventsEnabled = this.totalFights > 20; // events start after 20 fights
+      // C567: cursed altar tick
+      if (this.cursedAltarRemaining > 0) this.cursedAltarRemaining--;
+      if (this.cursedAltarRemaining === 0) this.cursedAltarAtkBuff = false;
+      // C568: fairy blessing tick
+      if (this.fairyBlessingRemaining > 0) this.fairyBlessingRemaining--;
+      // C563: Trap encounter
+      if (eventsEnabled && !eventTriggered && this.rng.chance(TRAP_CHANCE)) {
+        if (this.comboStreak >= TRAP_AVOID_COMBO) {
+          events.push({ type: 'event_trap_avoided' });
+        } else {
+          const trapChoice = this.rng.int(2);
+          if (trapChoice === 0) { hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * TRAP_DAMAGE)); }
+          else { hero.gold = Math.max(0, hero.gold - TRAP_GOLD_LOSS); }
+          events.push({ type: 'event_trap' });
+        }
+        eventTriggered = true;
+      }
+      // C562: Treasure shrine
+      if (eventsEnabled && !eventTriggered && this.rng.chance(TREASURE_SHRINE_CHANCE)) {
+        const choice = this.rng.int(3);
+        if (choice === 0) hero.gold += SHRINE_GOLD_BURST;
+        else if (choice === 1) hero.gainExp(SHRINE_EXP_BURST);
+        else hero.heal(Math.floor(hero.hpMax * SHRINE_HEAL_AMOUNT));
+        events.push({ type: 'event_treasure_shrine', choice });
+        eventTriggered = true;
+      }
+      // C564: Rest shrine — full heal but reset combo
+      if (eventsEnabled && !eventTriggered && this.rng.chance(REST_SHRINE_CHANCE) && hero.hp < hero.hpMax * 0.3) {
+        hero.hp = hero.hpMax;
+        this.comboStreak = 0;
+        events.push({ type: 'event_rest_shrine' });
+        eventTriggered = true;
+      }
+      // C565: Gambler — double or nothing
+      if (eventsEnabled && !eventTriggered && this.rng.chance(GAMBLER_CHANCE) && hero.gold >= 50) {
+        if (this.rng.chance(GAMBLER_WIN_RATE)) { hero.gold *= 2; }
+        else { hero.gold = Math.floor(hero.gold * 0.5); }
+        events.push({ type: 'event_gambler' });
+        eventTriggered = true;
+      }
+      // C566: Blacksmith — boost weapon ATK
+      if (eventsEnabled && !eventTriggered && this.rng.chance(BLACKSMITH_CHANCE)) {
+        hero.atk += BLACKSMITH_BOOST;
+        events.push({ type: 'event_blacksmith' });
+        eventTriggered = true;
+      }
+      // C567: Cursed altar — massive ATK buff + curse
+      if (eventsEnabled && !eventTriggered && this.rng.chance(CURSED_ALTAR_CHANCE) && !this.cursedAltarAtkBuff) {
+        this.cursedAltarAtkBuff = true;
+        this.cursedAltarRemaining = CURSED_ALTAR_DURATION;
+        events.push({ type: 'event_cursed_altar' });
+        eventTriggered = true;
+      }
+      // C568: Fairy blessing — guaranteed drops
+      if (eventsEnabled && !eventTriggered && this.rng.chance(FAIRY_CHANCE)) {
+        this.fairyBlessingRemaining = FAIRY_DURATION;
+        events.push({ type: 'event_fairy' });
+        eventTriggered = true;
+      }
+      // C569: Time rift — reset fatigue
+      if (eventsEnabled && !eventTriggered && this.rng.chance(TIME_RIFT_CHANCE) && this.fightsSinceVillage > 50) {
+        this.fightsSinceVillage = 0;
+        events.push({ type: 'event_time_rift' });
+        eventTriggered = true;
+      }
+      // C561: Wandering Merchant — buy a relic for gold
+      if (!eventTriggered && !isElite && !isBoss && this.rng.chance(MERCHANT_EVENT_CHANCE) && hero.gold >= 200 && this.relics.length < 3) {
+        const available = [0, 1, 2, 3, 4, 5].filter(id => !this.relics.includes(id));
+        if (available.length > 0) {
+          const offered = available[this.rng.int(available.length)];
+          const cost = 200 * MERCHANT_PRICE_MUL;
+          if (hero.gold >= cost) {
+            hero.gold -= cost;
+            this.relics.push(offered);
+            this.relicLevels.push(1);
+            events.push({ type: 'event_merchant', relicId: offered });
+            eventTriggered = true;
+          }
+        }
+      }
+      // C570: Event chain — consecutive events → mega reward
+      if (eventTriggered) {
+        this.eventChainCount++;
+        if (this.eventChainCount >= EVENT_CHAIN_THRESHOLD) {
+          hero.gainExp(EVENT_CHAIN_REWARD_EXP);
+          hero.gold += EVENT_CHAIN_REWARD_GOLD;
+          events.push({ type: 'event_chain_reward' });
+          this.eventChainCount = 0;
+        }
+      } else {
+        this.eventChainCount = 0;
       }
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
