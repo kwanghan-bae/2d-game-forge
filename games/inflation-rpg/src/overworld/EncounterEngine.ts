@@ -197,6 +197,7 @@ export class EncounterEngine {
   private prestigeEchoRemaining = 0; // C508: prestige echo duration
   private inspirationRemaining = 0; // C749: inspiration ATK buff duration
   private mentorRemaining = 0; // C812: wandering mentor EXP buff duration
+  private lastChainFlavor: string | null = null; // C821: chain event narrative flavor
   // C788: hero reference for event resolve (set at start of resolveEncounter)
   private hero!: HeroEntity;
   private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
@@ -348,6 +349,12 @@ export class EncounterEngine {
   getAtkBreakdownInput() { return this.lastAtkBreakdownInput; }
   getExpBreakdown() { return this.lastExpBreakdown; }
   getWeather() { return this.weatherSub.getCurrent(); }
+  // C821: chain event narrative flavor for UI toast
+  getLastChainFlavor(): string | null {
+    const f = this.lastChainFlavor;
+    this.lastChainFlavor = null; // consume on read
+    return f;
+  }
   // C753: expose inspiration remaining for HUD
   getInspirationRemaining(): number { return this.inspirationRemaining; }
   // C788: All event pending/resolve/remaining delegate to EventOrchestrator
@@ -477,8 +484,11 @@ export class EncounterEngine {
         this.soulForgeStacks = Math.min(this.soulForgeStacks + 1, SOUL_FORGE_MAX_STACKS);
       }
       // C815: Event Chain — roll for follow-up event after accept
-      const chainNext = rollChainEvent(id, (rate) => this.rng.chance(rate));
-      if (chainNext) this.eventOrch.trigger(chainNext);
+      const chainResult = rollChainEvent(id, (rate) => this.rng.chance(rate));
+      if (chainResult) {
+        this.eventOrch.trigger(chainResult.next);
+        this.lastChainFlavor = chainResult.flavor;
+      }
     } else {
       // C804: push decline stack
       pushDecline(this.declineStack);
