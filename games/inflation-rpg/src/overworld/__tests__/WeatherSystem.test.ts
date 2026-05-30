@@ -105,8 +105,8 @@ describe('C738 night balance constants', () => {
     expect(NIGHT_CYCLE_INTERVAL).toBe(25);
   });
 
-  test('NIGHT_ENEMY_DMG_MUL = 1.6 (was 1.5)', () => {
-    expect(NIGHT_ENEMY_DMG_MUL).toBe(1.6);
+  test('NIGHT_ENEMY_DMG_MUL = 1.5 (C743 revert from 1.6)', () => {
+    expect(NIGHT_ENEMY_DMG_MUL).toBe(1.5);
   });
 
   test('night uptime = NIGHT_DURATION / NIGHT_CYCLE_INTERVAL = 20%', () => {

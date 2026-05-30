@@ -22,7 +22,16 @@ import {
   EVENT_CHAIN_REWARD_EXP,
   EVENT_CHAIN_REWARD_GOLD,
 } from './constants-combat';
-import { TRAP_AVOID_COMBO, EVENT_PITY_THRESHOLD } from './constants-events';
+import {
+  TRAP_AVOID_COMBO,
+  EVENT_PITY_THRESHOLD,
+  HEALER_EVENT_CHANCE,
+  HEALER_HEAL_RATE,
+  HEALER_MIN_FIGHTS,
+  ECHO_EVENT_CHANCE,
+  ECHO_DURATION,
+  ECHO_MIN_LEVEL,
+} from './constants-events';
 
 export interface PostCombatContext {
   totalFights: number;
@@ -66,6 +75,7 @@ export interface PostCombatResult {
   newFightsSinceVillage: number;
   newRelics: number[];
   newRelicLevels: number[];
+  newPrestigeEchoRemaining: number;
   eventChainReward: boolean;
   comboReset: boolean;
   shrinePending: boolean;
@@ -90,6 +100,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     newFightsSinceVillage: ctx.fightsSinceVillage,
     newRelics: [...ctx.relics],
     newRelicLevels: [...ctx.relicLevels],
+    newPrestigeEchoRemaining: 0,
     eventChainReward: false,
     comboReset: false,
     shrinePending: false,
@@ -183,6 +194,20 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   if (eventsEnabled && !eventTriggered && rngOrPity(FAIRY_CHANCE)) {
     result.newFairyBlessingRemaining = FAIRY_DURATION;
     result.eventType = 'event_fairy';
+    eventTriggered = true;
+  }
+
+  // C743: Healer event — mid-game HP recovery
+  if (eventsEnabled && !eventTriggered && ctx.totalFights >= HEALER_MIN_FIGHTS && rngOrPity(HEALER_EVENT_CHANCE)) {
+    result.heroHpDelta = Math.floor(ctx.heroHpMax * HEALER_HEAL_RATE);
+    result.eventType = 'event_healer';
+    eventTriggered = true;
+  }
+
+  // C743: Echo event — grants short prestige echo
+  if (eventsEnabled && !eventTriggered && ctx.heroLevel >= ECHO_MIN_LEVEL && rngOrPity(ECHO_EVENT_CHANCE)) {
+    result.newPrestigeEchoRemaining = ECHO_DURATION;
+    result.eventType = 'event_echo';
     eventTriggered = true;
   }
 

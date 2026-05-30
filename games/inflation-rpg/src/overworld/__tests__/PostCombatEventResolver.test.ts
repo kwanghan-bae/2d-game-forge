@@ -81,9 +81,56 @@ describe('PostCombatEventResolver', () => {
 
   it('pity timer forces positive event (treasure shrine first)', () => {
     const result = resolvePostCombatEvent(makeCtx({
-      fightsSinceEvent: 20,
+      fightsSinceEvent: 18, // C743: pity threshold now 18
       rngChance: () => false,
     }));
     expect(result.eventType).toBe('event_treasure_shrine_pending');
+  });
+
+  // C743: Healer event
+  it('triggers healer event with HP recovery', () => {
+    let callIdx = 0;
+    const chances = [false, false, false, false, false, false, false, false, true]; // healer is after other events
+    const result = resolvePostCombatEvent(makeCtx({
+      heroHp: 50,
+      heroHpMax: 100,
+      totalFights: 50,
+      rngChance: () => { return chances[callIdx++] ?? false; },
+    }));
+    expect(result.eventType).toBe('event_healer');
+    expect(result.heroHpDelta).toBe(25); // 0.25 * 100 = 25
+  });
+
+  it('healer blocked when totalFights < HEALER_MIN_FIGHTS', () => {
+    const result = resolvePostCombatEvent(makeCtx({
+      totalFights: 25, // < 30
+      heroHp: 50,
+      heroHpMax: 100,
+      rngChance: () => true,
+    }));
+    // Should not be healer since totalFights < 30
+    expect(result.eventType).not.toBe('event_healer');
+  });
+
+  // C743: Echo event
+  it('triggers echo event granting prestige echo duration', () => {
+    let callIdx = 0;
+    const chances = [false, false, false, false, false, false, false, false, false, true]; // echo is after healer
+    const result = resolvePostCombatEvent(makeCtx({
+      heroLevel: 10,
+      totalFights: 50,
+      rngChance: () => { return chances[callIdx++] ?? false; },
+    }));
+    expect(result.eventType).toBe('event_echo');
+    expect(result.newPrestigeEchoRemaining).toBe(10);
+  });
+
+  it('echo blocked when heroLevel < ECHO_MIN_LEVEL', () => {
+    const result = resolvePostCombatEvent(makeCtx({
+      heroLevel: 3, // < 5
+      totalFights: 50,
+      rngChance: () => true,
+    }));
+    expect(result.eventType).not.toBe('event_echo');
   });
 });
