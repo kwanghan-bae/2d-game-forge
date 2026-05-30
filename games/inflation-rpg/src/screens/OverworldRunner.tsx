@@ -152,7 +152,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [isNight, setIsNight] = useState(false);
   const [inspirationRemaining, setInspirationRemaining] = useState(0);
   const [influencingTraits, setInfluencingTraits] = useState<TraitId[]>([]);
-  const [activeEvents, setActiveEvents] = useState<ActiveEventState>({ trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0, stormNexusRemaining: 0, rainSanctuaryRemaining: 0, fogAmbushRemaining: 0 });
+  const [activeEvents, setActiveEvents] = useState<ActiveEventState>({ trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0, stormNexusRemaining: 0, rainSanctuaryRemaining: 0, fogAmbushRemaining: 0, windGaleRemaining: 0, snowDriftRemaining: 0 });
   const [currentDestination, setCurrentDestination] = useState<import('../data/landmarks').LandmarkKind | null>(null);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -334,6 +334,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             stormNexusRemaining: controller.getStormNexusRemaining(),
             rainSanctuaryRemaining: controller.getRainSanctuaryRemaining(),
             fogAmbushRemaining: controller.getFogAmbushRemaining(),
+            windGaleRemaining: controller.getWindGaleRemaining(),
+            snowDriftRemaining: controller.getSnowDriftRemaining(),
           });
           const eventSubTypeEv = evs.find(e =>
             e.type.startsWith('event_merchant_') ||
