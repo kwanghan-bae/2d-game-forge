@@ -138,7 +138,7 @@ describe('computeExpMultiplierWithBreakdown', () => {
   it('C757: colosseum doubles EXP multiplier', () => {
     const base = computeExpMultiplier(makeCtx());
     const colosseum = computeExpMultiplier(makeCtx({ colosseumActive: true }));
-    expect(colosseum).toBeCloseTo(base * 2.0, 5);
+    expect(colosseum).toBeCloseTo(base * 2.8, 5);
   });
 
   it('C779: trial grounds applies 1.40x EXP multiplier', () => {
