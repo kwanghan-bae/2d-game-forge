@@ -39,6 +39,20 @@ export const MID_GAME_EVENTS: readonly EventGateDef[] = [
     weatherCondition: 'storm',
     description: 'Storm Nexus — ATK×1.4 + HP drain 5%/fight, 4 fights (storm only)',
   },
+  {
+    id: 'event_wind_gale',
+    minTotalFights: 95,
+    chance: 0.02,
+    weatherCondition: 'wind',
+    description: 'Wind Gale — EXP×1.25 + dodge +15%, 3 fights (wind only)',
+  },
+  {
+    id: 'event_snow_drift',
+    minTotalFights: 100,
+    chance: 0.02,
+    weatherCondition: 'snow',
+    description: 'Snow Drift — enemy speed -30%, hero ATK -10%, 3 fights (snow only)',
+  },
 ];
 
 export const LATE_GAME_EVENTS: readonly EventGateDef[] = [

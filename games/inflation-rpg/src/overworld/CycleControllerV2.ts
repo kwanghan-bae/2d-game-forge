@@ -894,6 +894,13 @@ export class CycleControllerV2 {
   getFogAmbushRemaining() { return this.encounter.getFogAmbushRemaining(); }
   getFogAmbushPending() { return this.encounter.getFogAmbushPending(); }
   resolveFogAmbush(accept: boolean) { this.encounter.resolveFogAmbush(accept); }
+  // C782: Wind Gale + Snow Drift
+  getWindGaleRemaining() { return this.encounter.getWindGaleRemaining(); }
+  getWindGalePending() { return this.encounter.getWindGalePending(); }
+  resolveWindGale(accept: boolean) { this.encounter.resolveWindGale(accept); }
+  getSnowDriftRemaining() { return this.encounter.getSnowDriftRemaining(); }
+  getSnowDriftPending() { return this.encounter.getSnowDriftPending(); }
+  resolveSnowDrift(accept: boolean) { this.encounter.resolveSnowDrift(accept); }
   getVoidRiftRemaining() { return this.encounter.getVoidRiftRemaining(); }
   getVoidRiftPending() { return this.encounter.getVoidRiftPending(); }
   resolveVoidRift(accept: boolean) { this.encounter.resolveVoidRift(accept); }
