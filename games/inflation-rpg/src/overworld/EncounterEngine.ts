@@ -272,7 +272,7 @@ export class EncounterEngine {
     if (this.goldenHourRemaining > 0) activeBuffs.push('황금 시간');
     let deathPrevention = 0;
     if (this.rng) deathPrevention++; // lucky dodge (always available)
-    if (this.prestigeCount > 0) deathPrevention++; // death defiance prestige
+    if (this.levelSacrificeCooldown <= 0) deathPrevention++; // level sacrifice ready
     if (this.hasRelic(2) && !this.phoenixFeatherUsed) deathPrevention++; // phoenix
     const dangerLevel = Math.min(10, Math.floor(this.dangerStreak / 5));
     return { activeBuffs, deathPrevention, dangerLevel };
@@ -723,25 +723,15 @@ export class EncounterEngine {
           }
           // C206: damage reflection
           eHp -= Math.max(1, Math.floor(incomingDmg * DAMAGE_REFLECT_RATE));
-          // C142: lucky dodge — survive fatal hit with 10% chance
+          // C142: lucky dodge — survive fatal hit with 10% chance (primary death save)
           if (hero.staggered && this.rng.chance(LUCKY_DODGE_CHANCE)) {
             hero.staggered = false;
             hero.hp = 1;
             luckyDodge = true;
           }
-          // C296: death defiance — separate 10% survival chance
-          if (hero.staggered && !luckyDodge && this.rng.chance(DEATH_DEFIANCE_CHANCE)) {
-            hero.staggered = false;
-            hero.hp = 1;
-          }
-          // C439: death defiance prestige — cooldown-based survival
-          if (hero.staggered && this.deathDefianceCooldown <= 0 && this.prestigeCount > 0 && this.rng.chance(DEATH_DEFIANCE_PRESTIGE_CHANCE)) {
-            hero.staggered = false;
-            hero.hp = 1;
-            this.deathDefianceCooldown = DEATH_DEFIANCE_PRESTIGE_COOLDOWN;
-          }
-          // C522: level sacrifice — sacrifice 10% levels to survive (once per 20 fights)
-          if (hero.staggered && hero.level > 10 && this.levelSacrificeCooldown <= 0) {
+          // C581: removed C296 death defiance + C439 prestige defiance (redundant layers)
+          // C522: level sacrifice — sacrifice 25% levels to survive (once per 50 fights)
+          if (hero.staggered && !luckyDodge && hero.level > 10 && this.levelSacrificeCooldown <= 0) {
             const levelsLost = Math.max(1, Math.floor(hero.level * LEVEL_SACRIFICE_RATE));
             hero.level -= levelsLost;
             hero.recomputeStats();
@@ -749,7 +739,7 @@ export class EncounterEngine {
             hero.hp = hero.hpMax;
             this.prestigeShieldRemaining += 1;
             this.totalSacrifices++;
-            this.levelSacrificeCooldown = 50; // C573: was 20
+            this.levelSacrificeCooldown = 50;
           }
           // C555: Phoenix Feather relic — one-time death prevention
           if (hero.staggered && this.hasRelic(2) && !this.phoenixFeatherUsed) {
