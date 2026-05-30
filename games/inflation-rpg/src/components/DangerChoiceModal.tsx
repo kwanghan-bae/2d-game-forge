@@ -35,10 +35,13 @@ export function DangerChoiceModal({ onClose }: Props) {
         padding: 24, maxWidth: 320, width: '90%', textAlign: 'center',
       }}>
         <div style={{ fontSize: 24, marginBottom: 12 }}>⚠️ 위험지대!</div>
-        <p style={{ color: '#ddd', marginBottom: 16 }}>
+        <p style={{ color: '#ddd', marginBottom: 8 }}>
           강력한 적 출현! (EXP ×4, GOLD ×3)<br/>
-          도전하시겠습니까?
+          적 스탯 ×2.5 — 도전하시겠습니까?
         </p>
+        <div style={{ marginBottom: 12, fontSize: 12, color: '#aaa' }}>
+          HP: {Math.round(hero.hp / hero.hpMax * 100)}%
+        </div>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button onClick={handleFight} style={{
             padding: '10px 20px', background: '#c44', border: 'none',
