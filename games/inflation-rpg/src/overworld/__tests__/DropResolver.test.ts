@@ -12,6 +12,7 @@ describe('DropResolver', () => {
     dropChanceBonus: 0,
     introDropBonus: 0,
     dropStreak: 0,
+    heroLevel: 1,
   };
 
   test('base drop rate for normal enemies', () => {
@@ -72,5 +73,24 @@ describe('DropResolver', () => {
   test('elite combo threshold guarantees drop', () => {
     const result = computeDropChance({ ...baseCtx, isElite: true, eliteCombo: 3 });
     expect(result.dropOdds).toBe(1.0);
+  });
+
+  test('drop diminish reduces rate at high levels', () => {
+    // At level 200: diminish = floor(200/100)*0.03 = 0.06
+    // dropOdds = 0.36 * (1 - 0.06) = 0.36 * 0.94 = 0.3384
+    const result = computeDropChance({ ...baseCtx, heroLevel: 200 });
+    expect(result.dropOdds).toBeCloseTo(0.3384, 3);
+  });
+
+  test('drop diminish does not affect guaranteed drops (elite/boss)', () => {
+    const result = computeDropChance({ ...baseCtx, isElite: true, heroLevel: 500 });
+    expect(result.dropOdds).toBe(1.0);
+  });
+
+  test('drop diminish capped at max reduction', () => {
+    // At level 1000: diminish = floor(1000/100)*0.03 = 0.30, capped at 0.25
+    // dropOdds = 0.36 * (1 - 0.25) = 0.36 * 0.75 = 0.27
+    const result = computeDropChance({ ...baseCtx, heroLevel: 1000 });
+    expect(result.dropOdds).toBeCloseTo(0.27, 2);
   });
 });
