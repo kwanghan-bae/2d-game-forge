@@ -57,6 +57,7 @@ function makeCtx(overrides: Partial<ExpMultiplierContext> = {}): ExpMultiplierCo
     hasScholarLens: false,
     critExpChain: 0,
     baseExpGain: 100,
+    colosseumActive: false,
     ...overrides,
   };
 }
@@ -126,5 +127,11 @@ describe('computeExpMultiplierWithBreakdown', () => {
     // Each entry has name and value
     expect(result.breakdown[0]).toHaveProperty('name');
     expect(result.breakdown[0]).toHaveProperty('value');
+  });
+
+  it('C757: colosseum doubles EXP multiplier', () => {
+    const base = computeExpMultiplier(makeCtx());
+    const colosseum = computeExpMultiplier(makeCtx({ colosseumActive: true }));
+    expect(colosseum).toBeCloseTo(base * 2.0, 5);
   });
 });

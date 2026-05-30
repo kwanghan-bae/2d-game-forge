@@ -194,3 +194,6 @@ export const ARENA_REWARD_MUL = 5;
 export const ARENA_ENEMY_HP_MUL = 3;
 export const SHRINE_SKILL_GRANT_RATE = 0.20;
 export const MERCIFUL_PROC_RATE = 0.04;
+// C757: Ancient Colosseum constants
+export const COLOSSEUM_EXP_MUL = 2.0;
+export const COLOSSEUM_ENEMY_ATK_MUL = 1.3;
