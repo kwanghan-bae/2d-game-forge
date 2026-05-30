@@ -50,4 +50,9 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
     accept: '균열 속으로 뛰어들었다. 유물이 공명한다!',
     decline: '균열을 외면한다. 아직 준비가 안 됐다.',
   },
+  abyssal_convergence: {
+    trigger: '심연의 기운이 수렴하고 있다. 엄청난 경험치가 느껴지지만 위험하다.',
+    accept: '심연에 뛰어든다! 적이 강해지고 생명력이 빠져나간다.',
+    decline: '심연의 유혹을 뿌리친다.',
+  },
 };

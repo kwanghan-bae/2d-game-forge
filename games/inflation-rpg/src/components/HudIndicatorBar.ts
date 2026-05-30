@@ -25,6 +25,7 @@ export interface ActiveEventState {
   fogAmbushRemaining: number;
   windGaleRemaining: number;
   snowDriftRemaining: number;
+  abyssalConvergenceRemaining: number;
 }
 
 export interface HudBadge {
@@ -62,7 +63,7 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
 
   // Active gated events
   if (input.activeEvents) {
-    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining, rainSanctuaryRemaining, fogAmbushRemaining, windGaleRemaining, snowDriftRemaining } = input.activeEvents;
+    const { trialGroundsRemaining, colosseumRemaining, voidRiftRemaining, stormNexusRemaining, rainSanctuaryRemaining, fogAmbushRemaining, windGaleRemaining, snowDriftRemaining, abyssalConvergenceRemaining } = input.activeEvents;
     if (trialGroundsRemaining > 0) {
       badges.push({ type: 'event', icon: '⚔️', label: `시련장 (${trialGroundsRemaining})` });
     }
@@ -86,6 +87,9 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
     }
     if (snowDriftRemaining > 0) {
       badges.push({ type: 'event', icon: '❄️', label: `눈보라 (${snowDriftRemaining})` });
+    }
+    if (abyssalConvergenceRemaining > 0) {
+      badges.push({ type: 'event', icon: '🌊', label: `심연 수렴 (${abyssalConvergenceRemaining})` });
     }
   }
 

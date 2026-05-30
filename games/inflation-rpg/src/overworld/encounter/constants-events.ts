@@ -238,3 +238,14 @@ export const SNOW_DRIFT_DURATION = 3; // 3 fights
 // C775: Event decline consolation
 export const EVENT_DECLINE_GOLD_RATE = 0.02; // gold × 0.02 × comboStreak
 export const EVENT_DECLINE_GOLD_CAP = 50; // max 50 gold consolation
+
+// C789: Late-game density scaling
+export const LATE_GAME_DENSITY_THRESHOLD = 200; // fights after which event chance increases
+export const LATE_GAME_DENSITY_MUL = 1.5; // ×1.5 event chance after threshold
+
+// C789: Abyssal Convergence event (late-game, fight 250+)
+export const ABYSSAL_CONVERGENCE_DURATION = 5; // 5 fights
+export const ABYSSAL_CONVERGENCE_EXP_MUL = 1.50; // EXP ×1.50
+export const ABYSSAL_CONVERGENCE_ENEMY_ATK_MUL = 1.60; // enemy ATK ×1.60
+export const ABYSSAL_CONVERGENCE_HP_DRAIN_RATE = 0.03; // 3% HP drain per fight
+

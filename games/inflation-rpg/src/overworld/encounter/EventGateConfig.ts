@@ -2,6 +2,7 @@
  * C754: EventGateConfig — defines phase-gated event availability.
  * Late-game exclusive events only appear after totalFights threshold.
  */
+import { LATE_GAME_DENSITY_THRESHOLD, LATE_GAME_DENSITY_MUL } from './constants';
 
 export interface EventGateDef {
   id: string;
@@ -68,6 +69,12 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     chance: 0.015,
     description: 'Void Rift — teleport to random higher-tier area, gain relic shard',
   },
+  {
+    id: 'event_abyssal_convergence',
+    minTotalFights: 250,
+    chance: 0.025,
+    description: 'Abyssal Convergence — EXP×1.50, enemy ATK×1.60, 3% HP drain, 5 fights',
+  },
 ];
 
 /**
@@ -86,4 +93,12 @@ export function getAvailableMidEvents(totalFights: number, currentWeather?: stri
  */
 export function getAvailableLateEvents(totalFights: number): readonly EventGateDef[] {
   return LATE_GAME_EVENTS.filter(e => totalFights >= e.minTotalFights);
+}
+
+/**
+ * C789: Late-game density multiplier for event chances.
+ * After LATE_GAME_DENSITY_THRESHOLD fights, events trigger ×1.5 more often.
+ */
+export function getLateGameDensityMul(totalFights: number): number {
+  return totalFights >= LATE_GAME_DENSITY_THRESHOLD ? LATE_GAME_DENSITY_MUL : 1.0;
 }
