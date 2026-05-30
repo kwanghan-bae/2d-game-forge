@@ -15,7 +15,7 @@
 - Era start: C651
 
 ## 제약
-- cycles_since_collab: 3 (→ 다음 C657은 협의 사이클)
+- cycles_since_collab: 0 (C657 협의 완료)
 - Next era: C657~C662
 - File budget (completed era): {EncounterEngine.test.ts, EncounterContext.ts, EventChoiceEngine.ts+test, OverworldRunner.tsx, CombatOverlay.tsx, DamageFloaterLogic.ts+test+component, LandmarkResolver.ts+test}
 - EncounterEngine: 2229→2213 lines (net -16, 구조적으로 3개 모듈 분리됨)

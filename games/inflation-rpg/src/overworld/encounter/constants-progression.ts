@@ -180,3 +180,7 @@ export const VILLAGE_ATK_TRAINING_BONUS = 0.1;
 export const VILLAGE_ATK_TRAINING_DURATION = 5;
 export const CRIT_COMBO_SYNERGY_BONUS = 0.15;
 export const CRIT_COMBO_SYNERGY_THRESHOLD = 5;
+// C657: ATK multiplier cap scales with prestige
+export const ATK_CAP_BASE = 10;
+export const ATK_CAP_PER_PRESTIGE = 2;
+export const ATK_CAP_MAX = 30;
