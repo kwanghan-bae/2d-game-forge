@@ -1092,6 +1092,30 @@ export const SYNERGY_PRESTIGE_RATE = 0.02;
 export const SYNERGY_PRESTIGE_CAP = 0.3;
 // C550: synergy discovery — track unique synergies triggered
 export const TOTAL_SYNERGIES = 8; // number of possible synergies
+// C551: relic drop — elite/boss drop relics (10% elite, 25% boss)
+export const RELIC_DROP_CHANCE_ELITE = 0.10;
+export const RELIC_DROP_CHANCE_BOSS = 0.25;
+export const RELIC_UPGRADE_CHANCE = 0.15;
+export const RELIC_MAX_SLOTS = 3;
+// C553: Ember Crown relic — crit gives +2% ATK stacking (cap 50%)
+export const EMBER_CROWN_ATK_PER_CRIT = 0.02;
+export const EMBER_CROWN_CAP = 0.5;
+// C554: Miser's Pouch relic — gold +40%, healing -50%
+export const MISER_POUCH_GOLD_MUL = 1.4;
+export const MISER_POUCH_HEAL_PENALTY = 0.5;
+// C555: Phoenix Feather relic — survive one death, then destroyed
+// C556: Hourglass relic — temporal effects ×2 duration
+export const HOURGLASS_DURATION_MUL = 2;
+// C557: Blood Pact relic — sacrifice efficiency +100%, maxHP -30%
+export const BLOOD_PACT_RELIC_EFFICIENCY = 2.0;
+export const BLOOD_PACT_RELIC_HP_PENALTY = 0.3;
+// C558: Scholar's Lens relic — exp +50%, ATK -20%
+export const SCHOLAR_LENS_EXP_MUL = 1.5;
+export const SCHOLAR_LENS_ATK_PENALTY = 0.2;
+// C559: relic upgrade — same relic again = upgrade (★→★★)
+export const RELIC_UPGRADE_BONUS = 0.5; // 50% stronger
+// C560: relic prestige — prestige "imprints" one relic (weakened version persists)
+export const RELIC_PRESTIGE_RETENTION = 0.3; // 30% of original effect
 // C201: village gold fountain
 export const VILLAGE_GOLD_FOUNTAIN = 25; // flat gold per village visit
 // C202: danger zone gold tax immunity
@@ -1303,6 +1327,13 @@ export class EncounterEngine {
   private temporalPrestigeBonus = 0; // C540: bonus from last prestige speed
   private synergiesDiscovered = 0; // C550: unique synergies triggered (bitmask)
   private synergyPrestigeBonus = 0; // C549: permanent bonus from synergy discovery
+  // C551-C560: Relic system state
+  private relics: number[] = []; // equipped relic IDs (max 3)
+  private relicLevels: number[] = []; // upgrade levels (1=base, 2=★★)
+  private emberCrownStacks = 0; // C553: ATK stacks from crits
+  private phoenixFeatherUsed = false; // C555: one-shot survival
+  private imprintedRelic = -1; // C560: prestige-imprinted relic ID
+  private imprintedRelicLevel = 0; // C560: imprinted relic strength
 
   constructor(private readonly rng: SeededRng, private opts: EncounterEngineOpts = {}) {}
 
@@ -1318,6 +1349,17 @@ export class EncounterEngine {
     let count = 0;
     while (n) { count += n & 1; n >>>= 1; }
     return count;
+  }
+
+  private hasRelic(id: number): boolean {
+    return this.relics.includes(id) || this.imprintedRelic === id;
+  }
+
+  private getRelicPower(id: number): number {
+    const idx = this.relics.indexOf(id);
+    if (idx >= 0) return (this.relicLevels[idx] ?? 1) * (1 + (this.relicLevels[idx] > 1 ? RELIC_UPGRADE_BONUS : 0));
+    if (this.imprintedRelic === id) return RELIC_PRESTIGE_RETENTION * this.imprintedRelicLevel;
+    return 0;
   }
 
   getComboStreak(): number { return this.comboStreak; }
@@ -1524,8 +1566,9 @@ export class EncounterEngine {
       // C496: elite ATK chain — consecutive elites grant ATK
       const eliteAtkChainMul2 = isElite ? (1 + Math.min(ELITE_ATK_CHAIN_CAP2 - 1, this.eliteCombo * ELITE_ATK_CHAIN_BONUS2)) : 1;
       // C501: blood pact — below 50% HP, sacrifice HP for ATK
-      const bloodPactMul = (hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD) ? (1 + BLOOD_PACT_ATK_BONUS) : 1;
-      if (hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD) hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * BLOOD_PACT_HP_COST));
+      const bloodPactRelicBonus = this.hasRelic(4) ? BLOOD_PACT_RELIC_EFFICIENCY : 1;
+      const bloodPactMul = (hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD) ? (1 + BLOOD_PACT_ATK_BONUS * bloodPactRelicBonus) : 1;
+      if (hero.hp < hero.hpMax * BLOOD_PACT_THRESHOLD) hero.hp = Math.max(1, hero.hp - Math.floor(hero.hpMax * BLOOD_PACT_HP_COST * (this.hasRelic(4) ? BLOOD_PACT_RELIC_HP_PENALTY : 1)));
       // C503: adrenaline rush — very low HP gives massive ATK but no healing this fight
       const adrenalineRushMul = (hero.hp < hero.hpMax * ADRENALINE_RUSH_HP_THRESHOLD) ? (1 + ADRENALINE_RUSH_ATK_BONUS) : 1;
       // C506: shield sacrifice — chance to consume shield for massive ATK
@@ -1596,7 +1639,11 @@ export class EncounterEngine {
       const synergyTierMul = activeSynergies >= 5 ? (1 + SYNERGY_TIER_5_BONUS) : activeSynergies >= 3 ? (1 + SYNERGY_TIER_3_BONUS) : 1;
       // C549: synergy prestige permanent bonus
       const synergyPrestigeMul = 1 + this.synergyPrestigeBonus;
-      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul * sacrificePrestigeMul * fatigueMul * accumulatorMul * agingAtkMul * temporalPrestigeMul * bloodFurySynergy * antiSynergyPenalty * synergyCountMul * synergyTierMul * synergyPrestigeMul));
+      // C553: Ember Crown relic — stacked crit ATK bonus
+      const emberCrownMul = this.hasRelic(0) ? (1 + Math.min(EMBER_CROWN_CAP, this.emberCrownStacks * EMBER_CROWN_ATK_PER_CRIT)) : 1;
+      // C558: Scholar's Lens relic — ATK penalty
+      const scholarLensMul = this.hasRelic(5) ? (1 - SCHOLAR_LENS_ATK_PENALTY) : 1;
+      const baseHeroAtk = Math.max(1, Math.floor((hero.atk + comboPrestigeFlat + this.comboMilestoneBonus + combatMastery + waveChainAtk + deathCountAtk + dangerComboAtk + comboAtkMilestone) * damping * bossAtkMul * realmAtkMul * momentumMul * shrineMul * revengeMul * milestoneMul * nearDeathMul * exhaustionMul * titheMul * shieldBreakMul * comboBreakerMul * prestigeMul * achieveMul * weatherAtkMul * deathAtkMul * berserkerMul * curseMul * specMul * elementalMul * furyMul * staminaMul * goldHoardMul * bossKillAtkMul * adrenalineMul * trainingMul * prestigeAtkMul * vengefulMul * critChainMul * dangerAtkMul * bossFuryMul * finalStandMul * bossTrophyMul * prestigeSurgeMul * villageRestAtkMul * waveMomentumAtkMul * revengeStreakMul * eliteChainAtkMul * comboPrestigeSynergyMul * bossFuryChainMul * deathAtkSurgeMul * dangerAtkScaleMul * waveAtkCompoundMul * villageAtkTrainingMul * prestigeAtkMomentumMul * eliteAtkChainMul2 * bloodPactMul * adrenalineRushMul * shieldSacrificeMul * prestigeEchoMul * waveExhaustionMul * lowHpFuryMul * bossConditionalMul * conditionalStackMul * shieldBreakBurstMul * dangerBetMul * sacrificePrestigeMul * fatigueMul * accumulatorMul * agingAtkMul * temporalPrestigeMul * bloodFurySynergy * antiSynergyPenalty * synergyCountMul * synergyTierMul * synergyPrestigeMul * emberCrownMul * scholarLensMul));
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -1639,7 +1686,7 @@ export class EncounterEngine {
         const heroAtk = Math.floor(baseCritAtk * comboCritBonus * dangerCritBonus * critComboSynergy * desperateTradeCritMul);
         // C395: crit heal scaling — crit heal grows with total crits
         const critHealScale = Math.min(CRIT_HEAL_SCALE_CAP, Math.floor(this.totalCrits / 100) * CRIT_HEAL_SCALE_PER_100);
-        if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * (CRIT_HEAL_RATE + critHealScale)))); this.critExpChain++; }
+        if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * (CRIT_HEAL_RATE + critHealScale) * (this.hasRelic(1) ? MISER_POUCH_HEAL_PENALTY : 1)))); this.critExpChain++; if (this.hasRelic(0)) this.emberCrownStacks++; }
         else { this.critExpChain = 0; }
         // C192: boss rage reset on crit
         if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
@@ -1790,6 +1837,14 @@ export class EncounterEngine {
             this.prestigeShieldRemaining += 1;
             this.totalSacrifices++;
             this.levelSacrificeCooldown = 20;
+          }
+          // C555: Phoenix Feather relic — one-time death prevention
+          if (hero.staggered && this.hasRelic(2) && !this.phoenixFeatherUsed) {
+            hero.staggered = false;
+            hero.hp = hero.hpMax;
+            this.phoenixFeatherUsed = true;
+            const featherIdx = this.relics.indexOf(2);
+            if (featherIdx >= 0) { this.relics.splice(featherIdx, 1); this.relicLevels.splice(featherIdx, 1); }
           }
           // C195: gold sacrifice heal — auto-heal when low HP (once per fight)
           if (!hero.staggered && hero.hp < hero.hpMax * GOLD_HEAL_HP_THRESHOLD && hero.gold >= GOLD_HEAL_COST && !goldHealUsed) {
@@ -2132,7 +2187,9 @@ export class EncounterEngine {
       const agingExpMul = 1 + this.heroAge * AGING_EXP_BONUS;
       // C544: elder wisdom synergy — aging + prestige = exp ×1.5
       const elderWisdomExpMul = elderWisdomActive ? ELDER_WISDOM_EXP_MUL : 1;
-      const expGainRaw = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul * critChainExpMul * dangerExpMasteryMul * eliteVillageBurstMul * comboAccelExpMul * comboExpVelocityMul * waveExpCompoundMul * critExpChainMul2 * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * dangerExpSurgeMul * waveExpMasteryMul * finalMasteryMul2 * greedGambitExpMul * riskRewardExpMul * deepDangerExpMul * prestigeReadyExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul);
+      // C558: Scholar's Lens relic — exp bonus
+      const scholarLensExpMul = this.hasRelic(5) ? SCHOLAR_LENS_EXP_MUL : 1;
+      const expGainRaw = Math.floor(baseExpGain * dangerMul2 * eliteMul * comboBonus * diminish * firstBloodMul * survivalBonus * waveMulExp * familiarityMul * comboExpMul * closeCallMul * greedExpMul * lvUpMul * eliteBountyMul * expDecayMul * bossExpMul * weatherExpMul * arenaMul * nightExpMul * expChainMul * quickKillMul * companionMul * bossSlayerMul * multiKillMul * shrineBlessMul * revengeExpMul * lowHpExpMul * comboBreakMul * expCascadeMul * prestigeExpMul * killMomentumExp * expDroughtMul * survivorGritMul * survivalScaleMul * expChainFightMul * eliteExpMul2 * comboFinisherMul * villageExpMul * waveSurvivalMul * dangerCascadeExpMul * dangerChainMul * bossEnrageMul * waveExpScaleMul * eliteExpChainMul * prestigeAllExpMul * bossExpMasteryMul * eliteDangerMul * finalMasteryMul * eliteMasteryMul * comboExpCascadeMul * prestigeExpScaleMul * survivalCompoundMul * waveDangerMul * critChainExpMul * dangerExpMasteryMul * eliteVillageBurstMul * comboAccelExpMul * comboExpVelocityMul * waveExpCompoundMul * critExpChainMul2 * eliteExpCascadeMul * elitePrestigeExpMul * bossExpCascadeMul * dangerExpSurgeMul * waveExpMasteryMul * finalMasteryMul2 * greedGambitExpMul * riskRewardExpMul * deepDangerExpMul * prestigeReadyExpMul * rushHourExpMul * agingExpMul * elderWisdomExpMul * scholarLensExpMul);
       // Safety cap: prevent exp overflow causing infinite level-up loops
       const expGain = Math.min(expGainRaw, hero.level * 2500);
       // C216: elite combo — 3 consecutive elites guarantee drop on next
@@ -2339,7 +2396,9 @@ export class EncounterEngine {
       const goldenHourGoldMul = this.goldenHourRemaining > 0 ? GOLDEN_HOUR_GOLD_MUL : 1;
       // C536: rush hour — gold ×3 during rush hour window
       const rushHourGoldMul = rushHourActive ? RUSH_HOUR_GOLD_MUL : 1;
-      const goldEarnedRaw = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul * waveGoldCascadeMul * comboGoldEscMul * dangerMasteryMul * dangerGoldStreakMul * dangerStreakCompoundMul * eliteGoldChainMul * waveAccumulatorMul * overkillChainExtraMul * bossGoldCascadeMul * prestigeGoldCascadeMul * deathGoldCompoundMul * comboGoldVelocityMul * prestigeDangerGoldMul * critGoldMasteryMul * comboDangerSynergyMul * dangerGoldMasteryMul * eliteGoldMasteryMul * prestigeGoldMomentumMul * critGoldCascadeMul2 * comboPrestigeGoldMul * waveGoldSurgeScale * eliteGoldCascadeMul2 * finalMasteryGoldMul * fullHpFortuneMul * eliteHunterMul * goldenHourGoldMul * rushHourGoldMul) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
+      // C554: Miser's Pouch relic — gold bonus
+      const miserPouchGoldMul = this.hasRelic(1) ? MISER_POUCH_GOLD_MUL : 1;
+      const goldEarnedRaw = Math.floor(GOLD_PER_KILL_BASE * Math.pow(hero.level, GOLD_LEVEL_POWER) * goldMul * dangerGoldMul * waveMul * momentumGoldMul * comboGoldMul * overkillGoldMul * overkillChainMul * critGoldMul * greedGoldMul * revengeGoldMul * arenaMul * treasureHunterMul * goldStreakMul * comboGoldMul2 * comboMilestoneMul * fullHpGoldMul * eliteGoldMul * goldCascadeMul * villageBlessMul * bossGoldMul * dangerScaleMul * treasureHoardMul2 * comboGoldHighMul * killStreakGoldMul * goldHarvestMul * prestigeGoldMul2 * waveFinisherMul * doubleGoldMul * critGoldBonusMul * waveGoldSurgeMul * critChainGoldMul * prestigeGoldMul3 * dangerPrestigeMul * waveGoldCascadeMul * comboGoldEscMul * dangerMasteryMul * dangerGoldStreakMul * dangerStreakCompoundMul * eliteGoldChainMul * waveAccumulatorMul * overkillChainExtraMul * bossGoldCascadeMul * prestigeGoldCascadeMul * deathGoldCompoundMul * comboGoldVelocityMul * prestigeDangerGoldMul * critGoldMasteryMul * comboDangerSynergyMul * dangerGoldMasteryMul * eliteGoldMasteryMul * prestigeGoldMomentumMul * critGoldCascadeMul2 * comboPrestigeGoldMul * waveGoldSurgeScale * eliteGoldCascadeMul2 * finalMasteryGoldMul * fullHpFortuneMul * eliteHunterMul * goldenHourGoldMul * rushHourGoldMul * miserPouchGoldMul) + levelMilestoneGold + critGoldFlat + bossTrophyGold;
       // Safety cap: prevent gold overflow
       const goldEarned = Math.min(goldEarnedRaw, hero.level * 5000);
       // C328: combo gold floor
@@ -2415,7 +2474,8 @@ export class EncounterEngine {
       // C532: golden hour — trigger/decrement
       this.fightsSincePrestige++;
       if (this.fightsSincePrestige % GOLDEN_HOUR_INTERVAL === 0) {
-        this.goldenHourRemaining = GOLDEN_HOUR_DURATION;
+        // C556: Hourglass relic doubles temporal durations
+        this.goldenHourRemaining = GOLDEN_HOUR_DURATION * (this.hasRelic(3) ? HOURGLASS_DURATION_MUL : 1);
       }
       if (this.goldenHourRemaining > 0) this.goldenHourRemaining--;
       // C533: fatigue counter
@@ -2602,6 +2662,23 @@ export class EncounterEngine {
       if (this.rng.chance(LUCKY_FIND_CHANCE)) {
         const foundItem = this.rollDrop(false);
         if (foundItem) hero.addEquipment(foundItem);
+      }
+      // C551-C552: Relic drop — chance after elite/boss kills
+      if (this.relics.length < 3) {
+        const relicChance = isElite ? RELIC_DROP_CHANCE_ELITE : (isBoss ? RELIC_DROP_CHANCE_BOSS : 0);
+        if (relicChance > 0 && this.rng.chance(relicChance)) {
+          const available = [0, 1, 2, 3, 4, 5].filter(id => !this.relics.includes(id));
+          if (available.length > 0) {
+            const newRelic = available[this.rng.int(available.length)];
+            this.relics.push(newRelic);
+            this.relicLevels.push(1);
+          }
+        }
+      }
+      // C557: Relic upgrade — duplicate drops upgrade existing relic
+      if (this.relics.length >= 3 && isElite && this.rng.chance(RELIC_UPGRADE_CHANCE)) {
+        const upgradeIdx = this.rng.int(this.relics.length);
+        this.relicLevels[upgradeIdx] = Math.min((this.relicLevels[upgradeIdx] || 1) + 1, 5);
       }
       // C136: decrement shrine buff after each fight
       if (this.shrineBuffRemaining > 0) this.shrineBuffRemaining--;
@@ -2858,6 +2935,19 @@ export class EncounterEngine {
         // C549: synergy prestige — discovered synergies → permanent bonus
         const discoveredCount = this.countBits(this.synergiesDiscovered);
         this.synergyPrestigeBonus = Math.min(SYNERGY_PRESTIGE_CAP, discoveredCount * SYNERGY_PRESTIGE_RATE);
+        // C560: relic prestige — imprint best relic (weakened version persists after reset)
+        if (this.relics.length > 0) {
+          let bestIdx = 0;
+          for (let i = 1; i < this.relics.length; i++) {
+            if ((this.relicLevels[i] || 1) > (this.relicLevels[bestIdx] || 1)) bestIdx = i;
+          }
+          this.imprintedRelic = this.relics[bestIdx];
+          this.imprintedRelicLevel = this.relicLevels[bestIdx] || 1;
+          this.relics = [];
+          this.relicLevels = [];
+          this.emberCrownStacks = 0;
+          this.phoenixFeatherUsed = false;
+        }
         events.push({ type: 'prestige', count: this.prestigeCount });
       }
     } else if (kind === 'village') {
