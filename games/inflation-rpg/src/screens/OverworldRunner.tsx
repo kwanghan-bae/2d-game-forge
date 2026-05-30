@@ -15,6 +15,7 @@ import { NpcEncounterModal } from './NpcEncounterModal';
 import { SagaBookModal } from './SagaBookModal';
 import { StatusModal } from './StatusModal';
 import { RelicPanel } from '../components/RelicPanel';
+import { StrategyPanel } from '../components/StrategyPanel';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -120,6 +121,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [spendModalOpen, setSpendModalOpen] = useState(false);
   const [sagaModalOpen, setSagaModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [strategyOpen, setStrategyOpen] = useState(false);
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   // Cycle 108 F1 — fate roll modal state.
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
@@ -552,6 +554,13 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           >
             📊 상태
           </button>
+          <button
+            type="button"
+            onClick={() => setStrategyOpen(true)}
+            style={hudActionBtnStyle}
+          >
+            ⚙️ 전략
+          </button>
           <span data-testid="speed-buttons" style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
             {SPEED_PRESETS.map(s => (
               <button
@@ -599,6 +608,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {npcModal && <NpcEncounterModal npcInstanceId={npcModal.npcInstanceId} onClose={() => setNpcModal(null)} />}
       {sagaModalOpen && <SagaBookModal onClose={() => setSagaModalOpen(false)} />}
       {statusModalOpen && <StatusModal onClose={() => setStatusModalOpen(false)} />}
+      {strategyOpen && <StrategyPanel onClose={() => setStrategyOpen(false)} />}
       {fateRollModal && (
         <FateRollModal
           oldLevel={fateRollModal.oldLevel}

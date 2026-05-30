@@ -3,6 +3,7 @@ import type { HeroEntity } from '../hero/HeroEntity';
 import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import type { OverworldEvent } from './OverworldEvents';
 import { ENEMY_DROPS, BOSS_DROPS } from './dropTable';
+import { getStrategyEnabled } from '../components/StrategyPanel';
 import {
   enemyHpAtLevel,
   enemyAtkAtLevel,
@@ -1594,28 +1595,28 @@ export class EncounterEngine {
         events.push({ type: 'event_treasure_shrine', choice });
         eventTriggered = true;
       }
-      // C564: Rest shrine — full heal but reset combo
-      if (eventsEnabled && !eventTriggered && this.rng.chance(REST_SHRINE_CHANCE) && hero.hp < hero.hpMax * 0.3) {
+      // C564: Rest shrine — full heal but reset combo (C575: player toggle)
+      if (eventsEnabled && !eventTriggered && getStrategyEnabled('restShrine') && this.rng.chance(REST_SHRINE_CHANCE) && hero.hp < hero.hpMax * 0.3) {
         hero.hp = hero.hpMax;
         this.comboStreak = 0;
         events.push({ type: 'event_rest_shrine' });
         eventTriggered = true;
       }
-      // C565: Gambler — double or nothing
-      if (eventsEnabled && !eventTriggered && this.rng.chance(GAMBLER_CHANCE) && hero.gold >= 50) {
+      // C565: Gambler — double or nothing (C575: player toggle)
+      if (eventsEnabled && !eventTriggered && getStrategyEnabled('gambler') && this.rng.chance(GAMBLER_CHANCE) && hero.gold >= 50) {
         if (this.rng.chance(GAMBLER_WIN_RATE)) { hero.gold *= 2; }
         else { hero.gold = Math.floor(hero.gold * 0.5); }
         events.push({ type: 'event_gambler' });
         eventTriggered = true;
       }
-      // C566: Blacksmith — boost weapon ATK
-      if (eventsEnabled && !eventTriggered && this.rng.chance(BLACKSMITH_CHANCE)) {
+      // C566: Blacksmith — boost weapon ATK (C575: player toggle)
+      if (eventsEnabled && !eventTriggered && getStrategyEnabled('blacksmith') && this.rng.chance(BLACKSMITH_CHANCE)) {
         hero.atk += BLACKSMITH_BOOST;
         events.push({ type: 'event_blacksmith' });
         eventTriggered = true;
       }
-      // C567: Cursed altar — massive ATK buff + curse
-      if (eventsEnabled && !eventTriggered && this.rng.chance(CURSED_ALTAR_CHANCE) && !this.cursedAltarAtkBuff) {
+      // C567: Cursed altar — massive ATK buff + curse (C575: player toggle)
+      if (eventsEnabled && !eventTriggered && getStrategyEnabled('cursedAltar') && this.rng.chance(CURSED_ALTAR_CHANCE) && !this.cursedAltarAtkBuff) {
         this.cursedAltarAtkBuff = true;
         this.cursedAltarRemaining = CURSED_ALTAR_DURATION;
         events.push({ type: 'event_cursed_altar' });
