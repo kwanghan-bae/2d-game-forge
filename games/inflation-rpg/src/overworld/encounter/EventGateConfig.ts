@@ -103,7 +103,13 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     id: 'event_astral_paradox',
     minTotalFights: 400,
     chance: 0.015,
-    description: 'Astral Paradox — EXP×2.5 but enemy ATK×1.8 for 5 fights',
+    description: 'Astral Paradox — EXP×2.5 but enemy ATK×2.0 for 5 fights',
+  },
+  {
+    id: 'event_soul_forge',
+    minTotalFights: 500,
+    chance: 0.02,
+    description: 'Soul Forge — sacrifice 15 combo for permanent +8% EXP stack (max 5)',
   },
 ];
 

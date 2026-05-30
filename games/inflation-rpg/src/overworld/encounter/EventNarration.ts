@@ -77,7 +77,12 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
   },
   astral_paradox: {
     trigger: '별의 역설이 열렸다. 위험하지만 막대한 경험을 얻을 수 있다.',
-    accept: '별의 역설에 뛰어든다. 5전투간 EXP×2.5, 적 ATK×1.8!',
+    accept: '별의 역설에 뛰어든다. 5전투간 EXP×2.5, 적 ATK×2.0!',
     decline: '너무 위험하다. 별의 역설을 피해간다.',
+  },
+  soul_forge: {
+    trigger: '영혼 단조 — 콤보를 바쳐 영구적 경험 증폭을 얻을 수 있다.',
+    accept: '콤보 15를 소각한다. 영구 EXP +8% 스택 획득!',
+    decline: '콤보가 아깝다. 단조를 포기한다.',
   },
 };

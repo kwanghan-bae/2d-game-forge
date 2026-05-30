@@ -287,7 +287,12 @@ export const CRIMSON_TITHE_EXP_MUL = 1.8;
 export const CRIMSON_TITHE_LIFESTEAL = 0.08; // 8% lifesteal during event
 
 // C804: DeclineStack system — declining events builds stacks for future rewards
-export const DECLINE_STACK_REWARD_THRESHOLD = 2; // 2 declines → next event reward ×1.5
+export const DECLINE_STACK_REWARD_THRESHOLD = 2; // 2 declines → start getting bonus
 export const DECLINE_STACK_FORCE_THRESHOLD = 4; // 4 declines → force a rare event next trigger
-export const DECLINE_STACK_REWARD_MUL = 1.5; // EXP multiplier for stacked accept
 export const DECLINE_STACK_MAX = 6; // cap stacks at 6
+
+// C806: Soul Forge — gate 500, sacrifice combo for permanent EXP multiplier
+export const SOUL_FORGE_DURATION = 8; // fights with permanent EXP boost active
+export const SOUL_FORGE_EXP_PER_STACK = 0.08; // +8% EXP per stack (permanent within run)
+export const SOUL_FORGE_MAX_STACKS = 5; // cap at 5 stacks = +40% EXP
+export const SOUL_FORGE_COMBO_COST = 15; // costs 15 combo streak on accept

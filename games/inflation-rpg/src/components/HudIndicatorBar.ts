@@ -31,6 +31,7 @@ export interface ActiveEventState {
   crimsonTitheRemaining: number;
   goldCrucibleRemaining: number;
   astralParadoxRemaining: number;
+  soulForgeRemaining: number;
   eventMomentumAtkRemaining: number;
   eventMomentumDensityRemaining: number;
 }
@@ -57,6 +58,7 @@ const EVENT_BADGE_REGISTRY: Array<{ key: keyof ActiveEventState; icon: string; l
   { key: 'crimsonTitheRemaining', icon: '🩸', label: '피의 십일조' },
   { key: 'goldCrucibleRemaining', icon: '🔥', label: '황금 도가니' },
   { key: 'astralParadoxRemaining', icon: '⭐', label: '별의 역설' },
+  { key: 'soulForgeRemaining', icon: '🔨', label: '영혼 단조' },
   { key: 'eventMomentumAtkRemaining', icon: '🔥', label: '기세 ATK' },
   { key: 'eventMomentumDensityRemaining', icon: '🌀', label: '기세 밀도' },
 ];
