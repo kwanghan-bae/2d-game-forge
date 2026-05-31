@@ -60,7 +60,7 @@ export interface ActiveAtkBuffs {
 }
 
 // C865: Maximum composite buff multiplier (prevents degenerate N-stack)
-export const BUFF_STACK_CAP = 2.00;
+export const BUFF_STACK_CAP = 1.85; // C868: 2.00→1.85 (tighten ceiling)
 
 export function computeBuffedHeroAtk(baseAtk: number, buffs: ActiveAtkBuffs): number {
   const product = (buffs.stormNexus ? buffs.stormNexusMul : 1)

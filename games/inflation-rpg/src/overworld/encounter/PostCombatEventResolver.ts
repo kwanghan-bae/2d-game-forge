@@ -40,6 +40,7 @@ import {
   MERCENARY_OFFER_MIN_FIGHTS,
   MERCENARY_OFFER_MAX_FIGHTS,
   CROSSROADS_CHANCE,
+  CROSSROADS_PITY_THRESHOLD,
   CROSSROADS_MIN_FIGHTS,
   CROSSROADS_MAX_FIGHTS,
   WANDERING_MERCHANT_CHANCE,
@@ -349,9 +350,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     }
 
     // C854: Crossroads Choice — once-per-run, 3 paths (fight 95-130)
+    // C868: pity at 40 fights in window — force weight to 1.0
     if (!ctx.crossroadsUsed && ctx.totalFights >= CROSSROADS_MIN_FIGHTS && ctx.totalFights <= CROSSROADS_MAX_FIGHTS) {
+      const fightsInWindow = ctx.totalFights - CROSSROADS_MIN_FIGHTS;
+      const crossroadsWeight = fightsInWindow >= CROSSROADS_PITY_THRESHOLD ? 1.0 : CROSSROADS_CHANCE;
       candidates.push({
-        id: 'crossroads', weight: CROSSROADS_CHANCE, pityEligible: true,
+        id: 'crossroads', weight: crossroadsWeight, pityEligible: true,
         apply: (r) => { r.crossroadsPending = true; r.eventType = 'event_crossroads'; },
       });
     }
