@@ -225,7 +225,7 @@ export const HIGH_GOLD_DEATH_PENALTY_CAP = 0.20;
 // C854: Crossroads Choice Event — once-per-run, 3 paths (95-130)
 export const CROSSROADS_CHANCE = 0.03;
 export const CROSSROADS_PITY_THRESHOLD = 30; // C869: 40→30 (must be ≤ window size 35)
-export const CROSSROADS_MIN_FIGHTS = 95;
+export const CROSSROADS_MIN_FIGHTS = 80; // C906: 95→80 (fight 40-110 Proving-only monotony fix)
 export const CROSSROADS_MAX_FIGHTS = 160; // C880: 130→160 (spread density cliff)
 export const CROSSROADS_ATK_DURATION = 5;
 export const CROSSROADS_ATK_MUL = 0.18; // C859: 0.20→0.18 (composable stack rebalance)
@@ -441,7 +441,7 @@ export const LAST_STAND_DECLINE_GOLD_MUL = 50; // C895: 2.5→50 (decline EV par
 // Strongest consequence payoff — rewards players who survive to 500+
 export const FINAL_RECKONING_MIN_FIGHT = 500;
 export const FINAL_RECKONING_MAX_FIGHT = 600;
-export const FINAL_RECKONING_CHANCE = 0.08; // 8% per fight (higher than others — reward survival)
+export const FINAL_RECKONING_CHANCE = 0.06; // C906: 0.08→0.06 (fight 500-600 over-density fix)
 export const FINAL_RECKONING_MIN_CHOICES = 8; // requires extensive choice history
 // Aggressive: massive ATK buff, but permanent HP sacrifice
 export const FINAL_RECKONING_AGG_ATK_MUL = 0.35;
