@@ -1,33 +1,47 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 856
+- Cycle: 862
 - Target: 600+ (연속 진화)
-- Last commit: C856 window overlap fix + gamble identity
-- Vitest: 2224 pass / 0 fail
-- EncounterEngine: ~2210 lines (C855 −50 lines extraction)
-- Critic score: 31.5/40 (C856 collab, +0.5)
+- Last commit: C862 crossroads rebalance
+- Vitest: 2242 pass / 0 fail
+- EncounterEngine: ~2230 lines
+- Critic score: 32/40 (C862 collab, +0.5)
 
-## 레이어 카운터 (C854-C856 era)
-- 시스템: 1 (C854)
-- 구조: 1 (C855)
-- 밸런스: 1 (C856)
-- 콜라보: 1 (C856)
+## 레이어 카운터 (C854-C862 era)
+- 시스템: 3 (C854, C857, C860)
+- 구조: 3 (C855, C858, C861)
+- 밸런스: 3 (C856, C859, C862)
+- 콜라보: 3 (C856, C859, C862)
 
 ## 제약
-- cycles_since_collab: 0 (C856 is collab)
-- Next collab: C859
-- EncounterEngine: ~2210 lines
-- Layer rotation: system → structure → balance (C857=system, C858=structure, C859=balance+collab)
+- cycles_since_collab: 0 (C862 is collab)
+- Next collab: C865
+- EncounterEngine: ~2230 lines
+- Layer rotation: system → structure → balance (C863=system, C864=structure, C865=balance+collab)
 
-## 다음 3사이클 (C856 합의)
-- C857 [system]: Composable ATK Buff Stack — ternary→multiplicative (storm×clearSky×crossroads)
-- C858 [structure]: Extract computeBuffedHeroAtk — pure fn + 8-case unit test
-- C859 [balance+collab]: Stacking rebalance (storm 1.40→1.35, clearSky 1.15→1.12, crossroads 0.20→0.18, drain 0.05→0.06)
+## 다음 3사이클 (C862 합의)
+- C863 [system]: Storm drain event emit (시각 피드백, storm_drain/storm_drain_critical)
+- C864 [structure]: resolveGambleOutcome 순수함수 추출 (gambler+merchant gamble 통합)
+- C865 [balance+collab]: Gamble real loss (gold 15%) + BUFF_STACK_CAP=2.00 + EARLY_MOMENTUM_ATK_MUL 0.03→0.06
 
-## 달성 사항 (C854-C856)
+## 달성 사항 (C854-C862)
 - C854 [system]: Crossroads Choice Event — once-per-run 3-path (ATK/EXP/Gold, 95-130)
 - C855 [structure]: applyPostVictoryExpBonuses extraction (−50 lines)
+- C856 [balance]: Window overlap fix + gamble identity
+- C857 [system]: Composable ATK Buff Stack — multiplicative (storm×clearSky×crossroads)
+- C858 [structure]: Extract computeBuffedHeroAtk + 8-case unit test
+- C859 [balance]: Stacking rebalance (storm 1.35, clearSky 1.12, crossroads 0.18)
+- C860 [system]: Early-game Momentum — fight 1-50 combo milestone rewards
+- C861 [structure]: Extract computePostVictoryExp — 14-line EXP chain → pure fn + 8 tests
+- C862 [balance]: Crossroads rebalance — chance 5%→3%, gold burst ×50→×120
+
+## Backlog
+- Early momentum narrative feedback (UI layer)
+- Crossroads chance 0.04 + pity system
+- EXP cap 500→200
+- computeBuffedHeroAtk atkCap 외부 적용 문서화
+- Fight 51-94 void zone (mid-game hook)
 - C856 [balance+collab]: Window overlap fix (ClearSky 95+, Mercenary 115-145, gamble free/55%)
 
 ## 달성 사항 (C848-C850)
