@@ -1,35 +1,41 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 877
+- Cycle: 880
 - Target: 600+ (연속 진화)
-- Last commit: C877 sparring 70 + momentum 70 + manual proving bonus 25%
-- Vitest: 2307 pass / 0 fail
-- EncounterEngine: ~2515 lines
-- Critic score: 20/40 (C877 collab — choice 1개는 시작이지만 아직 부족)
+- Last commit: C880 density cliff fix + weather visibility
+- Vitest: 2309 pass / 0 fail
+- EncounterEngine: ~2530 lines
+- Critic score: 22/40 (C880 collab, Δ+2 — choice 3개로 개선)
 
-## 레이어 카운터 (C872-C877 era)
-- 시스템: 2 (C872, C875)
-- 구조: 2 (C873, C876)
-- 밸런스: 2 (C874, C877)
-- 콜라보: 2 (C874, C877)
+## 레이어 카운터 (C878-C880 era)
+- 시스템: 1 (C878)
+- 구조: 1 (C879)
+- 밸런스: 1 (C880)
+- 콜라보: 1 (C880)
 
 ## 제약
-- cycles_since_collab: 0 (C877 is collab)
-- Next collab: C880
-- EncounterEngine: ~2515 lines
-- Layer rotation: system → structure → balance (C878=system, C879=structure, C880=balance+collab)
+- cycles_since_collab: 0 (C880 is collab)
+- Next collab: C883
+- EncounterEngine: ~2530 lines
+- Layer rotation: system → structure → balance (C881=system, C882=structure, C883=balance+collab)
 
-## 🟡 Player Agency: 1 choice (Proving Grounds)
-- C875에서 첫 플레이어 선택 추가 (Accept/Decline, 2s timeout)
-- Manual accept → +25% EXP bonus (C877)
-- 하지만 여전히 binary + auto-accept = "잠깐 멈춘 자동화"
-- Crossroads/Merchant를 선택 이벤트로 승격해야 critic +3~4
+## 🟡 Player Agency: 3 choices
+- Proving Grounds: binary accept/decline, 2s timeout (fight 55-110)
+- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-175)
+- Crossroads: 3-way ATK/EXP/Gold, 4s timeout (fight 95-160)
+- ActiveBuffHUD shows active buffs
+- 176+ dead zone (choice 0%) — 새 핵심 문제
 
-## 다음 3사이클 (C877 합의)
+## 다음 3사이클 (C880 합의)
+- C881 [system]: Wandering Merchant 선택화 + choice memory v1
+- C882 [structure]: ChoiceProfileRegistry + ChoiceConsequenceTracker 추출
+- C883 [balance+collab]: 160-200 consequence payoff window + 수치 조정
+
+## 달성 사항 (C878-C880)
 - C878 [system]: Crossroads 3지선다 + Mercenary 수락/거절 모달 (choice 1→3)
-- C879 [structure]: Generic timed choice modal + Active buff HUD
-- C880 [balance+collab]: Density cliff fix (Mercenary 145→175) + weather visibility
+- C879 [structure]: TimedChoiceModal + ActiveBuffHUD + getCombatSummary 확장
+- C880 [balance+collab]: Mercenary 175, Mentor 150, Crossroads 160, Weather 0.28
 
 ## 달성 사항 (C875-C877)
 - C875 [system]: Proving Grounds player choice gate (첫 player agency!)
