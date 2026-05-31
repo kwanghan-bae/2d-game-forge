@@ -86,6 +86,8 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   boss_shield: { nameKR: '보스 방패', category: 'combat' },
   mercy: { nameKR: '자비', category: 'combat' },
   revenge_gold: { nameKR: '복수 골드', category: 'combat' },
+  vc_exp: { nameKR: '도전자 경험', category: 'event' },
+  vc_atk: { nameKR: '도전 위안', category: 'event' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */

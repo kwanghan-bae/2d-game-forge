@@ -529,3 +529,11 @@ export const ENDGAME_SURGE_CHANCE = 0.06; // 6% per fight (pity-boosted via Late
 export const ENDGAME_SURGE_ATK_MUL = 0.30; // +30% ATK for duration
 export const ENDGAME_SURGE_DURATION = 8; // 8 fight buff
 export const ENDGAME_SURGE_SHARD_CHANCE = 0.50; // 50% to also grant stat shard
+
+// C959: Veteran's Challenge — mid-game decision event (200-400)
+export const VETERANS_CHALLENGE_MIN_FIGHT = 200;
+export const VETERANS_CHALLENGE_MAX_FIGHT = 400;
+export const VETERANS_CHALLENGE_CHANCE = 0.05; // 5% per fight
+export const VETERANS_CHALLENGE_EXP_MUL = 1.80; // +80% EXP on accept
+export const VETERANS_CHALLENGE_ATK_PENALTY = 0.70; // enemies hit 30% harder
+export const VETERANS_CHALLENGE_DURATION = 6; // 6 fights

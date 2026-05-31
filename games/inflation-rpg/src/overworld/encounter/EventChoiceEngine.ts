@@ -61,6 +61,12 @@ export enum WanderingMerchantChoice {
   GAMBLE = 2,
 }
 
+// C959: Veteran's Challenge — mid-game risk/reward choice
+export enum VeteransChallengeChoice {
+  ACCEPT = 0,
+  DECLINE = 1,
+}
+
 export class EventChoiceEngine {
   private shrineChoice: ShrineChoice | -1 = -1;
   private dangerChoice: DangerChoice = DangerChoice.NONE;
@@ -281,6 +287,30 @@ export class EventChoiceEngine {
     const c = this.wanderingMerchantChoice;
     this.wanderingMerchantChoicePending = false;
     this.wanderingMerchantChoice = WanderingMerchantChoice.HEAL;
+    return c;
+  }
+
+  // --- Veteran's Challenge (C959) ---
+  private veteransChallengePending = false;
+  private veteransChallengeChoice: VeteransChallengeChoice = VeteransChallengeChoice.ACCEPT;
+
+  hasPendingVeteransChallengeChoice(): boolean {
+    return this.veteransChallengePending;
+  }
+
+  triggerVeteransChallenge(): void {
+    this.veteransChallengePending = true;
+    this.veteransChallengeChoice = VeteransChallengeChoice.ACCEPT;
+  }
+
+  setVeteransChallengeChoice(choice: VeteransChallengeChoice): void {
+    this.veteransChallengeChoice = choice;
+  }
+
+  resolveVeteransChallengeChoice(): VeteransChallengeChoice {
+    const c = this.veteransChallengeChoice;
+    this.veteransChallengePending = false;
+    this.veteransChallengeChoice = VeteransChallengeChoice.ACCEPT;
     return c;
   }
 }

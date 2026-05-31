@@ -72,6 +72,11 @@ import {
   ENEMY_MORPH_DURATION,
   ENEMY_MORPH_DR_RATE,
   ENEMY_MORPH_CHANCE,
+  VETERANS_CHALLENGE_MIN_FIGHT,
+  VETERANS_CHALLENGE_MAX_FIGHT,
+  VETERANS_CHALLENGE_CHANCE,
+  VETERANS_CHALLENGE_EXP_MUL,
+  VETERANS_CHALLENGE_DURATION,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -113,6 +118,8 @@ export interface MidGamePending {
   eldersJudgmentFired?: boolean; // C926: already triggered this run
   eldersJudgmentPending?: boolean; // C926: pending player choice
   eldersJudgmentChoiceResolved?: 'double_down' | 'diversify'; // C926
+  veteransChallengeChoiceResolved?: 'accept' | 'decline'; // C959: player's choice
+  veteransChallengeFired?: boolean; // C959: already triggered this run
 }
 
 export interface MidGameResult {
@@ -146,6 +153,8 @@ export interface MidGameResult {
     eldersJudgmentShieldRemaining?: number; // C926
     eldersJudgmentExpRemaining?: number; // C926
     lastStandAtkRemaining?: number; // C890
+    veteransChallengeExpRemaining?: number; // C959
+    veteransChallengeAtkRemaining?: number; // C959
   };
   statShardAtk?: number; // C938: permanent ATK shard (flat bonus)
   enemyMorphDuration?: number; // C939: enemy morph duration (fights)
@@ -159,6 +168,7 @@ export interface MidGameResult {
   wanderingSageChoicePending?: boolean; // C921: true = player choice needed
   eldersJudgmentChoicePending?: boolean; // C926: true = player choice needed
   eldersJudgmentFired?: boolean; // C926: true = elder's judgment triggered
+  veteransChallengePending?: boolean; // C959: true = player choice needed
   lastStandChoicePending?: boolean; // C890: true = player choice needed
   reputationFired?: boolean; // C883: true = reputation payoff event triggered
   veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
@@ -430,6 +440,20 @@ export function resolveMidGameEvents(
     && ctx.totalFights <= WANDERING_SAGE_MAX_FIGHTS
     && ctx.rngChance(WANDERING_SAGE_CHANCE)) {
     return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
+  }
+
+  // C959: Veteran's Challenge — mid-game risk/reward decision (200-400, one-shot)
+  if (pending.veteransChallengeChoiceResolved === 'accept') {
+    buffs.veteransChallengeExpRemaining = VETERANS_CHALLENGE_DURATION;
+    buffs.veteransChallengeAtkRemaining = VETERANS_CHALLENGE_DURATION;
+    events.push({ type: 'event_veterans_challenge', accepted: true, duration: VETERANS_CHALLENGE_DURATION });
+  } else if (pending.veteransChallengeChoiceResolved === 'decline') {
+    events.push({ type: 'event_veterans_challenge', accepted: false, duration: 0 });
+  } else if (!pending.veteransChallengeFired
+    && ctx.totalFights >= VETERANS_CHALLENGE_MIN_FIGHT
+    && ctx.totalFights <= VETERANS_CHALLENGE_MAX_FIGHT
+    && ctx.rngChance(VETERANS_CHALLENGE_CHANCE)) {
+    return { events, heroMutations, buffs, crossroadsUsed, veteransChallengePending: true };
   }
 
   return { events, heroMutations, buffs, crossroadsUsed, statShardAtk, enemyMorphDuration, enemyMorphDrRate };
