@@ -95,16 +95,16 @@ describe('CombatCalculator.computeBuffedHeroAtk', () => {
     expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, clearSky: true, ...muls })).toBe(161);
   });
 
-  it('storm + crossroads → ×1.68', () => {
-    expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, crossroads: true, ...muls })).toBe(168);
+  it('storm + crossroads → capped at ×1.65', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, crossroads: true, ...muls })).toBe(165);
   });
 
   it('clearSky + crossroads → ×1.38', () => {
     expect(computeBuffedHeroAtk(100, { ...off, clearSky: true, crossroads: true, ...muls })).toBe(137);
   });
 
-  it('all three → capped at ×1.85', () => {
-    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, earlyMomentum: false, ...muls })).toBe(185);
+  it('all three → capped at ×1.65', () => {
+    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, earlyMomentum: false, ...muls })).toBe(165);
   });
 
   it('earlyMomentum only → ×1.03', () => {

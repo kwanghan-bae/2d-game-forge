@@ -240,7 +240,7 @@ export const PROVING_GROUNDS_CHANCE = 0.04; // 4% per fight → expected 1.4/run
 export const PROVING_GROUNDS_REWARD_EXP_MUL = 2.00; // C869: 1.50→2.00 (meaningful EXP boost)
 export const PROVING_GROUNDS_REWARD_DURATION = 5; // C869: 3→5 (longer window)
 export const PROVING_GROUNDS_FAIL_HP_COST = 0.10; // fail: 10% max HP loss
-export const PROVING_GROUNDS_WIN_CHANCE = 0.65; // 65% success based on combo
+export const PROVING_GROUNDS_WIN_CHANCE = 0.70; // C871: 0.65→0.70 (reduce fail frustration)
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
