@@ -82,6 +82,8 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   armor: { nameKR: '갑옷', category: 'village' },
   village_rest: { nameKR: '마을 휴식', category: 'village' },
   village_blessing: { nameKR: '마을 축복', category: 'village' },
+  gold_overflow_shield: { nameKR: '골드 오버플로우 방패', category: 'combat' },
+  boss_shield: { nameKR: '보스 방패', category: 'combat' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */

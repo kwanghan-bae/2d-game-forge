@@ -175,7 +175,6 @@ export class EncounterEngine {
   private prestigeSurgeReady = false; // C354: first fight after prestige
   private villageDefenseRemaining = 0; // C356: village temp immunity
   private dangerChainCount = 0; // C357: consecutive danger kills
-  private goldOverflowShieldRemaining = 0; // C368
   private comboMilestoneBonus = 0; // C367: permanent bonus from combo milestones
   private maxComboReached = 0; // C367: track highest combo
   private forgeDiscount = 0; // C364: accumulated village forge discount
@@ -197,7 +196,6 @@ export class EncounterEngine {
   
   private critExpChain = 0; // C469: consecutive crits for exp chain
   
-  private bossShieldRemaining = 0; // C494: boss shield remaining
   // C932: prestigeEcho, inspiration, mentor migrated to midGameBuffs
   // C932: wanderingMerchantAtk, mercenaryShield migrated to midGameBuffs
   private lastChainFlavor: string | null = null; // C821: chain event narrative flavor
@@ -1073,12 +1071,12 @@ export class EncounterEngine {
           }
           // C622: DR computation via pure DefenseCalc module
           const goldShieldWasActive = this.goldShieldRemaining > 0;
-          const goldOverflowWasActive = this.goldOverflowShieldRemaining > 0;
-          const bossShieldWasActive = this.bossShieldRemaining > 0;
+          const goldOverflowWasActive = this.midGameBuffs.isActive('gold_overflow_shield');
+          const bossShieldWasActive = this.midGameBuffs.isActive('boss_shield');
           // Side effects: decrement shield counters after reading
           if (this.goldShieldRemaining > 0) this.goldShieldRemaining--;
-          if (this.goldOverflowShieldRemaining > 0) this.goldOverflowShieldRemaining--;
-          if (this.bossShieldRemaining > 0) this.bossShieldRemaining--;
+          this.midGameBuffs.tick1('gold_overflow_shield');
+          this.midGameBuffs.tick1('boss_shield');
           const totalDrMul = computeDamageReduction({
             mercyRemaining: this.mercyRemaining,
             shopShieldRemaining: this.shopShieldRemaining,
@@ -2321,7 +2319,7 @@ export class EncounterEngine {
       events.push({ type: 'gold_rain' });
     }
     hero.gold += Math.floor(hero.atk * BOSS_GOLD_FURY_RATE);
-    this.bossShieldRemaining = BOSS_SHIELD_GRANT_DURATION;
+    this.midGameBuffs.activate('boss_shield', BOSS_SHIELD_GRANT_DURATION);
   }
 
   // C852: Extracted hero death handling from resolveEncounter combat loop
@@ -2562,8 +2560,8 @@ export class EncounterEngine {
       const tax = Math.floor(hero.gold * GOLD_TAX_RATE);
       hero.gold -= tax;
     }
-    if (hero.gold > GOLD_SHIELD_OVERFLOW_THRESHOLD * hero.level && this.goldOverflowShieldRemaining <= 0) {
-      this.goldOverflowShieldRemaining = GOLD_OVERFLOW_SHIELD_DURATION + (this.prestigeCount > 0 ? GOLD_OVERFLOW_SHIELD_UPGRADE : 0);
+    if (hero.gold > GOLD_SHIELD_OVERFLOW_THRESHOLD * hero.level && !this.midGameBuffs.isActive('gold_overflow_shield')) {
+      this.midGameBuffs.activate('gold_overflow_shield', GOLD_OVERFLOW_SHIELD_DURATION + (this.prestigeCount > 0 ? GOLD_OVERFLOW_SHIELD_UPGRADE : 0));
     }
     if (isBoss) {
       this.resolveBossRewards(hero, events, isOverkill);
