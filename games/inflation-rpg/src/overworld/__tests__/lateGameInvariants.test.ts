@@ -130,4 +130,18 @@ describe('C955: Mid-game pity invariants', () => {
     // Must provide meaningful boost (at least 1.5×)
     expect(maxAtkStack).toBeGreaterThan(1.5);
   });
+
+  it('C970: Veteran\'s Challenge DPS ratio within design bounds', () => {
+    // When VC ATK penalty is active, hero DPS drops by a controlled amount
+    // This ensures the penalty is meaningful but not crippling
+    const dpsRatio = VETERANS_CHALLENGE_ATK_PENALTY; // 0.60 = 40% DPS reduction
+    // Penalty must reduce DPS by at least 15% (otherwise it's a free choice)
+    expect(dpsRatio).toBeLessThan(0.85);
+    // But not more than 50% (would make the 6 fights frustratingly slow)
+    expect(dpsRatio).toBeGreaterThan(0.50);
+    // Net gain (EXP × ATK) must be marginal (1.0-1.2) to create genuine decision
+    const netGain = VETERANS_CHALLENGE_EXP_MUL * VETERANS_CHALLENGE_ATK_PENALTY;
+    expect(netGain).toBeGreaterThan(1.0);
+    expect(netGain).toBeLessThan(1.2);
+  });
 });
