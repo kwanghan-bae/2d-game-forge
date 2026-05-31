@@ -27,6 +27,10 @@ import {
   REVENGE_STREAK_CAP,
   REVENGE_STREAK_DURATION,
 } from './constants-progression';
+import {
+  HIGH_GOLD_DEATH_THRESHOLD,
+  HIGH_GOLD_DEATH_PENALTY_CAP,
+} from './constants-events';
 
 export interface DeathPenaltyContext {
   comboStreak: number;
@@ -86,10 +90,15 @@ export function resolveDeathPenalty(ctx: DeathPenaltyContext): DeathPenaltyResul
 
   // C147: gold loss on death + C399: prestige gold protection
   const goldProtectRate = Math.min(DEATH_GOLD_PROTECT_CAP, ctx.prestigeCount * DEATH_GOLD_PROTECT_PER_PRESTIGE);
+  // C853: High-gold death penalty ramp — scales 10%→20% above 500k gold
+  const baseGoldPenalty = GOLD_DEATH_PENALTY;
+  const highGoldRamp = ctx.heroGold > HIGH_GOLD_DEATH_THRESHOLD
+    ? Math.min(HIGH_GOLD_DEATH_PENALTY_CAP, baseGoldPenalty + (ctx.heroGold - HIGH_GOLD_DEATH_THRESHOLD) / 5_000_000)
+    : baseGoldPenalty;
   let goldLost = 0;
   let goldSaved = false;
   if (!ctx.goldSaveRoll) {
-    goldLost = Math.floor(ctx.heroGold * GOLD_DEATH_PENALTY * (1 - goldProtectRate));
+    goldLost = Math.floor(ctx.heroGold * highGoldRamp * (1 - goldProtectRate));
   } else {
     goldSaved = true;
   }
