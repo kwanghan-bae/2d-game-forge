@@ -26,6 +26,15 @@ const EVENT_LABELS: Record<string, string> = {
   event_crossroads_gold: '🔀 갈림길: 골드 폭발!',
   storm_drain: '⚡ 폭풍 소모: HP 감소',
   storm_drain_critical: '⚡💀 폭풍 위험! HP 급감!',
+  // C888: Consequence event toasts
+  event_reputation_aggressive: '🏆 명성: 공격적! ATK 버프!',
+  event_reputation_defensive: '🏆 명성: 방어적! 방패 + 회복!',
+  event_reputation_greedy: '🏆 명성: 탐욕! 골드 폭발!',
+  event_reputation_balanced: '🏆 명성: 균형! EXP 버프!',
+  event_veterans_trial_aggressive: '⚔️ 노련한 시련: 공격! ATK 폭발 (HP 대가)',
+  event_veterans_trial_defensive: '🛡️ 노련한 시련: 방어! 회복 + 방패!',
+  event_veterans_trial_greedy: '💰 노련한 시련: 탐욕! 골드 대박!',
+  event_veterans_trial_balanced: '⚖️ 노련한 시련: 균형! ATK + EXP!',
 };
 
 export function getEventToastLabel(eventType: string): string | null {
@@ -46,6 +55,10 @@ export function resolveEventToastKey(event: { type: string; [k: string]: unknown
       return `event_mercenary_offer_${event.choice}`;
     case 'event_crossroads':
       return `event_crossroads_${event.path}`;
+    case 'event_reputation':
+      return `event_reputation_${event.style}`;
+    case 'event_veterans_trial':
+      return `event_veterans_trial_${event.style}`;
     case 'storm_drain':
     case 'storm_drain_critical':
       return event.type;

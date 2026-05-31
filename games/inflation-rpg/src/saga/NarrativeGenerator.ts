@@ -43,6 +43,47 @@ export class NarrativeGenerator {
     return NarrationVariants.moralChoice(opts, seed);
   }
 
+  /** C888: Player choice event narration for saga entries */
+  static forChoiceEvent(opts: { age: number; eventType: string; choice: string }, _seed = 0): string {
+    const labels: Record<string, string> = {
+      proving_accept: '시련의 장에 도전했다',
+      proving_decline: '시련의 장을 회피했다',
+      crossroads_atk: '갈림길에서 힘의 길을 택했다',
+      crossroads_exp: '갈림길에서 지혜의 길을 택했다',
+      crossroads_gold: '갈림길에서 부의 길을 택했다',
+      mercenary_accept: '용병의 제안을 받아들였다',
+      mercenary_decline: '용병의 제안을 거절했다',
+      merchant_heal: '방랑 상인에게 치유를 구했다',
+      merchant_atk: '방랑 상인에게 힘을 구했다',
+      merchant_gamble: '방랑 상인과 도박을 벌였다',
+    };
+    const key = `${opts.eventType}_${opts.choice}`;
+    return `${opts.age}세에 ${labels[key] ?? '선택을 내렸다'}.`;
+  }
+
+  /** C888: Consequence event narration for saga entries */
+  static forConsequenceEvent(opts: { age: number; eventType: string; style: string }, _seed = 0): string {
+    if (opts.eventType === 'reputation') {
+      const styleLabels: Record<string, string> = {
+        aggressive: '공격적 명성이 보답했다 — ATK 강화!',
+        defensive: '방어적 명성이 보답했다 — 방패와 회복!',
+        greedy: '탐욕적 명성이 보답했다 — 골드 폭발!',
+        balanced: '균형잡힌 명성이 보답했다 — EXP 버프!',
+      };
+      return `${opts.age}세에 ${styleLabels[opts.style] ?? '명성이 보답했다.'}`;
+    }
+    if (opts.eventType === 'veterans_trial') {
+      const styleLabels: Record<string, string> = {
+        aggressive: '노련한 시련에서 전투의 기억이 되살아났다!',
+        defensive: '노련한 시련에서 방어의 지혜가 빛났다!',
+        greedy: '노련한 시련에서 축적된 부가 쏟아졌다!',
+        balanced: '노련한 시련을 균형 있게 극복했다!',
+      };
+      return `${opts.age}세에 ${styleLabels[opts.style] ?? '노련한 시련을 마쳤다.'}`;
+    }
+    return `${opts.age}세에 시련을 마쳤다.`;
+  }
+
   static forRejuvenation(opts: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
     return NarrationVariants.rejuvenation(opts, seed);
   }

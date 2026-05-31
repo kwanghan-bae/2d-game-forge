@@ -78,5 +78,50 @@ describe('EventChoiceToastLogic', () => {
       expect(resolveEventToastKey({ type: 'storm_drain', value: 30, hpAfter: 200 }))
         .toBe('storm_drain');
     });
+    // C888: consequence event toast keys
+    it('maps reputation aggressive to key', () => {
+      expect(resolveEventToastKey({ type: 'event_reputation', style: 'aggressive', value: 0.2 }))
+        .toBe('event_reputation_aggressive');
+    });
+    it('maps reputation balanced to key', () => {
+      expect(resolveEventToastKey({ type: 'event_reputation', style: 'balanced', value: 0.15 }))
+        .toBe('event_reputation_balanced');
+    });
+    it('maps veterans trial defensive to key', () => {
+      expect(resolveEventToastKey({ type: 'event_veterans_trial', style: 'defensive', value: 100 }))
+        .toBe('event_veterans_trial_defensive');
+    });
+    it('maps veterans trial greedy to key', () => {
+      expect(resolveEventToastKey({ type: 'event_veterans_trial', style: 'greedy', value: 500 }))
+        .toBe('event_veterans_trial_greedy');
+    });
+  });
+
+  // C888: consequence event label tests
+  describe('getEventToastLabel — C888 consequence labels', () => {
+    it('reputation aggressive', () => {
+      expect(getEventToastLabel('event_reputation_aggressive')).toContain('ATK');
+    });
+    it('reputation defensive', () => {
+      expect(getEventToastLabel('event_reputation_defensive')).toContain('방패');
+    });
+    it('reputation greedy', () => {
+      expect(getEventToastLabel('event_reputation_greedy')).toContain('골드');
+    });
+    it('reputation balanced', () => {
+      expect(getEventToastLabel('event_reputation_balanced')).toContain('EXP');
+    });
+    it('veterans trial aggressive', () => {
+      expect(getEventToastLabel('event_veterans_trial_aggressive')).toContain('ATK');
+    });
+    it('veterans trial defensive', () => {
+      expect(getEventToastLabel('event_veterans_trial_defensive')).toContain('방패');
+    });
+    it('veterans trial greedy', () => {
+      expect(getEventToastLabel('event_veterans_trial_greedy')).toContain('골드');
+    });
+    it('veterans trial balanced', () => {
+      expect(getEventToastLabel('event_veterans_trial_balanced')).toContain('ATK');
+    });
   });
 });

@@ -308,4 +308,45 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
     expect(() => NarrativeGenerator.forLevelUp({ age: 15, newLevel: 24 }, 0)).not.toThrow();
     expect(() => NarrativeGenerator.forLevelUpBatch({ age: 30, fromLevel: 1, toLevel: 5, count: 4 }, 0)).not.toThrow();
   });
+
+  // C888: Choice event narration
+  describe('forChoiceEvent', () => {
+    it('proving accept', () => {
+      const txt = NarrativeGenerator.forChoiceEvent({ age: 20, eventType: 'proving', choice: 'accept' });
+      expect(txt).toContain('20세');
+      expect(txt).toContain('시련의 장');
+    });
+    it('crossroads atk', () => {
+      const txt = NarrativeGenerator.forChoiceEvent({ age: 25, eventType: 'crossroads', choice: 'atk' });
+      expect(txt).toContain('힘의 길');
+    });
+    it('unknown choice defaults', () => {
+      const txt = NarrativeGenerator.forChoiceEvent({ age: 30, eventType: 'unknown', choice: 'x' });
+      expect(txt).toContain('선택을 내렸다');
+    });
+  });
+
+  // C888: Consequence event narration
+  describe('forConsequenceEvent', () => {
+    it('reputation aggressive', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 40, eventType: 'reputation', style: 'aggressive' });
+      expect(txt).toContain('ATK');
+    });
+    it('reputation balanced', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 40, eventType: 'reputation', style: 'balanced' });
+      expect(txt).toContain('EXP');
+    });
+    it('veterans trial defensive', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'defensive' });
+      expect(txt).toContain('방어의 지혜');
+    });
+    it('veterans trial greedy', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'greedy' });
+      expect(txt).toContain('축적된 부');
+    });
+    it('unknown consequence defaults', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 60, eventType: 'unknown', style: 'x' });
+      expect(txt).toContain('시련을 마쳤다');
+    });
+  });
 });
