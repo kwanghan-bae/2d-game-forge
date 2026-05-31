@@ -235,8 +235,8 @@ export const EARLY_MOMENTUM_GOLD_MUL = 30; // level × 30 gold burst
 export const EARLY_MOMENTUM_STREAK_INTERVAL = 5; // every 5 consecutive wins
 // C866: Proving Grounds — mid-game challenge event (fight 55-90)
 export const PROVING_GROUNDS_MIN_FIGHT = 55;
-export const PROVING_GROUNDS_MAX_FIGHT = 90;
-export const PROVING_GROUNDS_CHANCE = 0.04; // 4% per fight → expected 1.4/run
+export const PROVING_GROUNDS_MAX_FIGHT = 110; // C874: 90→110 (overlap with density ramp)
+export const PROVING_GROUNDS_CHANCE = 0.06; // C874: 4→6% per fight → expected ~2.1/run
 export const PROVING_GROUNDS_REWARD_EXP_MUL = 2.00; // C869: 1.50→2.00 (meaningful EXP boost)
 export const PROVING_GROUNDS_REWARD_DURATION = 5; // C869: 3→5 (longer window)
 export const PROVING_GROUNDS_FAIL_HP_COST = 0.10; // fail: 10% max HP loss

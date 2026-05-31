@@ -85,20 +85,20 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('mercenary offer accepted if gold > 100', () => {
-    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 500, level: 10, atk: 20 }, totalFights: 100 });
+    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 500, level: 10, atk: 20 }, totalFights: 115 });
     const result = resolveMidGameEvents(ctx, { mercenaryOfferPending: true });
     expect(result.events[0]).toMatchObject({ type: 'event_mercenary_offer', choice: 'accept' });
     expect(result.buffs.mercenaryShieldRemaining).toBeGreaterThan(0);
   });
 
   it('mercenary offer declined if gold <= 100', () => {
-    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 50, level: 10, atk: 20 }, totalFights: 100 });
+    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 50, level: 10, atk: 20 }, totalFights: 115 });
     const result = resolveMidGameEvents(ctx, { mercenaryOfferPending: true });
     expect(result.events[0]).toMatchObject({ type: 'event_mercenary_offer', choice: 'decline' });
   });
 
   it('crossroads picks gold when hp < 40%', () => {
-    const ctx = makeCtx({ hero: { hp: 300, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 100 });
+    const ctx = makeCtx({ hero: { hp: 300, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 115 });
     const result = resolveMidGameEvents(ctx, { crossroadsPending: true });
     expect(result.events[0]).toMatchObject({ type: 'event_crossroads', path: 'gold' });
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
@@ -106,14 +106,14 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('crossroads picks exp when atk > level*3', () => {
-    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 200, level: 10, atk: 50 }, totalFights: 100 });
+    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 200, level: 10, atk: 50 }, totalFights: 115 });
     const result = resolveMidGameEvents(ctx, { crossroadsPending: true });
     expect(result.events[0]).toMatchObject({ type: 'event_crossroads', path: 'exp' });
     expect(result.buffs.crossroadsExpRemaining).toBeGreaterThan(0);
   });
 
   it('crossroads picks atk as default', () => {
-    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 100 });
+    const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 115 });
     const result = resolveMidGameEvents(ctx, { crossroadsPending: true });
     expect(result.events[0]).toMatchObject({ type: 'event_crossroads', path: 'atk' });
     expect(result.buffs.crossroadsAtkRemaining).toBeGreaterThan(0);
