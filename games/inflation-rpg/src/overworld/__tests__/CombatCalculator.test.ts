@@ -72,8 +72,8 @@ describe('CombatCalculator.computeHeroAtk', () => {
 });
 
 describe('CombatCalculator.computeBuffedHeroAtk', () => {
-  const muls = { stormNexusMul: 1.40, clearSkyMul: 1.15, crossroadsMul: 1.20, earlyMomentumMul: 1.03, reputationMul: 1.20, veteransTrialMul: 1.25 };
-  const off = { stormNexus: false, clearSky: false, crossroads: false, earlyMomentum: false, reputation: false, veteransTrial: false };
+  const muls = { stormNexusMul: 1.40, clearSkyMul: 1.15, crossroadsMul: 1.20, earlyMomentumMul: 1.03, reputationMul: 1.20, veteransTrialMul: 1.25, lastStandMul: 1.35 };
+  const off = { stormNexus: false, clearSky: false, crossroads: false, earlyMomentum: false, reputation: false, veteransTrial: false, lastStand: false };
 
   it('no buffs → base unchanged', () => {
     expect(computeBuffedHeroAtk(100, { ...off, ...muls })).toBe(100);

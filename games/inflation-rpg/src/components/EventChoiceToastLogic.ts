@@ -35,6 +35,9 @@ const EVENT_LABELS: Record<string, string> = {
   event_veterans_trial_defensive: '🛡️ 노련한 시련: 방어! 회복 + 방패!',
   event_veterans_trial_greedy: '💰 노련한 시련: 탐욕! 골드 대박!',
   event_veterans_trial_balanced: '⚖️ 노련한 시련: 균형! ATK + EXP!',
+  // C890: Last Stand toast labels
+  event_last_stand_accept: '🔥 최후의 항전: 수락! ATK 폭발 (HP 대가)',
+  event_last_stand_decline: '🛡️ 최후의 항전: 거절! 안전하게 진행',
 };
 
 export function getEventToastLabel(eventType: string): string | null {
@@ -59,6 +62,8 @@ export function resolveEventToastKey(event: { type: string; [k: string]: unknown
       return `event_reputation_${event.style}`;
     case 'event_veterans_trial':
       return `event_veterans_trial_${event.style}`;
+    case 'event_last_stand':
+      return `event_last_stand_${event.choice}`;
     case 'storm_drain':
     case 'storm_drain_critical':
       return event.type;

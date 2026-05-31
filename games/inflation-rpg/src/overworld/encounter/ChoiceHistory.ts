@@ -71,5 +71,7 @@ export function classifyChoice(event: string, choice: string): ChoiceCategory {
     if (choice === 'atk') return 'aggressive';
     return 'greedy';
   }
+  // C890: Last Stand: accept=aggressive, decline=defensive
+  if (event === 'last_stand') return choice === 'accept' ? 'aggressive' : 'defensive';
   return 'defensive';
 }

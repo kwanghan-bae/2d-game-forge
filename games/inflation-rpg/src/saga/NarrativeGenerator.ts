@@ -56,6 +56,9 @@ export class NarrativeGenerator {
       merchant_heal: '방랑 상인에게 치유를 구했다',
       merchant_atk: '방랑 상인에게 힘을 구했다',
       merchant_gamble: '방랑 상인과 도박을 벌였다',
+      // C890: Last Stand
+      last_stand_accept: '최후의 항전에 뛰어들었다',
+      last_stand_decline: '최후의 항전을 거절했다',
     };
     const key = `${opts.eventType}_${opts.choice}`;
     return `${opts.age}세에 ${labels[key] ?? '선택을 내렸다'}.`;

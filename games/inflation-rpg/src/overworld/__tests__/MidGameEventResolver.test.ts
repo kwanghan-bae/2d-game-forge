@@ -246,4 +246,41 @@ describe('resolveMidGameEvents', () => {
     const vtEvents = result.events.filter(e => e.type === 'event_veterans_trial');
     expect(vtEvents).toHaveLength(0);
   });
+
+  // C890: Last Stand Challenge tests
+  it('last stand returns pending when no choice resolved', () => {
+    const ctx = makeCtx({ totalFights: 450, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationFired: true, veteransTrialFired: true });
+    expect(result.lastStandChoicePending).toBe(true);
+  });
+
+  it('last stand accept gives ATK buff + costs HP', () => {
+    const ctx = makeCtx({ totalFights: 450, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationFired: true, veteransTrialFired: true, lastStandChoiceResolved: 'accept' });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_last_stand', choice: 'accept' }));
+    expect(result.buffs.lastStandAtkRemaining).toBe(12);
+    expect(result.heroMutations.hpDelta).toBeLessThan(0);
+  });
+
+  it('last stand decline heals + gives gold', () => {
+    const ctx = makeCtx({ totalFights: 450, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationFired: true, veteransTrialFired: true, lastStandChoiceResolved: 'decline' });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_last_stand', choice: 'decline' }));
+    expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
+    expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+  });
+
+  it('last stand does not fire outside window', () => {
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationFired: true, veteransTrialFired: true });
+    expect(result.lastStandChoicePending).toBeUndefined();
+  });
+
+  it('last stand does not re-fire', () => {
+    const ctx = makeCtx({ totalFights: 450, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationFired: true, veteransTrialFired: true, lastStandFired: true });
+    expect(result.lastStandChoicePending).toBeUndefined();
+    const lsEvents = result.events.filter(e => e.type === 'event_last_stand');
+    expect(lsEvents).toHaveLength(0);
+  });
 });
