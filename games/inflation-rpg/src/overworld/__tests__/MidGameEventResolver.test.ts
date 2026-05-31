@@ -503,4 +503,39 @@ describe('resolveMidGameEvents', () => {
     });
     expect(result.finalReckoningFired).toBeUndefined();
   });
+
+  // C959: Veteran's Challenge tests
+  it('veterans challenge triggers pending in window', () => {
+    const ctx = makeCtx({ totalFights: 220, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true });
+    expect(result.veteransChallengePending).toBe(true);
+  });
+
+  it('veterans challenge accept gives EXP + ATK penalty buffs', () => {
+    const ctx = makeCtx({ totalFights: 220, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {
+      firstTrialFired: true,
+      veteransChallengeChoiceResolved: 'accept',
+    });
+    expect(result.buffs.veteransChallengeExpRemaining).toBe(6);
+    expect(result.buffs.veteransChallengeAtkRemaining).toBe(6);
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_challenge', accepted: true }));
+  });
+
+  it('veterans challenge decline emits event with no buffs', () => {
+    const ctx = makeCtx({ totalFights: 220, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {
+      firstTrialFired: true,
+      veteransChallengeChoiceResolved: 'decline',
+    });
+    expect(result.buffs.veteransChallengeExpRemaining).toBeUndefined();
+    expect(result.buffs.veteransChallengeAtkRemaining).toBeUndefined();
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_challenge', accepted: false }));
+  });
+
+  it('veterans challenge does not trigger when already fired', () => {
+    const ctx = makeCtx({ totalFights: 220, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, veteransChallengeFired: true });
+    expect(result.veteransChallengePending).toBeUndefined();
+  });
 });
