@@ -201,7 +201,7 @@ export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
 // C841: Sparring Grounds — mid-early event filling dead zone (fights 80-119)
 export const SPARRING_GROUNDS_CHANCE = 0.04; // C844: 0.03→0.04 (reduce miss rate)
 export const SPARRING_GROUNDS_MIN_FIGHTS = 70; // C877: 80→70 (fill fight 66-79 gap)
-export const SPARRING_GROUNDS_MAX_FIGHTS = 129; // C844: 119→129 (wider window)
+export const SPARRING_GROUNDS_MAX_FIGHTS = 200; // C912: 129→200 (fill fight 130-199 mid-game desert)
 export const SPARRING_GROUNDS_EXP_REWARD_MUL = 2.0; // win → 2× base EXP
 export const SPARRING_GROUNDS_HP_COST_RATE = 0.10; // lose → 10% current HP
 export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level advantage
@@ -209,7 +209,7 @@ export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level a
 // C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
 export const MERCENARY_OFFER_CHANCE = 0.03;
 export const MERCENARY_OFFER_MIN_FIGHTS = 115; // C856: 100→115 (separate from Crossroads window)
-export const MERCENARY_OFFER_MAX_FIGHTS = 400; // C903: 340→400 (fill fight 341-399 choice desert)
+export const MERCENARY_OFFER_MAX_FIGHTS = 550; // C912: 400→550 (fill fight 420-549 late-game desert)
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
 export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken

@@ -324,6 +324,15 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
       const txt = NarrativeGenerator.forChoiceEvent({ age: 30, eventType: 'unknown', choice: 'x' });
       expect(txt).toContain('선택을 내렸다');
     });
+    // C912: First Trial narrative
+    it('first trial heal', () => {
+      const txt = NarrativeGenerator.forChoiceEvent({ age: 12, eventType: 'first_trial', choice: 'heal' });
+      expect(txt).toContain('치유의 길');
+    });
+    it('first trial atk', () => {
+      const txt = NarrativeGenerator.forChoiceEvent({ age: 12, eventType: 'first_trial', choice: 'atk' });
+      expect(txt).toContain('힘의 길');
+    });
   });
 
   // C888: Consequence event narration

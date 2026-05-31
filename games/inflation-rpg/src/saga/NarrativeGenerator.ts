@@ -59,6 +59,9 @@ export class NarrativeGenerator {
       // C890: Last Stand
       last_stand_accept: '최후의 항전에 뛰어들었다',
       last_stand_decline: '최후의 항전을 거절했다',
+      // C911: First Trial
+      first_trial_heal: '첫 시련에서 치유의 길을 택했다',
+      first_trial_atk: '첫 시련에서 힘의 길을 택했다',
     };
     const key = `${opts.eventType}_${opts.choice}`;
     return `${opts.age}세에 ${labels[key] ?? '선택을 내렸다'}.`;

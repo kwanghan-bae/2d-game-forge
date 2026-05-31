@@ -85,4 +85,10 @@ export const EVENT_NARRATION: Record<string, EventNarrationEntry> = {
     accept: '콤보 15를 소각한다. 영구 EXP +8% 스택 획득!',
     decline: '콤보가 아깝다. 단조를 포기한다.',
   },
+  // C912: First Trial (2-phase player choice)
+  first_trial: {
+    trigger: '첫 시련의 빛이 내린다. 치유와 힘 중 하나를 택해야 한다.',
+    accept: '시련의 빛을 받아들였다.',
+    decline: '시련의 빛을 거절했다.',
+  },
 };
