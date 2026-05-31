@@ -1341,7 +1341,13 @@ export class EncounterEngine {
         ? (this.midGameBuffs.isActive('ej_atk') ? (1 + ELDERS_JUDGMENT_DIVERSIFY_EXP) : (1 + ELDERS_JUDGMENT_BAL_EXP_MUL))
         : 1;
       // C959: Veteran's Challenge EXP buff
-      const vcExpMul = this.midGameBuffs.isActive('vc_exp') ? VETERANS_CHALLENGE_EXP_MUL : 1;
+      // C975: EXP mul decays with consecutive defensive choices (decline penalty escalation)
+      let vcExpMul = 1;
+      if (this.midGameBuffs.isActive('vc_exp')) {
+        const declines = this.choiceHistory.getConsecutiveDeclines();
+        const decay = declines >= 2 ? Math.pow(0.85, declines - 1) : 1;
+        vcExpMul = Math.max(1.20, VETERANS_CHALLENGE_EXP_MUL * decay);
+      }
       const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul * vcExpMul);
       if (this.declineStackExpDuration > 0) this.declineStackExpDuration--;
       // C711: drop chance via extracted pure function

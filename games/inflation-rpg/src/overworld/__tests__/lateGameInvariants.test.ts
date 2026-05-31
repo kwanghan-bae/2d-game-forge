@@ -165,4 +165,18 @@ describe('C955: Mid-game pity invariants', () => {
     expect(VETERANS_CHALLENGE_HP_DRAIN).toBeGreaterThanOrEqual(0.01);
     expect(VETERANS_CHALLENGE_HP_DRAIN).toBeLessThanOrEqual(0.05);
   });
+
+  it('C975: consecutive declines decay VC EXP multiplier', () => {
+    // 0-1 declines: full bonus
+    const full = VETERANS_CHALLENGE_EXP_MUL; // 1.80
+    // 2 declines: 1.80 × 0.85^1 = 1.53
+    const after2 = Math.max(1.20, full * Math.pow(0.85, 1));
+    expect(after2).toBeCloseTo(1.53, 1);
+    // 3 declines: 1.80 × 0.85^2 ≈ 1.30
+    const after3 = Math.max(1.20, full * Math.pow(0.85, 2));
+    expect(after3).toBeCloseTo(1.30, 1);
+    // 5+ declines: hits floor of 1.20
+    const after5 = Math.max(1.20, full * Math.pow(0.85, 4));
+    expect(after5).toBe(1.20);
+  });
 });
