@@ -210,14 +210,8 @@ export class EncounterEngine {
   private runStats = new RunStatistics(); // C833: per-run statistics accumulator
   // C788: hero reference for event resolve (set at start of resolveEncounter)
   private hero!: HeroEntity;
-  private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
-  private voidRiftRemaining = 0; // C758: void rift tier+2 offset duration
-  private trialGroundsRemaining = 0; // C762: trial grounds duration (EXP×1.35, enemy +1 level)
+  // C933: colosseum, voidRift, trialGrounds, rainSanctuary, fogAmbush, windGale, clearSkyPath migrated to midGameBuffs
   private stormNexusRemaining = 0; // C770: Storm Nexus duration (ATK×1.4, HP drain 5%)
-  private rainSanctuaryRemaining = 0; // C773: Rain Sanctuary duration (gold×0.7)
-  private fogAmbushRemaining = 0; // C773: Fog Ambush duration (enemy ATK×1.2, EXP×1.3)
-  private windGaleRemaining = 0; // C782: Wind Gale duration (EXP×1.25, dodge+15%)
-  private clearSkyPathRemaining = 0; // C851: Clear Sky Path ATK×1.15 (normal weather)
   private crossroadsUsed = false; // C854: once-per-run crossroads gate
   // C932: crossroads, earlyMomentum buffs migrated to midGameBuffs (xr_atk, xr_exp, em_atk, em_exp)
   // C930: reputation, veteransTrial buffs migrated to midGameBuffs
@@ -250,16 +244,12 @@ export class EncounterEngine {
   // C929: Elder's Judgment buffs migrated to DurationBuffTracker
   private readonly midGameBuffs = new DurationBuffTracker(); // C929: shared tracker for mid-game event buffs
   private readonly choiceHistory = new ChoiceHistory(); // C883: tracks player choices for consequence events
-  private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
+  // C933: snowDrift, titanArena, crimsonTithe, astralParadox, soulForge migrated to midGameBuffs
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
   private temporalFissureRemaining = 0; // C791: Temporal Fissure (store EXP, pay back ×2)
   private temporalFissureStoredExp = 0; // C791: accumulated EXP during fissure
-  private titanArenaRemaining = 0; // C797: Titan Arena (enemy HP×1.5, ATK×1.2, EXP×2.0)
-  private crimsonTitheRemaining = 0; // C803: Crimson Tithe (HP cost → EXP×1.8 + lifesteal)
   private goldCrucibleRemaining = 0; // C803: Gold Crucible (ratio-based ATK from gold burn)
   private goldCrucibleAtkFlat = 0; // C803: burned gold × ATK_RATE
-  private astralParadoxRemaining = 0; // C800: Astral Paradox (EXP×2.5, enemy ATK×1.8)
-  private soulForgeRemaining = 0; // C806: Soul Forge (permanent EXP stack)
   private soulForgeStacks = 0; // C806: permanent stacks (max 5, each +8% EXP)
   // C788: EventOrchestrator replaces EventStateMachine + accept/decline logic
   private readonly eventOrch = new EventOrchestrator();
@@ -415,29 +405,29 @@ export class EncounterEngine {
   // C753: expose inspiration remaining for HUD
   getInspirationRemaining(): number { return this.midGameBuffs.remaining('inspiration'); }
   // C788: All event pending/resolve/remaining delegate to EventOrchestrator
-  getColosseumRemaining(): number { return this.colosseumRemaining; }
+  getColosseumRemaining(): number { return this.midGameBuffs.remaining('colosseum'); }
   getColosseumPending(): boolean { return this.eventOrch.getPending('colosseum'); }
   resolveColosseum(accept: boolean): void { this.applyEventResolve('colosseum', accept); }
-  getVoidRiftRemaining(): number { return this.voidRiftRemaining; }
+  getVoidRiftRemaining(): number { return this.midGameBuffs.remaining('void_rift'); }
   getVoidRiftPending(): boolean { return this.eventOrch.getPending('void_rift'); }
   resolveVoidRift(accept: boolean): void { this.applyEventResolve('void_rift', accept); }
-  getTrialGroundsRemaining(): number { return this.trialGroundsRemaining; }
+  getTrialGroundsRemaining(): number { return this.midGameBuffs.remaining('trial_grounds'); }
   getTrialGroundsPending(): boolean { return this.eventOrch.getPending('trial_grounds'); }
   resolveTrialGrounds(accept: boolean): void { this.applyEventResolve('trial_grounds', accept); }
   getStormNexusRemaining(): number { return this.stormNexusRemaining; }
   getStormNexusPending(): boolean { return this.eventOrch.getPending('storm_nexus'); }
   resolveStormNexus(accept: boolean): void { this.applyEventResolve('storm_nexus', accept); }
-  getRainSanctuaryRemaining(): number { return this.rainSanctuaryRemaining; }
+  getRainSanctuaryRemaining(): number { return this.midGameBuffs.remaining('rain_sanctuary'); }
   getRainSanctuaryPending(): boolean { return this.eventOrch.getPending('rain_sanctuary'); }
   resolveRainSanctuary(accept: boolean): void { this.applyEventResolve('rain_sanctuary', accept); }
-  getFogAmbushRemaining(): number { return this.fogAmbushRemaining; }
+  getFogAmbushRemaining(): number { return this.midGameBuffs.remaining('fog_ambush'); }
   getFogAmbushPending(): boolean { return this.eventOrch.getPending('fog_ambush'); }
   resolveFogAmbush(accept: boolean): void { this.applyEventResolve('fog_ambush', accept); }
-  getWindGaleRemaining(): number { return this.windGaleRemaining; }
-  getClearSkyPathRemaining(): number { return this.clearSkyPathRemaining; }
+  getWindGaleRemaining(): number { return this.midGameBuffs.remaining('wind_gale'); }
+  getClearSkyPathRemaining(): number { return this.midGameBuffs.remaining('clear_sky'); }
   getWindGalePending(): boolean { return this.eventOrch.getPending('wind_gale'); }
   resolveWindGale(accept: boolean): void { this.applyEventResolve('wind_gale', accept); }
-  getSnowDriftRemaining(): number { return this.snowDriftRemaining; }
+  getSnowDriftRemaining(): number { return this.midGameBuffs.remaining('snow_drift'); }
   getSnowDriftPending(): boolean { return this.eventOrch.getPending('snow_drift'); }
   resolveSnowDrift(accept: boolean): void { this.applyEventResolve('snow_drift', accept); }
   // C789: Abyssal Convergence
@@ -449,11 +439,11 @@ export class EncounterEngine {
   getTemporalFissurePending(): boolean { return this.eventOrch.getPending('temporal_fissure'); }
   resolveTemporalFissure(accept: boolean): void { this.applyEventResolve('temporal_fissure', accept); }
   // C797: Titan Arena
-  getTitanArenaRemaining(): number { return this.titanArenaRemaining; }
+  getTitanArenaRemaining(): number { return this.midGameBuffs.remaining('titan_arena'); }
   getTitanArenaPending(): boolean { return this.eventOrch.getPending('titan_arena'); }
   resolveTitanArena(accept: boolean): void { this.applyEventResolve('titan_arena', accept); }
   // C803: Crimson Tithe
-  getCrimsonTitheRemaining(): number { return this.crimsonTitheRemaining; }
+  getCrimsonTitheRemaining(): number { return this.midGameBuffs.remaining('crimson_tithe'); }
   getCrimsonTithePending(): boolean { return this.eventOrch.getPending('crimson_tithe'); }
   resolveCrimsonTithe(accept: boolean): void { this.applyEventResolve('crimson_tithe', accept); }
   // C800: Gold Crucible
@@ -461,10 +451,10 @@ export class EncounterEngine {
   getGoldCruciblePending(): boolean { return this.eventOrch.getPending('gold_crucible'); }
   resolveGoldCrucible(accept: boolean): void { this.applyEventResolve('gold_crucible', accept); }
   // C800: Astral Paradox
-  getAstralParadoxRemaining(): number { return this.astralParadoxRemaining; }
+  getAstralParadoxRemaining(): number { return this.midGameBuffs.remaining('astral_paradox'); }
   getAstralParadoxPending(): boolean { return this.eventOrch.getPending('astral_paradox'); }
   resolveAstralParadox(accept: boolean): void { this.applyEventResolve('astral_paradox', accept); }
-  getSoulForgeRemaining(): number { return this.soulForgeRemaining; }
+  getSoulForgeRemaining(): number { return this.midGameBuffs.remaining('soul_forge'); }
   getSoulForgePending(): boolean { return this.eventOrch.getPending('soul_forge'); }
   resolveSoulForge(accept: boolean): void { this.applyEventResolve('soul_forge', accept); }
   getSoulForgeStacks(): number { return this.soulForgeStacks; }
@@ -472,27 +462,27 @@ export class EncounterEngine {
   // C801: Generic event accessors — replaces per-event boilerplate in controllers
   // C894: Type widened to include mid-game buff remaining accessors alongside EventId
   private readonly eventRemainingMap: Record<string, () => number> = {
-    colosseum: () => this.colosseumRemaining,
-    void_rift: () => this.voidRiftRemaining,
-    trial_grounds: () => this.trialGroundsRemaining,
+    colosseum: () => this.midGameBuffs.remaining('colosseum'),
+    void_rift: () => this.midGameBuffs.remaining('void_rift'),
+    trial_grounds: () => this.midGameBuffs.remaining('trial_grounds'),
     storm_nexus: () => this.stormNexusRemaining,
-    rain_sanctuary: () => this.rainSanctuaryRemaining,
-    fog_ambush: () => this.fogAmbushRemaining,
-    wind_gale: () => this.windGaleRemaining,
-    clear_sky_path: () => this.clearSkyPathRemaining,
+    rain_sanctuary: () => this.midGameBuffs.remaining('rain_sanctuary'),
+    fog_ambush: () => this.midGameBuffs.remaining('fog_ambush'),
+    wind_gale: () => this.midGameBuffs.remaining('wind_gale'),
+    clear_sky_path: () => this.midGameBuffs.remaining('clear_sky'),
     crossroads_atk: () => this.midGameBuffs.remaining('xr_atk'),
     crossroads_exp: () => this.midGameBuffs.remaining('xr_exp'),
     early_momentum_atk: () => this.midGameBuffs.remaining('em_atk'),
     early_momentum_exp: () => this.midGameBuffs.remaining('em_exp'),
     proving_grounds_exp: () => this.provingGroundsExpRemaining,
-    snow_drift: () => this.snowDriftRemaining,
+    snow_drift: () => this.midGameBuffs.remaining('snow_drift'),
     abyssal_convergence: () => this.abyssalConvergenceRemaining,
     temporal_fissure: () => this.temporalFissureRemaining,
-    titan_arena: () => this.titanArenaRemaining,
-    crimson_tithe: () => this.crimsonTitheRemaining,
+    titan_arena: () => this.midGameBuffs.remaining('titan_arena'),
+    crimson_tithe: () => this.midGameBuffs.remaining('crimson_tithe'),
     gold_crucible: () => this.goldCrucibleRemaining,
-    astral_paradox: () => this.astralParadoxRemaining,
-    soul_forge: () => this.soulForgeRemaining,
+    astral_paradox: () => this.midGameBuffs.remaining('astral_paradox'),
+    soul_forge: () => this.midGameBuffs.remaining('soul_forge'),
   };
   getEventRemaining(id: EventId | string): number { return this.eventRemainingMap[id]?.() ?? 0; }
   getEventPending(id: EventId): boolean { return this.eventOrch.getPending(id); }
@@ -514,25 +504,25 @@ export class EncounterEngine {
         // C816: data-driven duration lookup (replaces brittle || chain)
         this.declineStackExpDuration = findEffectDuration(effects);
       }
-      if (effects.colosseumRemaining) this.colosseumRemaining = effects.colosseumRemaining;
-      if (effects.voidRiftRemaining) this.voidRiftRemaining = effects.voidRiftRemaining;
+      if (effects.colosseumRemaining) this.midGameBuffs.activate('colosseum', effects.colosseumRemaining);
+      if (effects.voidRiftRemaining) this.midGameBuffs.activate('void_rift', effects.voidRiftRemaining);
       if (effects.voidRiftRelicLevels) this.relicLevels = effects.voidRiftRelicLevels;
-      if (effects.trialGroundsRemaining) this.trialGroundsRemaining = effects.trialGroundsRemaining;
+      if (effects.trialGroundsRemaining) this.midGameBuffs.activate('trial_grounds', effects.trialGroundsRemaining);
       if (effects.stormNexusRemaining) this.stormNexusRemaining = effects.stormNexusRemaining;
-      if (effects.rainSanctuaryRemaining) this.rainSanctuaryRemaining = effects.rainSanctuaryRemaining;
+      if (effects.rainSanctuaryRemaining) this.midGameBuffs.activate('rain_sanctuary', effects.rainSanctuaryRemaining);
       if (effects.rainSanctuaryHeal) this.hero.hp = Math.min(this.hero.hpMax, this.hero.hp + effects.rainSanctuaryHeal);
-      if (effects.fogAmbushRemaining) this.fogAmbushRemaining = effects.fogAmbushRemaining;
-      if (effects.windGaleRemaining) this.windGaleRemaining = effects.windGaleRemaining;
-      if (effects.clearSkyPathRemaining) this.clearSkyPathRemaining = effects.clearSkyPathRemaining;
-      if (effects.snowDriftRemaining) this.snowDriftRemaining = effects.snowDriftRemaining;
+      if (effects.fogAmbushRemaining) this.midGameBuffs.activate('fog_ambush', effects.fogAmbushRemaining);
+      if (effects.windGaleRemaining) this.midGameBuffs.activate('wind_gale', effects.windGaleRemaining);
+      if (effects.clearSkyPathRemaining) this.midGameBuffs.activate('clear_sky', effects.clearSkyPathRemaining);
+      if (effects.snowDriftRemaining) this.midGameBuffs.activate('snow_drift', effects.snowDriftRemaining);
       if (effects.abyssalConvergenceRemaining) this.abyssalConvergenceRemaining = effects.abyssalConvergenceRemaining;
       if (effects.temporalFissureRemaining) {
         this.temporalFissureRemaining = effects.temporalFissureRemaining;
         this.temporalFissureStoredExp = 0;
       }
-      if (effects.titanArenaRemaining) this.titanArenaRemaining = effects.titanArenaRemaining;
+      if (effects.titanArenaRemaining) this.midGameBuffs.activate('titan_arena', effects.titanArenaRemaining);
       if (effects.crimsonTitheRemaining) {
-        this.crimsonTitheRemaining = effects.crimsonTitheRemaining;
+        this.midGameBuffs.activate('crimson_tithe', effects.crimsonTitheRemaining);
         this.hero.hp -= effects.crimsonTitheHpCost;
         if (this.hero.hp < 1) this.hero.hp = 1;
       }
@@ -542,9 +532,9 @@ export class EncounterEngine {
         this.hero.gold -= effects.goldCrucibleGoldBurned;
         if (this.hero.gold < 0) this.hero.gold = 0;
       }
-      if (effects.astralParadoxRemaining) this.astralParadoxRemaining = effects.astralParadoxRemaining;
+      if (effects.astralParadoxRemaining) this.midGameBuffs.activate('astral_paradox', effects.astralParadoxRemaining);
       if (effects.soulForgeRemaining) {
-        this.soulForgeRemaining = effects.soulForgeRemaining;
+        this.midGameBuffs.activate('soul_forge', effects.soulForgeRemaining);
         this.comboStreak -= effects.soulForgeComboCost;
         if (this.comboStreak < 0) this.comboStreak = 0;
         this.soulForgeStacks = Math.min(this.soulForgeStacks + 1, SOUL_FORGE_MAX_STACKS);
@@ -571,14 +561,14 @@ export class EncounterEngine {
   // C798: Aggregate accessor for HUD — replaces N individual getter calls
   getActiveEventState() {
     return {
-      trialGroundsRemaining: this.trialGroundsRemaining,
-      colosseumRemaining: this.colosseumRemaining,
-      voidRiftRemaining: this.voidRiftRemaining,
+      trialGroundsRemaining: this.midGameBuffs.remaining('trial_grounds'),
+      colosseumRemaining: this.midGameBuffs.remaining('colosseum'),
+      voidRiftRemaining: this.midGameBuffs.remaining('void_rift'),
       stormNexusRemaining: this.stormNexusRemaining,
-      rainSanctuaryRemaining: this.rainSanctuaryRemaining,
-      fogAmbushRemaining: this.fogAmbushRemaining,
-      windGaleRemaining: this.windGaleRemaining,
-      clearSkyPathRemaining: this.clearSkyPathRemaining,
+      rainSanctuaryRemaining: this.midGameBuffs.remaining('rain_sanctuary'),
+      fogAmbushRemaining: this.midGameBuffs.remaining('fog_ambush'),
+      windGaleRemaining: this.midGameBuffs.remaining('wind_gale'),
+      clearSkyPathRemaining: this.midGameBuffs.remaining('clear_sky'),
       crossroadsUsed: this.crossroadsUsed,
       crossroadsAtkRemaining: this.midGameBuffs.remaining('xr_atk'),
       crossroadsExpRemaining: this.midGameBuffs.remaining('xr_exp'),
@@ -586,14 +576,14 @@ export class EncounterEngine {
       earlyMomentumExpRemaining: this.midGameBuffs.remaining('em_exp'),
       earlyMomentumLastMilestone: this.earlyMomentumLastMilestone,
       provingGroundsExpRemaining: this.provingGroundsExpRemaining,
-      snowDriftRemaining: this.snowDriftRemaining,
+      snowDriftRemaining: this.midGameBuffs.remaining('snow_drift'),
       abyssalConvergenceRemaining: this.abyssalConvergenceRemaining,
       temporalFissureRemaining: this.temporalFissureRemaining,
-      titanArenaRemaining: this.titanArenaRemaining,
-      crimsonTitheRemaining: this.crimsonTitheRemaining,
+      titanArenaRemaining: this.midGameBuffs.remaining('titan_arena'),
+      crimsonTitheRemaining: this.midGameBuffs.remaining('crimson_tithe'),
       goldCrucibleRemaining: this.goldCrucibleRemaining,
-      astralParadoxRemaining: this.astralParadoxRemaining,
-      soulForgeRemaining: this.soulForgeRemaining,
+      astralParadoxRemaining: this.midGameBuffs.remaining('astral_paradox'),
+      soulForgeRemaining: this.midGameBuffs.remaining('soul_forge'),
       eventMomentumAtkRemaining: this.midGameBuffs.remaining('ev_mom_atk'),
       eventMomentumDensityRemaining: this.midGameBuffs.remaining('ev_mom_density'),
     };
@@ -813,11 +803,11 @@ export class EncounterEngine {
       // C669: enemy prestige scaling — enemies scale with hero prestige
       const { hpMul: enemyPrestigeHpMul, atkMul: enemyPrestigeAtkMul } = computeEnemyPrestigeScale(this.prestigeCount);
       // C771: Void Rift multiplicative scaling (inflation-safe: percentage of level)
-      const voidRiftMul = this.voidRiftRemaining > 0
+      const voidRiftMul = this.midGameBuffs.isActive('void_rift')
         ? 1 + VOID_RIFT_SCALE_PER_TIER * Math.ceil(Math.log2(Math.max(hero.level, 200) / 200) + 1)
         : 1;
       // C769: Trial Grounds multiplicative offset (inflation-safe: constant % regardless of level)
-      const trialGroundsLevel = this.trialGroundsRemaining > 0 ? Math.floor(hero.level * TRIAL_GROUNDS_LEVEL_MUL) : hero.level;
+      const trialGroundsLevel = this.midGameBuffs.isActive('trial_grounds') ? Math.floor(hero.level * TRIAL_GROUNDS_LEVEL_MUL) : hero.level;
       const effectiveEnemyLevel = Math.floor(trialGroundsLevel * voidRiftMul);
       const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, effectiveEnemyLevel, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * adaptiveHpMul * enemyPrestigeHpMul));
       const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, effectiveEnemyLevel, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul * enemyPrestigeAtkMul * (this.abyssalConvergenceRemaining > 0 ? ABYSSAL_CONVERGENCE_ENEMY_ATK_MUL : 1));
@@ -941,7 +931,7 @@ export class EncounterEngine {
       this.lastAtkBreakdownInput = atkInput;
       // C723: weatherSpeedMul (fog=0.90) reduces effective ATK (hero is slower)
       // C782: Snow Drift ATK penalty (hero ATK ×0.90)
-      const snowDriftAtkMul = this.snowDriftRemaining > 0 ? SNOW_DRIFT_ATK_PENALTY : 1;
+      const snowDriftAtkMul = this.midGameBuffs.isActive('snow_drift') ? SNOW_DRIFT_ATK_PENALTY : 1;
       // C832: Wandering Merchant ATK buff
       const merchantAtkMul = this.midGameBuffs.isActive('wm_atk') ? (1 + WANDERING_MERCHANT_ATK_MUL) : 1;
       const baseHeroAtk = Math.floor(computeHeroAtk(atkInput) * weatherSpeedMul * snowDriftAtkMul * merchantAtkMul);
@@ -953,7 +943,7 @@ export class EncounterEngine {
       // C212: arena enemy HP boost
       let eHp = this.arenaActive ? enemyHp * ARENA_ENEMY_HP_MUL : enemyHp;
       // C797: Titan Arena enemy HP boost
-      if (this.titanArenaRemaining > 0) eHp = Math.floor(eHp * TITAN_ARENA_ENEMY_HP_MUL);
+      if (this.midGameBuffs.isActive('titan_arena')) eHp = Math.floor(eHp * TITAN_ARENA_ENEMY_HP_MUL);
       let didCrit = false;
       let hitCount = 0;
       let rageTurn = 0;
@@ -1063,7 +1053,7 @@ export class EncounterEngine {
           // C171: dodge chance based on kill count
           // C723: rain weather boosts dodge chance
           const baseDodgeChance = Math.min(DODGE_CAP, Math.floor(this.killCount / 100) * DODGE_PER_100_KILLS);
-          const windGaleDodge = this.windGaleRemaining > 0 ? WIND_GALE_DODGE_BONUS : 0; // C782
+          const windGaleDodge = this.midGameBuffs.isActive('wind_gale') ? WIND_GALE_DODGE_BONUS : 0; // C782
           const dodgeChance = Math.min(DODGE_CAP, (baseDodgeChance + windGaleDodge) * weatherDodgeMul);
           if (dodgeChance > 0 && this.rng.chance(dodgeChance)) {
             dodgeCount++; // C268
@@ -1098,12 +1088,12 @@ export class EncounterEngine {
             heroLevel: hero.level,
             cursedAltarAtkBuff: this.cursedAltarAtkBuff,
             isNight,
-            colosseumActive: this.colosseumRemaining > 0,
-            fogAmbushActive: this.fogAmbushRemaining > 0,
-            windGaleActive: this.windGaleRemaining > 0,
-            snowDriftActive: this.snowDriftRemaining > 0,
+            colosseumActive: this.midGameBuffs.isActive('colosseum'),
+            fogAmbushActive: this.midGameBuffs.isActive('fog_ambush'),
+            windGaleActive: this.midGameBuffs.isActive('wind_gale'),
+            snowDriftActive: this.midGameBuffs.isActive('snow_drift'),
             abyssalConvergenceActive: this.abyssalConvergenceRemaining > 0,
-            titanArenaActive: this.titanArenaRemaining > 0, astralParadoxActive: this.astralParadoxRemaining > 0, crimsonTitheActive: this.crimsonTitheRemaining > 0,
+            titanArenaActive: this.midGameBuffs.isActive('titan_arena'), astralParadoxActive: this.midGameBuffs.isActive('astral_paradox'), crimsonTitheActive: this.midGameBuffs.isActive('crimson_tithe'),
           });
           const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.midGameBuffs.isActive('merc_shield') ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.midGameBuffs.isActive('rep_shield') ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('vt_shield') ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('fr_shield') ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
           // C380: prestige shield blocks hits
@@ -1289,14 +1279,14 @@ export class EncounterEngine {
         hasScholarLens: this.hasRelic(5),
         critExpChain: this.critExpChain,
         baseExpGain,
-        colosseumActive: this.colosseumRemaining > 0,
-        trialGroundsActive: this.trialGroundsRemaining > 0,
-        fogAmbushActive: this.fogAmbushRemaining > 0,
-        windGaleActive: this.windGaleRemaining > 0,
-        snowDriftActive: this.snowDriftRemaining > 0,
+        colosseumActive: this.midGameBuffs.isActive('colosseum'),
+        trialGroundsActive: this.midGameBuffs.isActive('trial_grounds'),
+        fogAmbushActive: this.midGameBuffs.isActive('fog_ambush'),
+        windGaleActive: this.midGameBuffs.isActive('wind_gale'),
+        snowDriftActive: this.midGameBuffs.isActive('snow_drift'),
         abyssalConvergenceActive: this.abyssalConvergenceRemaining > 0,
-        titanArenaActive: this.titanArenaRemaining > 0, astralParadoxActive: this.astralParadoxRemaining > 0, crimsonTitheActive: this.crimsonTitheRemaining > 0,
-        voidRiftTier: this.voidRiftRemaining > 0
+        titanArenaActive: this.midGameBuffs.isActive('titan_arena'), astralParadoxActive: this.midGameBuffs.isActive('astral_paradox'), crimsonTitheActive: this.midGameBuffs.isActive('crimson_tithe'),
+        voidRiftTier: this.midGameBuffs.isActive('void_rift')
           ? Math.ceil(Math.log2(Math.max(hero.level, 200) / 200) + 1)
           : 0,
       });
@@ -1400,9 +1390,9 @@ export class EncounterEngine {
       // Apply gold to hero
       let goldEarned = goldResult.goldEarned;
       // C773: Rain Sanctuary gold penalty
-      if (this.rainSanctuaryRemaining > 0) goldEarned = Math.floor(goldEarned * RAIN_SANCTUARY_GOLD_MUL);
+      if (this.midGameBuffs.isActive('rain_sanctuary')) goldEarned = Math.floor(goldEarned * RAIN_SANCTUARY_GOLD_MUL);
       // C785: Wind Gale gold penalty (trade-off for EXP+dodge)
-      if (this.windGaleRemaining > 0) goldEarned = Math.floor(goldEarned * WIND_GALE_GOLD_PENALTY);
+      if (this.midGameBuffs.isActive('wind_gale')) goldEarned = Math.floor(goldEarned * WIND_GALE_GOLD_PENALTY);
       // C795: Abyssal Convergence gold penalty (trade-off for high EXP)
       if (this.abyssalConvergenceRemaining > 0) goldEarned = Math.floor(goldEarned * ABYSSAL_CONVERGENCE_GOLD_MUL);
       // C902: Greedy gold gain buff
@@ -1446,7 +1436,7 @@ export class EncounterEngine {
       if (healResult.overkillHeal > 0) hero.heal(healResult.overkillHeal);
       if (healResult.survivalHeal > 0) hero.heal(healResult.survivalHeal);
       // C803: Crimson Tithe lifesteal
-      if (this.crimsonTitheRemaining > 0) {
+      if (this.midGameBuffs.isActive('crimson_tithe')) {
         const titheHeal = Math.floor(totalDamageDealt * CRIMSON_TITHE_LIFESTEAL);
         if (titheHeal > 0) hero.heal(titheHeal);
       }
@@ -1978,7 +1968,7 @@ export class EncounterEngine {
       // C858: Delegated to computeBuffedHeroAtk pure function
       heroAtk: computeBuffedHeroAtk(p.hero.atk, {
         stormNexus: this.stormNexusRemaining > 0,
-        clearSky: this.clearSkyPathRemaining > 0,
+        clearSky: this.midGameBuffs.isActive('clear_sky'),
         crossroads: this.midGameBuffs.isActive('xr_atk'),
         earlyMomentum: this.midGameBuffs.isActive('em_atk'),
         reputation: this.midGameBuffs.isActive('rep_atk'),
@@ -2376,15 +2366,15 @@ export class EncounterEngine {
     this.temporalFissureRemaining = 0;
     this.temporalFissureStoredExp = Math.floor(this.temporalFissureStoredExp * 0.30);
     // C797: Titan Arena lost on death
-    this.titanArenaRemaining = 0;
+    this.midGameBuffs.deactivate('titan_arena');
     // C803: Crimson Tithe lost on death (combo reset as penalty)
-    if (this.crimsonTitheRemaining > 0) this.comboStreak = 0;
-    this.crimsonTitheRemaining = 0;
+    if (this.midGameBuffs.isActive('crimson_tithe')) this.comboStreak = 0;
+    this.midGameBuffs.deactivate('crimson_tithe');
     // C800: Gold Crucible + Astral Paradox lost on death
     this.goldCrucibleRemaining = 0;
     this.goldCrucibleAtkFlat = 0;
-    this.astralParadoxRemaining = 0;
-    this.soulForgeRemaining = 0; // duration lost, but stacks are permanent
+    this.midGameBuffs.deactivate('astral_paradox');
+    this.midGameBuffs.deactivate('soul_forge'); // duration lost, but stacks are permanent
     // C793: Event Momentum buffs lost on death
     this.midGameBuffs.deactivate('ev_mom_atk');
     this.midGameBuffs.deactivate('ev_mom_density');
@@ -2459,30 +2449,9 @@ export class EncounterEngine {
     if (result.eldersJudgmentFired) this.eldersJudgmentFired = true;
   }
 
-  // C819/C837: Batch decrement for simple duration counters (no side effects)
+  // C933: All env effect + event buff durations now tracked via midGameBuffs
   private tickSimpleDurations(): void {
-    if (this.colosseumRemaining > 0) this.colosseumRemaining--;
-    if (this.voidRiftRemaining > 0) this.voidRiftRemaining--;
-    if (this.trialGroundsRemaining > 0) this.trialGroundsRemaining--;
-    if (this.rainSanctuaryRemaining > 0) this.rainSanctuaryRemaining--;
-    if (this.fogAmbushRemaining > 0) this.fogAmbushRemaining--;
-    if (this.windGaleRemaining > 0) this.windGaleRemaining--;
-    if (this.clearSkyPathRemaining > 0) this.clearSkyPathRemaining--;
-    // C932: crossroads + earlyMomentum ticked via midGameBuffs.tick()
-    if (this.snowDriftRemaining > 0) this.snowDriftRemaining--;
-    if (this.titanArenaRemaining > 0) this.titanArenaRemaining--;
-    if (this.crimsonTitheRemaining > 0) this.crimsonTitheRemaining--;
-    if (this.astralParadoxRemaining > 0) this.astralParadoxRemaining--;
-    if (this.soulForgeRemaining > 0) this.soulForgeRemaining--;
-    // C932: wanderingMerchantAtk + mercenaryShield ticked via midGameBuffs.tick()
-    // C883: Reputation buff decrements via midGameBuffs.tick()
-    // C887: Veteran's Trial buff decrements via midGameBuffs.tick()
-    // C890: Last Stand buff decrement via midGameBuffs.tick()
-    // C896: Final Reckoning buff decrements via midGameBuffs.tick()
-    // C902: Greedy gold gain buff decrement via midGameBuffs.tick()
-    // C929: First Trial + Wandering Sage + Elder's Judgment buffs ticked via midGameBuffs
     this.midGameBuffs.tick();
-    // C932: prestigeEcho, inspiration, mentor, eventMomentum ticked via midGameBuffs.tick()
   }
 
   // C855: Post-victory EXP bonuses (hoard, theft, prestige floor, trophy, temporal fissure, overflow)
