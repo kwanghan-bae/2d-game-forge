@@ -20,6 +20,7 @@ import { computePostVictoryExp } from './encounter/PostVictoryExpCalculator';
 import { resolveMidGameEvents } from './encounter/MidGameEventResolver';
 import { ChoiceHistory, classifyChoice } from './encounter/ChoiceHistory';
 import { DurationBuffTracker } from './encounter/DurationBuffTracker';
+import { PermanentRewardTracker } from './encounter/PermanentRewardTracker';
 import { tickWeatherHazards as tickWeatherHazardsPure } from './encounter/WeatherHazardTicker';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
@@ -244,6 +245,7 @@ export class EncounterEngine {
   private eldersJudgmentFired = false; // C926: once-per-run
   // C929: Elder's Judgment buffs migrated to DurationBuffTracker
   private readonly midGameBuffs = new DurationBuffTracker(); // C929: shared tracker for mid-game event buffs
+  private readonly permanentRewards = new PermanentRewardTracker(); // C939: non-buff permanent rewards
   private readonly choiceHistory = new ChoiceHistory(); // C883: tracks player choices for consequence events
   // C933: snowDrift, titanArena, crimsonTithe, astralParadox, soulForge migrated to midGameBuffs
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
@@ -588,6 +590,8 @@ export class EncounterEngine {
       eventMomentumAtkRemaining: this.midGameBuffs.remaining('ev_mom_atk'),
       eventMomentumDensityRemaining: this.midGameBuffs.remaining('ev_mom_density'),
       statShardAtk: this.statShardAtk,
+      enemyMorphRemaining: this.permanentRewards.enemyMorphRemaining,
+      enemyMorphDrRate: this.permanentRewards.enemyMorphDrRate,
     };
   }
   getTotalDeaths(): number { return this.totalDeaths; }
@@ -727,6 +731,8 @@ export class EncounterEngine {
     if (this.midGameBuffs.isActive('ev_mom_density')) activeBuffs.push('이벤트 기세 밀도');
     // C938: Stat Shard permanent ATK indicator
     if (this.statShardAtk > 0) activeBuffs.push(`파편 ATK +${this.statShardAtk}`);
+    // C939: Enemy Morph indicator
+    if (this.permanentRewards.enemyMorphActive) activeBuffs.push(`적 약화 ${this.permanentRewards.enemyMorphRemaining}턴`);
     const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
     if (!deathSaveBlocked) {
@@ -833,7 +839,7 @@ export class EncounterEngine {
       const trialGroundsLevel = this.midGameBuffs.isActive('trial_grounds') ? Math.floor(hero.level * TRIAL_GROUNDS_LEVEL_MUL) : hero.level;
       const effectiveEnemyLevel = Math.floor(trialGroundsLevel * voidRiftMul);
       const enemyHp = Math.max(1, Math.floor(enemyHpAtLevel(ENEMY_BASE_HP, effectiveEnemyLevel, isBoss ? BOSS_HP_MUL : hpMul) * bossStreakScale * timePressureMul * adaptiveHpMul * enemyPrestigeHpMul));
-      const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, effectiveEnemyLevel, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul * enemyPrestigeAtkMul * (this.abyssalConvergenceRemaining > 0 ? ABYSSAL_CONVERGENCE_ENEMY_ATK_MUL : 1));
+      const enemyAtk = Math.floor(enemyAtkAtLevel(ENEMY_BASE_ATK, effectiveEnemyLevel, isBoss ? BOSS_ATK_MUL : atkMul) * bossStreakScale * adaptiveAtkMul * enemyPrestigeAtkMul * (this.abyssalConvergenceRemaining > 0 ? ABYSSAL_CONVERGENCE_ENEMY_ATK_MUL : 1) * (this.permanentRewards.enemyMorphActive ? (1 - this.permanentRewards.enemyMorphDrRate) : 1));
 
       if (hero.staggered) return events;
       // C439: decrement death defiance cooldown
@@ -2472,11 +2478,16 @@ export class EncounterEngine {
     if (result.eldersJudgmentFired) this.eldersJudgmentFired = true;
     // C938: Stat Shard — permanent ATK bonus (stacks)
     if (result.statShardAtk !== undefined) this.statShardAtk += result.statShardAtk;
+    // C939: Enemy Morph — weakened enemies for N fights
+    if (result.enemyMorphDuration !== undefined && result.enemyMorphDrRate !== undefined) {
+      this.permanentRewards.grantEnemyMorph(result.enemyMorphDuration, result.enemyMorphDrRate);
+    }
   }
 
   // C933: All env effect + event buff durations now tracked via midGameBuffs
   private tickSimpleDurations(): void {
     this.midGameBuffs.tick();
+    this.permanentRewards.tickEnemyMorph();
   }
 
   // C855: Post-victory EXP bonuses (hoard, theft, prestige floor, trophy, temporal fissure, overflow)

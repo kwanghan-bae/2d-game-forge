@@ -69,6 +69,9 @@ import {
   ELDERS_JUDGMENT_DIVERSIFY_DURATION,
   STAT_SHARD_ATK_FLAT,
   STAT_SHARD_CHANCE,
+  ENEMY_MORPH_DURATION,
+  ENEMY_MORPH_DR_RATE,
+  ENEMY_MORPH_CHANCE,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -145,6 +148,8 @@ export interface MidGameResult {
     lastStandAtkRemaining?: number; // C890
   };
   statShardAtk?: number; // C938: permanent ATK shard (flat bonus)
+  enemyMorphDuration?: number; // C939: enemy morph duration (fights)
+  enemyMorphDrRate?: number; // C939: enemy morph damage reduction rate
   greedyGoldMul?: number; // C902: greedy gold gain multiplier
   crossroadsUsed?: boolean;
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
@@ -171,6 +176,8 @@ export function resolveMidGameEvents(
   const buffs: MidGameResult['buffs'] = {};
   let crossroadsUsed = false;
   let statShardAtk: number | undefined;
+  let enemyMorphDuration: number | undefined;
+  let enemyMorphDrRate: number | undefined;
 
   // Wandering Merchant — C881: two-phase player choice (heal/atk/gamble)
   if (pending.wanderingMerchantPending) {
@@ -204,7 +211,13 @@ export function resolveMidGameEvents(
     if (won) {
       const expGained = Math.floor(ctx.hero.level * SPARRING_GROUNDS_EXP_REWARD_MUL);
       heroMutations.expGain = (heroMutations.expGain ?? 0) + expGained;
-      events.push({ type: 'event_sparring_grounds', won: true, expGained, hpLost: 0 });
+      // C939: Enemy Morph — 30% chance to weaken enemies on sparring win
+      const morphGranted = ctx.rngChance(ENEMY_MORPH_CHANCE);
+      if (morphGranted) {
+        enemyMorphDuration = ENEMY_MORPH_DURATION;
+        enemyMorphDrRate = ENEMY_MORPH_DR_RATE;
+      }
+      events.push({ type: 'event_sparring_grounds', won: true, expGained, hpLost: 0, morphGranted });
     } else {
       const hpLost = Math.floor(ctx.hero.hp * SPARRING_GROUNDS_HP_COST_RATE);
       heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) - hpLost;
@@ -419,5 +432,5 @@ export function resolveMidGameEvents(
     return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
   }
 
-  return { events, heroMutations, buffs, crossroadsUsed, statShardAtk };
+  return { events, heroMutations, buffs, crossroadsUsed, statShardAtk, enemyMorphDuration, enemyMorphDrRate };
 }

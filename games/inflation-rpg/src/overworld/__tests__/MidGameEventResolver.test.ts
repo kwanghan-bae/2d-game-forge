@@ -120,6 +120,22 @@ describe('resolveMidGameEvents', () => {
     expect(result.statShardAtk).toBeUndefined();
   });
 
+  // C939: Enemy Morph
+  it('sparring grounds win grants enemy morph with 30% chance', () => {
+    const ctx = makeCtx({ totalFights: 15, rngChance: () => true, rngFloat: () => 0.3 });
+    const result = resolveMidGameEvents(ctx, { sparringGroundsPending: true, firstTrialFired: true });
+    expect(result.events[0]).toMatchObject({ type: 'event_sparring_grounds', won: true, morphGranted: true });
+    expect(result.enemyMorphDuration).toBe(4);
+    expect(result.enemyMorphDrRate).toBe(0.20);
+  });
+
+  it('sparring grounds win without morph when rng fails', () => {
+    const ctx = makeCtx({ totalFights: 15, rngChance: () => false, rngFloat: () => 0.3 });
+    const result = resolveMidGameEvents(ctx, { sparringGroundsPending: true, firstTrialFired: true });
+    expect(result.events[0]).toMatchObject({ type: 'event_sparring_grounds', won: true });
+    expect(result.enemyMorphDuration).toBeUndefined();
+  });
+
   // C911: First Trial 2-phase pending tests
   it('first trial returns pending when no choice resolved', () => {
     const ctx = makeCtx({ hero: { hp: 400, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });

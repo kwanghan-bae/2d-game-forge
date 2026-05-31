@@ -254,6 +254,10 @@ export const PROVING_GROUNDS_MANUAL_BONUS = 0.25; // C877: +25% EXP mul when pla
 // C938: Stat Shard — permanent (run-lifetime) ATK bonus from Proving Grounds victory
 export const STAT_SHARD_ATK_FLAT = 3; // +3 flat ATK per shard (stacks)
 export const STAT_SHARD_CHANCE = 0.40; // 40% chance on Proving Grounds win
+// C939: Enemy Morph — weakens enemies for N fights (granted from Sparring Grounds)
+export const ENEMY_MORPH_DURATION = 4; // 4 fights with weakened enemies
+export const ENEMY_MORPH_DR_RATE = 0.20; // enemies deal 20% less damage during morph
+export const ENEMY_MORPH_CHANCE = 0.30; // 30% chance on Sparring Grounds win
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
