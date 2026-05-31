@@ -23,6 +23,12 @@ import {
   FIRST_TRIAL_EXP_MUL,
   WANDERING_SAGE_EXP_MUL,
   ELDERS_JUDGMENT_BAL_EXP_MUL,
+  WANDERING_MERCHANT_ATK_MUL,
+  CROSSROADS_ATK_MUL,
+  WANDERING_SAGE_ATK_MUL,
+  ELDERS_JUDGMENT_AGG_ATK_MUL,
+  ENDGAME_SURGE_ATK_MUL,
+  ECHO_MEMORY_ATK_MUL,
 } from '../encounter/constants-events';
 import { LATE_GAME_EVENTS } from '../encounter/EventGateConfig';
 
@@ -109,5 +115,19 @@ describe('C955: Mid-game pity invariants', () => {
     expect(maxStack).toBeLessThan(15);
     // But must be at least 5× to feel rewarding
     expect(maxStack).toBeGreaterThan(5);
+  });
+
+  it('max theoretical ATK buff stacking is bounded', () => {
+    // ATK buffs from mid-game events (multiplicative chain)
+    const maxAtkStack = (1 + WANDERING_MERCHANT_ATK_MUL)
+      * (1 + CROSSROADS_ATK_MUL)
+      * (1 + WANDERING_SAGE_ATK_MUL)
+      * (1 + ELDERS_JUDGMENT_AGG_ATK_MUL)
+      * (1 + ENDGAME_SURGE_ATK_MUL)
+      * (1 + ECHO_MEMORY_ATK_MUL);
+    // Should not exceed 3× total (exponential growth comes from levels, not buffs)
+    expect(maxAtkStack).toBeLessThan(3.0);
+    // Must provide meaningful boost (at least 1.5×)
+    expect(maxAtkStack).toBeGreaterThan(1.5);
   });
 });
