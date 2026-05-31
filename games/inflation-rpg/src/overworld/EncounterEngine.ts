@@ -704,6 +704,25 @@ export class EncounterEngine {
     if (this.midGameBuffs.isActive('ej_atk')) activeBuffs.push('장로 ATK');
     if (this.midGameBuffs.isActive('ej_shield')) activeBuffs.push('장로 방패');
     if (this.midGameBuffs.isActive('ej_exp')) activeBuffs.push('장로 EXP');
+    // C936: Environment effect buffs (migrated to midGameBuffs in C933)
+    if (this.midGameBuffs.isActive('colosseum')) activeBuffs.push('콜로세움');
+    if (this.midGameBuffs.isActive('void_rift')) activeBuffs.push('공허 균열');
+    if (this.midGameBuffs.isActive('trial_grounds')) activeBuffs.push('시험장');
+    if (this.midGameBuffs.isActive('rain_sanctuary')) activeBuffs.push('비의 성소');
+    if (this.midGameBuffs.isActive('fog_ambush')) activeBuffs.push('안개 매복');
+    if (this.midGameBuffs.isActive('wind_gale')) activeBuffs.push('돌풍');
+    if (this.midGameBuffs.isActive('clear_sky')) activeBuffs.push('맑은 하늘');
+    if (this.midGameBuffs.isActive('snow_drift')) activeBuffs.push('눈보라');
+    if (this.midGameBuffs.isActive('titan_arena')) activeBuffs.push('타이탄 투기장');
+    if (this.midGameBuffs.isActive('crimson_tithe')) activeBuffs.push('핏빛 공물');
+    if (this.midGameBuffs.isActive('astral_paradox')) activeBuffs.push('성계 역설');
+    if (this.midGameBuffs.isActive('soul_forge')) activeBuffs.push('영혼 화로');
+    // C936: Event/misc buffs (migrated to midGameBuffs in C932)
+    if (this.midGameBuffs.isActive('prestige_echo')) activeBuffs.push('명성 메아리');
+    if (this.midGameBuffs.isActive('inspiration')) activeBuffs.push('영감');
+    if (this.midGameBuffs.isActive('mentor')) activeBuffs.push('멘토');
+    if (this.midGameBuffs.isActive('ev_mom_atk')) activeBuffs.push('이벤트 기세 ATK');
+    if (this.midGameBuffs.isActive('ev_mom_density')) activeBuffs.push('이벤트 기세 밀도');
     const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
     if (!deathSaveBlocked) {
