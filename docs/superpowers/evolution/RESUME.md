@@ -1,34 +1,40 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 871
+- Cycle: 874
 - Target: 600+ (연속 진화)
-- Last commit: C871 BUFF_STACK_CAP 1.65 + density ramp 120 + proving win 70%
-- Vitest: 2268 pass / 0 fail
-- EncounterEngine: ~2500 lines
-- Critic score: 20/40 (C871 collab, 플레이어 체감 기준 재보정)
+- Last commit: C874 proving 6% + density slope 0.008 + proving window 110
+- Vitest: 2297 pass / 0 fail
+- EncounterEngine: ~2485 lines
+- Critic score: 20/40 (C874 collab, 변동 없음 — player agency 여전히 0)
 
-## 레이어 카운터 (C854-C868 era)
-- 시스템: 5 (C854, C857, C860, C863, C866)
-- 구조: 5 (C855, C858, C861, C864, C867)
-- 밸런스: 5 (C856, C859, C862, C865, C868)
-- 콜라보: 5 (C856, C859, C862, C865, C868)
+## 레이어 카운터 (C866-C874 era)
+- 시스템: 3 (C866, C869, C872)
+- 구조: 3 (C867, C870, C873)
+- 밸런스: 3 (C868, C871, C874)
+- 콜라보: 3 (C868, C871, C874)
 
 ## 제약
-- cycles_since_collab: 0 (C871 is collab)
-- Next collab: C874
-- EncounterEngine: ~2500 lines
-- Layer rotation: system → structure → balance (C872=system, C873=structure, C874=balance+collab)
+- cycles_since_collab: 0 (C874 is collab)
+- Next collab: C877
+- EncounterEngine: ~2485 lines
+- Layer rotation: system → structure → balance (C875=system, C876=structure, C877=balance+collab)
 
-## 🔴 Critical: UI Consumer Gap
-- 모든 mid-game events (proving/crossroads/storm/merchant) UI 표시 0px
-- "시뮬레이터가 아닌 게임"으로 전환 필요
-- C872에서 toast pipeline 추가 최우선
+## 🔴 Critical: Player Agency = 0
+- Mid-game events 전부 auto-resolve (MidGameEventResolver heuristic)
+- 토스트는 "통보"이지 "선택"이 아니다
+- C875에서 Proving Grounds choice modal 추가 최우선
+- "보여주기 → 선택하기" 패러다임 전환 시작
 
-## 다음 3사이클 (C871 합의)
-- C872 [system]: Mid-game event toast pipeline (EventChoiceToastLogic + OverworldRunner wire)
-- C873 [structure]: Extract combat resolution loop OR constants domain split (−200 LOC)
-- C874 [balance+collab]: PROVING_GROUNDS_CHANCE 6% + density slope 0.008 + late pool expansion
+## 다음 3사이클 (C874 합의)
+- C875 [system]: Proving Grounds 선택 게이트 (fight/flee 2지선다 + 2초 timeout fallback)
+- C876 [structure]: EventChoiceOverlay + FSM 분리 (idle/presenting/resolved)
+- C877 [balance+collab]: 수동 선택 보상 +25% + SPARRING 70 + MOMENTUM 70
+
+## 달성 사항 (C872-C874)
+- C872 [system]: Mid-game event toast pipeline (16 labels + resolveEventToastKey + OverworldRunner wire)
+- C873 [structure]: Extract WeatherHazardTicker pure function (8 tests)
+- C874 [balance+collab]: PROVING_GROUNDS_CHANCE 6% + window 55-110 + density slope 0.008
 
 ## 달성 사항 (C854-C868)
 - C854 [system]: Crossroads Choice Event
