@@ -72,8 +72,8 @@ describe('CombatCalculator.computeHeroAtk', () => {
 });
 
 describe('CombatCalculator.computeBuffedHeroAtk', () => {
-  const muls = { stormNexusMul: 1.40, clearSkyMul: 1.15, crossroadsMul: 1.20 };
-  const off = { stormNexus: false, clearSky: false, crossroads: false };
+  const muls = { stormNexusMul: 1.40, clearSkyMul: 1.15, crossroadsMul: 1.20, earlyMomentumMul: 1.03 };
+  const off = { stormNexus: false, clearSky: false, crossroads: false, earlyMomentum: false };
 
   it('no buffs → base unchanged', () => {
     expect(computeBuffedHeroAtk(100, { ...off, ...muls })).toBe(100);
@@ -104,6 +104,14 @@ describe('CombatCalculator.computeBuffedHeroAtk', () => {
   });
 
   it('all three → ×1.932', () => {
-    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, ...muls })).toBe(193);
+    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, earlyMomentum: false, ...muls })).toBe(193);
+  });
+
+  it('earlyMomentum only → ×1.03', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, earlyMomentum: true, ...muls })).toBe(103);
+  });
+
+  it('earlyMomentum + crossroads → ×1.236', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, earlyMomentum: true, crossroads: true, ...muls })).toBe(123);
   });
 });

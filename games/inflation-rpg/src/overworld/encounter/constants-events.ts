@@ -224,6 +224,14 @@ export const CROSSROADS_ATK_MUL = 0.18; // C859: 0.20→0.18 (composable stack r
 export const CROSSROADS_EXP_DURATION = 5;
 export const CROSSROADS_EXP_MUL = 1.30; // ×1.3 EXP for duration
 export const CROSSROADS_GOLD_BURST_MUL = 50; // level × 50 gold
+// C860: Early-game Momentum — fight 1-50 micro-rewards on combo milestones
+export const EARLY_MOMENTUM_MAX_FIGHT = 50;
+export const EARLY_MOMENTUM_ATK_MUL = 0.03; // +3% composable ATK buff
+export const EARLY_MOMENTUM_ATK_DURATION = 2;
+export const EARLY_MOMENTUM_EXP_MUL = 1.15; // ×1.15 EXP for 3 fights
+export const EARLY_MOMENTUM_EXP_DURATION = 3;
+export const EARLY_MOMENTUM_GOLD_MUL = 30; // level × 30 gold burst
+export const EARLY_MOMENTUM_STREAK_INTERVAL = 5; // every 5 consecutive wins
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
