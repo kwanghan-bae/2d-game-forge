@@ -50,6 +50,7 @@ export interface MidGamePending {
   sparringGroundsPending?: boolean;
   mercenaryOfferPending?: boolean;
   crossroadsPending?: boolean;
+  provingChoiceResolved?: 'accept' | 'decline'; // C875: player's choice (if already made)
 }
 
 export interface MidGameResult {
@@ -67,6 +68,7 @@ export interface MidGameResult {
     crossroadsExpRemaining?: number;
   };
   crossroadsUsed?: boolean;
+  provingPending?: boolean; // C875: true = player choice needed, pause game loop
 }
 
 export function resolveMidGameEvents(
@@ -116,18 +118,30 @@ export function resolveMidGameEvents(
     }
   }
 
-  // Proving Grounds (fight 55-90)
+  // Proving Grounds (fight 55-110)
+  // C875: If choice not yet resolved, signal provingPending for player decision
   if (ctx.totalFights >= PROVING_GROUNDS_MIN_FIGHT
     && ctx.totalFights <= PROVING_GROUNDS_MAX_FIGHT
     && ctx.rngChance(PROVING_GROUNDS_CHANCE)) {
-    const won = ctx.rngFloat() < PROVING_GROUNDS_WIN_CHANCE;
-    if (won) {
-      buffs.provingGroundsExpRemaining = PROVING_GROUNDS_REWARD_DURATION;
-      events.push({ type: 'event_proving_grounds', won: true, expMul: PROVING_GROUNDS_REWARD_EXP_MUL, hpCost: 0 });
+    if (pending.provingChoiceResolved === 'decline') {
+      // Player chose to decline — small gold consolation
+      const consolation = Math.floor(ctx.hero.level * 0.5);
+      heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + consolation;
+      events.push({ type: 'event_proving_grounds', won: false, expMul: 1, hpCost: 0, declined: true });
+    } else if (pending.provingChoiceResolved === 'accept') {
+      // Player explicitly accepted — resolve with outcome
+      const won = ctx.rngFloat() < PROVING_GROUNDS_WIN_CHANCE;
+      if (won) {
+        buffs.provingGroundsExpRemaining = PROVING_GROUNDS_REWARD_DURATION;
+        events.push({ type: 'event_proving_grounds', won: true, expMul: PROVING_GROUNDS_REWARD_EXP_MUL, hpCost: 0 });
+      } else {
+        const hpCost = Math.floor(ctx.hero.hpMax * PROVING_GROUNDS_FAIL_HP_COST);
+        heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) - hpCost;
+        events.push({ type: 'event_proving_grounds', won: false, expMul: 1, hpCost });
+      }
     } else {
-      const hpCost = Math.floor(ctx.hero.hpMax * PROVING_GROUNDS_FAIL_HP_COST);
-      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) - hpCost;
-      events.push({ type: 'event_proving_grounds', won: false, expMul: 1, hpCost });
+      // No choice yet — signal pending (game loop should pause for player input)
+      return { events, heroMutations, buffs, crossroadsUsed, provingPending: true };
     }
   }
 

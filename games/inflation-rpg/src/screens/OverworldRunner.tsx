@@ -42,6 +42,7 @@ import { AtkBreakdownTooltip } from '../components/AtkBreakdownTooltip';
 import { computeAtkBreakdown } from '../components/AtkBreakdownLogic';
 import { ShrineChoiceModal } from '../components/ShrineChoiceModal';
 import { DangerChoiceModal } from '../components/DangerChoiceModal';
+import { ProvingChoiceModal } from '../components/ProvingChoiceModal';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -166,6 +167,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [strategyOpen, setStrategyOpen] = useState(false);
   const [shrineModalOpen, setShrineModalOpen] = useState(false);
   const [dangerModalOpen, setDangerModalOpen] = useState(false);
+  const [provingModalOpen, setProvingModalOpen] = useState(false); // C875
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   // Cycle 108 F1 — fate roll modal state.
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
@@ -367,6 +369,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           const flavor =
            evs.some(e => e.type === 'event_treasure_shrine_pending') ? (() => { setShrineModalOpen(true); return '✨ 보물 제단! 축복을 선택하세요'; })() :
            evs.some(e => e.type === 'danger_zone_choice') ? (() => { setDangerModalOpen(true); return '⚠️ 위험지대! 전투 or 도주?'; })() :
+          evs.some(e => e.type === 'proving_grounds_choice') ? (() => { setProvingModalOpen(true); return '🏟️ 시련의 장!'; })() :
            evs.some(e => e.type === 'event_merchant') ? '🏪 상인 등장! 렐릭 구매' :
            evs.some(e => e.type === 'event_treasure_shrine') ? '✨ 보물 제단 발견!' :
             evs.some(e => e.type === 'event_trap_avoided') ? '⚡ 함정 회피! (높은 콤보)' :
@@ -753,6 +756,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {strategyOpen && <StrategyPanel onClose={() => setStrategyOpen(false)} />}
       {shrineModalOpen && <ShrineChoiceModal onClose={() => setShrineModalOpen(false)} />}
       {dangerModalOpen && <DangerChoiceModal onClose={() => setDangerModalOpen(false)} />}
+      {provingModalOpen && <ProvingChoiceModal onClose={() => setProvingModalOpen(false)} />}
       {fateRollModal && (
         <FateRollModal
           oldLevel={fateRollModal.oldLevel}

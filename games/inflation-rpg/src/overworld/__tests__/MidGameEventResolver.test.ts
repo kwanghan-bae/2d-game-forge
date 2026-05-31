@@ -66,22 +66,35 @@ describe('resolveMidGameEvents', () => {
 
   it('proving grounds triggers in fight 55-90 window', () => {
     const ctx = makeCtx({ totalFights: 70, rngChance: () => true, rngFloat: () => 0.3 });
-    const result = resolveMidGameEvents(ctx, {});
+    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept' });
     expect(result.events[0]).toMatchObject({ type: 'event_proving_grounds', won: true });
     expect(result.buffs.provingGroundsExpRemaining).toBe(5);
   });
 
   it('proving grounds does not trigger outside window', () => {
     const ctx = makeCtx({ totalFights: 30, rngChance: () => true, rngFloat: () => 0.3 });
-    const result = resolveMidGameEvents(ctx, {});
+    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept' });
     expect(result.events).toHaveLength(0);
   });
 
   it('proving grounds fail costs 10% maxHP', () => {
     const ctx = makeCtx({ totalFights: 60, rngChance: () => true, rngFloat: () => 0.99 });
-    const result = resolveMidGameEvents(ctx, {});
+    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept' });
     expect(result.events[0]).toMatchObject({ type: 'event_proving_grounds', won: false });
     expect(result.heroMutations.hpDelta).toBe(-100); // 10% of 1000
+  });
+
+  it('proving grounds returns provingPending when no choice given', () => {
+    const ctx = makeCtx({ totalFights: 70, rngChance: () => true, rngFloat: () => 0.3 });
+    const result = resolveMidGameEvents(ctx, {});
+    expect(result.provingPending).toBe(true);
+  });
+
+  it('proving grounds decline gives consolation gold', () => {
+    const ctx = makeCtx({ totalFights: 70, rngChance: () => true, rngFloat: () => 0.3 });
+    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'decline' });
+    expect(result.events[0]).toMatchObject({ type: 'event_proving_grounds', declined: true });
+    expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
   });
 
   it('mercenary offer accepted if gold > 100', () => {
