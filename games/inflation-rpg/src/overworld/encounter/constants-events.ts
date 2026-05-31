@@ -198,6 +198,14 @@ export const SPARRING_GROUNDS_MAX_FIGHTS = 129; // C844: 119→129 (wider window
 export const SPARRING_GROUNDS_EXP_REWARD_MUL = 2.0; // win → 2× base EXP
 export const SPARRING_GROUNDS_HP_COST_RATE = 0.10; // lose → 10% current HP
 export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level advantage
+
+// C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
+export const MERCENARY_OFFER_CHANCE = 0.03;
+export const MERCENARY_OFFER_MIN_FIGHTS = 90;
+export const MERCENARY_OFFER_MAX_FIGHTS = 120;
+export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
+export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
+export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
