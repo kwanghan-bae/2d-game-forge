@@ -181,6 +181,20 @@ export function resolveMidGameEvents(
   ctx: MidGameContext,
   pending: MidGamePending,
 ): MidGameResult {
+  // C966: Event evaluation order (earlier = higher priority, early-returns block later events):
+  // 1. Wandering Merchant (pending-gated)
+  // 2. Sparring Grounds (pending-gated)
+  // 3. Proving Grounds (fight 20-110, rng)
+  // 4. Mercenary Offer (pending-gated)
+  // 5. Crossroads (pending-gated)
+  // 6. First Trial (fight 10-40, rng, one-shot)
+  // 7. Reputation Consequence (fight 160+, choices≥3, one-shot)
+  // 8. Veteran's Trial (via consequence, choices≥5, one-shot)
+  // 9. Elder's Judgment (fight 300+, choices≥6, one-shot)
+  // 10. Last Stand (fight 400-600, rng, one-shot)
+  // 11. Wandering Sage (fight 260-450, rng, repeatable)
+  // 12. Veteran's Challenge (fight 200-400, rng, one-shot)
+  // 13. Stat Shard / Enemy Morph (endgame, rng)
   const events: OverworldEvent[] = [];
   const heroMutations: MidGameResult['heroMutations'] = {};
   const buffs: MidGameResult['buffs'] = {};
