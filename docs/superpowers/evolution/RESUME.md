@@ -1,35 +1,40 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 874
+- Cycle: 877
 - Target: 600+ (연속 진화)
-- Last commit: C874 proving 6% + density slope 0.008 + proving window 110
-- Vitest: 2297 pass / 0 fail
-- EncounterEngine: ~2485 lines
-- Critic score: 20/40 (C874 collab, 변동 없음 — player agency 여전히 0)
+- Last commit: C877 sparring 70 + momentum 70 + manual proving bonus 25%
+- Vitest: 2307 pass / 0 fail
+- EncounterEngine: ~2515 lines
+- Critic score: 20/40 (C877 collab — choice 1개는 시작이지만 아직 부족)
 
-## 레이어 카운터 (C866-C874 era)
-- 시스템: 3 (C866, C869, C872)
-- 구조: 3 (C867, C870, C873)
-- 밸런스: 3 (C868, C871, C874)
-- 콜라보: 3 (C868, C871, C874)
+## 레이어 카운터 (C872-C877 era)
+- 시스템: 2 (C872, C875)
+- 구조: 2 (C873, C876)
+- 밸런스: 2 (C874, C877)
+- 콜라보: 2 (C874, C877)
 
 ## 제약
-- cycles_since_collab: 0 (C874 is collab)
-- Next collab: C877
-- EncounterEngine: ~2485 lines
-- Layer rotation: system → structure → balance (C875=system, C876=structure, C877=balance+collab)
+- cycles_since_collab: 0 (C877 is collab)
+- Next collab: C880
+- EncounterEngine: ~2515 lines
+- Layer rotation: system → structure → balance (C878=system, C879=structure, C880=balance+collab)
 
-## 🔴 Critical: Player Agency = 0
-- Mid-game events 전부 auto-resolve (MidGameEventResolver heuristic)
-- 토스트는 "통보"이지 "선택"이 아니다
-- C875에서 Proving Grounds choice modal 추가 최우선
-- "보여주기 → 선택하기" 패러다임 전환 시작
+## 🟡 Player Agency: 1 choice (Proving Grounds)
+- C875에서 첫 플레이어 선택 추가 (Accept/Decline, 2s timeout)
+- Manual accept → +25% EXP bonus (C877)
+- 하지만 여전히 binary + auto-accept = "잠깐 멈춘 자동화"
+- Crossroads/Merchant를 선택 이벤트로 승격해야 critic +3~4
 
-## 다음 3사이클 (C874 합의)
-- C875 [system]: Proving Grounds 선택 게이트 (fight/flee 2지선다 + 2초 timeout fallback)
-- C876 [structure]: EventChoiceOverlay + FSM 분리 (idle/presenting/resolved)
-- C877 [balance+collab]: 수동 선택 보상 +25% + SPARRING 70 + MOMENTUM 70
+## 다음 3사이클 (C877 합의)
+- C878 [system]: Crossroads 3지선다 + Mercenary 수락/거절 모달 (choice 1→3)
+- C879 [structure]: Generic timed choice modal + Active buff HUD
+- C880 [balance+collab]: Density cliff fix (Mercenary 145→175) + weather visibility
+
+## 달성 사항 (C875-C877)
+- C875 [system]: Proving Grounds player choice gate (첫 player agency!)
+- C876 [structure]: EventChoiceFSM reusable 3-state machine (8 tests)
+- C877 [balance+collab]: SPARRING 70, MOMENTUM 70, MANUAL_BONUS 25%
 
 ## 달성 사항 (C872-C874)
 - C872 [system]: Mid-game event toast pipeline (16 labels + resolveEventToastKey + OverworldRunner wire)
