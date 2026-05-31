@@ -36,6 +36,9 @@ import {
   SPARRING_GROUNDS_CHANCE,
   SPARRING_GROUNDS_MIN_FIGHTS,
   SPARRING_GROUNDS_MAX_FIGHTS,
+  MERCENARY_OFFER_CHANCE,
+  MERCENARY_OFFER_MIN_FIGHTS,
+  MERCENARY_OFFER_MAX_FIGHTS,
   WANDERING_MERCHANT_CHANCE,
   WANDERING_MERCHANT_MIN_FIGHTS,
   WANDERING_MERCHANT_MAX_FIGHTS,
@@ -143,6 +146,7 @@ export interface PostCombatResult {
   altarPending: boolean;
   riskGambitPending: boolean;
   sparringGroundsPending: boolean; // C841
+  mercenaryOfferPending: boolean; // C848
   wanderingMerchantPending: boolean; // C832
 }
 
@@ -191,6 +195,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     altarPending: false,
     riskGambitPending: false,
     sparringGroundsPending: false,
+    mercenaryOfferPending: false,
     wanderingMerchantPending: false,
   };
 
@@ -316,6 +321,14 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       candidates.push({
         id: 'sparring_grounds', weight: SPARRING_GROUNDS_CHANCE, pityEligible: true,
         apply: (r) => { r.sparringGroundsPending = true; r.eventType = 'event_sparring_grounds'; },
+      });
+    }
+
+    // C848: Mercenary Offer — gold investment → 3 fights shared combat (90-120)
+    if (ctx.totalFights >= MERCENARY_OFFER_MIN_FIGHTS && ctx.totalFights <= MERCENARY_OFFER_MAX_FIGHTS) {
+      candidates.push({
+        id: 'mercenary_offer', weight: MERCENARY_OFFER_CHANCE, pityEligible: true,
+        apply: (r) => { r.mercenaryOfferPending = true; r.eventType = 'event_mercenary_offer'; },
       });
     }
 
