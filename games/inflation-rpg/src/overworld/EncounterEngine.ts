@@ -17,6 +17,7 @@ import { LandmarkResolver } from './encounter/LandmarkResolver';
 import { VillageResolver } from './encounter/VillageResolver';
 import { computeHeroAtk, computeBuffedHeroAtk } from './encounter/CombatCalculator';
 import { computePostVictoryExp } from './encounter/PostVictoryExpCalculator';
+import { resolveMidGameEvents } from './encounter/MidGameEventResolver';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
@@ -2015,100 +2016,50 @@ export class EncounterEngine {
       }
     }
 
-    // C832: Wandering Merchant — auto-resolve (heal if HP<70%, else ATK buff)
-    if (r.wanderingMerchantPending) {
-      const needsHeal = hero.hp < hero.hpMax * 0.7;
-      if (needsHeal) {
-        const healAmt = Math.floor(hero.hpMax * WANDERING_MERCHANT_HEAL_RATE);
-        hero.heal(healAmt);
-        events.push({ type: 'event_wandering_merchant', choice: 'heal', value: healAmt });
-      } else if (this.rng.chance(WANDERING_MERCHANT_GAMBLE_CHANCE)) {
-        // C844: ATK double-or-nothing gamble
-        if (this.rng.chance(WANDERING_MERCHANT_GAMBLE_WIN_RATE)) {
-          this.wanderingMerchantAtkRemaining = WANDERING_MERCHANT_ATK_DURATION * 2;
-          events.push({ type: 'event_wandering_merchant', choice: 'gamble_win', value: WANDERING_MERCHANT_ATK_DURATION * 2 });
-        } else {
-          // C865: rate-based gold loss (sentinel -1 = use LOSS_RATE)
-          const lossAmount = WANDERING_MERCHANT_GAMBLE_LOSS_GOLD === -1
-            ? -Math.floor(hero.gold * WANDERING_MERCHANT_GAMBLE_LOSS_RATE)
-            : WANDERING_MERCHANT_GAMBLE_LOSS_GOLD;
-          hero.gold += lossAmount;
-          if (hero.gold < 0) hero.gold = 0;
-          events.push({ type: 'event_wandering_merchant', choice: 'gamble_lose', value: lossAmount });
-        }
-      } else {
-        this.wanderingMerchantAtkRemaining = WANDERING_MERCHANT_ATK_DURATION;
-        events.push({ type: 'event_wandering_merchant', choice: 'atk', value: WANDERING_MERCHANT_ATK_DURATION });
-      }
+    // C870: Delegate mid-game events to pure resolver
+    const midGameResult = resolveMidGameEvents(
+      {
+        hero: { hp: hero.hp, hpMax: hero.hpMax, gold: hero.gold, level: hero.level, atk: hero.atk },
+        totalFights: this.totalFights,
+        crossroadsUsed: this.crossroadsUsed,
+        rngFloat: () => this.rng.float(),
+        rngChance: (rate: number) => this.rng.chance(rate),
+      },
+      {
+        wanderingMerchantPending: r.wanderingMerchantPending,
+        sparringGroundsPending: r.sparringGroundsPending,
+        mercenaryOfferPending: r.mercenaryOfferPending,
+        crossroadsPending: r.crossroadsPending,
+      },
+    );
+    // Apply hero mutations
+    if (midGameResult.heroMutations.hpDelta) {
+      hero.hp = Math.max(1, hero.hp + midGameResult.heroMutations.hpDelta);
+      if (midGameResult.heroMutations.hpDelta > 0) hero.heal(midGameResult.heroMutations.hpDelta);
     }
-
-    // C841: Sparring Grounds — skill-check (win=EXP, lose=HP cost)
-    if (r.sparringGroundsPending) {
-      const won = this.rng.float() < SPARRING_GROUNDS_WIN_CHANCE;
-      if (won) {
-        const expGained = Math.floor(hero.level * SPARRING_GROUNDS_EXP_REWARD_MUL);
-        hero.gainExp(expGained);
-        events.push({ type: 'event_sparring_grounds', won: true, expGained, hpLost: 0 });
-      } else {
-        const hpLost = Math.floor(hero.hp * SPARRING_GROUNDS_HP_COST_RATE);
-        hero.hp = Math.max(1, hero.hp - hpLost);
-        events.push({ type: 'event_sparring_grounds', won: false, expGained: 0, hpLost });
-      }
+    if (midGameResult.heroMutations.goldDelta) {
+      hero.gold += midGameResult.heroMutations.goldDelta;
+      if (hero.gold < 0) hero.gold = 0;
     }
-
-    // C866: Proving Grounds — mid-game challenge (fight 55-90)
-    if (this.totalFights >= PROVING_GROUNDS_MIN_FIGHT
-      && this.totalFights <= PROVING_GROUNDS_MAX_FIGHT
-      && this.rng.chance(PROVING_GROUNDS_CHANCE)) {
-      const won = this.rng.float() < PROVING_GROUNDS_WIN_CHANCE;
-      if (won) {
-        this.provingGroundsExpRemaining = PROVING_GROUNDS_REWARD_DURATION;
-        events.push({ type: 'event_proving_grounds', won: true, expMul: PROVING_GROUNDS_REWARD_EXP_MUL, hpCost: 0 });
-      } else {
-        const hpCost = Math.floor(hero.hpMax * PROVING_GROUNDS_FAIL_HP_COST);
-        hero.hp = Math.max(1, hero.hp - hpCost);
-        events.push({ type: 'event_proving_grounds', won: false, expMul: 1, hpCost });
-      }
+    if (midGameResult.heroMutations.expGain) hero.gainExp(midGameResult.heroMutations.expGain);
+    // Apply buff state
+    if (midGameResult.buffs.wanderingMerchantAtkRemaining !== undefined) {
+      this.wanderingMerchantAtkRemaining = midGameResult.buffs.wanderingMerchantAtkRemaining;
     }
-
-    // C848: Mercenary Offer — AI choice: invest gold for 3-fight damage shield
-    if (r.mercenaryOfferPending) {
-      const goldCost = Math.floor(hero.gold * MERCENARY_OFFER_GOLD_COST_RATE);
-      // AI accepts if gold > 100 (worthwhile investment)
-      if (hero.gold > 100) {
-        hero.gold -= goldCost;
-        this.mercenaryShieldRemaining = MERCENARY_OFFER_DURATION;
-        events.push({ type: 'event_mercenary_offer', choice: 'accept', goldPaid: goldCost, duration: MERCENARY_OFFER_DURATION });
-      } else {
-        events.push({ type: 'event_mercenary_offer', choice: 'decline', goldPaid: 0, duration: 0 });
-      }
+    if (midGameResult.buffs.provingGroundsExpRemaining !== undefined) {
+      this.provingGroundsExpRemaining = midGameResult.buffs.provingGroundsExpRemaining;
     }
-
-    // C854: Crossroads Choice — AI picks best path based on hero state
-    if (r.crossroadsPending) {
-      this.crossroadsUsed = true;
-      // AI heuristic: low HP → gold (safe), high ATK → EXP, else → ATK
-      const hpRate = hero.hp / hero.hpMax;
-      let path: 'atk' | 'exp' | 'gold';
-      if (hpRate < 0.4) {
-        path = 'gold';
-      } else if (hero.atk > hero.level * 3) {
-        path = 'exp';
-      } else {
-        path = 'atk';
-      }
-      if (path === 'atk') {
-        this.crossroadsAtkRemaining = CROSSROADS_ATK_DURATION;
-        events.push({ type: 'event_crossroads', path, duration: CROSSROADS_ATK_DURATION });
-      } else if (path === 'exp') {
-        this.crossroadsExpRemaining = CROSSROADS_EXP_DURATION;
-        events.push({ type: 'event_crossroads', path, duration: CROSSROADS_EXP_DURATION });
-      } else {
-        const goldBurst = hero.level * CROSSROADS_GOLD_BURST_MUL;
-        hero.gold += goldBurst;
-        events.push({ type: 'event_crossroads', path, goldBurst });
-      }
+    if (midGameResult.buffs.mercenaryShieldRemaining !== undefined) {
+      this.mercenaryShieldRemaining = midGameResult.buffs.mercenaryShieldRemaining;
     }
+    if (midGameResult.buffs.crossroadsAtkRemaining !== undefined) {
+      this.crossroadsAtkRemaining = midGameResult.buffs.crossroadsAtkRemaining;
+    }
+    if (midGameResult.buffs.crossroadsExpRemaining !== undefined) {
+      this.crossroadsExpRemaining = midGameResult.buffs.crossroadsExpRemaining;
+    }
+    if (midGameResult.crossroadsUsed) this.crossroadsUsed = true;
+    events.push(...midGameResult.events);
 
     if (r.eventType && !r.merchantPending && !r.gamblerPending && !r.altarPending && !r.riskGambitPending && !r.wanderingMerchantPending && !r.sparringGroundsPending && !r.mercenaryOfferPending && !r.crossroadsPending) {
       events.push({ type: r.eventType });
