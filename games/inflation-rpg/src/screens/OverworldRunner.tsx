@@ -24,6 +24,7 @@ import type { BattleOutcomeInput } from '../components/BattleOutcomeBadgeLogic';
 import { ComboStreakBadge } from '../components/ComboStreakBadge';
 import { ExpBreakdownBadge } from '../components/ExpBreakdownBadge';
 import { EventChoiceToast } from '../components/EventChoiceToast';
+import { resolveEventToastKey } from '../components/EventChoiceToastLogic';
 import { ChainFlavorToast } from '../components/ChainFlavorToast';
 import { RiskGambitToast } from '../components/RiskGambitToast';
 import { HealBreakdownBadge } from '../components/HealBreakdownBadge';
@@ -344,6 +345,20 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             e.type.startsWith('event_altar_')
           );
           if (eventSubTypeEv) setEventSubType(eventSubTypeEv.type);
+          // C872: Mid-game event toast pipeline
+          const midGameEv = evs.find(e =>
+            e.type === 'event_wandering_merchant' ||
+            e.type === 'event_sparring_grounds' ||
+            e.type === 'event_proving_grounds' ||
+            e.type === 'event_mercenary_offer' ||
+            e.type === 'event_crossroads' ||
+            e.type === 'storm_drain' ||
+            e.type === 'storm_drain_critical'
+          );
+          if (midGameEv && !eventSubTypeEv) {
+            const toastKey = resolveEventToastKey(midGameEv as { type: string; [k: string]: unknown });
+            if (toastKey) setEventSubType(toastKey);
+          }
           if (event.landmarkKind === 'village') {
             setMomentumDisplay(0);
           }
