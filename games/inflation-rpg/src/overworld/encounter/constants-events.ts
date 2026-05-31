@@ -201,7 +201,7 @@ export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
 // C841: Sparring Grounds — mid-early event filling dead zone (fights 80-119)
 export const SPARRING_GROUNDS_CHANCE = 0.04; // C844: 0.03→0.04 (reduce miss rate)
 export const SPARRING_GROUNDS_MIN_FIGHTS = 70; // C877: 80→70 (fill fight 66-79 gap)
-export const SPARRING_GROUNDS_MAX_FIGHTS = 200; // C912: 129→200 (fill fight 130-199 mid-game desert)
+export const SPARRING_GROUNDS_MAX_FIGHTS = 250; // C919: 200→250 (fill fight 200-250 post-VT desert)
 export const SPARRING_GROUNDS_EXP_REWARD_MUL = 2.0; // win → 2× base EXP
 export const SPARRING_GROUNDS_HP_COST_RATE = 0.10; // lose → 10% current HP
 export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level advantage
@@ -371,7 +371,7 @@ export const GOLD_CRUCIBLE_ATK_RATE = 0.12; // C803: 12% of burned gold → flat
 // C800: Astral Paradox — high-risk EXP event (fight 400+)
 export const ASTRAL_PARADOX_DURATION = 5;
 export const ASTRAL_PARADOX_EXP_MUL = 2.5;
-export const ASTRAL_PARADOX_ENEMY_ATK_MUL = 2.0;
+export const ASTRAL_PARADOX_ENEMY_ATK_MUL = 1.8; // C919: 2.0→1.8 (SN×Astral worst-case survival fix)
 
 // C803: Crimson Tithe — HP investment event (fight 325+)
 export const CRIMSON_TITHE_DURATION = 6;
