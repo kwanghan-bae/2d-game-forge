@@ -208,7 +208,7 @@ describe('resolveMidGameEvents', () => {
     const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 5, reputationFired: true });
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'aggressive' }));
-    expect(result.buffs.veteransTrialAtkRemaining).toBe(10);
+    expect(result.buffs.veteransTrialAtkRemaining).toBe(12);
     expect(result.heroMutations.hpDelta).toBeLessThan(0);
     expect(result.veteransTrialFired).toBe(true);
   });

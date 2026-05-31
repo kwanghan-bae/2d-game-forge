@@ -95,16 +95,16 @@ describe('CombatCalculator.computeBuffedHeroAtk', () => {
     expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, clearSky: true, ...muls })).toBe(161);
   });
 
-  it('storm + crossroads → capped at ×1.65', () => {
-    expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, crossroads: true, ...muls })).toBe(165);
+  it('storm + crossroads → ×1.68 (under new cap 1.85)', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, crossroads: true, ...muls })).toBe(168);
   });
 
   it('clearSky + crossroads → ×1.38', () => {
     expect(computeBuffedHeroAtk(100, { ...off, clearSky: true, crossroads: true, ...muls })).toBe(137);
   });
 
-  it('all three → capped at ×1.65', () => {
-    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, earlyMomentum: false, finalReckoning: false, ...muls })).toBe(165);
+  it('all three → capped at ×1.85', () => {
+    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, earlyMomentum: false, finalReckoning: false, ...muls })).toBe(185);
   });
 
   it('earlyMomentum only → ×1.03', () => {
@@ -116,8 +116,8 @@ describe('CombatCalculator.computeBuffedHeroAtk', () => {
   });
 
   // C901: BUFF_STACK_CAP headroom verification
-  it('lastStand + finalReckoning → capped at ×1.65 (product 1.755)', () => {
-    expect(computeBuffedHeroAtk(100, { ...off, lastStand: true, finalReckoning: true, ...muls })).toBe(165);
+  it('lastStand + finalReckoning → ×1.82 (under new cap 1.85)', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, lastStand: true, finalReckoning: true, ...muls })).toBe(182);
   });
 
   it('finalReckoning only → ×1.35', () => {
