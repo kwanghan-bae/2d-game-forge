@@ -95,8 +95,10 @@ export interface MidGameResult {
     finalReckoningAtkRemaining?: number; // C896
     finalReckoningShieldRemaining?: number; // C896
     finalReckoningExpRemaining?: number; // C896
+    greedyGoldRemaining?: number; // C902
     lastStandAtkRemaining?: number; // C890
   };
+  greedyGoldMul?: number; // C902: greedy gold gain multiplier
   crossroadsUsed?: boolean;
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
   mercenaryChoicePending?: boolean; // C878: true = player choice needed
@@ -251,6 +253,7 @@ export function resolveMidGameEvents(
       reputationFired: consequenceResult.reputationFired,
       veteransTrialFired: consequenceResult.veteransTrialFired,
       finalReckoningFired: consequenceResult.finalReckoningFired,
+      greedyGoldMul: consequenceResult.greedyGoldMul,
     };
   }
 

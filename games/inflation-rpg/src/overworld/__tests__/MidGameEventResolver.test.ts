@@ -170,6 +170,9 @@ describe('resolveMidGameEvents', () => {
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'greedy', reputationTotalChoices: 3 });
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_reputation', style: 'greedy' }));
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+    // C902: greedy gold gain buff
+    expect(result.greedyGoldMul).toBe(1.25);
+    expect(result.buffs.greedyGoldRemaining).toBe(5);
   });
 
   it('reputation balanced gives EXP buff', () => {
@@ -223,6 +226,9 @@ describe('resolveMidGameEvents', () => {
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'greedy', reputationTotalChoices: 5, reputationFired: true });
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'greedy' }));
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+    // C902: greedy gold gain buff
+    expect(result.greedyGoldMul).toBe(1.35);
+    expect(result.buffs.greedyGoldRemaining).toBe(8);
   });
 
   it('veterans trial balanced gives both ATK + EXP', () => {
@@ -324,6 +330,9 @@ describe('resolveMidGameEvents', () => {
     });
     expect(result.finalReckoningFired).toBe(true);
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+    // C902: greedy gold gain buff
+    expect(result.greedyGoldMul).toBe(1.50);
+    expect(result.buffs.greedyGoldRemaining).toBe(15);
   });
 
   it('final reckoning balanced style gives ATK + EXP', () => {

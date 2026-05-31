@@ -15,6 +15,8 @@ import {
   REPUTATION_DEF_HEAL_RATE,
   REPUTATION_DEF_SHIELD_DURATION,
   REPUTATION_GREEDY_GOLD_MUL,
+  REPUTATION_GREEDY_GOLD_GAIN,
+  REPUTATION_GREEDY_GOLD_GAIN_DURATION,
   REPUTATION_BALANCED_EXP_DURATION,
   REPUTATION_BALANCED_EXP_MUL,
   VETERANS_TRIAL_MIN_FIGHT,
@@ -27,6 +29,8 @@ import {
   VETERANS_TRIAL_DEF_SHIELD_DURATION,
   VETERANS_TRIAL_DEF_HEAL_RATE,
   VETERANS_TRIAL_GREEDY_GOLD_MUL,
+  VETERANS_TRIAL_GREEDY_GOLD_GAIN,
+  VETERANS_TRIAL_GREEDY_GOLD_GAIN_DURATION,
   VETERANS_TRIAL_BALANCED_ALL_DURATION,
   VETERANS_TRIAL_BALANCED_ATK_MUL,
   VETERANS_TRIAL_BALANCED_EXP_MUL,
@@ -40,6 +44,8 @@ import {
   FINAL_RECKONING_DEF_SHIELD_DURATION,
   FINAL_RECKONING_DEF_HEAL_RATE,
   FINAL_RECKONING_GREEDY_GOLD_MUL,
+  FINAL_RECKONING_GREEDY_GOLD_GAIN,
+  FINAL_RECKONING_GREEDY_GOLD_GAIN_DURATION,
   FINAL_RECKONING_BALANCED_ALL_DURATION,
   FINAL_RECKONING_BALANCED_ATK_MUL,
   FINAL_RECKONING_BALANCED_EXP_MUL,
@@ -73,11 +79,13 @@ export interface ConsequenceResult {
     finalReckoningAtkRemaining?: number;
     finalReckoningShieldRemaining?: number;
     finalReckoningExpRemaining?: number;
+    greedyGoldRemaining?: number; // C902: greedy gold mul duration
   };
+  greedyGoldMul?: number; // C902: gold gain multiplier for greedy path
   reputationFired?: boolean;
   veteransTrialFired?: boolean;
   finalReckoningFired?: boolean;
-  varianceRoll?: number; // C900: 0.0-1.0 roll for narrative suffix
+  varianceRoll?: number;
 }
 
 // C899: ±20% variance on consequence durations/amounts for replay variety
@@ -139,7 +147,9 @@ function resolveReputation(ctx: ConsequenceContext): ConsequenceResult {
   } else if (style === 'greedy') {
     const goldBurst = applyVariance(Math.floor(ctx.hero.level * REPUTATION_GREEDY_GOLD_MUL), v);
     heroMutations.goldDelta = goldBurst;
+    buffs.greedyGoldRemaining = applyVariance(REPUTATION_GREEDY_GOLD_GAIN_DURATION, v);
     events.push({ type: 'event_reputation', style, value: goldBurst });
+    return { events, heroMutations, buffs, reputationFired: true, varianceRoll: v, greedyGoldMul: 1 + REPUTATION_GREEDY_GOLD_GAIN };
   } else {
     buffs.reputationExpRemaining = applyVariance(REPUTATION_BALANCED_EXP_DURATION, v);
     events.push({ type: 'event_reputation', style: 'balanced', value: REPUTATION_BALANCED_EXP_MUL });
@@ -168,7 +178,9 @@ function resolveVeteransTrial(ctx: ConsequenceContext): ConsequenceResult {
   } else if (style === 'greedy') {
     const goldBurst = applyVariance(Math.floor(ctx.hero.level * VETERANS_TRIAL_GREEDY_GOLD_MUL), v);
     heroMutations.goldDelta = goldBurst;
+    buffs.greedyGoldRemaining = applyVariance(VETERANS_TRIAL_GREEDY_GOLD_GAIN_DURATION, v);
     events.push({ type: 'event_veterans_trial', style, value: goldBurst });
+    return { events, heroMutations, buffs, veteransTrialFired: true, varianceRoll: v, greedyGoldMul: 1 + VETERANS_TRIAL_GREEDY_GOLD_GAIN };
   } else {
     const dur = applyVariance(VETERANS_TRIAL_BALANCED_ALL_DURATION, v);
     buffs.veteransTrialAtkRemaining = dur;
@@ -199,7 +211,9 @@ function resolveFinalReckoning(ctx: ConsequenceContext): ConsequenceResult {
   } else if (style === 'greedy') {
     const goldBurst = applyVariance(Math.floor(ctx.hero.level * FINAL_RECKONING_GREEDY_GOLD_MUL), v);
     heroMutations.goldDelta = goldBurst;
+    buffs.greedyGoldRemaining = applyVariance(FINAL_RECKONING_GREEDY_GOLD_GAIN_DURATION, v);
     events.push({ type: 'event_final_reckoning', style, value: goldBurst } as OverworldEvent);
+    return { events, heroMutations, buffs, finalReckoningFired: true, varianceRoll: v, greedyGoldMul: 1 + FINAL_RECKONING_GREEDY_GOLD_GAIN };
   } else {
     const dur = applyVariance(FINAL_RECKONING_BALANCED_ALL_DURATION, v);
     buffs.finalReckoningAtkRemaining = dur;

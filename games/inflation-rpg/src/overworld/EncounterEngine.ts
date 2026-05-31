@@ -248,6 +248,8 @@ export class EncounterEngine {
   private finalReckoningAtkRemaining = 0; // C896: final reckoning ATK buff
   private finalReckoningShieldRemaining = 0; // C896: final reckoning shield
   private finalReckoningExpRemaining = 0; // C896: final reckoning EXP buff
+  private greedyGoldRemaining = 0; // C902: greedy gold gain buff
+  private greedyGoldMul = 1; // C902: greedy gold gain multiplier
   private readonly choiceHistory = new ChoiceHistory(); // C883: tracks player choices for consequence events
   private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
@@ -682,6 +684,7 @@ export class EncounterEngine {
     if (this.finalReckoningAtkRemaining > 0) activeBuffs.push('최종 심판 ATK');
     if (this.finalReckoningShieldRemaining > 0) activeBuffs.push('최종 심판 방패');
     if (this.finalReckoningExpRemaining > 0) activeBuffs.push('최종 심판 EXP');
+    if (this.greedyGoldRemaining > 0) activeBuffs.push('탐욕 골드');
     const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
     if (!deathSaveBlocked) {
@@ -1366,6 +1369,8 @@ export class EncounterEngine {
       if (this.windGaleRemaining > 0) goldEarned = Math.floor(goldEarned * WIND_GALE_GOLD_PENALTY);
       // C795: Abyssal Convergence gold penalty (trade-off for high EXP)
       if (this.abyssalConvergenceRemaining > 0) goldEarned = Math.floor(goldEarned * ABYSSAL_CONVERGENCE_GOLD_MUL);
+      // C902: Greedy gold gain buff
+      if (this.greedyGoldRemaining > 0) goldEarned = Math.floor(goldEarned * this.greedyGoldMul);
       hero.gold += goldEarned;
       hero.gold -= goldResult.greedPenalty;
       hero.gold -= goldResult.sacrificeGold;
@@ -2370,6 +2375,9 @@ export class EncounterEngine {
     if (b.finalReckoningShieldRemaining !== undefined) this.finalReckoningShieldRemaining = b.finalReckoningShieldRemaining;
     if (b.finalReckoningExpRemaining !== undefined) this.finalReckoningExpRemaining = b.finalReckoningExpRemaining;
     if (result.finalReckoningFired) this.finalReckoningFired = true;
+    // C902: Greedy gold gain buff
+    if (b.greedyGoldRemaining !== undefined) this.greedyGoldRemaining = b.greedyGoldRemaining;
+    if (result.greedyGoldMul !== undefined) this.greedyGoldMul = result.greedyGoldMul;
   }
 
   // C819/C837: Batch decrement for simple duration counters (no side effects)
@@ -2406,6 +2414,8 @@ export class EncounterEngine {
     if (this.finalReckoningAtkRemaining > 0) this.finalReckoningAtkRemaining--;
     if (this.finalReckoningShieldRemaining > 0) this.finalReckoningShieldRemaining--;
     if (this.finalReckoningExpRemaining > 0) this.finalReckoningExpRemaining--;
+    // C902: Greedy gold gain buff decrement
+    if (this.greedyGoldRemaining > 0) this.greedyGoldRemaining--;
     // C837: consolidated from inline
     if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
     if (this.inspirationRemaining > 0) this.inspirationRemaining--;

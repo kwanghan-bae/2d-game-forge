@@ -394,6 +394,8 @@ export const REPUTATION_DEF_HEAL_RATE = 0.30; // defensive: heal 30% maxHP
 export const REPUTATION_DEF_SHIELD_DURATION = 6; // +6 fight shield
 export const REPUTATION_DEF_SHIELD_DR = 0.20; // C890: 20% damage reduction during shield
 export const REPUTATION_GREEDY_GOLD_MUL = 2.5; // greedy: gold burst ×2.5× level
+export const REPUTATION_GREEDY_GOLD_GAIN = 0.25; // C902: +25% gold gain for 5 fights
+export const REPUTATION_GREEDY_GOLD_GAIN_DURATION = 5;
 export const REPUTATION_BALANCED_EXP_DURATION = 5; // balanced: +15% EXP for 5 fights
 export const REPUTATION_BALANCED_EXP_MUL = 0.15;
 
@@ -409,6 +411,8 @@ export const VETERANS_TRIAL_DEF_SHIELD_DURATION = 10; // defensive: 10-fight shi
 export const VETERANS_TRIAL_DEF_SHIELD_DR = 0.25; // C890: 25% damage reduction during shield
 export const VETERANS_TRIAL_DEF_HEAL_RATE = 0.20; // +20% maxHP heal
 export const VETERANS_TRIAL_GREEDY_GOLD_MUL = 4.0; // greedy: gold ×4× level
+export const VETERANS_TRIAL_GREEDY_GOLD_GAIN = 0.35; // C902: +35% gold gain for 8 fights
+export const VETERANS_TRIAL_GREEDY_GOLD_GAIN_DURATION = 8;
 export const VETERANS_TRIAL_BALANCED_ALL_DURATION = 6; // balanced: +10% ATK + 10% EXP for 6 fights
 export const VETERANS_TRIAL_BALANCED_ATK_MUL = 0.10;
 export const VETERANS_TRIAL_BALANCED_EXP_MUL = 0.10;
@@ -442,6 +446,8 @@ export const FINAL_RECKONING_DEF_SHIELD_DR = 0.30; // C896: 30% damage reduction
 export const FINAL_RECKONING_DEF_HEAL_RATE = 0.30; // C899: 0.50→0.30 (DEF dominant fix)
 // Greedy: massive gold burst
 export const FINAL_RECKONING_GREEDY_GOLD_MUL = 200;
+export const FINAL_RECKONING_GREEDY_GOLD_GAIN = 0.50; // C902: +50% gold gain for 15 fights
+export const FINAL_RECKONING_GREEDY_GOLD_GAIN_DURATION = 15;
 // Balanced: all-around boost (ATK + EXP)
 export const FINAL_RECKONING_BALANCED_ALL_DURATION = 15;
 export const FINAL_RECKONING_BALANCED_ATK_MUL = 0.20;
