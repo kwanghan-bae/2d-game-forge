@@ -1,34 +1,34 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 847
+- Cycle: 850
 - Target: 600+ (연속 진화)
-- Last commit: C847 late-game density ramp + gamble loss consolation
+- Last commit: C850 gamble consolation + pity gate + dead constant
 - Vitest: 2224 pass / 0 fail
-- EncounterEngine: ~2320 lines
-- Critic score: 30.0/40 (C847 collab, 유지)
+- EncounterEngine: ~2340 lines
+- Critic score: 30.0/40 (C850 collab, 유지)
 
-## 레이어 카운터 (C845-C847 era)
-- 시스템: 1 (C845)
-- 구조: 1 (C846)
-- 밸런스: 1 (C847)
-- 콜라보: 1 (C847)
+## 레이어 카운터 (C848-C850 era)
+- 시스템: 1 (C848)
+- 구조: 1 (C849)
+- 밸런스: 1 (C850)
+- 콜라보: 1 (C850)
 
 ## 제약
-- cycles_since_collab: 0 (C847 was collab)
-- Next collab: C850
-- EncounterEngine: ~2320 lines
-- Layer rotation: system → structure → balance (C848=system, C849=structure, C850=balance+collab)
+- cycles_since_collab: 0 (C850 was collab)
+- Next collab: C853
+- EncounterEngine: ~2340 lines
+- Layer rotation: system → structure → balance (C851=system, C852=structure, C853=balance+collab)
 
-## 다음 3사이클 (C847 합의)
-1. C848 [system]: Mercenary Offer choice event (fight 90-120, 골드 투자 → 3전투 공동전투)
-2. C849 [structure]: tickAtkMultiplierContext 추출 (88줄 → private method)
-3. C850 [balance+collab]: gamble consolation 50→35 + pity gate 250→200 + dead constant 제거
+## 다음 3사이클 (C850 합의)
+1. C851 [system]: Clear Sky Path — sunshine buff ATK ×1.15 / 3 fights (80-130 gap)
+2. C852 [structure]: handleHeroDeath extraction (−55줄)
+3. C853 [balance+collab]: Death penalty ramp (500k+) + Mercenary min 90→100 + consolation 35→20
 
-## 달성 사항 (C845-C847)
-- C845 [system]: LateGameScheduler — late-event pity timer (15-fight, ×1.5 boost)
-- C846 [structure]: buildPostCombatContext 추출 (30-field → private method)
-- C847 [balance+collab]: density ramp steepened (×1.8@250) + gamble loss consolation +50g
+## 달성 사항 (C848-C850)
+- C848 [system]: Mercenary Offer choice event (90-120, 15% gold → 3-fight 30% DR)
+- C849 [structure]: buildAtkContext extraction (−88 lines from hot path)
+- C850 [balance+collab]: gamble consolation 50→35, pity gate 250→200, dead constant removed
 
 ## 달성 사항 (C842-C844)
 - C842 [system]: RunStatisticsSummary — top-3 highlight computation (11 categories)
