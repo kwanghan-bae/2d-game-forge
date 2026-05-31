@@ -243,21 +243,18 @@ export class EncounterEngine {
   private veteransTrialFired = false; // C887: veteran's trial one-shot flag
   private lastStandFired = false; // C890: last stand one-shot flag
   private lastStandPending = false; // C890: waiting for player choice
-  private lastStandAtkRemaining = 0; // C890: last stand ATK buff
+  // C929: lastStandAtk migrated to midGameBuffs
   private lastStandChoiceResolved: 'accept' | 'decline' | null = null; // C890
   private finalReckoningFired = false; // C896: final reckoning one-shot flag
   private finalReckoningAtkRemaining = 0; // C896: final reckoning ATK buff
   private finalReckoningShieldRemaining = 0; // C896: final reckoning shield
   private finalReckoningExpRemaining = 0; // C896: final reckoning EXP buff
-  private greedyGoldRemaining = 0; // C902: greedy gold gain buff
+  // C929: greedyGoldRemaining migrated to midGameBuffs ('greedy_gold')
   private greedyGoldMul = 1; // C902: greedy gold gain multiplier
   private firstTrialFired = false; // C905: first trial triggered
-  private firstTrialAtkRemaining = 0; // C905: first trial ATK buff
-  private firstTrialExpRemaining = 0; // C920: first trial EXP buff
+  // C929: firstTrialAtk/Exp + wanderingSageExp/Atk migrated to midGameBuffs
   private firstTrialPending = false; // C911: waiting for player choice
   private firstTrialChoiceResolved: 'heal' | 'atk' | 'exp' | null = null; // C920: 3-way
-  private wanderingSageExpRemaining = 0; // C921: sage EXP buff
-  private wanderingSageAtkRemaining = 0; // C921: sage ATK buff
   private wanderingSagePending = false; // C921: waiting for player choice
   private wanderingSageChoiceResolved: 'exp' | 'atk' | null = null; // C921
   private eldersJudgmentPending = false; // C926: waiting for player choice
@@ -718,16 +715,16 @@ export class EncounterEngine {
     if (this.veteransTrialShieldRemaining > 0) activeBuffs.push('노련 방패');
     if (this.veteransTrialExpRemaining > 0) activeBuffs.push('노련 EXP');
     // C890: Last Stand buff
-    if (this.lastStandAtkRemaining > 0) activeBuffs.push('최후의 항전 ATK');
+    if (this.midGameBuffs.isActive('ls_atk')) activeBuffs.push('최후의 항전 ATK');
     // C896: Final Reckoning buffs
     if (this.finalReckoningAtkRemaining > 0) activeBuffs.push('최종 심판 ATK');
     if (this.finalReckoningShieldRemaining > 0) activeBuffs.push('최종 심판 방패');
     if (this.finalReckoningExpRemaining > 0) activeBuffs.push('최종 심판 EXP');
-    if (this.greedyGoldRemaining > 0) activeBuffs.push('탐욕 골드');
-    if (this.firstTrialAtkRemaining > 0) activeBuffs.push('첫 시련 ATK');
-    if (this.firstTrialExpRemaining > 0) activeBuffs.push('첫 시련 EXP');
-    if (this.wanderingSageExpRemaining > 0) activeBuffs.push('현자 EXP');
-    if (this.wanderingSageAtkRemaining > 0) activeBuffs.push('현자 ATK');
+    if (this.midGameBuffs.isActive('greedy_gold')) activeBuffs.push('탐욕 골드');
+    if (this.midGameBuffs.isActive('ft_atk')) activeBuffs.push('첫 시련 ATK');
+    if (this.midGameBuffs.isActive('ft_exp')) activeBuffs.push('첫 시련 EXP');
+    if (this.midGameBuffs.isActive('ws_exp')) activeBuffs.push('현자 EXP');
+    if (this.midGameBuffs.isActive('ws_atk')) activeBuffs.push('현자 ATK');
     if (this.midGameBuffs.isActive('ej_atk')) activeBuffs.push('장로 ATK');
     if (this.midGameBuffs.isActive('ej_shield')) activeBuffs.push('장로 방패');
     if (this.midGameBuffs.isActive('ej_exp')) activeBuffs.push('장로 EXP');
@@ -1349,9 +1346,9 @@ export class EncounterEngine {
       // C896: Final Reckoning EXP buff
       const finalReckoningExpMul = this.finalReckoningExpRemaining > 0 ? (1 + FINAL_RECKONING_BALANCED_EXP_MUL) : 1;
       // C920: First Trial EXP buff
-      const firstTrialExpMul = this.firstTrialExpRemaining > 0 ? FIRST_TRIAL_EXP_MUL : 1;
+      const firstTrialExpMul = this.midGameBuffs.isActive('ft_exp') ? FIRST_TRIAL_EXP_MUL : 1;
       // C921: Wandering Sage EXP buff
-      const wanderingSageExpMul = this.wanderingSageExpRemaining > 0 ? WANDERING_SAGE_EXP_MUL : 1;
+      const wanderingSageExpMul = this.midGameBuffs.isActive('ws_exp') ? WANDERING_SAGE_EXP_MUL : 1;
       const eldersJudgmentExpMul = this.midGameBuffs.isActive('ej_exp')
         ? (this.midGameBuffs.isActive('ej_atk') ? (1 + ELDERS_JUDGMENT_DIVERSIFY_EXP) : (1 + ELDERS_JUDGMENT_BAL_EXP_MUL))
         : 1;
@@ -1423,7 +1420,7 @@ export class EncounterEngine {
       // C795: Abyssal Convergence gold penalty (trade-off for high EXP)
       if (this.abyssalConvergenceRemaining > 0) goldEarned = Math.floor(goldEarned * ABYSSAL_CONVERGENCE_GOLD_MUL);
       // C902: Greedy gold gain buff
-      if (this.greedyGoldRemaining > 0) goldEarned = Math.floor(goldEarned * this.greedyGoldMul);
+      if (this.midGameBuffs.isActive('greedy_gold')) goldEarned = Math.floor(goldEarned * this.greedyGoldMul);
       hero.gold += goldEarned;
       hero.gold -= goldResult.greedPenalty;
       hero.gold -= goldResult.sacrificeGold;
@@ -2000,7 +1997,7 @@ export class EncounterEngine {
         earlyMomentum: this.earlyMomentumAtkRemaining > 0,
         reputation: this.reputationAtkRemaining > 0,
         veteransTrial: this.veteransTrialAtkRemaining > 0,
-        lastStand: this.lastStandAtkRemaining > 0,
+        lastStand: this.midGameBuffs.isActive('ls_atk'),
         finalReckoning: this.finalReckoningAtkRemaining > 0,
         stormNexusMul: STORM_NEXUS_ATK_MUL,
         clearSkyMul: CLEAR_SKY_PATH_ATK_MUL,
@@ -2010,8 +2007,8 @@ export class EncounterEngine {
         veteransTrialMul: 1 + VETERANS_TRIAL_AGG_ATK_MUL,
         lastStandMul: 1 + LAST_STAND_ATK_MUL,
         finalReckoningMul: 1 + FINAL_RECKONING_AGG_ATK_MUL,
-      }) * (this.firstTrialAtkRemaining > 0 ? (1 + FIRST_TRIAL_ATK_MUL) : 1)
-         * (this.wanderingSageAtkRemaining > 0 ? (1 + WANDERING_SAGE_ATK_MUL) : 1)
+      }) * (this.midGameBuffs.isActive('ft_atk') ? (1 + FIRST_TRIAL_ATK_MUL) : 1)
+         * (this.midGameBuffs.isActive('ws_atk') ? (1 + WANDERING_SAGE_ATK_MUL) : 1)
          * (this.midGameBuffs.isActive('ej_atk')
            ? (this.midGameBuffs.isActive('ej_exp') ? (1 + ELDERS_JUDGMENT_DIVERSIFY_ATK) : (1 + ELDERS_JUDGMENT_AGG_ATK_MUL))
            : 1),
@@ -2450,7 +2447,7 @@ export class EncounterEngine {
     if (b.veteransTrialShieldRemaining !== undefined) this.veteransTrialShieldRemaining = b.veteransTrialShieldRemaining;
     if (b.veteransTrialExpRemaining !== undefined) this.veteransTrialExpRemaining = b.veteransTrialExpRemaining;
     if (result.veteransTrialFired) this.veteransTrialFired = true;
-    if (b.lastStandAtkRemaining !== undefined) this.lastStandAtkRemaining = b.lastStandAtkRemaining;
+    if (b.lastStandAtkRemaining !== undefined) this.midGameBuffs.activate('ls_atk', b.lastStandAtkRemaining);
     // lastStandPending is set in the pending event emit block above, not here
     if (this.lastStandChoiceResolved) {
       this.lastStandFired = true;
@@ -2462,13 +2459,13 @@ export class EncounterEngine {
     if (b.finalReckoningExpRemaining !== undefined) this.finalReckoningExpRemaining = b.finalReckoningExpRemaining;
     if (result.finalReckoningFired) this.finalReckoningFired = true;
     // C902: Greedy gold gain buff
-    if (b.greedyGoldRemaining !== undefined) this.greedyGoldRemaining = b.greedyGoldRemaining;
+    if (b.greedyGoldRemaining !== undefined) this.midGameBuffs.activate('greedy_gold', b.greedyGoldRemaining);
     if (result.greedyGoldMul !== undefined) this.greedyGoldMul = result.greedyGoldMul;
     // C905: First Trial buff application
-    if (b.firstTrialAtkRemaining !== undefined) this.firstTrialAtkRemaining = b.firstTrialAtkRemaining;
-    if (b.firstTrialExpRemaining !== undefined) this.firstTrialExpRemaining = b.firstTrialExpRemaining;
-    if (b.wanderingSageExpRemaining !== undefined) this.wanderingSageExpRemaining = b.wanderingSageExpRemaining;
-    if (b.wanderingSageAtkRemaining !== undefined) this.wanderingSageAtkRemaining = b.wanderingSageAtkRemaining;
+    if (b.firstTrialAtkRemaining !== undefined) this.midGameBuffs.activate('ft_atk', b.firstTrialAtkRemaining);
+    if (b.firstTrialExpRemaining !== undefined) this.midGameBuffs.activate('ft_exp', b.firstTrialExpRemaining);
+    if (b.wanderingSageExpRemaining !== undefined) this.midGameBuffs.activate('ws_exp', b.wanderingSageExpRemaining);
+    if (b.wanderingSageAtkRemaining !== undefined) this.midGameBuffs.activate('ws_atk', b.wanderingSageAtkRemaining);
     if (b.eldersJudgmentAtkRemaining !== undefined) this.midGameBuffs.activate('ej_atk', b.eldersJudgmentAtkRemaining);
     if (b.eldersJudgmentShieldRemaining !== undefined) this.midGameBuffs.activate('ej_shield', b.eldersJudgmentShieldRemaining);
     if (b.eldersJudgmentExpRemaining !== undefined) this.midGameBuffs.activate('ej_exp', b.eldersJudgmentExpRemaining);
@@ -2504,22 +2501,13 @@ export class EncounterEngine {
     if (this.veteransTrialAtkRemaining > 0) this.veteransTrialAtkRemaining--;
     if (this.veteransTrialShieldRemaining > 0) this.veteransTrialShieldRemaining--;
     if (this.veteransTrialExpRemaining > 0) this.veteransTrialExpRemaining--;
-    // C890: Last Stand buff decrement
-    if (this.lastStandAtkRemaining > 0) this.lastStandAtkRemaining--;
+    // C890: Last Stand buff decrement via midGameBuffs.tick()
     // C896: Final Reckoning buff decrements
     if (this.finalReckoningAtkRemaining > 0) this.finalReckoningAtkRemaining--;
     if (this.finalReckoningShieldRemaining > 0) this.finalReckoningShieldRemaining--;
     if (this.finalReckoningExpRemaining > 0) this.finalReckoningExpRemaining--;
-    // C902: Greedy gold gain buff decrement
-    if (this.greedyGoldRemaining > 0) this.greedyGoldRemaining--;
-    // C905: First Trial ATK buff decrement
-    if (this.firstTrialAtkRemaining > 0) this.firstTrialAtkRemaining--;
-    // C920: First Trial EXP buff decrement
-    if (this.firstTrialExpRemaining > 0) this.firstTrialExpRemaining--;
-    // C921: Wandering Sage buff decrements
-    if (this.wanderingSageExpRemaining > 0) this.wanderingSageExpRemaining--;
-    if (this.wanderingSageAtkRemaining > 0) this.wanderingSageAtkRemaining--;    // C837: consolidated from inline
-    // C929: Elder's Judgment buffs ticked via midGameBuffs
+    // C902: Greedy gold gain buff decrement via midGameBuffs.tick()
+    // C929: First Trial + Wandering Sage + Elder's Judgment buffs ticked via midGameBuffs
     this.midGameBuffs.tick();
     if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
     if (this.inspirationRemaining > 0) this.inspirationRemaining--;
