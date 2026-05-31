@@ -144,4 +144,13 @@ describe('C955: Mid-game pity invariants', () => {
     expect(netGain).toBeGreaterThan(1.0);
     expect(netGain).toBeLessThan(1.2);
   });
+
+  it('C973: VC duration is proportional to trigger window', () => {
+    // Duration should be 1-5% of the trigger window (200-400 = 200 fights)
+    const window = VETERANS_CHALLENGE_MAX_FIGHT - VETERANS_CHALLENGE_MIN_FIGHT;
+    const ratio = VETERANS_CHALLENGE_DURATION / window;
+    // Duration = 6 / 200 = 3% — within intentional band
+    expect(ratio).toBeGreaterThanOrEqual(0.01); // at least 1%
+    expect(ratio).toBeLessThanOrEqual(0.05);    // at most 5%
+  });
 });
