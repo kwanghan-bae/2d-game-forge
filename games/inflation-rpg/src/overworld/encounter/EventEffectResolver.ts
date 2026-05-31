@@ -8,6 +8,7 @@ import {
   CURSED_ALTAR_DAMAGE_MUL,
   CURSED_ALTAR_HP_THRESHOLD,
 } from './constants-events';
+import { resolveGambleOutcome } from './resolveGambleOutcome';
 
 export interface EventEffectContext {
   heroGold: number;
@@ -92,21 +93,25 @@ function resolveGambler(choice: GamblerChoice, ctx: EventEffectContext): EventEf
   if (choice === GamblerChoice.WALK_AWAY) {
     return { ...EMPTY_RESULT, eventSubType: 'event_gambler_walk' };
   }
-  const betRate = choice === GamblerChoice.BET_HIGH ? GAMBLER_WIN_RATE : GAMBLER_WIN_RATE + 0.20;
-  const won = ctx.rngChance(betRate);
-  if (won) {
-    // C714: BET_HIGH 3x gold, BET_LOW 1.5x gold
-    const winAmount = choice === GamblerChoice.BET_HIGH
-      ? Math.floor(ctx.heroGold * (GAMBLER_BET_HIGH_REWARD_MUL - 1))
-      : Math.floor(ctx.heroGold * 0.5);
-    return { ...EMPTY_RESULT, goldDelta: winAmount, eventSubType: 'event_gambler_win' };
+  const isHighBet = choice === GamblerChoice.BET_HIGH;
+  const winRate = isHighBet ? GAMBLER_WIN_RATE : GAMBLER_WIN_RATE + 0.20;
+  const won = ctx.rngChance(winRate);
+  // C864: delegate to pure function (rng pre-resolved)
+  const result = resolveGambleOutcome({
+    winRate,
+    heroGold: ctx.heroGold,
+    rng: won ? 0 : 1, // 0 < winRate = win
+    isHighBet,
+    betHighRewardMul: GAMBLER_BET_HIGH_REWARD_MUL,
+    betLowRewardMul: 1.5,
+    betHighLossRate: GAMBLER_BET_HIGH_LOSS_RATE,
+    betLowLossRate: GAMBLER_BET_LOW_LOSS_RATE,
+  });
+  if (result.won) {
+    return { ...EMPTY_RESULT, goldDelta: result.goldDelta, eventSubType: 'event_gambler_win' };
   }
-  // C714: BET_HIGH loses 60%, BET_LOW loses 25%
-  const loseAmount = choice === GamblerChoice.BET_HIGH
-    ? Math.floor(ctx.heroGold * GAMBLER_BET_HIGH_LOSS_RATE)
-    : Math.floor(ctx.heroGold * GAMBLER_BET_LOW_LOSS_RATE);
-  const loseSubType = choice === GamblerChoice.BET_HIGH ? 'event_gambler_lose_high' : 'event_gambler_lose_low';
-  return { ...EMPTY_RESULT, goldDelta: -loseAmount, eventSubType: loseSubType };
+  const loseSubType = isHighBet ? 'event_gambler_lose_high' : 'event_gambler_lose_low';
+  return { ...EMPTY_RESULT, goldDelta: result.goldDelta, eventSubType: loseSubType };
 }
 
 function resolveAltar(choice: AltarChoice, ctx: EventEffectContext): EventEffectResult {
