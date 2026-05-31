@@ -1,29 +1,34 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 850
+- Cycle: 853
 - Target: 600+ (연속 진화)
-- Last commit: C850 gamble consolation + pity gate + dead constant
+- Last commit: C853 high-gold death penalty ramp + mercenary/gamble tuning
 - Vitest: 2224 pass / 0 fail
-- EncounterEngine: ~2340 lines
-- Critic score: 30.0/40 (C850 collab, 유지)
+- EncounterEngine: ~2250 lines (C852 −90 lines extraction)
+- Critic score: 31.0/40 (C853 collab, +1.0)
 
-## 레이어 카운터 (C848-C850 era)
-- 시스템: 1 (C848)
-- 구조: 1 (C849)
-- 밸런스: 1 (C850)
-- 콜라보: 1 (C850)
+## 레이어 카운터 (C851-C853 era)
+- 시스템: 1 (C851)
+- 구조: 1 (C852)
+- 밸런스: 1 (C853)
+- 콜라보: 1 (C853)
 
 ## 제약
-- cycles_since_collab: 0 (C850 was collab)
-- Next collab: C853
-- EncounterEngine: ~2340 lines
-- Layer rotation: system → structure → balance (C851=system, C852=structure, C853=balance+collab)
+- cycles_since_collab: 0 (C853 is collab)
+- Next collab: C856
+- EncounterEngine: ~2250 lines
+- Layer rotation: system → structure → balance (C854=system, C855=structure, C856=balance+collab)
 
-## 다음 3사이클 (C850 합의)
-1. C851 [system]: Clear Sky Path — sunshine buff ATK ×1.15 / 3 fights (80-130 gap)
-2. C852 [structure]: handleHeroDeath extraction (−55줄)
-3. C853 [balance+collab]: Death penalty ramp (500k+) + Mercenary min 90→100 + consolation 35→20
+## 다음 3사이클 (C853 합의)
+- C854 [system]: Crossroads Choice Event — fight 95-130, 런당 1회, 3경로 선택
+- C855 [structure]: tickWeatherBuffs 추출 — weather buff 5개 관리 별도 메서드 (−40줄)
+- C856 [balance+collab]: Window overlap fix + gamble identity (CLEAR_SKY_MIN 95, MERCENARY 115/145, GAMBLE WIN 0.55/LOSS 0)
+
+## 달성 사항 (C851-C853)
+- C851 [system]: Clear Sky Path — ATK×1.15 / 3 fights (normal weather, 80-130)
+- C852 [structure]: handleHeroDeath extraction (−90 lines from combat loop)
+- C853 [balance+collab]: Death penalty ramp (500k+, 20% cap) + Mercenary 90→100 + consolation 35→20
 
 ## 달성 사항 (C848-C850)
 - C848 [system]: Mercenary Offer choice event (90-120, 15% gold → 3-fight 30% DR)
