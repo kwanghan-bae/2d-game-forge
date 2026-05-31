@@ -158,8 +158,8 @@ export const HEALER_EVENT_CHANCE = 0.06; // C814: doubled (was 0.03) — prevent
 export const HEALER_HEAL_RATE = 0.25; // heals 25% of max HP
 export const HEALER_MIN_FIGHTS = 25; // C826: 30→25 (close fight 6-24 narrative gap)
 export const ECHO_EVENT_CHANCE = 0.02; // C743: prestige echo event
-export const ECHO_LATE_CHANCE = 0.03; // C823: fight 300+ scaling
-export const ECHO_LATE_THRESHOLD = 300;
+export const ECHO_LATE_CHANCE = 0.04; // C832: fight 250+ scaling (was 0.03 @300)
+export const ECHO_LATE_THRESHOLD = 250; // C832: lowered from 300
 export const ECHO_DURATION = 10; // shorter than full prestige echo (20)
 export const ECHO_MIN_LEVEL = 5; // only for mid-game heroes
 export const INSPIRATION_EVENT_CHANCE = 0.025; // C747: ATK buff event
@@ -188,6 +188,13 @@ export const RISK_GAMBIT_MIN_FIGHTS = 40;
 export const RISK_GAMBIT_MAX_FIGHTS = 90;
 export const RISK_GAMBIT_HP_COST_RATE = 0.20; // costs 20% of current HP
 export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
+// C832: Wandering Merchant — mid-game event (heal OR ATK buff)
+export const WANDERING_MERCHANT_CHANCE = 0.03;
+export const WANDERING_MERCHANT_MIN_FIGHTS = 100;
+export const WANDERING_MERCHANT_MAX_FIGHTS = 250;
+export const WANDERING_MERCHANT_HEAL_RATE = 0.30; // heals 30% of maxHP
+export const WANDERING_MERCHANT_ATK_DURATION = 15; // ATK buff lasts 15 fights
+export const WANDERING_MERCHANT_ATK_MUL = 0.10; // +10% ATK
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
@@ -199,6 +206,7 @@ export const EVENT_MOMENTUM_TIER2_DURATION = 10;
 export const EVENT_MOMENTUM_TIER3_THRESHOLD = 10; // C817: was 8, harder to reach after saturation fix
 export const EVENT_MOMENTUM_TIER3_DENSITY_MUL = 1.2; // C820: was 1.3, worst-case 2.5×1.2=3.0 (90% max)
 export const EVENT_MOMENTUM_TIER3_DURATION = 20;
+export const EVENT_MOMENTUM_TIER3_DENSITY_CAP = 2.8; // C832: hard cap during momentum T3
 export const VILLAGE_GOLD_FOUNTAIN = 25;
 export const DANGER_TAX_IMMUNITY = true;
 export const CRIT_STREAK_GUARANTEE_THRESHOLD = 3;

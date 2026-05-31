@@ -30,6 +30,9 @@ import {
   RISK_GAMBIT_CHANCE,
   RISK_GAMBIT_MIN_FIGHTS,
   RISK_GAMBIT_MAX_FIGHTS,
+  WANDERING_MERCHANT_CHANCE,
+  WANDERING_MERCHANT_MIN_FIGHTS,
+  WANDERING_MERCHANT_MAX_FIGHTS,
   TIME_RIFT_CHANCE,
   MERCHANT_EVENT_CHANCE,
   EVENT_CHAIN_THRESHOLD,
@@ -39,6 +42,7 @@ import {
   EVENT_MOMENTUM_TIER2_THRESHOLD,
   EVENT_MOMENTUM_TIER3_THRESHOLD,
   EVENT_MOMENTUM_TIER3_DENSITY_MUL,
+  EVENT_MOMENTUM_TIER3_DENSITY_CAP,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
 import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
@@ -131,6 +135,7 @@ export interface PostCombatResult {
   gamblerPending: boolean;
   altarPending: boolean;
   riskGambitPending: boolean;
+  wanderingMerchantPending: boolean; // C832
 }
 
 export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult {
@@ -177,6 +182,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     gamblerPending: false,
     altarPending: false,
     riskGambitPending: false,
+    wanderingMerchantPending: false,
   };
 
   if (result.newCursedAltarRemaining === 0 && ctx.cursedAltarRemaining > 0) {
@@ -293,6 +299,14 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
+    // C832: Wandering Merchant — mid-game (fights 100-250, heal OR ATK buff)
+    if (ctx.totalFights >= WANDERING_MERCHANT_MIN_FIGHTS && ctx.totalFights <= WANDERING_MERCHANT_MAX_FIGHTS) {
+      candidates.push({
+        id: 'wandering_merchant', weight: WANDERING_MERCHANT_CHANCE, pityEligible: false,
+        apply: (r) => { r.wanderingMerchantPending = true; r.eventType = 'event_wandering_merchant'; },
+      });
+    }
+
     // Healer
     if (ctx.totalFights >= HEALER_MIN_FIGHTS) {
       candidates.push({
@@ -335,11 +349,11 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
-    // Late-game events (with density multiplier, C814: hard cap 4.0, C829: momentum cap 2.8)
+    // Late-game events (with density multiplier, C814: hard cap 4.0, C832: T3 cap constant)
     const lateEvents = getAvailableLateEvents(ctx.totalFights);
     const baseDensity = getLateGameDensityMul(ctx.totalFights);
     const densityMul = ctx.eventMomentumDensityActive
-      ? Math.min(2.8, baseDensity * EVENT_MOMENTUM_TIER3_DENSITY_MUL)
+      ? Math.min(EVENT_MOMENTUM_TIER3_DENSITY_CAP, baseDensity * EVENT_MOMENTUM_TIER3_DENSITY_MUL)
       : Math.min(4.0, baseDensity);
     for (const le of lateEvents) {
       candidates.push({
