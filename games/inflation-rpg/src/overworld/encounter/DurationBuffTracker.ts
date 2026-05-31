@@ -4,13 +4,22 @@
  * Pure data structure, no side effects.
  */
 
+/** C942: structured buff info for UI consumption. */
+export interface BuffInfo {
+  name: string;
+  magnitude: number;
+  remaining: number; // -1 for permanent
+}
+
 export class DurationBuffTracker {
   private readonly durations = new Map<string, number>();
+  private readonly magnitudes = new Map<string, number>();
 
   /** Activate a buff for `duration` fights. Overwrites if already active. */
-  activate(buffId: string, duration: number): void {
+  activate(buffId: string, duration: number, magnitude?: number): void {
     if (duration > 0) {
       this.durations.set(buffId, duration);
+      if (magnitude !== undefined) this.magnitudes.set(buffId, magnitude);
     }
   }
 
@@ -38,16 +47,27 @@ export class DurationBuffTracker {
   /** Deactivate a specific buff (remove it). */
   deactivate(buffId: string): void {
     this.durations.delete(buffId);
+    this.magnitudes.delete(buffId);
   }
 
   /** Remove all active buffs. */
   reset(): void {
     this.durations.clear();
+    this.magnitudes.clear();
   }
 
   /** Get all active buff IDs. */
   activeBuffs(): string[] {
     return [...this.durations.keys()];
+  }
+
+  /** C942: Get structured info for all active buffs. */
+  getActiveBuffInfos(): BuffInfo[] {
+    const infos: BuffInfo[] = [];
+    for (const [id, remaining] of this.durations) {
+      infos.push({ name: id, magnitude: this.magnitudes.get(id) ?? 0, remaining });
+    }
+    return infos;
   }
 
   /** Get count of active buffs. */

@@ -19,7 +19,7 @@ import { computeHeroAtk, computeBuffedHeroAtk } from './encounter/CombatCalculat
 import { computePostVictoryExp } from './encounter/PostVictoryExpCalculator';
 import { resolveMidGameEvents } from './encounter/MidGameEventResolver';
 import { ChoiceHistory, classifyChoice } from './encounter/ChoiceHistory';
-import { DurationBuffTracker } from './encounter/DurationBuffTracker';
+import { DurationBuffTracker, BuffInfo } from './encounter/DurationBuffTracker';
 import { PermanentRewardTracker } from './encounter/PermanentRewardTracker';
 import { tickWeatherHazards as tickWeatherHazardsPure } from './encounter/WeatherHazardTicker';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
@@ -693,7 +693,7 @@ export class EncounterEngine {
   }
 
   // C578: combat stats summary for visual overlay
-  getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean; adaptivePressure: number } {
+  getCombatSummary(): { activeBuffs: string[]; activeBuffInfos: BuffInfo[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean; adaptivePressure: number } {
     const activeBuffs: string[] = [];
     if (this.shrineBuffRemaining > 0) activeBuffs.push('명상');
     if (this.sacrificeFuryRemaining > 0) activeBuffs.push('분노');
@@ -769,7 +769,12 @@ export class EncounterEngine {
     const dangerLevel = Math.min(10, Math.floor(this.dangerStreak / 5));
     // C612: adaptive pressure indicator (0-100%)
     const adaptivePressure = Math.min(100, Math.round(this.comboStreak * 2));
-    return { activeBuffs, deathPrevention, dangerLevel, deathSaveBlocked, adaptivePressure };
+    // C942: structured buff info array
+    const activeBuffInfos: BuffInfo[] = this.midGameBuffs.getActiveBuffInfos();
+    if (this.shrineBuffRemaining > 0) activeBuffInfos.push({ name: '명상', magnitude: SHRINE_MEDITATION_ATK_BUFF, remaining: this.shrineBuffRemaining });
+    if (this.statShardAtk > 0) activeBuffInfos.push({ name: '파편 ATK', magnitude: this.statShardAtk, remaining: -1 });
+    if (this.permanentRewards.enemyMorphActive) activeBuffInfos.push({ name: '적 약화', magnitude: this.permanentRewards.enemyMorphDrRate, remaining: this.permanentRewards.enemyMorphRemaining });
+    return { activeBuffs, activeBuffInfos, deathPrevention, dangerLevel, deathSaveBlocked, adaptivePressure };
   }
 
   // C594: extracted death prevention logic
