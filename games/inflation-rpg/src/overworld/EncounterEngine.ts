@@ -173,7 +173,7 @@ export class EncounterEngine {
   private fightChainCount = 0; // C293: fights since last village (for exp chain)
   private goldShieldRemaining = 0; // C307: gold shield from shop
   private consecutiveCrits = 0; // C311: crit chain counter
-  private bossFuryRemaining = 0; // C321: post-boss ATK buff
+  private bossFuryRemaining_DEPRECATED = 0; // C945: migrated to midGameBuffs('boss_fury')
   private eliteFuryRemaining = 0; // C331: post-elite crit boost
   private uniqueBossKills = 0; // C335: unique boss kills
   private dangerCascadeRemaining = 0; // C336: danger cascade duration
@@ -188,7 +188,7 @@ export class EncounterEngine {
   private critMasteryBonus = 0; // C376: accumulated crit mastery
   private villageRestAtkRemaining = 0; // C377: village rest ATK buff
   private prestigeShieldRemaining = 0; // C380: hits blocked after prestige
-  private waveMomentumRemaining = 0; // C385: wave momentum ATK buff
+  private waveMomentumRemaining_DEPRECATED = 0; // C945: migrated to midGameBuffs('wave_momentum')
   private prestigeDangerImmune = 0; // C392: immune to danger damage after prestige
   private revengeStreakRemaining = 0; // C401: revenge streak buff duration
   private revengeStreakPower = 0; // C401: accumulated revenge ATK bonus
@@ -196,7 +196,7 @@ export class EncounterEngine {
   private consecutiveWaveClears = 0; // C410: consecutive wave completions
   private dangerFights = 0; // C405: track total danger zone fights
   private overkillChain = 0; // C421: consecutive overkills
-  private eliteChainAtkRemaining = 0; // C433: elite chain ATK buff duration
+  private eliteChainAtkRemaining_DEPRECATED = 0; // C945: migrated to midGameBuffs('elite_chain_atk')
   private deathDefianceCooldown = 0; // C439: death defiance cooldown
   private eliteAfterVillage = false; // C443: track first elite after village
   private deathGoldCompound = 0; // C449: accumulated gold compound from deaths
@@ -1573,7 +1573,7 @@ export class EncounterEngine {
       // C141: survival streak increments on win
       this.survivalStreak++;
       // C216: elite combo tracking
-      if (isElite) { this.eliteCombo++; this.eliteChainAtkRemaining = ELITE_CHAIN_ATK_DURATION; } else { this.eliteCombo = 0; }
+      if (isElite) { this.eliteCombo++; this.midGameBuffs.activate('elite_chain_atk', ELITE_CHAIN_ATK_DURATION); } else { this.eliteCombo = 0; }
       // C450: elite prestige ATK — prestige makes elite kills boost ATK
       if (isElite && this.prestigeCount > 0) {
         hero.atkBase += Math.floor(this.prestigeCount * ELITE_PRESTIGE_ATK_BONUS * hero.level);
@@ -1660,7 +1660,7 @@ export class EncounterEngine {
           hero.atkBase += WAVE_MULTI_KILL_ATK_BONUS;
           hero.recomputeStats();
           // C385: wave momentum — surviving full wave boosts next fights
-          this.waveMomentumRemaining = WAVE_MOMENTUM_ATK_DURATION;
+          this.midGameBuffs.activate('wave_momentum', WAVE_MOMENTUM_ATK_DURATION);
          // C410: wave chain — consecutive wave clears boost ATK
          this.consecutiveWaveClears++;
          // C435: wave completion gold bonus
@@ -1918,7 +1918,9 @@ export class EncounterEngine {
     this.eliteAfterVillage = result.eliteAfterVillage;
     this.bankGold = result.bankGold;
     this.arenaActive = result.arenaActive || this.arenaActive;
-    if (result.waveMomentumBonus > 0) this.waveMomentumRemaining += result.waveMomentumBonus;
+    if (result.waveMomentumBonus > 0) {
+      this.midGameBuffs.activate('wave_momentum', this.midGameBuffs.remaining('wave_momentum') + result.waveMomentumBonus);
+    }
   }
 
   private resolveShrine(hero: HeroEntity, landmarkId: string, events: OverworldEvent[]): void {
@@ -2368,7 +2370,7 @@ export class EncounterEngine {
     }
     events.push({ type: 'boss_vault', gold: vaultGold });
     this.bossSlayerRemaining = BOSS_SLAYER_DURATION;
-    this.bossFuryRemaining = BOSS_FURY_DURATION;
+    this.midGameBuffs.activate('boss_fury', BOSS_FURY_DURATION);
     this.consecutiveBossKills++;
     const frenzyMul = Math.min(BOSS_FRENZY_CAP, Math.pow(BOSS_FRENZY_EXP_BASE, this.consecutiveBossKills - 1));
     hero.exp += Math.floor(hero.level * 10 * frenzyMul);
@@ -2664,18 +2666,15 @@ export class EncounterEngine {
     if (this.comboBreakerReady) this.comboBreakerReady = false;
     const hadVillageTraining = this.villageTrainingRemaining > 0;
     if (this.villageTrainingRemaining > 0) this.villageTrainingRemaining--;
-    const hadBossFury = this.bossFuryRemaining > 0;
-    if (this.bossFuryRemaining > 0) this.bossFuryRemaining--;
+    const hadBossFury = this.midGameBuffs.isActive('boss_fury');
     const hadPrestigeSurge = this.prestigeSurgeReady;
     if (this.prestigeSurgeReady) this.prestigeSurgeReady = false;
     const hadVillageRestAtk = this.villageRestAtkRemaining > 0;
     if (this.villageRestAtkRemaining > 0) this.villageRestAtkRemaining--;
-    const hadWaveMomentum = this.waveMomentumRemaining > 0;
-    if (this.waveMomentumRemaining > 0) this.waveMomentumRemaining--;
+    const hadWaveMomentum = this.midGameBuffs.isActive('wave_momentum');
     const hadRevengeStreak = this.revengeStreakRemaining > 0;
     if (this.revengeStreakRemaining > 0) this.revengeStreakRemaining--;
-    const hadEliteChainAtk = this.eliteChainAtkRemaining > 0;
-    if (this.eliteChainAtkRemaining > 0) this.eliteChainAtkRemaining--;
+    const hadEliteChainAtk = this.midGameBuffs.isActive('elite_chain_atk');
     // deathAtkSurge: decrements BEFORE reading (original behavior)
     if (this.deathAtkSurgeRemaining > 0) this.deathAtkSurgeRemaining--;
     const hadDeathAtkSurge = this.deathAtkSurgeRemaining > 0;

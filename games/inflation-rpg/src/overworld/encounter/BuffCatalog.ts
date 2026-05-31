@@ -62,6 +62,10 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   endgame_surge: { nameKR: '종반 쇄도 ATK', category: 'event' },
   ascension_trial: { nameKR: '승천 시련', category: 'event' },
   echo_memory: { nameKR: '기억의 메아리 ATK', category: 'event' },
+  // C945: Combat duration buffs (migrated from manual *Remaining fields)
+  boss_fury: { nameKR: '보스 분노', category: 'combat' },
+  wave_momentum: { nameKR: '파도 기세', category: 'combat' },
+  elite_chain_atk: { nameKR: '엘리트 연쇄 ATK', category: 'combat' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */

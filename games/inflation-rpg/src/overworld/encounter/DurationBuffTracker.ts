@@ -76,4 +76,14 @@ export class DurationBuffTracker {
   get size(): number {
     return this.durations.size;
   }
+
+  /** C945: Tick all buffs and return map of which were active before tick. */
+  tickAndCapture(): Map<string, boolean> {
+    const wasActive = new Map<string, boolean>();
+    for (const [id] of this.durations) {
+      wasActive.set(id, true);
+    }
+    this.tick();
+    return wasActive;
+  }
 }
