@@ -27,10 +27,10 @@ describe('EventGateConfig — C754', () => {
     }
   });
 
-  it('all late events have chance in (0, 0.05]', () => {
+  it('all late events have chance in (0, 0.07]', () => {
     for (const e of LATE_GAME_EVENTS) {
       expect(e.chance).toBeGreaterThan(0);
-      expect(e.chance).toBeLessThanOrEqual(0.05);
+      expect(e.chance).toBeLessThanOrEqual(0.07);
     }
   });
 

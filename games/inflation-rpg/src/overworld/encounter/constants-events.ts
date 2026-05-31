@@ -496,3 +496,10 @@ export const ELDERS_JUDGMENT_DIVERSIFY_ATK = 0.10;
 export const ELDERS_JUDGMENT_DIVERSIFY_EXP = 0.10;
 export const ELDERS_JUDGMENT_DIVERSIFY_HEAL = 0.10; // 10% maxHP heal
 export const ELDERS_JUDGMENT_DIVERSIFY_DURATION = 6;
+
+// C940: Endgame Surge — fills fight 601+ choice desert
+export const ENDGAME_SURGE_MIN_FIGHT = 601;
+export const ENDGAME_SURGE_CHANCE = 0.06; // 6% per fight (pity-boosted via LateGameScheduler)
+export const ENDGAME_SURGE_ATK_MUL = 0.30; // +30% ATK for duration
+export const ENDGAME_SURGE_DURATION = 8; // 8 fight buff
+export const ENDGAME_SURGE_SHARD_CHANCE = 0.50; // 50% to also grant stat shard

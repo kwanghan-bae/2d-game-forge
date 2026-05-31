@@ -24,6 +24,7 @@ export const EVENT_PENDING_TRIGGER_MAP: ReadonlyArray<
   ['goldCruciblePending', 'gold_crucible'],
   ['astralParadoxPending', 'astral_paradox'],
   ['soulForgePending', 'soul_forge'],
+  ['endgameSurgePending', 'endgame_surge'],
   ['voidRiftTriggered', 'void_rift'],
 ];
 

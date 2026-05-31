@@ -30,6 +30,10 @@ import {
   SOUL_FORGE_COMBO_COST,
   CLEAR_SKY_PATH_DURATION,
 } from './constants';
+import {
+  ENDGAME_SURGE_DURATION,
+  ENDGAME_SURGE_SHARD_CHANCE,
+} from './constants-events';
 
 export type EventId =
   | 'colosseum' | 'trial_grounds' | 'storm_nexus'
@@ -37,7 +41,7 @@ export type EventId =
   | 'snow_drift' | 'void_rift' | 'abyssal_convergence'
   | 'temporal_fissure' | 'titan_arena'
   | 'crimson_tithe' | 'gold_crucible' | 'astral_paradox' | 'soul_forge'
-  | 'clear_sky_path';
+  | 'clear_sky_path' | 'endgame_surge';
 
 export interface EventAcceptEffects {
   colosseumRemaining: number;
@@ -61,6 +65,8 @@ export interface EventAcceptEffects {
   soulForgeRemaining: number;
   soulForgeComboCost: number;
   clearSkyPathRemaining: number;
+  endgameSurgeRemaining: number;
+  endgameSurgeShardGranted: boolean;
   declineGold: number;
 }
 
@@ -71,7 +77,8 @@ const EMPTY_EFFECTS: EventAcceptEffects = {
   snowDriftRemaining: 0, abyssalConvergenceRemaining: 0, temporalFissureRemaining: 0,
   titanArenaRemaining: 0, crimsonTitheRemaining: 0, crimsonTitheHpCost: 0,
   goldCrucibleRemaining: 0, goldCrucibleGoldBurned: 0,
-  astralParadoxRemaining: 0, soulForgeRemaining: 0, soulForgeComboCost: 0, clearSkyPathRemaining: 0, declineGold: 0,
+  astralParadoxRemaining: 0, soulForgeRemaining: 0, soulForgeComboCost: 0,
+  clearSkyPathRemaining: 0, endgameSurgeRemaining: 0, endgameSurgeShardGranted: false, declineGold: 0,
 };
 
 // C816: Duration keys for data-driven lookup (avoids brittle || chain)
@@ -99,6 +106,7 @@ export interface EventOrchestratorCtx {
   heroGold: number;
   comboStreak: number;
   relicLevels: number[];
+  rngChance: (rate: number) => boolean; // C940: for endgame surge shard roll
 }
 
 export class EventOrchestrator {
@@ -125,6 +133,7 @@ export class EventOrchestrator {
     this.sm.register('gold_crucible', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('astral_paradox', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('soul_forge', { onAccept: () => {}, onDecline: () => {} });
+    this.sm.register('endgame_surge', { onAccept: () => {}, onDecline: () => {} });
   }
 
   trigger(id: EventId): void { this.sm.trigger(id); }
@@ -178,6 +187,10 @@ export class EventOrchestrator {
         case 'soul_forge':
           this.lastEffects.soulForgeRemaining = SOUL_FORGE_DURATION;
           this.lastEffects.soulForgeComboCost = Math.min(ctx.comboStreak, SOUL_FORGE_COMBO_COST);
+          break;
+        case 'endgame_surge':
+          this.lastEffects.endgameSurgeRemaining = ENDGAME_SURGE_DURATION;
+          this.lastEffects.endgameSurgeShardGranted = ctx.rngChance(ENDGAME_SURGE_SHARD_CHANCE);
           break;
       }
     } else {

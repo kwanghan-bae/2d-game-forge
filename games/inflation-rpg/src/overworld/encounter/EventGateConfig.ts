@@ -118,6 +118,12 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     chance: 0.02,
     description: 'Soul Forge — sacrifice 15 combo for permanent +8% EXP stack (max 5)',
   },
+  {
+    id: 'event_endgame_surge',
+    minTotalFights: 601,
+    chance: 0.06,
+    description: 'Endgame Surge — +30% ATK for 8 fights, 50% chance to also grant stat shard',
+  },
 ];
 
 /**

@@ -72,6 +72,7 @@ const LATE_EVENT_REGISTRY: Record<string, (r: LateEventResult) => void> = {
   event_gold_crucible: (r) => { r.goldCruciblePending = true; },
   event_astral_paradox: (r) => { r.astralParadoxPending = true; },
   event_soul_forge: (r) => { r.soulForgePending = true; },
+  event_endgame_surge: (r) => { r.endgameSurgePending = true; },
 };
 
 export interface PostCombatContext {
@@ -155,6 +156,7 @@ export interface PostCombatResult {
   mercenaryOfferPending: boolean; // C848
   crossroadsPending: boolean; // C854
   wanderingMerchantPending: boolean; // C832
+  endgameSurgePending: boolean; // C940
 }
 
 export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult {
@@ -206,6 +208,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     mercenaryOfferPending: false,
     crossroadsPending: false,
     wanderingMerchantPending: false,
+    endgameSurgePending: false,
   };
 
   if (result.newCursedAltarRemaining === 0 && ctx.cursedAltarRemaining > 0) {
