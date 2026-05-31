@@ -1194,60 +1194,8 @@ export class EncounterEngine {
         this.dropStreak = 0;
       }
 
-      // C322: gold hoarding exp
-      if (hero.gold > GOLD_HOARD_EXP_THRESHOLD) {
-        const hoardExp = Math.floor((hero.gold - GOLD_HOARD_EXP_THRESHOLD) / 1000) * GOLD_HOARD_EXP_PER_1000;
-        hero.exp += hoardExp;
-      }
-
-      // C343: exp theft on crit
-      const expTheft = didCrit ? Math.floor(expGain * EXP_THEFT_RATE) : 0;
-      // C362: prestige exp floor
-      const prestigeExpFloor = this.prestigeCount * PRESTIGE_EXP_FLOOR_PER_LEVEL;
-      // C369: trophy exp bonus
-      const trophyExpBonus = Math.floor(expGain * this.uniqueBossKills * TROPHY_EXP_BONUS);
-      const finalExp = Math.max(prestigeExpFloor, expGain) + expTheft + trophyExpBonus;
-      // C791: Temporal Fissure — store portion of EXP for delayed payback
-      let actualExp = finalExp;
-      if (this.temporalFissureRemaining > 0) {
-        const stored = Math.floor(finalExp * TEMPORAL_FISSURE_STORE_RATE);
-        this.temporalFissureStoredExp += stored;
-        actualExp = finalExp - stored;
-      }
-      const { leveled } = hero.gainExp(actualExp);
-      // C513: combo gate — one-shot exp burst on first reaching combo 50
-      if (this.comboStreak >= COMBO_GATE_THRESHOLD && !this.comboGateTriggered) {
-        this.comboGateTriggered = true;
-        hero.gainExp(COMBO_GATE_EXP_BURST * hero.level);
-      }
-      // C517: elite hunter streak tracking
-      if (isElite) {
-        this.consecutiveEliteKills2++;
-      } else {
-        this.consecutiveEliteKills2 = 0;
-      }
-      // C352: combo exp overflow to gold — high combo converts some exp to gold
-      if (this.comboStreak >= COMBO_STREAK_THRESHOLD && expGain > COMBO_EXP_OVERFLOW_RATIO) {
-        hero.gold += Math.floor(expGain / COMBO_EXP_OVERFLOW_RATIO);
-      }
-      // C336: danger zone kill sets cascade for next fights
-      if (isDangerZone) this.dangerCascadeRemaining = DANGER_CASCADE_DURATION;
-      // C237: exp overflow bonus — leftover exp after level-up boosted by 50%
-      if (leveled.length > 0 && hero.exp > 0) {
-        const overflowBonus = Math.floor(hero.exp * EXP_OVERFLOW_BONUS);
-        hero.exp += overflowBonus;
-      }
-      // C166: exp overflow gold bonus — excess exp converts to gold
-      if (leveled.length > 0) {
-        const overflowGold = Math.floor(hero.exp / EXP_OVERFLOW_GOLD_RATIO);
-        if (overflowGold > 0) hero.gold += overflowGold;
-      }
-
-      // Cycle 283: Sub-phase σ T3 — milestone level-up 시 trait auto-roll.
-      // milestone level (5/15/30/50/80) 도달 + chance 30% 통과 시 trait 추가.
-      if (leveled.length > 0) {
-        hero.rollTraitsForLevels(this.rng, leveled);
-      }
+      // C855: Post-victory EXP bonuses extracted
+      const leveled = this.applyPostVictoryExpBonuses(hero, expGain, didCrit, isDangerZone, isElite);
 
       // C144→C680: gold earned from battle — delegated to GoldCalculator
       const arenaMul = this.arenaActive ? ARENA_REWARD_MUL : 1;
@@ -2263,6 +2211,52 @@ export class EncounterEngine {
     if (this.mentorRemaining > 0) this.mentorRemaining--;
     if (this.eventMomentumAtkRemaining > 0) this.eventMomentumAtkRemaining--;
     if (this.eventMomentumDensityRemaining > 0) this.eventMomentumDensityRemaining--;
+  }
+
+  // C855: Post-victory EXP bonuses (hoard, theft, prestige floor, trophy, temporal fissure, overflow)
+  private applyPostVictoryExpBonuses(
+    hero: HeroEntity, expGain: number, didCrit: boolean, isDangerZone: boolean, isElite: boolean,
+  ): number[] {
+    if (hero.gold > GOLD_HOARD_EXP_THRESHOLD) {
+      const hoardExp = Math.floor((hero.gold - GOLD_HOARD_EXP_THRESHOLD) / 1000) * GOLD_HOARD_EXP_PER_1000;
+      hero.exp += hoardExp;
+    }
+    const expTheft = didCrit ? Math.floor(expGain * EXP_THEFT_RATE) : 0;
+    const prestigeExpFloor = this.prestigeCount * PRESTIGE_EXP_FLOOR_PER_LEVEL;
+    const trophyExpBonus = Math.floor(expGain * this.uniqueBossKills * TROPHY_EXP_BONUS);
+    const finalExp = Math.max(prestigeExpFloor, expGain) + expTheft + trophyExpBonus;
+    let actualExp = finalExp;
+    if (this.temporalFissureRemaining > 0) {
+      const stored = Math.floor(finalExp * TEMPORAL_FISSURE_STORE_RATE);
+      this.temporalFissureStoredExp += stored;
+      actualExp = finalExp - stored;
+    }
+    const { leveled } = hero.gainExp(actualExp);
+    if (this.comboStreak >= COMBO_GATE_THRESHOLD && !this.comboGateTriggered) {
+      this.comboGateTriggered = true;
+      hero.gainExp(COMBO_GATE_EXP_BURST * hero.level);
+    }
+    if (isElite) {
+      this.consecutiveEliteKills2++;
+    } else {
+      this.consecutiveEliteKills2 = 0;
+    }
+    if (this.comboStreak >= COMBO_STREAK_THRESHOLD && expGain > COMBO_EXP_OVERFLOW_RATIO) {
+      hero.gold += Math.floor(expGain / COMBO_EXP_OVERFLOW_RATIO);
+    }
+    if (isDangerZone) this.dangerCascadeRemaining = DANGER_CASCADE_DURATION;
+    if (leveled.length > 0 && hero.exp > 0) {
+      const overflowBonus = Math.floor(hero.exp * EXP_OVERFLOW_BONUS);
+      hero.exp += overflowBonus;
+    }
+    if (leveled.length > 0) {
+      const overflowGold = Math.floor(hero.exp / EXP_OVERFLOW_GOLD_RATIO);
+      if (overflowGold > 0) hero.gold += overflowGold;
+    }
+    if (leveled.length > 0) {
+      hero.rollTraitsForLevels(this.rng, leveled);
+    }
+    return leveled;
   }
 
   // C843: Time lock vault — deposit gold that matures over time
