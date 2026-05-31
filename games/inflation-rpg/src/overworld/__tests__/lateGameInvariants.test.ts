@@ -167,18 +167,19 @@ describe('C955: Mid-game pity invariants', () => {
     expect(VETERANS_CHALLENGE_HP_DRAIN).toBeLessThanOrEqual(0.05);
   });
 
-  it('C975: consecutive declines decay VC EXP multiplier', () => {
-    // 0-1 declines: full bonus
+  it('C975/C979: consecutive declines decay VC EXP multiplier (threshold 3, soft)', () => {
     const full = VETERANS_CHALLENGE_EXP_MUL; // 1.80
-    // 2 declines: 1.80 × 0.85^1 = 1.53
-    const after2 = Math.max(1.20, full * Math.pow(0.85, 1));
-    expect(after2).toBeCloseTo(1.53, 1);
-    // 3 declines: 1.80 × 0.85^2 ≈ 1.30
-    const after3 = Math.max(1.20, full * Math.pow(0.85, 2));
-    expect(after3).toBeCloseTo(1.30, 1);
-    // 5+ declines: hits floor of 1.20
-    const after5 = Math.max(1.20, full * Math.pow(0.85, 4));
-    expect(after5).toBe(1.20);
+    // 0-2 declines: full bonus (no penalty)
+    expect(Math.max(1.20, full * 1)).toBe(full);
+    // 3 declines: 1.80 × 0.90^1 = 1.62
+    const after3 = Math.max(1.20, full * Math.pow(0.90, 1));
+    expect(after3).toBeCloseTo(1.62, 1);
+    // 5 declines: 1.80 × 0.90^3 ≈ 1.31
+    const after5 = Math.max(1.20, full * Math.pow(0.90, 3));
+    expect(after5).toBeCloseTo(1.31, 1);
+    // 8+ declines: hits floor of 1.20
+    const after8 = Math.max(1.20, full * Math.pow(0.90, 6));
+    expect(after8).toBeCloseTo(1.20, 1);
   });
 
   it('C977: VC survival burst rewards proportional to level', () => {

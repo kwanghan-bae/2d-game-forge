@@ -233,6 +233,7 @@ export class EncounterEngine {
   private eldersJudgmentChoiceResolved: 'double_down' | 'diversify' | null = null; // C926
   private eldersJudgmentFired = false; // C926: once-per-run
   private veteransChallengeChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C959
+  private vcDeclineCount = 0; // C979: VC-specific decline counter (scoped, not cross-event)
   private veteransChallengeFired = false; // C959: once-per-run
   // C929: Elder's Judgment buffs migrated to DurationBuffTracker
   private readonly midGameBuffs = new DurationBuffTracker(); // C929: shared tracker for mid-game event buffs
@@ -686,6 +687,12 @@ export class EncounterEngine {
   setVeteransChallengeChoice(accept: boolean): void {
     this.veteransChallengeChoiceResolved = accept ? 'accept' : 'decline';
     this.choiceHistory.record(this.getTotalFights(), 'veterans_challenge', accept ? 'accept' : 'decline', classifyChoice('veterans_challenge', accept ? 'accept' : 'decline'));
+    // C979: VC-specific decline tracking (scoped — not cross-event confusion)
+    if (accept) {
+      this.vcDeclineCount = 0;
+    } else {
+      this.vcDeclineCount++;
+    }
     this.choiceEngine.resolveVeteransChallengeChoice();
   }
 
@@ -1354,11 +1361,11 @@ export class EncounterEngine {
         ? (this.midGameBuffs.isActive('ej_atk') ? (1 + ELDERS_JUDGMENT_DIVERSIFY_EXP) : (1 + ELDERS_JUDGMENT_BAL_EXP_MUL))
         : 1;
       // C959: Veteran's Challenge EXP buff
-      // C975: EXP mul decays with consecutive defensive choices (decline penalty escalation)
+      // C975/C979: EXP mul decays with consecutive defensive choices (threshold 3, soft decay 0.90)
       let vcExpMul = 1;
       if (this.midGameBuffs.isActive('vc_exp')) {
         const declines = this.choiceHistory.getConsecutiveDeclines();
-        const decay = declines >= 2 ? Math.pow(0.85, declines - 1) : 1;
+        const decay = declines >= 3 ? Math.pow(0.90, declines - 2) : 1;
         vcExpMul = Math.max(1.20, VETERANS_CHALLENGE_EXP_MUL * decay);
       }
       const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul * vcExpMul);
