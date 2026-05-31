@@ -16,6 +16,7 @@ import { LateGameScheduler } from './encounter/LateGameScheduler';
 import { LandmarkResolver } from './encounter/LandmarkResolver';
 import { VillageResolver } from './encounter/VillageResolver';
 import { computeHeroAtk, computeBuffedHeroAtk } from './encounter/CombatCalculator';
+import { computePostVictoryExp } from './encounter/PostVictoryExpCalculator';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
@@ -1178,20 +1179,22 @@ export class EncounterEngine {
       this.lastExpBreakdown = expBreakdownResult;
       if (this.survivorGritActive) this.survivorGritActive = false;
 
-      // C804: decline stack EXP bonus for event duration
-      const dsm = this.declineStackExpDuration > 0 ? this.declineStackExpMul : 1;
+      // C861: Post-victory EXP multiplier chain delegated to pure function
+      const { cappedExp: expGain } = computePostVictoryExp({
+        baseExpGain, expMul,
+        declineStackActive: this.declineStackExpDuration > 0,
+        declineStackExpMul: this.declineStackExpMul,
+        soulForgeStacks: this.soulForgeStacks,
+        soulForgeExpPerStack: SOUL_FORGE_EXP_PER_STACK,
+        mentorActive,
+        mentorExpMul: MENTOR_EXP_MUL,
+        crossroadsExpActive: this.crossroadsExpRemaining > 0,
+        crossroadsExpMul: CROSSROADS_EXP_MUL,
+        earlyMomentumExpActive: this.earlyMomentumExpRemaining > 0,
+        earlyMomentumExpMul: EARLY_MOMENTUM_EXP_MUL,
+        heroLevel: hero.level,
+      });
       if (this.declineStackExpDuration > 0) this.declineStackExpDuration--;
-      // C806: Soul Forge permanent EXP bonus
-      const sfm = 1 + this.soulForgeStacks * SOUL_FORGE_EXP_PER_STACK;
-      // C812: Wandering Mentor EXP bonus
-      const mentorMul = mentorActive ? (1 + MENTOR_EXP_MUL) : 1;
-      // C854: Crossroads EXP path bonus
-      const crossroadsExpMul = this.crossroadsExpRemaining > 0 ? CROSSROADS_EXP_MUL : 1;
-      // C860: Early momentum EXP buff
-      const earlyMomExpMul = this.earlyMomentumExpRemaining > 0 ? EARLY_MOMENTUM_EXP_MUL : 1;
-      const expGainRaw = Math.floor(baseExpGain * expMul * dsm * sfm * mentorMul * crossroadsExpMul * earlyMomExpMul);
-      // C627: EXP safety cap — reduced from level×2500 to level×500
-      const expGain = Math.min(expGainRaw, hero.level * 500);
       // C711: drop chance via extracted pure function
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
       const dropResult = computeDropChance({
