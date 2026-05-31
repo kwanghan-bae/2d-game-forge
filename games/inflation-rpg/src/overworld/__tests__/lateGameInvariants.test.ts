@@ -16,6 +16,13 @@ import {
   VETERANS_CHALLENGE_MIN_FIGHT,
   VETERANS_CHALLENGE_MAX_FIGHT,
   VETERANS_CHALLENGE_DURATION,
+  PROVING_GROUNDS_REWARD_EXP_MUL,
+  REPUTATION_BALANCED_EXP_MUL,
+  VETERANS_TRIAL_BALANCED_EXP_MUL,
+  FINAL_RECKONING_BALANCED_EXP_MUL,
+  FIRST_TRIAL_EXP_MUL,
+  WANDERING_SAGE_EXP_MUL,
+  ELDERS_JUDGMENT_BAL_EXP_MUL,
 } from '../encounter/constants-events';
 import { LATE_GAME_EVENTS } from '../encounter/EventGateConfig';
 
@@ -85,5 +92,22 @@ describe('C955: Mid-game pity invariants', () => {
     expect(VETERANS_CHALLENGE_MAX_FIGHT).toBeLessThanOrEqual(500);
     expect(VETERANS_CHALLENGE_DURATION).toBeGreaterThanOrEqual(3);
     expect(VETERANS_CHALLENGE_DURATION).toBeLessThanOrEqual(10);
+  });
+
+  it('max theoretical EXP stacking is within designed inflation bounds', () => {
+    // All EXP buffs multiply: proving × rep × vt × fr × ft × ws × ej × vc
+    const maxStack = PROVING_GROUNDS_REWARD_EXP_MUL
+      * (1 + REPUTATION_BALANCED_EXP_MUL)
+      * (1 + VETERANS_TRIAL_BALANCED_EXP_MUL)
+      * (1 + FINAL_RECKONING_BALANCED_EXP_MUL)
+      * FIRST_TRIAL_EXP_MUL
+      * WANDERING_SAGE_EXP_MUL
+      * (1 + ELDERS_JUDGMENT_BAL_EXP_MUL)
+      * VETERANS_CHALLENGE_EXP_MUL;
+    // Intentional: inflation-rpg allows exponential growth
+    // Cap at 15× to catch accidental constant inflation
+    expect(maxStack).toBeLessThan(15);
+    // But must be at least 5× to feel rewarding
+    expect(maxStack).toBeGreaterThan(5);
   });
 });
