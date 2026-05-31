@@ -198,6 +198,7 @@ export class EncounterEngine {
   private inspirationRemaining = 0; // C749: inspiration ATK buff duration
   private mentorRemaining = 0; // C812: wandering mentor EXP buff duration
   private lastChainFlavor: string | null = null; // C821: chain event narrative flavor
+  private gambitPolicy: 'always' | 'never' | 'hp_above_half' = 'always'; // C830: player policy
   // C788: hero reference for event resolve (set at start of resolveEncounter)
   private hero!: HeroEntity;
   private colosseumRemaining = 0; // C757: ancient colosseum duration (EXP×2, enemy ATK×1.3)
@@ -354,6 +355,18 @@ export class EncounterEngine {
     const f = this.lastChainFlavor;
     this.lastChainFlavor = null; // consume on read
     return f;
+  }
+  // C830: Gambit policy accessor
+  setGambitPolicy(policy: 'always' | 'never' | 'hp_above_half'): void {
+    this.gambitPolicy = policy;
+  }
+  getGambitPolicy(): string { return this.gambitPolicy; }
+  private resolveGambitPolicy(hero: HeroEntity): boolean {
+    switch (this.gambitPolicy) {
+      case 'always': return true;
+      case 'never': return false;
+      case 'hp_above_half': return hero.hp > hero.hpMax * 0.5;
+    }
   }
   // C753: expose inspiration remaining for HUD
   getInspirationRemaining(): number { return this.inspirationRemaining; }
@@ -2135,9 +2148,9 @@ export class EncounterEngine {
       if (fx.eventSubType) events.push({ type: fx.eventSubType });
     }
 
-    // C826: Risk Gambit — auto-resolve (50% accept)
+    // C826/C830: Risk Gambit — resolve via player policy
     if (r.riskGambitPending) {
-      const accepted = this.rng.chance(0.5);
+      const accepted = this.resolveGambitPolicy(hero);
       if (accepted) {
         const hpCost = Math.floor(hero.hp * RISK_GAMBIT_HP_COST_RATE);
         const goldReward = hero.level * RISK_GAMBIT_GOLD_MUL;

@@ -170,6 +170,7 @@ export const INITIAL_META: MetaState = {
   tokensRedeemed: 0,
   seasonStartedAt: 0,
   battleSpeed: 1,
+  gambitPolicy: 'always',
   bestiary: {},
 };
 
@@ -209,6 +210,7 @@ interface GameStore {
   restartTutorial: () => void;
   setVolumes: (music: number, sfx: number, muted: boolean) => void;
   toggleBattleSpeed: () => void;
+  setGambitPolicy: (p: 'always' | 'never' | 'hp_above_half') => void;
   gainDR: (amount: number) => void;
   gainEnhanceStones: (amount: number) => void;
   enhanceItem: (instanceId: string) => void;
@@ -753,6 +755,10 @@ export function runStoreMigration(persisted: unknown, fromVersion: number): unkn
   if (fromVersion <= 26 && s.meta) {
     (s.meta as Record<string, unknown>)['bestiary'] = (s.meta as Record<string, unknown>)['bestiary'] ?? {};
   }
+  // C830 — gambitPolicy default
+  if (s.meta && !(s.meta as Record<string, unknown>)['gambitPolicy']) {
+    (s.meta as Record<string, unknown>)['gambitPolicy'] = 'always';
+  }
   return s;
 }
 
@@ -1049,6 +1055,7 @@ export const useGameStore = create<GameStore>()(
       restartTutorial: () => set((s) => ({ meta: { ...s.meta, tutorialDone: false, tutorialStep: 0 } })),
       setVolumes: (music, sfx, muted) => set((s) => ({ meta: { ...s.meta, musicVolume: music, sfxVolume: sfx, muted } })),
       toggleBattleSpeed: () => set((s) => ({ meta: { ...s.meta, battleSpeed: s.meta.battleSpeed === 1 ? 2 : 1 } })),
+      setGambitPolicy: (p: 'always' | 'never' | 'hp_above_half') => set((s) => ({ meta: { ...s.meta, gambitPolicy: p } })),
 
       gainDR: (amount) =>
         set((s) => ({ meta: { ...s.meta, dr: s.meta.dr + amount } })),
