@@ -1,12 +1,12 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 934
+- Cycle: 937
 - Target: 600+ (연속 진화)
-- Last commit: C933 DurationBuffTracker Phase 4
+- Last commit: C936 getCombatSummary buff visibility
 - Vitest: 2426 pass / 0 fail
-- EncounterEngine: ~2650 lines (reduced ~100 LOC via field removal)
-- Critic score: 26/40 (C928, pending C934 update)
+- EncounterEngine: ~2670 lines
+- Critic score: 20/40 (C934)
 
 ## 레이어 카운터 (C926-C934 era)
 - 시스템: 3 (C926, C929, C932)
@@ -15,9 +15,9 @@
 - 콜라보: 2 (C928, C934)
 
 ## 제약
-- cycles_since_collab: 0 (current is C934)
-- Next collab: C937
-- Layer rotation: C935=system, C936=structure, C937=balance+collab
+- cycles_since_collab: 0 (current is C937)
+- Next collab: C940
+- Layer rotation: C938=system, C939=structure, C940=balance+collab
 
 ## DurationBuffTracker 마이그레이션 상태
 - 총 40 fields migrated to midGameBuffs
@@ -43,7 +43,7 @@
 - Elder's Judgment: 2-way double_down/diversify, once (fight 300-500, ≥6 choices)
 - Reputation/VT/FR: auto-resolve consequences
 
-## 달성 사항 (C926-C934)
+## 달성 사항 (C926-C937)
 - C926 [system]: Elder's Judgment resolver (fight 300-500, once, ≥6 choices)
 - C927 [structure]: Elder's Judgment full EncounterEngine wiring
 - C928 [balance+collab]: Collab (critic 26/40, level B+, planner C929-C934 roadmap)
@@ -52,4 +52,7 @@
 - C931 [balance]: Sim parity verified
 - C932 [system]: DurationBuffTracker Phase 3 — 11 fields (total 28)
 - C933 [structure]: DurationBuffTracker Phase 4 — 12 env fields (total 40)
-- C934 [balance+collab]: Collab dispatch (critic/level/planner) + RESUME update
+- C934 [balance+collab]: Collab dispatch (critic 20/40, level B-, planner C935-C940)
+- C935 [system]: Early-game desert fix — Proving Grounds min 35→20
+- C936 [structure]: getCombatSummary exposes all 40 midGameBuffs
+- C937 [balance+collab]: Collab dispatch (critic 18/40, planner C938-C943)
