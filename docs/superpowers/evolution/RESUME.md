@@ -1,12 +1,12 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 868
+- Cycle: 871
 - Target: 600+ (연속 진화)
-- Last commit: C868 crossroads pity + BUFF_STACK_CAP 1.85 + momentum ATK 0.08
+- Last commit: C871 BUFF_STACK_CAP 1.65 + density ramp 120 + proving win 70%
 - Vitest: 2268 pass / 0 fail
-- EncounterEngine: ~2549 lines
-- Critic score: 28.5/40 (C868 collab, +0.5)
+- EncounterEngine: ~2500 lines
+- Critic score: 20/40 (C871 collab, 플레이어 체감 기준 재보정)
 
 ## 레이어 카운터 (C854-C868 era)
 - 시스템: 5 (C854, C857, C860, C863, C866)
@@ -15,20 +15,20 @@
 - 콜라보: 5 (C856, C859, C862, C865, C868)
 
 ## 제약
-- cycles_since_collab: 0 (C868 is collab)
-- Next collab: C871
-- EncounterEngine: ~2549 lines
-- Layer rotation: system → structure → balance (C869=system, C870=structure, C871=balance+collab)
+- cycles_since_collab: 0 (C871 is collab)
+- Next collab: C874
+- EncounterEngine: ~2500 lines
+- Layer rotation: system → structure → balance (C872=system, C873=structure, C874=balance+collab)
 
-## 🔴 Critical Bug Found
-- Crossroads pity DEAD CODE: threshold=40 > window=35 (fight 95-130)
-- MidGameEventResolver NOT WIRED into EncounterEngine (duplicate code)
-- BUFF_STACK_CAP 1.85 unreachable in any practical scenario
+## 🔴 Critical: UI Consumer Gap
+- 모든 mid-game events (proving/crossroads/storm/merchant) UI 표시 0px
+- "시뮬레이터가 아닌 게임"으로 전환 필요
+- C872에서 toast pipeline 추가 최우선
 
-## 다음 3사이클 (C868 합의)
-- C869 [system]: Fix crossroads pity (30) + EARLY_MOMENTUM_MAX 50→65 + proving grounds buff (2.00×5)
-- C870 [structure]: Wire MidGameEventResolver into EncounterEngine (−100 LOC)
-- C871 [balance+collab]: BUFF_STACK_CAP 1.65 + late density ramp 120 + proving win 70%
+## 다음 3사이클 (C871 합의)
+- C872 [system]: Mid-game event toast pipeline (EventChoiceToastLogic + OverworldRunner wire)
+- C873 [structure]: Extract combat resolution loop OR constants domain split (−200 LOC)
+- C874 [balance+collab]: PROVING_GROUNDS_CHANCE 6% + density slope 0.008 + late pool expansion
 
 ## 달성 사항 (C854-C868)
 - C854 [system]: Crossroads Choice Event
@@ -46,6 +46,9 @@
 - C866 [system]: Proving Grounds mid-game challenge (fight 55-90)
 - C867 [structure]: Extract MidGameEventResolver (14 tests)
 - C868 [balance]: Crossroads pity 40 + BUFF_STACK_CAP 1.85 + momentum ATK 8%
+- C869 [system]: Fix crossroads pity (30) + momentum extend (65) + proving buff (2.00×5)
+- C870 [structure]: Wire MidGameEventResolver into EncounterEngine (−49 LOC)
+- C871 [balance]: BUFF_STACK_CAP 1.65 + density ramp 120 + proving win 70%
 
 ## Backlog
 - Storm drain / early momentum UI consumer (VFX/toast/saga)
