@@ -1800,10 +1800,11 @@ export class EncounterEngine {
       dangerComboAtk: p.dangerComboAtk,
       comboAtkMilestone: p.comboAtkMilestone,
       goldCrucibleAtkFlat: this.goldCrucibleAtkFlat,
-      heroAtk: this.stormNexusRemaining > 0 ? Math.floor(p.hero.atk * STORM_NEXUS_ATK_MUL)
-        : this.clearSkyPathRemaining > 0 ? Math.floor(p.hero.atk * CLEAR_SKY_PATH_ATK_MUL)
-        : this.crossroadsAtkRemaining > 0 ? Math.floor(p.hero.atk * (1 + CROSSROADS_ATK_MUL))
-        : p.hero.atk,
+      // C857: Composable multiplicative ATK buff stack (weather exclusivity = natural cap)
+      heroAtk: Math.floor(p.hero.atk
+        * (this.stormNexusRemaining > 0 ? STORM_NEXUS_ATK_MUL : 1)
+        * (this.clearSkyPathRemaining > 0 ? CLEAR_SKY_PATH_ATK_MUL : 1)
+        * (this.crossroadsAtkRemaining > 0 ? (1 + CROSSROADS_ATK_MUL) : 1)),
       weather: p.weather,
       hasBloodPactRelic: this.hasRelic(4),
     };
