@@ -119,6 +119,24 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
     description: 'Soul Forge — sacrifice 15 combo for permanent +8% EXP stack (max 5)',
   },
   {
+    id: 'event_ascension_trial',
+    minTotalFights: 520,
+    chance: 0.04,
+    description: 'Ascension Trial — enemies ×1.5 level, EXP×2.0 for 5 fights',
+  },
+  {
+    id: 'event_echo_memory',
+    minTotalFights: 540,
+    chance: 0.035,
+    description: 'Echo Memory — phantom buff: +25% ATK for 6 fights',
+  },
+  {
+    id: 'event_shard_fusion',
+    minTotalFights: 570,
+    chance: 0.03,
+    description: 'Shard Fusion — sacrifice 3 stat shards for permanent +15 ATK',
+  },
+  {
     id: 'event_endgame_surge',
     minTotalFights: 601,
     chance: 0.06,

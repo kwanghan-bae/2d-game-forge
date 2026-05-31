@@ -56,6 +56,8 @@ import {
   EVENT_MOMENTUM_TIER3_THRESHOLD,
   EVENT_MOMENTUM_TIER3_DENSITY_MUL,
   EVENT_MOMENTUM_TIER3_DENSITY_CAP,
+  LATE_GAME_PITY_THRESHOLD,
+  LATE_GAME_PITY_FIGHT_MIN,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
 import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
@@ -73,6 +75,9 @@ const LATE_EVENT_REGISTRY: Record<string, (r: LateEventResult) => void> = {
   event_astral_paradox: (r) => { r.astralParadoxPending = true; },
   event_soul_forge: (r) => { r.soulForgePending = true; },
   event_endgame_surge: (r) => { r.endgameSurgePending = true; },
+  event_ascension_trial: (r) => { r.ascensionTrialPending = true; },
+  event_echo_memory: (r) => { r.echoMemoryPending = true; },
+  event_shard_fusion: (r) => { r.shardFusionPending = true; },
 };
 
 export interface PostCombatContext {
@@ -157,6 +162,9 @@ export interface PostCombatResult {
   crossroadsPending: boolean; // C854
   wanderingMerchantPending: boolean; // C832
   endgameSurgePending: boolean; // C940
+  ascensionTrialPending: boolean; // C941
+  echoMemoryPending: boolean; // C941
+  shardFusionPending: boolean; // C941
 }
 
 export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult {
@@ -209,6 +217,9 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     crossroadsPending: false,
     wanderingMerchantPending: false,
     endgameSurgePending: false,
+    ascensionTrialPending: false,
+    echoMemoryPending: false,
+    shardFusionPending: false,
   };
 
   if (result.newCursedAltarRemaining === 0 && ctx.cursedAltarRemaining > 0) {
@@ -218,7 +229,10 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   const eventsEnabled = ctx.totalFights > 20;
   let eventTriggered = false;
   // C714: pity timer — force event if N fights without one
-  const pityActive = eventsEnabled && ctx.fightsSinceEvent >= EVENT_PITY_THRESHOLD;
+  // C941: reduced threshold for fights > 500 (18 → 12)
+  const effectivePityThreshold = ctx.totalFights >= LATE_GAME_PITY_FIGHT_MIN
+    ? LATE_GAME_PITY_THRESHOLD : EVENT_PITY_THRESHOLD;
+  const pityActive = eventsEnabled && ctx.fightsSinceEvent >= effectivePityThreshold;
 
   // C809: Weighted event pool — replaces first-match-wins if-chain
   if (eventsEnabled) {

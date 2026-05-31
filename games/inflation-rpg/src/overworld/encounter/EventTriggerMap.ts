@@ -25,6 +25,9 @@ export const EVENT_PENDING_TRIGGER_MAP: ReadonlyArray<
   ['astralParadoxPending', 'astral_paradox'],
   ['soulForgePending', 'soul_forge'],
   ['endgameSurgePending', 'endgame_surge'],
+  ['ascensionTrialPending', 'ascension_trial'],
+  ['echoMemoryPending', 'echo_memory'],
+  ['shardFusionPending', 'shard_fusion'],
   ['voidRiftTriggered', 'void_rift'],
 ];
 

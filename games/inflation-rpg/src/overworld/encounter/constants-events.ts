@@ -497,6 +497,27 @@ export const ELDERS_JUDGMENT_DIVERSIFY_EXP = 0.10;
 export const ELDERS_JUDGMENT_DIVERSIFY_HEAL = 0.10; // 10% maxHP heal
 export const ELDERS_JUDGMENT_DIVERSIFY_DURATION = 6;
 
+// C941: Late-game event seeding — fills fight 501-600 choice desert
+export const ASCENSION_TRIAL_MIN_FIGHT = 520;
+export const ASCENSION_TRIAL_CHANCE = 0.04;
+export const ASCENSION_TRIAL_DURATION = 5;
+export const ASCENSION_TRIAL_ENEMY_LEVEL_MUL = 1.5;
+export const ASCENSION_TRIAL_EXP_MUL = 2.0;
+
+export const ECHO_MEMORY_MIN_FIGHT = 540;
+export const ECHO_MEMORY_CHANCE = 0.035;
+export const ECHO_MEMORY_DURATION = 6;
+export const ECHO_MEMORY_ATK_MUL = 0.25; // +25% ATK
+
+export const SHARD_FUSION_MIN_FIGHT = 570;
+export const SHARD_FUSION_CHANCE = 0.03;
+export const SHARD_FUSION_COST = 3; // shards consumed
+export const SHARD_FUSION_ATK_REWARD = 15; // permanent ATK
+
+// C941: late-game pity reduction (was 18 → 12 for fights > 500)
+export const LATE_GAME_PITY_THRESHOLD = 12;
+export const LATE_GAME_PITY_FIGHT_MIN = 500;
+
 // C940: Endgame Surge — fills fight 601+ choice desert
 export const ENDGAME_SURGE_MIN_FIGHT = 601;
 export const ENDGAME_SURGE_CHANCE = 0.06; // 6% per fight (pity-boosted via LateGameScheduler)

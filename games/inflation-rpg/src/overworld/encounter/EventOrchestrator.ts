@@ -33,6 +33,10 @@ import {
 import {
   ENDGAME_SURGE_DURATION,
   ENDGAME_SURGE_SHARD_CHANCE,
+  ASCENSION_TRIAL_DURATION,
+  ECHO_MEMORY_DURATION,
+  SHARD_FUSION_COST,
+  SHARD_FUSION_ATK_REWARD,
 } from './constants-events';
 
 export type EventId =
@@ -41,7 +45,8 @@ export type EventId =
   | 'snow_drift' | 'void_rift' | 'abyssal_convergence'
   | 'temporal_fissure' | 'titan_arena'
   | 'crimson_tithe' | 'gold_crucible' | 'astral_paradox' | 'soul_forge'
-  | 'clear_sky_path' | 'endgame_surge';
+  | 'clear_sky_path' | 'endgame_surge'
+  | 'ascension_trial' | 'echo_memory' | 'shard_fusion';
 
 export interface EventAcceptEffects {
   colosseumRemaining: number;
@@ -67,6 +72,10 @@ export interface EventAcceptEffects {
   clearSkyPathRemaining: number;
   endgameSurgeRemaining: number;
   endgameSurgeShardGranted: boolean;
+  ascensionTrialRemaining: number;
+  echoMemoryRemaining: number;
+  shardFusionGranted: boolean;
+  shardFusionCost: number;
   declineGold: number;
 }
 
@@ -78,7 +87,9 @@ const EMPTY_EFFECTS: EventAcceptEffects = {
   titanArenaRemaining: 0, crimsonTitheRemaining: 0, crimsonTitheHpCost: 0,
   goldCrucibleRemaining: 0, goldCrucibleGoldBurned: 0,
   astralParadoxRemaining: 0, soulForgeRemaining: 0, soulForgeComboCost: 0,
-  clearSkyPathRemaining: 0, endgameSurgeRemaining: 0, endgameSurgeShardGranted: false, declineGold: 0,
+  clearSkyPathRemaining: 0, endgameSurgeRemaining: 0, endgameSurgeShardGranted: false,
+  ascensionTrialRemaining: 0, echoMemoryRemaining: 0, shardFusionGranted: false, shardFusionCost: 0,
+  declineGold: 0,
 };
 
 // C816: Duration keys for data-driven lookup (avoids brittle || chain)
@@ -88,7 +99,7 @@ const DURATION_KEYS: ReadonlyArray<keyof EventAcceptEffects> = [
   'windGaleRemaining', 'snowDriftRemaining', 'abyssalConvergenceRemaining',
   'temporalFissureRemaining', 'titanArenaRemaining', 'crimsonTitheRemaining',
   'goldCrucibleRemaining', 'astralParadoxRemaining', 'soulForgeRemaining',
-  'clearSkyPathRemaining',
+  'clearSkyPathRemaining', 'ascensionTrialRemaining', 'echoMemoryRemaining',
 ];
 
 /** C816: Find the active event duration from effects (first non-zero), or default. */
@@ -106,6 +117,7 @@ export interface EventOrchestratorCtx {
   heroGold: number;
   comboStreak: number;
   relicLevels: number[];
+  statShardAtk: number; // C941: for shard fusion eligibility
   rngChance: (rate: number) => boolean; // C940: for endgame surge shard roll
 }
 
@@ -134,6 +146,9 @@ export class EventOrchestrator {
     this.sm.register('astral_paradox', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('soul_forge', { onAccept: () => {}, onDecline: () => {} });
     this.sm.register('endgame_surge', { onAccept: () => {}, onDecline: () => {} });
+    this.sm.register('ascension_trial', { onAccept: () => {}, onDecline: () => {} });
+    this.sm.register('echo_memory', { onAccept: () => {}, onDecline: () => {} });
+    this.sm.register('shard_fusion', { onAccept: () => {}, onDecline: () => {} });
   }
 
   trigger(id: EventId): void { this.sm.trigger(id); }
@@ -191,6 +206,16 @@ export class EventOrchestrator {
         case 'endgame_surge':
           this.lastEffects.endgameSurgeRemaining = ENDGAME_SURGE_DURATION;
           this.lastEffects.endgameSurgeShardGranted = ctx.rngChance(ENDGAME_SURGE_SHARD_CHANCE);
+          break;
+        case 'ascension_trial':
+          this.lastEffects.ascensionTrialRemaining = ASCENSION_TRIAL_DURATION;
+          break;
+        case 'echo_memory':
+          this.lastEffects.echoMemoryRemaining = ECHO_MEMORY_DURATION;
+          break;
+        case 'shard_fusion':
+          this.lastEffects.shardFusionGranted = true;
+          this.lastEffects.shardFusionCost = SHARD_FUSION_COST;
           break;
       }
     } else {
