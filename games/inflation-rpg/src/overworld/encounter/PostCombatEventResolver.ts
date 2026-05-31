@@ -22,6 +22,8 @@ import {
   FAIRY_CHANCE,
   FAIRY_LATE_CHANCE,
   FAIRY_LATE_THRESHOLD,
+  FAIRY_RAMP_START,
+  FAIRY_RAMP_END,
   FAIRY_DURATION,
   MENTOR_CHANCE,
   MENTOR_MIN_FIGHTS,
@@ -277,9 +279,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
-    // Fairy blessing — C823: late-game scaling
+    // Fairy blessing — C835: linear ramp (fight 120→200, 2%→4%)
+    const fairyWeight = ctx.totalFights <= FAIRY_RAMP_START ? FAIRY_CHANCE
+      : ctx.totalFights >= FAIRY_RAMP_END ? FAIRY_LATE_CHANCE
+      : FAIRY_CHANCE + (FAIRY_LATE_CHANCE - FAIRY_CHANCE) * ((ctx.totalFights - FAIRY_RAMP_START) / (FAIRY_RAMP_END - FAIRY_RAMP_START));
     candidates.push({
-      id: 'fairy', weight: ctx.totalFights >= FAIRY_LATE_THRESHOLD ? FAIRY_LATE_CHANCE : FAIRY_CHANCE, pityEligible: true,
+      id: 'fairy', weight: fairyWeight, pityEligible: true,
       apply: (r) => { r.newFairyBlessingRemaining = FAIRY_DURATION; r.eventType = 'event_fairy'; },
     });
 

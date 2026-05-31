@@ -159,7 +159,7 @@ export const HEALER_HEAL_RATE = 0.25; // heals 25% of max HP
 export const HEALER_MIN_FIGHTS = 25; // C826: 30→25 (close fight 6-24 narrative gap)
 export const ECHO_EVENT_CHANCE = 0.02; // C743: prestige echo event
 export const ECHO_LATE_CHANCE = 0.04; // C832: fight 250+ scaling (was 0.03 @300)
-export const ECHO_LATE_THRESHOLD = 250; // C832: lowered from 300
+export const ECHO_LATE_THRESHOLD = 275; // C835: 250→275 (separate from Abyssal activation at 250)
 export const ECHO_DURATION = 10; // shorter than full prestige echo (20)
 export const ECHO_MIN_LEVEL = 5; // only for mid-game heroes
 export const INSPIRATION_EVENT_CHANCE = 0.025; // C747: ATK buff event
@@ -175,6 +175,8 @@ export const CURSED_ALTAR_HP_THRESHOLD = 0.40; // C702: sacrifice blocked if HP 
 export const FAIRY_CHANCE = 0.02;
 export const FAIRY_LATE_CHANCE = 0.04; // C829: 0.035→0.04 (share 3.9%→4.5% @400)
 export const FAIRY_LATE_THRESHOLD = 150; // C829: 350→150 (mid-game presence)
+export const FAIRY_RAMP_START = 120; // C835: linear ramp start
+export const FAIRY_RAMP_END = 200; // C835: linear ramp end
 export const FAIRY_DURATION = 5;
 // C812: Wandering Mentor — early-game EXP buff (fights 25-149)
 export const MENTOR_CHANCE = 0.05; // C818: was 0.03, collab consensus
@@ -190,11 +192,11 @@ export const RISK_GAMBIT_HP_COST_RATE = 0.20; // costs 20% of current HP
 export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
-export const WANDERING_MERCHANT_MIN_FIGHTS = 100;
+export const WANDERING_MERCHANT_MIN_FIGHTS = 120; // C835: 100→120 (reduce 90-130 saturation)
 export const WANDERING_MERCHANT_MAX_FIGHTS = 250;
-export const WANDERING_MERCHANT_HEAL_RATE = 0.30; // heals 30% of maxHP
-export const WANDERING_MERCHANT_ATK_DURATION = 15; // ATK buff lasts 15 fights
-export const WANDERING_MERCHANT_ATK_MUL = 0.10; // +10% ATK
+export const WANDERING_MERCHANT_HEAL_RATE = 0.25; // C835: 0.30→0.25 (balance ATK path attractiveness)
+export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, stronger identity)
+export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
