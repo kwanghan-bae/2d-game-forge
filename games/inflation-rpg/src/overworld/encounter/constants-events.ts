@@ -201,14 +201,14 @@ export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level a
 
 // C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
 export const MERCENARY_OFFER_CHANCE = 0.03;
-export const MERCENARY_OFFER_MIN_FIGHTS = 100; // C853: 90→100 (reduce Sparring overlap)
-export const MERCENARY_OFFER_MAX_FIGHTS = 120;
+export const MERCENARY_OFFER_MIN_FIGHTS = 115; // C856: 100→115 (separate from Crossroads window)
+export const MERCENARY_OFFER_MAX_FIGHTS = 145; // C856: 120→145 (wider late window)
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
 export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
 // C851: Clear Sky Path — sunshine ATK buff (normal weather, fight 80-130)
 export const CLEAR_SKY_PATH_CHANCE = 0.03;
-export const CLEAR_SKY_PATH_MIN_FIGHTS = 80;
+export const CLEAR_SKY_PATH_MIN_FIGHTS = 95; // C856: 80→95 (align with Crossroads start)
 export const CLEAR_SKY_PATH_MAX_FIGHTS = 130;
 export const CLEAR_SKY_PATH_ATK_MUL = 1.15; // ×1.15 ATK for duration
 export const CLEAR_SKY_PATH_DURATION = 3; // 3 fights
@@ -232,8 +232,8 @@ export const WANDERING_MERCHANT_HEAL_RATE = 0.25; // C835: 0.30→0.25 (balance 
 export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, stronger identity)
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
 export const WANDERING_MERCHANT_GAMBLE_CHANCE = 0.35; // C844: probability AI picks double-or-nothing over safe ATK
-export const WANDERING_MERCHANT_GAMBLE_WIN_RATE = 0.5; // C844: 50% → 2× duration, 50% → nothing
-export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 20; // C853: 35→20 (reduce gamble EV dominance)
+export const WANDERING_MERCHANT_GAMBLE_WIN_RATE = 0.55; // C856: 0.50→0.55 (strengthen gamble identity)
+export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 0; // C856: 20→0 (free gamble, identity = variance)
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
