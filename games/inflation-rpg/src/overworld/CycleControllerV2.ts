@@ -1189,6 +1189,36 @@ export class CycleControllerV2 {
           payload: { choice: ev.choice, dim: ev.dim, delta: ev.delta },
         });
       }
+      // C893: Wire choice/consequence events into saga
+      if (ev.type === 'event_wandering_merchant' || ev.type === 'event_proving_grounds'
+        || ev.type === 'event_crossroads' || ev.type === 'event_mercenary_offer'
+        || ev.type === 'event_last_stand') {
+        const choice = (ev as { choice?: string; path?: string }).choice
+          ?? (ev as { path?: string }).path ?? 'unknown';
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'choiceEvent',
+          narrativeText: NarrativeGenerator.forChoiceEvent({
+            age: this.hero.age,
+            eventType: ev.type.replace('event_', ''),
+            choice,
+          }, this.rng.int(100000)),
+          payload: { eventType: ev.type, choice },
+        });
+      }
+      if (ev.type === 'event_reputation' || ev.type === 'event_veterans_trial') {
+        const style = (ev as { style?: string }).style ?? 'balanced';
+        this.recordToStore({
+          age: this.hero.age,
+          type: 'consequenceEvent',
+          narrativeText: NarrativeGenerator.forConsequenceEvent({
+            age: this.hero.age,
+            eventType: ev.type.replace('event_', ''),
+            style,
+          }, this.rng.int(100000)),
+          payload: { eventType: ev.type, style },
+        });
+      }
       if (ev.type === 'hero_died') {
         this.endCause = ev.cause;
         const enemyType = ev.enemyId ? LANDMARK_TYPES.find(t => ev.enemyId!.startsWith(t.id)) : null;
