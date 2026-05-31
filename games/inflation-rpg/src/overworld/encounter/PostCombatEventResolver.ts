@@ -39,6 +39,9 @@ import {
   MERCENARY_OFFER_CHANCE,
   MERCENARY_OFFER_MIN_FIGHTS,
   MERCENARY_OFFER_MAX_FIGHTS,
+  CROSSROADS_CHANCE,
+  CROSSROADS_MIN_FIGHTS,
+  CROSSROADS_MAX_FIGHTS,
   WANDERING_MERCHANT_CHANCE,
   WANDERING_MERCHANT_MIN_FIGHTS,
   WANDERING_MERCHANT_MAX_FIGHTS,
@@ -97,6 +100,7 @@ export interface PostCombatContext {
   strategyBlacksmith: boolean;
   strategyCursedAltar: boolean;
   currentWeather?: string; // C770: for weather-conditional events
+  crossroadsUsed: boolean; // C854: once-per-run crossroads gate
   rngChance: (rate: number) => boolean;
   rngInt: (n: number) => number;
   hasPendingShrineChoice: () => boolean;
@@ -148,6 +152,7 @@ export interface PostCombatResult {
   riskGambitPending: boolean;
   sparringGroundsPending: boolean; // C841
   mercenaryOfferPending: boolean; // C848
+  crossroadsPending: boolean; // C854
   wanderingMerchantPending: boolean; // C832
 }
 
@@ -198,6 +203,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     riskGambitPending: false,
     sparringGroundsPending: false,
     mercenaryOfferPending: false,
+    crossroadsPending: false,
     wanderingMerchantPending: false,
   };
 
@@ -339,6 +345,14 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       candidates.push({
         id: 'wandering_merchant', weight: WANDERING_MERCHANT_CHANCE, pityEligible: false,
         apply: (r) => { r.wanderingMerchantPending = true; r.eventType = 'event_wandering_merchant'; },
+      });
+    }
+
+    // C854: Crossroads Choice — once-per-run, 3 paths (fight 95-130)
+    if (!ctx.crossroadsUsed && ctx.totalFights >= CROSSROADS_MIN_FIGHTS && ctx.totalFights <= CROSSROADS_MAX_FIGHTS) {
+      candidates.push({
+        id: 'crossroads', weight: CROSSROADS_CHANCE, pityEligible: true,
+        apply: (r) => { r.crossroadsPending = true; r.eventType = 'event_crossroads'; },
       });
     }
 

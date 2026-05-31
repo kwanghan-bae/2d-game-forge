@@ -215,6 +215,15 @@ export const CLEAR_SKY_PATH_DURATION = 3; // 3 fights
 // C853: High-gold death penalty ramp (500k+ gold → up to 20% penalty)
 export const HIGH_GOLD_DEATH_THRESHOLD = 500_000;
 export const HIGH_GOLD_DEATH_PENALTY_CAP = 0.20;
+// C854: Crossroads Choice Event — once-per-run, 3 paths (95-130)
+export const CROSSROADS_CHANCE = 0.05;
+export const CROSSROADS_MIN_FIGHTS = 95;
+export const CROSSROADS_MAX_FIGHTS = 130;
+export const CROSSROADS_ATK_DURATION = 5;
+export const CROSSROADS_ATK_MUL = 0.20; // +20% ATK for duration
+export const CROSSROADS_EXP_DURATION = 5;
+export const CROSSROADS_EXP_MUL = 1.30; // ×1.3 EXP for duration
+export const CROSSROADS_GOLD_BURST_MUL = 50; // level × 50 gold
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
