@@ -1,47 +1,50 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 862
+- Cycle: 865
 - Target: 600+ (연속 진화)
-- Last commit: C862 crossroads rebalance
-- Vitest: 2242 pass / 0 fail
-- EncounterEngine: ~2230 lines
-- Critic score: 32/40 (C862 collab, +0.5)
+- Last commit: C865 gamble real loss + BUFF_STACK_CAP + momentum ATK fix
+- Vitest: 2254 pass / 0 fail
+- EncounterEngine: ~2530 lines
+- Critic score: 28/40 (C865 collab, recalibrated −4 from 32)
 
-## 레이어 카운터 (C854-C862 era)
-- 시스템: 3 (C854, C857, C860)
-- 구조: 3 (C855, C858, C861)
-- 밸런스: 3 (C856, C859, C862)
-- 콜라보: 3 (C856, C859, C862)
+## 레이어 카운터 (C854-C865 era)
+- 시스템: 4 (C854, C857, C860, C863)
+- 구조: 4 (C855, C858, C861, C864)
+- 밸런스: 4 (C856, C859, C862, C865)
+- 콜라보: 4 (C856, C859, C862, C865)
 
 ## 제약
-- cycles_since_collab: 0 (C862 is collab)
-- Next collab: C865
-- EncounterEngine: ~2230 lines
-- Layer rotation: system → structure → balance (C863=system, C864=structure, C865=balance+collab)
+- cycles_since_collab: 0 (C865 is collab)
+- Next collab: C868
+- EncounterEngine: ~2530 lines
+- Layer rotation: system → structure → balance (C866=system, C867=structure, C868=balance+collab)
 
-## 다음 3사이클 (C862 합의)
-- C863 [system]: Storm drain event emit (시각 피드백, storm_drain/storm_drain_critical)
-- C864 [structure]: resolveGambleOutcome 순수함수 추출 (gambler+merchant gamble 통합)
-- C865 [balance+collab]: Gamble real loss (gold 15%) + BUFF_STACK_CAP=2.00 + EARLY_MOMENTUM_ATK_MUL 0.03→0.06
+## 다음 3사이클 (C865 합의)
+- C866 [system]: Mid-game event (fight 55-90, choice-based — void zone 해소)
+- C867 [structure]: Extract MidGameEventResolver (−200 LOC from God Object)
+- C868 [balance+collab]: Crossroads pity (40 fight) + BUFF_STACK_CAP 2.00→1.85 + ATK_MUL 0.06→0.08
 
-## 달성 사항 (C854-C862)
-- C854 [system]: Crossroads Choice Event — once-per-run 3-path (ATK/EXP/Gold, 95-130)
-- C855 [structure]: applyPostVictoryExpBonuses extraction (−50 lines)
+## 달성 사항 (C854-C865)
+- C854 [system]: Crossroads Choice Event
+- C855 [structure]: applyPostVictoryExpBonuses extraction
 - C856 [balance]: Window overlap fix + gamble identity
-- C857 [system]: Composable ATK Buff Stack — multiplicative (storm×clearSky×crossroads)
-- C858 [structure]: Extract computeBuffedHeroAtk + 8-case unit test
-- C859 [balance]: Stacking rebalance (storm 1.35, clearSky 1.12, crossroads 0.18)
-- C860 [system]: Early-game Momentum — fight 1-50 combo milestone rewards
-- C861 [structure]: Extract computePostVictoryExp — 14-line EXP chain → pure fn + 8 tests
-- C862 [balance]: Crossroads rebalance — chance 5%→3%, gold burst ×50→×120
+- C857 [system]: Composable ATK Buff Stack
+- C858 [structure]: Extract computeBuffedHeroAtk
+- C859 [balance]: Stacking rebalance
+- C860 [system]: Early-game Momentum
+- C861 [structure]: Extract computePostVictoryExp
+- C862 [balance]: Crossroads rebalance (3%, ×120)
+- C863 [system]: Storm drain event emission
+- C864 [structure]: Extract resolveGambleOutcome
+- C865 [balance]: Gamble real loss (15%) + BUFF_STACK_CAP=2.00 + momentum ATK 6%
 
 ## Backlog
-- Early momentum narrative feedback (UI layer)
-- Crossroads chance 0.04 + pity system
+- Storm drain / early momentum UI consumer (VFX/toast/saga)
+- Constants phase-tag metadata system
 - EXP cap 500→200
-- computeBuffedHeroAtk atkCap 외부 적용 문서화
-- Fight 51-94 void zone (mid-game hook)
+- computeBuffedHeroAtk atkCap bypass documentation
+- Saga log integration for new events
 - C856 [balance+collab]: Window overlap fix (ClearSky 95+, Mercenary 115-145, gamble free/55%)
 
 ## 달성 사항 (C848-C850)
