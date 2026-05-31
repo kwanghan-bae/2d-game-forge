@@ -1,24 +1,24 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 913
+- Cycle: 916
 - Target: 600+ (연속 진화)
-- Last commit: C912 structure (First Trial narration + desert fix)
-- Vitest: 2406 pass / 0 fail
+- Last commit: C916 balance + collab
+- Vitest: 2415 pass / 0 fail
 - EncounterEngine: ~2700 lines
-- Critic score: 26/40 (C910)
+- Critic score: 25/40 (C913)
 
-## 레이어 카운터 (C911-C913 era)
-- 시스템: 1 (C911)
-- 구조: 1 (C912)
-- 밸런스: 1 (C913, 진행 중)
-- 콜라보: 1 (C913, 진행 중)
+## 레이어 카운터 (C914-C916 era)
+- 시스템: 1 (C914)
+- 구조: 1 (C915)
+- 밸런스: 1 (C916)
+- 콜라보: 1 (C916)
 
 ## 제약
-- cycles_since_collab: 0 (C913)
-- Next collab: C916
+- cycles_since_collab: 0 (C916)
+- Next collab: C919
 - EncounterEngine: ~2700 lines
-- Layer rotation: C914=system, C915=structure, C916=balance+collab
+- Layer rotation: C917=system, C918=structure, C919=balance+collab
 
 ## 🟡 Player Agency: 6 choices + 3 consequences
 - **First Trial**: 2-phase heal/atk, once (fight 10-40) ← C911 신설
@@ -28,14 +28,14 @@
 - Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-600)
 - Last Stand: binary accept/decline, 3s timeout (fight 400-600, once-per-run)
 - Reputation Payoff: auto-resolve consequence (fight 160-225, style-based, ≥3 choices)
-- Veteran's Trial: auto-resolve consequence (fight 240-450, style-based, ≥4 choices)
+- Veteran's Trial: auto-resolve consequence (fight 226-450, style-based, ≥4 choices)
 - Final Reckoning: auto-resolve consequence (fight 500-600, style-based, ≥8 choices, 6%/fight)
 - ChoiceHistory tracks all choices with aggressive/defensive/greedy categories
 - Toast labels: 20 (12 consequence + 2 last stand + 4 final reckoning + 2 first trial)
 - NarrativeGenerator: forChoiceEvent (14 mappings) + forConsequenceEvent (12 entries)
 - 5-tier narrative variance (C908)
 
-## 달성 사항 (C905-C913)
+## 달성 사항 (C905-C916)
 - C905 [system]: First Trial early-game event (fight 10-40, 8%, heal/ATK), MENTOR_MIN 15
 - C906 [structure]: CROSSROADS_MIN 95→80, FR_CHANCE 8→6%, C904 collab record
 - C907 [balance+collab]: First Trial ATK cap-safety verification, VT_AGG monitoring 2/3
@@ -44,18 +44,10 @@
 - C910 [balance+collab]: Collab dispatch (critic 26/40, level desert analysis, planner roadmap)
 - C911 [system]: First Trial 2-phase pending (real player choice)
 - C912 [structure]: First Trial EventNarration, SPARRING_MAX 129→200, MERC_MAX 400→550
-- C913 [balance+collab]: VT_AGG monitoring 3/3 완료 (유지), C910 collab record
-
-## 달성 사항 (C905-C913)
-- C905 [system]: First Trial early-game event (fight 10-40, 8%, heal/ATK), MENTOR_MIN 15
-- C906 [structure]: CROSSROADS_MIN 95→80, FR_CHANCE 8→6%, C904 collab record
-- C907 [balance+collab]: First Trial ATK cap-safety verification, VT_AGG monitoring 2/3
-- C908 [system]: First Trial window 30→40, 5-tier narrative variance
-- C909 [structure]: PROVING_MIN 40→35, REPUTATION_MIN 176→160, VT_MIN 275→240
-- C910 [balance+collab]: Collab dispatch (critic 26/40, level desert analysis, planner roadmap)
-- C911 [system]: First Trial 2-phase pending (real player choice)
-- C912 [structure]: First Trial EventNarration, SPARRING_MAX 129→200, MERC_MAX 400→550
-- C913 [balance+collab]: VT_AGG monitoring 3/3 완료 (유지), C910 collab record
+- C913 [balance+collab]: VT_AGG monitoring 3/3 완료, C910 collab record
+- C914 [system]: DurationBuffTracker 생성 (9 tests)
+- C915 [structure]: VT_MIN 240→226, SN_ATK 1.35→1.30
+- C916 [balance+collab]: C913 collab record, collab dispatch
 
 ## 달성 사항 (C896-C898)
 - C896 [system]: Final Reckoning consequence event (fight 500-600, 4 styles, shield DR 0.30, 11 tests)
