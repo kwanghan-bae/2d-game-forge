@@ -20,6 +20,7 @@ import { computePostVictoryExp } from './encounter/PostVictoryExpCalculator';
 import { resolveMidGameEvents } from './encounter/MidGameEventResolver';
 import { ChoiceHistory, classifyChoice } from './encounter/ChoiceHistory';
 import { DurationBuffTracker, BuffInfo } from './encounter/DurationBuffTracker';
+import { getBuffNameKR } from './encounter/BuffCatalog';
 import { PermanentRewardTracker } from './encounter/PermanentRewardTracker';
 import { tickWeatherHazards as tickWeatherHazardsPure } from './encounter/WeatherHazardTicker';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
@@ -702,63 +703,14 @@ export class EncounterEngine {
     if (this.villageShieldActive) activeBuffs.push('마을 방패');
     if (this.fairyBlessingRemaining > 0) activeBuffs.push('요정 축복');
     if (this.goldenHourRemaining > 0) activeBuffs.push('황금 시간');
-    // C879: Mid-game event buffs
-    if (this.provingGroundsExpRemaining > 0) activeBuffs.push('시련 EXP');
-    if (this.midGameBuffs.isActive('merc_shield')) activeBuffs.push('용병 방패');
-    if (this.midGameBuffs.isActive('xr_atk')) activeBuffs.push('갈림길 ATK');
-    if (this.midGameBuffs.isActive('xr_exp')) activeBuffs.push('갈림길 EXP');
-    if (this.midGameBuffs.isActive('wm_atk')) activeBuffs.push('상인 ATK');
-    if (this.midGameBuffs.isActive('em_atk')) activeBuffs.push('기세 ATK');
-    if (this.midGameBuffs.isActive('em_exp')) activeBuffs.push('기세 EXP');
-    // C883: Reputation buffs
-    if (this.midGameBuffs.isActive('rep_atk')) activeBuffs.push('명성 ATK');
-    if (this.midGameBuffs.isActive('rep_shield')) activeBuffs.push('명성 방패');
-    if (this.midGameBuffs.isActive('rep_exp')) activeBuffs.push('명성 EXP');
-    // C887: Veteran's Trial buffs
-    if (this.midGameBuffs.isActive('vt_atk')) activeBuffs.push('노련 ATK');
-    if (this.midGameBuffs.isActive('vt_shield')) activeBuffs.push('노련 방패');
-    if (this.midGameBuffs.isActive('vt_exp')) activeBuffs.push('노련 EXP');
-    // C890: Last Stand buff
-    if (this.midGameBuffs.isActive('ls_atk')) activeBuffs.push('최후의 항전 ATK');
-    // C896: Final Reckoning buffs
-    if (this.midGameBuffs.isActive('fr_atk')) activeBuffs.push('최종 심판 ATK');
-    if (this.midGameBuffs.isActive('fr_shield')) activeBuffs.push('최종 심판 방패');
-    if (this.midGameBuffs.isActive('fr_exp')) activeBuffs.push('최종 심판 EXP');
-    if (this.midGameBuffs.isActive('greedy_gold')) activeBuffs.push('탐욕 골드');
-    if (this.midGameBuffs.isActive('ft_atk')) activeBuffs.push('첫 시련 ATK');
-    if (this.midGameBuffs.isActive('ft_exp')) activeBuffs.push('첫 시련 EXP');
-    if (this.midGameBuffs.isActive('ws_exp')) activeBuffs.push('현자 EXP');
-    if (this.midGameBuffs.isActive('ws_atk')) activeBuffs.push('현자 ATK');
-    if (this.midGameBuffs.isActive('ej_atk')) activeBuffs.push('장로 ATK');
-    if (this.midGameBuffs.isActive('ej_shield')) activeBuffs.push('장로 방패');
-    if (this.midGameBuffs.isActive('ej_exp')) activeBuffs.push('장로 EXP');
-    // C936: Environment effect buffs (migrated to midGameBuffs in C933)
-    if (this.midGameBuffs.isActive('colosseum')) activeBuffs.push('콜로세움');
-    if (this.midGameBuffs.isActive('void_rift')) activeBuffs.push('공허 균열');
-    if (this.midGameBuffs.isActive('trial_grounds')) activeBuffs.push('시험장');
-    if (this.midGameBuffs.isActive('rain_sanctuary')) activeBuffs.push('비의 성소');
-    if (this.midGameBuffs.isActive('fog_ambush')) activeBuffs.push('안개 매복');
-    if (this.midGameBuffs.isActive('wind_gale')) activeBuffs.push('돌풍');
-    if (this.midGameBuffs.isActive('clear_sky')) activeBuffs.push('맑은 하늘');
-    if (this.midGameBuffs.isActive('snow_drift')) activeBuffs.push('눈보라');
-    if (this.midGameBuffs.isActive('titan_arena')) activeBuffs.push('타이탄 투기장');
-    if (this.midGameBuffs.isActive('crimson_tithe')) activeBuffs.push('핏빛 공물');
-    if (this.midGameBuffs.isActive('astral_paradox')) activeBuffs.push('성계 역설');
-    if (this.midGameBuffs.isActive('soul_forge')) activeBuffs.push('영혼 화로');
-    // C936: Event/misc buffs (migrated to midGameBuffs in C932)
-    if (this.midGameBuffs.isActive('prestige_echo')) activeBuffs.push('명성 메아리');
-    if (this.midGameBuffs.isActive('inspiration')) activeBuffs.push('영감');
-    if (this.midGameBuffs.isActive('mentor')) activeBuffs.push('멘토');
-    if (this.midGameBuffs.isActive('ev_mom_atk')) activeBuffs.push('이벤트 기세 ATK');
-    if (this.midGameBuffs.isActive('ev_mom_density')) activeBuffs.push('이벤트 기세 밀도');
+    // C947: All midGameBuffs via BuffCatalog loop (replaces 55 manual isActive lines)
+    for (const buffId of this.midGameBuffs.activeBuffs()) {
+      activeBuffs.push(getBuffNameKR(buffId));
+    }
     // C938: Stat Shard permanent ATK indicator
     if (this.statShardAtk > 0) activeBuffs.push(`파편 ATK +${this.statShardAtk}`);
     // C939: Enemy Morph indicator
     if (this.permanentRewards.enemyMorphActive) activeBuffs.push(`적 약화 ${this.permanentRewards.enemyMorphRemaining}턴`);
-    // C940: Endgame Surge ATK buff
-    if (this.midGameBuffs.isActive('endgame_surge')) activeBuffs.push('종반 쇄도 ATK');
-    if (this.midGameBuffs.isActive('ascension_trial')) activeBuffs.push('승천 시련');
-    if (this.midGameBuffs.isActive('echo_memory')) activeBuffs.push('기억의 메아리 ATK');
     const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
     if (!deathSaveBlocked) {
