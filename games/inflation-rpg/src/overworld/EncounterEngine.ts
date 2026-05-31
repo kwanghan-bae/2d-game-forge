@@ -2093,6 +2093,11 @@ export class EncounterEngine {
       return;
     }
 
+    this.applyPendingEvents(r, hero, events);
+  }
+
+  // C834: Extracted pending event resolution from resolvePostCombatEvents
+  private applyPendingEvents(r: PostCombatResult, hero: HeroEntity, events: OverworldEvent[]): void {
     // Merchant pending → trigger + auto-resolve + apply effects
     if (r.merchantPending) {
       this.choiceEngine.triggerMerchant();
@@ -2107,7 +2112,6 @@ export class EncounterEngine {
     // Gambler pending → trigger + auto-resolve + apply effects
     if (r.gamblerPending) {
       this.choiceEngine.triggerGambler();
-      // C723: AI conditionally bets high when gold surplus is large
       const aiChoice = chooseGamblerBet(hero.gold, GOLD_FORGE_THRESHOLD);
       if (aiChoice === 'BET_HIGH') {
         this.choiceEngine.setGamblerChoice(GamblerChoice.BET_HIGH);
