@@ -45,6 +45,7 @@ import { DangerChoiceModal } from '../components/DangerChoiceModal';
 import { ProvingChoiceModal } from '../components/ProvingChoiceModal';
 import { MercenaryChoiceModal } from '../components/MercenaryChoiceModal';
 import { CrossroadsChoiceModal } from '../components/CrossroadsChoiceModal';
+import { ActiveBuffHUD } from '../components/ActiveBuffHUD';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -765,6 +766,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {provingModalOpen && <ProvingChoiceModal onClose={() => setProvingModalOpen(false)} />}
       {mercenaryModalOpen && <MercenaryChoiceModal onClose={() => setMercenaryModalOpen(false)} />}
       {crossroadsModalOpen && <CrossroadsChoiceModal onClose={() => setCrossroadsModalOpen(false)} />}
+      <ActiveBuffHUD />
       {fateRollModal && (
         <FateRollModal
           oldLevel={fateRollModal.oldLevel}
