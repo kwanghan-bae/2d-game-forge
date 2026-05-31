@@ -72,8 +72,8 @@ describe('CombatCalculator.computeHeroAtk', () => {
 });
 
 describe('CombatCalculator.computeBuffedHeroAtk', () => {
-  const muls = { stormNexusMul: 1.40, clearSkyMul: 1.15, crossroadsMul: 1.20, earlyMomentumMul: 1.03, reputationMul: 1.20, veteransTrialMul: 1.25, lastStandMul: 1.35 };
-  const off = { stormNexus: false, clearSky: false, crossroads: false, earlyMomentum: false, reputation: false, veteransTrial: false, lastStand: false };
+  const muls = { stormNexusMul: 1.40, clearSkyMul: 1.15, crossroadsMul: 1.20, earlyMomentumMul: 1.03, reputationMul: 1.20, veteransTrialMul: 1.25, lastStandMul: 1.35, finalReckoningMul: 1.35 };
+  const off = { stormNexus: false, clearSky: false, crossroads: false, earlyMomentum: false, reputation: false, veteransTrial: false, lastStand: false, finalReckoning: false };
 
   it('no buffs → base unchanged', () => {
     expect(computeBuffedHeroAtk(100, { ...off, ...muls })).toBe(100);
@@ -104,7 +104,7 @@ describe('CombatCalculator.computeBuffedHeroAtk', () => {
   });
 
   it('all three → capped at ×1.65', () => {
-    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, earlyMomentum: false, ...muls })).toBe(165);
+    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, earlyMomentum: false, finalReckoning: false, ...muls })).toBe(165);
   });
 
   it('earlyMomentum only → ×1.03', () => {
@@ -113,5 +113,18 @@ describe('CombatCalculator.computeBuffedHeroAtk', () => {
 
   it('earlyMomentum + crossroads → ×1.236', () => {
     expect(computeBuffedHeroAtk(100, { ...off, earlyMomentum: true, crossroads: true, ...muls })).toBe(123);
+  });
+
+  // C901: BUFF_STACK_CAP headroom verification
+  it('lastStand + finalReckoning → capped at ×1.65 (product 1.755)', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, lastStand: true, finalReckoning: true, ...muls })).toBe(165);
+  });
+
+  it('finalReckoning only → ×1.35', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, finalReckoning: true, ...muls })).toBe(135);
+  });
+
+  it('lastStand only → ×1.35', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, lastStand: true, ...muls })).toBe(135);
   });
 });
