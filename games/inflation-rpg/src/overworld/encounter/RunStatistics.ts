@@ -1,4 +1,10 @@
 // C833: Run Statistics accumulator — tracks per-run metrics for player feedback
+export interface RunHighlight {
+  key: string;
+  value: number;
+  priority: number;
+}
+
 export interface RunStatisticsData {
   totalFights: number;
   deaths: number;
@@ -114,6 +120,26 @@ export class RunStatistics {
   recordGambitOutcome(goldDelta: number, hpCost: number): void {
     this.data.gambitGoldNet += goldDelta;
     this.data.gambitHpCost += hpCost;
+  }
+
+  // C842: Pick top-3 highlights from run stats for player summary
+  computeHighlights(): RunHighlight[] {
+    const candidates: RunHighlight[] = [];
+    const d = this.data;
+    if (d.peakCombo >= 10) candidates.push({ key: 'peak_combo', value: d.peakCombo, priority: d.peakCombo });
+    if (d.bossKills >= 1) candidates.push({ key: 'boss_kills', value: d.bossKills, priority: d.bossKills * 10 });
+    if (d.eliteKills >= 3) candidates.push({ key: 'elite_kills', value: d.eliteKills, priority: d.eliteKills * 3 });
+    if (d.criticalHits >= 5) candidates.push({ key: 'critical_hits', value: d.criticalHits, priority: d.criticalHits });
+    if (d.overkills >= 3) candidates.push({ key: 'overkills', value: d.overkills, priority: d.overkills * 2 });
+    if (d.goldEarned >= 100) candidates.push({ key: 'gold_earned', value: d.goldEarned, priority: Math.floor(d.goldEarned / 50) });
+    if (d.gambitGoldNet > 0) candidates.push({ key: 'gambit_profit', value: d.gambitGoldNet, priority: Math.floor(d.gambitGoldNet / 10) });
+    if (d.gambitsWon >= 2) candidates.push({ key: 'gambits_won', value: d.gambitsWon, priority: d.gambitsWon * 5 });
+    if (d.deaths === 0 && d.totalFights >= 20) candidates.push({ key: 'deathless', value: d.totalFights, priority: d.totalFights });
+    if (d.peakLevel >= 5) candidates.push({ key: 'peak_level', value: d.peakLevel, priority: d.peakLevel * 2 });
+    const eventCount = Object.values(d.eventsTriggered).reduce((a, b) => a + b, 0);
+    if (eventCount >= 5) candidates.push({ key: 'events_total', value: eventCount, priority: eventCount });
+    candidates.sort((a, b) => b.priority - a.priority);
+    return candidates.slice(0, 3);
   }
 
   snapshot(): RunStatisticsData {
