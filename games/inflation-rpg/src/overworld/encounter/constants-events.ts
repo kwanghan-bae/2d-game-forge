@@ -538,3 +538,4 @@ export const VETERANS_CHALLENGE_EXP_MUL = 1.80; // +80% EXP on accept
 export const VETERANS_CHALLENGE_ATK_PENALTY = 0.60; // 40% ATK reduction (net EXP×ATK≈1.08, marginal — real risk from slower kills)
 export const VETERANS_CHALLENGE_DURATION = 10; // C976: 10 fights (was 6) — HP drain 30% total, meaningful tension
 export const VETERANS_CHALLENGE_HP_DRAIN = 0.03; // C974: 3% maxHP lost per fight (real death risk)
+export const VETERANS_CHALLENGE_SURVIVAL_BURST = 3.0; // C977: survive 10 fights → EXP burst = level × 3.0

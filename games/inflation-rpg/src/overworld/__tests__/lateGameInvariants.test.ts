@@ -14,6 +14,7 @@ import {
   VETERANS_CHALLENGE_EXP_MUL,
   VETERANS_CHALLENGE_ATK_PENALTY,
   VETERANS_CHALLENGE_HP_DRAIN,
+  VETERANS_CHALLENGE_SURVIVAL_BURST,
   VETERANS_CHALLENGE_MIN_FIGHT,
   VETERANS_CHALLENGE_MAX_FIGHT,
   VETERANS_CHALLENGE_DURATION,
@@ -178,5 +179,12 @@ describe('C955: Mid-game pity invariants', () => {
     // 5+ declines: hits floor of 1.20
     const after5 = Math.max(1.20, full * Math.pow(0.85, 4));
     expect(after5).toBe(1.20);
+  });
+
+  it('C977: VC survival burst rewards proportional to level', () => {
+    // Burst must be meaningful (≥ 2× level) to justify 30% HP drain
+    expect(VETERANS_CHALLENGE_SURVIVAL_BURST).toBeGreaterThanOrEqual(2.0);
+    // But not so high it breaks inflation curve (≤ 10× level)
+    expect(VETERANS_CHALLENGE_SURVIVAL_BURST).toBeLessThanOrEqual(10.0);
   });
 });

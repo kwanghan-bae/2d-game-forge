@@ -132,6 +132,8 @@ export type OverworldEvent =
   | { type: 'storm_drain_critical'; value: number; hpAfter: number }
   // C974: Veteran's Challenge HP drain per fight
   | { type: 'vc_hp_drain'; value: number; hpAfter: number }
+  // C977: Veteran's Challenge survival burst (completed 10 fights)
+  | { type: 'vc_survival_burst'; value: number }
   // C866: Proving Grounds mid-game challenge
   | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number; declined?: boolean; shardGranted?: boolean }
   // C875: Proving Grounds player choice pending
