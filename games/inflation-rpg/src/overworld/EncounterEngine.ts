@@ -1031,99 +1031,7 @@ export class EncounterEngine {
       // C183: decrement invincibility after fight
       if (this.invincibleFights > 0) this.invincibleFights--;
       if (hero.staggered) {
-        // C120: combo streak resets on death
-        // C198: combo breaker — if had high combo, grant ATK bonus
-        if (this.comboStreak >= 3) this.comboBreakerReady = true;
-        // C667: death penalty delegation to DeathPenaltyResolver
-        const deathResult = resolveDeathPenalty({
-          comboStreak: this.comboStreak,
-          heroGold: hero.gold,
-          heroHpMax: hero.hpMax,
-          heroLevel: hero.level,
-          heroExp: hero.exp,
-          prestigeCount: this.prestigeCount,
-          totalDeaths: this.totalDeaths,
-          deathStreak: this.deathStreak,
-          consecutiveDeaths: this.consecutiveDeaths,
-          goldSaveRoll: this.rng.chance(GOLD_SAVE_CHANCE),
-          revengeStreakPower: this.revengeStreakPower,
-          deathGoldCompound: this.deathGoldCompound,
-        });
-        // Apply results
-        this.comboStreak = deathResult.newComboStreak;
-        hero.gold -= deathResult.goldLost;
-        if (deathResult.goldSaved) events.push({ type: 'gold_saved' });
-        hero.gold += deathResult.goldInsurance;
-        hero.hpMax = deathResult.newHpMax;
-        hero.gainExp(deathResult.expGained);
-        this.deathAtkSurgeRemaining = deathResult.deathAtkSurgeDuration;
-        this.revengeStreakPower = deathResult.newRevengeStreakPower;
-        this.revengeStreakRemaining = deathResult.newRevengeStreakRemaining;
-        this.deathGoldCompound = deathResult.newDeathGoldCompound;
-        this.deathStreak = deathResult.newDeathStreak;
-        this.totalDeaths = deathResult.newTotalDeaths;
-        this.consecutiveDeaths = deathResult.newConsecutiveDeaths;
-        this.runStats.recordDeath();
-        if (deathResult.mercyActivated) {
-          this.mercyRemaining = deathResult.mercyDuration;
-          events.push({ type: 'mercy_activated', duration: deathResult.mercyDuration });
-        }
-        if (deathResult.darknessCursed) this.darknessCursed = true;
-        this.revengeGoldRemaining = deathResult.revengeGoldFights;
-        // Resets
-        this.survivalStreak = 0;
-        this.consecutiveWaveClears = 0;
-        this.fightsSinceDeath = 0;
-        this.fightsSinceLastDeath = 0;
-        // C799: Temporal Fissure — death forfeits 70% of stored EXP (was 100% in C793)
-        this.temporalFissureRemaining = 0;
-        this.temporalFissureStoredExp = Math.floor(this.temporalFissureStoredExp * 0.30);
-        // C797: Titan Arena lost on death
-        this.titanArenaRemaining = 0;
-        // C803: Crimson Tithe lost on death (combo reset as penalty)
-        if (this.crimsonTitheRemaining > 0) this.comboStreak = 0;
-        this.crimsonTitheRemaining = 0;
-        // C800: Gold Crucible + Astral Paradox lost on death
-        this.goldCrucibleRemaining = 0;
-        this.goldCrucibleAtkFlat = 0;
-        this.astralParadoxRemaining = 0;
-        this.soulForgeRemaining = 0; // duration lost, but stacks are permanent
-        // C793: Event Momentum buffs lost on death
-        this.eventMomentumAtkRemaining = 0;
-        this.eventMomentumDensityRemaining = 0;
-        // Cycle 108 F1: intercept (a) — before applyDeathPenalty, check fate
-        // roll eligibility. If eligible, emit fate_roll_required and *abort*
-        // (level penalty + hero_died emit are deferred to controller's
-        // resolveFateRoll('decline'). hero.hp == 0 + staggered=true still hold
-        // so controller's handleArrival top-guard catches subsequent arrivals
-        // until fate roll resolves).
-        if (this.opts.isFateRollEligible?.()) {
-          // Preview the level penalty without applying it. Mirrors
-          // applyDeathPenalty's floor(level * 0.90) formula but doesn't mutate.
-          const oldLevel = hero.level;
-          const pendingDeathPenaltyNewLevel = Math.max(1, Math.floor(hero.level * 0.90));
-          events.push({ type: 'fate_roll_required', enemyId: landmarkId, oldLevel, pendingDeathPenaltyNewLevel });
-          return events;
-        }
-        // V3-H E1: hero died in battle — apply -10% level penalty and emit event.
-        // C215: exp shield — first death preserves 50% of exp
-        if (!this.expShieldUsed) {
-          this.expShieldUsed = true;
-          hero.exp = Math.floor(hero.exp * EXP_SHIELD_PRESERVE);
-        }
-        const { oldLevel, newLevel } = hero.applyDeathPenalty();
-        // C260: death insurance — first death per village cycle is lighter
-        if (!this.deathInsuranceUsed) {
-          this.deathInsuranceUsed = true;
-          const recovered = Math.max(0, Math.floor(oldLevel * (0.10 - DEATH_INSURANCE_PENALTY)));
-          if (recovered > 0) hero.level = Math.min(oldLevel, newLevel + recovered);
-          // C344: insurance enhanced payout — recover gold on insurance
-          hero.gold += Math.floor(hero.level * GOLD_INSURANCE_PAYOUT_MUL);
-        }
-        // C140: track who killed us for revenge
-        this.lastDeathEnemyId = landmarkId;
-        events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
-        return events;
+        return this.handleHeroDeath(hero, events, landmarkId);
       }
       // C120: combo streak — no-damage kills in a row grant bonus exp
       if (tookDamage) {
@@ -2200,6 +2108,97 @@ export class EncounterEngine {
     }
     hero.gold += Math.floor(hero.atk * BOSS_GOLD_FURY_RATE);
     this.bossShieldRemaining = BOSS_SHIELD_GRANT_DURATION;
+  }
+
+  // C852: Extracted hero death handling from resolveEncounter combat loop
+  private handleHeroDeath(hero: HeroEntity, events: OverworldEvent[], landmarkId: string): OverworldEvent[] {
+    // C120: combo streak resets on death
+    // C198: combo breaker — if had high combo, grant ATK bonus
+    if (this.comboStreak >= 3) this.comboBreakerReady = true;
+    // C667: death penalty delegation to DeathPenaltyResolver
+    const deathResult = resolveDeathPenalty({
+      comboStreak: this.comboStreak,
+      heroGold: hero.gold,
+      heroHpMax: hero.hpMax,
+      heroLevel: hero.level,
+      heroExp: hero.exp,
+      prestigeCount: this.prestigeCount,
+      totalDeaths: this.totalDeaths,
+      deathStreak: this.deathStreak,
+      consecutiveDeaths: this.consecutiveDeaths,
+      goldSaveRoll: this.rng.chance(GOLD_SAVE_CHANCE),
+      revengeStreakPower: this.revengeStreakPower,
+      deathGoldCompound: this.deathGoldCompound,
+    });
+    // Apply results
+    this.comboStreak = deathResult.newComboStreak;
+    hero.gold -= deathResult.goldLost;
+    if (deathResult.goldSaved) events.push({ type: 'gold_saved' });
+    hero.gold += deathResult.goldInsurance;
+    hero.hpMax = deathResult.newHpMax;
+    hero.gainExp(deathResult.expGained);
+    this.deathAtkSurgeRemaining = deathResult.deathAtkSurgeDuration;
+    this.revengeStreakPower = deathResult.newRevengeStreakPower;
+    this.revengeStreakRemaining = deathResult.newRevengeStreakRemaining;
+    this.deathGoldCompound = deathResult.newDeathGoldCompound;
+    this.deathStreak = deathResult.newDeathStreak;
+    this.totalDeaths = deathResult.newTotalDeaths;
+    this.consecutiveDeaths = deathResult.newConsecutiveDeaths;
+    this.runStats.recordDeath();
+    if (deathResult.mercyActivated) {
+      this.mercyRemaining = deathResult.mercyDuration;
+      events.push({ type: 'mercy_activated', duration: deathResult.mercyDuration });
+    }
+    if (deathResult.darknessCursed) this.darknessCursed = true;
+    this.revengeGoldRemaining = deathResult.revengeGoldFights;
+    // Resets
+    this.survivalStreak = 0;
+    this.consecutiveWaveClears = 0;
+    this.fightsSinceDeath = 0;
+    this.fightsSinceLastDeath = 0;
+    // C799: Temporal Fissure — death forfeits 70% of stored EXP (was 100% in C793)
+    this.temporalFissureRemaining = 0;
+    this.temporalFissureStoredExp = Math.floor(this.temporalFissureStoredExp * 0.30);
+    // C797: Titan Arena lost on death
+    this.titanArenaRemaining = 0;
+    // C803: Crimson Tithe lost on death (combo reset as penalty)
+    if (this.crimsonTitheRemaining > 0) this.comboStreak = 0;
+    this.crimsonTitheRemaining = 0;
+    // C800: Gold Crucible + Astral Paradox lost on death
+    this.goldCrucibleRemaining = 0;
+    this.goldCrucibleAtkFlat = 0;
+    this.astralParadoxRemaining = 0;
+    this.soulForgeRemaining = 0; // duration lost, but stacks are permanent
+    // C793: Event Momentum buffs lost on death
+    this.eventMomentumAtkRemaining = 0;
+    this.eventMomentumDensityRemaining = 0;
+    // Cycle 108 F1: intercept (a) — before applyDeathPenalty, check fate
+    // roll eligibility. If eligible, emit fate_roll_required and *abort*
+    if (this.opts.isFateRollEligible?.()) {
+      const oldLevel = hero.level;
+      const pendingDeathPenaltyNewLevel = Math.max(1, Math.floor(hero.level * 0.90));
+      events.push({ type: 'fate_roll_required', enemyId: landmarkId, oldLevel, pendingDeathPenaltyNewLevel });
+      return events;
+    }
+    // V3-H E1: hero died in battle — apply -10% level penalty and emit event.
+    // C215: exp shield — first death preserves 50% of exp
+    if (!this.expShieldUsed) {
+      this.expShieldUsed = true;
+      hero.exp = Math.floor(hero.exp * EXP_SHIELD_PRESERVE);
+    }
+    const { oldLevel, newLevel } = hero.applyDeathPenalty();
+    // C260: death insurance — first death per village cycle is lighter
+    if (!this.deathInsuranceUsed) {
+      this.deathInsuranceUsed = true;
+      const recovered = Math.max(0, Math.floor(oldLevel * (0.10 - DEATH_INSURANCE_PENALTY)));
+      if (recovered > 0) hero.level = Math.min(oldLevel, newLevel + recovered);
+      // C344: insurance enhanced payout — recover gold on insurance
+      hero.gold += Math.floor(hero.level * GOLD_INSURANCE_PAYOUT_MUL);
+    }
+    // C140: track who killed us for revenge
+    this.lastDeathEnemyId = landmarkId;
+    events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
+    return events;
   }
 
   // C819/C837: Batch decrement for simple duration counters (no side effects)
