@@ -182,7 +182,7 @@ export const FAIRY_DURATION = 5;
 // C812: Wandering Mentor — early-game EXP buff (fights 25-149)
 export const MENTOR_CHANCE = 0.05; // C818: was 0.03, collab consensus
 export const MENTOR_MIN_FIGHTS = 25;
-export const MENTOR_MAX_FIGHTS = 130; // C838: 149→130 (mentor ends before late-game transition)
+export const MENTOR_MAX_FIGHTS = 150; // C880: 130→150 (spread density cliff)
 export const MENTOR_EXP_MUL = 0.15; // +15% EXP
 export const MENTOR_DURATION = 4;
 // C826: Risk Gambit — early-game decision event (fights 40-90)
@@ -202,7 +202,7 @@ export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level a
 // C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
 export const MERCENARY_OFFER_CHANCE = 0.03;
 export const MERCENARY_OFFER_MIN_FIGHTS = 115; // C856: 100→115 (separate from Crossroads window)
-export const MERCENARY_OFFER_MAX_FIGHTS = 145; // C856: 120→145 (wider late window)
+export const MERCENARY_OFFER_MAX_FIGHTS = 175; // C880: 145→175 (spread density cliff)
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
 export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
@@ -219,7 +219,7 @@ export const HIGH_GOLD_DEATH_PENALTY_CAP = 0.20;
 export const CROSSROADS_CHANCE = 0.03;
 export const CROSSROADS_PITY_THRESHOLD = 30; // C869: 40→30 (must be ≤ window size 35)
 export const CROSSROADS_MIN_FIGHTS = 95;
-export const CROSSROADS_MAX_FIGHTS = 130;
+export const CROSSROADS_MAX_FIGHTS = 160; // C880: 130→160 (spread density cliff)
 export const CROSSROADS_ATK_DURATION = 5;
 export const CROSSROADS_ATK_MUL = 0.18; // C859: 0.20→0.18 (composable stack rebalance)
 export const CROSSROADS_EXP_DURATION = 5;
@@ -278,7 +278,7 @@ export const PASSIVE_GOLD_CAP = 10;
 export const BOSS_IMMUNITY_INTERVAL = 3;
 export const ACHIEVEMENT_KILL_THRESHOLDS = [100, 500, 1000];
 export const ACHIEVEMENT_ATK_BONUS = 0.05;
-export const WEATHER_CHANCE = 0.20; // C781: tuned from 0.30 (uptime 70%→53%, weather stays "special")
+export const WEATHER_CHANCE = 0.28; // C880: 0.20→0.28 (weather uptime ~65%, events visible)
 // C777: weather duration — once weather occurs it persists for multiple fights
 export const WEATHER_DURATION_MIN = 3;
 export const WEATHER_DURATION_MAX = 8;
