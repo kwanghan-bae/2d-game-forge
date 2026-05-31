@@ -28,6 +28,7 @@ import {
   CRIMSON_TITHE_HP_COST,
   SOUL_FORGE_DURATION,
   SOUL_FORGE_COMBO_COST,
+  CLEAR_SKY_PATH_DURATION,
 } from './constants';
 
 export type EventId =
@@ -35,7 +36,8 @@ export type EventId =
   | 'rain_sanctuary' | 'fog_ambush' | 'wind_gale'
   | 'snow_drift' | 'void_rift' | 'abyssal_convergence'
   | 'temporal_fissure' | 'titan_arena'
-  | 'crimson_tithe' | 'gold_crucible' | 'astral_paradox' | 'soul_forge';
+  | 'crimson_tithe' | 'gold_crucible' | 'astral_paradox' | 'soul_forge'
+  | 'clear_sky_path';
 
 export interface EventAcceptEffects {
   colosseumRemaining: number;
@@ -58,6 +60,7 @@ export interface EventAcceptEffects {
   astralParadoxRemaining: number;
   soulForgeRemaining: number;
   soulForgeComboCost: number;
+  clearSkyPathRemaining: number;
   declineGold: number;
 }
 
@@ -68,7 +71,7 @@ const EMPTY_EFFECTS: EventAcceptEffects = {
   snowDriftRemaining: 0, abyssalConvergenceRemaining: 0, temporalFissureRemaining: 0,
   titanArenaRemaining: 0, crimsonTitheRemaining: 0, crimsonTitheHpCost: 0,
   goldCrucibleRemaining: 0, goldCrucibleGoldBurned: 0,
-  astralParadoxRemaining: 0, soulForgeRemaining: 0, soulForgeComboCost: 0, declineGold: 0,
+  astralParadoxRemaining: 0, soulForgeRemaining: 0, soulForgeComboCost: 0, clearSkyPathRemaining: 0, declineGold: 0,
 };
 
 // C816: Duration keys for data-driven lookup (avoids brittle || chain)
@@ -78,6 +81,7 @@ const DURATION_KEYS: ReadonlyArray<keyof EventAcceptEffects> = [
   'windGaleRemaining', 'snowDriftRemaining', 'abyssalConvergenceRemaining',
   'temporalFissureRemaining', 'titanArenaRemaining', 'crimsonTitheRemaining',
   'goldCrucibleRemaining', 'astralParadoxRemaining', 'soulForgeRemaining',
+  'clearSkyPathRemaining',
 ];
 
 /** C816: Find the active event duration from effects (first non-zero), or default. */
@@ -158,6 +162,7 @@ export class EventOrchestrator {
         case 'fog_ambush': this.lastEffects.fogAmbushRemaining = FOG_AMBUSH_DURATION; break;
         case 'wind_gale': this.lastEffects.windGaleRemaining = WIND_GALE_DURATION; break;
         case 'snow_drift': this.lastEffects.snowDriftRemaining = SNOW_DRIFT_DURATION; break;
+        case 'clear_sky_path': this.lastEffects.clearSkyPathRemaining = CLEAR_SKY_PATH_DURATION; break;
         case 'abyssal_convergence': this.lastEffects.abyssalConvergenceRemaining = ABYSSAL_CONVERGENCE_DURATION; break;
         case 'temporal_fissure': this.lastEffects.temporalFissureRemaining = TEMPORAL_FISSURE_DURATION; break;
         case 'titan_arena': this.lastEffects.titanArenaRemaining = TITAN_ARENA_DURATION; break;

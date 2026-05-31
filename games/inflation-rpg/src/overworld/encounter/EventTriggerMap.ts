@@ -16,6 +16,7 @@ export const EVENT_PENDING_TRIGGER_MAP: ReadonlyArray<
   ['fogAmbushPending', 'fog_ambush'],
   ['windGalePending', 'wind_gale'],
   ['snowDriftPending', 'snow_drift'],
+  ['clearSkyPathPending', 'clear_sky_path'],
   ['abyssalConvergencePending', 'abyssal_convergence'],
   ['temporalFissurePending', 'temporal_fissure'],
   ['titanArenaPending', 'titan_arena'],
