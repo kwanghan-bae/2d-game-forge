@@ -689,6 +689,10 @@ export class EncounterEngine {
     this.choiceEngine.resolveVeteransChallengeChoice();
   }
 
+  // C968: Veteran's Challenge remaining duration
+  getVeteransChallengeExpRemaining(): number { return this.midGameBuffs.remaining('vc_exp'); }
+  getVeteransChallengeAtkRemaining(): number { return this.midGameBuffs.remaining('vc_atk'); }
+
   // C578: combat stats summary for visual overlay
   getCombatSummary(): { activeBuffs: string[]; activeBuffInfos: BuffInfo[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean; adaptivePressure: number } {
     const activeBuffs: string[] = [];
