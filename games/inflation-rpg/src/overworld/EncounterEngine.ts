@@ -746,31 +746,8 @@ export class EncounterEngine {
       const eventMomentumAtkActive = this.eventMomentumAtkRemaining > 0;
       // C837: All simple duration decrements consolidated in tickSimpleDurations
       this.tickSimpleDurations();
-      // C770: Storm Nexus decrement + HP drain + ATK buff
-      if (this.stormNexusRemaining > 0) {
-        hero.hp -= Math.floor(hero.hpMax * STORM_NEXUS_HP_DRAIN_RATE);
-        if (hero.hp < 1) hero.hp = 1;
-        this.stormNexusRemaining--;
-      }
-      // C789: Abyssal Convergence decrement + HP drain
-      if (this.abyssalConvergenceRemaining > 0) {
-        hero.hp -= Math.floor(hero.hpMax * ABYSSAL_CONVERGENCE_HP_DRAIN_RATE);
-        if (hero.hp < 1) hero.hp = 1;
-        this.abyssalConvergenceRemaining--;
-      }
-      // C791: Temporal Fissure decrement + payback at end
-      if (this.temporalFissureRemaining > 0) {
-        this.temporalFissureRemaining--;
-        if (this.temporalFissureRemaining === 0 && this.temporalFissureStoredExp > 0) {
-          hero.gainExp(Math.floor(this.temporalFissureStoredExp * TEMPORAL_FISSURE_PAYBACK_MUL));
-          this.temporalFissureStoredExp = 0;
-        }
-      }
-      // C800: Gold Crucible (resets atkFlat on expiry)
-      if (this.goldCrucibleRemaining > 0) {
-        this.goldCrucibleRemaining--;
-        if (this.goldCrucibleRemaining === 0) this.goldCrucibleAtkFlat = 0;
-      }
+      // C840: Weather hazard + late-game duration effects (side-effects on hero HP / EXP / atkFlat)
+      this.tickWeatherHazards(hero);
       // Wave exhaustion
       const hadWaveExhaustion = this.waveExhaustionRemaining > 0;
       if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
@@ -2225,6 +2202,31 @@ export class EncounterEngine {
     if (this.mentorRemaining > 0) this.mentorRemaining--;
     if (this.eventMomentumAtkRemaining > 0) this.eventMomentumAtkRemaining--;
     if (this.eventMomentumDensityRemaining > 0) this.eventMomentumDensityRemaining--;
+  }
+
+  // C840: Weather hazard + late-game duration effects with side-effects
+  private tickWeatherHazards(hero: HeroEntity): void {
+    if (this.stormNexusRemaining > 0) {
+      hero.hp -= Math.floor(hero.hpMax * STORM_NEXUS_HP_DRAIN_RATE);
+      if (hero.hp < 1) hero.hp = 1;
+      this.stormNexusRemaining--;
+    }
+    if (this.abyssalConvergenceRemaining > 0) {
+      hero.hp -= Math.floor(hero.hpMax * ABYSSAL_CONVERGENCE_HP_DRAIN_RATE);
+      if (hero.hp < 1) hero.hp = 1;
+      this.abyssalConvergenceRemaining--;
+    }
+    if (this.temporalFissureRemaining > 0) {
+      this.temporalFissureRemaining--;
+      if (this.temporalFissureRemaining === 0 && this.temporalFissureStoredExp > 0) {
+        hero.gainExp(Math.floor(this.temporalFissureStoredExp * TEMPORAL_FISSURE_PAYBACK_MUL));
+        this.temporalFissureStoredExp = 0;
+      }
+    }
+    if (this.goldCrucibleRemaining > 0) {
+      this.goldCrucibleRemaining--;
+      if (this.goldCrucibleRemaining === 0) this.goldCrucibleAtkFlat = 0;
+    }
   }
 
   // C822: Batch capture "had" flags + decrement combat buff timers
