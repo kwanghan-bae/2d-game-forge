@@ -1448,76 +1448,10 @@ export class EncounterEngine {
       this.tickSacrificeSubsystem(hero, isDangerZone);
       // C531-C538: temporal systems (momentum decay, golden hour, fatigue, accumulator, season, aging)
       this.tickTemporalSystems(hero, tookDamage);
-      // C539: time lock vault — deposit and mature
-      if (this.timeLockTimer > 0) {
-        this.timeLockTimer--;
-        if (this.timeLockTimer <= 0) {
-          hero.gold += Math.floor(this.timeLockGold * (1 + TIME_LOCK_GROWTH));
-          this.timeLockGold = 0;
-        }
-      } else if (hero.gold > 500 && this.rng.chance(0.05)) {
-        const deposit = Math.floor(hero.gold * TIME_LOCK_DEPOSIT_RATE);
-        hero.gold -= deposit;
-        this.timeLockGold = deposit;
-        this.timeLockTimer = TIME_LOCK_DURATION;
-      }
-      // C426: combo gold milestone — every 15 combo grants flat gold
-      if (this.comboStreak > 0 && this.comboStreak % COMBO_GOLD_MILESTONE_INTERVAL === 0) {
-        hero.gold += COMBO_GOLD_MILESTONE_AMOUNT * hero.level;
-      }
-      // C493: combo gold milestone 2 — every 25 combo grants gold burst
-      if (this.comboStreak > 0 && this.comboStreak % COMBO_GOLD_MILESTONE2_INTERVAL === 0) {
-        hero.gold += COMBO_GOLD_MILESTONE2_BONUS * hero.level;
-      }
-      // C358: gold per hit bonus — multi-hit fights give extra
-      if (hitCount > 1) hero.gold += hitCount * GOLD_PER_HIT_BONUS;
-      // C280: lucky gold drop
-      if (this.rng.chance(LUCKY_GOLD_CHANCE)) {
-        hero.gold += hero.level * LUCKY_GOLD_PER_LEVEL;
-      }
-      // C375: combo breaker gold — surviving enemy rage and winning gives gold
-      if (rageTurn > 0) hero.gold += hero.level * COMBO_BREAK_GOLD_PER_LEVEL;
-      // C391: survival gold bonus — staying alive gives gold per 10 fights
-      if (this.fightsSinceDeath > 0 && this.fightsSinceDeath % SURVIVAL_GOLD_THRESHOLD === 0) {
-        hero.gold += hero.level * SURVIVAL_GOLD_PER_LEVEL;
-      }
-      // C447: danger shield — C608: removed prestige shield recharge from danger survival
-      // C208: passive gold income based on village visits
-      // C259: gold magnet prestige scaling
-      // C378: danger zone raises gold cap
-      const effectiveGoldCap = PASSIVE_GOLD_CAP + (isDangerZone ? this.dangerStreak * DANGER_GOLD_CAP_PER_STREAK : 0);
-      hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT + this.prestigeCount * GOLD_MAGNET_PRESTIGE_BONUS, effectiveGoldCap);
-      // C438: village gold fountain upgrade — village gold scales with visits
-      hero.gold += Math.floor(this.villageVisits * VILLAGE_GOLD_FOUNTAIN_SCALE);
-      // C388: bank interest — banked gold grows each fight
-      // C424: prestige bank interest bonus
-      if (this.bankGold > 0) {
-        const interestRate = BANK_INTEREST_RATE + this.prestigeCount * PRESTIGE_BANK_INTEREST_BONUS;
-        this.bankGold += Math.min(BANK_INTEREST_CAP, Math.floor(this.bankGold * interestRate));
-      }
-      // C193: gold tax at high levels (C202: exempt during danger streak)
-      if (hero.level >= GOLD_TAX_LEVEL_THRESHOLD && !(DANGER_TAX_IMMUNITY && isDangerZone)) {
-        const tax = Math.floor(hero.gold * GOLD_TAX_RATE);
-        hero.gold -= tax;
-      }
-      // C368: gold overflow shield — when gold exceeds threshold, grant temporary shield
-      if (hero.gold > GOLD_SHIELD_OVERFLOW_THRESHOLD * hero.level && this.goldOverflowShieldRemaining <= 0) {
-        // C451: gold overflow shield upgrade — more charges with prestige
-        this.goldOverflowShieldRemaining = GOLD_OVERFLOW_SHIELD_DURATION + (this.prestigeCount > 0 ? GOLD_OVERFLOW_SHIELD_UPGRADE : 0);
-      }
-      // C157→C831: boss rewards extraction
-      if (isBoss) {
-        this.resolveBossRewards(hero, events, isOverkill);
-      } else {
-        this.consecutiveBossKills = 0;
-      }
-      // C302: gold overflow — excess gold above threshold converts to exp
-      if (hero.gold > GOLD_OVERFLOW_THRESHOLD) {
-        const excess = hero.gold - GOLD_OVERFLOW_THRESHOLD;
-        const bonusExp = Math.floor(excess / GOLD_OVERFLOW_RATIO);
-        hero.gold = GOLD_OVERFLOW_THRESHOLD;
-        hero.exp += bonusExp;
-      }
+      // C539/C843: time lock vault — deposit and mature
+      this.tickTimeLockVault(hero);
+      // C843: combo milestones + misc gold bonuses + bank interest + tax + overflow + boss rewards
+      this.tickPostCombatGoldBonuses(hero, events, hitCount, rageTurn, isDangerZone, isBoss, isOverkill);
       // C156: HP regen on win
       // C238: reset consecutive deaths on win
       this.consecutiveDeaths = 0;
@@ -2216,6 +2150,69 @@ export class EncounterEngine {
     if (this.mentorRemaining > 0) this.mentorRemaining--;
     if (this.eventMomentumAtkRemaining > 0) this.eventMomentumAtkRemaining--;
     if (this.eventMomentumDensityRemaining > 0) this.eventMomentumDensityRemaining--;
+  }
+
+  // C843: Time lock vault — deposit gold that matures over time
+  private tickTimeLockVault(hero: HeroEntity): void {
+    if (this.timeLockTimer > 0) {
+      this.timeLockTimer--;
+      if (this.timeLockTimer <= 0) {
+        hero.gold += Math.floor(this.timeLockGold * (1 + TIME_LOCK_GROWTH));
+        this.timeLockGold = 0;
+      }
+    } else if (hero.gold > 500 && this.rng.chance(0.05)) {
+      const deposit = Math.floor(hero.gold * TIME_LOCK_DEPOSIT_RATE);
+      hero.gold -= deposit;
+      this.timeLockGold = deposit;
+      this.timeLockTimer = TIME_LOCK_DURATION;
+    }
+  }
+
+  // C843: Combo milestones, misc gold bonuses, bank interest, tax, overflow, boss rewards
+  private tickPostCombatGoldBonuses(
+    hero: HeroEntity, events: OverworldEvent[],
+    hitCount: number, rageTurn: number, isDangerZone: boolean,
+    isBoss: boolean, isOverkill: boolean,
+  ): void {
+    if (this.comboStreak > 0 && this.comboStreak % COMBO_GOLD_MILESTONE_INTERVAL === 0) {
+      hero.gold += COMBO_GOLD_MILESTONE_AMOUNT * hero.level;
+    }
+    if (this.comboStreak > 0 && this.comboStreak % COMBO_GOLD_MILESTONE2_INTERVAL === 0) {
+      hero.gold += COMBO_GOLD_MILESTONE2_BONUS * hero.level;
+    }
+    if (hitCount > 1) hero.gold += hitCount * GOLD_PER_HIT_BONUS;
+    if (this.rng.chance(LUCKY_GOLD_CHANCE)) {
+      hero.gold += hero.level * LUCKY_GOLD_PER_LEVEL;
+    }
+    if (rageTurn > 0) hero.gold += hero.level * COMBO_BREAK_GOLD_PER_LEVEL;
+    if (this.fightsSinceDeath > 0 && this.fightsSinceDeath % SURVIVAL_GOLD_THRESHOLD === 0) {
+      hero.gold += hero.level * SURVIVAL_GOLD_PER_LEVEL;
+    }
+    const effectiveGoldCap = PASSIVE_GOLD_CAP + (isDangerZone ? this.dangerStreak * DANGER_GOLD_CAP_PER_STREAK : 0);
+    hero.gold += Math.min(this.villageVisits * PASSIVE_GOLD_PER_VISIT + this.prestigeCount * GOLD_MAGNET_PRESTIGE_BONUS, effectiveGoldCap);
+    hero.gold += Math.floor(this.villageVisits * VILLAGE_GOLD_FOUNTAIN_SCALE);
+    if (this.bankGold > 0) {
+      const interestRate = BANK_INTEREST_RATE + this.prestigeCount * PRESTIGE_BANK_INTEREST_BONUS;
+      this.bankGold += Math.min(BANK_INTEREST_CAP, Math.floor(this.bankGold * interestRate));
+    }
+    if (hero.level >= GOLD_TAX_LEVEL_THRESHOLD && !(DANGER_TAX_IMMUNITY && isDangerZone)) {
+      const tax = Math.floor(hero.gold * GOLD_TAX_RATE);
+      hero.gold -= tax;
+    }
+    if (hero.gold > GOLD_SHIELD_OVERFLOW_THRESHOLD * hero.level && this.goldOverflowShieldRemaining <= 0) {
+      this.goldOverflowShieldRemaining = GOLD_OVERFLOW_SHIELD_DURATION + (this.prestigeCount > 0 ? GOLD_OVERFLOW_SHIELD_UPGRADE : 0);
+    }
+    if (isBoss) {
+      this.resolveBossRewards(hero, events, isOverkill);
+    } else {
+      this.consecutiveBossKills = 0;
+    }
+    if (hero.gold > GOLD_OVERFLOW_THRESHOLD) {
+      const excess = hero.gold - GOLD_OVERFLOW_THRESHOLD;
+      const bonusExp = Math.floor(excess / GOLD_OVERFLOW_RATIO);
+      hero.gold = GOLD_OVERFLOW_THRESHOLD;
+      hero.exp += bonusExp;
+    }
   }
 
   // C840: Weather hazard + late-game duration effects with side-effects
