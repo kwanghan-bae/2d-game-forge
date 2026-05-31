@@ -392,6 +392,7 @@ export const REPUTATION_AGG_ATK_MUL = 0.20; // aggressive: +20% ATK for 8 fights
 export const REPUTATION_AGG_DURATION = 8;
 export const REPUTATION_DEF_HEAL_RATE = 0.30; // defensive: heal 30% maxHP
 export const REPUTATION_DEF_SHIELD_DURATION = 6; // +6 fight shield
+export const REPUTATION_DEF_SHIELD_DR = 0.20; // C890: 20% damage reduction during shield
 export const REPUTATION_GREEDY_GOLD_MUL = 2.5; // greedy: gold burst ×2.5× level
 export const REPUTATION_BALANCED_EXP_DURATION = 5; // balanced: +15% EXP for 5 fights
 export const REPUTATION_BALANCED_EXP_MUL = 0.15;
@@ -405,6 +406,7 @@ export const VETERANS_TRIAL_AGG_ATK_MUL = 0.25; // aggressive path: +25% ATK for
 export const VETERANS_TRIAL_AGG_DURATION = 10;
 export const VETERANS_TRIAL_AGG_HP_COST = 0.12; // C889: 0.15→0.12 (less punishing aggressive)
 export const VETERANS_TRIAL_DEF_SHIELD_DURATION = 10; // defensive: 10-fight shield
+export const VETERANS_TRIAL_DEF_SHIELD_DR = 0.25; // C890: 25% damage reduction during shield
 export const VETERANS_TRIAL_DEF_HEAL_RATE = 0.20; // +20% maxHP heal
 export const VETERANS_TRIAL_GREEDY_GOLD_MUL = 4.0; // greedy: gold ×4× level
 export const VETERANS_TRIAL_GREEDY_EXP_PENALTY = 0.20; // but EXP -20% for 5 fights
@@ -412,3 +414,16 @@ export const VETERANS_TRIAL_GREEDY_PENALTY_DURATION = 5;
 export const VETERANS_TRIAL_BALANCED_ALL_DURATION = 6; // balanced: +10% ATK + 10% EXP for 6 fights
 export const VETERANS_TRIAL_BALANCED_ATK_MUL = 0.10;
 export const VETERANS_TRIAL_BALANCED_EXP_MUL = 0.10;
+
+// C890: Last Stand Challenge — late-game player choice (fight 400-600)
+export const LAST_STAND_MIN_FIGHT = 400;
+export const LAST_STAND_MAX_FIGHT = 600;
+export const LAST_STAND_CHANCE = 0.04; // 4% per fight
+export const LAST_STAND_TIMEOUT_SEC = 3; // 3s decision window
+// Accept: massive ATK burst but costs 25% HP
+export const LAST_STAND_ATK_MUL = 0.35; // +35% ATK for 12 fights
+export const LAST_STAND_ATK_DURATION = 12;
+export const LAST_STAND_HP_COST = 0.25; // costs 25% maxHP
+// Decline: safe heal + small gold
+export const LAST_STAND_DECLINE_HEAL_RATE = 0.15; // heal 15% maxHP
+export const LAST_STAND_DECLINE_GOLD_MUL = 2.0; // gold = level × 2

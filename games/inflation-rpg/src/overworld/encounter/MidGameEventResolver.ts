@@ -52,6 +52,14 @@ import {
   VETERANS_TRIAL_BALANCED_ALL_DURATION,
   VETERANS_TRIAL_BALANCED_ATK_MUL,
   VETERANS_TRIAL_BALANCED_EXP_MUL,
+  LAST_STAND_MIN_FIGHT,
+  LAST_STAND_MAX_FIGHT,
+  LAST_STAND_CHANCE,
+  LAST_STAND_ATK_MUL,
+  LAST_STAND_ATK_DURATION,
+  LAST_STAND_HP_COST,
+  LAST_STAND_DECLINE_HEAL_RATE,
+  LAST_STAND_DECLINE_GOLD_MUL,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -83,6 +91,8 @@ export interface MidGamePending {
   reputationTotalChoices?: number; // C883: how many choices player has made
   reputationFired?: boolean; // C883: already triggered this run
   veteransTrialFired?: boolean; // C887: already triggered this run
+  lastStandChoiceResolved?: 'accept' | 'decline'; // C890: player's choice
+  lastStandFired?: boolean; // C890: already triggered this run
 }
 
 export interface MidGameResult {
@@ -104,12 +114,14 @@ export interface MidGameResult {
     veteransTrialAtkRemaining?: number; // C887
     veteransTrialShieldRemaining?: number; // C887
     veteransTrialExpRemaining?: number; // C887
+    lastStandAtkRemaining?: number; // C890
   };
   crossroadsUsed?: boolean;
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
   mercenaryChoicePending?: boolean; // C878: true = player choice needed
   crossroadsChoicePending?: boolean; // C878: true = player choice needed
   wanderingMerchantChoicePending?: boolean; // C881: true = player choice needed
+  lastStandChoicePending?: boolean; // C890: true = player choice needed
   reputationFired?: boolean; // C883: true = reputation payoff event triggered
   veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
 }
@@ -280,6 +292,33 @@ export function resolveMidGameEvents(
       events.push({ type: 'event_veterans_trial', style: 'balanced', value: VETERANS_TRIAL_BALANCED_ATK_MUL });
     }
     return { events, heroMutations, buffs, crossroadsUsed, veteransTrialFired: true };
+  }
+
+  // C890: Last Stand Challenge — late-game player choice (fight 400-600)
+  // Phase 1: trigger pending (no resolved choice yet)
+  if (!pending.lastStandFired
+    && !pending.lastStandChoiceResolved
+    && ctx.totalFights >= LAST_STAND_MIN_FIGHT
+    && ctx.totalFights <= LAST_STAND_MAX_FIGHT
+    && ctx.rngChance(LAST_STAND_CHANCE)) {
+    return { events, heroMutations, buffs, crossroadsUsed, lastStandChoicePending: true };
+  }
+
+  // Phase 2: resolve choice
+  if (pending.lastStandChoiceResolved === 'accept') {
+    buffs.lastStandAtkRemaining = LAST_STAND_ATK_DURATION;
+    const hpCost = Math.floor(ctx.hero.hpMax * LAST_STAND_HP_COST);
+    heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) - hpCost;
+    events.push({ type: 'event_last_stand', choice: 'accept', value: LAST_STAND_ATK_MUL });
+    return { events, heroMutations, buffs, crossroadsUsed };
+  }
+  if (pending.lastStandChoiceResolved === 'decline') {
+    const healAmt = Math.floor(ctx.hero.hpMax * LAST_STAND_DECLINE_HEAL_RATE);
+    heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
+    const goldGain = Math.floor(ctx.hero.level * LAST_STAND_DECLINE_GOLD_MUL);
+    heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldGain;
+    events.push({ type: 'event_last_stand', choice: 'decline', value: healAmt });
+    return { events, heroMutations, buffs, crossroadsUsed };
   }
 
   return { events, heroMutations, buffs, crossroadsUsed };

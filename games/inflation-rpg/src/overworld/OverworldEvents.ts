@@ -143,4 +143,6 @@ export type OverworldEvent =
   // C883: Reputation payoff event
   | { type: 'event_reputation'; style: string; value: number }
   // C887: Veteran's Trial consequence event
-  | { type: 'event_veterans_trial'; style: string; value: number };
+  | { type: 'event_veterans_trial'; style: string; value: number }
+  // C890: Last Stand Challenge player choice
+  | { type: 'event_last_stand'; choice: string; value: number };

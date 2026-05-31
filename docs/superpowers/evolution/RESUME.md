@@ -1,43 +1,51 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 884
+- Cycle: 889
 - Target: 600+ (연속 진화)
-- Last commit: C884 wire ChoiceHistory + reputation buffs into EncounterEngine
-- Vitest: 2331 pass / 0 fail
-- EncounterEngine: ~2560 lines
-- Critic score: 26/40 (C883 collab, Δ+4 — consequence chain + 4th choice)
+- Last commit: C889 late-game density + veteran trial tuning
+- Vitest: 2357 pass / 0 fail
+- EncounterEngine: ~2630 lines
+- Critic score: pending (C889 collab dispatched)
 
-## 레이어 카운터 (C881-C884 era)
-- 시스템: 2 (C881, C884)
-- 구조: 1 (C882)
-- 밸런스: 1 (C883)
-- 콜라보: 1 (C883)
+## 레이어 카운터 (C887-C889 era)
+- 시스템: 1 (C887)
+- 구조: 1 (C888)
+- 밸런스: 1 (C889)
+- 콜라보: 1 (C889)
 
 ## 제약
-- cycles_since_collab: 1 (C884)
-- Next collab: C886
-- EncounterEngine: ~2560 lines
-- Layer rotation: C885=structure, C886=balance+collab
+- cycles_since_collab: 0 (C889)
+- Next collab: C892
+- EncounterEngine: ~2630 lines
+- Layer rotation: C890=system, C891=structure, C892=balance+collab
 
-## 🟡 Player Agency: 4 choices + consequence
-- Proving Grounds: binary accept/decline, 2s timeout (fight 55-110)
+## 🟡 Player Agency: 4 choices + 2 consequences
+- Proving Grounds: binary accept/decline, 2s timeout (fight 40-110)
 - Crossroads: 3-way ATK/EXP/Gold, 4s timeout (fight 95-160)
-- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-175)
-- Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-250)
-- Reputation Payoff: auto-resolve consequence (fight 176-225, style-based)
+- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-225)
+- Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-400)
+- Reputation Payoff: auto-resolve consequence (fight 176-225, style-based, ≥3 choices)
+- Veteran's Trial: auto-resolve consequence (fight 275-450, style-based, ≥4 choices)
 - ChoiceHistory tracks all choices with aggressive/defensive/greedy categories
-- **Dead zones**: fight 21-54 (no choice), fight 251+ (no choice)
+- Toast labels: 8 consequence styles fully wired
+- NarrativeGenerator: forChoiceEvent + forConsequenceEvent saga hooks added
+- **Dead zones**: fight 0-39 (no choice), fight 451+ (no choice)
 
-## 다음 2사이클 (C883 합의)
-- C885 [structure]: Late-game choice event (fight 226-300)
-- C886 [balance+collab]: Density tuning + early choice gap fix
+## 달성 사항 (C887-C889)
+- C887 [system]: Veteran's Trial 2nd consequence event (fight 275-450, 4 styles)
+- C888 [structure]: Toast labels (8) + NarrativeGenerator saga hooks
+- C889 [balance+collab]: WANDERING_MERCHANT_MAX 400, VETERANS_TRIAL_MAX 450, AGG_HP_COST 0.12
 
-## 달성 사항 (C881-C884)
+## 달성 사항 (C884-C886)
+- C884 [system]: Wire ChoiceHistory into EncounterEngine + reputation buffs
+- C885 [structure]: Extend choice event windows (proving 40, mercenary 225, merchant 350)
+- C886 [balance]: Reputation tuning (CHANCE 0.06, MIN_CHOICES 3)
+
+## 달성 사항 (C881-C883)
 - C881 [system]: Wandering Merchant 3-way player choice (heal/atk/gamble)
 - C882 [structure]: ChoiceHistory tracker + classifyChoice (14 tests)
 - C883 [balance]: Reputation Payoff consequence event (fight 176-225, 7 tests)
-- C884 [system]: Wire ChoiceHistory into EncounterEngine + reputation buffs
 
 ## 달성 사항 (C875-C877)
 - C875 [system]: Proving Grounds player choice gate (첫 player agency!)
