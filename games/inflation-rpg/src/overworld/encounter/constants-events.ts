@@ -439,7 +439,7 @@ export const FINAL_RECKONING_MIN_CHOICES = 8; // requires extensive choice histo
 // Aggressive: massive ATK buff, but permanent HP sacrifice
 export const FINAL_RECKONING_AGG_ATK_MUL = 0.35;
 export const FINAL_RECKONING_AGG_DURATION = 20;
-export const FINAL_RECKONING_AGG_HP_COST = 0.12; // C899: 0.25→0.12 (AGG risk halved, DEF parity)
+export const FINAL_RECKONING_AGG_HP_COST = 0.15; // C904: 0.12→0.15 (FR_AGG over-dominant fix)
 // Defensive: full heal + long shield
 export const FINAL_RECKONING_DEF_SHIELD_DURATION = 20;
 export const FINAL_RECKONING_DEF_SHIELD_DR = 0.30; // C896: 30% damage reduction (strongest consequence)

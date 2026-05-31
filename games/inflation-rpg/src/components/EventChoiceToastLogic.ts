@@ -29,11 +29,11 @@ const EVENT_LABELS: Record<string, string> = {
   // C888: Consequence event toasts
   event_reputation_aggressive: '🏆 명성: 공격적! ATK 버프!',
   event_reputation_defensive: '🏆 명성: 방어적! 방패 + 회복!',
-  event_reputation_greedy: '🏆 명성: 탐욕! 골드 폭발!',
+  event_reputation_greedy: '🏆 명성: 탐욕! 골드 폭발 + 투자!',
   event_reputation_balanced: '🏆 명성: 균형! EXP 버프!',
   event_veterans_trial_aggressive: '⚔️ 노련한 시련: 공격! ATK 폭발 (HP 대가)',
   event_veterans_trial_defensive: '🛡️ 노련한 시련: 방어! 회복 + 방패!',
-  event_veterans_trial_greedy: '💰 노련한 시련: 탐욕! 골드 대박!',
+  event_veterans_trial_greedy: '💰 노련한 시련: 탐욕! 골드 + 투자!',
   event_veterans_trial_balanced: '⚖️ 노련한 시련: 균형! ATK + EXP!',
   // C890: Last Stand toast labels
   event_last_stand_accept: '🔥 최후의 항전: 수락! ATK 폭발 (HP 대가)',
@@ -41,7 +41,7 @@ const EVENT_LABELS: Record<string, string> = {
   // C896: Final Reckoning toast labels
   event_final_reckoning_aggressive: '⚔️ 최종 심판: 공격! ATK 폭발 (HP 대가)',
   event_final_reckoning_defensive: '🛡️ 최종 심판: 방어! 대량 회복 + 방패!',
-  event_final_reckoning_greedy: '💰 최종 심판: 탐욕! 골드 대박!',
+  event_final_reckoning_greedy: '💰 최종 심판: 탐욕! 골드 + 대투자!',
   event_final_reckoning_balanced: '⚖️ 최종 심판: 균형! ATK + EXP!',
 };
 
