@@ -19,6 +19,7 @@ import { computeHeroAtk, computeBuffedHeroAtk } from './encounter/CombatCalculat
 import { computePostVictoryExp } from './encounter/PostVictoryExpCalculator';
 import { resolveMidGameEvents } from './encounter/MidGameEventResolver';
 import { ChoiceHistory, classifyChoice } from './encounter/ChoiceHistory';
+import { DurationBuffTracker } from './encounter/DurationBuffTracker';
 import { tickWeatherHazards as tickWeatherHazardsPure } from './encounter/WeatherHazardTicker';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
@@ -262,9 +263,8 @@ export class EncounterEngine {
   private eldersJudgmentPending = false; // C926: waiting for player choice
   private eldersJudgmentChoiceResolved: 'double_down' | 'diversify' | null = null; // C926
   private eldersJudgmentFired = false; // C926: once-per-run
-  private eldersJudgmentAtkRemaining = 0; // C926
-  private eldersJudgmentShieldRemaining = 0; // C926
-  private eldersJudgmentExpRemaining = 0; // C926
+  // C929: Elder's Judgment buffs migrated to DurationBuffTracker
+  private readonly midGameBuffs = new DurationBuffTracker(); // C929: shared tracker for mid-game event buffs
   private readonly choiceHistory = new ChoiceHistory(); // C883: tracks player choices for consequence events
   private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
@@ -728,9 +728,9 @@ export class EncounterEngine {
     if (this.firstTrialExpRemaining > 0) activeBuffs.push('첫 시련 EXP');
     if (this.wanderingSageExpRemaining > 0) activeBuffs.push('현자 EXP');
     if (this.wanderingSageAtkRemaining > 0) activeBuffs.push('현자 ATK');
-    if (this.eldersJudgmentAtkRemaining > 0) activeBuffs.push('장로 ATK');
-    if (this.eldersJudgmentShieldRemaining > 0) activeBuffs.push('장로 방패');
-    if (this.eldersJudgmentExpRemaining > 0) activeBuffs.push('장로 EXP');
+    if (this.midGameBuffs.isActive('ej_atk')) activeBuffs.push('장로 ATK');
+    if (this.midGameBuffs.isActive('ej_shield')) activeBuffs.push('장로 방패');
+    if (this.midGameBuffs.isActive('ej_exp')) activeBuffs.push('장로 EXP');
     const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
     if (!deathSaveBlocked) {
@@ -1122,7 +1122,7 @@ export class EncounterEngine {
             abyssalConvergenceActive: this.abyssalConvergenceRemaining > 0,
             titanArenaActive: this.titanArenaRemaining > 0, astralParadoxActive: this.astralParadoxRemaining > 0, crimsonTitheActive: this.crimsonTitheRemaining > 0,
           });
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.mercenaryShieldRemaining > 0 ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.reputationShieldRemaining > 0 ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.veteransTrialShieldRemaining > 0 ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.finalReckoningShieldRemaining > 0 ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.eldersJudgmentShieldRemaining > 0 ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.mercenaryShieldRemaining > 0 ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.reputationShieldRemaining > 0 ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.veteransTrialShieldRemaining > 0 ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.finalReckoningShieldRemaining > 0 ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
           // C380: prestige shield blocks hits
           if (this.prestigeShieldRemaining > 0) {
             this.prestigeShieldRemaining--;
@@ -1352,8 +1352,8 @@ export class EncounterEngine {
       const firstTrialExpMul = this.firstTrialExpRemaining > 0 ? FIRST_TRIAL_EXP_MUL : 1;
       // C921: Wandering Sage EXP buff
       const wanderingSageExpMul = this.wanderingSageExpRemaining > 0 ? WANDERING_SAGE_EXP_MUL : 1;
-      const eldersJudgmentExpMul = this.eldersJudgmentExpRemaining > 0
-        ? (this.eldersJudgmentAtkRemaining > 0 ? (1 + ELDERS_JUDGMENT_DIVERSIFY_EXP) : (1 + ELDERS_JUDGMENT_BAL_EXP_MUL))
+      const eldersJudgmentExpMul = this.midGameBuffs.isActive('ej_exp')
+        ? (this.midGameBuffs.isActive('ej_atk') ? (1 + ELDERS_JUDGMENT_DIVERSIFY_EXP) : (1 + ELDERS_JUDGMENT_BAL_EXP_MUL))
         : 1;
       const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul);
       if (this.declineStackExpDuration > 0) this.declineStackExpDuration--;
@@ -2012,8 +2012,8 @@ export class EncounterEngine {
         finalReckoningMul: 1 + FINAL_RECKONING_AGG_ATK_MUL,
       }) * (this.firstTrialAtkRemaining > 0 ? (1 + FIRST_TRIAL_ATK_MUL) : 1)
          * (this.wanderingSageAtkRemaining > 0 ? (1 + WANDERING_SAGE_ATK_MUL) : 1)
-         * (this.eldersJudgmentAtkRemaining > 0
-           ? (this.eldersJudgmentExpRemaining > 0 ? (1 + ELDERS_JUDGMENT_DIVERSIFY_ATK) : (1 + ELDERS_JUDGMENT_AGG_ATK_MUL))
+         * (this.midGameBuffs.isActive('ej_atk')
+           ? (this.midGameBuffs.isActive('ej_exp') ? (1 + ELDERS_JUDGMENT_DIVERSIFY_ATK) : (1 + ELDERS_JUDGMENT_AGG_ATK_MUL))
            : 1),
       weather: p.weather,
       hasBloodPactRelic: this.hasRelic(4),
@@ -2469,9 +2469,9 @@ export class EncounterEngine {
     if (b.firstTrialExpRemaining !== undefined) this.firstTrialExpRemaining = b.firstTrialExpRemaining;
     if (b.wanderingSageExpRemaining !== undefined) this.wanderingSageExpRemaining = b.wanderingSageExpRemaining;
     if (b.wanderingSageAtkRemaining !== undefined) this.wanderingSageAtkRemaining = b.wanderingSageAtkRemaining;
-    if (b.eldersJudgmentAtkRemaining !== undefined) this.eldersJudgmentAtkRemaining = b.eldersJudgmentAtkRemaining;
-    if (b.eldersJudgmentShieldRemaining !== undefined) this.eldersJudgmentShieldRemaining = b.eldersJudgmentShieldRemaining;
-    if (b.eldersJudgmentExpRemaining !== undefined) this.eldersJudgmentExpRemaining = b.eldersJudgmentExpRemaining;
+    if (b.eldersJudgmentAtkRemaining !== undefined) this.midGameBuffs.activate('ej_atk', b.eldersJudgmentAtkRemaining);
+    if (b.eldersJudgmentShieldRemaining !== undefined) this.midGameBuffs.activate('ej_shield', b.eldersJudgmentShieldRemaining);
+    if (b.eldersJudgmentExpRemaining !== undefined) this.midGameBuffs.activate('ej_exp', b.eldersJudgmentExpRemaining);
     if (result.firstTrialFired) this.firstTrialFired = true;
     if (result.eldersJudgmentFired) this.eldersJudgmentFired = true;
   }
@@ -2519,9 +2519,8 @@ export class EncounterEngine {
     // C921: Wandering Sage buff decrements
     if (this.wanderingSageExpRemaining > 0) this.wanderingSageExpRemaining--;
     if (this.wanderingSageAtkRemaining > 0) this.wanderingSageAtkRemaining--;    // C837: consolidated from inline
-    if (this.eldersJudgmentAtkRemaining > 0) this.eldersJudgmentAtkRemaining--;
-    if (this.eldersJudgmentShieldRemaining > 0) this.eldersJudgmentShieldRemaining--;
-    if (this.eldersJudgmentExpRemaining > 0) this.eldersJudgmentExpRemaining--;
+    // C929: Elder's Judgment buffs ticked via midGameBuffs
+    this.midGameBuffs.tick();
     if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
     if (this.inspirationRemaining > 0) this.inspirationRemaining--;
     if (this.mentorRemaining > 0) this.mentorRemaining--;
