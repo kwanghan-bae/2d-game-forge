@@ -1,35 +1,34 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 838
+- Cycle: 841
 - Target: 600+ (연속 진화)
-- Last commit: C838 weather cluster spread + Echo ramp + Mentor cap
-- Vitest: 2224 pass / 0 fail (+ 10 slow smoke tests excluded due to machine load)
-- E2E: 60 passed
-- EncounterEngine: ~2355 lines
-- Critic score: 28.5/40 (C838, +0.5 — Merchant EV rebalance)
+- Last commit: C841 Sparring Grounds + Colosseum/Echo tuning
+- Vitest: 2224 pass / 0 fail
+- EncounterEngine: ~2360 lines
+- Critic score: 29.5/40 (C841, +1.0 — dead zone filled)
 
-## 레이어 카운터 (C836-C838 era)
-- 시스템: 1 (C836)
-- 구조: 1 (C837)
-- 밸런스: 1 (C838)
-- 콜라보: 1 (C838)
+## 레이어 카운터 (C839-C841 era)
+- 시스템: 1 (C839)
+- 구조: 1 (C840)
+- 밸런스: 1 (C841)
+- 콜라보: 1 (C841)
 
 ## 제약
-- cycles_since_collab: 0 (C838 was collab)
-- Next collab: C841
-- EncounterEngine: ~2355 lines
-- Layer rotation: system → structure → balance (C839=system, C840=structure, C841=balance+collab)
+- cycles_since_collab: 0 (C841 was collab)
+- Next collab: C844
+- EncounterEngine: ~2360 lines
+- Layer rotation: system → structure → balance (C842=system, C843=structure, C844=balance+collab)
 
-## 다음 3사이클 (C838 합의)
-1. C839 [system]: GambitFeedbackAccumulator (gambitGoldNet/gambitHpCost → RunStatistics)
-2. C840 [structure]: tickWeatherHazards() extraction (Storm/Abyssal/Temporal/GoldCrucible)
-3. C841 [balance+collab]: Sparring Grounds event (fight 80-119, 3%) + Colosseum 0.03 + Echo 0.035
+## 다음 3사이클 (C841 합의)
+1. C842 [system]: RunStatisticsSummary (top-3 highlight computation)
+2. C843 [structure]: buildAtkContext() extraction (60-field context)
+3. C844 [balance+collab]: Merchant 3rd choice + Sparring tuning (0.04, MAX 129, Merchant MIN 125)
 
-## 달성 사항 (C836-C838)
-- C836 [system]: End-of-Run Summary (RunStatistics → cycle end snapshot)
-- C837 [structure]: Consolidate 5 inline decrements into tickSimpleDurations (now 17 counters)
-- C838 [balance+collab]: Weather spread (Wind 110/Fog 130/Snow 140/Storm 160) + Echo linear ramp (275-350) + Mentor cap 130
+## 달성 사항 (C839-C841)
+- C839 [system]: GambitFeedbackAccumulator (gambitGoldNet/gambitHpCost)
+- C840 [structure]: tickWeatherHazards() extraction (Storm/Abyssal/Temporal/GoldCrucible)
+- C841 [balance+collab]: Sparring Grounds (80-119, 3%) + Colosseum 0.03 + Echo 0.035
 
 ## 달성 사항 (C833-C835)
 - C833 [system]: RunStatistics accumulator (per-run metrics tracking, 17 fields)
