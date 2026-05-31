@@ -935,18 +935,9 @@ export class EncounterEngine {
       const { flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls } = atkResult;
       const atkInput = { flatAtk, coreMuls, conditionMuls, goldMuls, combatMuls, progressMuls, chainMuls, tradeoffMuls, systemMuls, atkCap: this.getAtkCap() };
       this.lastAtkBreakdownInput = atkInput;
-      // C723: weatherSpeedMul (fog=0.90) reduces effective ATK (hero is slower)
-      // C782: Snow Drift ATK penalty (hero ATK ×0.90)
-      const snowDriftAtkMul = this.midGameBuffs.isActive('snow_drift') ? SNOW_DRIFT_ATK_PENALTY : 1;
-      // C832: Wandering Merchant ATK buff
-      const merchantAtkMul = this.midGameBuffs.isActive('wm_atk') ? (1 + WANDERING_MERCHANT_ATK_MUL) : 1;
-      // C940: Endgame Surge ATK buff
-      const endgameSurgeAtkMul = this.midGameBuffs.isActive('endgame_surge') ? (1 + ENDGAME_SURGE_ATK_MUL) : 1;
-      // C941: Echo Memory ATK buff
-      const echoMemoryAtkMul = this.midGameBuffs.isActive('echo_memory') ? (1 + ECHO_MEMORY_ATK_MUL) : 1;
-      // C959: Veteran's Challenge ATK penalty
-      const vcAtkMul = this.midGameBuffs.isActive('vc_atk') ? VETERANS_CHALLENGE_ATK_PENALTY : 1;
-      const baseHeroAtk = Math.floor(computeHeroAtk(atkInput) * weatherSpeedMul * snowDriftAtkMul * merchantAtkMul * endgameSurgeAtkMul * echoMemoryAtkMul * vcAtkMul) + this.statShardAtk;
+      // ATK multipliers from active buffs
+      const buffAtkMul = this.computeBuffAtkMultiplier(weatherSpeedMul);
+      const baseHeroAtk = Math.floor(computeHeroAtk(atkInput) * buffAtkMul) + this.statShardAtk;
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -2473,6 +2464,16 @@ export class EncounterEngine {
     if (result.enemyMorphDuration !== undefined && result.enemyMorphDrRate !== undefined) {
       this.permanentRewards.grantEnemyMorph(result.enemyMorphDuration, result.enemyMorphDrRate);
     }
+  }
+
+  // C965: Extract buff ATK multiplier chain for clarity
+  private computeBuffAtkMultiplier(weatherSpeedMul: number): number {
+    const snowDrift = this.midGameBuffs.isActive('snow_drift') ? SNOW_DRIFT_ATK_PENALTY : 1;
+    const merchant = this.midGameBuffs.isActive('wm_atk') ? (1 + WANDERING_MERCHANT_ATK_MUL) : 1;
+    const endgameSurge = this.midGameBuffs.isActive('endgame_surge') ? (1 + ENDGAME_SURGE_ATK_MUL) : 1;
+    const echoMemory = this.midGameBuffs.isActive('echo_memory') ? (1 + ECHO_MEMORY_ATK_MUL) : 1;
+    const vc = this.midGameBuffs.isActive('vc_atk') ? VETERANS_CHALLENGE_ATK_PENALTY : 1;
+    return weatherSpeedMul * snowDrift * merchant * endgameSurge * echoMemory * vc;
   }
 
   // C933: All env effect + event buff durations now tracked via midGameBuffs
