@@ -60,7 +60,7 @@ export const LATE_GAME_EVENTS: readonly EventGateDef[] = [
   {
     id: 'event_ancient_colosseum',
     minTotalFights: 130,
-    chance: 0.02,
+    chance: 0.03, // C841: 0.02→0.03 (Mentor→Colosseum frequency cliff fix)
     description: 'Ancient Colosseum — double XP for next 5 fights but enemies hit 30% harder',
   },
   {

@@ -158,7 +158,7 @@ export const HEALER_EVENT_CHANCE = 0.06; // C814: doubled (was 0.03) — prevent
 export const HEALER_HEAL_RATE = 0.25; // heals 25% of max HP
 export const HEALER_MIN_FIGHTS = 25; // C826: 30→25 (close fight 6-24 narrative gap)
 export const ECHO_EVENT_CHANCE = 0.02; // C743: prestige echo event
-export const ECHO_LATE_CHANCE = 0.04; // C832: fight 250+ scaling (was 0.03 @300)
+export const ECHO_LATE_CHANCE = 0.035; // C841: 0.04→0.035 (density mul over-amplifies at 350+)
 export const ECHO_LATE_THRESHOLD = 275; // C835: ramp start (was step threshold)
 export const ECHO_RAMP_END = 350; // C838: ramp end — full LATE_CHANCE at 350
 export const ECHO_DURATION = 10; // shorter than full prestige echo (20)
@@ -191,6 +191,13 @@ export const RISK_GAMBIT_MIN_FIGHTS = 40;
 export const RISK_GAMBIT_MAX_FIGHTS = 90;
 export const RISK_GAMBIT_HP_COST_RATE = 0.20; // costs 20% of current HP
 export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
+// C841: Sparring Grounds — mid-early event filling dead zone (fights 80-119)
+export const SPARRING_GROUNDS_CHANCE = 0.03;
+export const SPARRING_GROUNDS_MIN_FIGHTS = 80;
+export const SPARRING_GROUNDS_MAX_FIGHTS = 119;
+export const SPARRING_GROUNDS_EXP_REWARD_MUL = 2.0; // win → 2× base EXP
+export const SPARRING_GROUNDS_HP_COST_RATE = 0.10; // lose → 10% current HP
+export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level advantage
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 120; // C835: 100→120 (reduce 90-130 saturation)

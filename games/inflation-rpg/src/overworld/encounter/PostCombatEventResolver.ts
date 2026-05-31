@@ -33,6 +33,9 @@ import {
   RISK_GAMBIT_CHANCE,
   RISK_GAMBIT_MIN_FIGHTS,
   RISK_GAMBIT_MAX_FIGHTS,
+  SPARRING_GROUNDS_CHANCE,
+  SPARRING_GROUNDS_MIN_FIGHTS,
+  SPARRING_GROUNDS_MAX_FIGHTS,
   WANDERING_MERCHANT_CHANCE,
   WANDERING_MERCHANT_MIN_FIGHTS,
   WANDERING_MERCHANT_MAX_FIGHTS,
@@ -138,6 +141,7 @@ export interface PostCombatResult {
   gamblerPending: boolean;
   altarPending: boolean;
   riskGambitPending: boolean;
+  sparringGroundsPending: boolean; // C841
   wanderingMerchantPending: boolean; // C832
 }
 
@@ -185,6 +189,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     gamblerPending: false,
     altarPending: false,
     riskGambitPending: false,
+    sparringGroundsPending: false,
     wanderingMerchantPending: false,
   };
 
@@ -302,6 +307,14 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       candidates.push({
         id: 'risk_gambit', weight: RISK_GAMBIT_CHANCE, pityEligible: false,
         apply: (r) => { r.riskGambitPending = true; r.eventType = 'event_risk_gambit'; },
+      });
+    }
+
+    // C841: Sparring Grounds — mid-early (fights 80-119, skill-check EXP/HP)
+    if (ctx.totalFights >= SPARRING_GROUNDS_MIN_FIGHTS && ctx.totalFights <= SPARRING_GROUNDS_MAX_FIGHTS) {
+      candidates.push({
+        id: 'sparring_grounds', weight: SPARRING_GROUNDS_CHANCE, pityEligible: true,
+        apply: (r) => { r.sparringGroundsPending = true; r.eventType = 'event_sparring_grounds'; },
       });
     }
 
