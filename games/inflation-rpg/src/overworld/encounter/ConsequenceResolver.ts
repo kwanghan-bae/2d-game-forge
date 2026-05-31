@@ -77,6 +77,7 @@ export interface ConsequenceResult {
   reputationFired?: boolean;
   veteransTrialFired?: boolean;
   finalReckoningFired?: boolean;
+  varianceRoll?: number; // C900: 0.0-1.0 roll for narrative suffix
 }
 
 // C899: ±20% variance on consequence durations/amounts for replay variety
@@ -144,7 +145,7 @@ function resolveReputation(ctx: ConsequenceContext): ConsequenceResult {
     events.push({ type: 'event_reputation', style: 'balanced', value: REPUTATION_BALANCED_EXP_MUL });
   }
 
-  return { events, heroMutations, buffs, reputationFired: true };
+  return { events, heroMutations, buffs, reputationFired: true, varianceRoll: v };
 }
 
 function resolveVeteransTrial(ctx: ConsequenceContext): ConsequenceResult {
@@ -175,7 +176,7 @@ function resolveVeteransTrial(ctx: ConsequenceContext): ConsequenceResult {
     events.push({ type: 'event_veterans_trial', style: 'balanced', value: VETERANS_TRIAL_BALANCED_ATK_MUL });
   }
 
-  return { events, heroMutations, buffs, veteransTrialFired: true };
+  return { events, heroMutations, buffs, veteransTrialFired: true, varianceRoll: v };
 }
 
 function resolveFinalReckoning(ctx: ConsequenceContext): ConsequenceResult {
@@ -206,5 +207,5 @@ function resolveFinalReckoning(ctx: ConsequenceContext): ConsequenceResult {
     events.push({ type: 'event_final_reckoning', style: 'balanced', value: FINAL_RECKONING_BALANCED_ATK_MUL } as OverworldEvent);
   }
 
-  return { events, heroMutations, buffs, finalReckoningFired: true };
+  return { events, heroMutations, buffs, finalReckoningFired: true, varianceRoll: v };
 }

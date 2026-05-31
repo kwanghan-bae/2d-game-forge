@@ -365,5 +365,22 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 70, eventType: 'final_reckoning', style: 'balanced' });
       expect(txt).toContain('지혜롭게');
     });
+    // C900: variance suffix tests
+    it('high variance roll adds 강하게 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'aggressive', varianceRoll: 0.95 });
+      expect(txt).toContain('강하게');
+    });
+    it('low variance roll adds 약하게 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'defensive', varianceRoll: 0.1 });
+      expect(txt).toContain('약하게');
+    });
+    it('mid variance roll has no suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'final_reckoning', style: 'greedy', varianceRoll: 0.5 });
+      expect(txt).not.toContain('바람');
+    });
+    it('no varianceRoll has no suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'balanced' });
+      expect(txt).not.toContain('바람');
+    });
   });
 });

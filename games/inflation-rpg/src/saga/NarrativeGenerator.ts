@@ -65,7 +65,14 @@ export class NarrativeGenerator {
   }
 
   /** C888: Consequence event narration for saga entries */
-  static forConsequenceEvent(opts: { age: number; eventType: string; style: string }, _seed = 0): string {
+  static forConsequenceEvent(opts: { age: number; eventType: string; style: string; varianceRoll?: number }, _seed = 0): string {
+    // C900: variance suffix for replay variety
+    const vSuffix = opts.varianceRoll !== undefined
+      ? (opts.varianceRoll > 0.8 ? ' 운명의 바람이 강하게 불었다.'
+        : opts.varianceRoll < 0.2 ? ' 운명의 바람이 약하게 불었다.'
+        : '')
+      : '';
+
     if (opts.eventType === 'reputation') {
       const styleLabels: Record<string, string> = {
         aggressive: '공격적 명성이 보답했다 — ATK 강화!',
@@ -73,7 +80,7 @@ export class NarrativeGenerator {
         greedy: '탐욕적 명성이 보답했다 — 골드 폭발!',
         balanced: '균형잡힌 명성이 보답했다 — EXP 버프!',
       };
-      return `${opts.age}세에 ${styleLabels[opts.style] ?? '명성이 보답했다.'}`;
+      return `${opts.age}세에 ${styleLabels[opts.style] ?? '명성이 보답했다.'}${vSuffix}`;
     }
     if (opts.eventType === 'veterans_trial') {
       const styleLabels: Record<string, string> = {
@@ -82,7 +89,7 @@ export class NarrativeGenerator {
         greedy: '노련한 시련에서 축적된 부가 쏟아졌다!',
         balanced: '노련한 시련을 균형 있게 극복했다!',
       };
-      return `${opts.age}세에 ${styleLabels[opts.style] ?? '노련한 시련을 마쳤다.'}`;
+      return `${opts.age}세에 ${styleLabels[opts.style] ?? '노련한 시련을 마쳤다.'}${vSuffix}`;
     }
     if (opts.eventType === 'final_reckoning') {
       const styleLabels: Record<string, string> = {
@@ -91,9 +98,9 @@ export class NarrativeGenerator {
         greedy: '최종 심판에서 축적된 보물이 쏟아졌다!',
         balanced: '최종 심판을 지혜롭게 완수했다!',
       };
-      return `${opts.age}세에 ${styleLabels[opts.style] ?? '최종 심판을 마쳤다.'}`;
+      return `${opts.age}세에 ${styleLabels[opts.style] ?? '최종 심판을 마쳤다.'}${vSuffix}`;
     }
-    return `${opts.age}세에 시련을 마쳤다.`;
+    return `${opts.age}세에 시련을 마쳤다.${vSuffix}`;
   }
 
   static forRejuvenation(opts: { age: number; yearsBack: number; rejuvenationCount: number }, seed = 0): string {
