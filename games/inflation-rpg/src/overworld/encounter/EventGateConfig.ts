@@ -143,9 +143,10 @@ export function getAvailableLateEvents(totalFights: number): readonly EventGateD
  * C814: phase2 cap reduced 3.5→2.5 to prevent saturation (target ~80% fire@550)
  */
 export function getLateGameDensityMul(totalFights: number): number {
-  if (totalFights <= 150) return 1.0;
-  // C847: steeper ramp to 250 (1.8), then gentle rise to 350 (2.0), phase 2 unchanged
-  if (totalFights <= 250) return 1.0 + (totalFights - 150) * 0.008; // →1.8 at 250
+  // C871: ramp starts at 120 (was 150) to fill late-early zone
+  if (totalFights <= 120) return 1.0;
+  if (totalFights <= 200) return 1.0 + (totalFights - 120) * 0.006; // →1.48 at 200
+  if (totalFights <= 250) return 1.48 + (totalFights - 200) * 0.0064; // →1.8 at 250
   if (totalFights <= 350) return 1.8 + (totalFights - 250) * 0.002; // →2.0 at 350
   return Math.min(2.5, 2.0 + (totalFights - 350) / 400); // →2.5 at 550
 }
