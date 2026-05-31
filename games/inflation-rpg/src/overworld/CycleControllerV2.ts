@@ -918,6 +918,8 @@ export class CycleControllerV2 {
   resolveVoidRift(accept: boolean) { this.resolveEventGeneric('void_rift', accept); }
   hasPendingDangerChoice() { return this.encounter.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
+  // C875: Proving Grounds player choice
+  setProvingChoice(accept: boolean) { this.encounter.setProvingChoice(accept); }
   getAbyssalConvergenceRemaining() { return this.encounter.getEventRemaining('abyssal_convergence'); }
   getAbyssalConvergencePending() { return this.encounter.getEventPending('abyssal_convergence'); }
   resolveAbyssalConvergence(accept: boolean) { this.resolveEventGeneric('abyssal_convergence', accept); }

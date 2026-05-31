@@ -226,6 +226,7 @@ export class EncounterEngine {
   private earlyMomentumExpRemaining = 0; // C860: early momentum EXP buff
   private earlyMomentumLastMilestone = 0; // C860: last streak milestone triggered
   private provingGroundsExpRemaining = 0; // C866: EXP buff duration after proving grounds win
+  private provingChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C875
   private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
   private temporalFissureRemaining = 0; // C791: Temporal Fissure (store EXP, pay back ×2)
@@ -584,6 +585,13 @@ export class EncounterEngine {
   // C603: danger zone fight/retreat real-time choice — delegates to EventChoiceEngine
   hasPendingDangerChoice(): boolean { return this.choiceEngine.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean): void { this.choiceEngine.setDangerChoice(retreat); }
+
+  // C875: Proving Grounds accept/decline choice
+  hasPendingProvingChoice(): boolean { return this.choiceEngine.hasPendingProvingChoice(); }
+  setProvingChoice(accept: boolean): void {
+    this.provingChoiceResolved = accept ? 'accept' : 'decline';
+    this.choiceEngine.resolveProvingChoice();
+  }
 
   // C578: combat stats summary for visual overlay
   getCombatSummary(): { activeBuffs: string[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean; adaptivePressure: number } {
@@ -2018,6 +2026,12 @@ export class EncounterEngine {
     }
 
     // C870: Delegate mid-game events to pure resolver
+    // C875: If proving choice is pending (modal open), skip mid-game until resolved
+    if (this.choiceEngine.hasPendingProvingChoice()) {
+      // Waiting for player input — don't re-roll events
+    } else {
+    const provingResolved = this.provingChoiceResolved;
+    this.provingChoiceResolved = undefined;
     const midGameResult = resolveMidGameEvents(
       {
         hero: { hp: hero.hp, hpMax: hero.hpMax, gold: hero.gold, level: hero.level, atk: hero.atk },
@@ -2031,8 +2045,15 @@ export class EncounterEngine {
         sparringGroundsPending: r.sparringGroundsPending,
         mercenaryOfferPending: r.mercenaryOfferPending,
         crossroadsPending: r.crossroadsPending,
+        provingChoiceResolved: provingResolved,
       },
     );
+    // C875: If proving grounds needs player choice, trigger EventChoiceEngine and emit event
+    if (midGameResult.provingPending) {
+      this.choiceEngine.triggerProving();
+      events.push({ type: 'proving_grounds_choice' });
+      events.push(...midGameResult.events);
+    } else {
     // Apply hero mutations
     if (midGameResult.heroMutations.hpDelta) {
       hero.hp = Math.max(1, hero.hp + midGameResult.heroMutations.hpDelta);
@@ -2061,6 +2082,8 @@ export class EncounterEngine {
     }
     if (midGameResult.crossroadsUsed) this.crossroadsUsed = true;
     events.push(...midGameResult.events);
+    }
+    } // end: !hasPendingProvingChoice
 
     if (r.eventType && !r.merchantPending && !r.gamblerPending && !r.altarPending && !r.riskGambitPending && !r.wanderingMerchantPending && !r.sparringGroundsPending && !r.mercenaryOfferPending && !r.crossroadsPending) {
       events.push({ type: r.eventType });

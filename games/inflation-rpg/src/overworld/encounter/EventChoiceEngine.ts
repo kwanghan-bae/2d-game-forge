@@ -35,6 +35,12 @@ export enum AltarChoice {
   LEAVE = 2,
 }
 
+// C875: Proving Grounds player choice
+export enum ProvingChoice {
+  ACCEPT = 0,
+  DECLINE = 1,
+}
+
 export class EventChoiceEngine {
   private shrineChoice: ShrineChoice | -1 = -1;
   private dangerChoice: DangerChoice = DangerChoice.NONE;
@@ -159,6 +165,30 @@ export class EventChoiceEngine {
     const c = this.altarChoice;
     this.altarPending = false;
     this.altarChoice = AltarChoice.SACRIFICE;
+    return c;
+  }
+
+  // --- Proving Grounds (C875) ---
+  private provingPending = false;
+  private provingChoice: ProvingChoice = ProvingChoice.ACCEPT;
+
+  hasPendingProvingChoice(): boolean {
+    return this.provingPending;
+  }
+
+  triggerProving(): void {
+    this.provingPending = true;
+    this.provingChoice = ProvingChoice.ACCEPT; // default (AI fallback)
+  }
+
+  setProvingChoice(choice: ProvingChoice): void {
+    this.provingChoice = choice;
+  }
+
+  resolveProvingChoice(): ProvingChoice {
+    const c = this.provingChoice;
+    this.provingPending = false;
+    this.provingChoice = ProvingChoice.ACCEPT;
     return c;
   }
 }

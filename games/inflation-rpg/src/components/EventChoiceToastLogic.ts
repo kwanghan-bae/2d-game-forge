@@ -18,6 +18,7 @@ const EVENT_LABELS: Record<string, string> = {
   event_sparring_grounds_lose: '⚔️ 수련장: 패배... HP 손실',
   event_proving_grounds_win: '🏟️ 시련의 장: 승리! EXP ×2 버프!',
   event_proving_grounds_lose: '🏟️ 시련의 장: 패배... HP 10% 손실',
+  event_proving_grounds_decline: '🏟️ 시련의 장: 회피 (소량 골드)',
   event_mercenary_offer_accept: '💰 용병: 골드 지불 → 방어막!',
   event_mercenary_offer_decline: '💰 용병: 거절',
   event_crossroads_atk: '🔀 갈림길: ATK 강화 선택!',
@@ -39,6 +40,7 @@ export function resolveEventToastKey(event: { type: string; [k: string]: unknown
     case 'event_sparring_grounds':
       return `event_sparring_grounds_${event.won ? 'win' : 'lose'}`;
     case 'event_proving_grounds':
+      if (event.declined) return 'event_proving_grounds_decline';
       return `event_proving_grounds_${event.won ? 'win' : 'lose'}`;
     case 'event_mercenary_offer':
       return `event_mercenary_offer_${event.choice}`;
