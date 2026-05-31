@@ -52,6 +52,7 @@ import {
   WANDERING_SAGE_EXP_DURATION,
   WANDERING_SAGE_ATK_MUL,
   WANDERING_SAGE_ATK_DURATION,
+  WANDERING_SAGE_ATK_HEAL_RATE,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -273,23 +274,6 @@ export function resolveMidGameEvents(
     return { events, heroMutations, buffs, crossroadsUsed, firstTrialFired: true };
   }
 
-  // C921: Wandering Sage — mid-late repeatable (fight 260-400, 4%, 2-way choice)
-  if (pending.wanderingSagePending) {
-    if (pending.wanderingSageChoiceResolved === 'exp') {
-      buffs.wanderingSageExpRemaining = WANDERING_SAGE_EXP_DURATION;
-      events.push({ type: 'event_wandering_sage', style: 'exp', value: WANDERING_SAGE_EXP_MUL } as OverworldEvent);
-    } else if (pending.wanderingSageChoiceResolved === 'atk') {
-      buffs.wanderingSageAtkRemaining = WANDERING_SAGE_ATK_DURATION;
-      events.push({ type: 'event_wandering_sage', style: 'atk', value: WANDERING_SAGE_ATK_MUL } as OverworldEvent);
-    } else {
-      return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
-    }
-  } else if (ctx.totalFights >= WANDERING_SAGE_MIN_FIGHTS
-    && ctx.totalFights <= WANDERING_SAGE_MAX_FIGHTS
-    && ctx.rngChance(WANDERING_SAGE_CHANCE)) {
-    return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
-  }
-
   // C891: Delegate consequence events to ConsequenceResolver
   const consequenceResult = resolveConsequenceEvents(
     {
@@ -349,6 +333,26 @@ export function resolveMidGameEvents(
     heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldGain;
     events.push({ type: 'event_last_stand', choice: 'decline', value: healAmt });
     return { events, heroMutations, buffs, crossroadsUsed };
+  }
+
+  // C921: Wandering Sage — mid-late repeatable (fight 260-450, 4%, 2-way choice)
+  // Placed after consequences to avoid blocking auto-resolve events
+  if (pending.wanderingSagePending) {
+    if (pending.wanderingSageChoiceResolved === 'exp') {
+      buffs.wanderingSageExpRemaining = WANDERING_SAGE_EXP_DURATION;
+      events.push({ type: 'event_wandering_sage', style: 'exp', value: WANDERING_SAGE_EXP_MUL } as OverworldEvent);
+    } else if (pending.wanderingSageChoiceResolved === 'atk') {
+      buffs.wanderingSageAtkRemaining = WANDERING_SAGE_ATK_DURATION;
+      const healAmt = Math.floor(ctx.hero.hpMax * WANDERING_SAGE_ATK_HEAL_RATE);
+      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
+      events.push({ type: 'event_wandering_sage', style: 'atk', value: WANDERING_SAGE_ATK_MUL } as OverworldEvent);
+    } else {
+      return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
+    }
+  } else if (ctx.totalFights >= WANDERING_SAGE_MIN_FIGHTS
+    && ctx.totalFights <= WANDERING_SAGE_MAX_FIGHTS
+    && ctx.rngChance(WANDERING_SAGE_CHANCE)) {
+    return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
   }
 
   return { events, heroMutations, buffs, crossroadsUsed };

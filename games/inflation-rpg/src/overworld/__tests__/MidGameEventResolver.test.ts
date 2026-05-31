@@ -163,11 +163,12 @@ describe('resolveMidGameEvents', () => {
     expect(result.buffs.wanderingSageExpRemaining).toBeGreaterThan(0);
   });
 
-  it('wandering sage gives ATK buff when player chooses atk', () => {
+  it('wandering sage gives ATK buff + heal when player chooses atk', () => {
     const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 30, atk: 50 }, totalFights: 280, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { firstTrialFired: true, wanderingSagePending: true, wanderingSageChoiceResolved: 'atk' });
     expect(result.events[0]).toMatchObject({ type: 'event_wandering_sage', style: 'atk' });
     expect(result.buffs.wanderingSageAtkRemaining).toBeGreaterThan(0);
+    expect(result.heroMutations.hpDelta).toBeGreaterThan(0); // C924: ATK choice also heals
   });
 
   it('mercenary offer returns pending when no choice resolved', () => {
@@ -274,7 +275,7 @@ describe('resolveMidGameEvents', () => {
 
   // C887: Veteran's Trial tests
   it('veterans trial aggressive gives ATK + costs HP', () => {
-    const ctx = makeCtx({ totalFights: 420, rngChance: () => true });
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 5, reputationFired: true });
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'aggressive' }));
     expect(result.buffs.veteransTrialAtkRemaining).toBe(12);
@@ -283,7 +284,7 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('veterans trial defensive heals + shield', () => {
-    const ctx = makeCtx({ totalFights: 420, rngChance: () => true });
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'defensive', reputationTotalChoices: 5, reputationFired: true });
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'defensive' }));
     expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
@@ -291,7 +292,7 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('veterans trial greedy gives gold burst', () => {
-    const ctx = makeCtx({ totalFights: 420, rngChance: () => true });
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'greedy', reputationTotalChoices: 5, reputationFired: true });
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'greedy' }));
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
@@ -301,7 +302,7 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('veterans trial balanced gives both ATK + EXP', () => {
-    const ctx = makeCtx({ totalFights: 420, rngChance: () => true });
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'balanced', reputationTotalChoices: 5, reputationFired: true });
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'balanced' }));
     expect(result.buffs.veteransTrialAtkRemaining).toBe(6);
@@ -316,7 +317,7 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('veterans trial does not re-fire', () => {
-    const ctx = makeCtx({ totalFights: 420, rngChance: () => true });
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 5, reputationFired: true, veteransTrialFired: true });
     const vtEvents = result.events.filter(e => e.type === 'event_veterans_trial');
     expect(vtEvents).toHaveLength(0);
