@@ -224,12 +224,7 @@ export class EncounterEngine {
   private crossroadsUsed = false; // C854: once-per-run crossroads gate
   private crossroadsAtkRemaining = 0; // C854: crossroads ATK path duration
   private crossroadsExpRemaining = 0; // C854: crossroads EXP path duration
-  private reputationAtkRemaining = 0; // C883: reputation aggressive ATK buff
-  private reputationShieldRemaining = 0; // C883: reputation defensive shield
-  private reputationExpRemaining = 0; // C883: reputation balanced EXP buff
-  private veteransTrialAtkRemaining = 0; // C887: veteran's trial ATK buff
-  private veteransTrialShieldRemaining = 0; // C887: veteran's trial shield
-  private veteransTrialExpRemaining = 0; // C887: veteran's trial EXP buff
+  // C930: reputation, veteransTrial buffs migrated to midGameBuffs
   private earlyMomentumAtkRemaining = 0; // C860: early momentum ATK buff
   private earlyMomentumExpRemaining = 0; // C860: early momentum EXP buff
   private earlyMomentumLastMilestone = 0; // C860: last streak milestone triggered
@@ -246,9 +241,7 @@ export class EncounterEngine {
   // C929: lastStandAtk migrated to midGameBuffs
   private lastStandChoiceResolved: 'accept' | 'decline' | null = null; // C890
   private finalReckoningFired = false; // C896: final reckoning one-shot flag
-  private finalReckoningAtkRemaining = 0; // C896: final reckoning ATK buff
-  private finalReckoningShieldRemaining = 0; // C896: final reckoning shield
-  private finalReckoningExpRemaining = 0; // C896: final reckoning EXP buff
+  // C930: finalReckoning buffs migrated to midGameBuffs
   // C929: greedyGoldRemaining migrated to midGameBuffs ('greedy_gold')
   private greedyGoldMul = 1; // C902: greedy gold gain multiplier
   private firstTrialFired = false; // C905: first trial triggered
@@ -707,19 +700,19 @@ export class EncounterEngine {
     if (this.earlyMomentumAtkRemaining > 0) activeBuffs.push('기세 ATK');
     if (this.earlyMomentumExpRemaining > 0) activeBuffs.push('기세 EXP');
     // C883: Reputation buffs
-    if (this.reputationAtkRemaining > 0) activeBuffs.push('명성 ATK');
-    if (this.reputationShieldRemaining > 0) activeBuffs.push('명성 방패');
-    if (this.reputationExpRemaining > 0) activeBuffs.push('명성 EXP');
+    if (this.midGameBuffs.isActive('rep_atk')) activeBuffs.push('명성 ATK');
+    if (this.midGameBuffs.isActive('rep_shield')) activeBuffs.push('명성 방패');
+    if (this.midGameBuffs.isActive('rep_exp')) activeBuffs.push('명성 EXP');
     // C887: Veteran's Trial buffs
-    if (this.veteransTrialAtkRemaining > 0) activeBuffs.push('노련 ATK');
-    if (this.veteransTrialShieldRemaining > 0) activeBuffs.push('노련 방패');
-    if (this.veteransTrialExpRemaining > 0) activeBuffs.push('노련 EXP');
+    if (this.midGameBuffs.isActive('vt_atk')) activeBuffs.push('노련 ATK');
+    if (this.midGameBuffs.isActive('vt_shield')) activeBuffs.push('노련 방패');
+    if (this.midGameBuffs.isActive('vt_exp')) activeBuffs.push('노련 EXP');
     // C890: Last Stand buff
     if (this.midGameBuffs.isActive('ls_atk')) activeBuffs.push('최후의 항전 ATK');
     // C896: Final Reckoning buffs
-    if (this.finalReckoningAtkRemaining > 0) activeBuffs.push('최종 심판 ATK');
-    if (this.finalReckoningShieldRemaining > 0) activeBuffs.push('최종 심판 방패');
-    if (this.finalReckoningExpRemaining > 0) activeBuffs.push('최종 심판 EXP');
+    if (this.midGameBuffs.isActive('fr_atk')) activeBuffs.push('최종 심판 ATK');
+    if (this.midGameBuffs.isActive('fr_shield')) activeBuffs.push('최종 심판 방패');
+    if (this.midGameBuffs.isActive('fr_exp')) activeBuffs.push('최종 심판 EXP');
     if (this.midGameBuffs.isActive('greedy_gold')) activeBuffs.push('탐욕 골드');
     if (this.midGameBuffs.isActive('ft_atk')) activeBuffs.push('첫 시련 ATK');
     if (this.midGameBuffs.isActive('ft_exp')) activeBuffs.push('첫 시련 EXP');
@@ -1119,7 +1112,7 @@ export class EncounterEngine {
             abyssalConvergenceActive: this.abyssalConvergenceRemaining > 0,
             titanArenaActive: this.titanArenaRemaining > 0, astralParadoxActive: this.astralParadoxRemaining > 0, crimsonTitheActive: this.crimsonTitheRemaining > 0,
           });
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.mercenaryShieldRemaining > 0 ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.reputationShieldRemaining > 0 ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.veteransTrialShieldRemaining > 0 ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.finalReckoningShieldRemaining > 0 ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.mercenaryShieldRemaining > 0 ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.midGameBuffs.isActive('rep_shield') ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('vt_shield') ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('fr_shield') ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
           // C380: prestige shield blocks hits
           if (this.prestigeShieldRemaining > 0) {
             this.prestigeShieldRemaining--;
@@ -1341,10 +1334,10 @@ export class EncounterEngine {
         if (this.provingGroundsExpRemaining === 0) this.provingGroundsManualAccept = false;
       }
       // C890: Reputation + Veteran's Trial EXP buffs (post-multiplier, same pattern as proving)
-      const reputationExpMul = this.reputationExpRemaining > 0 ? (1 + REPUTATION_BALANCED_EXP_MUL) : 1;
-      const veteransTrialExpMul = this.veteransTrialExpRemaining > 0 ? (1 + VETERANS_TRIAL_BALANCED_EXP_MUL) : 1;
+      const reputationExpMul = this.midGameBuffs.isActive('rep_exp') ? (1 + REPUTATION_BALANCED_EXP_MUL) : 1;
+      const veteransTrialExpMul = this.midGameBuffs.isActive('vt_exp') ? (1 + VETERANS_TRIAL_BALANCED_EXP_MUL) : 1;
       // C896: Final Reckoning EXP buff
-      const finalReckoningExpMul = this.finalReckoningExpRemaining > 0 ? (1 + FINAL_RECKONING_BALANCED_EXP_MUL) : 1;
+      const finalReckoningExpMul = this.midGameBuffs.isActive('fr_exp') ? (1 + FINAL_RECKONING_BALANCED_EXP_MUL) : 1;
       // C920: First Trial EXP buff
       const firstTrialExpMul = this.midGameBuffs.isActive('ft_exp') ? FIRST_TRIAL_EXP_MUL : 1;
       // C921: Wandering Sage EXP buff
@@ -1995,10 +1988,10 @@ export class EncounterEngine {
         clearSky: this.clearSkyPathRemaining > 0,
         crossroads: this.crossroadsAtkRemaining > 0,
         earlyMomentum: this.earlyMomentumAtkRemaining > 0,
-        reputation: this.reputationAtkRemaining > 0,
-        veteransTrial: this.veteransTrialAtkRemaining > 0,
+        reputation: this.midGameBuffs.isActive('rep_atk'),
+        veteransTrial: this.midGameBuffs.isActive('vt_atk'),
         lastStand: this.midGameBuffs.isActive('ls_atk'),
-        finalReckoning: this.finalReckoningAtkRemaining > 0,
+        finalReckoning: this.midGameBuffs.isActive('fr_atk'),
         stormNexusMul: STORM_NEXUS_ATK_MUL,
         clearSkyMul: CLEAR_SKY_PATH_ATK_MUL,
         crossroadsMul: 1 + CROSSROADS_ATK_MUL,
@@ -2439,13 +2432,13 @@ export class EncounterEngine {
     if (b.mercenaryShieldRemaining !== undefined) this.mercenaryShieldRemaining = b.mercenaryShieldRemaining;
     if (b.crossroadsAtkRemaining !== undefined) this.crossroadsAtkRemaining = b.crossroadsAtkRemaining;
     if (b.crossroadsExpRemaining !== undefined) this.crossroadsExpRemaining = b.crossroadsExpRemaining;
-    if (b.reputationAtkRemaining !== undefined) this.reputationAtkRemaining = b.reputationAtkRemaining;
-    if (b.reputationShieldRemaining !== undefined) this.reputationShieldRemaining = b.reputationShieldRemaining;
-    if (b.reputationExpRemaining !== undefined) this.reputationExpRemaining = b.reputationExpRemaining;
+    if (b.reputationAtkRemaining !== undefined) this.midGameBuffs.activate('rep_atk', b.reputationAtkRemaining);
+    if (b.reputationShieldRemaining !== undefined) this.midGameBuffs.activate('rep_shield', b.reputationShieldRemaining);
+    if (b.reputationExpRemaining !== undefined) this.midGameBuffs.activate('rep_exp', b.reputationExpRemaining);
     if (result.reputationFired) this.reputationFired = true;
-    if (b.veteransTrialAtkRemaining !== undefined) this.veteransTrialAtkRemaining = b.veteransTrialAtkRemaining;
-    if (b.veteransTrialShieldRemaining !== undefined) this.veteransTrialShieldRemaining = b.veteransTrialShieldRemaining;
-    if (b.veteransTrialExpRemaining !== undefined) this.veteransTrialExpRemaining = b.veteransTrialExpRemaining;
+    if (b.veteransTrialAtkRemaining !== undefined) this.midGameBuffs.activate('vt_atk', b.veteransTrialAtkRemaining);
+    if (b.veteransTrialShieldRemaining !== undefined) this.midGameBuffs.activate('vt_shield', b.veteransTrialShieldRemaining);
+    if (b.veteransTrialExpRemaining !== undefined) this.midGameBuffs.activate('vt_exp', b.veteransTrialExpRemaining);
     if (result.veteransTrialFired) this.veteransTrialFired = true;
     if (b.lastStandAtkRemaining !== undefined) this.midGameBuffs.activate('ls_atk', b.lastStandAtkRemaining);
     // lastStandPending is set in the pending event emit block above, not here
@@ -2454,9 +2447,9 @@ export class EncounterEngine {
       this.lastStandChoiceResolved = null;
     }
     // C896: Final Reckoning buff application
-    if (b.finalReckoningAtkRemaining !== undefined) this.finalReckoningAtkRemaining = b.finalReckoningAtkRemaining;
-    if (b.finalReckoningShieldRemaining !== undefined) this.finalReckoningShieldRemaining = b.finalReckoningShieldRemaining;
-    if (b.finalReckoningExpRemaining !== undefined) this.finalReckoningExpRemaining = b.finalReckoningExpRemaining;
+    if (b.finalReckoningAtkRemaining !== undefined) this.midGameBuffs.activate('fr_atk', b.finalReckoningAtkRemaining);
+    if (b.finalReckoningShieldRemaining !== undefined) this.midGameBuffs.activate('fr_shield', b.finalReckoningShieldRemaining);
+    if (b.finalReckoningExpRemaining !== undefined) this.midGameBuffs.activate('fr_exp', b.finalReckoningExpRemaining);
     if (result.finalReckoningFired) this.finalReckoningFired = true;
     // C902: Greedy gold gain buff
     if (b.greedyGoldRemaining !== undefined) this.midGameBuffs.activate('greedy_gold', b.greedyGoldRemaining);
@@ -2493,19 +2486,10 @@ export class EncounterEngine {
     if (this.soulForgeRemaining > 0) this.soulForgeRemaining--;
     if (this.wanderingMerchantAtkRemaining > 0) this.wanderingMerchantAtkRemaining--;
     if (this.mercenaryShieldRemaining > 0) this.mercenaryShieldRemaining--;
-    // C883: Reputation buff decrements
-    if (this.reputationAtkRemaining > 0) this.reputationAtkRemaining--;
-    if (this.reputationShieldRemaining > 0) this.reputationShieldRemaining--;
-    if (this.reputationExpRemaining > 0) this.reputationExpRemaining--;
-    // C887: Veteran's Trial buff decrements
-    if (this.veteransTrialAtkRemaining > 0) this.veteransTrialAtkRemaining--;
-    if (this.veteransTrialShieldRemaining > 0) this.veteransTrialShieldRemaining--;
-    if (this.veteransTrialExpRemaining > 0) this.veteransTrialExpRemaining--;
+    // C883: Reputation buff decrements via midGameBuffs.tick()
+    // C887: Veteran's Trial buff decrements via midGameBuffs.tick()
     // C890: Last Stand buff decrement via midGameBuffs.tick()
-    // C896: Final Reckoning buff decrements
-    if (this.finalReckoningAtkRemaining > 0) this.finalReckoningAtkRemaining--;
-    if (this.finalReckoningShieldRemaining > 0) this.finalReckoningShieldRemaining--;
-    if (this.finalReckoningExpRemaining > 0) this.finalReckoningExpRemaining--;
+    // C896: Final Reckoning buff decrements via midGameBuffs.tick()
     // C902: Greedy gold gain buff decrement via midGameBuffs.tick()
     // C929: First Trial + Wandering Sage + Elder's Judgment buffs ticked via midGameBuffs
     this.midGameBuffs.tick();
