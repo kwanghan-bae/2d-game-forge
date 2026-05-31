@@ -17,6 +17,8 @@ export interface RunStatisticsData {
   overkills: number;
   merchantHeals: number;
   merchantAtkBuffs: number;
+  gambitGoldNet: number; // C839: gold gained minus gold from gambit bets
+  gambitHpCost: number; // C839: total HP lost from gambit failures
 }
 
 export function createEmptyRunStatistics(): RunStatisticsData {
@@ -38,6 +40,8 @@ export function createEmptyRunStatistics(): RunStatisticsData {
     overkills: 0,
     merchantHeals: 0,
     merchantAtkBuffs: 0,
+    gambitGoldNet: 0,
+    gambitHpCost: 0,
   };
 }
 
@@ -105,6 +109,11 @@ export class RunStatistics {
   recordMerchant(choice: 'heal' | 'atk'): void {
     if (choice === 'heal') this.data.merchantHeals++;
     else this.data.merchantAtkBuffs++;
+  }
+
+  recordGambitOutcome(goldDelta: number, hpCost: number): void {
+    this.data.gambitGoldNet += goldDelta;
+    this.data.gambitHpCost += hpCost;
   }
 
   snapshot(): RunStatisticsData {

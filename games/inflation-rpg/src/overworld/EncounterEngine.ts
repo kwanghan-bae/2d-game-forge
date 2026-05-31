@@ -2139,6 +2139,7 @@ export class EncounterEngine {
         hero.hp = Math.max(1, hero.hp - hpCost);
         hero.gold += goldReward;
         events.push({ type: 'event_risk_gambit', accepted: true, hpCost, goldReward });
+        this.runStats.recordGambitOutcome(goldReward, hpCost); // C839
       } else {
         events.push({ type: 'event_risk_gambit', accepted: false, hpCost: 0, goldReward: 0 });
       }
