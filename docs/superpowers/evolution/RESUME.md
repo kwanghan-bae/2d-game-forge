@@ -1,31 +1,36 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 865
+- Cycle: 868
 - Target: 600+ (연속 진화)
-- Last commit: C865 gamble real loss + BUFF_STACK_CAP + momentum ATK fix
-- Vitest: 2254 pass / 0 fail
-- EncounterEngine: ~2530 lines
-- Critic score: 28/40 (C865 collab, recalibrated −4 from 32)
+- Last commit: C868 crossroads pity + BUFF_STACK_CAP 1.85 + momentum ATK 0.08
+- Vitest: 2268 pass / 0 fail
+- EncounterEngine: ~2549 lines
+- Critic score: 28.5/40 (C868 collab, +0.5)
 
-## 레이어 카운터 (C854-C865 era)
-- 시스템: 4 (C854, C857, C860, C863)
-- 구조: 4 (C855, C858, C861, C864)
-- 밸런스: 4 (C856, C859, C862, C865)
-- 콜라보: 4 (C856, C859, C862, C865)
+## 레이어 카운터 (C854-C868 era)
+- 시스템: 5 (C854, C857, C860, C863, C866)
+- 구조: 5 (C855, C858, C861, C864, C867)
+- 밸런스: 5 (C856, C859, C862, C865, C868)
+- 콜라보: 5 (C856, C859, C862, C865, C868)
 
 ## 제약
-- cycles_since_collab: 0 (C865 is collab)
-- Next collab: C868
-- EncounterEngine: ~2530 lines
-- Layer rotation: system → structure → balance (C866=system, C867=structure, C868=balance+collab)
+- cycles_since_collab: 0 (C868 is collab)
+- Next collab: C871
+- EncounterEngine: ~2549 lines
+- Layer rotation: system → structure → balance (C869=system, C870=structure, C871=balance+collab)
 
-## 다음 3사이클 (C865 합의)
-- C866 [system]: Mid-game event (fight 55-90, choice-based — void zone 해소)
-- C867 [structure]: Extract MidGameEventResolver (−200 LOC from God Object)
-- C868 [balance+collab]: Crossroads pity (40 fight) + BUFF_STACK_CAP 2.00→1.85 + ATK_MUL 0.06→0.08
+## 🔴 Critical Bug Found
+- Crossroads pity DEAD CODE: threshold=40 > window=35 (fight 95-130)
+- MidGameEventResolver NOT WIRED into EncounterEngine (duplicate code)
+- BUFF_STACK_CAP 1.85 unreachable in any practical scenario
 
-## 달성 사항 (C854-C865)
+## 다음 3사이클 (C868 합의)
+- C869 [system]: Fix crossroads pity (30) + EARLY_MOMENTUM_MAX 50→65 + proving grounds buff (2.00×5)
+- C870 [structure]: Wire MidGameEventResolver into EncounterEngine (−100 LOC)
+- C871 [balance+collab]: BUFF_STACK_CAP 1.65 + late density ramp 120 + proving win 70%
+
+## 달성 사항 (C854-C868)
 - C854 [system]: Crossroads Choice Event
 - C855 [structure]: applyPostVictoryExpBonuses extraction
 - C856 [balance]: Window overlap fix + gamble identity
@@ -38,6 +43,9 @@
 - C863 [system]: Storm drain event emission
 - C864 [structure]: Extract resolveGambleOutcome
 - C865 [balance]: Gamble real loss (15%) + BUFF_STACK_CAP=2.00 + momentum ATK 6%
+- C866 [system]: Proving Grounds mid-game challenge (fight 55-90)
+- C867 [structure]: Extract MidGameEventResolver (14 tests)
+- C868 [balance]: Crossroads pity 40 + BUFF_STACK_CAP 1.85 + momentum ATK 8%
 
 ## Backlog
 - Storm drain / early momentum UI consumer (VFX/toast/saga)
