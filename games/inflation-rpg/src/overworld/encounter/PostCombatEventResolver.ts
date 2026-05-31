@@ -127,6 +127,7 @@ export interface PostCombatResult {
   fogAmbushPending: boolean;
   windGalePending: boolean; // C782
   snowDriftPending: boolean; // C782
+  clearSkyPathPending: boolean; // C851
   abyssalConvergencePending: boolean; // C789
   temporalFissurePending: boolean; // C791
   titanArenaPending: boolean; // C797
@@ -176,6 +177,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     fogAmbushPending: false,
     windGalePending: false,
     snowDriftPending: false,
+    clearSkyPathPending: false,
     abyssalConvergencePending: false,
     temporalFissurePending: false,
     titanArenaPending: false,
@@ -384,6 +386,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
           else if (me.id === 'event_fog_ambush') { r.fogAmbushPending = true; }
           else if (me.id === 'event_wind_gale') { r.windGalePending = true; }
           else if (me.id === 'event_snow_drift') { r.snowDriftPending = true; }
+          else if (me.id === 'event_clear_sky_path') { r.clearSkyPathPending = true; }
           r.eventType = me.id;
         },
       });

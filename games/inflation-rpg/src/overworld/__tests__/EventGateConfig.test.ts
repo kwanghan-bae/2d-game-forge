@@ -131,7 +131,7 @@ describe('EventGateConfig — C754', () => {
     expect(eventsBefore.some(e => e.id === 'event_fog_ambush')).toBe(false);
   });
 
-  it('C782: mid-game events pool now has 6 events', () => {
-    expect(MID_GAME_EVENTS).toHaveLength(6);
+  it('C851: mid-game events pool now has 7 events', () => {
+    expect(MID_GAME_EVENTS).toHaveLength(7);
   });
 });

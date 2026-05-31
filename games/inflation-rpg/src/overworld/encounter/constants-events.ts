@@ -206,6 +206,12 @@ export const MERCENARY_OFFER_MAX_FIGHTS = 120;
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
 export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
+// C851: Clear Sky Path — sunshine ATK buff (normal weather, fight 80-130)
+export const CLEAR_SKY_PATH_CHANCE = 0.03;
+export const CLEAR_SKY_PATH_MIN_FIGHTS = 80;
+export const CLEAR_SKY_PATH_MAX_FIGHTS = 130;
+export const CLEAR_SKY_PATH_ATK_MUL = 1.15; // ×1.15 ATK for duration
+export const CLEAR_SKY_PATH_DURATION = 3; // 3 fights
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
