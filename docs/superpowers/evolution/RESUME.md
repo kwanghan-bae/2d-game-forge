@@ -1,34 +1,34 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 853
+- Cycle: 856
 - Target: 600+ (연속 진화)
-- Last commit: C853 high-gold death penalty ramp + mercenary/gamble tuning
+- Last commit: C856 window overlap fix + gamble identity
 - Vitest: 2224 pass / 0 fail
-- EncounterEngine: ~2250 lines (C852 −90 lines extraction)
-- Critic score: 31.0/40 (C853 collab, +1.0)
+- EncounterEngine: ~2210 lines (C855 −50 lines extraction)
+- Critic score: 31.5/40 (C856 collab, +0.5)
 
-## 레이어 카운터 (C851-C853 era)
-- 시스템: 1 (C851)
-- 구조: 1 (C852)
-- 밸런스: 1 (C853)
-- 콜라보: 1 (C853)
+## 레이어 카운터 (C854-C856 era)
+- 시스템: 1 (C854)
+- 구조: 1 (C855)
+- 밸런스: 1 (C856)
+- 콜라보: 1 (C856)
 
 ## 제약
-- cycles_since_collab: 0 (C853 is collab)
-- Next collab: C856
-- EncounterEngine: ~2250 lines
-- Layer rotation: system → structure → balance (C854=system, C855=structure, C856=balance+collab)
+- cycles_since_collab: 0 (C856 is collab)
+- Next collab: C859
+- EncounterEngine: ~2210 lines
+- Layer rotation: system → structure → balance (C857=system, C858=structure, C859=balance+collab)
 
-## 다음 3사이클 (C853 합의)
-- C854 [system]: Crossroads Choice Event — fight 95-130, 런당 1회, 3경로 선택
-- C855 [structure]: tickWeatherBuffs 추출 — weather buff 5개 관리 별도 메서드 (−40줄)
-- C856 [balance+collab]: Window overlap fix + gamble identity (CLEAR_SKY_MIN 95, MERCENARY 115/145, GAMBLE WIN 0.55/LOSS 0)
+## 다음 3사이클 (C856 합의)
+- C857 [system]: Composable ATK Buff Stack — ternary→multiplicative (storm×clearSky×crossroads)
+- C858 [structure]: Extract computeBuffedHeroAtk — pure fn + 8-case unit test
+- C859 [balance+collab]: Stacking rebalance (storm 1.40→1.35, clearSky 1.15→1.12, crossroads 0.20→0.18, drain 0.05→0.06)
 
-## 달성 사항 (C851-C853)
-- C851 [system]: Clear Sky Path — ATK×1.15 / 3 fights (normal weather, 80-130)
-- C852 [structure]: handleHeroDeath extraction (−90 lines from combat loop)
-- C853 [balance+collab]: Death penalty ramp (500k+, 20% cap) + Mercenary 90→100 + consolation 35→20
+## 달성 사항 (C854-C856)
+- C854 [system]: Crossroads Choice Event — once-per-run 3-path (ATK/EXP/Gold, 95-130)
+- C855 [structure]: applyPostVictoryExpBonuses extraction (−50 lines)
+- C856 [balance+collab]: Window overlap fix (ClearSky 95+, Mercenary 115-145, gamble free/55%)
 
 ## 달성 사항 (C848-C850)
 - C848 [system]: Mercenary Offer choice event (90-120, 15% gold → 3-fight 30% DR)
