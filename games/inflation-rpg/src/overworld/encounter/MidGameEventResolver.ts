@@ -52,6 +52,8 @@ export interface MidGamePending {
   mercenaryOfferPending?: boolean;
   crossroadsPending?: boolean;
   provingChoiceResolved?: 'accept' | 'decline'; // C875: player's choice (if already made)
+  mercenaryChoiceResolved?: 'accept' | 'decline'; // C878: player's choice
+  crossroadsChoiceResolved?: 'atk' | 'exp' | 'gold'; // C878: player's chosen path
 }
 
 export interface MidGameResult {
@@ -70,6 +72,8 @@ export interface MidGameResult {
   };
   crossroadsUsed?: boolean;
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
+  mercenaryChoicePending?: boolean; // C878: true = player choice needed
+  crossroadsChoicePending?: boolean; // C878: true = player choice needed
 }
 
 export function resolveMidGameEvents(
@@ -146,40 +150,40 @@ export function resolveMidGameEvents(
     }
   }
 
-  // Mercenary Offer
+  // Mercenary Offer — C878: two-phase player choice
   if (pending.mercenaryOfferPending) {
-    const goldCost = Math.floor(ctx.hero.gold * MERCENARY_OFFER_GOLD_COST_RATE);
-    if (ctx.hero.gold > 100) {
+    if (pending.mercenaryChoiceResolved === 'accept') {
+      const goldCost = Math.floor(ctx.hero.gold * MERCENARY_OFFER_GOLD_COST_RATE);
       heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) - goldCost;
       buffs.mercenaryShieldRemaining = MERCENARY_OFFER_DURATION;
       events.push({ type: 'event_mercenary_offer', choice: 'accept', goldPaid: goldCost, duration: MERCENARY_OFFER_DURATION });
-    } else {
+    } else if (pending.mercenaryChoiceResolved === 'decline') {
       events.push({ type: 'event_mercenary_offer', choice: 'decline', goldPaid: 0, duration: 0 });
+    } else {
+      // No choice yet — signal pending
+      return { events, heroMutations, buffs, crossroadsUsed, mercenaryChoicePending: true };
     }
   }
 
-  // Crossroads
+  // Crossroads — C878: two-phase player choice (3-way: ATK/EXP/Gold)
   if (pending.crossroadsPending) {
-    crossroadsUsed = true;
-    const hpRate = ctx.hero.hp / ctx.hero.hpMax;
-    let path: 'atk' | 'exp' | 'gold';
-    if (hpRate < 0.4) {
-      path = 'gold';
-    } else if (ctx.hero.atk > ctx.hero.level * 3) {
-      path = 'exp';
+    if (pending.crossroadsChoiceResolved) {
+      crossroadsUsed = true;
+      const path = pending.crossroadsChoiceResolved;
+      if (path === 'atk') {
+        buffs.crossroadsAtkRemaining = CROSSROADS_ATK_DURATION;
+        events.push({ type: 'event_crossroads', path, duration: CROSSROADS_ATK_DURATION });
+      } else if (path === 'exp') {
+        buffs.crossroadsExpRemaining = CROSSROADS_EXP_DURATION;
+        events.push({ type: 'event_crossroads', path, duration: CROSSROADS_EXP_DURATION });
+      } else {
+        const goldBurst = ctx.hero.level * CROSSROADS_GOLD_BURST_MUL;
+        heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldBurst;
+        events.push({ type: 'event_crossroads', path, goldBurst });
+      }
     } else {
-      path = 'atk';
-    }
-    if (path === 'atk') {
-      buffs.crossroadsAtkRemaining = CROSSROADS_ATK_DURATION;
-      events.push({ type: 'event_crossroads', path, duration: CROSSROADS_ATK_DURATION });
-    } else if (path === 'exp') {
-      buffs.crossroadsExpRemaining = CROSSROADS_EXP_DURATION;
-      events.push({ type: 'event_crossroads', path, duration: CROSSROADS_EXP_DURATION });
-    } else {
-      const goldBurst = ctx.hero.level * CROSSROADS_GOLD_BURST_MUL;
-      heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldBurst;
-      events.push({ type: 'event_crossroads', path, goldBurst });
+      // No choice yet — signal pending
+      return { events, heroMutations, buffs, crossroadsUsed, crossroadsChoicePending: true };
     }
   }
 

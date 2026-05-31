@@ -41,6 +41,19 @@ export enum ProvingChoice {
   DECLINE = 1,
 }
 
+// C878: Mercenary Offer player choice
+export enum MercenaryOfferChoice {
+  ACCEPT = 0,
+  DECLINE = 1,
+}
+
+// C878: Crossroads path player choice
+export enum CrossroadsPathChoice {
+  ATK = 0,
+  EXP = 1,
+  GOLD = 2,
+}
+
 export class EventChoiceEngine {
   private shrineChoice: ShrineChoice | -1 = -1;
   private dangerChoice: DangerChoice = DangerChoice.NONE;
@@ -189,6 +202,54 @@ export class EventChoiceEngine {
     const c = this.provingChoice;
     this.provingPending = false;
     this.provingChoice = ProvingChoice.ACCEPT;
+    return c;
+  }
+
+  // --- Mercenary Offer Choice (C878) ---
+  private mercenaryChoicePending = false;
+  private mercenaryOfferChoice: MercenaryOfferChoice = MercenaryOfferChoice.ACCEPT;
+
+  hasPendingMercenaryChoice(): boolean {
+    return this.mercenaryChoicePending;
+  }
+
+  triggerMercenaryOffer(): void {
+    this.mercenaryChoicePending = true;
+    this.mercenaryOfferChoice = MercenaryOfferChoice.ACCEPT;
+  }
+
+  setMercenaryOfferChoice(choice: MercenaryOfferChoice): void {
+    this.mercenaryOfferChoice = choice;
+  }
+
+  resolveMercenaryChoice(): MercenaryOfferChoice {
+    const c = this.mercenaryOfferChoice;
+    this.mercenaryChoicePending = false;
+    this.mercenaryOfferChoice = MercenaryOfferChoice.ACCEPT;
+    return c;
+  }
+
+  // --- Crossroads Path Choice (C878) ---
+  private crossroadsPathPending = false;
+  private crossroadsPathChoice: CrossroadsPathChoice = CrossroadsPathChoice.ATK;
+
+  hasPendingCrossroadsChoice(): boolean {
+    return this.crossroadsPathPending;
+  }
+
+  triggerCrossroads(): void {
+    this.crossroadsPathPending = true;
+    this.crossroadsPathChoice = CrossroadsPathChoice.ATK;
+  }
+
+  setCrossroadsPathChoice(choice: CrossroadsPathChoice): void {
+    this.crossroadsPathChoice = choice;
+  }
+
+  resolveCrossroadsChoice(): CrossroadsPathChoice {
+    const c = this.crossroadsPathChoice;
+    this.crossroadsPathPending = false;
+    this.crossroadsPathChoice = CrossroadsPathChoice.ATK;
     return c;
   }
 }
