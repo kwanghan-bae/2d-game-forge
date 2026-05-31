@@ -18,6 +18,7 @@ import { VillageResolver } from './encounter/VillageResolver';
 import { computeHeroAtk, computeBuffedHeroAtk } from './encounter/CombatCalculator';
 import { computePostVictoryExp } from './encounter/PostVictoryExpCalculator';
 import { resolveMidGameEvents } from './encounter/MidGameEventResolver';
+import { tickWeatherHazards as tickWeatherHazardsPure } from './encounter/WeatherHazardTicker';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
@@ -2338,36 +2339,22 @@ export class EncounterEngine {
 
   // C840: Weather hazard + late-game duration effects with side-effects
   // C863: emit storm_drain events for UI visibility
+  // C873: Delegated to pure WeatherHazardTicker
   private tickWeatherHazards(hero: HeroEntity, events: OverworldEvent[]): void {
-    if (this.stormNexusRemaining > 0) {
-      const drainAmount = Math.floor(hero.hpMax * STORM_NEXUS_HP_DRAIN_RATE);
-      hero.hp -= drainAmount;
-      if (hero.hp < 1) hero.hp = 1;
-      const hpRatio = hero.hp / hero.hpMax;
-      const isCritical = hpRatio < STORM_DRAIN_WARN_HP_THRESHOLD;
-      if (isCritical) {
-        events.push({ type: 'storm_drain_critical', value: drainAmount, hpAfter: hero.hp });
-      } else {
-        events.push({ type: 'storm_drain', value: drainAmount, hpAfter: hero.hp });
-      }
-      this.stormNexusRemaining--;
-    }
-    if (this.abyssalConvergenceRemaining > 0) {
-      hero.hp -= Math.floor(hero.hpMax * ABYSSAL_CONVERGENCE_HP_DRAIN_RATE);
-      if (hero.hp < 1) hero.hp = 1;
-      this.abyssalConvergenceRemaining--;
-    }
-    if (this.temporalFissureRemaining > 0) {
-      this.temporalFissureRemaining--;
-      if (this.temporalFissureRemaining === 0 && this.temporalFissureStoredExp > 0) {
-        hero.gainExp(Math.floor(this.temporalFissureStoredExp * TEMPORAL_FISSURE_PAYBACK_MUL));
-        this.temporalFissureStoredExp = 0;
-      }
-    }
-    if (this.goldCrucibleRemaining > 0) {
-      this.goldCrucibleRemaining--;
-      if (this.goldCrucibleRemaining === 0) this.goldCrucibleAtkFlat = 0;
-    }
+    const result = tickWeatherHazardsPure({
+      stormNexusRemaining: this.stormNexusRemaining,
+      abyssalConvergenceRemaining: this.abyssalConvergenceRemaining,
+      temporalFissureRemaining: this.temporalFissureRemaining,
+      temporalFissureStoredExp: this.temporalFissureStoredExp,
+      goldCrucibleRemaining: this.goldCrucibleRemaining,
+      goldCrucibleAtkFlat: this.goldCrucibleAtkFlat,
+    }, hero, events);
+    this.stormNexusRemaining = result.stormNexusRemaining;
+    this.abyssalConvergenceRemaining = result.abyssalConvergenceRemaining;
+    this.temporalFissureRemaining = result.temporalFissureRemaining;
+    this.temporalFissureStoredExp = result.temporalFissureStoredExp;
+    this.goldCrucibleRemaining = result.goldCrucibleRemaining;
+    this.goldCrucibleAtkFlat = result.goldCrucibleAtkFlat;
   }
 
   // C822: Batch capture "had" flags + decrement combat buff timers
