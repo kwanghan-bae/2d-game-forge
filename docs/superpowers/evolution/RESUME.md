@@ -1,30 +1,35 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 832
+- Cycle: 835
 - Target: 600+ (연속 진화)
-- Last commit: C832 Wandering Merchant event + Echo/T3 tuning
+- Last commit: C835 Fairy linear ramp + Merchant/Echo tuning
 - Vitest: 2224 pass / 0 fail (+ 10 slow smoke tests excluded due to machine load)
 - E2E: 60 passed
-- EncounterEngine: ~2310 lines
-- Critic score: 28/40 (C832, +1 from merchant event + policy toggle)
+- EncounterEngine: ~2355 lines
+- Critic score: 28/40 (C835, maintained — infrastructure investment)
 
-## 레이어 카운터 (C830-C832 era)
-- 시스템: 1 (C830)
-- 구조: 1 (C831)
-- 밸런스: 1 (C832)
-- 콜라보: 1 (C832)
+## 레이어 카운터 (C833-C835 era)
+- 시스템: 1 (C833)
+- 구조: 1 (C834)
+- 밸런스: 1 (C835)
+- 콜라보: 1 (C835)
 
 ## 제약
-- cycles_since_collab: 0 (C832 was collab)
-- Next collab: C835
-- EncounterEngine: ~2310 lines
-- Layer rotation: system → structure → balance (C833=system, C834=structure, C835=balance+collab)
+- cycles_since_collab: 0 (C835 was collab)
+- Next collab: C838
+- EncounterEngine: ~2355 lines
+- Layer rotation: system → structure → balance (C836=system, C837=structure, C838=balance+collab)
 
-## 다음 3사이클 (C832 합의)
-1. C833 [system]: RunStatistics accumulator (+autoResolved gambit feedback)
-2. C834 [structure]: BuffTracker extraction (30+ *Remaining fields → class)
-3. C835 [balance+collab]: Fairy linear ramp (120-200) + Merchant tuning (ATK 0.15/12, MIN 120, HEAL 0.25) + Echo threshold 275
+## 다음 3사이클 (C835 합의)
+1. C836 [system]: End-of-Run Summary Event (RunStatistics → saga)
+2. C837 [structure]: BuffDurationTracker extraction (12 tick fields)
+3. C838 [balance+collab]: Weather cluster spread + Echo linear ramp + Mentor cap 130
+
+## 달성 사항 (C833-C835)
+- C833 [system]: RunStatistics accumulator (per-run metrics tracking, 17 fields)
+- C834 [structure]: applyPendingEvents extraction (68-line event chain → method)
+- C835 [balance+collab]: Fairy linear ramp (120-200, 2%→4%) + Merchant (ATK 0.15/12, MIN 120, HEAL 0.25) + Echo 275
 
 ## 달성 사항 (C830-C832)
 - C830 [system]: Risk Gambit Policy Toggle (always/never/hp_above_half)
