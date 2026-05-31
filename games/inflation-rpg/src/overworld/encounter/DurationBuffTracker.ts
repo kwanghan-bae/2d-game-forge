@@ -4,6 +4,8 @@
  * Pure data structure, no side effects.
  */
 
+import { getBuffNameKR } from './BuffCatalog';
+
 /** C942: structured buff info for UI consumption. */
 export interface BuffInfo {
   name: string;
@@ -65,7 +67,7 @@ export class DurationBuffTracker {
   getActiveBuffInfos(): BuffInfo[] {
     const infos: BuffInfo[] = [];
     for (const [id, remaining] of this.durations) {
-      infos.push({ name: id, magnitude: this.magnitudes.get(id) ?? 0, remaining });
+      infos.push({ name: getBuffNameKR(id), magnitude: this.magnitudes.get(id) ?? 0, remaining });
     }
     return infos;
   }
