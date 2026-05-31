@@ -535,5 +535,5 @@ export const VETERANS_CHALLENGE_MIN_FIGHT = 200;
 export const VETERANS_CHALLENGE_MAX_FIGHT = 400;
 export const VETERANS_CHALLENGE_CHANCE = 0.05; // 5% per fight
 export const VETERANS_CHALLENGE_EXP_MUL = 1.80; // +80% EXP on accept
-export const VETERANS_CHALLENGE_ATK_PENALTY = 0.70; // enemies hit 30% harder
+export const VETERANS_CHALLENGE_ATK_PENALTY = 0.60; // 40% ATK reduction (net EXP×ATK≈1.08, marginal — real risk from slower kills)
 export const VETERANS_CHALLENGE_DURATION = 6; // 6 fights

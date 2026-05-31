@@ -171,7 +171,6 @@ export class EncounterEngine {
   private uniqueBossKills = 0; // C335: unique boss kills
   private consecutiveBossKills = 0; // C349: boss frenzy tracking
   private prestigeSurgeReady = false; // C354: first fight after prestige
-  private villageDefenseRemaining = 0; // C356: village temp immunity
   private dangerChainCount = 0; // C357: consecutive danger kills
   private comboMilestoneBonus = 0; // C367: permanent bonus from combo milestones
   private maxComboReached = 0; // C367: track highest combo
