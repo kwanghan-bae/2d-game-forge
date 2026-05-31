@@ -85,6 +85,7 @@ export interface PostCombatContext {
   fightsSinceVillage: number;
   eventChainCount: number;
   eventMomentumDensityActive: boolean; // C793
+  lateGameDensityBoost: number; // C845: late-game pity scheduler boost
   consecutiveEliteKills2: number;
   goldenHourRemaining: number;
   fightsSinceEvent: number; // C714: pity timer
@@ -381,9 +382,11 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
     const densityMul = ctx.eventMomentumDensityActive
       ? Math.min(EVENT_MOMENTUM_TIER3_DENSITY_CAP, baseDensity * EVENT_MOMENTUM_TIER3_DENSITY_MUL)
       : Math.min(4.0, baseDensity);
+    // C845: apply late-game pity scheduler boost
+    const lateBoost = ctx.lateGameDensityBoost;
     for (const le of lateEvents) {
       candidates.push({
-        id: le.id, weight: le.chance * densityMul, pityEligible: true,
+        id: le.id, weight: le.chance * densityMul * lateBoost, pityEligible: true,
         apply: (r) => {
           const handler = LATE_EVENT_REGISTRY[le.id];
           if (handler) handler(r);

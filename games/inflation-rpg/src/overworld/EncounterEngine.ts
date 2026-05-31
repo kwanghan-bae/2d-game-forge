@@ -12,6 +12,7 @@ import {
 import { SkillLearningSystem, isSkillMilestoneLevel } from '../hero/SkillLearningSystem';
 import { findEncounterForKind, selectBranch } from '../data/personalityEncounters';
 import { EventChoiceEngine, ShrineChoice, DangerChoice, MerchantChoice, GamblerChoice, AltarChoice } from './encounter/EventChoiceEngine';
+import { LateGameScheduler } from './encounter/LateGameScheduler';
 import { LandmarkResolver } from './encounter/LandmarkResolver';
 import { VillageResolver } from './encounter/VillageResolver';
 import { computeHeroAtk } from './encounter/CombatCalculator';
@@ -282,6 +283,7 @@ export class EncounterEngine {
   private eventMomentumDensityRemaining = 0; // C793: density boost from tier 3
   private fightsSinceEvent = 0; // C714: pity timer counter
   private readonly choiceEngine = new EventChoiceEngine();
+  private readonly lateGameScheduler = new LateGameScheduler(); // C845
   private landmarkResolver: LandmarkResolver | null = null;
 
   private getLandmarkResolver(): LandmarkResolver {
@@ -1925,6 +1927,7 @@ export class EncounterEngine {
       fightsSinceVillage: this.fightsSinceVillage,
       eventChainCount: this.eventChainCount,
       eventMomentumDensityActive: this.eventMomentumDensityRemaining > 0,
+      lateGameDensityBoost: this.lateGameScheduler.getDensityBoost(),
       consecutiveEliteKills2: this.consecutiveEliteKills2,
       goldenHourRemaining: this.goldenHourRemaining,
       fightsSinceEvent: this.fightsSinceEvent,
@@ -1977,6 +1980,12 @@ export class EncounterEngine {
     } else {
       this.fightsSinceEvent++;
     }
+    // C845: late-game scheduler — track late event pity separately
+    const isLateEvent = r.eventType?.startsWith('event_abyssal') ||
+      r.eventType?.startsWith('event_titan') || r.eventType?.startsWith('event_crimson') ||
+      r.eventType?.startsWith('event_gold_crucible') || r.eventType?.startsWith('event_astral') ||
+      r.eventType?.startsWith('event_soul_forge');
+    this.lateGameScheduler.recordFight(this.totalFights, !!isLateEvent);
 
     // Apply hero deltas
     if (r.heroHpDelta !== 0) hero.hp = Math.max(1, hero.hp + r.heroHpDelta);

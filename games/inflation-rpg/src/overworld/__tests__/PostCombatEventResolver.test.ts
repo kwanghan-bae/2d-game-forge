@@ -21,6 +21,7 @@ describe('PostCombatEventResolver', () => {
       fightsSinceVillage: 10,
       eventChainCount: 0,
       eventMomentumDensityActive: false,
+      lateGameDensityBoost: 1.0,
       consecutiveEliteKills2: 0,
       goldenHourRemaining: 0,
       strategyRestShrine: true,
