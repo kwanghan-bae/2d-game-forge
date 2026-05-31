@@ -63,6 +63,8 @@ export class NarrativeGenerator {
       first_trial_heal: '첫 시련에서 치유의 길을 택했다',
       first_trial_atk: '첫 시련에서 힘의 길을 택했다',
       first_trial_exp: '첫 시련에서 지혜의 길을 택했다',
+      wandering_sage_exp: '방랑현자에게서 깨달음을 얻었다',
+      wandering_sage_atk: '방랑현자에게서 비전을 전수받았다',
     };
     const key = `${opts.eventType}_${opts.choice}`;
     return `${opts.age}세에 ${labels[key] ?? '선택을 내렸다'}.`;

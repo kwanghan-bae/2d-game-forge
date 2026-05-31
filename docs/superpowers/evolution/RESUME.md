@@ -1,23 +1,24 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 916
+- Cycle: 920
 - Target: 600+ (연속 진화)
-- Last commit: C916 balance + collab
-- Vitest: 2415 pass / 0 fail
+- Last commit: C920 First Trial 3-way choice
+- Vitest: 2420 pass / 0 fail
 - EncounterEngine: ~2700 lines
-- Critic score: 25/40 (C913)
+- Critic score: 26/40 (C916)
 
-## 레이어 카운터 (C914-C916 era)
-- 시스템: 1 (C914)
-- 구조: 1 (C915)
-- 밸런스: 1 (C916)
-- 콜라보: 1 (C916)
+## 레이어 카운터 (C917-C920 era)
+- 시스템: 2 (C917, C920)
+- 구조: 2 (C918, C919)
+- 밸런스: 0
+- 콜라보: 0 (due at C922)
 
 ## 제약
-- cycles_since_collab: 0 (C916)
-- Next collab: C919
+- cycles_since_collab: 3 (last C916)
+- Next collab: C922
 - EncounterEngine: ~2700 lines
+- Layer rotation: C921=structure, C922=balance+collab, C923=system
 - Layer rotation: C917=system, C918=structure, C919=balance+collab
 
 ## 🟡 Player Agency: 6 choices + 3 consequences

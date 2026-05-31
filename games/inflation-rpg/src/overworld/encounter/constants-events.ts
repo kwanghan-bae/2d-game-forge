@@ -461,3 +461,12 @@ export const FINAL_RECKONING_GREEDY_GOLD_GAIN_DURATION = 15;
 export const FINAL_RECKONING_BALANCED_ALL_DURATION = 15;
 export const FINAL_RECKONING_BALANCED_ATK_MUL = 0.20;
 export const FINAL_RECKONING_BALANCED_EXP_MUL = 0.25;
+
+// C921: Wandering Sage — mid-late repeatable (fight 260-400, 4%, EXP boost)
+export const WANDERING_SAGE_MIN_FIGHTS = 260;
+export const WANDERING_SAGE_MAX_FIGHTS = 400;
+export const WANDERING_SAGE_CHANCE = 0.04;
+export const WANDERING_SAGE_EXP_MUL = 1.3; // ×1.3 EXP for duration
+export const WANDERING_SAGE_EXP_DURATION = 6;
+export const WANDERING_SAGE_ATK_MUL = 0.10; // +10% ATK alternative
+export const WANDERING_SAGE_ATK_DURATION = 5;

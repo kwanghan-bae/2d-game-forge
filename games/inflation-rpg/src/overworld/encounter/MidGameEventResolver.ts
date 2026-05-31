@@ -45,6 +45,13 @@ import {
   FIRST_TRIAL_ATK_DURATION,
   FIRST_TRIAL_EXP_MUL,
   FIRST_TRIAL_EXP_DURATION,
+  WANDERING_SAGE_MIN_FIGHTS,
+  WANDERING_SAGE_MAX_FIGHTS,
+  WANDERING_SAGE_CHANCE,
+  WANDERING_SAGE_EXP_MUL,
+  WANDERING_SAGE_EXP_DURATION,
+  WANDERING_SAGE_ATK_MUL,
+  WANDERING_SAGE_ATK_DURATION,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -81,6 +88,8 @@ export interface MidGamePending {
   lastStandFired?: boolean; // C890: already triggered this run
   firstTrialFired?: boolean; // C905: already triggered this run
   firstTrialChoiceResolved?: 'heal' | 'atk' | 'exp'; // C920: 3-way player choice
+  wanderingSagePending?: boolean; // C921: sage encounter active
+  wanderingSageChoiceResolved?: 'exp' | 'atk'; // C921: player's choice
 }
 
 export interface MidGameResult {
@@ -108,6 +117,8 @@ export interface MidGameResult {
     greedyGoldRemaining?: number; // C902
     firstTrialAtkRemaining?: number; // C905
     firstTrialExpRemaining?: number; // C920: EXP rush duration
+    wanderingSageExpRemaining?: number; // C921
+    wanderingSageAtkRemaining?: number; // C921
     lastStandAtkRemaining?: number; // C890
   };
   greedyGoldMul?: number; // C902: greedy gold gain multiplier
@@ -116,6 +127,7 @@ export interface MidGameResult {
   mercenaryChoicePending?: boolean; // C878: true = player choice needed
   crossroadsChoicePending?: boolean; // C878: true = player choice needed
   wanderingMerchantChoicePending?: boolean; // C881: true = player choice needed
+  wanderingSageChoicePending?: boolean; // C921: true = player choice needed
   lastStandChoicePending?: boolean; // C890: true = player choice needed
   reputationFired?: boolean; // C883: true = reputation payoff event triggered
   veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
@@ -259,6 +271,23 @@ export function resolveMidGameEvents(
       events.push({ type: 'event_first_trial', style: 'atk', value: FIRST_TRIAL_ATK_MUL } as OverworldEvent);
     }
     return { events, heroMutations, buffs, crossroadsUsed, firstTrialFired: true };
+  }
+
+  // C921: Wandering Sage — mid-late repeatable (fight 260-400, 4%, 2-way choice)
+  if (pending.wanderingSagePending) {
+    if (pending.wanderingSageChoiceResolved === 'exp') {
+      buffs.wanderingSageExpRemaining = WANDERING_SAGE_EXP_DURATION;
+      events.push({ type: 'event_wandering_sage', style: 'exp', value: WANDERING_SAGE_EXP_MUL } as OverworldEvent);
+    } else if (pending.wanderingSageChoiceResolved === 'atk') {
+      buffs.wanderingSageAtkRemaining = WANDERING_SAGE_ATK_DURATION;
+      events.push({ type: 'event_wandering_sage', style: 'atk', value: WANDERING_SAGE_ATK_MUL } as OverworldEvent);
+    } else {
+      return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
+    }
+  } else if (ctx.totalFights >= WANDERING_SAGE_MIN_FIGHTS
+    && ctx.totalFights <= WANDERING_SAGE_MAX_FIGHTS
+    && ctx.rngChance(WANDERING_SAGE_CHANCE)) {
+    return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
   }
 
   // C891: Delegate consequence events to ConsequenceResolver

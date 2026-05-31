@@ -22,6 +22,8 @@ const EVENT_LABELS: Record<string, string> = {
   event_first_trial_heal: '🌱 첫 시련: 회복! HP +30%',
   event_first_trial_atk: '🌱 첫 시련: ATK +15% 버프!',
   event_first_trial_exp: '🌱 첫 시련: EXP ×1.5 러시!',
+  event_wandering_sage_exp: '📖 현자: EXP ×1.3 깨달음!',
+  event_wandering_sage_atk: '📖 현자: ATK +10% 비전!',
   event_mercenary_offer_accept: '💰 용병: 골드 지불 → 방어막!',
   event_mercenary_offer_decline: '💰 용병: 거절',
   event_crossroads_atk: '🔀 갈림길: ATK 강화 선택!',
@@ -64,6 +66,8 @@ export function resolveEventToastKey(event: { type: string; [k: string]: unknown
       return `event_proving_grounds_${event.won ? 'win' : 'lose'}`;
     case 'event_first_trial':
       return `event_first_trial_${event.style}`;
+    case 'event_wandering_sage':
+      return `event_wandering_sage_${event.style}`;
     case 'event_mercenary_offer':
       return `event_mercenary_offer_${event.choice}`;
     case 'event_crossroads':
