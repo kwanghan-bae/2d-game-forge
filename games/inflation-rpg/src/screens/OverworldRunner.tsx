@@ -47,6 +47,7 @@ import { MercenaryChoiceModal } from '../components/MercenaryChoiceModal';
 import { CrossroadsChoiceModal } from '../components/CrossroadsChoiceModal';
 import { ActiveBuffHUD } from '../components/ActiveBuffHUD';
 import { WanderingMerchantChoiceModal } from '../components/WanderingMerchantChoiceModal';
+import { LastStandChoiceModal } from '../components/LastStandChoiceModal';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -175,6 +176,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [mercenaryModalOpen, setMercenaryModalOpen] = useState(false); // C878
   const [crossroadsModalOpen, setCrossroadsModalOpen] = useState(false); // C878
   const [wanderingMerchantModalOpen, setWanderingMerchantModalOpen] = useState(false); // C881
+  const [lastStandModalOpen, setLastStandModalOpen] = useState(false); // C893a
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   // Cycle 108 F1 — fate roll modal state.
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
@@ -380,6 +382,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
            evs.some(e => e.type === 'mercenary_offer_choice') ? (() => { setMercenaryModalOpen(true); return '🛡️ 용병의 제안!'; })() :
            evs.some(e => e.type === 'crossroads_choice') ? (() => { setCrossroadsModalOpen(true); return '🔀 갈림길!'; })() :
            evs.some(e => e.type === 'wandering_merchant_choice') ? (() => { setWanderingMerchantModalOpen(true); return '🏪 떠돌이 상인!'; })() :
+           evs.some(e => e.type === 'last_stand_choice') ? (() => { setLastStandModalOpen(true); return '🔥 최후의 항전!'; })() :
            evs.some(e => e.type === 'event_merchant') ? '🏪 상인 등장! 렐릭 구매' :
            evs.some(e => e.type === 'event_treasure_shrine') ? '✨ 보물 제단 발견!' :
             evs.some(e => e.type === 'event_trap_avoided') ? '⚡ 함정 회피! (높은 콤보)' :
@@ -770,6 +773,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {mercenaryModalOpen && <MercenaryChoiceModal onClose={() => setMercenaryModalOpen(false)} />}
       {crossroadsModalOpen && <CrossroadsChoiceModal onClose={() => setCrossroadsModalOpen(false)} />}
       {wanderingMerchantModalOpen && <WanderingMerchantChoiceModal onClose={() => setWanderingMerchantModalOpen(false)} />}
+      {lastStandModalOpen && <LastStandChoiceModal onClose={() => setLastStandModalOpen(false)} />}
       <ActiveBuffHUD />
       {fateRollModal && (
         <FateRollModal
