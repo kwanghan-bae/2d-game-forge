@@ -158,13 +158,10 @@ export class EncounterEngine {
   private consecutiveDeaths = 0; // C238: consecutive death counter
   private darknessCursed = false; // C238: curse active flag
   private bossesKilled = 0; // C239: boss kill counter for loot table
-  private armorRemaining = 0; // C242: armor buff fights remaining
-  private villageRestRemaining = 0; // C258: rest bonus from village
   private deathInsuranceUsed = false; // C260: first death insurance
   private consecutiveOneHits = 0; // C261: consecutive one-hit kills
   private shrineBlessingRemaining = 0; // C265: shrine exp blessing
   private comboBreakBonus = false; // C272: consolation exp boost
-  private villageBlessingRemaining = 0; // C276: gold blessing duration
   private fightsSinceLastDeath = 0; // C276: deathless streak
   private villageShieldActive = false; // C282: 1-hit shield
   
@@ -1085,8 +1082,8 @@ export class EncounterEngine {
           const totalDrMul = computeDamageReduction({
             mercyRemaining: this.mercyRemaining,
             shopShieldRemaining: this.shopShieldRemaining,
-            armorRemaining: this.armorRemaining,
-            villageRestRemaining: this.villageRestRemaining,
+            armorRemaining: this.midGameBuffs.remaining('armor'),
+            villageRestRemaining: this.midGameBuffs.remaining('village_rest'),
             goldShieldActive: goldShieldWasActive,
             comboStreak: this.comboStreak,
             goldOverflowShieldActive: goldOverflowWasActive,
@@ -1382,7 +1379,7 @@ export class EncounterEngine {
         waveRemaining: this.waveRemaining, consecutiveCrits: this.consecutiveCrits,
         fightChainCount: this.fightChainCount, prestigeCount: this.prestigeCount,
         revengeGoldRemaining: this.revengeGoldRemaining,
-        villageBlessingRemaining: this.villageBlessingRemaining,
+        villageBlessingRemaining: this.midGameBuffs.remaining('village_blessing'),
         eliteCombo: this.eliteCombo, uniqueBossKills: this.uniqueBossKills,
         consecutiveEliteKills2: this.consecutiveEliteKills2,
         overkillChain: this.overkillChain, consecutiveBossKills: this.consecutiveBossKills,
@@ -1395,7 +1392,7 @@ export class EncounterEngine {
       const goldResult = computeGoldReward(goldCtx);
       // Apply side-effects: decrement cooldown counters read by GoldCalculator
       if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
-      if (this.villageBlessingRemaining > 0) this.villageBlessingRemaining--;
+      this.midGameBuffs.tick1('village_blessing');
       // Apply gold to hero
       let goldEarned = goldResult.goldEarned;
       // C773: Rain Sanctuary gold penalty
@@ -1501,13 +1498,13 @@ export class EncounterEngine {
         if (this.shopShieldRemaining === 0) this.shieldBreakReady = true;
       }
       // C242: decrement armor after each fight
-      if (this.armorRemaining > 0) this.armorRemaining--;
+      this.midGameBuffs.tick1('armor');
       // C248: decrement sacrifice fury
       this.midGameBuffs.tick1('sacrifice_fury');
       // C251: decrement boss slayer
       this.midGameBuffs.tick1('boss_slayer');
       // C258: decrement village vigor
-      if (this.villageRestRemaining > 0) this.villageRestRemaining--;
+      this.midGameBuffs.tick1('village_rest');
       // C265: decrement shrine blessing
       if (this.shrineBlessingRemaining > 0) this.shrineBlessingRemaining--;
       // C137: win resets death streak, decrement mercy
@@ -1841,15 +1838,15 @@ export class EncounterEngine {
     // Apply state mutations
     this.battleMomentum = result.battleMomentum;
     this.fightsSinceVillage = result.fightsSinceVillage;
-    this.villageRestRemaining = result.villageRestRemaining;
+    if (result.villageRestRemaining > 0) this.midGameBuffs.activate('village_rest', result.villageRestRemaining);
     this.deathInsuranceUsed = result.deathInsuranceUsed;
     this.villageShieldActive = result.villageShieldActive;
     if (result.villageTrainingRemaining > 0) this.midGameBuffs.activate('village_training', result.villageTrainingRemaining);
-    this.villageBlessingRemaining = result.villageBlessingRemaining;
+    if (result.villageBlessingRemaining > 0) this.midGameBuffs.activate('village_blessing', result.villageBlessingRemaining);
     this.fightsSinceSpend = result.fightsSinceSpend;
     this.fightChainCount = result.fightChainCount;
     this.shopShieldRemaining = result.shopShieldRemaining;
-    this.armorRemaining = result.armorRemaining;
+    if (result.armorRemaining > 0) this.midGameBuffs.activate('armor', result.armorRemaining);
     this.goldShieldRemaining = result.goldShieldRemaining;
     this.investFightsRemaining = result.investFightsRemaining;
     this.goldInvested = result.goldInvested;

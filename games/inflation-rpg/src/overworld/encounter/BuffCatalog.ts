@@ -79,6 +79,9 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   elite_fury: { nameKR: '엘리트 분노', category: 'combat' },
   sacrifice_fury: { nameKR: '희생 분노', category: 'combat' },
   boss_slayer: { nameKR: '보스 슬레이어', category: 'combat' },
+  armor: { nameKR: '갑옷', category: 'village' },
+  village_rest: { nameKR: '마을 휴식', category: 'village' },
+  village_blessing: { nameKR: '마을 축복', category: 'village' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */
