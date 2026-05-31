@@ -15,7 +15,7 @@ import { EventChoiceEngine, ShrineChoice, DangerChoice, MerchantChoice, GamblerC
 import { LateGameScheduler } from './encounter/LateGameScheduler';
 import { LandmarkResolver } from './encounter/LandmarkResolver';
 import { VillageResolver } from './encounter/VillageResolver';
-import { computeHeroAtk } from './encounter/CombatCalculator';
+import { computeHeroAtk, computeBuffedHeroAtk } from './encounter/CombatCalculator';
 import { computeAtkMultipliers } from './encounter/AtkMultiplierCalc';
 import { resolveDeathPenalty } from './encounter/DeathPenaltyResolver';
 import { resolvePostCombatEvent, type PostCombatContext } from './encounter/PostCombatEventResolver';
@@ -1800,11 +1800,15 @@ export class EncounterEngine {
       dangerComboAtk: p.dangerComboAtk,
       comboAtkMilestone: p.comboAtkMilestone,
       goldCrucibleAtkFlat: this.goldCrucibleAtkFlat,
-      // C857: Composable multiplicative ATK buff stack (weather exclusivity = natural cap)
-      heroAtk: Math.floor(p.hero.atk
-        * (this.stormNexusRemaining > 0 ? STORM_NEXUS_ATK_MUL : 1)
-        * (this.clearSkyPathRemaining > 0 ? CLEAR_SKY_PATH_ATK_MUL : 1)
-        * (this.crossroadsAtkRemaining > 0 ? (1 + CROSSROADS_ATK_MUL) : 1)),
+      // C858: Delegated to computeBuffedHeroAtk pure function
+      heroAtk: computeBuffedHeroAtk(p.hero.atk, {
+        stormNexus: this.stormNexusRemaining > 0,
+        clearSky: this.clearSkyPathRemaining > 0,
+        crossroads: this.crossroadsAtkRemaining > 0,
+        stormNexusMul: STORM_NEXUS_ATK_MUL,
+        clearSkyMul: CLEAR_SKY_PATH_ATK_MUL,
+        crossroadsMul: 1 + CROSSROADS_ATK_MUL,
+      }),
       weather: p.weather,
       hasBloodPactRelic: this.hasRelic(4),
     };

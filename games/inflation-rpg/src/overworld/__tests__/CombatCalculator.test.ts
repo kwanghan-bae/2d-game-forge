@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeHeroAtk, type AtkComputeInput } from '../encounter/CombatCalculator';
+import { computeHeroAtk, computeBuffedHeroAtk, type AtkComputeInput } from '../encounter/CombatCalculator';
 
 function makeInput(overrides: Partial<AtkComputeInput> = {}): AtkComputeInput {
   return {
@@ -68,5 +68,42 @@ describe('CombatCalculator.computeHeroAtk', () => {
       coreMuls: 1.3,
     }));
     expect(result).toBe(13); // floor(10 * 1.3)
+  });
+});
+
+describe('CombatCalculator.computeBuffedHeroAtk', () => {
+  const muls = { stormNexusMul: 1.40, clearSkyMul: 1.15, crossroadsMul: 1.20 };
+  const off = { stormNexus: false, clearSky: false, crossroads: false };
+
+  it('no buffs → base unchanged', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, ...muls })).toBe(100);
+  });
+
+  it('storm only → ×1.40', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, ...muls })).toBe(140);
+  });
+
+  it('clearSky only → ×1.15', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, clearSky: true, ...muls })).toBe(114);
+  });
+
+  it('crossroads only → ×1.20', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, crossroads: true, ...muls })).toBe(120);
+  });
+
+  it('storm + clearSky → ×1.61 (weather exclusive in practice)', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, clearSky: true, ...muls })).toBe(161);
+  });
+
+  it('storm + crossroads → ×1.68', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, stormNexus: true, crossroads: true, ...muls })).toBe(168);
+  });
+
+  it('clearSky + crossroads → ×1.38', () => {
+    expect(computeBuffedHeroAtk(100, { ...off, clearSky: true, crossroads: true, ...muls })).toBe(137);
+  });
+
+  it('all three → ×1.932', () => {
+    expect(computeBuffedHeroAtk(100, { stormNexus: true, clearSky: true, crossroads: true, ...muls })).toBe(193);
   });
 });
