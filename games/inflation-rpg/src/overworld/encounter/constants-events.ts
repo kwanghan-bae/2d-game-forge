@@ -306,7 +306,7 @@ export const TRIAL_GROUNDS_EXP_MUL = 1.40; // C779: tuned from 1.50 (R:R 2.80→
 export const TRIAL_GROUNDS_LEVEL_MUL = 1.20; // C774: tuned from 1.10 (R:R 1:5→1:2.5, meaningful decision)
 export const TRIAL_GROUNDS_DURATION = 3;
 
-export const STORM_NEXUS_ATK_MUL = 1.35; // C859: 1.40→1.35 (composable stack rebalance)
+export const STORM_NEXUS_ATK_MUL = 1.30; // C915: 1.35→1.30 (SN×FR headroom 1.5%→5.1%)
 export const STORM_NEXUS_HP_DRAIN_RATE = 0.06; // C859: 0.05→0.06 (risk compensation for lower ATK)
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
 export const STORM_DRAIN_WARN_HP_THRESHOLD = 0.40; // C863: emit critical warning below 40% HP
@@ -407,7 +407,7 @@ export const REPUTATION_BALANCED_EXP_DURATION = 5; // balanced: +15% EXP for 5 f
 export const REPUTATION_BALANCED_EXP_MUL = 0.15;
 
 // C887: Veteran's Trial — 2nd consequence event (fight 275-400)
-export const VETERANS_TRIAL_MIN_FIGHT = 240; // C909: 275→240 (fight 226-274 longest desert fix)
+export const VETERANS_TRIAL_MIN_FIGHT = 226; // C915: 240→226 (fight 226-239 micro-desert fix)
 export const VETERANS_TRIAL_MAX_FIGHT = 450; // C889: 400→450 (extend late-game coverage)
 export const VETERANS_TRIAL_CHANCE = 0.05;
 export const VETERANS_TRIAL_MIN_CHOICES = 4;
