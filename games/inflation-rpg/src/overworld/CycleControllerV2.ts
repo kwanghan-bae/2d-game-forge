@@ -920,6 +920,10 @@ export class CycleControllerV2 {
   setDangerChoice(retreat: boolean) { this.encounter.setDangerChoice(retreat); }
   // C875: Proving Grounds player choice
   setProvingChoice(accept: boolean) { this.encounter.setProvingChoice(accept); }
+  // C878: Mercenary Offer player choice
+  setMercenaryChoice(accept: boolean) { this.encounter.setMercenaryChoice(accept); }
+  // C878: Crossroads path player choice
+  setCrossroadsChoice(path: 'atk' | 'exp' | 'gold') { this.encounter.setCrossroadsChoice(path); }
   getAbyssalConvergenceRemaining() { return this.encounter.getEventRemaining('abyssal_convergence'); }
   getAbyssalConvergencePending() { return this.encounter.getEventPending('abyssal_convergence'); }
   resolveAbyssalConvergence(accept: boolean) { this.resolveEventGeneric('abyssal_convergence', accept); }

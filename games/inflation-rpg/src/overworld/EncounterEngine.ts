@@ -228,6 +228,8 @@ export class EncounterEngine {
   private provingGroundsExpRemaining = 0; // C866: EXP buff duration after proving grounds win
   private provingChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C875
   private provingGroundsManualAccept = false; // C877: +25% bonus when player manually chose
+  private mercenaryChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C878
+  private crossroadsChoiceResolved: 'atk' | 'exp' | 'gold' | undefined = undefined; // C878
   private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
   private temporalFissureRemaining = 0; // C791: Temporal Fissure (store EXP, pay back ×2)
@@ -593,6 +595,20 @@ export class EncounterEngine {
     this.provingChoiceResolved = accept ? 'accept' : 'decline';
     if (accept) this.provingGroundsManualAccept = true; // C877: manual bonus flag
     this.choiceEngine.resolveProvingChoice();
+  }
+
+  // C878: Mercenary Offer accept/decline choice
+  hasPendingMercenaryChoice(): boolean { return this.choiceEngine.hasPendingMercenaryChoice(); }
+  setMercenaryChoice(accept: boolean): void {
+    this.mercenaryChoiceResolved = accept ? 'accept' : 'decline';
+    this.choiceEngine.resolveMercenaryChoice();
+  }
+
+  // C878: Crossroads 3-way path choice
+  hasPendingCrossroadsChoice(): boolean { return this.choiceEngine.hasPendingCrossroadsChoice(); }
+  setCrossroadsChoice(path: 'atk' | 'exp' | 'gold'): void {
+    this.crossroadsChoiceResolved = path;
+    this.choiceEngine.resolveCrossroadsChoice();
   }
 
   // C578: combat stats summary for visual overlay
@@ -2033,12 +2049,18 @@ export class EncounterEngine {
     }
 
     // C870: Delegate mid-game events to pure resolver
-    // C875: If proving choice is pending (modal open), skip mid-game until resolved
-    if (this.choiceEngine.hasPendingProvingChoice()) {
+    // C875/C878: If any choice is pending (modal open), skip mid-game until resolved
+    if (this.choiceEngine.hasPendingProvingChoice()
+      || this.choiceEngine.hasPendingMercenaryChoice()
+      || this.choiceEngine.hasPendingCrossroadsChoice()) {
       // Waiting for player input — don't re-roll events
     } else {
     const provingResolved = this.provingChoiceResolved;
     this.provingChoiceResolved = undefined;
+    const mercenaryResolved = this.mercenaryChoiceResolved;
+    this.mercenaryChoiceResolved = undefined;
+    const crossroadsResolved = this.crossroadsChoiceResolved;
+    this.crossroadsChoiceResolved = undefined;
     const midGameResult = resolveMidGameEvents(
       {
         hero: { hp: hero.hp, hpMax: hero.hpMax, gold: hero.gold, level: hero.level, atk: hero.atk },
@@ -2053,12 +2075,22 @@ export class EncounterEngine {
         mercenaryOfferPending: r.mercenaryOfferPending,
         crossroadsPending: r.crossroadsPending,
         provingChoiceResolved: provingResolved,
+        mercenaryChoiceResolved: mercenaryResolved,
+        crossroadsChoiceResolved: crossroadsResolved,
       },
     );
     // C875: If proving grounds needs player choice, trigger EventChoiceEngine and emit event
     if (midGameResult.provingPending) {
       this.choiceEngine.triggerProving();
       events.push({ type: 'proving_grounds_choice' });
+      events.push(...midGameResult.events);
+    } else if (midGameResult.mercenaryChoicePending) {
+      this.choiceEngine.triggerMercenaryOffer();
+      events.push({ type: 'mercenary_offer_choice' });
+      events.push(...midGameResult.events);
+    } else if (midGameResult.crossroadsChoicePending) {
+      this.choiceEngine.triggerCrossroads();
+      events.push({ type: 'crossroads_choice' });
       events.push(...midGameResult.events);
     } else {
     // Apply hero mutations
@@ -2090,7 +2122,7 @@ export class EncounterEngine {
     if (midGameResult.crossroadsUsed) this.crossroadsUsed = true;
     events.push(...midGameResult.events);
     }
-    } // end: !hasPendingProvingChoice
+    } // end: !hasPendingChoice
 
     if (r.eventType && !r.merchantPending && !r.gamblerPending && !r.altarPending && !r.riskGambitPending && !r.wanderingMerchantPending && !r.sparringGroundsPending && !r.mercenaryOfferPending && !r.crossroadsPending) {
       events.push({ type: r.eventType });
