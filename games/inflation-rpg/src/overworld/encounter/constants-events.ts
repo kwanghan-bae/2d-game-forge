@@ -418,12 +418,12 @@ export const VETERANS_TRIAL_BALANCED_EXP_MUL = 0.10;
 // C890: Last Stand Challenge — late-game player choice (fight 400-600)
 export const LAST_STAND_MIN_FIGHT = 400;
 export const LAST_STAND_MAX_FIGHT = 600;
-export const LAST_STAND_CHANCE = 0.04; // 4% per fight
+export const LAST_STAND_CHANCE = 0.05; // 5% per fight (was 4%)
 export const LAST_STAND_TIMEOUT_SEC = 3; // 3s decision window
-// Accept: massive ATK burst but costs 25% HP
-export const LAST_STAND_ATK_MUL = 0.35; // +35% ATK for 12 fights
+// Accept: massive ATK burst but costs 20% HP (was 25%)
+export const LAST_STAND_ATK_MUL = 0.40; // +40% ATK for 12 fights (was 35%)
 export const LAST_STAND_ATK_DURATION = 12;
-export const LAST_STAND_HP_COST = 0.25; // costs 25% maxHP
+export const LAST_STAND_HP_COST = 0.20; // costs 20% maxHP (was 25%)
 // Decline: safe heal + small gold
-export const LAST_STAND_DECLINE_HEAL_RATE = 0.15; // heal 15% maxHP
-export const LAST_STAND_DECLINE_GOLD_MUL = 2.0; // gold = level × 2
+export const LAST_STAND_DECLINE_HEAL_RATE = 0.12; // heal 12% maxHP (was 15%)
+export const LAST_STAND_DECLINE_GOLD_MUL = 2.5; // gold = level × 2.5 (was 2.0)
