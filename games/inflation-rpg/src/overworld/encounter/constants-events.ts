@@ -386,8 +386,8 @@ export const SOUL_FORGE_COMBO_COST = 15; // costs 15 combo streak on accept
 // C883: Reputation Payoff — consequence event based on player's dominant choice style (fight 176-225)
 export const REPUTATION_MIN_FIGHT = 176;
 export const REPUTATION_MAX_FIGHT = 225;
-export const REPUTATION_CHANCE = 0.08; // 8% per fight → ~2.4 expected triggers in window
-export const REPUTATION_MIN_CHOICES = 2; // need ≥2 recorded choices for payoff
+export const REPUTATION_CHANCE = 0.06; // C886: 0.08→0.06 (near-guaranteed but less frequent)
+export const REPUTATION_MIN_CHOICES = 3; // C886: 2→3 (need ≥3 recorded choices for payoff)
 export const REPUTATION_AGG_ATK_MUL = 0.20; // aggressive: +20% ATK for 8 fights
 export const REPUTATION_AGG_DURATION = 8;
 export const REPUTATION_DEF_HEAL_RATE = 0.30; // defensive: heal 30% maxHP

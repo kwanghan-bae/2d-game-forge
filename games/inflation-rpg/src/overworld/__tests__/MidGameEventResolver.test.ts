@@ -188,7 +188,7 @@ describe('resolveMidGameEvents', () => {
 
   it('reputation does not fire with too few choices', () => {
     const ctx = makeCtx({ totalFights: 190, rngChance: () => true });
-    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 1 });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 2 });
     const repEvents = result.events.filter(e => e.type === 'event_reputation');
     expect(repEvents).toHaveLength(0);
   });
