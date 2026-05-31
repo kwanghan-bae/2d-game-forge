@@ -1,24 +1,24 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 920
+- Cycle: 922
 - Target: 600+ (연속 진화)
-- Last commit: C920 First Trial 3-way choice
-- Vitest: 2420 pass / 0 fail
+- Last commit: C921 Wandering Sage event
+- Vitest: 2423 pass / 0 fail
 - EncounterEngine: ~2700 lines
 - Critic score: 26/40 (C916)
 
-## 레이어 카운터 (C917-C920 era)
-- 시스템: 2 (C917, C920)
-- 구조: 2 (C918, C919)
+## 레이어 카운터 (C920-C922 era)
+- 시스템: 1 (C920)
+- 구조: 1 (C921)
 - 밸런스: 0
-- 콜라보: 0 (due at C922)
+- 콜라보: 0 (due NOW)
 
 ## 제약
-- cycles_since_collab: 3 (last C916)
-- Next collab: C922
+- cycles_since_collab: 0 (dispatching C922)
+- Next collab: C925
 - EncounterEngine: ~2700 lines
-- Layer rotation: C921=structure, C922=balance+collab, C923=system
+- Layer rotation: C923=system, C924=structure, C925=balance+collab
 - Layer rotation: C917=system, C918=structure, C919=balance+collab
 
 ## 🟡 Player Agency: 6 choices + 3 consequences
