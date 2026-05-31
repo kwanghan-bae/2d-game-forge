@@ -177,6 +177,30 @@ export interface MidGameResult {
   firstTrialChoicePending?: boolean; // C911: true = player choice needed
 }
 
+/**
+ * C969: Formal priority constants for MidGameEventResolver evaluation order.
+ * Higher number = evaluated first (early-returns block lower-priority events).
+ * One-shot events should generally have higher priority than repeatable events.
+ * NOTE: Current code still uses if/else ordering; these constants document intent
+ * and serve as migration target for eventual EventHandler[] refactor.
+ */
+export const EVENT_PRIORITY = {
+  WANDERING_MERCHANT: 130,   // pending-gated, always first
+  SPARRING_GROUNDS: 120,     // pending-gated
+  PROVING_GROUNDS: 110,      // fight 20-110, rng
+  MERCENARY_OFFER: 100,      // pending-gated
+  CROSSROADS: 90,            // pending-gated
+  FIRST_TRIAL: 80,           // fight 10-40, rng, one-shot
+  REPUTATION: 70,            // fight 160+, choices≥3, one-shot
+  VETERANS_TRIAL: 60,        // consequence-gated, choices≥5, one-shot
+  ELDERS_JUDGMENT: 55,       // fight 300+, choices≥6, one-shot
+  LAST_STAND: 50,            // fight 400-600, rng, one-shot
+  WANDERING_SAGE: 40,        // fight 260-450, rng, repeatable
+  VETERANS_CHALLENGE: 30,    // fight 200-400, rng, one-shot (critic: should be higher)
+  STAT_SHARD: 20,            // endgame, rng
+  ENEMY_MORPH: 10,           // endgame, rng
+} as const;
+
 export function resolveMidGameEvents(
   ctx: MidGameContext,
   pending: MidGamePending,

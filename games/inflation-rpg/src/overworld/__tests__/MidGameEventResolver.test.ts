@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveMidGameEvents, MidGameContext, MidGamePending } from '../encounter/MidGameEventResolver';
+import { resolveMidGameEvents, MidGameContext, MidGamePending, EVENT_PRIORITY } from '../encounter/MidGameEventResolver';
 
 function makeCtx(overrides: Partial<MidGameContext> = {}): MidGameContext {
   return {
@@ -537,5 +537,15 @@ describe('resolveMidGameEvents', () => {
     const ctx = makeCtx({ totalFights: 220, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { firstTrialFired: true, veteransChallengeFired: true });
     expect(result.veteransChallengePending).toBeUndefined();
+  });
+
+  it('EVENT_PRIORITY has exactly 14 entries covering all events', () => {
+    const keys = Object.keys(EVENT_PRIORITY);
+    expect(keys.length).toBe(14);
+    // All priorities are unique
+    const values = Object.values(EVENT_PRIORITY) as number[];
+    expect(new Set(values).size).toBe(14);
+    // All priorities are positive
+    expect(values.every(v => v > 0)).toBe(true);
   });
 });
