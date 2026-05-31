@@ -232,6 +232,14 @@ export const EARLY_MOMENTUM_EXP_MUL = 1.15; // ×1.15 EXP for 3 fights
 export const EARLY_MOMENTUM_EXP_DURATION = 3;
 export const EARLY_MOMENTUM_GOLD_MUL = 30; // level × 30 gold burst
 export const EARLY_MOMENTUM_STREAK_INTERVAL = 5; // every 5 consecutive wins
+// C866: Proving Grounds — mid-game challenge event (fight 55-90)
+export const PROVING_GROUNDS_MIN_FIGHT = 55;
+export const PROVING_GROUNDS_MAX_FIGHT = 90;
+export const PROVING_GROUNDS_CHANCE = 0.04; // 4% per fight → expected 1.4/run
+export const PROVING_GROUNDS_REWARD_EXP_MUL = 1.50; // success: 3 fight EXP ×1.5
+export const PROVING_GROUNDS_REWARD_DURATION = 3;
+export const PROVING_GROUNDS_FAIL_HP_COST = 0.10; // fail: 10% max HP loss
+export const PROVING_GROUNDS_WIN_CHANCE = 0.65; // 65% success based on combo
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125

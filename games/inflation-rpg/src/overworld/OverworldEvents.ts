@@ -129,4 +129,6 @@ export type OverworldEvent =
   | { type: 'event_sparring_grounds'; won: boolean; expGained: number; hpLost: number }
   // C863: Storm drain visual feedback
   | { type: 'storm_drain'; value: number; hpAfter: number }
-  | { type: 'storm_drain_critical'; value: number; hpAfter: number };
+  | { type: 'storm_drain_critical'; value: number; hpAfter: number }
+  // C866: Proving Grounds mid-game challenge
+  | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number };
