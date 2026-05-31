@@ -207,6 +207,7 @@ export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, st
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
 export const WANDERING_MERCHANT_GAMBLE_CHANCE = 0.35; // C844: probability AI picks double-or-nothing over safe ATK
 export const WANDERING_MERCHANT_GAMBLE_WIN_RATE = 0.5; // C844: 50% → 2× duration, 50% → nothing
+export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 50; // C847: consolation gold on gamble loss
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
