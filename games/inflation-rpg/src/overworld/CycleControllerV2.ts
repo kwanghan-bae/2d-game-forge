@@ -62,6 +62,8 @@ export interface CycleControllerV2Opts {
   onBossKill?: (currentRealmId: import('../types').RealmId) => import('../types').RealmId | null;
   /** V3-H B2 — 이어하기 시 기존 hero state 복원. null/undefined 면 새 hero 생성. */
   heroSnapshot?: HeroSnapshot | null;
+  /** C830 — Risk Gambit auto-resolve policy. default='always'. */
+  gambitPolicy?: 'always' | 'never' | 'hp_above_half';
 }
 
 export class CycleControllerV2 {
@@ -198,6 +200,7 @@ export class CycleControllerV2 {
       // Cycle 110 F1: realm fork atk mul (applies to all combat, not just boss).
       getRealmForkAtkMul: () => this.getRealmForkAtkMul(),
     });
+    if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
     this.saga = new SagaRecorder(this.hero.name, opts.seed);
     this.getBuffSnapshot = opts.getBuffSnapshot;

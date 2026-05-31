@@ -59,6 +59,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     const ctrl = new CycleControllerV2({
       ...opts,
       heroSnapshot: savedSnapshot,
+      gambitPolicy: opts.gambitPolicy ?? useGameStore.getState().meta.gambitPolicy,
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
         const state = useGameStore.getState();
         const meta = state.meta;

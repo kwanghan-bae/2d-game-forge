@@ -324,6 +324,8 @@ export interface MetaState {
   totalClaimsCount?: number;
   /** Cycle 33 — 전투 속도 배율. 1 = 기본, 2 = 2배속. */
   battleSpeed: 1 | 2;
+  /** C830 — Risk Gambit 자동 결정 정책. */
+  gambitPolicy: 'always' | 'never' | 'hp_above_half';
   /** Cycle 10 — 몬스터 도감 처치 횟수. monsterId → kill count. */
   bestiary: Record<string, number>;
 }
