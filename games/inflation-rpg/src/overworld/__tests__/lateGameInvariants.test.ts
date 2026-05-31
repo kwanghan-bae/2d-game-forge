@@ -11,6 +11,11 @@ import {
   EVENT_PITY_THRESHOLD,
   MID_GAME_PITY_THRESHOLD,
   MID_GAME_PITY_FIGHT_MIN,
+  VETERANS_CHALLENGE_EXP_MUL,
+  VETERANS_CHALLENGE_ATK_PENALTY,
+  VETERANS_CHALLENGE_MIN_FIGHT,
+  VETERANS_CHALLENGE_MAX_FIGHT,
+  VETERANS_CHALLENGE_DURATION,
 } from '../encounter/constants-events';
 import { LATE_GAME_EVENTS } from '../encounter/EventGateConfig';
 
@@ -67,5 +72,18 @@ describe('C955: Mid-game pity invariants', () => {
     expect(EVENT_PITY_THRESHOLD).toBeGreaterThan(MID_GAME_PITY_THRESHOLD);
     expect(MID_GAME_PITY_THRESHOLD).toBeGreaterThan(LATE_GAME_PITY_THRESHOLD);
     expect(LATE_GAME_PITY_THRESHOLD).toBeGreaterThan(LATE_GAME_PITY_THRESHOLD_800);
+  });
+
+  it('veterans challenge EXP gain compensates for ATK penalty over duration', () => {
+    // EXP multiplier (1.80) × ATK penalty (0.70) should be > 1.0 net value
+    // This means even with reduced kill speed, net EXP gain is positive
+    expect(VETERANS_CHALLENGE_EXP_MUL * VETERANS_CHALLENGE_ATK_PENALTY).toBeGreaterThan(1.0);
+  });
+
+  it('veterans challenge window is within mid-game range', () => {
+    expect(VETERANS_CHALLENGE_MIN_FIGHT).toBeGreaterThanOrEqual(200);
+    expect(VETERANS_CHALLENGE_MAX_FIGHT).toBeLessThanOrEqual(500);
+    expect(VETERANS_CHALLENGE_DURATION).toBeGreaterThanOrEqual(3);
+    expect(VETERANS_CHALLENGE_DURATION).toBeLessThanOrEqual(10);
   });
 });
