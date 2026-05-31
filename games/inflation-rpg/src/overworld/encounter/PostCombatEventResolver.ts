@@ -60,6 +60,8 @@ import {
   LATE_GAME_PITY_THRESHOLD_700,
   LATE_GAME_PITY_THRESHOLD_800,
   LATE_GAME_PITY_FIGHT_MIN,
+  MID_GAME_PITY_THRESHOLD,
+  MID_GAME_PITY_FIGHT_MIN,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
 import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
@@ -232,10 +234,13 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   let eventTriggered = false;
   // C714: pity timer — force event if N fights without one
   // C949: smooth pity curve (18 at <500, linear ramp to 9 at 800+)
+  // C952: mid-game micro-ramp (200-499 → threshold 15)
   let effectivePityThreshold = EVENT_PITY_THRESHOLD;
   if (ctx.totalFights >= LATE_GAME_PITY_FIGHT_MIN) {
     const progress = Math.min(1, (ctx.totalFights - LATE_GAME_PITY_FIGHT_MIN) / 300); // 500→800 = 0→1
     effectivePityThreshold = Math.round(LATE_GAME_PITY_THRESHOLD - progress * (LATE_GAME_PITY_THRESHOLD - LATE_GAME_PITY_THRESHOLD_800));
+  } else if (ctx.totalFights >= MID_GAME_PITY_FIGHT_MIN) {
+    effectivePityThreshold = MID_GAME_PITY_THRESHOLD;
   }
   const pityActive = eventsEnabled && ctx.fightsSinceEvent >= effectivePityThreshold;
 

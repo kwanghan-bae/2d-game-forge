@@ -519,6 +519,9 @@ export const LATE_GAME_PITY_THRESHOLD = 12;
 export const LATE_GAME_PITY_THRESHOLD_700 = 10;
 export const LATE_GAME_PITY_THRESHOLD_800 = 9;
 export const LATE_GAME_PITY_FIGHT_MIN = 500;
+// C952: mid-game micro-ramp (200-499)
+export const MID_GAME_PITY_THRESHOLD = 15;
+export const MID_GAME_PITY_FIGHT_MIN = 200;
 
 // C940: Endgame Surge — fills fight 601+ choice desert
 export const ENDGAME_SURGE_MIN_FIGHT = 601;
