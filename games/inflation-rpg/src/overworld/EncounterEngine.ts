@@ -1523,56 +1523,9 @@ export class EncounterEngine {
         // C451: gold overflow shield upgrade — more charges with prestige
         this.goldOverflowShieldRemaining = GOLD_OVERFLOW_SHIELD_DURATION + (this.prestigeCount > 0 ? GOLD_OVERFLOW_SHIELD_UPGRADE : 0);
       }
-      // C157: boss vault — lump sum gold bonus for boss kills
+      // C157→C831: boss rewards extraction
       if (isBoss) {
-        this.bossStreak++;
-        this.bossesKilled++; // C239
-        this.uniqueBossKills++; // C335: boss trophy ATK
-        // C172: boss streak multiplier
-        const streakMul = 1 + (this.bossStreak - 1) * BOSS_STREAK_MULTIPLIER;
-        // C186: overkill boss vault doubler
-        const bossOverkillMul = isOverkill ? BOSS_OVERKILL_VAULT_MUL : 1;
-        // C239: boss loot table — every Nth boss gives double gold
-        const bossLootMul = (this.bossesKilled % BOSS_LOOT_INTERVAL === 0) ? BOSS_LOOT_GOLD_MUL : 1;
-        // C374: boss vault prestige bonus
-        const bossVaultPrestigeMul = 1 + this.prestigeCount * BOSS_VAULT_PRESTIGE_MUL;
-        // C430: boss vault prestige scaling
-        const bossVaultPrestigeScale = 1 + this.prestigeCount * BOSS_VAULT_PRESTIGE_SCALE;
-        // C456: boss vault compound — vault compounds with consecutive bosses
-        const bossVaultCompound = 1 + this.consecutiveBossKills * BOSS_VAULT_COMPOUND_BONUS;
-        // C509: boss enrage trade — chance of enraged boss giving 3x vault
-        const bossEnrageMul2 = this.rng.chance(BOSS_ENRAGE_CHANCE) ? BOSS_ENRAGE_REWARD_MUL : 1;
-        // C524: exp offering — if active, boss rewards ×3
-        const expOfferingMul = this.expOfferingActive ? EXP_OFFERING_BOSS_MUL : 1;
-        if (this.expOfferingActive) this.expOfferingActive = false;
-        const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul * bossLootMul * bossVaultPrestigeMul * bossVaultPrestigeScale * bossVaultCompound * bossEnrageMul2 * expOfferingMul);
-        hero.gold += vaultGold;
-        // C383: boss chain gold — consecutive bosses give escalating gold
-        if (this.consecutiveBossKills > 0) {
-          hero.gold += this.consecutiveBossKills * hero.level * BOSS_CHAIN_GOLD_PER_LEVEL;
-        }
-        events.push({ type: 'boss_vault', gold: vaultGold });
-        // C251: boss slayer buff
-        this.bossSlayerRemaining = BOSS_SLAYER_DURATION;
-        // C321: boss fury buff
-        this.bossFuryRemaining = BOSS_FURY_DURATION;
-        // C349: boss frenzy — consecutive boss kills give exponential reward
-        this.consecutiveBossKills++;
-        const frenzyMul = Math.min(BOSS_FRENZY_CAP, Math.pow(BOSS_FRENZY_EXP_BASE, this.consecutiveBossKills - 1));
-        hero.exp += Math.floor(hero.level * 10 * frenzyMul);
-        // C366: boss defeat heal
-        hero.heal(Math.max(1, Math.floor(hero.hpMax * BOSS_DEFEAT_HEAL_RATE)));
-        // C414: boss heal on kill — heal based on boss level
-        hero.heal(Math.max(1, Math.floor(hero.hpMax * BOSS_HEAL_ON_KILL_RATE)));
-        // C402: gold rain — chance after boss kill
-        if (this.rng.chance(GOLD_RAIN_CHANCE)) {
-          hero.gold += Math.floor(hero.gold * (GOLD_RAIN_MUL - 1));
-          events.push({ type: 'gold_rain' });
-        }
-        // C474: boss gold fury — boss kills give gold proportional to ATK
-        hero.gold += Math.floor(hero.atk * BOSS_GOLD_FURY_RATE);
-        // C494: boss shield — boss kills grant temporary shield
-        this.bossShieldRemaining = BOSS_SHIELD_GRANT_DURATION;
+        this.resolveBossRewards(hero, events, isOverkill);
       } else {
         this.consecutiveBossKills = 0;
       }
@@ -2171,6 +2124,41 @@ export class EncounterEngine {
   private rollDrop(isBoss: boolean): string {
     const pool = isBoss ? BOSS_DROPS : ENEMY_DROPS;
     return pool[this.rng.int(pool.length)].id;
+  }
+
+  // C831: Boss reward resolution — extracted from resolveEncounter hot path
+  private resolveBossRewards(hero: HeroEntity, events: OverworldEvent[], isOverkill: boolean): void {
+    this.bossStreak++;
+    this.bossesKilled++;
+    this.uniqueBossKills++;
+    const streakMul = 1 + (this.bossStreak - 1) * BOSS_STREAK_MULTIPLIER;
+    const bossOverkillMul = isOverkill ? BOSS_OVERKILL_VAULT_MUL : 1;
+    const bossLootMul = (this.bossesKilled % BOSS_LOOT_INTERVAL === 0) ? BOSS_LOOT_GOLD_MUL : 1;
+    const bossVaultPrestigeMul = 1 + this.prestigeCount * BOSS_VAULT_PRESTIGE_MUL;
+    const bossVaultPrestigeScale = 1 + this.prestigeCount * BOSS_VAULT_PRESTIGE_SCALE;
+    const bossVaultCompound = 1 + this.consecutiveBossKills * BOSS_VAULT_COMPOUND_BONUS;
+    const bossEnrageMul2 = this.rng.chance(BOSS_ENRAGE_CHANCE) ? BOSS_ENRAGE_REWARD_MUL : 1;
+    const expOfferingMul = this.expOfferingActive ? EXP_OFFERING_BOSS_MUL : 1;
+    if (this.expOfferingActive) this.expOfferingActive = false;
+    const vaultGold = Math.floor(hero.level * BOSS_VAULT_GOLD_PER_LEVEL * streakMul * bossOverkillMul * bossLootMul * bossVaultPrestigeMul * bossVaultPrestigeScale * bossVaultCompound * bossEnrageMul2 * expOfferingMul);
+    hero.gold += vaultGold;
+    if (this.consecutiveBossKills > 0) {
+      hero.gold += this.consecutiveBossKills * hero.level * BOSS_CHAIN_GOLD_PER_LEVEL;
+    }
+    events.push({ type: 'boss_vault', gold: vaultGold });
+    this.bossSlayerRemaining = BOSS_SLAYER_DURATION;
+    this.bossFuryRemaining = BOSS_FURY_DURATION;
+    this.consecutiveBossKills++;
+    const frenzyMul = Math.min(BOSS_FRENZY_CAP, Math.pow(BOSS_FRENZY_EXP_BASE, this.consecutiveBossKills - 1));
+    hero.exp += Math.floor(hero.level * 10 * frenzyMul);
+    hero.heal(Math.max(1, Math.floor(hero.hpMax * BOSS_DEFEAT_HEAL_RATE)));
+    hero.heal(Math.max(1, Math.floor(hero.hpMax * BOSS_HEAL_ON_KILL_RATE)));
+    if (this.rng.chance(GOLD_RAIN_CHANCE)) {
+      hero.gold += Math.floor(hero.gold * (GOLD_RAIN_MUL - 1));
+      events.push({ type: 'gold_rain' });
+    }
+    hero.gold += Math.floor(hero.atk * BOSS_GOLD_FURY_RATE);
+    this.bossShieldRemaining = BOSS_SHIELD_GRANT_DURATION;
   }
 
   // C819: Batch decrement for simple duration counters (no side effects)
