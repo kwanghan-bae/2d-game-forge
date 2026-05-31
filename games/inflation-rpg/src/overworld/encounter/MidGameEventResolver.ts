@@ -4,6 +4,7 @@
  * mercenary offer, and crossroads resolution from EncounterEngine.
  */
 import type { OverworldEvent } from '../OverworldEvents';
+import { resolveConsequenceEvents } from './ConsequenceResolver';
 import {
   WANDERING_MERCHANT_HEAL_RATE,
   WANDERING_MERCHANT_ATK_DURATION,
@@ -28,30 +29,6 @@ import {
   CROSSROADS_ATK_DURATION,
   CROSSROADS_EXP_DURATION,
   CROSSROADS_GOLD_BURST_MUL,
-  REPUTATION_MIN_FIGHT,
-  REPUTATION_MAX_FIGHT,
-  REPUTATION_CHANCE,
-  REPUTATION_MIN_CHOICES,
-  REPUTATION_AGG_ATK_MUL,
-  REPUTATION_AGG_DURATION,
-  REPUTATION_DEF_HEAL_RATE,
-  REPUTATION_DEF_SHIELD_DURATION,
-  REPUTATION_GREEDY_GOLD_MUL,
-  REPUTATION_BALANCED_EXP_DURATION,
-  REPUTATION_BALANCED_EXP_MUL,
-  VETERANS_TRIAL_MIN_FIGHT,
-  VETERANS_TRIAL_MAX_FIGHT,
-  VETERANS_TRIAL_CHANCE,
-  VETERANS_TRIAL_MIN_CHOICES,
-  VETERANS_TRIAL_AGG_ATK_MUL,
-  VETERANS_TRIAL_AGG_DURATION,
-  VETERANS_TRIAL_AGG_HP_COST,
-  VETERANS_TRIAL_DEF_SHIELD_DURATION,
-  VETERANS_TRIAL_DEF_HEAL_RATE,
-  VETERANS_TRIAL_GREEDY_GOLD_MUL,
-  VETERANS_TRIAL_BALANCED_ALL_DURATION,
-  VETERANS_TRIAL_BALANCED_ATK_MUL,
-  VETERANS_TRIAL_BALANCED_EXP_MUL,
   LAST_STAND_MIN_FIGHT,
   LAST_STAND_MAX_FIGHT,
   LAST_STAND_CHANCE,
@@ -239,59 +216,34 @@ export function resolveMidGameEvents(
     }
   }
 
-  // C883: Reputation Payoff — consequence event based on player's dominant choice style
-  if (!pending.reputationFired
-    && ctx.totalFights >= REPUTATION_MIN_FIGHT
-    && ctx.totalFights <= REPUTATION_MAX_FIGHT
-    && (pending.reputationTotalChoices ?? 0) >= REPUTATION_MIN_CHOICES
-    && ctx.rngChance(REPUTATION_CHANCE)) {
-    const style = pending.reputationStyle ?? 'balanced';
-    if (style === 'aggressive') {
-      buffs.reputationAtkRemaining = REPUTATION_AGG_DURATION;
-      events.push({ type: 'event_reputation', style, value: REPUTATION_AGG_ATK_MUL });
-    } else if (style === 'defensive') {
-      const healAmt = Math.floor(ctx.hero.hpMax * REPUTATION_DEF_HEAL_RATE);
-      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
-      buffs.reputationShieldRemaining = REPUTATION_DEF_SHIELD_DURATION;
-      events.push({ type: 'event_reputation', style, value: healAmt });
-    } else if (style === 'greedy') {
-      const goldBurst = Math.floor(ctx.hero.level * REPUTATION_GREEDY_GOLD_MUL);
-      heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldBurst;
-      events.push({ type: 'event_reputation', style, value: goldBurst });
-    } else {
-      buffs.reputationExpRemaining = REPUTATION_BALANCED_EXP_DURATION;
-      events.push({ type: 'event_reputation', style: 'balanced', value: REPUTATION_BALANCED_EXP_MUL });
+  // C891: Delegate consequence events to ConsequenceResolver
+  const consequenceResult = resolveConsequenceEvents(
+    {
+      hero: ctx.hero,
+      totalFights: ctx.totalFights,
+      rngChance: ctx.rngChance,
+      reputationStyle: pending.reputationStyle ?? 'balanced',
+      reputationTotalChoices: pending.reputationTotalChoices ?? 0,
+    },
+    {
+      reputationFired: pending.reputationFired ?? false,
+      veteransTrialFired: pending.veteransTrialFired ?? false,
+    },
+  );
+  if (consequenceResult) {
+    events.push(...consequenceResult.events);
+    if (consequenceResult.heroMutations.hpDelta) {
+      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + consequenceResult.heroMutations.hpDelta;
     }
-    return { events, heroMutations, buffs, crossroadsUsed, reputationFired: true };
-  }
-
-  // C887: Veteran's Trial — 2nd consequence event (fight 275-400)
-  if (!pending.veteransTrialFired
-    && ctx.totalFights >= VETERANS_TRIAL_MIN_FIGHT
-    && ctx.totalFights <= VETERANS_TRIAL_MAX_FIGHT
-    && (pending.reputationTotalChoices ?? 0) >= VETERANS_TRIAL_MIN_CHOICES
-    && ctx.rngChance(VETERANS_TRIAL_CHANCE)) {
-    const style = pending.reputationStyle ?? 'balanced';
-    if (style === 'aggressive') {
-      buffs.veteransTrialAtkRemaining = VETERANS_TRIAL_AGG_DURATION;
-      const hpCost = Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_AGG_HP_COST);
-      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) - hpCost;
-      events.push({ type: 'event_veterans_trial', style, value: VETERANS_TRIAL_AGG_ATK_MUL });
-    } else if (style === 'defensive') {
-      buffs.veteransTrialShieldRemaining = VETERANS_TRIAL_DEF_SHIELD_DURATION;
-      const healAmt = Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_DEF_HEAL_RATE);
-      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
-      events.push({ type: 'event_veterans_trial', style, value: healAmt });
-    } else if (style === 'greedy') {
-      const goldBurst = Math.floor(ctx.hero.level * VETERANS_TRIAL_GREEDY_GOLD_MUL);
-      heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldBurst;
-      events.push({ type: 'event_veterans_trial', style, value: goldBurst });
-    } else {
-      buffs.veteransTrialAtkRemaining = VETERANS_TRIAL_BALANCED_ALL_DURATION;
-      buffs.veteransTrialExpRemaining = VETERANS_TRIAL_BALANCED_ALL_DURATION;
-      events.push({ type: 'event_veterans_trial', style: 'balanced', value: VETERANS_TRIAL_BALANCED_ATK_MUL });
+    if (consequenceResult.heroMutations.goldDelta) {
+      heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + consequenceResult.heroMutations.goldDelta;
     }
-    return { events, heroMutations, buffs, crossroadsUsed, veteransTrialFired: true };
+    Object.assign(buffs, consequenceResult.buffs);
+    return {
+      events, heroMutations, buffs, crossroadsUsed,
+      reputationFired: consequenceResult.reputationFired,
+      veteransTrialFired: consequenceResult.veteransTrialFired,
+    };
   }
 
   // C890: Last Stand Challenge — late-game player choice (fight 400-600)
