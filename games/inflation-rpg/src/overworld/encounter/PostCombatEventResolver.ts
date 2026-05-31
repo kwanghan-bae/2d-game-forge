@@ -57,6 +57,8 @@ import {
   EVENT_MOMENTUM_TIER3_DENSITY_MUL,
   EVENT_MOMENTUM_TIER3_DENSITY_CAP,
   LATE_GAME_PITY_THRESHOLD,
+  LATE_GAME_PITY_THRESHOLD_700,
+  LATE_GAME_PITY_THRESHOLD_800,
   LATE_GAME_PITY_FIGHT_MIN,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
@@ -229,9 +231,11 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   const eventsEnabled = ctx.totalFights > 20;
   let eventTriggered = false;
   // C714: pity timer — force event if N fights without one
-  // C941: reduced threshold for fights > 500 (18 → 12)
-  const effectivePityThreshold = ctx.totalFights >= LATE_GAME_PITY_FIGHT_MIN
-    ? LATE_GAME_PITY_THRESHOLD : EVENT_PITY_THRESHOLD;
+  // C943: ramped threshold (500→12, 700→10, 800+→9)
+  let effectivePityThreshold = EVENT_PITY_THRESHOLD;
+  if (ctx.totalFights >= 800) effectivePityThreshold = LATE_GAME_PITY_THRESHOLD_800;
+  else if (ctx.totalFights >= 700) effectivePityThreshold = LATE_GAME_PITY_THRESHOLD_700;
+  else if (ctx.totalFights >= LATE_GAME_PITY_FIGHT_MIN) effectivePityThreshold = LATE_GAME_PITY_THRESHOLD;
   const pityActive = eventsEnabled && ctx.fightsSinceEvent >= effectivePityThreshold;
 
   // C809: Weighted event pool — replaces first-match-wins if-chain

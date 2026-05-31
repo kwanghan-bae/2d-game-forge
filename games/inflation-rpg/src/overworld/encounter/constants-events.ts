@@ -514,8 +514,10 @@ export const SHARD_FUSION_CHANCE = 0.03;
 export const SHARD_FUSION_COST = 3; // shards consumed
 export const SHARD_FUSION_ATK_REWARD = 15; // permanent ATK
 
-// C941: late-game pity reduction (was 18 → 12 for fights > 500)
+// C941→C943: late-game pity ramp (500→12, 700→10, 800+→9)
 export const LATE_GAME_PITY_THRESHOLD = 12;
+export const LATE_GAME_PITY_THRESHOLD_700 = 10;
+export const LATE_GAME_PITY_THRESHOLD_800 = 9;
 export const LATE_GAME_PITY_FIGHT_MIN = 500;
 
 // C940: Endgame Surge — fills fight 601+ choice desert
