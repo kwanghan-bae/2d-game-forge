@@ -7,6 +7,7 @@ import {
   ECHO_EVENT_CHANCE,
   ECHO_LATE_CHANCE,
   ECHO_LATE_THRESHOLD,
+  ECHO_RAMP_END,
   ECHO_DURATION,
   ECHO_MIN_LEVEL,
   INSPIRATION_EVENT_CHANCE,
@@ -320,10 +321,17 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
       });
     }
 
-    // Echo — C823: late-game scaling
+    // Echo — C838: linear ramp (275-350, base→late)
     if (ctx.heroLevel >= ECHO_MIN_LEVEL) {
+      let echoWeight = ECHO_EVENT_CHANCE;
+      if (ctx.totalFights >= ECHO_RAMP_END) {
+        echoWeight = ECHO_LATE_CHANCE;
+      } else if (ctx.totalFights > ECHO_LATE_THRESHOLD) {
+        echoWeight = ECHO_EVENT_CHANCE + (ECHO_LATE_CHANCE - ECHO_EVENT_CHANCE) *
+          ((ctx.totalFights - ECHO_LATE_THRESHOLD) / (ECHO_RAMP_END - ECHO_LATE_THRESHOLD));
+      }
       candidates.push({
-        id: 'echo', weight: ctx.totalFights >= ECHO_LATE_THRESHOLD ? ECHO_LATE_CHANCE : ECHO_EVENT_CHANCE, pityEligible: true,
+        id: 'echo', weight: echoWeight, pityEligible: true,
         apply: (r) => { r.newPrestigeEchoRemaining = ECHO_DURATION; r.eventType = 'event_echo'; },
       });
     }

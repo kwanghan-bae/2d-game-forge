@@ -99,17 +99,17 @@ describe('EventGateConfig — C754', () => {
     expect(voidRiftMul(100)).toBeCloseTo(1.05, 5); // clamped → tier 1
   });
 
-  it('C770: storm_nexus available only during storm weather after 110 fights', () => {
-    const eventsStorm = getAvailableMidEvents(120, 'storm');
+  it('C770: storm_nexus available only during storm weather after 160 fights', () => {
+    const eventsStorm = getAvailableMidEvents(170, 'storm');
     expect(eventsStorm.some(e => e.id === 'event_storm_nexus')).toBe(true);
-    const eventsNormal = getAvailableMidEvents(120, 'normal');
+    const eventsNormal = getAvailableMidEvents(170, 'normal');
     expect(eventsNormal.some(e => e.id === 'event_storm_nexus')).toBe(false);
-    const eventsNoWeather = getAvailableMidEvents(120);
+    const eventsNoWeather = getAvailableMidEvents(170);
     expect(eventsNoWeather.some(e => e.id === 'event_storm_nexus')).toBe(false);
   });
 
-  it('C770: storm_nexus not available before 110 fights', () => {
-    const events = getAvailableMidEvents(100, 'storm');
+  it('C770: storm_nexus not available before 160 fights', () => {
+    const events = getAvailableMidEvents(150, 'storm');
     expect(events.some(e => e.id === 'event_storm_nexus')).toBe(false);
   });
 
@@ -122,12 +122,12 @@ describe('EventGateConfig — C754', () => {
     expect(eventsBefore.some(e => e.id === 'event_rain_sanctuary')).toBe(false);
   });
 
-  it('C773: fog_ambush available only during fog after 100 fights', () => {
-    const eventsFog = getAvailableMidEvents(110, 'fog');
+  it('C773: fog_ambush available only during fog after 130 fights', () => {
+    const eventsFog = getAvailableMidEvents(140, 'fog');
     expect(eventsFog.some(e => e.id === 'event_fog_ambush')).toBe(true);
-    const eventsNormal = getAvailableMidEvents(110, 'normal');
+    const eventsNormal = getAvailableMidEvents(140, 'normal');
     expect(eventsNormal.some(e => e.id === 'event_fog_ambush')).toBe(false);
-    const eventsBefore = getAvailableMidEvents(95, 'fog');
+    const eventsBefore = getAvailableMidEvents(120, 'fog');
     expect(eventsBefore.some(e => e.id === 'event_fog_ambush')).toBe(false);
   });
 
