@@ -131,7 +131,7 @@ export type OverworldEvent =
   | { type: 'storm_drain'; value: number; hpAfter: number }
   | { type: 'storm_drain_critical'; value: number; hpAfter: number }
   // C866: Proving Grounds mid-game challenge
-  | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number; declined?: boolean }
+  | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number; declined?: boolean; shardGranted?: boolean }
   // C875: Proving Grounds player choice pending
   | { type: 'proving_grounds_choice' }
   // C878: Mercenary Offer player choice pending

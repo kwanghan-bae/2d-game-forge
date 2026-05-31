@@ -101,6 +101,25 @@ describe('resolveMidGameEvents', () => {
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
   });
 
+  // C938: Stat Shard
+  it('proving grounds win grants stat shard with 40% chance', () => {
+    // rngChance always true → shard granted
+    const ctx = makeCtx({ totalFights: 70, rngChance: () => true, rngFloat: () => 0.3 });
+    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept' });
+    expect(result.events[0]).toMatchObject({ type: 'event_proving_grounds', won: true, shardGranted: true });
+    expect(result.statShardAtk).toBe(3);
+  });
+
+  it('proving grounds win without shard when rng fails', () => {
+    let rngChanceCallCount = 0;
+    // First rngChance call is for proving grounds trigger (returns true)
+    // Second is for stat shard (returns false)
+    const ctx = makeCtx({ totalFights: 70, rngChance: () => { rngChanceCallCount++; return rngChanceCallCount <= 1; }, rngFloat: () => 0.3 });
+    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept' });
+    expect(result.events[0]).toMatchObject({ type: 'event_proving_grounds', won: true, shardGranted: false });
+    expect(result.statShardAtk).toBeUndefined();
+  });
+
   // C911: First Trial 2-phase pending tests
   it('first trial returns pending when no choice resolved', () => {
     const ctx = makeCtx({ hero: { hp: 400, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });

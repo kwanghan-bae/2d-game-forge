@@ -251,6 +251,9 @@ export const PROVING_GROUNDS_REWARD_DURATION = 5; // C869: 3→5 (longer window)
 export const PROVING_GROUNDS_FAIL_HP_COST = 0.10; // fail: 10% max HP loss
 export const PROVING_GROUNDS_WIN_CHANCE = 0.70; // C871: 0.65→0.70 (reduce fail frustration)
 export const PROVING_GROUNDS_MANUAL_BONUS = 0.25; // C877: +25% EXP mul when player manually accepts
+// C938: Stat Shard — permanent (run-lifetime) ATK bonus from Proving Grounds victory
+export const STAT_SHARD_ATK_FLAT = 3; // +3 flat ATK per shard (stacks)
+export const STAT_SHARD_CHANCE = 0.40; // 40% chance on Proving Grounds win
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125

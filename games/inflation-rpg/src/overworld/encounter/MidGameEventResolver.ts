@@ -67,6 +67,8 @@ import {
   ELDERS_JUDGMENT_DIVERSIFY_EXP,
   ELDERS_JUDGMENT_DIVERSIFY_HEAL,
   ELDERS_JUDGMENT_DIVERSIFY_DURATION,
+  STAT_SHARD_ATK_FLAT,
+  STAT_SHARD_CHANCE,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -142,6 +144,7 @@ export interface MidGameResult {
     eldersJudgmentExpRemaining?: number; // C926
     lastStandAtkRemaining?: number; // C890
   };
+  statShardAtk?: number; // C938: permanent ATK shard (flat bonus)
   greedyGoldMul?: number; // C902: greedy gold gain multiplier
   crossroadsUsed?: boolean;
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
@@ -167,6 +170,7 @@ export function resolveMidGameEvents(
   const heroMutations: MidGameResult['heroMutations'] = {};
   const buffs: MidGameResult['buffs'] = {};
   let crossroadsUsed = false;
+  let statShardAtk: number | undefined;
 
   // Wandering Merchant — C881: two-phase player choice (heal/atk/gamble)
   if (pending.wanderingMerchantPending) {
@@ -223,7 +227,12 @@ export function resolveMidGameEvents(
       const won = ctx.rngFloat() < PROVING_GROUNDS_WIN_CHANCE;
       if (won) {
         buffs.provingGroundsExpRemaining = PROVING_GROUNDS_REWARD_DURATION;
-        events.push({ type: 'event_proving_grounds', won: true, expMul: PROVING_GROUNDS_REWARD_EXP_MUL, hpCost: 0 });
+        // C938: Stat Shard — 40% chance of permanent ATK bonus on win
+        const shardGranted = ctx.rngChance(STAT_SHARD_CHANCE);
+        if (shardGranted) {
+          statShardAtk = STAT_SHARD_ATK_FLAT;
+        }
+        events.push({ type: 'event_proving_grounds', won: true, expMul: PROVING_GROUNDS_REWARD_EXP_MUL, hpCost: 0, shardGranted });
       } else {
         const hpCost = Math.floor(ctx.hero.hpMax * PROVING_GROUNDS_FAIL_HP_COST);
         heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) - hpCost;
@@ -410,5 +419,5 @@ export function resolveMidGameEvents(
     return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
   }
 
-  return { events, heroMutations, buffs, crossroadsUsed };
+  return { events, heroMutations, buffs, crossroadsUsed, statShardAtk };
 }

@@ -217,6 +217,7 @@ export class EncounterEngine {
   // C930: reputation, veteransTrial buffs migrated to midGameBuffs
   private earlyMomentumLastMilestone = 0; // C860: last streak milestone triggered
   private provingGroundsExpRemaining = 0; // C866: EXP buff duration after proving grounds win
+  private statShardAtk = 0; // C938: permanent ATK bonus from Stat Shard rewards
   private provingChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C875
   private provingGroundsManualAccept = false; // C877: +25% bonus when player manually chose
   private mercenaryChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C878
@@ -586,6 +587,7 @@ export class EncounterEngine {
       soulForgeRemaining: this.midGameBuffs.remaining('soul_forge'),
       eventMomentumAtkRemaining: this.midGameBuffs.remaining('ev_mom_atk'),
       eventMomentumDensityRemaining: this.midGameBuffs.remaining('ev_mom_density'),
+      statShardAtk: this.statShardAtk,
     };
   }
   getTotalDeaths(): number { return this.totalDeaths; }
@@ -723,6 +725,8 @@ export class EncounterEngine {
     if (this.midGameBuffs.isActive('mentor')) activeBuffs.push('멘토');
     if (this.midGameBuffs.isActive('ev_mom_atk')) activeBuffs.push('이벤트 기세 ATK');
     if (this.midGameBuffs.isActive('ev_mom_density')) activeBuffs.push('이벤트 기세 밀도');
+    // C938: Stat Shard permanent ATK indicator
+    if (this.statShardAtk > 0) activeBuffs.push(`파편 ATK +${this.statShardAtk}`);
     const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
     if (!deathSaveBlocked) {
@@ -953,7 +957,7 @@ export class EncounterEngine {
       const snowDriftAtkMul = this.midGameBuffs.isActive('snow_drift') ? SNOW_DRIFT_ATK_PENALTY : 1;
       // C832: Wandering Merchant ATK buff
       const merchantAtkMul = this.midGameBuffs.isActive('wm_atk') ? (1 + WANDERING_MERCHANT_ATK_MUL) : 1;
-      const baseHeroAtk = Math.floor(computeHeroAtk(atkInput) * weatherSpeedMul * snowDriftAtkMul * merchantAtkMul);
+      const baseHeroAtk = Math.floor(computeHeroAtk(atkInput) * weatherSpeedMul * snowDriftAtkMul * merchantAtkMul) + this.statShardAtk;
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
       const effectiveCombo = this.comboStreak + this.prestigeCount * PRESTIGE_COMBO_ADD;
@@ -2466,6 +2470,8 @@ export class EncounterEngine {
     if (b.eldersJudgmentExpRemaining !== undefined) this.midGameBuffs.activate('ej_exp', b.eldersJudgmentExpRemaining);
     if (result.firstTrialFired) this.firstTrialFired = true;
     if (result.eldersJudgmentFired) this.eldersJudgmentFired = true;
+    // C938: Stat Shard — permanent ATK bonus (stacks)
+    if (result.statShardAtk !== undefined) this.statShardAtk += result.statShardAtk;
   }
 
   // C933: All env effect + event buff durations now tracked via midGameBuffs
