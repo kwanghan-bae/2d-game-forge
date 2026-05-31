@@ -217,7 +217,7 @@ export const HIGH_GOLD_DEATH_THRESHOLD = 500_000;
 export const HIGH_GOLD_DEATH_PENALTY_CAP = 0.20;
 // C854: Crossroads Choice Event — once-per-run, 3 paths (95-130)
 export const CROSSROADS_CHANCE = 0.03;
-export const CROSSROADS_PITY_THRESHOLD = 40; // C868: force crossroads if 40 fights without one
+export const CROSSROADS_PITY_THRESHOLD = 30; // C869: 40→30 (must be ≤ window size 35)
 export const CROSSROADS_MIN_FIGHTS = 95;
 export const CROSSROADS_MAX_FIGHTS = 130;
 export const CROSSROADS_ATK_DURATION = 5;
@@ -226,7 +226,7 @@ export const CROSSROADS_EXP_DURATION = 5;
 export const CROSSROADS_EXP_MUL = 1.30; // ×1.3 EXP for duration
 export const CROSSROADS_GOLD_BURST_MUL = 120; // level × 120 gold
 // C860: Early-game Momentum — fight 1-50 micro-rewards on combo milestones
-export const EARLY_MOMENTUM_MAX_FIGHT = 50;
+export const EARLY_MOMENTUM_MAX_FIGHT = 65; // C869: 50→65 (overlap with proving grounds, shrink dead zone)
 export const EARLY_MOMENTUM_ATK_MUL = 0.08; // C868: 0.06→0.08 (stronger early feel)
 export const EARLY_MOMENTUM_ATK_DURATION = 2;
 export const EARLY_MOMENTUM_EXP_MUL = 1.15; // ×1.15 EXP for 3 fights
@@ -237,8 +237,8 @@ export const EARLY_MOMENTUM_STREAK_INTERVAL = 5; // every 5 consecutive wins
 export const PROVING_GROUNDS_MIN_FIGHT = 55;
 export const PROVING_GROUNDS_MAX_FIGHT = 90;
 export const PROVING_GROUNDS_CHANCE = 0.04; // 4% per fight → expected 1.4/run
-export const PROVING_GROUNDS_REWARD_EXP_MUL = 1.50; // success: 3 fight EXP ×1.5
-export const PROVING_GROUNDS_REWARD_DURATION = 3;
+export const PROVING_GROUNDS_REWARD_EXP_MUL = 2.00; // C869: 1.50→2.00 (meaningful EXP boost)
+export const PROVING_GROUNDS_REWARD_DURATION = 5; // C869: 3→5 (longer window)
 export const PROVING_GROUNDS_FAIL_HP_COST = 0.10; // fail: 10% max HP loss
 export const PROVING_GROUNDS_WIN_CHANCE = 0.65; // 65% success based on combo
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)

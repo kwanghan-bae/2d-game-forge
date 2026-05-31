@@ -68,7 +68,7 @@ describe('resolveMidGameEvents', () => {
     const ctx = makeCtx({ totalFights: 70, rngChance: () => true, rngFloat: () => 0.3 });
     const result = resolveMidGameEvents(ctx, {});
     expect(result.events[0]).toMatchObject({ type: 'event_proving_grounds', won: true });
-    expect(result.buffs.provingGroundsExpRemaining).toBe(3);
+    expect(result.buffs.provingGroundsExpRemaining).toBe(5);
   });
 
   it('proving grounds does not trigger outside window', () => {
