@@ -1908,8 +1908,9 @@ export class EncounterEngine {
   }
 
   // C628/C675: post-combat events delegated to PostCombatEventResolver
-  private resolvePostCombatEvents(hero: HeroEntity, events: OverworldEvent[], isElite: boolean, isBoss: boolean): void {
-    const ctx: PostCombatContext = {
+  // C846: Build PostCombatContext from current engine state
+  private buildPostCombatContext(hero: HeroEntity, isElite: boolean, isBoss: boolean): PostCombatContext {
+    return {
       totalFights: this.totalFights,
       comboStreak: this.comboStreak,
       heroHp: hero.hp,
@@ -1940,6 +1941,10 @@ export class EncounterEngine {
       rngInt: (n: number) => this.rng.int(n),
       hasPendingShrineChoice: () => this.choiceEngine.hasPendingShrineChoice(),
     };
+  }
+
+  private resolvePostCombatEvents(hero: HeroEntity, events: OverworldEvent[], isElite: boolean, isBoss: boolean): void {
+    const ctx = this.buildPostCombatContext(hero, isElite, isBoss);
 
     const r = resolvePostCombatEvent(ctx);
 
