@@ -1,30 +1,30 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 892
+- Cycle: 895
 - Target: 600+ (연속 진화)
-- Last commit: C892 Last Stand EV rebalance
+- Last commit: C895 level-designer balance pass
 - Vitest: 2372 pass / 0 fail
-- EncounterEngine: ~2660 lines
-- Critic score: pending (C892 collab dispatched)
+- EncounterEngine: ~2670 lines
+- Critic score: 26/40 (C892), pending C895
 
-## 레이어 카운터 (C890-C892 era)
-- 시스템: 1 (C890)
-- 구조: 1 (C891)
-- 밸런스: 1 (C892)
-- 콜라보: 1 (C892)
+## 레이어 카운터 (C893-C895 era)
+- 시스템: 2 (C893, C893a)
+- 구조: 1 (C894)
+- 밸런스: 1 (C895)
+- 콜라보: 1 (C895)
 
 ## 제약
-- cycles_since_collab: 0 (C892)
-- Next collab: C895
-- EncounterEngine: ~2660 lines
-- Layer rotation: C893=system, C894=structure, C895=balance+collab
+- cycles_since_collab: 0 (C895)
+- Next collab: C898
+- EncounterEngine: ~2670 lines
+- Layer rotation: C896=system, C897=structure, C898=balance+collab
 
 ## 🟡 Player Agency: 5 choices + 2 consequences
 - Proving Grounds: binary accept/decline, 2s timeout (fight 40-110)
 - Crossroads: 3-way ATK/EXP/Gold, 4s timeout (fight 95-160)
-- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-225)
-- Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-400)
+- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-275)
+- Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-500)
 - Last Stand: binary accept/decline, 3s timeout (fight 400-600, once-per-run)
 - Reputation Payoff: auto-resolve consequence (fight 176-225, style-based, ≥3 choices)
 - Veteran's Trial: auto-resolve consequence (fight 275-450, style-based, ≥4 choices)
