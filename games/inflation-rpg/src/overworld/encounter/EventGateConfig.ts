@@ -28,28 +28,28 @@ export const MID_GAME_EVENTS: readonly EventGateDef[] = [
   },
   {
     id: 'event_fog_ambush',
-    minTotalFights: 100,
+    minTotalFights: 130, // C838: 100→130 (spread weather cluster, was all 95-110)
     chance: 0.04, // C785: doubled
     weatherCondition: 'fog',
     description: 'Fog Ambush — enemy ATK×1.2, EXP×1.3 for 2 fights (fog only)',
   },
   {
     id: 'event_storm_nexus',
-    minTotalFights: 110,
+    minTotalFights: 160, // C838: 110→160 (hardest weather event, push late)
     chance: 0.04, // C785: doubled
     weatherCondition: 'storm',
     description: 'Storm Nexus — ATK×1.4 + HP drain 5%/fight, 4 fights (storm only)',
   },
   {
     id: 'event_wind_gale',
-    minTotalFights: 95,
+    minTotalFights: 110, // C838: 95→110 (mildest weather, slight push)
     chance: 0.04, // C785: doubled
     weatherCondition: 'wind',
     description: 'Wind Gale — EXP×1.20 + dodge +10%, gold×0.60, 3 fights (wind only)',
   },
   {
     id: 'event_snow_drift',
-    minTotalFights: 100,
+    minTotalFights: 140, // C838: 100→140 (defensive event, mid-late)
     chance: 0.04, // C785: doubled
     weatherCondition: 'snow',
     description: 'Snow Drift — enemy dmg×0.85, hero ATK×0.92, 3 fights (snow only)',

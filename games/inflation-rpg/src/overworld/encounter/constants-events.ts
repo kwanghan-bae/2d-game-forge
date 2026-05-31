@@ -159,7 +159,8 @@ export const HEALER_HEAL_RATE = 0.25; // heals 25% of max HP
 export const HEALER_MIN_FIGHTS = 25; // C826: 30→25 (close fight 6-24 narrative gap)
 export const ECHO_EVENT_CHANCE = 0.02; // C743: prestige echo event
 export const ECHO_LATE_CHANCE = 0.04; // C832: fight 250+ scaling (was 0.03 @300)
-export const ECHO_LATE_THRESHOLD = 275; // C835: 250→275 (separate from Abyssal activation at 250)
+export const ECHO_LATE_THRESHOLD = 275; // C835: ramp start (was step threshold)
+export const ECHO_RAMP_END = 350; // C838: ramp end — full LATE_CHANCE at 350
 export const ECHO_DURATION = 10; // shorter than full prestige echo (20)
 export const ECHO_MIN_LEVEL = 5; // only for mid-game heroes
 export const INSPIRATION_EVENT_CHANCE = 0.025; // C747: ATK buff event
@@ -181,7 +182,7 @@ export const FAIRY_DURATION = 5;
 // C812: Wandering Mentor — early-game EXP buff (fights 25-149)
 export const MENTOR_CHANCE = 0.05; // C818: was 0.03, collab consensus
 export const MENTOR_MIN_FIGHTS = 25;
-export const MENTOR_MAX_FIGHTS = 149; // C818: was 99, extend into mid transition
+export const MENTOR_MAX_FIGHTS = 130; // C838: 149→130 (mentor ends before late-game transition)
 export const MENTOR_EXP_MUL = 0.15; // +15% EXP
 export const MENTOR_DURATION = 4;
 // C826: Risk Gambit — early-game decision event (fights 40-90)
