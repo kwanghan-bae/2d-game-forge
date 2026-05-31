@@ -2,7 +2,7 @@
  * C754: EventGateConfig — defines phase-gated event availability.
  * Late-game exclusive events only appear after totalFights threshold.
  */
-import { LATE_GAME_DENSITY_THRESHOLD, LATE_GAME_DENSITY_MUL } from './constants';
+import { LATE_GAME_DENSITY_THRESHOLD } from './constants';
 
 export interface EventGateDef {
   id: string;
