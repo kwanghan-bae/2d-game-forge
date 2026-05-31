@@ -202,7 +202,7 @@ export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level a
 // C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
 export const MERCENARY_OFFER_CHANCE = 0.03;
 export const MERCENARY_OFFER_MIN_FIGHTS = 115; // C856: 100→115 (separate from Crossroads window)
-export const MERCENARY_OFFER_MAX_FIGHTS = 290; // C897: 275→290 (15-fight overlap with Veteran's Trial)
+export const MERCENARY_OFFER_MAX_FIGHTS = 340; // C899: 290→340 (fill fight 300-340 choice gap)
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
 export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
@@ -245,7 +245,7 @@ export const PROVING_GROUNDS_MANUAL_BONUS = 0.25; // C877: +25% EXP mul when pla
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
-export const WANDERING_MERCHANT_MAX_FIGHTS = 575; // C897: 500→575 (fill fight 501-575 choice desert)
+export const WANDERING_MERCHANT_MAX_FIGHTS = 600; // C899: 575→600 (fill fight 576-600 choice desert)
 export const WANDERING_MERCHANT_HEAL_RATE = 0.25; // C835: 0.30→0.25 (balance ATK path attractiveness)
 export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, stronger identity)
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
@@ -435,11 +435,11 @@ export const FINAL_RECKONING_MIN_CHOICES = 8; // requires extensive choice histo
 // Aggressive: massive ATK buff, but permanent HP sacrifice
 export const FINAL_RECKONING_AGG_ATK_MUL = 0.35;
 export const FINAL_RECKONING_AGG_DURATION = 20;
-export const FINAL_RECKONING_AGG_HP_COST = 0.25;
+export const FINAL_RECKONING_AGG_HP_COST = 0.12; // C899: 0.25→0.12 (AGG risk halved, DEF parity)
 // Defensive: full heal + long shield
 export const FINAL_RECKONING_DEF_SHIELD_DURATION = 20;
 export const FINAL_RECKONING_DEF_SHIELD_DR = 0.30; // C896: 30% damage reduction (strongest consequence)
-export const FINAL_RECKONING_DEF_HEAL_RATE = 0.50;
+export const FINAL_RECKONING_DEF_HEAL_RATE = 0.30; // C899: 0.50→0.30 (DEF dominant fix)
 // Greedy: massive gold burst
 export const FINAL_RECKONING_GREEDY_GOLD_MUL = 200;
 // Balanced: all-around boost (ATK + EXP)

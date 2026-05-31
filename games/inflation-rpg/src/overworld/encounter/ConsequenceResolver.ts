@@ -49,6 +49,7 @@ export interface ConsequenceContext {
   hero: { hp: number; hpMax: number; gold: number; level: number };
   totalFights: number;
   rngChance: (rate: number) => boolean;
+  rngFloat: () => number; // C899: 0-1 for consequence variance
   reputationStyle: 'aggressive' | 'defensive' | 'greedy' | 'balanced';
   reputationTotalChoices: number;
 }
@@ -76,6 +77,12 @@ export interface ConsequenceResult {
   reputationFired?: boolean;
   veteransTrialFired?: boolean;
   finalReckoningFired?: boolean;
+}
+
+// C899: ±20% variance on consequence durations/amounts for replay variety
+function applyVariance(base: number, roll: number): number {
+  const mul = 0.8 + roll * 0.4; // 0.8 to 1.2
+  return Math.max(1, Math.round(base * mul));
 }
 
 /** Resolve reputation + veteran's trial consequence events. Returns null if nothing fired. */
@@ -118,21 +125,22 @@ function resolveReputation(ctx: ConsequenceContext): ConsequenceResult {
   const heroMutations: { hpDelta?: number; goldDelta?: number } = {};
   const buffs: ConsequenceResult['buffs'] = {};
   const style = ctx.reputationStyle;
+  const v = ctx.rngFloat(); // C899: variance roll
 
   if (style === 'aggressive') {
-    buffs.reputationAtkRemaining = REPUTATION_AGG_DURATION;
+    buffs.reputationAtkRemaining = applyVariance(REPUTATION_AGG_DURATION, v);
     events.push({ type: 'event_reputation', style, value: REPUTATION_AGG_ATK_MUL });
   } else if (style === 'defensive') {
-    const healAmt = Math.floor(ctx.hero.hpMax * REPUTATION_DEF_HEAL_RATE);
+    const healAmt = applyVariance(Math.floor(ctx.hero.hpMax * REPUTATION_DEF_HEAL_RATE), v);
     heroMutations.hpDelta = healAmt;
-    buffs.reputationShieldRemaining = REPUTATION_DEF_SHIELD_DURATION;
+    buffs.reputationShieldRemaining = applyVariance(REPUTATION_DEF_SHIELD_DURATION, v);
     events.push({ type: 'event_reputation', style, value: healAmt });
   } else if (style === 'greedy') {
-    const goldBurst = Math.floor(ctx.hero.level * REPUTATION_GREEDY_GOLD_MUL);
+    const goldBurst = applyVariance(Math.floor(ctx.hero.level * REPUTATION_GREEDY_GOLD_MUL), v);
     heroMutations.goldDelta = goldBurst;
     events.push({ type: 'event_reputation', style, value: goldBurst });
   } else {
-    buffs.reputationExpRemaining = REPUTATION_BALANCED_EXP_DURATION;
+    buffs.reputationExpRemaining = applyVariance(REPUTATION_BALANCED_EXP_DURATION, v);
     events.push({ type: 'event_reputation', style: 'balanced', value: REPUTATION_BALANCED_EXP_MUL });
   }
 
@@ -144,24 +152,26 @@ function resolveVeteransTrial(ctx: ConsequenceContext): ConsequenceResult {
   const heroMutations: { hpDelta?: number; goldDelta?: number } = {};
   const buffs: ConsequenceResult['buffs'] = {};
   const style = ctx.reputationStyle;
+  const v = ctx.rngFloat(); // C899: variance roll
 
   if (style === 'aggressive') {
-    buffs.veteransTrialAtkRemaining = VETERANS_TRIAL_AGG_DURATION;
-    const hpCost = Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_AGG_HP_COST);
+    buffs.veteransTrialAtkRemaining = applyVariance(VETERANS_TRIAL_AGG_DURATION, v);
+    const hpCost = applyVariance(Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_AGG_HP_COST), v);
     heroMutations.hpDelta = -hpCost;
     events.push({ type: 'event_veterans_trial', style, value: VETERANS_TRIAL_AGG_ATK_MUL });
   } else if (style === 'defensive') {
-    buffs.veteransTrialShieldRemaining = VETERANS_TRIAL_DEF_SHIELD_DURATION;
-    const healAmt = Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_DEF_HEAL_RATE);
+    buffs.veteransTrialShieldRemaining = applyVariance(VETERANS_TRIAL_DEF_SHIELD_DURATION, v);
+    const healAmt = applyVariance(Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_DEF_HEAL_RATE), v);
     heroMutations.hpDelta = healAmt;
     events.push({ type: 'event_veterans_trial', style, value: healAmt });
   } else if (style === 'greedy') {
-    const goldBurst = Math.floor(ctx.hero.level * VETERANS_TRIAL_GREEDY_GOLD_MUL);
+    const goldBurst = applyVariance(Math.floor(ctx.hero.level * VETERANS_TRIAL_GREEDY_GOLD_MUL), v);
     heroMutations.goldDelta = goldBurst;
     events.push({ type: 'event_veterans_trial', style, value: goldBurst });
   } else {
-    buffs.veteransTrialAtkRemaining = VETERANS_TRIAL_BALANCED_ALL_DURATION;
-    buffs.veteransTrialExpRemaining = VETERANS_TRIAL_BALANCED_ALL_DURATION;
+    const dur = applyVariance(VETERANS_TRIAL_BALANCED_ALL_DURATION, v);
+    buffs.veteransTrialAtkRemaining = dur;
+    buffs.veteransTrialExpRemaining = dur;
     events.push({ type: 'event_veterans_trial', style: 'balanced', value: VETERANS_TRIAL_BALANCED_ATK_MUL });
   }
 
@@ -173,24 +183,26 @@ function resolveFinalReckoning(ctx: ConsequenceContext): ConsequenceResult {
   const heroMutations: { hpDelta?: number; goldDelta?: number } = {};
   const buffs: ConsequenceResult['buffs'] = {};
   const style = ctx.reputationStyle;
+  const v = ctx.rngFloat(); // C899: variance roll
 
   if (style === 'aggressive') {
-    buffs.finalReckoningAtkRemaining = FINAL_RECKONING_AGG_DURATION;
-    const hpCost = Math.floor(ctx.hero.hpMax * FINAL_RECKONING_AGG_HP_COST);
+    buffs.finalReckoningAtkRemaining = applyVariance(FINAL_RECKONING_AGG_DURATION, v);
+    const hpCost = applyVariance(Math.floor(ctx.hero.hpMax * FINAL_RECKONING_AGG_HP_COST), v);
     heroMutations.hpDelta = -hpCost;
     events.push({ type: 'event_final_reckoning', style, value: FINAL_RECKONING_AGG_ATK_MUL } as OverworldEvent);
   } else if (style === 'defensive') {
-    buffs.finalReckoningShieldRemaining = FINAL_RECKONING_DEF_SHIELD_DURATION;
-    const healAmt = Math.floor(ctx.hero.hpMax * FINAL_RECKONING_DEF_HEAL_RATE);
+    buffs.finalReckoningShieldRemaining = applyVariance(FINAL_RECKONING_DEF_SHIELD_DURATION, v);
+    const healAmt = applyVariance(Math.floor(ctx.hero.hpMax * FINAL_RECKONING_DEF_HEAL_RATE), v);
     heroMutations.hpDelta = healAmt;
     events.push({ type: 'event_final_reckoning', style, value: healAmt } as OverworldEvent);
   } else if (style === 'greedy') {
-    const goldBurst = Math.floor(ctx.hero.level * FINAL_RECKONING_GREEDY_GOLD_MUL);
+    const goldBurst = applyVariance(Math.floor(ctx.hero.level * FINAL_RECKONING_GREEDY_GOLD_MUL), v);
     heroMutations.goldDelta = goldBurst;
     events.push({ type: 'event_final_reckoning', style, value: goldBurst } as OverworldEvent);
   } else {
-    buffs.finalReckoningAtkRemaining = FINAL_RECKONING_BALANCED_ALL_DURATION;
-    buffs.finalReckoningExpRemaining = FINAL_RECKONING_BALANCED_ALL_DURATION;
+    const dur = applyVariance(FINAL_RECKONING_BALANCED_ALL_DURATION, v);
+    buffs.finalReckoningAtkRemaining = dur;
+    buffs.finalReckoningExpRemaining = dur;
     events.push({ type: 'event_final_reckoning', style: 'balanced', value: FINAL_RECKONING_BALANCED_ATK_MUL } as OverworldEvent);
   }
 

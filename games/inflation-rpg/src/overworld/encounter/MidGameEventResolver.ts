@@ -227,6 +227,7 @@ export function resolveMidGameEvents(
       hero: ctx.hero,
       totalFights: ctx.totalFights,
       rngChance: ctx.rngChance,
+      rngFloat: ctx.rngFloat,
       reputationStyle: pending.reputationStyle ?? 'balanced',
       reputationTotalChoices: pending.reputationTotalChoices ?? 0,
     },
