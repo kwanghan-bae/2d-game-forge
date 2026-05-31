@@ -169,7 +169,7 @@ export class EncounterEngine {
   private villageBlessingRemaining = 0; // C276: gold blessing duration
   private fightsSinceLastDeath = 0; // C276: deathless streak
   private villageShieldActive = false; // C282: 1-hit shield
-  private villageTrainingRemaining = 0; // C285: ATK buff duration
+  
   private survivorGritActive = false; // C286: survived at low HP
   private fightChainCount = 0; // C293: fights since last village (for exp chain)
   private goldShieldRemaining = 0; // C307: gold shield from shop
@@ -187,11 +187,11 @@ export class EncounterEngine {
   private maxComboReached = 0; // C367: track highest combo
   private forgeDiscount = 0; // C364: accumulated village forge discount
   private critMasteryBonus = 0; // C376: accumulated crit mastery
-  private villageRestAtkRemaining = 0; // C377: village rest ATK buff
+  
   private prestigeShieldRemaining = 0; // C380: hits blocked after prestige
   private waveMomentumRemaining_DEPRECATED = 0; // C945: migrated to midGameBuffs('wave_momentum')
   private prestigeDangerImmune = 0; // C392: immune to danger damage after prestige
-  private revengeStreakRemaining = 0; // C401: revenge streak buff duration
+  
   private revengeStreakPower = 0; // C401: accumulated revenge ATK bonus
   private totalEliteKills = 0; // C408: track total elites
   private consecutiveWaveClears = 0; // C410: consecutive wave completions
@@ -201,9 +201,9 @@ export class EncounterEngine {
   private deathDefianceCooldown = 0; // C439: death defiance cooldown
   private eliteAfterVillage = false; // C443: track first elite after village
   private deathGoldCompound = 0; // C449: accumulated gold compound from deaths
-  private deathAtkSurgeRemaining = 0; // C467: temp ATK surge after death
+  
   private critExpChain = 0; // C469: consecutive crits for exp chain
-  private villageAtkTrainingRemaining = 0; // C488: village ATK training duration
+  
   private bossShieldRemaining = 0; // C494: boss shield remaining
   // C932: prestigeEcho, inspiration, mentor migrated to midGameBuffs
   // C932: wanderingMerchantAtk, mercenaryShield migrated to midGameBuffs
@@ -1853,7 +1853,7 @@ export class EncounterEngine {
     this.villageRestRemaining = result.villageRestRemaining;
     this.deathInsuranceUsed = result.deathInsuranceUsed;
     this.villageShieldActive = result.villageShieldActive;
-    this.villageTrainingRemaining = result.villageTrainingRemaining;
+    if (result.villageTrainingRemaining > 0) this.midGameBuffs.activate('village_training', result.villageTrainingRemaining);
     this.villageBlessingRemaining = result.villageBlessingRemaining;
     this.fightsSinceSpend = result.fightsSinceSpend;
     this.fightChainCount = result.fightChainCount;
@@ -1864,8 +1864,8 @@ export class EncounterEngine {
     this.goldInvested = result.goldInvested;
     this.villageVisits = result.villageVisits;
     this.forgeDiscount = result.forgeDiscount;
-    this.villageRestAtkRemaining = result.villageRestAtkRemaining;
-    this.villageAtkTrainingRemaining = result.villageAtkTrainingRemaining;
+    if (result.villageRestAtkRemaining > 0) this.midGameBuffs.activate('village_rest_atk', result.villageRestAtkRemaining);
+    if (result.villageAtkTrainingRemaining > 0) this.midGameBuffs.activate('village_atk_training', result.villageAtkTrainingRemaining);
     this.dangerFights = Math.max(0, this.dangerFights - 5);
     this.eliteAfterVillage = result.eliteAfterVillage;
     this.bankGold = result.bankGold;
@@ -2363,9 +2363,9 @@ export class EncounterEngine {
     hero.gold += deathResult.goldInsurance;
     hero.hpMax = deathResult.newHpMax;
     hero.gainExp(deathResult.expGained);
-    this.deathAtkSurgeRemaining = deathResult.deathAtkSurgeDuration;
+    if (deathResult.deathAtkSurgeDuration > 0) this.midGameBuffs.activate('death_atk_surge', deathResult.deathAtkSurgeDuration);
     this.revengeStreakPower = deathResult.newRevengeStreakPower;
-    this.revengeStreakRemaining = deathResult.newRevengeStreakRemaining;
+    if (deathResult.newRevengeStreakRemaining > 0) this.midGameBuffs.activate('revenge_streak', deathResult.newRevengeStreakRemaining);
     this.deathGoldCompound = deathResult.newDeathGoldCompound;
     this.deathStreak = deathResult.newDeathStreak;
     this.totalDeaths = deathResult.newTotalDeaths;
@@ -2616,22 +2616,17 @@ export class EncounterEngine {
     if (this.shieldBreakReady) this.shieldBreakReady = false;
     const hadComboBreaker = this.comboBreakerReady;
     if (this.comboBreakerReady) this.comboBreakerReady = false;
-    const hadVillageTraining = this.villageTrainingRemaining > 0;
-    if (this.villageTrainingRemaining > 0) this.villageTrainingRemaining--;
+    const hadVillageTraining = this.midGameBuffs.isActive('village_training');
     const hadBossFury = this.midGameBuffs.isActive('boss_fury');
     const hadPrestigeSurge = this.prestigeSurgeReady;
     if (this.prestigeSurgeReady) this.prestigeSurgeReady = false;
-    const hadVillageRestAtk = this.villageRestAtkRemaining > 0;
-    if (this.villageRestAtkRemaining > 0) this.villageRestAtkRemaining--;
+    const hadVillageRestAtk = this.midGameBuffs.isActive('village_rest_atk');
     const hadWaveMomentum = this.midGameBuffs.isActive('wave_momentum');
-    const hadRevengeStreak = this.revengeStreakRemaining > 0;
-    if (this.revengeStreakRemaining > 0) this.revengeStreakRemaining--;
+    const hadRevengeStreak = this.midGameBuffs.isActive('revenge_streak');
     const hadEliteChainAtk = this.midGameBuffs.isActive('elite_chain_atk');
-    // deathAtkSurge: decrements BEFORE reading (original behavior)
-    if (this.deathAtkSurgeRemaining > 0) this.deathAtkSurgeRemaining--;
-    const hadDeathAtkSurge = this.deathAtkSurgeRemaining > 0;
-    const hadVillageAtkTraining = this.villageAtkTrainingRemaining > 0;
-    if (this.villageAtkTrainingRemaining > 0) this.villageAtkTrainingRemaining--;
+    // deathAtkSurge: original decremented BEFORE reading — simulate with remaining > 1
+    const hadDeathAtkSurge = this.midGameBuffs.remaining('death_atk_surge') > 1;
+    const hadVillageAtkTraining = this.midGameBuffs.isActive('village_atk_training');
     return {
       hadShieldBreak, hadComboBreaker, hadVillageTraining, hadBossFury,
       hadPrestigeSurge, hadVillageRestAtk, hadWaveMomentum, hadRevengeStreak,

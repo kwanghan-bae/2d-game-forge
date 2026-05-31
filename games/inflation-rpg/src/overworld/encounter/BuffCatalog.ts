@@ -66,6 +66,12 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   boss_fury: { nameKR: '보스 분노', category: 'combat' },
   wave_momentum: { nameKR: '파도 기세', category: 'combat' },
   elite_chain_atk: { nameKR: '엘리트 연쇄 ATK', category: 'combat' },
+  // C948: More combat duration migrations
+  village_training: { nameKR: '마을 훈련', category: 'village' },
+  village_rest_atk: { nameKR: '마을 휴식 ATK', category: 'village' },
+  revenge_streak: { nameKR: '복수 연쇄', category: 'combat' },
+  death_atk_surge: { nameKR: '죽음의 쇄도', category: 'combat' },
+  village_atk_training: { nameKR: '마을 ATK 훈련', category: 'village' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */
