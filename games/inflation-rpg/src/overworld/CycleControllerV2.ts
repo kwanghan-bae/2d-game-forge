@@ -1198,7 +1198,7 @@ export class CycleControllerV2 {
       if (evType === 'event_wandering_merchant' || evType === 'event_proving_grounds'
         || evType === 'event_crossroads' || evType === 'event_mercenary_offer'
         || evType === 'event_last_stand' || evType === 'event_first_trial'
-        || evType === 'event_wandering_sage') {
+        || evType === 'event_wandering_sage' || evType === 'event_elders_judgment') {
         const choice = (ev as { choice?: string; path?: string; style?: string }).choice
           ?? (ev as { path?: string }).path ?? (ev as { style?: string }).style ?? 'unknown';
         this.recordToStore({
