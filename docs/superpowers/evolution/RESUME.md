@@ -1,30 +1,35 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 835
+- Cycle: 838
 - Target: 600+ (연속 진화)
-- Last commit: C835 Fairy linear ramp + Merchant/Echo tuning
+- Last commit: C838 weather cluster spread + Echo ramp + Mentor cap
 - Vitest: 2224 pass / 0 fail (+ 10 slow smoke tests excluded due to machine load)
 - E2E: 60 passed
 - EncounterEngine: ~2355 lines
-- Critic score: 28/40 (C835, maintained — infrastructure investment)
+- Critic score: 28.5/40 (C838, +0.5 — Merchant EV rebalance)
 
-## 레이어 카운터 (C833-C835 era)
-- 시스템: 1 (C833)
-- 구조: 1 (C834)
-- 밸런스: 1 (C835)
-- 콜라보: 1 (C835)
+## 레이어 카운터 (C836-C838 era)
+- 시스템: 1 (C836)
+- 구조: 1 (C837)
+- 밸런스: 1 (C838)
+- 콜라보: 1 (C838)
 
 ## 제약
-- cycles_since_collab: 0 (C835 was collab)
-- Next collab: C838
+- cycles_since_collab: 0 (C838 was collab)
+- Next collab: C841
 - EncounterEngine: ~2355 lines
-- Layer rotation: system → structure → balance (C836=system, C837=structure, C838=balance+collab)
+- Layer rotation: system → structure → balance (C839=system, C840=structure, C841=balance+collab)
 
-## 다음 3사이클 (C835 합의)
-1. C836 [system]: End-of-Run Summary Event (RunStatistics → saga)
-2. C837 [structure]: BuffDurationTracker extraction (12 tick fields)
-3. C838 [balance+collab]: Weather cluster spread + Echo linear ramp + Mentor cap 130
+## 다음 3사이클 (C838 합의)
+1. C839 [system]: GambitFeedbackAccumulator (gambitGoldNet/gambitHpCost → RunStatistics)
+2. C840 [structure]: tickWeatherHazards() extraction (Storm/Abyssal/Temporal/GoldCrucible)
+3. C841 [balance+collab]: Sparring Grounds event (fight 80-119, 3%) + Colosseum 0.03 + Echo 0.035
+
+## 달성 사항 (C836-C838)
+- C836 [system]: End-of-Run Summary (RunStatistics → cycle end snapshot)
+- C837 [structure]: Consolidate 5 inline decrements into tickSimpleDurations (now 17 counters)
+- C838 [balance+collab]: Weather spread (Wind 110/Fog 130/Snow 140/Storm 160) + Echo linear ramp (275-350) + Mentor cap 130
 
 ## 달성 사항 (C833-C835)
 - C833 [system]: RunStatistics accumulator (per-run metrics tracking, 17 fields)
