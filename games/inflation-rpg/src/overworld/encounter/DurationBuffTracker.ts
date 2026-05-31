@@ -36,6 +36,14 @@ export class DurationBuffTracker {
     }
   }
 
+  /** C950: Tick a single buff by ID (decrement or remove). */
+  tick1(buffId: string): void {
+    const r = this.durations.get(buffId);
+    if (r == null) return;
+    if (r <= 1) this.durations.delete(buffId);
+    else this.durations.set(buffId, r - 1);
+  }
+
   /** Check if a buff is currently active (remaining > 0). */
   isActive(buffId: string): boolean {
     return (this.durations.get(buffId) ?? 0) > 0;

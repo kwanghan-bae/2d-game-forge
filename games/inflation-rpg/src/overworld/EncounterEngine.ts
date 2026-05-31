@@ -175,9 +175,7 @@ export class EncounterEngine {
   private goldShieldRemaining = 0; // C307: gold shield from shop
   private consecutiveCrits = 0; // C311: crit chain counter
   private bossFuryRemaining_DEPRECATED = 0; // C945: migrated to midGameBuffs('boss_fury')
-  private eliteFuryRemaining = 0; // C331: post-elite crit boost
   private uniqueBossKills = 0; // C335: unique boss kills
-  private dangerCascadeRemaining = 0; // C336: danger cascade duration
   private consecutiveBossKills = 0; // C349: boss frenzy tracking
   private prestigeSurgeReady = false; // C354: first fight after prestige
   private villageDefenseRemaining = 0; // C356: village temp immunity
@@ -260,7 +258,6 @@ export class EncounterEngine {
   private readonly declineStack: DeclineStackState = createDeclineStack(); // C804
   private declineStackExpMul = 1; // C804: bonus EXP from stacked declines
   private declineStackExpDuration = 0; // C804: fights remaining for bonus
-  private waveExhaustionRemaining = 0; // C510: wave exhaustion duration
   private comboGateTriggered = false; // C513: combo gate one-shot
   private deathProximityCrit = 0; // C515: guaranteed crit after surviving at 1 HP
   private consecutiveEliteKills2 = 0; // C517: elite hunter streak
@@ -268,7 +265,6 @@ export class EncounterEngine {
   private goldBurnCooldown = 0; // C521: gold burn cooldown
   private goldBurnTotal = 0; // C521: total gold burned (for ATK calc)
   private expOfferingActive = false; // C524: next boss gets ×3
-  private shieldBreakBurstRemaining = 0; // C525: burst ATK duration
   private dangerBetRemaining = 0; // C526: danger bet lock duration
   private healthTaxApplied = false; // C527: whether health tax taken
   private sacrificeAltarCooldown = 0; // C528: shared cooldown
@@ -885,7 +881,7 @@ export class EncounterEngine {
       if (this.prestigeShieldRemaining > 0 && this.rng.chance(SHIELD_SACRIFICE_CHANCE)) {
         this.prestigeShieldRemaining--;
         hadShieldSacrifice = true;
-        this.shieldBreakBurstRemaining = SHIELD_BREAK_BURST_DURATION;
+        this.midGameBuffs.activate('shield_break_burst', SHIELD_BREAK_BURST_DURATION);
         this.totalSacrifices++;
       }
       // Prestige echo
@@ -897,16 +893,13 @@ export class EncounterEngine {
       const mentorActive = this.midGameBuffs.isActive('mentor');
       // C793: Event Momentum buffs
       const eventMomentumAtkActive = this.midGameBuffs.isActive('ev_mom_atk');
+      // C948: capture had-flags for buffs that will be ticked below
+      const hadWaveExhaustion = this.midGameBuffs.isActive('wave_exhaustion');
+      const hadShieldBreakBurst = this.midGameBuffs.isActive('shield_break_burst');
       // C837: All simple duration decrements consolidated in tickSimpleDurations
       this.tickSimpleDurations();
       // C840: Weather hazard + late-game duration effects (side-effects on hero HP / EXP / atkFlat)
       this.tickWeatherHazards(hero, events);
-      // Wave exhaustion
-      const hadWaveExhaustion = this.waveExhaustionRemaining > 0;
-      if (this.waveExhaustionRemaining > 0) this.waveExhaustionRemaining--;
-      // Shield break burst (may have been set by shield sacrifice above)
-      const hadShieldBreakBurst = this.shieldBreakBurstRemaining > 0;
-      if (this.shieldBreakBurstRemaining > 0) this.shieldBreakBurstRemaining--;
 
       // Phase 2: Synergy detection (side effects on synergiesDiscovered)
       const lowHpFury = hero.hp <= hero.hpMax * LOW_HP_FURY_THRESHOLD;
@@ -982,7 +975,7 @@ export class EncounterEngine {
           berserkerHpThreshold: BERSERKER_HP_THRESHOLD,
           heroHpRatio: hero.hp / hero.hpMax,
           berserkerCritBonus: BERSERKER_CRIT_BONUS,
-          eliteFuryActive: this.eliteFuryRemaining > 0,
+          eliteFuryActive: this.midGameBuffs.isActive('elite_fury'),
           eliteFuryCritBonus: ELITE_FURY_CRIT_BONUS,
           isBoss,
           bossCritBonus: BOSS_CRIT_BONUS,
@@ -1159,9 +1152,9 @@ export class EncounterEngine {
       }
       const tookDamage = hero.hp < hpBefore;
       // C331: decrement elite fury
-      if (this.eliteFuryRemaining > 0) this.eliteFuryRemaining--;
+      if (this.midGameBuffs.isActive('elite_fury')) this.eliteFuryRemaining--;
       // C336: decrement danger cascade
-      if (this.dangerCascadeRemaining > 0) this.dangerCascadeRemaining--;
+      this.midGameBuffs.tick1('danger_cascade');
       const isOverkill = hitCount === 1 && !hero.staggered;
       // C261: multi-kill tracking
       if (isOverkill) { this.consecutiveOneHits++; } else { this.consecutiveOneHits = 0; }
@@ -1288,7 +1281,7 @@ export class EncounterEngine {
         revengeGoldRemaining: this.revengeGoldRemaining,
         bossSlayerRemaining: this.bossSlayerRemaining,
         survivorGritActive: this.survivorGritActive,
-        dangerCascadeRemaining: this.dangerCascadeRemaining,
+        dangerCascadeRemaining: this.midGameBuffs.remaining('danger_cascade'),
         eliteAfterVillage: hadEliteAfterVillage,
         prestigeReadyBonus: this.prestigeReadyBonus,
         rushHourActive,
@@ -1595,7 +1588,7 @@ export class EncounterEngine {
         this.eliteKills++;
         this.runStats.recordEliteKill();
         // C331: elite fury — grant temp crit boost
-        this.eliteFuryRemaining = ELITE_FURY_DURATION;
+        this.midGameBuffs.activate('elite_fury', ELITE_FURY_DURATION);
         if (this.eliteKills % ELITE_BOUNTY_INTERVAL === 0) {
           this.eliteBountyMilestones++;
         }
@@ -1624,7 +1617,7 @@ export class EncounterEngine {
          hero.atkBase += waveAtkGain;
          hero.recomputeStats();
          // C510: wave exhaustion — completing wave gives gold but temp ATK penalty
-         this.waveExhaustionRemaining = WAVE_EXHAUSTION_DURATION;
+         this.midGameBuffs.activate('wave_exhaustion', WAVE_EXHAUSTION_DURATION);
          hero.gold += Math.floor(hero.gold * WAVE_EXHAUSTION_GOLD_BONUS);
         }
       } else if (this.totalWins % WAVE_INTERVAL === 0) {
@@ -2512,7 +2505,7 @@ export class EncounterEngine {
     if (this.comboStreak >= COMBO_STREAK_THRESHOLD && expGain > COMBO_EXP_OVERFLOW_RATIO) {
       hero.gold += Math.floor(expGain / COMBO_EXP_OVERFLOW_RATIO);
     }
-    if (isDangerZone) this.dangerCascadeRemaining = DANGER_CASCADE_DURATION;
+    if (isDangerZone) this.midGameBuffs.activate('danger_cascade', DANGER_CASCADE_DURATION);
     if (leveled.length > 0 && hero.exp > 0) {
       const overflowBonus = Math.floor(hero.exp * EXP_OVERFLOW_BONUS);
       hero.exp += overflowBonus;

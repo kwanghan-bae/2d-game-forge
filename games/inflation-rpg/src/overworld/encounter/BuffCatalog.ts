@@ -72,6 +72,11 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   revenge_streak: { nameKR: '복수 연쇄', category: 'combat' },
   death_atk_surge: { nameKR: '죽음의 쇄도', category: 'combat' },
   village_atk_training: { nameKR: '마을 ATK 훈련', category: 'village' },
+  // C950: More migrations
+  wave_exhaustion: { nameKR: '파도 탈진', category: 'combat' },
+  shield_break_burst: { nameKR: '방패 파괴 폭발', category: 'combat' },
+  danger_cascade: { nameKR: '위험 연쇄', category: 'combat' },
+  elite_fury: { nameKR: '엘리트 분노', category: 'combat' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */
