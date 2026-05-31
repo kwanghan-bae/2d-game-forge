@@ -46,3 +46,20 @@ export function computeHeroAtk(input: AtkComputeInput): number {
   const totalMuls = Math.min(atkCap, coreMuls * conditionMuls * goldMuls * combatMuls * progressMuls * chainMuls * tradeoffMuls * systemMuls);
   return Math.max(1, Math.floor(flatAtk * totalMuls));
 }
+
+// C858: Composable ATK buff resolution — multiplicative stack
+export interface ActiveAtkBuffs {
+  stormNexus: boolean;
+  clearSky: boolean;
+  crossroads: boolean;
+  stormNexusMul: number;   // e.g. 1.40
+  clearSkyMul: number;     // e.g. 1.15
+  crossroadsMul: number;   // e.g. 1.20 (1 + CROSSROADS_ATK_MUL)
+}
+
+export function computeBuffedHeroAtk(baseAtk: number, buffs: ActiveAtkBuffs): number {
+  return Math.floor(baseAtk
+    * (buffs.stormNexus ? buffs.stormNexusMul : 1)
+    * (buffs.clearSky ? buffs.clearSkyMul : 1)
+    * (buffs.crossroads ? buffs.crossroadsMul : 1));
+}
