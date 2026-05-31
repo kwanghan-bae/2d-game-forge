@@ -52,14 +52,17 @@ export interface ActiveAtkBuffs {
   stormNexus: boolean;
   clearSky: boolean;
   crossroads: boolean;
-  stormNexusMul: number;   // e.g. 1.40
-  clearSkyMul: number;     // e.g. 1.15
-  crossroadsMul: number;   // e.g. 1.20 (1 + CROSSROADS_ATK_MUL)
+  earlyMomentum: boolean; // C860
+  stormNexusMul: number;   // e.g. 1.35
+  clearSkyMul: number;     // e.g. 1.12
+  crossroadsMul: number;   // e.g. 1.18 (1 + CROSSROADS_ATK_MUL)
+  earlyMomentumMul: number; // e.g. 1.03 (1 + EARLY_MOMENTUM_ATK_MUL)
 }
 
 export function computeBuffedHeroAtk(baseAtk: number, buffs: ActiveAtkBuffs): number {
   return Math.floor(baseAtk
     * (buffs.stormNexus ? buffs.stormNexusMul : 1)
     * (buffs.clearSky ? buffs.clearSkyMul : 1)
-    * (buffs.crossroads ? buffs.crossroadsMul : 1));
+    * (buffs.crossroads ? buffs.crossroadsMul : 1)
+    * (buffs.earlyMomentum ? buffs.earlyMomentumMul : 1));
 }
