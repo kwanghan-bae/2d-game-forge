@@ -684,13 +684,12 @@ export class EncounterEngine {
   getCombatSummary(): { activeBuffs: string[]; activeBuffInfos: BuffInfo[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean; adaptivePressure: number } {
     const activeBuffs: string[] = [];
     if (this.shrineBuffRemaining > 0) activeBuffs.push('명상');
-    if (this.midGameBuffs.isActive('sacrifice_fury')) activeBuffs.push('분노');
     if (this.cursedAltarAtkBuff) activeBuffs.push('저주 제단');
     if (this.invincibleFights > 0) activeBuffs.push('무적');
     if (this.villageShieldActive) activeBuffs.push('마을 방패');
     if (this.fairyBlessingRemaining > 0) activeBuffs.push('요정 축복');
     if (this.goldenHourRemaining > 0) activeBuffs.push('황금 시간');
-    // C947: All midGameBuffs via BuffCatalog loop (replaces 55 manual isActive lines)
+    // C947: All midGameBuffs via BuffCatalog loop
     for (const buffId of this.midGameBuffs.activeBuffs()) {
       activeBuffs.push(getBuffNameKR(buffId));
     }
