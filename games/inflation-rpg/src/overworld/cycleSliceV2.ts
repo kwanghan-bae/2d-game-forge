@@ -13,6 +13,7 @@ import { seasonBonus } from '../season/SeasonState';
 import { pickStartingRealm, spawnColumnForRealm } from './realmRotation';
 import { GRID_H } from './mapLayout';
 import { applyEndCycleMeta } from './cycleSlice.helpers';
+import type { RunStatisticsData } from './EncounterEngine';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -22,6 +23,7 @@ export interface CycleCombatStats {
   drops: number;
   maxLevel: number;
   goldEarned: number;
+  runStats?: RunStatisticsData; // C836: end-of-run statistics snapshot
 }
 
 interface CycleStoreV2State {
@@ -163,12 +165,15 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     // `scripts/sim-cycle-v2.ts` calls the same helper so future changes
     // propagate to both paths automatically. See cycleSlice.helpers.ts.
     useGameStore.setState(s => applyEndCycleMeta(s, { gold }));
+    // C836: Capture run statistics snapshot before finalization
+    const runStats = ctrl.getRunStatistics();
     set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, lastCycleStats: {
       kills: stats.kills,
       bossKills: stats.bossKills,
       drops: stats.drops,
       maxLevel: hero.level,
       goldEarned: gold,
+      runStats,
     } });
   },
   rejuvenateHero(years) {
