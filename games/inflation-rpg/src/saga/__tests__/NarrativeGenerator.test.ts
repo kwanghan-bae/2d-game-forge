@@ -366,9 +366,9 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
       expect(txt).toContain('지혜롭게');
     });
     // C900: variance suffix tests
-    it('high variance roll adds 강하게 suffix', () => {
+    it('high variance roll adds 맹렬히 suffix', () => {
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'aggressive', varianceRoll: 0.95 });
-      expect(txt).toContain('강하게');
+      expect(txt).toContain('맹렬히');
     });
     it('low variance roll adds 약하게 suffix', () => {
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'defensive', varianceRoll: 0.1 });
@@ -381,6 +381,23 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
     it('no varianceRoll has no suffix', () => {
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'balanced' });
       expect(txt).not.toContain('바람');
+    });
+    // C908: 5-tier variance suffix tests
+    it('very high variance roll (>0.9) adds 맹렬히 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'aggressive', varianceRoll: 0.95 });
+      expect(txt).toContain('맹렬히');
+    });
+    it('high variance roll (0.7-0.9) adds 강하게 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'aggressive', varianceRoll: 0.75 });
+      expect(txt).toContain('강하게');
+    });
+    it('very low variance roll (<0.1) adds 잦아들었다 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'defensive', varianceRoll: 0.05 });
+      expect(txt).toContain('잦아들었다');
+    });
+    it('low variance roll (0.1-0.3) adds 약하게 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'defensive', varianceRoll: 0.2 });
+      expect(txt).toContain('약하게');
     });
   });
 });

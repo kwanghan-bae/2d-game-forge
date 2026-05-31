@@ -187,7 +187,7 @@ export const MENTOR_EXP_MUL = 0.15; // +15% EXP
 export const MENTOR_DURATION = 4;
 // C905: First Trial — earliest player choice (fight 10-30, once per run)
 export const FIRST_TRIAL_MIN_FIGHTS = 10;
-export const FIRST_TRIAL_MAX_FIGHTS = 30;
+export const FIRST_TRIAL_MAX_FIGHTS = 40; // C908: 30→40 (fight 30-39 choice desert fix)
 export const FIRST_TRIAL_CHANCE = 0.08; // high chance for reliable early hook
 export const FIRST_TRIAL_HEAL_RATE = 0.30; // heal option: 30% maxHP
 export const FIRST_TRIAL_ATK_MUL = 0.15; // ATK option: +15% ATK for 5 fights

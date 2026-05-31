@@ -66,10 +66,12 @@ export class NarrativeGenerator {
 
   /** C888: Consequence event narration for saga entries */
   static forConsequenceEvent(opts: { age: number; eventType: string; style: string; varianceRoll?: number }, _seed = 0): string {
-    // C900: variance suffix for replay variety
+    // C908: 5-tier variance suffix (was 2-tier in C900)
     const vSuffix = opts.varianceRoll !== undefined
-      ? (opts.varianceRoll > 0.8 ? ' 운명의 바람이 강하게 불었다.'
-        : opts.varianceRoll < 0.2 ? ' 운명의 바람이 약하게 불었다.'
+      ? (opts.varianceRoll > 0.9 ? ' 운명의 바람이 맹렬히 불었다.'
+        : opts.varianceRoll > 0.7 ? ' 운명의 바람이 강하게 불었다.'
+        : opts.varianceRoll < 0.1 ? ' 운명의 바람이 거의 잦아들었다.'
+        : opts.varianceRoll < 0.3 ? ' 운명의 바람이 약하게 불었다.'
         : '')
       : '';
 
