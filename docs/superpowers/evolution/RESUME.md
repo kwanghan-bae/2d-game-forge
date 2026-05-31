@@ -1,41 +1,43 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 880
+- Cycle: 884
 - Target: 600+ (연속 진화)
-- Last commit: C880 density cliff fix + weather visibility
-- Vitest: 2309 pass / 0 fail
-- EncounterEngine: ~2530 lines
-- Critic score: 22/40 (C880 collab, Δ+2 — choice 3개로 개선)
+- Last commit: C884 wire ChoiceHistory + reputation buffs into EncounterEngine
+- Vitest: 2331 pass / 0 fail
+- EncounterEngine: ~2560 lines
+- Critic score: 26/40 (C883 collab, Δ+4 — consequence chain + 4th choice)
 
-## 레이어 카운터 (C878-C880 era)
-- 시스템: 1 (C878)
-- 구조: 1 (C879)
-- 밸런스: 1 (C880)
-- 콜라보: 1 (C880)
+## 레이어 카운터 (C881-C884 era)
+- 시스템: 2 (C881, C884)
+- 구조: 1 (C882)
+- 밸런스: 1 (C883)
+- 콜라보: 1 (C883)
 
 ## 제약
-- cycles_since_collab: 0 (C880 is collab)
-- Next collab: C883
-- EncounterEngine: ~2530 lines
-- Layer rotation: system → structure → balance (C881=system, C882=structure, C883=balance+collab)
+- cycles_since_collab: 1 (C884)
+- Next collab: C886
+- EncounterEngine: ~2560 lines
+- Layer rotation: C885=structure, C886=balance+collab
 
-## 🟡 Player Agency: 3 choices
+## 🟡 Player Agency: 4 choices + consequence
 - Proving Grounds: binary accept/decline, 2s timeout (fight 55-110)
-- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-175)
 - Crossroads: 3-way ATK/EXP/Gold, 4s timeout (fight 95-160)
-- ActiveBuffHUD shows active buffs
-- 176+ dead zone (choice 0%) — 새 핵심 문제
+- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-175)
+- Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-250)
+- Reputation Payoff: auto-resolve consequence (fight 176-225, style-based)
+- ChoiceHistory tracks all choices with aggressive/defensive/greedy categories
+- **Dead zones**: fight 21-54 (no choice), fight 251+ (no choice)
 
-## 다음 3사이클 (C880 합의)
-- C881 [system]: Wandering Merchant 선택화 + choice memory v1
-- C882 [structure]: ChoiceProfileRegistry + ChoiceConsequenceTracker 추출
-- C883 [balance+collab]: 160-200 consequence payoff window + 수치 조정
+## 다음 2사이클 (C883 합의)
+- C885 [structure]: Late-game choice event (fight 226-300)
+- C886 [balance+collab]: Density tuning + early choice gap fix
 
-## 달성 사항 (C878-C880)
-- C878 [system]: Crossroads 3지선다 + Mercenary 수락/거절 모달 (choice 1→3)
-- C879 [structure]: TimedChoiceModal + ActiveBuffHUD + getCombatSummary 확장
-- C880 [balance+collab]: Mercenary 175, Mentor 150, Crossroads 160, Weather 0.28
+## 달성 사항 (C881-C884)
+- C881 [system]: Wandering Merchant 3-way player choice (heal/atk/gamble)
+- C882 [structure]: ChoiceHistory tracker + classifyChoice (14 tests)
+- C883 [balance]: Reputation Payoff consequence event (fight 176-225, 7 tests)
+- C884 [system]: Wire ChoiceHistory into EncounterEngine + reputation buffs
 
 ## 달성 사항 (C875-C877)
 - C875 [system]: Proving Grounds player choice gate (첫 player agency!)
