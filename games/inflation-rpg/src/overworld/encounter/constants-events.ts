@@ -202,7 +202,7 @@ export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level a
 // C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
 export const MERCENARY_OFFER_CHANCE = 0.03;
 export const MERCENARY_OFFER_MIN_FIGHTS = 115; // C856: 100→115 (separate from Crossroads window)
-export const MERCENARY_OFFER_MAX_FIGHTS = 275; // C895: 225→275 (fill fight 226-274 dead zone)
+export const MERCENARY_OFFER_MAX_FIGHTS = 290; // C897: 275→290 (15-fight overlap with Veteran's Trial)
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
 export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
@@ -245,7 +245,7 @@ export const PROVING_GROUNDS_MANUAL_BONUS = 0.25; // C877: +25% EXP mul when pla
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
-export const WANDERING_MERCHANT_MAX_FIGHTS = 500; // C895: 400→500 (extend late-game coverage)
+export const WANDERING_MERCHANT_MAX_FIGHTS = 575; // C897: 500→575 (fill fight 501-575 choice desert)
 export const WANDERING_MERCHANT_HEAL_RATE = 0.25; // C835: 0.30→0.25 (balance ATK path attractiveness)
 export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, stronger identity)
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)

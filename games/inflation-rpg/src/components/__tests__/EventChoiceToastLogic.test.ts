@@ -95,6 +95,15 @@ describe('EventChoiceToastLogic', () => {
       expect(resolveEventToastKey({ type: 'event_veterans_trial', style: 'greedy', value: 500 }))
         .toBe('event_veterans_trial_greedy');
     });
+    // C896: Final Reckoning toast key mapping
+    it('maps final reckoning aggressive to key', () => {
+      expect(resolveEventToastKey({ type: 'event_final_reckoning', style: 'aggressive', value: 0.35 }))
+        .toBe('event_final_reckoning_aggressive');
+    });
+    it('maps final reckoning balanced to key', () => {
+      expect(resolveEventToastKey({ type: 'event_final_reckoning', style: 'balanced', value: 0.20 }))
+        .toBe('event_final_reckoning_balanced');
+    });
   });
 
   // C888: consequence event label tests
