@@ -56,7 +56,7 @@ export const MID_GAME_EVENTS: readonly EventGateDef[] = [
   },
   {
     id: 'event_clear_sky_path',
-    minTotalFights: 80, // C851: targets 80-130 agency desert
+    minTotalFights: 95, // C856: 80→95 (align with Crossroads start)
     chance: 0.03,
     weatherCondition: 'normal',
     description: 'Clear Sky Path — ATK×1.15 for 3 fights (normal weather only)',
