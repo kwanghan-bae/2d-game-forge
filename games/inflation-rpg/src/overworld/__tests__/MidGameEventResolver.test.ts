@@ -187,20 +187,20 @@ describe('resolveMidGameEvents', () => {
   // C921: Wandering Sage
   it('wandering sage triggers pending in window', () => {
     const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 30, atk: 50 }, totalFights: 280, rngChance: () => true });
-    const result = resolveMidGameEvents(ctx, { firstTrialFired: true });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, veteransChallengeFired: true });
     expect(result.wanderingSageChoicePending).toBe(true);
   });
 
   it('wandering sage gives EXP buff when player chooses exp', () => {
     const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 30, atk: 50 }, totalFights: 280, rngChance: () => true });
-    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, wanderingSagePending: true, wanderingSageChoiceResolved: 'exp' });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, veteransChallengeFired: true, wanderingSagePending: true, wanderingSageChoiceResolved: 'exp' });
     expect(result.events[0]).toMatchObject({ type: 'event_wandering_sage', style: 'exp' });
     expect(result.buffs.wanderingSageExpRemaining).toBeGreaterThan(0);
   });
 
   it('wandering sage gives ATK buff + heal when player chooses atk', () => {
     const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 30, atk: 50 }, totalFights: 280, rngChance: () => true });
-    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, wanderingSagePending: true, wanderingSageChoiceResolved: 'atk' });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, veteransChallengeFired: true, wanderingSagePending: true, wanderingSageChoiceResolved: 'atk' });
     expect(result.events[0]).toMatchObject({ type: 'event_wandering_sage', style: 'atk' });
     expect(result.buffs.wanderingSageAtkRemaining).toBeGreaterThan(0);
     expect(result.heroMutations.hpDelta).toBeGreaterThan(0); // C924: ATK choice also heals

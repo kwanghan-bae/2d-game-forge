@@ -195,8 +195,8 @@ export const EVENT_PRIORITY = {
   VETERANS_TRIAL: 60,        // consequence-gated, choices≥5, one-shot
   ELDERS_JUDGMENT: 55,       // fight 300+, choices≥6, one-shot
   LAST_STAND: 50,            // fight 400-600, rng, one-shot
+  VETERANS_CHALLENGE: 45,    // fight 200-400, rng, one-shot (C971: promoted above Wandering Sage)
   WANDERING_SAGE: 40,        // fight 260-450, rng, repeatable
-  VETERANS_CHALLENGE: 30,    // fight 200-400, rng, one-shot (critic: should be higher)
   STAT_SHARD: 20,            // endgame, rng
   ENEMY_MORPH: 10,           // endgame, rng
 } as const;
@@ -205,7 +205,7 @@ export function resolveMidGameEvents(
   ctx: MidGameContext,
   pending: MidGamePending,
 ): MidGameResult {
-  // C966: Event evaluation order (earlier = higher priority, early-returns block later events):
+  // C966/C971: Event evaluation order (earlier = higher priority, early-returns block later):
   // 1. Wandering Merchant (pending-gated)
   // 2. Sparring Grounds (pending-gated)
   // 3. Proving Grounds (fight 20-110, rng)
@@ -216,8 +216,8 @@ export function resolveMidGameEvents(
   // 8. Veteran's Trial (via consequence, choices≥5, one-shot)
   // 9. Elder's Judgment (fight 300+, choices≥6, one-shot)
   // 10. Last Stand (fight 400-600, rng, one-shot)
-  // 11. Wandering Sage (fight 260-450, rng, repeatable)
-  // 12. Veteran's Challenge (fight 200-400, rng, one-shot)
+  // 11. Veteran's Challenge (fight 200-400, rng, one-shot) ← promoted C971
+  // 12. Wandering Sage (fight 260-450, rng, repeatable)
   // 13. Stat Shard / Enemy Morph (endgame, rng)
   const events: OverworldEvent[] = [];
   const heroMutations: MidGameResult['heroMutations'] = {};
@@ -460,6 +460,21 @@ export function resolveMidGameEvents(
     return { events, heroMutations, buffs, crossroadsUsed };
   }
 
+  // C971: Veteran's Challenge — one-shot, moved before Wandering Sage (repeatable)
+  // Rationale: one-shot events should not be blocked by repeatable events (critic C967)
+  if (pending.veteransChallengeChoiceResolved === 'accept') {
+    buffs.veteransChallengeExpRemaining = VETERANS_CHALLENGE_DURATION;
+    buffs.veteransChallengeAtkRemaining = VETERANS_CHALLENGE_DURATION;
+    events.push({ type: 'event_veterans_challenge', accepted: true, duration: VETERANS_CHALLENGE_DURATION });
+  } else if (pending.veteransChallengeChoiceResolved === 'decline') {
+    events.push({ type: 'event_veterans_challenge', accepted: false, duration: 0 });
+  } else if (!pending.veteransChallengeFired
+    && ctx.totalFights >= VETERANS_CHALLENGE_MIN_FIGHT
+    && ctx.totalFights <= VETERANS_CHALLENGE_MAX_FIGHT
+    && ctx.rngChance(VETERANS_CHALLENGE_CHANCE)) {
+    return { events, heroMutations, buffs, crossroadsUsed, veteransChallengePending: true };
+  }
+
   // C921: Wandering Sage — mid-late repeatable (fight 260-450, 4%, 2-way choice)
   // Placed after consequences to avoid blocking auto-resolve events
   if (pending.wanderingSagePending) {
@@ -478,20 +493,6 @@ export function resolveMidGameEvents(
     && ctx.totalFights <= WANDERING_SAGE_MAX_FIGHTS
     && ctx.rngChance(WANDERING_SAGE_CHANCE)) {
     return { events, heroMutations, buffs, crossroadsUsed, wanderingSageChoicePending: true };
-  }
-
-  // C959: Veteran's Challenge — mid-game risk/reward decision (200-400, one-shot)
-  if (pending.veteransChallengeChoiceResolved === 'accept') {
-    buffs.veteransChallengeExpRemaining = VETERANS_CHALLENGE_DURATION;
-    buffs.veteransChallengeAtkRemaining = VETERANS_CHALLENGE_DURATION;
-    events.push({ type: 'event_veterans_challenge', accepted: true, duration: VETERANS_CHALLENGE_DURATION });
-  } else if (pending.veteransChallengeChoiceResolved === 'decline') {
-    events.push({ type: 'event_veterans_challenge', accepted: false, duration: 0 });
-  } else if (!pending.veteransChallengeFired
-    && ctx.totalFights >= VETERANS_CHALLENGE_MIN_FIGHT
-    && ctx.totalFights <= VETERANS_CHALLENGE_MAX_FIGHT
-    && ctx.rngChance(VETERANS_CHALLENGE_CHANCE)) {
-    return { events, heroMutations, buffs, crossroadsUsed, veteransChallengePending: true };
   }
 
   return { events, heroMutations, buffs, crossroadsUsed, statShardAtk, enemyMorphDuration, enemyMorphDrRate };
