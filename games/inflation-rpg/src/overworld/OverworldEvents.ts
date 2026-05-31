@@ -141,4 +141,6 @@ export type OverworldEvent =
   // C881: Wandering Merchant player choice pending
   | { type: 'wandering_merchant_choice' }
   // C883: Reputation payoff event
-  | { type: 'event_reputation'; style: string; value: number };
+  | { type: 'event_reputation'; style: string; value: number }
+  // C887: Veteran's Trial consequence event
+  | { type: 'event_veterans_trial'; style: string; value: number };

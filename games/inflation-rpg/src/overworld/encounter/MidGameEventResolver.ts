@@ -39,6 +39,19 @@ import {
   REPUTATION_GREEDY_GOLD_MUL,
   REPUTATION_BALANCED_EXP_DURATION,
   REPUTATION_BALANCED_EXP_MUL,
+  VETERANS_TRIAL_MIN_FIGHT,
+  VETERANS_TRIAL_MAX_FIGHT,
+  VETERANS_TRIAL_CHANCE,
+  VETERANS_TRIAL_MIN_CHOICES,
+  VETERANS_TRIAL_AGG_ATK_MUL,
+  VETERANS_TRIAL_AGG_DURATION,
+  VETERANS_TRIAL_AGG_HP_COST,
+  VETERANS_TRIAL_DEF_SHIELD_DURATION,
+  VETERANS_TRIAL_DEF_HEAL_RATE,
+  VETERANS_TRIAL_GREEDY_GOLD_MUL,
+  VETERANS_TRIAL_BALANCED_ALL_DURATION,
+  VETERANS_TRIAL_BALANCED_ATK_MUL,
+  VETERANS_TRIAL_BALANCED_EXP_MUL,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -69,6 +82,7 @@ export interface MidGamePending {
   reputationStyle?: 'aggressive' | 'defensive' | 'greedy' | 'balanced'; // C883: dominant choice style
   reputationTotalChoices?: number; // C883: how many choices player has made
   reputationFired?: boolean; // C883: already triggered this run
+  veteransTrialFired?: boolean; // C887: already triggered this run
 }
 
 export interface MidGameResult {
@@ -87,6 +101,9 @@ export interface MidGameResult {
     reputationAtkRemaining?: number; // C883
     reputationShieldRemaining?: number; // C883
     reputationExpRemaining?: number; // C883
+    veteransTrialAtkRemaining?: number; // C887
+    veteransTrialShieldRemaining?: number; // C887
+    veteransTrialExpRemaining?: number; // C887
   };
   crossroadsUsed?: boolean;
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
@@ -94,6 +111,7 @@ export interface MidGameResult {
   crossroadsChoicePending?: boolean; // C878: true = player choice needed
   wanderingMerchantChoicePending?: boolean; // C881: true = player choice needed
   reputationFired?: boolean; // C883: true = reputation payoff event triggered
+  veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
 }
 
 export function resolveMidGameEvents(
@@ -233,6 +251,35 @@ export function resolveMidGameEvents(
       events.push({ type: 'event_reputation', style: 'balanced', value: REPUTATION_BALANCED_EXP_MUL });
     }
     return { events, heroMutations, buffs, crossroadsUsed, reputationFired: true };
+  }
+
+  // C887: Veteran's Trial — 2nd consequence event (fight 275-400)
+  if (!pending.veteransTrialFired
+    && ctx.totalFights >= VETERANS_TRIAL_MIN_FIGHT
+    && ctx.totalFights <= VETERANS_TRIAL_MAX_FIGHT
+    && (pending.reputationTotalChoices ?? 0) >= VETERANS_TRIAL_MIN_CHOICES
+    && ctx.rngChance(VETERANS_TRIAL_CHANCE)) {
+    const style = pending.reputationStyle ?? 'balanced';
+    if (style === 'aggressive') {
+      buffs.veteransTrialAtkRemaining = VETERANS_TRIAL_AGG_DURATION;
+      const hpCost = Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_AGG_HP_COST);
+      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) - hpCost;
+      events.push({ type: 'event_veterans_trial', style, value: VETERANS_TRIAL_AGG_ATK_MUL });
+    } else if (style === 'defensive') {
+      buffs.veteransTrialShieldRemaining = VETERANS_TRIAL_DEF_SHIELD_DURATION;
+      const healAmt = Math.floor(ctx.hero.hpMax * VETERANS_TRIAL_DEF_HEAL_RATE);
+      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
+      events.push({ type: 'event_veterans_trial', style, value: healAmt });
+    } else if (style === 'greedy') {
+      const goldBurst = Math.floor(ctx.hero.level * VETERANS_TRIAL_GREEDY_GOLD_MUL);
+      heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldBurst;
+      events.push({ type: 'event_veterans_trial', style, value: goldBurst });
+    } else {
+      buffs.veteransTrialAtkRemaining = VETERANS_TRIAL_BALANCED_ALL_DURATION;
+      buffs.veteransTrialExpRemaining = VETERANS_TRIAL_BALANCED_ALL_DURATION;
+      events.push({ type: 'event_veterans_trial', style: 'balanced', value: VETERANS_TRIAL_BALANCED_ATK_MUL });
+    }
+    return { events, heroMutations, buffs, crossroadsUsed, veteransTrialFired: true };
   }
 
   return { events, heroMutations, buffs, crossroadsUsed };

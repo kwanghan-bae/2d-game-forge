@@ -395,3 +395,20 @@ export const REPUTATION_DEF_SHIELD_DURATION = 6; // +6 fight shield
 export const REPUTATION_GREEDY_GOLD_MUL = 2.5; // greedy: gold burst ×2.5× level
 export const REPUTATION_BALANCED_EXP_DURATION = 5; // balanced: +15% EXP for 5 fights
 export const REPUTATION_BALANCED_EXP_MUL = 0.15;
+
+// C887: Veteran's Trial — 2nd consequence event (fight 275-400)
+export const VETERANS_TRIAL_MIN_FIGHT = 275;
+export const VETERANS_TRIAL_MAX_FIGHT = 400;
+export const VETERANS_TRIAL_CHANCE = 0.05;
+export const VETERANS_TRIAL_MIN_CHOICES = 4;
+export const VETERANS_TRIAL_AGG_ATK_MUL = 0.25; // aggressive path: +25% ATK for 10 fights
+export const VETERANS_TRIAL_AGG_DURATION = 10;
+export const VETERANS_TRIAL_AGG_HP_COST = 0.15; // but costs 15% maxHP
+export const VETERANS_TRIAL_DEF_SHIELD_DURATION = 10; // defensive: 10-fight shield
+export const VETERANS_TRIAL_DEF_HEAL_RATE = 0.20; // +20% maxHP heal
+export const VETERANS_TRIAL_GREEDY_GOLD_MUL = 4.0; // greedy: gold ×4× level
+export const VETERANS_TRIAL_GREEDY_EXP_PENALTY = 0.20; // but EXP -20% for 5 fights
+export const VETERANS_TRIAL_GREEDY_PENALTY_DURATION = 5;
+export const VETERANS_TRIAL_BALANCED_ALL_DURATION = 6; // balanced: +10% ATK + 10% EXP for 6 fights
+export const VETERANS_TRIAL_BALANCED_ATK_MUL = 0.10;
+export const VETERANS_TRIAL_BALANCED_EXP_MUL = 0.10;

@@ -199,4 +199,51 @@ describe('resolveMidGameEvents', () => {
     const repEvents = result.events.filter(e => e.type === 'event_reputation');
     expect(repEvents).toHaveLength(0);
   });
+
+  // C887: Veteran's Trial tests
+  it('veterans trial aggressive gives ATK + costs HP', () => {
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 5, reputationFired: true });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'aggressive' }));
+    expect(result.buffs.veteransTrialAtkRemaining).toBe(10);
+    expect(result.heroMutations.hpDelta).toBeLessThan(0);
+    expect(result.veteransTrialFired).toBe(true);
+  });
+
+  it('veterans trial defensive heals + shield', () => {
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'defensive', reputationTotalChoices: 5, reputationFired: true });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'defensive' }));
+    expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
+    expect(result.buffs.veteransTrialShieldRemaining).toBe(10);
+  });
+
+  it('veterans trial greedy gives gold burst', () => {
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'greedy', reputationTotalChoices: 5, reputationFired: true });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'greedy' }));
+    expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+  });
+
+  it('veterans trial balanced gives both ATK + EXP', () => {
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'balanced', reputationTotalChoices: 5, reputationFired: true });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_trial', style: 'balanced' }));
+    expect(result.buffs.veteransTrialAtkRemaining).toBe(6);
+    expect(result.buffs.veteransTrialExpRemaining).toBe(6);
+  });
+
+  it('veterans trial does not fire outside window', () => {
+    const ctx = makeCtx({ totalFights: 200, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 5, reputationFired: true });
+    const vtEvents = result.events.filter(e => e.type === 'event_veterans_trial');
+    expect(vtEvents).toHaveLength(0);
+  });
+
+  it('veterans trial does not re-fire', () => {
+    const ctx = makeCtx({ totalFights: 300, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 5, reputationFired: true, veteransTrialFired: true });
+    const vtEvents = result.events.filter(e => e.type === 'event_veterans_trial');
+    expect(vtEvents).toHaveLength(0);
+  });
 });
