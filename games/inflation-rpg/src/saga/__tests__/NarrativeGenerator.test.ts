@@ -379,9 +379,9 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'aggressive', varianceRoll: 0.95 });
       expect(txt).toContain('맹렬히');
     });
-    it('low variance roll adds 약하게 suffix', () => {
+    it('low variance roll adds 잦아들었다 suffix', () => {
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'defensive', varianceRoll: 0.1 });
-      expect(txt).toContain('약하게');
+      expect(txt).toContain('잦아들었다');
     });
     it('mid variance roll has no suffix', () => {
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'final_reckoning', style: 'greedy', varianceRoll: 0.5 });
@@ -407,6 +407,19 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
     it('low variance roll (0.1-0.3) adds 약하게 suffix', () => {
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'veterans_trial', style: 'defensive', varianceRoll: 0.2 });
       expect(txt).toContain('약하게');
+    });
+    // C917: 8-tier variance suffix tests (3 new tiers)
+    it('extreme high variance roll (>0.95) adds 폭풍 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'aggressive', varianceRoll: 0.98 });
+      expect(txt).toContain('폭풍');
+    });
+    it('upper-mid variance roll (0.5-0.7) adds 고개를 끄덕 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'reputation', style: 'balanced', varianceRoll: 0.6 });
+      expect(txt).toContain('고개를 끄덕');
+    });
+    it('extreme low variance roll (<0.05) adds 침묵 suffix', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 50, eventType: 'final_reckoning', style: 'greedy', varianceRoll: 0.02 });
+      expect(txt).toContain('침묵');
     });
   });
 });
