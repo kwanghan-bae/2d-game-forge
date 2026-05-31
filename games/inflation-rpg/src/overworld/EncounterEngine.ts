@@ -159,8 +159,6 @@ export class EncounterEngine {
   private darknessCursed = false; // C238: curse active flag
   private bossesKilled = 0; // C239: boss kill counter for loot table
   private armorRemaining = 0; // C242: armor buff fights remaining
-  private sacrificeFuryRemaining = 0; // C248: fury buff from sacrifice
-  private bossSlayerRemaining = 0; // C251: exp buff from boss kill
   private villageRestRemaining = 0; // C258: rest bonus from village
   private deathInsuranceUsed = false; // C260: first death insurance
   private consecutiveOneHits = 0; // C261: consecutive one-hit kills
@@ -693,7 +691,7 @@ export class EncounterEngine {
   getCombatSummary(): { activeBuffs: string[]; activeBuffInfos: BuffInfo[]; deathPrevention: number; dangerLevel: number; deathSaveBlocked: boolean; adaptivePressure: number } {
     const activeBuffs: string[] = [];
     if (this.shrineBuffRemaining > 0) activeBuffs.push('명상');
-    if (this.sacrificeFuryRemaining > 0) activeBuffs.push('분노');
+    if (this.midGameBuffs.isActive('sacrifice_fury')) activeBuffs.push('분노');
     if (this.cursedAltarAtkBuff) activeBuffs.push('저주 제단');
     if (this.invincibleFights > 0) activeBuffs.push('무적');
     if (this.villageShieldActive) activeBuffs.push('마을 방패');
@@ -1141,7 +1139,7 @@ export class EncounterEngine {
             hero.heal(Math.floor(hero.hpMax * GOLD_HEAL_AMOUNT));
             goldHealUsed = true;
             // C248: sacrifice fury — gain ATK buff
-            this.sacrificeFuryRemaining = SACRIFICE_FURY_DURATION;
+            this.midGameBuffs.activate('sacrifice_fury', SACRIFICE_FURY_DURATION);
           }
           // C515: death proximity — surviving at exactly 1 HP triggers guaranteed crit
           if (!hero.staggered && hero.hp === 1) {
@@ -1279,7 +1277,7 @@ export class EncounterEngine {
         rageTurn,
         shrineBlessingRemaining: this.shrineBlessingRemaining,
         revengeGoldRemaining: this.revengeGoldRemaining,
-        bossSlayerRemaining: this.bossSlayerRemaining,
+        bossSlayerRemaining: this.midGameBuffs.remaining('boss_slayer'),
         survivorGritActive: this.survivorGritActive,
         dangerCascadeRemaining: this.midGameBuffs.remaining('danger_cascade'),
         eliteAfterVillage: hadEliteAfterVillage,
@@ -1349,7 +1347,7 @@ export class EncounterEngine {
         eliteCombo: this.eliteCombo,
         firstBloodUsed: this.firstBloodUsed,
         isOverkill,
-        bossSlayerRemaining: this.bossSlayerRemaining,
+        bossSlayerRemaining: this.midGameBuffs.remaining('boss_slayer'),
         dropChanceBonus: this.opts.dropChanceBonus ?? 0,
         introDropBonus: isBoss ? (this.opts.getBossIntroDropBonus?.() ?? 0) : 0,
         dropStreak: this.dropStreak,
@@ -1505,9 +1503,9 @@ export class EncounterEngine {
       // C242: decrement armor after each fight
       if (this.armorRemaining > 0) this.armorRemaining--;
       // C248: decrement sacrifice fury
-      if (this.sacrificeFuryRemaining > 0) this.sacrificeFuryRemaining--;
+      this.midGameBuffs.tick1('sacrifice_fury');
       // C251: decrement boss slayer
-      if (this.bossSlayerRemaining > 0) this.bossSlayerRemaining--;
+      this.midGameBuffs.tick1('boss_slayer');
       // C258: decrement village vigor
       if (this.villageRestRemaining > 0) this.villageRestRemaining--;
       // C265: decrement shrine blessing
@@ -1911,7 +1909,7 @@ export class EncounterEngine {
       totalDeaths: this.totalDeaths,
       darknessCursed: this.darknessCursed,
       heroLevel: p.hero.level,
-      sacrificeFuryActive: this.sacrificeFuryRemaining > 0,
+      sacrificeFuryActive: this.midGameBuffs.isActive('sacrifice_fury'),
       heroGold: p.hero.gold,
       bossesKilled: this.bossesKilled,
       hpBelowAdrenaline: p.hero.hp < p.hero.hpMax * ADRENALINE_HP_THRESHOLD,
@@ -2314,7 +2312,7 @@ export class EncounterEngine {
       hero.gold += this.consecutiveBossKills * hero.level * BOSS_CHAIN_GOLD_PER_LEVEL;
     }
     events.push({ type: 'boss_vault', gold: vaultGold });
-    this.bossSlayerRemaining = BOSS_SLAYER_DURATION;
+    this.midGameBuffs.activate('boss_slayer', BOSS_SLAYER_DURATION);
     this.midGameBuffs.activate('boss_fury', BOSS_FURY_DURATION);
     this.consecutiveBossKills++;
     const frenzyMul = Math.min(BOSS_FRENZY_CAP, Math.pow(BOSS_FRENZY_EXP_BASE, this.consecutiveBossKills - 1));

@@ -77,6 +77,8 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   shield_break_burst: { nameKR: '방패 파괴 폭발', category: 'combat' },
   danger_cascade: { nameKR: '위험 연쇄', category: 'combat' },
   elite_fury: { nameKR: '엘리트 분노', category: 'combat' },
+  sacrifice_fury: { nameKR: '희생 분노', category: 'combat' },
+  boss_slayer: { nameKR: '보스 슬레이어', category: 'combat' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */
