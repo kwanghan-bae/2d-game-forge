@@ -517,8 +517,8 @@ describe('resolveMidGameEvents', () => {
       firstTrialFired: true,
       veteransChallengeChoiceResolved: 'accept',
     });
-    expect(result.buffs.veteransChallengeExpRemaining).toBe(6);
-    expect(result.buffs.veteransChallengeAtkRemaining).toBe(6);
+    expect(result.buffs.veteransChallengeExpRemaining).toBe(10);
+    expect(result.buffs.veteransChallengeAtkRemaining).toBe(10);
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_veterans_challenge', accepted: true }));
   });
 
