@@ -126,4 +126,7 @@ export type OverworldEvent =
   // C832: Wandering Merchant — heal or ATK buff
   | { type: 'event_wandering_merchant'; choice: 'heal' | 'atk'; value: number }
   // C841: Sparring Grounds — skill-check micro-event
-  | { type: 'event_sparring_grounds'; won: boolean; expGained: number; hpLost: number };
+  | { type: 'event_sparring_grounds'; won: boolean; expGained: number; hpLost: number }
+  // C863: Storm drain visual feedback
+  | { type: 'storm_drain'; value: number; hpAfter: number }
+  | { type: 'storm_drain_critical'; value: number; hpAfter: number };
