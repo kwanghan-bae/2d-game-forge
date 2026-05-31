@@ -621,6 +621,14 @@ export class EncounterEngine {
     if (this.villageShieldActive) activeBuffs.push('마을 방패');
     if (this.fairyBlessingRemaining > 0) activeBuffs.push('요정 축복');
     if (this.goldenHourRemaining > 0) activeBuffs.push('황금 시간');
+    // C879: Mid-game event buffs
+    if (this.provingGroundsExpRemaining > 0) activeBuffs.push('시련 EXP');
+    if (this.mercenaryShieldRemaining > 0) activeBuffs.push('용병 방패');
+    if (this.crossroadsAtkRemaining > 0) activeBuffs.push('갈림길 ATK');
+    if (this.crossroadsExpRemaining > 0) activeBuffs.push('갈림길 EXP');
+    if (this.wanderingMerchantAtkRemaining > 0) activeBuffs.push('상인 ATK');
+    if (this.earlyMomentumAtkRemaining > 0) activeBuffs.push('기세 ATK');
+    if (this.earlyMomentumExpRemaining > 0) activeBuffs.push('기세 EXP');
     const deathSaveBlocked = this.cursedAltarAtkBuff;
     let deathPrevention = 0;
     if (!deathSaveBlocked) {
