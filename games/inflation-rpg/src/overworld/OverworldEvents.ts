@@ -147,4 +147,8 @@ export type OverworldEvent =
   // C890: Last Stand Challenge player choice
   | { type: 'event_last_stand'; choice: string; value: number }
   // C893a: Last Stand choice trigger
-  | { type: 'last_stand_choice' };
+  | { type: 'last_stand_choice' }
+  // C959: Veteran's Challenge player choice pending
+  | { type: 'veterans_challenge_choice' }
+  // C959: Veteran's Challenge resolved
+  | { type: 'event_veterans_challenge'; accepted: boolean; duration: number };
