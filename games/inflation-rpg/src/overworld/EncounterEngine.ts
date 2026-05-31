@@ -116,7 +116,6 @@ export class EncounterEngine {
   private dropStreak = 0;
   private shrineBuffRemaining = 0; // C136: fights remaining with shrine ATK buff
   private deathStreak = 0; // C137: consecutive deaths
-  private mercyRemaining = 0; // C137: fights remaining with damage reduction
   private firstBloodUsed = false; // C139: has first fight bonus been consumed
   private lastDeathEnemyId: string | null = null; // C140: revenge tracking
   private survivalStreak = 0; // C141: consecutive fights without death
@@ -137,7 +136,6 @@ export class EncounterEngine {
   private levelUpMomentum = false; // C184: next fight gets exp bonus after level-up
   private eliteKills = 0; // C185: total elite kills for bounty board
   private eliteBountyMilestones = 0; // C185: milestones reached
-  private revengeGoldRemaining = 0; // C188: fights with revenge gold bonus
   private fightsSinceDeath = 0; // C197: fights without dying
   private comboBreakerReady = false; // C198: ATK bonus after combo break
   private prestigeCount = 0; // C200: number of prestiges
@@ -360,7 +358,7 @@ export class EncounterEngine {
   getBattleMomentum(): number { return this.battleMomentum; }
   getDropStreak(): number { return this.dropStreak; }
   getShrineBuffRemaining(): number { return this.shrineBuffRemaining; }
-  getMercyRemaining(): number { return this.mercyRemaining; }
+  getMercyRemaining(): number { return this.midGameBuffs.remaining('mercy'); }
 
   // C572: expose relic state for UI (C733: delegated)
   getRelics(): { id: number; level: number; name: string }[] {
@@ -1075,10 +1073,8 @@ export class EncounterEngine {
           const bossShieldWasActive = this.midGameBuffs.isActive('boss_shield');
           // Side effects: decrement shield counters after reading
           if (this.goldShieldRemaining > 0) this.goldShieldRemaining--;
-          this.midGameBuffs.tick1('gold_overflow_shield');
-          this.midGameBuffs.tick1('boss_shield');
           const totalDrMul = computeDamageReduction({
-            mercyRemaining: this.mercyRemaining,
+            mercyRemaining: this.midGameBuffs.remaining('mercy'),
             shopShieldRemaining: this.shopShieldRemaining,
             armorRemaining: this.midGameBuffs.remaining('armor'),
             villageRestRemaining: this.midGameBuffs.remaining('village_rest'),
@@ -1147,7 +1143,6 @@ export class EncounterEngine {
       // C331: decrement elite fury
       if (this.midGameBuffs.isActive('elite_fury')) this.eliteFuryRemaining--;
       // C336: decrement danger cascade
-      this.midGameBuffs.tick1('danger_cascade');
       const isOverkill = hitCount === 1 && !hero.staggered;
       // C261: multi-kill tracking
       if (isOverkill) { this.consecutiveOneHits++; } else { this.consecutiveOneHits = 0; }
@@ -1271,7 +1266,7 @@ export class EncounterEngine {
         uniqueBossKills: this.uniqueBossKills,
         rageTurn,
         shrineBlessingRemaining: this.shrineBlessingRemaining,
-        revengeGoldRemaining: this.revengeGoldRemaining,
+        revengeGoldRemaining: this.midGameBuffs.remaining('revenge_gold'),
         bossSlayerRemaining: this.midGameBuffs.remaining('boss_slayer'),
         survivorGritActive: this.survivorGritActive,
         dangerCascadeRemaining: this.midGameBuffs.remaining('danger_cascade'),
@@ -1376,7 +1371,7 @@ export class EncounterEngine {
         dangerStreak: this.dangerStreak, dangerFights: this.dangerFights,
         waveRemaining: this.waveRemaining, consecutiveCrits: this.consecutiveCrits,
         fightChainCount: this.fightChainCount, prestigeCount: this.prestigeCount,
-        revengeGoldRemaining: this.revengeGoldRemaining,
+        revengeGoldRemaining: this.midGameBuffs.remaining('revenge_gold'),
         villageBlessingRemaining: this.midGameBuffs.remaining('village_blessing'),
         eliteCombo: this.eliteCombo, uniqueBossKills: this.uniqueBossKills,
         consecutiveEliteKills2: this.consecutiveEliteKills2,
@@ -1389,8 +1384,6 @@ export class EncounterEngine {
       };
       const goldResult = computeGoldReward(goldCtx);
       // Apply side-effects: decrement cooldown counters read by GoldCalculator
-      if (this.revengeGoldRemaining > 0) this.revengeGoldRemaining--;
-      this.midGameBuffs.tick1('village_blessing');
       // Apply gold to hero
       let goldEarned = goldResult.goldEarned;
       // C773: Rain Sanctuary gold penalty
@@ -1496,18 +1489,13 @@ export class EncounterEngine {
         if (this.shopShieldRemaining === 0) this.shieldBreakReady = true;
       }
       // C242: decrement armor after each fight
-      this.midGameBuffs.tick1('armor');
       // C248: decrement sacrifice fury
-      this.midGameBuffs.tick1('sacrifice_fury');
       // C251: decrement boss slayer
-      this.midGameBuffs.tick1('boss_slayer');
       // C258: decrement village vigor
-      this.midGameBuffs.tick1('village_rest');
       // C265: decrement shrine blessing
       if (this.shrineBlessingRemaining > 0) this.shrineBlessingRemaining--;
       // C137: win resets death streak, decrement mercy
       this.deathStreak = 0;
-      if (this.mercyRemaining > 0) this.mercyRemaining--;
       // C141: survival streak increments on win
       this.survivalStreak++;
       // C216: elite combo tracking
@@ -2358,11 +2346,11 @@ export class EncounterEngine {
     this.consecutiveDeaths = deathResult.newConsecutiveDeaths;
     this.runStats.recordDeath();
     if (deathResult.mercyActivated) {
-      this.mercyRemaining = deathResult.mercyDuration;
+      this.midGameBuffs.activate('mercy', deathResult.mercyDuration);
       events.push({ type: 'mercy_activated', duration: deathResult.mercyDuration });
     }
     if (deathResult.darknessCursed) this.darknessCursed = true;
-    this.revengeGoldRemaining = deathResult.revengeGoldFights;
+    this.midGameBuffs.activate('revenge_gold', deathResult.revengeGoldFights);
     // Resets
     this.survivalStreak = 0;
     this.consecutiveWaveClears = 0;

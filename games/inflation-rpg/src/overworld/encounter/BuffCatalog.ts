@@ -84,6 +84,8 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   village_blessing: { nameKR: '마을 축복', category: 'village' },
   gold_overflow_shield: { nameKR: '골드 오버플로우 방패', category: 'combat' },
   boss_shield: { nameKR: '보스 방패', category: 'combat' },
+  mercy: { nameKR: '자비', category: 'combat' },
+  revenge_gold: { nameKR: '복수 골드', category: 'combat' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */
