@@ -1,30 +1,35 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 829
+- Cycle: 832
 - Target: 600+ (연속 진화)
-- Last commit: C829 Fairy mid-game scaling + Momentum T3 density cap
+- Last commit: C832 Wandering Merchant event + Echo/T3 tuning
 - Vitest: 2224 pass / 0 fail (+ 10 slow smoke tests excluded due to machine load)
 - E2E: 60 passed
-- EncounterEngine: ~2305 lines
-- Critic score: 26/40 (C826, +2 from chain toast + risk gambit)
+- EncounterEngine: ~2310 lines
+- Critic score: 28/40 (C832, +1 from merchant event + policy toggle)
 
-## 레이어 카운터 (C824-C829 era)
-- 시스템: 2 (C824, C827)
-- 구조: 2 (C825, C828)
-- 밸런스: 2 (C826, C829)
-- 콜라보: 2 (C826, C829)
+## 레이어 카운터 (C830-C832 era)
+- 시스템: 1 (C830)
+- 구조: 1 (C831)
+- 밸런스: 1 (C832)
+- 콜라보: 1 (C832)
 
 ## 제약
-- cycles_since_collab: 0 (C829 was collab)
-- Next collab: C832
-- EncounterEngine: ~2305 lines
-- Layer rotation: system → structure → balance (C830=system, C831=structure, C832=balance+collab)
+- cycles_since_collab: 0 (C832 was collab)
+- Next collab: C835
+- EncounterEngine: ~2310 lines
+- Layer rotation: system → structure → balance (C833=system, C834=structure, C835=balance+collab)
 
-## 다음 3사이클 (C829 합의)
-1. C830 [system]: Risk Gambit Policy Toggle (always/never/above_threshold)
-2. C831 [structure]: Hot-path extraction (EE→~2220)
-3. C832 [balance+collab]: Mid-game event + Echo/T3 tuning
+## 다음 3사이클 (C832 합의)
+1. C833 [system]: RunStatistics accumulator (+autoResolved gambit feedback)
+2. C834 [structure]: BuffTracker extraction (30+ *Remaining fields → class)
+3. C835 [balance+collab]: Fairy linear ramp (120-200) + Merchant tuning (ATK 0.15/12, MIN 120, HEAL 0.25) + Echo threshold 275
+
+## 달성 사항 (C830-C832)
+- C830 [system]: Risk Gambit Policy Toggle (always/never/hp_above_half)
+- C831 [structure]: resolveBossRewards extraction (−49 lines from hot path)
+- C832 [balance+collab]: Wandering Merchant (3%, fight 100-250, heal/ATK) + Echo 0.04@250 + T3 cap constant
 
 ## 달성 사항 (C824-C829)
 - C824 [system]: ChainFlavorToast — chain narrative visible to player
