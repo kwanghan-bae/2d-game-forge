@@ -1,41 +1,44 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 889
+- Cycle: 892
 - Target: 600+ (연속 진화)
-- Last commit: C889 late-game density + veteran trial tuning
-- Vitest: 2357 pass / 0 fail
-- EncounterEngine: ~2630 lines
-- Critic score: pending (C889 collab dispatched)
+- Last commit: C892 Last Stand EV rebalance
+- Vitest: 2372 pass / 0 fail
+- EncounterEngine: ~2660 lines
+- Critic score: pending (C892 collab dispatched)
 
-## 레이어 카운터 (C887-C889 era)
-- 시스템: 1 (C887)
-- 구조: 1 (C888)
-- 밸런스: 1 (C889)
-- 콜라보: 1 (C889)
+## 레이어 카운터 (C890-C892 era)
+- 시스템: 1 (C890)
+- 구조: 1 (C891)
+- 밸런스: 1 (C892)
+- 콜라보: 1 (C892)
 
 ## 제약
-- cycles_since_collab: 0 (C889)
-- Next collab: C892
-- EncounterEngine: ~2630 lines
-- Layer rotation: C890=system, C891=structure, C892=balance+collab
+- cycles_since_collab: 0 (C892)
+- Next collab: C895
+- EncounterEngine: ~2660 lines
+- Layer rotation: C893=system, C894=structure, C895=balance+collab
 
-## 🟡 Player Agency: 4 choices + 2 consequences
+## 🟡 Player Agency: 5 choices + 2 consequences
 - Proving Grounds: binary accept/decline, 2s timeout (fight 40-110)
 - Crossroads: 3-way ATK/EXP/Gold, 4s timeout (fight 95-160)
 - Mercenary Offer: binary accept/decline, 3s timeout (fight 115-225)
 - Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-400)
+- Last Stand: binary accept/decline, 3s timeout (fight 400-600, once-per-run)
 - Reputation Payoff: auto-resolve consequence (fight 176-225, style-based, ≥3 choices)
 - Veteran's Trial: auto-resolve consequence (fight 275-450, style-based, ≥4 choices)
 - ChoiceHistory tracks all choices with aggressive/defensive/greedy categories
-- Toast labels: 8 consequence styles fully wired
-- NarrativeGenerator: forChoiceEvent + forConsequenceEvent saga hooks added
-- **Dead zones**: fight 0-39 (no choice), fight 451+ (no choice)
+- Toast labels: 10 (8 consequence + 2 last stand)
+- NarrativeGenerator: forChoiceEvent (12 mappings) + forConsequenceEvent saga hooks
+- ConsequenceResolver extracted from MidGameEventResolver (C891)
+- **Dead zones**: fight 0-39 (no choice)
 
-## 달성 사항 (C887-C889)
-- C887 [system]: Veteran's Trial 2nd consequence event (fight 275-450, 4 styles)
-- C888 [structure]: Toast labels (8) + NarrativeGenerator saga hooks
-- C889 [balance+collab]: WANDERING_MERCHANT_MAX 400, VETERANS_TRIAL_MAX 450, AGG_HP_COST 0.12
+## 달성 사항 (C890-C892)
+- C890 [system]: Last Stand Challenge (fight 400-600, +40% ATK/-20% HP or heal+gold)
+- C890a [fix]: Wire shield DR + EXP buffs into combat (critic fix)
+- C891 [structure]: Extract ConsequenceResolver (MidGameEventResolver 325→277 LOC)
+- C892 [balance+collab]: Last Stand EV rebalance (ATK 40%, HP cost 20%, chance 5%)
 
 ## 달성 사항 (C884-C886)
 - C884 [system]: Wire ChoiceHistory into EncounterEngine + reputation buffs
