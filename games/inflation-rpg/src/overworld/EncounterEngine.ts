@@ -738,18 +738,13 @@ export class EncounterEngine {
       // Prestige echo
       const hadPrestigeEcho = this.prestigeEchoRemaining > 0;
       const prestigeEchoDecay = hadPrestigeEcho ? (PRESTIGE_ECHO_DURATION - this.prestigeEchoRemaining) : 0;
-      if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
       // C749: Inspiration buff
       const inspirationActive = this.inspirationRemaining > 0;
-      if (this.inspirationRemaining > 0) this.inspirationRemaining--;
       // C812: Mentor EXP buff
       const mentorActive = this.mentorRemaining > 0;
-      if (this.mentorRemaining > 0) this.mentorRemaining--;
       // C793: Event Momentum buffs
       const eventMomentumAtkActive = this.eventMomentumAtkRemaining > 0;
-      if (this.eventMomentumAtkRemaining > 0) this.eventMomentumAtkRemaining--;
-      if (this.eventMomentumDensityRemaining > 0) this.eventMomentumDensityRemaining--;
-      // C819: Simple event duration decrements (no side effects)
+      // C837: All simple duration decrements consolidated in tickSimpleDurations
       this.tickSimpleDurations();
       // C770: Storm Nexus decrement + HP drain + ATK buff
       if (this.stormNexusRemaining > 0) {
@@ -2209,7 +2204,7 @@ export class EncounterEngine {
     this.bossShieldRemaining = BOSS_SHIELD_GRANT_DURATION;
   }
 
-  // C819: Batch decrement for simple duration counters (no side effects)
+  // C819/C837: Batch decrement for simple duration counters (no side effects)
   private tickSimpleDurations(): void {
     if (this.colosseumRemaining > 0) this.colosseumRemaining--;
     if (this.voidRiftRemaining > 0) this.voidRiftRemaining--;
@@ -2223,6 +2218,12 @@ export class EncounterEngine {
     if (this.astralParadoxRemaining > 0) this.astralParadoxRemaining--;
     if (this.soulForgeRemaining > 0) this.soulForgeRemaining--;
     if (this.wanderingMerchantAtkRemaining > 0) this.wanderingMerchantAtkRemaining--;
+    // C837: consolidated from inline
+    if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
+    if (this.inspirationRemaining > 0) this.inspirationRemaining--;
+    if (this.mentorRemaining > 0) this.mentorRemaining--;
+    if (this.eventMomentumAtkRemaining > 0) this.eventMomentumAtkRemaining--;
+    if (this.eventMomentumDensityRemaining > 0) this.eventMomentumDensityRemaining--;
   }
 
   // C822: Batch capture "had" flags + decrement combat buff timers
