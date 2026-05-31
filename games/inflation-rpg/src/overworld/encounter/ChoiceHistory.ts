@@ -77,5 +77,6 @@ export function classifyChoice(event: string, choice: string): ChoiceCategory {
   if (event === 'first_trial') return choice === 'heal' ? 'defensive' : choice === 'exp' ? 'balanced' : 'aggressive';
   // C921: Wandering Sage: exp=balanced, atk=aggressive
   if (event === 'wandering_sage') return choice === 'exp' ? 'balanced' : 'aggressive';
+  if (event === 'elders_judgment') return choice === 'diversify' ? 'balanced' : 'aggressive';
   return 'defensive';
 }

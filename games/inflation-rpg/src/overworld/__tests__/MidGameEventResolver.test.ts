@@ -171,6 +171,31 @@ describe('resolveMidGameEvents', () => {
     expect(result.heroMutations.hpDelta).toBeGreaterThan(0); // C924: ATK choice also heals
   });
 
+  // C926: Elder's Judgment
+  it('elders judgment triggers pending when 6+ choices and in window', () => {
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 30, atk: 50 }, totalFights: 350, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, reputationFired: true, veteransTrialFired: true, reputationTotalChoices: 7, reputationStyle: 'aggressive' });
+    expect(result.eldersJudgmentChoicePending).toBe(true);
+  });
+
+  it('elders judgment double_down aggressive gives ATK buff', () => {
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 30, atk: 50 }, totalFights: 350, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, reputationFired: true, veteransTrialFired: true, reputationTotalChoices: 7, reputationStyle: 'aggressive', eldersJudgmentPending: true, eldersJudgmentChoiceResolved: 'double_down' });
+    expect(result.events[0]).toMatchObject({ type: 'event_elders_judgment', choice: 'double_down', style: 'aggressive' });
+    expect(result.buffs.eldersJudgmentAtkRemaining).toBeGreaterThan(0);
+    expect(result.eldersJudgmentFired).toBe(true);
+  });
+
+  it('elders judgment diversify gives mixed buffs + heal', () => {
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 30, atk: 50 }, totalFights: 350, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true, reputationFired: true, veteransTrialFired: true, reputationTotalChoices: 7, reputationStyle: 'balanced', eldersJudgmentPending: true, eldersJudgmentChoiceResolved: 'diversify' });
+    expect(result.events[0]).toMatchObject({ type: 'event_elders_judgment', choice: 'diversify' });
+    expect(result.buffs.eldersJudgmentAtkRemaining).toBeGreaterThan(0);
+    expect(result.buffs.eldersJudgmentExpRemaining).toBeGreaterThan(0);
+    expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
+    expect(result.eldersJudgmentFired).toBe(true);
+  });
+
   it('mercenary offer returns pending when no choice resolved', () => {
     const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 500, level: 10, atk: 20 }, totalFights: 115 });
     const result = resolveMidGameEvents(ctx, { mercenaryOfferPending: true });

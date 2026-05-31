@@ -471,3 +471,21 @@ export const WANDERING_SAGE_EXP_DURATION = 6;
 export const WANDERING_SAGE_ATK_MUL = 0.12; // C924: 0.10→0.12 (+12% ATK)
 export const WANDERING_SAGE_ATK_DURATION = 5;
 export const WANDERING_SAGE_ATK_HEAL_RATE = 0.15; // C924: ATK choice also heals 15% maxHP
+
+// C926: Elder's Judgment — consequence player choice (fight 300-500, once, needs 6+ choices)
+export const ELDERS_JUDGMENT_MIN_FIGHT = 300;
+export const ELDERS_JUDGMENT_MAX_FIGHT = 500;
+export const ELDERS_JUDGMENT_MIN_CHOICES = 6;
+export const ELDERS_JUDGMENT_CHANCE = 0.05;
+// Double-down: stronger style-specific buff
+export const ELDERS_JUDGMENT_AGG_ATK_MUL = 0.20; // +20% ATK for 8 fights
+export const ELDERS_JUDGMENT_AGG_DURATION = 8;
+export const ELDERS_JUDGMENT_DEF_SHIELD_DR = 0.25; // 25% DR for 8 fights
+export const ELDERS_JUDGMENT_DEF_DURATION = 8;
+export const ELDERS_JUDGMENT_BAL_EXP_MUL = 0.20; // +20% EXP for 8 fights
+export const ELDERS_JUDGMENT_BAL_DURATION = 8;
+// Diversify: moderate all-around
+export const ELDERS_JUDGMENT_DIVERSIFY_ATK = 0.10;
+export const ELDERS_JUDGMENT_DIVERSIFY_EXP = 0.10;
+export const ELDERS_JUDGMENT_DIVERSIFY_HEAL = 0.10; // 10% maxHP heal
+export const ELDERS_JUDGMENT_DIVERSIFY_DURATION = 6;

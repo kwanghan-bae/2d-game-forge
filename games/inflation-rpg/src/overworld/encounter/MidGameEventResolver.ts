@@ -53,6 +53,20 @@ import {
   WANDERING_SAGE_ATK_MUL,
   WANDERING_SAGE_ATK_DURATION,
   WANDERING_SAGE_ATK_HEAL_RATE,
+  ELDERS_JUDGMENT_MIN_FIGHT,
+  ELDERS_JUDGMENT_MAX_FIGHT,
+  ELDERS_JUDGMENT_MIN_CHOICES,
+  ELDERS_JUDGMENT_CHANCE,
+  ELDERS_JUDGMENT_AGG_ATK_MUL,
+  ELDERS_JUDGMENT_AGG_DURATION,
+  ELDERS_JUDGMENT_DEF_SHIELD_DR,
+  ELDERS_JUDGMENT_DEF_DURATION,
+  ELDERS_JUDGMENT_BAL_EXP_MUL,
+  ELDERS_JUDGMENT_BAL_DURATION,
+  ELDERS_JUDGMENT_DIVERSIFY_ATK,
+  ELDERS_JUDGMENT_DIVERSIFY_EXP,
+  ELDERS_JUDGMENT_DIVERSIFY_HEAL,
+  ELDERS_JUDGMENT_DIVERSIFY_DURATION,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -91,6 +105,9 @@ export interface MidGamePending {
   firstTrialChoiceResolved?: 'heal' | 'atk' | 'exp'; // C920: 3-way player choice
   wanderingSagePending?: boolean; // C921: sage encounter active
   wanderingSageChoiceResolved?: 'exp' | 'atk'; // C921: player's choice
+  eldersJudgmentFired?: boolean; // C926: already triggered this run
+  eldersJudgmentPending?: boolean; // C926: pending player choice
+  eldersJudgmentChoiceResolved?: 'double_down' | 'diversify'; // C926
 }
 
 export interface MidGameResult {
@@ -120,6 +137,9 @@ export interface MidGameResult {
     firstTrialExpRemaining?: number; // C920: EXP rush duration
     wanderingSageExpRemaining?: number; // C921
     wanderingSageAtkRemaining?: number; // C921
+    eldersJudgmentAtkRemaining?: number; // C926
+    eldersJudgmentShieldRemaining?: number; // C926
+    eldersJudgmentExpRemaining?: number; // C926
     lastStandAtkRemaining?: number; // C890
   };
   greedyGoldMul?: number; // C902: greedy gold gain multiplier
@@ -129,6 +149,8 @@ export interface MidGameResult {
   crossroadsChoicePending?: boolean; // C878: true = player choice needed
   wanderingMerchantChoicePending?: boolean; // C881: true = player choice needed
   wanderingSageChoicePending?: boolean; // C921: true = player choice needed
+  eldersJudgmentChoicePending?: boolean; // C926: true = player choice needed
+  eldersJudgmentFired?: boolean; // C926: true = elder's judgment triggered
   lastStandChoicePending?: boolean; // C890: true = player choice needed
   reputationFired?: boolean; // C883: true = reputation payoff event triggered
   veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
@@ -306,6 +328,39 @@ export function resolveMidGameEvents(
       finalReckoningFired: consequenceResult.finalReckoningFired,
       greedyGoldMul: consequenceResult.greedyGoldMul,
     };
+  }
+
+  // C926: Elder's Judgment — consequence player choice (fight 300-500, once, 6+ choices)
+  if (pending.eldersJudgmentPending) {
+    const style = pending.reputationStyle ?? 'balanced';
+    if (pending.eldersJudgmentChoiceResolved === 'double_down') {
+      if (style === 'aggressive') {
+        buffs.eldersJudgmentAtkRemaining = ELDERS_JUDGMENT_AGG_DURATION;
+        events.push({ type: 'event_elders_judgment', choice: 'double_down', style, value: ELDERS_JUDGMENT_AGG_ATK_MUL } as OverworldEvent);
+      } else if (style === 'defensive') {
+        buffs.eldersJudgmentShieldRemaining = ELDERS_JUDGMENT_DEF_DURATION;
+        events.push({ type: 'event_elders_judgment', choice: 'double_down', style, value: ELDERS_JUDGMENT_DEF_SHIELD_DR } as OverworldEvent);
+      } else {
+        buffs.eldersJudgmentExpRemaining = ELDERS_JUDGMENT_BAL_DURATION;
+        events.push({ type: 'event_elders_judgment', choice: 'double_down', style, value: ELDERS_JUDGMENT_BAL_EXP_MUL } as OverworldEvent);
+      }
+      return { events, heroMutations, buffs, crossroadsUsed, eldersJudgmentFired: true };
+    } else if (pending.eldersJudgmentChoiceResolved === 'diversify') {
+      buffs.eldersJudgmentAtkRemaining = ELDERS_JUDGMENT_DIVERSIFY_DURATION;
+      buffs.eldersJudgmentExpRemaining = ELDERS_JUDGMENT_DIVERSIFY_DURATION;
+      const healAmt = Math.floor(ctx.hero.hpMax * ELDERS_JUDGMENT_DIVERSIFY_HEAL);
+      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
+      events.push({ type: 'event_elders_judgment', choice: 'diversify', style, value: ELDERS_JUDGMENT_DIVERSIFY_ATK } as OverworldEvent);
+      return { events, heroMutations, buffs, crossroadsUsed, eldersJudgmentFired: true };
+    } else {
+      return { events, heroMutations, buffs, crossroadsUsed, eldersJudgmentChoicePending: true };
+    }
+  } else if (!pending.eldersJudgmentFired
+    && ctx.totalFights >= ELDERS_JUDGMENT_MIN_FIGHT
+    && ctx.totalFights <= ELDERS_JUDGMENT_MAX_FIGHT
+    && (pending.reputationTotalChoices ?? 0) >= ELDERS_JUDGMENT_MIN_CHOICES
+    && ctx.rngChance(ELDERS_JUDGMENT_CHANCE)) {
+    return { events, heroMutations, buffs, crossroadsUsed, eldersJudgmentChoicePending: true };
   }
 
   // C890: Last Stand Challenge — late-game player choice (fight 400-600)
