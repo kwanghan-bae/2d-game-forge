@@ -1,29 +1,34 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 841
+- Cycle: 844
 - Target: 600+ (연속 진화)
-- Last commit: C841 Sparring Grounds + Colosseum/Echo tuning
+- Last commit: C844 Merchant gamble choice + Sparring/Merchant tuning
 - Vitest: 2224 pass / 0 fail
-- EncounterEngine: ~2360 lines
-- Critic score: 29.5/40 (C841, +1.0 — dead zone filled)
+- EncounterEngine: ~2310 lines (−50 from C843 extraction)
+- Critic score: 30.0/40 (C844 collab, +0.5)
 
-## 레이어 카운터 (C839-C841 era)
-- 시스템: 1 (C839)
-- 구조: 1 (C840)
-- 밸런스: 1 (C841)
-- 콜라보: 1 (C841)
+## 레이어 카운터 (C842-C844 era)
+- 시스템: 1 (C842)
+- 구조: 1 (C843)
+- 밸런스: 1 (C844)
+- 콜라보: 1 (C844)
 
 ## 제약
-- cycles_since_collab: 0 (C841 was collab)
-- Next collab: C844
-- EncounterEngine: ~2360 lines
-- Layer rotation: system → structure → balance (C842=system, C843=structure, C844=balance+collab)
+- cycles_since_collab: 0 (C844 was collab)
+- Next collab: C847
+- EncounterEngine: ~2310 lines
+- Layer rotation: system → structure → balance (C845=system, C846=structure, C847=balance+collab)
 
-## 다음 3사이클 (C841 합의)
-1. C842 [system]: RunStatisticsSummary (top-3 highlight computation)
-2. C843 [structure]: buildAtkContext() extraction (60-field context)
-3. C844 [balance+collab]: Merchant 3rd choice + Sparring tuning (0.04, MAX 129, Merchant MIN 125)
+## 다음 3사이클 (C844 합의)
+1. C845 [system]: LateGameEventScheduler — pity timer + density 관리 데이터 클래스
+2. C846 [structure]: SacrificeSubsystem 추출 (gold burn, combo reset, exp offering, danger bet, health tax)
+3. C847 [balance+collab]: Late density 1.5→1.8 @250+ + gamble loss consolation gold 50
+
+## 달성 사항 (C842-C844)
+- C842 [system]: RunStatisticsSummary — top-3 highlight computation (11 categories)
+- C843 [structure]: tickTimeLockVault + tickPostCombatGoldBonuses (−51 lines)
+- C844 [balance+collab]: Merchant gamble (35%×50/50 double-or-nothing ATK), Sparring 0.04/129, Merchant MIN 125
 
 ## 달성 사항 (C839-C841)
 - C839 [system]: GambitFeedbackAccumulator (gambitGoldNet/gambitHpCost)
