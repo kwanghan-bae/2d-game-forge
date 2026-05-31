@@ -2,7 +2,7 @@
  * C845: LateGameScheduler — tracks late-game event pity and density state.
  *
  * Separate from the general pity timer (fightsSinceEvent), this tracks
- * fights since last LATE-game event specifically. When fights > 250 and
+ * fights since last LATE-game event specifically. When fights > 200 and
  * the player hasn't seen a late event in N fights, the scheduler signals
  * that late-event weights should be boosted.
  */
@@ -21,13 +21,13 @@ export class LateGameScheduler {
   private totalLateEvents = 0;
   private lastLateEventFight = 0;
 
-  /** Call after every fight in the 250+ zone */
+  /** Call after every fight in the 200+ zone */
   recordFight(totalFights: number, lateEventFired: boolean): void {
     if (lateEventFired) {
       this.fightsSinceLateEvent = 0;
       this.totalLateEvents++;
       this.lastLateEventFight = totalFights;
-    } else if (totalFights >= 250) {
+    } else if (totalFights >= 200) {
       this.fightsSinceLateEvent++;
     }
   }

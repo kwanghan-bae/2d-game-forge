@@ -215,7 +215,7 @@ export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, st
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
 export const WANDERING_MERCHANT_GAMBLE_CHANCE = 0.35; // C844: probability AI picks double-or-nothing over safe ATK
 export const WANDERING_MERCHANT_GAMBLE_WIN_RATE = 0.5; // C844: 50% → 2× duration, 50% → nothing
-export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 50; // C847: consolation gold on gamble loss
+export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 35; // C850: 50→35 (reduce gamble EV advantage over safe path)
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
@@ -298,7 +298,7 @@ export const EVENT_DECLINE_GOLD_CAP = 80; // max 80 gold consolation (C805: buff
 
 // C789: Late-game density scaling
 export const LATE_GAME_DENSITY_THRESHOLD = 200; // fights after which event chance increases
-export const LATE_GAME_DENSITY_MUL = 1.5; // ×1.5 event chance after threshold
+// C850: LATE_GAME_DENSITY_MUL removed — replaced by getLateGameDensityMul() continuous function
 
 // C789: Abyssal Convergence event (late-game, fight 250+)
 export const ABYSSAL_CONVERGENCE_DURATION = 5; // 5 fights
