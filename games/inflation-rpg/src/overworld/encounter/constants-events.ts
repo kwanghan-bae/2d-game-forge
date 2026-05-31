@@ -192,19 +192,21 @@ export const RISK_GAMBIT_MAX_FIGHTS = 90;
 export const RISK_GAMBIT_HP_COST_RATE = 0.20; // costs 20% of current HP
 export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
 // C841: Sparring Grounds — mid-early event filling dead zone (fights 80-119)
-export const SPARRING_GROUNDS_CHANCE = 0.03;
+export const SPARRING_GROUNDS_CHANCE = 0.04; // C844: 0.03→0.04 (reduce miss rate)
 export const SPARRING_GROUNDS_MIN_FIGHTS = 80;
-export const SPARRING_GROUNDS_MAX_FIGHTS = 119;
+export const SPARRING_GROUNDS_MAX_FIGHTS = 129; // C844: 119→129 (wider window)
 export const SPARRING_GROUNDS_EXP_REWARD_MUL = 2.0; // win → 2× base EXP
 export const SPARRING_GROUNDS_HP_COST_RATE = 0.10; // lose → 10% current HP
 export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level advantage
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
-export const WANDERING_MERCHANT_MIN_FIGHTS = 120; // C835: 100→120 (reduce 90-130 saturation)
+export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
 export const WANDERING_MERCHANT_MAX_FIGHTS = 250;
 export const WANDERING_MERCHANT_HEAL_RATE = 0.25; // C835: 0.30→0.25 (balance ATK path attractiveness)
 export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, stronger identity)
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
+export const WANDERING_MERCHANT_GAMBLE_CHANCE = 0.35; // C844: probability AI picks double-or-nothing over safe ATK
+export const WANDERING_MERCHANT_GAMBLE_WIN_RATE = 0.5; // C844: 50% → 2× duration, 50% → nothing
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
