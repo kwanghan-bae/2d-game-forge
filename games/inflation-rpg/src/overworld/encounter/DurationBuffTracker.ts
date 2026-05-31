@@ -35,6 +35,11 @@ export class DurationBuffTracker {
     return this.durations.get(buffId) ?? 0;
   }
 
+  /** Deactivate a specific buff (remove it). */
+  deactivate(buffId: string): void {
+    this.durations.delete(buffId);
+  }
+
   /** Remove all active buffs. */
   reset(): void {
     this.durations.clear();

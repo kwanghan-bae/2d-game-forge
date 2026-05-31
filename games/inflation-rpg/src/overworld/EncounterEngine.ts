@@ -203,11 +203,8 @@ export class EncounterEngine {
   private critExpChain = 0; // C469: consecutive crits for exp chain
   private villageAtkTrainingRemaining = 0; // C488: village ATK training duration
   private bossShieldRemaining = 0; // C494: boss shield remaining
-  private prestigeEchoRemaining = 0; // C508: prestige echo duration
-  private inspirationRemaining = 0; // C749: inspiration ATK buff duration
-  private mentorRemaining = 0; // C812: wandering mentor EXP buff duration
-  private wanderingMerchantAtkRemaining = 0; // C832: wandering merchant ATK buff
-  private mercenaryShieldRemaining = 0; // C848: mercenary offer damage reduction duration
+  // C932: prestigeEcho, inspiration, mentor migrated to midGameBuffs
+  // C932: wanderingMerchantAtk, mercenaryShield migrated to midGameBuffs
   private lastChainFlavor: string | null = null; // C821: chain event narrative flavor
   private gambitPolicy: 'always' | 'never' | 'hp_above_half' = 'always'; // C830: player policy
   private runStats = new RunStatistics(); // C833: per-run statistics accumulator
@@ -222,11 +219,8 @@ export class EncounterEngine {
   private windGaleRemaining = 0; // C782: Wind Gale duration (EXP×1.25, dodge+15%)
   private clearSkyPathRemaining = 0; // C851: Clear Sky Path ATK×1.15 (normal weather)
   private crossroadsUsed = false; // C854: once-per-run crossroads gate
-  private crossroadsAtkRemaining = 0; // C854: crossroads ATK path duration
-  private crossroadsExpRemaining = 0; // C854: crossroads EXP path duration
+  // C932: crossroads, earlyMomentum buffs migrated to midGameBuffs (xr_atk, xr_exp, em_atk, em_exp)
   // C930: reputation, veteransTrial buffs migrated to midGameBuffs
-  private earlyMomentumAtkRemaining = 0; // C860: early momentum ATK buff
-  private earlyMomentumExpRemaining = 0; // C860: early momentum EXP buff
   private earlyMomentumLastMilestone = 0; // C860: last streak milestone triggered
   private provingGroundsExpRemaining = 0; // C866: EXP buff duration after proving grounds win
   private provingChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C875
@@ -321,8 +315,7 @@ export class EncounterEngine {
   private cursedAltarAtkBuff = false; // C567: ATK buff active
   private fairyBlessingRemaining = 0; // C568: guaranteed drops
   private eventChainCount = 0; // C570: consecutive events
-  private eventMomentumAtkRemaining = 0; // C793: ATK buff from tier 2
-  private eventMomentumDensityRemaining = 0; // C793: density boost from tier 3
+  // C932: eventMomentumAtk, eventMomentumDensity migrated to midGameBuffs
   private fightsSinceEvent = 0; // C714: pity timer counter
   private readonly choiceEngine = new EventChoiceEngine();
   private readonly lateGameScheduler = new LateGameScheduler(); // C845
@@ -420,7 +413,7 @@ export class EncounterEngine {
     }
   }
   // C753: expose inspiration remaining for HUD
-  getInspirationRemaining(): number { return this.inspirationRemaining; }
+  getInspirationRemaining(): number { return this.midGameBuffs.remaining('inspiration'); }
   // C788: All event pending/resolve/remaining delegate to EventOrchestrator
   getColosseumRemaining(): number { return this.colosseumRemaining; }
   getColosseumPending(): boolean { return this.eventOrch.getPending('colosseum'); }
@@ -487,10 +480,10 @@ export class EncounterEngine {
     fog_ambush: () => this.fogAmbushRemaining,
     wind_gale: () => this.windGaleRemaining,
     clear_sky_path: () => this.clearSkyPathRemaining,
-    crossroads_atk: () => this.crossroadsAtkRemaining,
-    crossroads_exp: () => this.crossroadsExpRemaining,
-    early_momentum_atk: () => this.earlyMomentumAtkRemaining,
-    early_momentum_exp: () => this.earlyMomentumExpRemaining,
+    crossroads_atk: () => this.midGameBuffs.remaining('xr_atk'),
+    crossroads_exp: () => this.midGameBuffs.remaining('xr_exp'),
+    early_momentum_atk: () => this.midGameBuffs.remaining('em_atk'),
+    early_momentum_exp: () => this.midGameBuffs.remaining('em_exp'),
     proving_grounds_exp: () => this.provingGroundsExpRemaining,
     snow_drift: () => this.snowDriftRemaining,
     abyssal_convergence: () => this.abyssalConvergenceRemaining,
@@ -573,8 +566,8 @@ export class EncounterEngine {
   getHealResult() { return this.lastHealResult; }
   getEventChainCount(): number { return this.eventChainCount; }
   getDeclineStacks(): number { return this.declineStack.stacks; } // C804
-  getEventMomentumAtkRemaining(): number { return this.eventMomentumAtkRemaining; }
-  getEventMomentumDensityRemaining(): number { return this.eventMomentumDensityRemaining; }
+  getEventMomentumAtkRemaining(): number { return this.midGameBuffs.remaining('ev_mom_atk'); }
+  getEventMomentumDensityRemaining(): number { return this.midGameBuffs.remaining('ev_mom_density'); }
   // C798: Aggregate accessor for HUD — replaces N individual getter calls
   getActiveEventState() {
     return {
@@ -587,10 +580,10 @@ export class EncounterEngine {
       windGaleRemaining: this.windGaleRemaining,
       clearSkyPathRemaining: this.clearSkyPathRemaining,
       crossroadsUsed: this.crossroadsUsed,
-      crossroadsAtkRemaining: this.crossroadsAtkRemaining,
-      crossroadsExpRemaining: this.crossroadsExpRemaining,
-      earlyMomentumAtkRemaining: this.earlyMomentumAtkRemaining,
-      earlyMomentumExpRemaining: this.earlyMomentumExpRemaining,
+      crossroadsAtkRemaining: this.midGameBuffs.remaining('xr_atk'),
+      crossroadsExpRemaining: this.midGameBuffs.remaining('xr_exp'),
+      earlyMomentumAtkRemaining: this.midGameBuffs.remaining('em_atk'),
+      earlyMomentumExpRemaining: this.midGameBuffs.remaining('em_exp'),
       earlyMomentumLastMilestone: this.earlyMomentumLastMilestone,
       provingGroundsExpRemaining: this.provingGroundsExpRemaining,
       snowDriftRemaining: this.snowDriftRemaining,
@@ -601,8 +594,8 @@ export class EncounterEngine {
       goldCrucibleRemaining: this.goldCrucibleRemaining,
       astralParadoxRemaining: this.astralParadoxRemaining,
       soulForgeRemaining: this.soulForgeRemaining,
-      eventMomentumAtkRemaining: this.eventMomentumAtkRemaining,
-      eventMomentumDensityRemaining: this.eventMomentumDensityRemaining,
+      eventMomentumAtkRemaining: this.midGameBuffs.remaining('ev_mom_atk'),
+      eventMomentumDensityRemaining: this.midGameBuffs.remaining('ev_mom_density'),
     };
   }
   getTotalDeaths(): number { return this.totalDeaths; }
@@ -693,12 +686,12 @@ export class EncounterEngine {
     if (this.goldenHourRemaining > 0) activeBuffs.push('황금 시간');
     // C879: Mid-game event buffs
     if (this.provingGroundsExpRemaining > 0) activeBuffs.push('시련 EXP');
-    if (this.mercenaryShieldRemaining > 0) activeBuffs.push('용병 방패');
-    if (this.crossroadsAtkRemaining > 0) activeBuffs.push('갈림길 ATK');
-    if (this.crossroadsExpRemaining > 0) activeBuffs.push('갈림길 EXP');
-    if (this.wanderingMerchantAtkRemaining > 0) activeBuffs.push('상인 ATK');
-    if (this.earlyMomentumAtkRemaining > 0) activeBuffs.push('기세 ATK');
-    if (this.earlyMomentumExpRemaining > 0) activeBuffs.push('기세 EXP');
+    if (this.midGameBuffs.isActive('merc_shield')) activeBuffs.push('용병 방패');
+    if (this.midGameBuffs.isActive('xr_atk')) activeBuffs.push('갈림길 ATK');
+    if (this.midGameBuffs.isActive('xr_exp')) activeBuffs.push('갈림길 EXP');
+    if (this.midGameBuffs.isActive('wm_atk')) activeBuffs.push('상인 ATK');
+    if (this.midGameBuffs.isActive('em_atk')) activeBuffs.push('기세 ATK');
+    if (this.midGameBuffs.isActive('em_exp')) activeBuffs.push('기세 EXP');
     // C883: Reputation buffs
     if (this.midGameBuffs.isActive('rep_atk')) activeBuffs.push('명성 ATK');
     if (this.midGameBuffs.isActive('rep_shield')) activeBuffs.push('명성 방패');
@@ -892,14 +885,14 @@ export class EncounterEngine {
         this.totalSacrifices++;
       }
       // Prestige echo
-      const hadPrestigeEcho = this.prestigeEchoRemaining > 0;
-      const prestigeEchoDecay = hadPrestigeEcho ? (PRESTIGE_ECHO_DURATION - this.prestigeEchoRemaining) : 0;
+      const hadPrestigeEcho = this.midGameBuffs.isActive('prestige_echo');
+      const prestigeEchoDecay = hadPrestigeEcho ? (PRESTIGE_ECHO_DURATION - this.midGameBuffs.remaining('prestige_echo')) : 0;
       // C749: Inspiration buff
-      const inspirationActive = this.inspirationRemaining > 0;
+      const inspirationActive = this.midGameBuffs.isActive('inspiration');
       // C812: Mentor EXP buff
-      const mentorActive = this.mentorRemaining > 0;
+      const mentorActive = this.midGameBuffs.isActive('mentor');
       // C793: Event Momentum buffs
-      const eventMomentumAtkActive = this.eventMomentumAtkRemaining > 0;
+      const eventMomentumAtkActive = this.midGameBuffs.isActive('ev_mom_atk');
       // C837: All simple duration decrements consolidated in tickSimpleDurations
       this.tickSimpleDurations();
       // C840: Weather hazard + late-game duration effects (side-effects on hero HP / EXP / atkFlat)
@@ -950,7 +943,7 @@ export class EncounterEngine {
       // C782: Snow Drift ATK penalty (hero ATK ×0.90)
       const snowDriftAtkMul = this.snowDriftRemaining > 0 ? SNOW_DRIFT_ATK_PENALTY : 1;
       // C832: Wandering Merchant ATK buff
-      const merchantAtkMul = this.wanderingMerchantAtkRemaining > 0 ? (1 + WANDERING_MERCHANT_ATK_MUL) : 1;
+      const merchantAtkMul = this.midGameBuffs.isActive('wm_atk') ? (1 + WANDERING_MERCHANT_ATK_MUL) : 1;
       const baseHeroAtk = Math.floor(computeHeroAtk(atkInput) * weatherSpeedMul * snowDriftAtkMul * merchantAtkMul);
       // C122: critical hit — when combo streak >= 5, 20% chance per attack for x2 damage
       // C333: prestige combo bonus
@@ -1112,7 +1105,7 @@ export class EncounterEngine {
             abyssalConvergenceActive: this.abyssalConvergenceRemaining > 0,
             titanArenaActive: this.titanArenaRemaining > 0, astralParadoxActive: this.astralParadoxRemaining > 0, crimsonTitheActive: this.crimsonTitheRemaining > 0,
           });
-          const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.mercenaryShieldRemaining > 0 ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.midGameBuffs.isActive('rep_shield') ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('vt_shield') ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('fr_shield') ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
+          const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.midGameBuffs.isActive('merc_shield') ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.midGameBuffs.isActive('rep_shield') ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('vt_shield') ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('fr_shield') ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
           // C380: prestige shield blocks hits
           if (this.prestigeShieldRemaining > 0) {
             this.prestigeShieldRemaining--;
@@ -1210,9 +1203,9 @@ export class EncounterEngine {
           this.earlyMomentumLastMilestone = milestone;
           const tier = milestone % 3; // 0=ATK, 1=EXP, 2=Gold (cycling)
           if (tier === 0) {
-            this.earlyMomentumAtkRemaining = EARLY_MOMENTUM_ATK_DURATION;
+            this.midGameBuffs.activate('em_atk', EARLY_MOMENTUM_ATK_DURATION);
           } else if (tier === 1) {
-            this.earlyMomentumExpRemaining = EARLY_MOMENTUM_EXP_DURATION;
+            this.midGameBuffs.activate('em_exp', EARLY_MOMENTUM_EXP_DURATION);
           } else {
             hero.gold += hero.level * EARLY_MOMENTUM_GOLD_MUL;
           }
@@ -1319,9 +1312,9 @@ export class EncounterEngine {
         soulForgeExpPerStack: SOUL_FORGE_EXP_PER_STACK,
         mentorActive,
         mentorExpMul: MENTOR_EXP_MUL,
-        crossroadsExpActive: this.crossroadsExpRemaining > 0,
+        crossroadsExpActive: this.midGameBuffs.isActive('xr_exp'),
         crossroadsExpMul: CROSSROADS_EXP_MUL,
-        earlyMomentumExpActive: this.earlyMomentumExpRemaining > 0,
+        earlyMomentumExpActive: this.midGameBuffs.isActive('em_exp'),
         earlyMomentumExpMul: EARLY_MOMENTUM_EXP_MUL,
         heroLevel: hero.level,
       });
@@ -1738,7 +1731,7 @@ export class EncounterEngine {
         // C476: prestige exp burst — prestige gives flat exp burst
         hero.gainExp(this.prestigeCount * PRESTIGE_EXP_BURST_PER_PRESTIGE);
         // C508: prestige echo — activate decaying bonus
-        this.prestigeEchoRemaining = PRESTIGE_ECHO_DURATION;
+        this.midGameBuffs.activate('prestige_echo', PRESTIGE_ECHO_DURATION);
         // C540: temporal prestige — speed of prestige affects next run bonus
         if (this.fightsSincePrestige <= TEMPORAL_PRESTIGE_FAST_THRESHOLD) {
           this.temporalPrestigeBonus = TEMPORAL_PRESTIGE_FAST_BONUS;
@@ -1986,8 +1979,8 @@ export class EncounterEngine {
       heroAtk: computeBuffedHeroAtk(p.hero.atk, {
         stormNexus: this.stormNexusRemaining > 0,
         clearSky: this.clearSkyPathRemaining > 0,
-        crossroads: this.crossroadsAtkRemaining > 0,
-        earlyMomentum: this.earlyMomentumAtkRemaining > 0,
+        crossroads: this.midGameBuffs.isActive('xr_atk'),
+        earlyMomentum: this.midGameBuffs.isActive('em_atk'),
         reputation: this.midGameBuffs.isActive('rep_atk'),
         veteransTrial: this.midGameBuffs.isActive('vt_atk'),
         lastStand: this.midGameBuffs.isActive('ls_atk'),
@@ -2030,7 +2023,7 @@ export class EncounterEngine {
       relicLevels: this.relicLevels,
       fightsSinceVillage: this.fightsSinceVillage,
       eventChainCount: this.eventChainCount,
-      eventMomentumDensityActive: this.eventMomentumDensityRemaining > 0,
+      eventMomentumDensityActive: this.midGameBuffs.isActive('ev_mom_density'),
       lateGameDensityBoost: this.lateGameScheduler.getDensityBoost(),
       consecutiveEliteKills2: this.consecutiveEliteKills2,
       goldenHourRemaining: this.goldenHourRemaining,
@@ -2059,20 +2052,20 @@ export class EncounterEngine {
     this.eventChainCount = r.newEventChainCount;
     // C793: Event Momentum tiers
     if (r.eventMomentumTier === 2) {
-      this.eventMomentumAtkRemaining = EVENT_MOMENTUM_TIER2_DURATION;
+      this.midGameBuffs.activate('ev_mom_atk', EVENT_MOMENTUM_TIER2_DURATION);
     } else if (r.eventMomentumTier === 3) {
-      this.eventMomentumAtkRemaining = EVENT_MOMENTUM_TIER2_DURATION; // also gives ATK buff
-      this.eventMomentumDensityRemaining = EVENT_MOMENTUM_TIER3_DURATION;
+      this.midGameBuffs.activate('ev_mom_atk', EVENT_MOMENTUM_TIER2_DURATION); // also gives ATK buff
+      this.midGameBuffs.activate('ev_mom_density', EVENT_MOMENTUM_TIER3_DURATION);
     }
     this.fightsSinceVillage = r.newFightsSinceVillage;
     this.relics = r.newRelics;
     this.relicLevels = r.newRelicLevels;
     // C745: wire Echo event → prestige echo duration
-    if (r.newPrestigeEchoRemaining > 0) this.prestigeEchoRemaining = r.newPrestigeEchoRemaining;
+    if (r.newPrestigeEchoRemaining > 0) this.midGameBuffs.activate('prestige_echo', r.newPrestigeEchoRemaining);
     // C749: wire Inspiration event → ATK buff duration
-    if (r.newInspirationRemaining > 0) this.inspirationRemaining = r.newInspirationRemaining;
+    if (r.newInspirationRemaining > 0) this.midGameBuffs.activate('inspiration', r.newInspirationRemaining);
     // C812: wire Mentor event → EXP buff duration
-    if (r.newMentorRemaining > 0) this.mentorRemaining = r.newMentorRemaining;
+    if (r.newMentorRemaining > 0) this.midGameBuffs.activate('mentor', r.newMentorRemaining);
     // C810: Data-driven event trigger dispatch
     dispatchPendingTriggers(r, (id) => this.eventOrch.trigger(id));
     // C804: DeclineStack force — if 4+ declines, guarantee rare event trigger
@@ -2393,8 +2386,8 @@ export class EncounterEngine {
     this.astralParadoxRemaining = 0;
     this.soulForgeRemaining = 0; // duration lost, but stacks are permanent
     // C793: Event Momentum buffs lost on death
-    this.eventMomentumAtkRemaining = 0;
-    this.eventMomentumDensityRemaining = 0;
+    this.midGameBuffs.deactivate('ev_mom_atk');
+    this.midGameBuffs.deactivate('ev_mom_density');
     // Cycle 108 F1: intercept (a) — before applyDeathPenalty, check fate
     // roll eligibility. If eligible, emit fate_roll_required and *abort*
     if (this.opts.isFateRollEligible?.()) {
@@ -2427,11 +2420,11 @@ export class EncounterEngine {
   /** C894: Apply mid-game event buff state from resolver result */
   private applyMidGameBuffs(result: import('./encounter/MidGameEventResolver').MidGameResult): void {
     const b = result.buffs;
-    if (b.wanderingMerchantAtkRemaining !== undefined) this.wanderingMerchantAtkRemaining = b.wanderingMerchantAtkRemaining;
+    if (b.wanderingMerchantAtkRemaining !== undefined) this.midGameBuffs.activate('wm_atk', b.wanderingMerchantAtkRemaining);
     if (b.provingGroundsExpRemaining !== undefined) this.provingGroundsExpRemaining = b.provingGroundsExpRemaining;
-    if (b.mercenaryShieldRemaining !== undefined) this.mercenaryShieldRemaining = b.mercenaryShieldRemaining;
-    if (b.crossroadsAtkRemaining !== undefined) this.crossroadsAtkRemaining = b.crossroadsAtkRemaining;
-    if (b.crossroadsExpRemaining !== undefined) this.crossroadsExpRemaining = b.crossroadsExpRemaining;
+    if (b.mercenaryShieldRemaining !== undefined) this.midGameBuffs.activate('merc_shield', b.mercenaryShieldRemaining);
+    if (b.crossroadsAtkRemaining !== undefined) this.midGameBuffs.activate('xr_atk', b.crossroadsAtkRemaining);
+    if (b.crossroadsExpRemaining !== undefined) this.midGameBuffs.activate('xr_exp', b.crossroadsExpRemaining);
     if (b.reputationAtkRemaining !== undefined) this.midGameBuffs.activate('rep_atk', b.reputationAtkRemaining);
     if (b.reputationShieldRemaining !== undefined) this.midGameBuffs.activate('rep_shield', b.reputationShieldRemaining);
     if (b.reputationExpRemaining !== undefined) this.midGameBuffs.activate('rep_exp', b.reputationExpRemaining);
@@ -2475,17 +2468,13 @@ export class EncounterEngine {
     if (this.fogAmbushRemaining > 0) this.fogAmbushRemaining--;
     if (this.windGaleRemaining > 0) this.windGaleRemaining--;
     if (this.clearSkyPathRemaining > 0) this.clearSkyPathRemaining--;
-    if (this.crossroadsAtkRemaining > 0) this.crossroadsAtkRemaining--;
-    if (this.crossroadsExpRemaining > 0) this.crossroadsExpRemaining--;
-    if (this.earlyMomentumAtkRemaining > 0) this.earlyMomentumAtkRemaining--;
-    if (this.earlyMomentumExpRemaining > 0) this.earlyMomentumExpRemaining--;
+    // C932: crossroads + earlyMomentum ticked via midGameBuffs.tick()
     if (this.snowDriftRemaining > 0) this.snowDriftRemaining--;
     if (this.titanArenaRemaining > 0) this.titanArenaRemaining--;
     if (this.crimsonTitheRemaining > 0) this.crimsonTitheRemaining--;
     if (this.astralParadoxRemaining > 0) this.astralParadoxRemaining--;
     if (this.soulForgeRemaining > 0) this.soulForgeRemaining--;
-    if (this.wanderingMerchantAtkRemaining > 0) this.wanderingMerchantAtkRemaining--;
-    if (this.mercenaryShieldRemaining > 0) this.mercenaryShieldRemaining--;
+    // C932: wanderingMerchantAtk + mercenaryShield ticked via midGameBuffs.tick()
     // C883: Reputation buff decrements via midGameBuffs.tick()
     // C887: Veteran's Trial buff decrements via midGameBuffs.tick()
     // C890: Last Stand buff decrement via midGameBuffs.tick()
@@ -2493,11 +2482,7 @@ export class EncounterEngine {
     // C902: Greedy gold gain buff decrement via midGameBuffs.tick()
     // C929: First Trial + Wandering Sage + Elder's Judgment buffs ticked via midGameBuffs
     this.midGameBuffs.tick();
-    if (this.prestigeEchoRemaining > 0) this.prestigeEchoRemaining--;
-    if (this.inspirationRemaining > 0) this.inspirationRemaining--;
-    if (this.mentorRemaining > 0) this.mentorRemaining--;
-    if (this.eventMomentumAtkRemaining > 0) this.eventMomentumAtkRemaining--;
-    if (this.eventMomentumDensityRemaining > 0) this.eventMomentumDensityRemaining--;
+    // C932: prestigeEcho, inspiration, mentor, eventMomentum ticked via midGameBuffs.tick()
   }
 
   // C855: Post-victory EXP bonuses (hoard, theft, prestige floor, trophy, temporal fissure, overflow)
