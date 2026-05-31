@@ -37,6 +37,12 @@ import {
   LAST_STAND_HP_COST,
   LAST_STAND_DECLINE_HEAL_RATE,
   LAST_STAND_DECLINE_GOLD_MUL,
+  FIRST_TRIAL_MIN_FIGHTS,
+  FIRST_TRIAL_MAX_FIGHTS,
+  FIRST_TRIAL_CHANCE,
+  FIRST_TRIAL_HEAL_RATE,
+  FIRST_TRIAL_ATK_MUL,
+  FIRST_TRIAL_ATK_DURATION,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -71,6 +77,7 @@ export interface MidGamePending {
   finalReckoningFired?: boolean; // C896: already triggered this run
   lastStandChoiceResolved?: 'accept' | 'decline'; // C890: player's choice
   lastStandFired?: boolean; // C890: already triggered this run
+  firstTrialFired?: boolean; // C905: already triggered this run
 }
 
 export interface MidGameResult {
@@ -96,6 +103,7 @@ export interface MidGameResult {
     finalReckoningShieldRemaining?: number; // C896
     finalReckoningExpRemaining?: number; // C896
     greedyGoldRemaining?: number; // C902
+    firstTrialAtkRemaining?: number; // C905
     lastStandAtkRemaining?: number; // C890
   };
   greedyGoldMul?: number; // C902: greedy gold gain multiplier
@@ -108,6 +116,7 @@ export interface MidGameResult {
   reputationFired?: boolean; // C883: true = reputation payoff event triggered
   veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
   finalReckoningFired?: boolean; // C896: true = final reckoning event triggered
+  firstTrialFired?: boolean; // C905: true = first trial event triggered
 }
 
 export function resolveMidGameEvents(
@@ -221,6 +230,25 @@ export function resolveMidGameEvents(
       // No choice yet — signal pending
       return { events, heroMutations, buffs, crossroadsUsed, crossroadsChoicePending: true };
     }
+  }
+
+  // C905: First Trial — earliest player choice (fight 10-30, once per run, auto-resolve)
+  if (!pending.firstTrialFired
+    && ctx.totalFights >= FIRST_TRIAL_MIN_FIGHTS
+    && ctx.totalFights <= FIRST_TRIAL_MAX_FIGHTS
+    && ctx.rngChance(FIRST_TRIAL_CHANCE)) {
+    const hpRatio = ctx.hero.hp / ctx.hero.hpMax;
+    if (hpRatio < 0.6) {
+      // Low HP → heal path
+      const healAmt = Math.floor(ctx.hero.hpMax * FIRST_TRIAL_HEAL_RATE);
+      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
+      events.push({ type: 'event_first_trial', style: 'heal', value: healAmt } as OverworldEvent);
+    } else {
+      // Healthy → ATK buff path
+      buffs.firstTrialAtkRemaining = FIRST_TRIAL_ATK_DURATION;
+      events.push({ type: 'event_first_trial', style: 'atk', value: FIRST_TRIAL_ATK_MUL } as OverworldEvent);
+    }
+    return { events, heroMutations, buffs, crossroadsUsed, firstTrialFired: true };
   }
 
   // C891: Delegate consequence events to ConsequenceResolver

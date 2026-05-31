@@ -181,10 +181,17 @@ export const FAIRY_RAMP_END = 200; // C835: linear ramp end
 export const FAIRY_DURATION = 5;
 // C812: Wandering Mentor — early-game EXP buff (fights 25-149)
 export const MENTOR_CHANCE = 0.05; // C818: was 0.03, collab consensus
-export const MENTOR_MIN_FIGHTS = 25;
+export const MENTOR_MIN_FIGHTS = 15; // C905: 25→15 (earlier engagement)
 export const MENTOR_MAX_FIGHTS = 150; // C880: 130→150 (spread density cliff)
 export const MENTOR_EXP_MUL = 0.15; // +15% EXP
 export const MENTOR_DURATION = 4;
+// C905: First Trial — earliest player choice (fight 10-30, once per run)
+export const FIRST_TRIAL_MIN_FIGHTS = 10;
+export const FIRST_TRIAL_MAX_FIGHTS = 30;
+export const FIRST_TRIAL_CHANCE = 0.08; // high chance for reliable early hook
+export const FIRST_TRIAL_HEAL_RATE = 0.30; // heal option: 30% maxHP
+export const FIRST_TRIAL_ATK_MUL = 0.15; // ATK option: +15% ATK for 5 fights
+export const FIRST_TRIAL_ATK_DURATION = 5;
 // C826: Risk Gambit — early-game decision event (fights 40-90)
 export const RISK_GAMBIT_CHANCE = 0.05;
 export const RISK_GAMBIT_MIN_FIGHTS = 40;

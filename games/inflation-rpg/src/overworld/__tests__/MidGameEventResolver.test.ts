@@ -63,7 +63,7 @@ describe('resolveMidGameEvents', () => {
 
   it('sparring grounds lose costs HP', () => {
     const ctx = makeCtx({ rngFloat: () => 0.99 }); // > WIN_CHANCE
-    const result = resolveMidGameEvents(ctx, { sparringGroundsPending: true });
+    const result = resolveMidGameEvents(ctx, { sparringGroundsPending: true, firstTrialFired: true });
     expect(result.events[0]).toMatchObject({ type: 'event_sparring_grounds', won: false });
     expect(result.heroMutations.hpDelta).toBeLessThan(0);
   });
@@ -77,7 +77,7 @@ describe('resolveMidGameEvents', () => {
 
   it('proving grounds does not trigger outside window', () => {
     const ctx = makeCtx({ totalFights: 30, rngChance: () => true, rngFloat: () => 0.3 });
-    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept' });
+    const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept', firstTrialFired: true });
     expect(result.events).toHaveLength(0);
   });
 
@@ -99,6 +99,37 @@ describe('resolveMidGameEvents', () => {
     const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'decline' });
     expect(result.events[0]).toMatchObject({ type: 'event_proving_grounds', declined: true });
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+  });
+
+  // C905: First Trial tests
+  it('first trial heals when HP < 60%', () => {
+    const ctx = makeCtx({ hero: { hp: 400, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {});
+    expect(result.events[0]).toMatchObject({ type: 'event_first_trial', style: 'heal' });
+    expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
+    expect(result.firstTrialFired).toBe(true);
+  });
+
+  it('first trial gives ATK buff when HP >= 60%', () => {
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 20, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {});
+    expect(result.events[0]).toMatchObject({ type: 'event_first_trial', style: 'atk' });
+    expect(result.buffs.firstTrialAtkRemaining).toBeGreaterThan(0);
+    expect(result.firstTrialFired).toBe(true);
+  });
+
+  it('first trial does not fire if already fired', () => {
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialFired: true });
+    const ftEvents = result.events.filter((e: { type: string }) => e.type === 'event_first_trial');
+    expect(ftEvents).toHaveLength(0);
+  });
+
+  it('first trial does not fire outside window', () => {
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 5, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {});
+    const ftEvents = result.events.filter((e: { type: string }) => e.type === 'event_first_trial');
+    expect(ftEvents).toHaveLength(0);
   });
 
   it('mercenary offer returns pending when no choice resolved', () => {
