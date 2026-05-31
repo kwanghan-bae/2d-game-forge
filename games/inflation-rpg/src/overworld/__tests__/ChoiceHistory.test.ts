@@ -40,6 +40,19 @@ describe('ChoiceHistory', () => {
     history.reset();
     expect(history.totalChoices).toBe(0);
   });
+
+  it('C972: getConsecutiveDeclines counts trailing defensive choices', () => {
+    history.record(10, 'proving', 'accept', 'aggressive');
+    history.record(20, 'mercenary', 'accept', 'defensive');
+    history.record(30, 'veterans_challenge', 'decline', 'defensive');
+    expect(history.getConsecutiveDeclines()).toBe(2);
+  });
+
+  it('C972: getConsecutiveDeclines returns 0 when last choice is not defensive', () => {
+    history.record(10, 'proving', 'decline', 'defensive');
+    history.record(20, 'crossroads', 'atk', 'aggressive');
+    expect(history.getConsecutiveDeclines()).toBe(0);
+  });
 });
 
 describe('classifyChoice', () => {

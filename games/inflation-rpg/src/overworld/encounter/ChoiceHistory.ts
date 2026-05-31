@@ -52,6 +52,16 @@ export class ChoiceHistory {
   reset(): void {
     this.records = [];
   }
+
+  /** C972: Count consecutive 'defensive' (decline-like) choices from the end */
+  getConsecutiveDeclines(): number {
+    let count = 0;
+    for (let i = this.records.length - 1; i >= 0; i--) {
+      if (this.records[i].category === 'defensive') count++;
+      else break;
+    }
+    return count;
+  }
 }
 
 /** Classify a choice into a category */
