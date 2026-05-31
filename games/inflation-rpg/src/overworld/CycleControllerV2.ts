@@ -1197,9 +1197,9 @@ export class CycleControllerV2 {
       const evType = ev.type as string;
       if (evType === 'event_wandering_merchant' || evType === 'event_proving_grounds'
         || evType === 'event_crossroads' || evType === 'event_mercenary_offer'
-        || evType === 'event_last_stand') {
-        const choice = (ev as { choice?: string; path?: string }).choice
-          ?? (ev as { path?: string }).path ?? 'unknown';
+        || evType === 'event_last_stand' || evType === 'event_first_trial') {
+        const choice = (ev as { choice?: string; path?: string; style?: string }).choice
+          ?? (ev as { path?: string }).path ?? (ev as { style?: string }).style ?? 'unknown';
         this.recordToStore({
           age: this.hero.age,
           type: 'choiceEvent',
@@ -1211,7 +1211,7 @@ export class CycleControllerV2 {
           payload: { eventType: evType, choice },
         });
       }
-      if (evType === 'event_reputation' || evType === 'event_veterans_trial') {
+      if (evType === 'event_reputation' || evType === 'event_veterans_trial' || evType === 'event_final_reckoning') {
         const style = (ev as { style?: string }).style ?? 'balanced';
         this.recordToStore({
           age: this.hero.age,
