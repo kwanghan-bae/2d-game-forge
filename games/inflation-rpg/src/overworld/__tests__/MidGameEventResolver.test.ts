@@ -13,19 +13,24 @@ function makeCtx(overrides: Partial<MidGameContext> = {}): MidGameContext {
 }
 
 describe('resolveMidGameEvents', () => {
-  it('wandering merchant heals when hp < 70%', () => {
+  it('wandering merchant returns pending when no choice resolved', () => {
     const ctx = makeCtx({ hero: { hp: 600, hpMax: 1000, gold: 200, level: 10, atk: 20 } });
     const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true });
+    expect(result.wanderingMerchantChoicePending).toBe(true);
+  });
+
+  it('wandering merchant heals when player chooses heal', () => {
+    const ctx = makeCtx({ hero: { hp: 600, hpMax: 1000, gold: 200, level: 10, atk: 20 } });
+    const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true, wanderingMerchantChoiceResolved: 'heal' });
     expect(result.events[0]).toMatchObject({ type: 'event_wandering_merchant', choice: 'heal' });
     expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
   });
 
-  it('wandering merchant ATK buff when hp >= 70% and no gamble', () => {
+  it('wandering merchant ATK buff when player chooses atk', () => {
     const ctx = makeCtx({
       hero: { hp: 800, hpMax: 1000, gold: 200, level: 10, atk: 20 },
-      rngChance: () => false,
     });
-    const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true });
+    const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true, wanderingMerchantChoiceResolved: 'atk' });
     expect(result.events[0]).toMatchObject({ type: 'event_wandering_merchant', choice: 'atk' });
     expect(result.buffs.wanderingMerchantAtkRemaining).toBeGreaterThan(0);
   });
@@ -35,17 +40,16 @@ describe('resolveMidGameEvents', () => {
       hero: { hp: 900, hpMax: 1000, gold: 200, level: 10, atk: 20 },
       rngChance: () => true,
     });
-    const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true });
+    const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true, wanderingMerchantChoiceResolved: 'gamble' });
     expect(result.events[0]).toMatchObject({ type: 'event_wandering_merchant', choice: 'gamble_win' });
   });
 
   it('wandering merchant gamble lose costs gold', () => {
-    let call = 0;
     const ctx = makeCtx({
       hero: { hp: 900, hpMax: 1000, gold: 200, level: 10, atk: 20 },
-      rngChance: (r) => { call++; return call === 1; }, // first=gamble chance yes, second=win no
+      rngChance: () => false,
     });
-    const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true });
+    const result = resolveMidGameEvents(ctx, { wanderingMerchantPending: true, wanderingMerchantChoiceResolved: 'gamble' });
     expect(result.events[0]).toMatchObject({ type: 'event_wandering_merchant', choice: 'gamble_lose' });
     expect(result.heroMutations.goldDelta).toBeLessThan(0);
   });

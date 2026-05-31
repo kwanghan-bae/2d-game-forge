@@ -924,6 +924,8 @@ export class CycleControllerV2 {
   setMercenaryChoice(accept: boolean) { this.encounter.setMercenaryChoice(accept); }
   // C878: Crossroads path player choice
   setCrossroadsChoice(path: 'atk' | 'exp' | 'gold') { this.encounter.setCrossroadsChoice(path); }
+  // C881: Wandering Merchant player choice
+  setWanderingMerchantChoice(choice: 'heal' | 'atk' | 'gamble') { this.encounter.setWanderingMerchantChoice(choice); }
   getAbyssalConvergenceRemaining() { return this.encounter.getEventRemaining('abyssal_convergence'); }
   getAbyssalConvergencePending() { return this.encounter.getEventPending('abyssal_convergence'); }
   resolveAbyssalConvergence(accept: boolean) { this.resolveEventGeneric('abyssal_convergence', accept); }

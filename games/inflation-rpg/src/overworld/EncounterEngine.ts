@@ -230,6 +230,7 @@ export class EncounterEngine {
   private provingGroundsManualAccept = false; // C877: +25% bonus when player manually chose
   private mercenaryChoiceResolved: 'accept' | 'decline' | undefined = undefined; // C878
   private crossroadsChoiceResolved: 'atk' | 'exp' | 'gold' | undefined = undefined; // C878
+  private wanderingMerchantChoiceResolved: 'heal' | 'atk' | 'gamble' | undefined = undefined; // C881
   private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
   private temporalFissureRemaining = 0; // C791: Temporal Fissure (store EXP, pay back ×2)
@@ -609,6 +610,13 @@ export class EncounterEngine {
   setCrossroadsChoice(path: 'atk' | 'exp' | 'gold'): void {
     this.crossroadsChoiceResolved = path;
     this.choiceEngine.resolveCrossroadsChoice();
+  }
+
+  // C881: Wandering Merchant choice
+  hasPendingWanderingMerchantChoice(): boolean { return this.choiceEngine.hasPendingWanderingMerchantChoice(); }
+  setWanderingMerchantChoice(choice: 'heal' | 'atk' | 'gamble'): void {
+    this.wanderingMerchantChoiceResolved = choice;
+    this.choiceEngine.resolveWanderingMerchantChoice();
   }
 
   // C578: combat stats summary for visual overlay
@@ -2057,10 +2065,11 @@ export class EncounterEngine {
     }
 
     // C870: Delegate mid-game events to pure resolver
-    // C875/C878: If any choice is pending (modal open), skip mid-game until resolved
+    // C875/C878/C881: If any choice is pending (modal open), skip mid-game until resolved
     if (this.choiceEngine.hasPendingProvingChoice()
       || this.choiceEngine.hasPendingMercenaryChoice()
-      || this.choiceEngine.hasPendingCrossroadsChoice()) {
+      || this.choiceEngine.hasPendingCrossroadsChoice()
+      || this.choiceEngine.hasPendingWanderingMerchantChoice()) {
       // Waiting for player input — don't re-roll events
     } else {
     const provingResolved = this.provingChoiceResolved;
@@ -2069,6 +2078,8 @@ export class EncounterEngine {
     this.mercenaryChoiceResolved = undefined;
     const crossroadsResolved = this.crossroadsChoiceResolved;
     this.crossroadsChoiceResolved = undefined;
+    const wanderingMerchantResolved = this.wanderingMerchantChoiceResolved;
+    this.wanderingMerchantChoiceResolved = undefined;
     const midGameResult = resolveMidGameEvents(
       {
         hero: { hp: hero.hp, hpMax: hero.hpMax, gold: hero.gold, level: hero.level, atk: hero.atk },
@@ -2085,12 +2096,17 @@ export class EncounterEngine {
         provingChoiceResolved: provingResolved,
         mercenaryChoiceResolved: mercenaryResolved,
         crossroadsChoiceResolved: crossroadsResolved,
+        wanderingMerchantChoiceResolved: wanderingMerchantResolved,
       },
     );
-    // C875: If proving grounds needs player choice, trigger EventChoiceEngine and emit event
+    // C875/C878/C881: If any event needs player choice, trigger and emit
     if (midGameResult.provingPending) {
       this.choiceEngine.triggerProving();
       events.push({ type: 'proving_grounds_choice' });
+      events.push(...midGameResult.events);
+    } else if (midGameResult.wanderingMerchantChoicePending) {
+      this.choiceEngine.triggerWanderingMerchant();
+      events.push({ type: 'wandering_merchant_choice' });
       events.push(...midGameResult.events);
     } else if (midGameResult.mercenaryChoicePending) {
       this.choiceEngine.triggerMercenaryOffer();

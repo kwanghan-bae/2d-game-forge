@@ -137,4 +137,6 @@ export type OverworldEvent =
   // C878: Mercenary Offer player choice pending
   | { type: 'mercenary_offer_choice' }
   // C878: Crossroads player choice pending
-  | { type: 'crossroads_choice' };
+  | { type: 'crossroads_choice' }
+  // C881: Wandering Merchant player choice pending
+  | { type: 'wandering_merchant_choice' };

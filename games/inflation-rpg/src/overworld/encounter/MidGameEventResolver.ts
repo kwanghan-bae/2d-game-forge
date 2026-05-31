@@ -54,6 +54,7 @@ export interface MidGamePending {
   provingChoiceResolved?: 'accept' | 'decline'; // C875: player's choice (if already made)
   mercenaryChoiceResolved?: 'accept' | 'decline'; // C878: player's choice
   crossroadsChoiceResolved?: 'atk' | 'exp' | 'gold'; // C878: player's chosen path
+  wanderingMerchantChoiceResolved?: 'heal' | 'atk' | 'gamble'; // C881: player's choice
 }
 
 export interface MidGameResult {
@@ -74,6 +75,7 @@ export interface MidGameResult {
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
   mercenaryChoicePending?: boolean; // C878: true = player choice needed
   crossroadsChoicePending?: boolean; // C878: true = player choice needed
+  wanderingMerchantChoicePending?: boolean; // C881: true = player choice needed
 }
 
 export function resolveMidGameEvents(
@@ -85,14 +87,16 @@ export function resolveMidGameEvents(
   const buffs: MidGameResult['buffs'] = {};
   let crossroadsUsed = false;
 
-  // Wandering Merchant
+  // Wandering Merchant — C881: two-phase player choice (heal/atk/gamble)
   if (pending.wanderingMerchantPending) {
-    const needsHeal = ctx.hero.hp < ctx.hero.hpMax * 0.7;
-    if (needsHeal) {
+    if (pending.wanderingMerchantChoiceResolved === 'heal') {
       const healAmt = Math.floor(ctx.hero.hpMax * WANDERING_MERCHANT_HEAL_RATE);
       heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
       events.push({ type: 'event_wandering_merchant', choice: 'heal', value: healAmt });
-    } else if (ctx.rngChance(WANDERING_MERCHANT_GAMBLE_CHANCE)) {
+    } else if (pending.wanderingMerchantChoiceResolved === 'atk') {
+      buffs.wanderingMerchantAtkRemaining = WANDERING_MERCHANT_ATK_DURATION;
+      events.push({ type: 'event_wandering_merchant', choice: 'atk', value: WANDERING_MERCHANT_ATK_DURATION });
+    } else if (pending.wanderingMerchantChoiceResolved === 'gamble') {
       if (ctx.rngChance(WANDERING_MERCHANT_GAMBLE_WIN_RATE)) {
         buffs.wanderingMerchantAtkRemaining = WANDERING_MERCHANT_ATK_DURATION * 2;
         events.push({ type: 'event_wandering_merchant', choice: 'gamble_win', value: WANDERING_MERCHANT_ATK_DURATION * 2 });
@@ -104,8 +108,8 @@ export function resolveMidGameEvents(
         events.push({ type: 'event_wandering_merchant', choice: 'gamble_lose', value: lossAmount });
       }
     } else {
-      buffs.wanderingMerchantAtkRemaining = WANDERING_MERCHANT_ATK_DURATION;
-      events.push({ type: 'event_wandering_merchant', choice: 'atk', value: WANDERING_MERCHANT_ATK_DURATION });
+      // No choice yet — signal pending
+      return { events, heroMutations, buffs, crossroadsUsed, wanderingMerchantChoicePending: true };
     }
   }
 

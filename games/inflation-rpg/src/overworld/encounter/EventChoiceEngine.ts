@@ -54,6 +54,13 @@ export enum CrossroadsPathChoice {
   GOLD = 2,
 }
 
+// C881: Wandering Merchant player choice
+export enum WanderingMerchantChoice {
+  HEAL = 0,
+  ATK = 1,
+  GAMBLE = 2,
+}
+
 export class EventChoiceEngine {
   private shrineChoice: ShrineChoice | -1 = -1;
   private dangerChoice: DangerChoice = DangerChoice.NONE;
@@ -250,6 +257,30 @@ export class EventChoiceEngine {
     const c = this.crossroadsPathChoice;
     this.crossroadsPathPending = false;
     this.crossroadsPathChoice = CrossroadsPathChoice.ATK;
+    return c;
+  }
+
+  // --- Wandering Merchant Choice (C881) ---
+  private wanderingMerchantChoicePending = false;
+  private wanderingMerchantChoice: WanderingMerchantChoice = WanderingMerchantChoice.HEAL;
+
+  hasPendingWanderingMerchantChoice(): boolean {
+    return this.wanderingMerchantChoicePending;
+  }
+
+  triggerWanderingMerchant(): void {
+    this.wanderingMerchantChoicePending = true;
+    this.wanderingMerchantChoice = WanderingMerchantChoice.HEAL;
+  }
+
+  setWanderingMerchantChoice(choice: WanderingMerchantChoice): void {
+    this.wanderingMerchantChoice = choice;
+  }
+
+  resolveWanderingMerchantChoice(): WanderingMerchantChoice {
+    const c = this.wanderingMerchantChoice;
+    this.wanderingMerchantChoicePending = false;
+    this.wanderingMerchantChoice = WanderingMerchantChoice.HEAL;
     return c;
   }
 }
