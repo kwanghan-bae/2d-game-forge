@@ -231,11 +231,12 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   const eventsEnabled = ctx.totalFights > 20;
   let eventTriggered = false;
   // C714: pity timer — force event if N fights without one
-  // C943: ramped threshold (500→12, 700→10, 800+→9)
+  // C949: smooth pity curve (18 at <500, linear ramp to 9 at 800+)
   let effectivePityThreshold = EVENT_PITY_THRESHOLD;
-  if (ctx.totalFights >= 800) effectivePityThreshold = LATE_GAME_PITY_THRESHOLD_800;
-  else if (ctx.totalFights >= 700) effectivePityThreshold = LATE_GAME_PITY_THRESHOLD_700;
-  else if (ctx.totalFights >= LATE_GAME_PITY_FIGHT_MIN) effectivePityThreshold = LATE_GAME_PITY_THRESHOLD;
+  if (ctx.totalFights >= LATE_GAME_PITY_FIGHT_MIN) {
+    const progress = Math.min(1, (ctx.totalFights - LATE_GAME_PITY_FIGHT_MIN) / 300); // 500→800 = 0→1
+    effectivePityThreshold = Math.round(LATE_GAME_PITY_THRESHOLD - progress * (LATE_GAME_PITY_THRESHOLD - LATE_GAME_PITY_THRESHOLD_800));
+  }
   const pityActive = eventsEnabled && ctx.fightsSinceEvent >= effectivePityThreshold;
 
   // C809: Weighted event pool — replaces first-match-wins if-chain
