@@ -241,7 +241,7 @@ export const EARLY_MOMENTUM_EXP_DURATION = 3;
 export const EARLY_MOMENTUM_GOLD_MUL = 30; // level × 30 gold burst
 export const EARLY_MOMENTUM_STREAK_INTERVAL = 5; // every 5 consecutive wins
 // C866: Proving Grounds — mid-game challenge event (fight 55-90)
-export const PROVING_GROUNDS_MIN_FIGHT = 40; // C885: 55→40 (fill early choice gap)
+export const PROVING_GROUNDS_MIN_FIGHT = 35; // C909: 40→35 (fight 31-39 Mentor-only gap fix)
 export const PROVING_GROUNDS_MAX_FIGHT = 110; // C874: 90→110 (overlap with density ramp)
 export const PROVING_GROUNDS_CHANCE = 0.06; // C874: 4→6% per fight → expected ~2.1/run
 export const PROVING_GROUNDS_REWARD_EXP_MUL = 2.00; // C869: 1.50→2.00 (meaningful EXP boost)
@@ -391,7 +391,7 @@ export const SOUL_FORGE_MAX_STACKS = 5; // cap at 5 stacks = +40% EXP
 export const SOUL_FORGE_COMBO_COST = 15; // costs 15 combo streak on accept
 
 // C883: Reputation Payoff — consequence event based on player's dominant choice style (fight 176-225)
-export const REPUTATION_MIN_FIGHT = 176;
+export const REPUTATION_MIN_FIGHT = 160; // C909: 176→160 (fight 161-175 micro-desert fix)
 export const REPUTATION_MAX_FIGHT = 225;
 export const REPUTATION_CHANCE = 0.06; // C886: 0.08→0.06 (near-guaranteed but less frequent)
 export const REPUTATION_MIN_CHOICES = 3; // C886: 2→3 (need ≥3 recorded choices for payoff)
@@ -407,7 +407,7 @@ export const REPUTATION_BALANCED_EXP_DURATION = 5; // balanced: +15% EXP for 5 f
 export const REPUTATION_BALANCED_EXP_MUL = 0.15;
 
 // C887: Veteran's Trial — 2nd consequence event (fight 275-400)
-export const VETERANS_TRIAL_MIN_FIGHT = 275;
+export const VETERANS_TRIAL_MIN_FIGHT = 240; // C909: 275→240 (fight 226-274 longest desert fix)
 export const VETERANS_TRIAL_MAX_FIGHT = 450; // C889: 400→450 (extend late-game coverage)
 export const VETERANS_TRIAL_CHANCE = 0.05;
 export const VETERANS_TRIAL_MIN_CHOICES = 4;
