@@ -201,7 +201,7 @@ export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level a
 
 // C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
 export const MERCENARY_OFFER_CHANCE = 0.03;
-export const MERCENARY_OFFER_MIN_FIGHTS = 90;
+export const MERCENARY_OFFER_MIN_FIGHTS = 100; // C853: 90→100 (reduce Sparring overlap)
 export const MERCENARY_OFFER_MAX_FIGHTS = 120;
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
@@ -212,6 +212,9 @@ export const CLEAR_SKY_PATH_MIN_FIGHTS = 80;
 export const CLEAR_SKY_PATH_MAX_FIGHTS = 130;
 export const CLEAR_SKY_PATH_ATK_MUL = 1.15; // ×1.15 ATK for duration
 export const CLEAR_SKY_PATH_DURATION = 3; // 3 fights
+// C853: High-gold death penalty ramp (500k+ gold → up to 20% penalty)
+export const HIGH_GOLD_DEATH_THRESHOLD = 500_000;
+export const HIGH_GOLD_DEATH_PENALTY_CAP = 0.20;
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
@@ -221,7 +224,7 @@ export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, st
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
 export const WANDERING_MERCHANT_GAMBLE_CHANCE = 0.35; // C844: probability AI picks double-or-nothing over safe ATK
 export const WANDERING_MERCHANT_GAMBLE_WIN_RATE = 0.5; // C844: 50% → 2× duration, 50% → nothing
-export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 35; // C850: 50→35 (reduce gamble EV advantage over safe path)
+export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 20; // C853: 35→20 (reduce gamble EV dominance)
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
