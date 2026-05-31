@@ -382,3 +382,16 @@ export const SOUL_FORGE_DURATION = 8; // fights with permanent EXP boost active
 export const SOUL_FORGE_EXP_PER_STACK = 0.08; // +8% EXP per stack (permanent within run)
 export const SOUL_FORGE_MAX_STACKS = 5; // cap at 5 stacks = +40% EXP
 export const SOUL_FORGE_COMBO_COST = 15; // costs 15 combo streak on accept
+
+// C883: Reputation Payoff — consequence event based on player's dominant choice style (fight 176-225)
+export const REPUTATION_MIN_FIGHT = 176;
+export const REPUTATION_MAX_FIGHT = 225;
+export const REPUTATION_CHANCE = 0.08; // 8% per fight → ~2.4 expected triggers in window
+export const REPUTATION_MIN_CHOICES = 2; // need ≥2 recorded choices for payoff
+export const REPUTATION_AGG_ATK_MUL = 0.20; // aggressive: +20% ATK for 8 fights
+export const REPUTATION_AGG_DURATION = 8;
+export const REPUTATION_DEF_HEAL_RATE = 0.30; // defensive: heal 30% maxHP
+export const REPUTATION_DEF_SHIELD_DURATION = 6; // +6 fight shield
+export const REPUTATION_GREEDY_GOLD_MUL = 2.5; // greedy: gold burst ×2.5× level
+export const REPUTATION_BALANCED_EXP_DURATION = 5; // balanced: +15% EXP for 5 fights
+export const REPUTATION_BALANCED_EXP_MUL = 0.15;

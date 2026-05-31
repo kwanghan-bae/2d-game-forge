@@ -28,6 +28,17 @@ import {
   CROSSROADS_ATK_DURATION,
   CROSSROADS_EXP_DURATION,
   CROSSROADS_GOLD_BURST_MUL,
+  REPUTATION_MIN_FIGHT,
+  REPUTATION_MAX_FIGHT,
+  REPUTATION_CHANCE,
+  REPUTATION_MIN_CHOICES,
+  REPUTATION_AGG_ATK_MUL,
+  REPUTATION_AGG_DURATION,
+  REPUTATION_DEF_HEAL_RATE,
+  REPUTATION_DEF_SHIELD_DURATION,
+  REPUTATION_GREEDY_GOLD_MUL,
+  REPUTATION_BALANCED_EXP_DURATION,
+  REPUTATION_BALANCED_EXP_MUL,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -55,6 +66,9 @@ export interface MidGamePending {
   mercenaryChoiceResolved?: 'accept' | 'decline'; // C878: player's choice
   crossroadsChoiceResolved?: 'atk' | 'exp' | 'gold'; // C878: player's chosen path
   wanderingMerchantChoiceResolved?: 'heal' | 'atk' | 'gamble'; // C881: player's choice
+  reputationStyle?: 'aggressive' | 'defensive' | 'greedy' | 'balanced'; // C883: dominant choice style
+  reputationTotalChoices?: number; // C883: how many choices player has made
+  reputationFired?: boolean; // C883: already triggered this run
 }
 
 export interface MidGameResult {
@@ -70,12 +84,16 @@ export interface MidGameResult {
     mercenaryShieldRemaining?: number;
     crossroadsAtkRemaining?: number;
     crossroadsExpRemaining?: number;
+    reputationAtkRemaining?: number; // C883
+    reputationShieldRemaining?: number; // C883
+    reputationExpRemaining?: number; // C883
   };
   crossroadsUsed?: boolean;
   provingPending?: boolean; // C875: true = player choice needed, pause game loop
   mercenaryChoicePending?: boolean; // C878: true = player choice needed
   crossroadsChoicePending?: boolean; // C878: true = player choice needed
   wanderingMerchantChoicePending?: boolean; // C881: true = player choice needed
+  reputationFired?: boolean; // C883: true = reputation payoff event triggered
 }
 
 export function resolveMidGameEvents(
@@ -189,6 +207,32 @@ export function resolveMidGameEvents(
       // No choice yet — signal pending
       return { events, heroMutations, buffs, crossroadsUsed, crossroadsChoicePending: true };
     }
+  }
+
+  // C883: Reputation Payoff — consequence event based on player's dominant choice style
+  if (!pending.reputationFired
+    && ctx.totalFights >= REPUTATION_MIN_FIGHT
+    && ctx.totalFights <= REPUTATION_MAX_FIGHT
+    && (pending.reputationTotalChoices ?? 0) >= REPUTATION_MIN_CHOICES
+    && ctx.rngChance(REPUTATION_CHANCE)) {
+    const style = pending.reputationStyle ?? 'balanced';
+    if (style === 'aggressive') {
+      buffs.reputationAtkRemaining = REPUTATION_AGG_DURATION;
+      events.push({ type: 'event_reputation', style, value: REPUTATION_AGG_ATK_MUL });
+    } else if (style === 'defensive') {
+      const healAmt = Math.floor(ctx.hero.hpMax * REPUTATION_DEF_HEAL_RATE);
+      heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
+      buffs.reputationShieldRemaining = REPUTATION_DEF_SHIELD_DURATION;
+      events.push({ type: 'event_reputation', style, value: healAmt });
+    } else if (style === 'greedy') {
+      const goldBurst = Math.floor(ctx.hero.level * REPUTATION_GREEDY_GOLD_MUL);
+      heroMutations.goldDelta = (heroMutations.goldDelta ?? 0) + goldBurst;
+      events.push({ type: 'event_reputation', style, value: goldBurst });
+    } else {
+      buffs.reputationExpRemaining = REPUTATION_BALANCED_EXP_DURATION;
+      events.push({ type: 'event_reputation', style: 'balanced', value: REPUTATION_BALANCED_EXP_MUL });
+    }
+    return { events, heroMutations, buffs, crossroadsUsed, reputationFired: true };
   }
 
   return { events, heroMutations, buffs, crossroadsUsed };

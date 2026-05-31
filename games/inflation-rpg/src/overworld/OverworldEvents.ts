@@ -139,4 +139,6 @@ export type OverworldEvent =
   // C878: Crossroads player choice pending
   | { type: 'crossroads_choice' }
   // C881: Wandering Merchant player choice pending
-  | { type: 'wandering_merchant_choice' };
+  | { type: 'wandering_merchant_choice' }
+  // C883: Reputation payoff event
+  | { type: 'event_reputation'; style: string; value: number };

@@ -147,4 +147,56 @@ describe('resolveMidGameEvents', () => {
     expect(result.events[0]).toMatchObject({ type: 'event_crossroads', path: 'atk' });
     expect(result.buffs.crossroadsAtkRemaining).toBeGreaterThan(0);
   });
+
+  // C883: Reputation payoff tests
+  it('reputation aggressive gives ATK buff', () => {
+    const ctx = makeCtx({ totalFights: 190, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 3 });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_reputation', style: 'aggressive' }));
+    expect(result.buffs.reputationAtkRemaining).toBe(8);
+    expect(result.reputationFired).toBe(true);
+  });
+
+  it('reputation defensive heals + shield', () => {
+    const ctx = makeCtx({ totalFights: 190, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'defensive', reputationTotalChoices: 3 });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_reputation', style: 'defensive' }));
+    expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
+    expect(result.buffs.reputationShieldRemaining).toBe(6);
+  });
+
+  it('reputation greedy gives gold burst', () => {
+    const ctx = makeCtx({ totalFights: 190, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'greedy', reputationTotalChoices: 3 });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_reputation', style: 'greedy' }));
+    expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+  });
+
+  it('reputation balanced gives EXP buff', () => {
+    const ctx = makeCtx({ totalFights: 190, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'balanced', reputationTotalChoices: 3 });
+    expect(result.events).toContainEqual(expect.objectContaining({ type: 'event_reputation', style: 'balanced' }));
+    expect(result.buffs.reputationExpRemaining).toBe(5);
+  });
+
+  it('reputation does not fire outside window', () => {
+    const ctx = makeCtx({ totalFights: 150, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 3 });
+    const repEvents = result.events.filter(e => e.type === 'event_reputation');
+    expect(repEvents).toHaveLength(0);
+  });
+
+  it('reputation does not fire with too few choices', () => {
+    const ctx = makeCtx({ totalFights: 190, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 1 });
+    const repEvents = result.events.filter(e => e.type === 'event_reputation');
+    expect(repEvents).toHaveLength(0);
+  });
+
+  it('reputation does not re-fire if already fired', () => {
+    const ctx = makeCtx({ totalFights: 190, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { reputationStyle: 'aggressive', reputationTotalChoices: 3, reputationFired: true });
+    const repEvents = result.events.filter(e => e.type === 'event_reputation');
+    expect(repEvents).toHaveLength(0);
+  });
 });
