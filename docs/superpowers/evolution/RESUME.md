@@ -1,49 +1,50 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 895
+- Cycle: 898
 - Target: 600+ (연속 진화)
-- Last commit: C895 level-designer balance pass
-- Vitest: 2372 pass / 0 fail
-- EncounterEngine: ~2670 lines
-- Critic score: 26/40 (C892), pending C895
+- Last commit: C898 balance + collab dispatch
+- Vitest: 2388 pass / 0 fail
+- EncounterEngine: ~2700 lines
+- Critic score: 27/40 (C895), pending C898
 
-## 레이어 카운터 (C893-C895 era)
-- 시스템: 2 (C893, C893a)
-- 구조: 1 (C894)
-- 밸런스: 1 (C895)
-- 콜라보: 1 (C895)
+## 레이어 카운터 (C896-C898 era)
+- 시스템: 1 (C896)
+- 구조: 1 (C897)
+- 밸런스: 1 (C898)
+- 콜라보: 1 (C898)
 
 ## 제약
-- cycles_since_collab: 0 (C895)
-- Next collab: C898
-- EncounterEngine: ~2670 lines
-- Layer rotation: C896=system, C897=structure, C898=balance+collab
+- cycles_since_collab: 0 (C898)
+- Next collab: C901
+- EncounterEngine: ~2700 lines
+- Layer rotation: C899=system, C900=structure, C901=balance+collab
 
-## 🟡 Player Agency: 5 choices + 2 consequences
+## 🟡 Player Agency: 5 choices + 3 consequences
 - Proving Grounds: binary accept/decline, 2s timeout (fight 40-110)
 - Crossroads: 3-way ATK/EXP/Gold, 4s timeout (fight 95-160)
-- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-275)
-- Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-500)
+- Mercenary Offer: binary accept/decline, 3s timeout (fight 115-290)
+- Wandering Merchant: 3-way heal/ATK/gamble, 3s timeout (fight 125-575)
 - Last Stand: binary accept/decline, 3s timeout (fight 400-600, once-per-run)
 - Reputation Payoff: auto-resolve consequence (fight 176-225, style-based, ≥3 choices)
 - Veteran's Trial: auto-resolve consequence (fight 275-450, style-based, ≥4 choices)
+- Final Reckoning: auto-resolve consequence (fight 500-600, style-based, ≥8 choices, 8%/fight)
 - ChoiceHistory tracks all choices with aggressive/defensive/greedy categories
-- Toast labels: 10 (8 consequence + 2 last stand)
-- NarrativeGenerator: forChoiceEvent (12 mappings) + forConsequenceEvent saga hooks
+- Toast labels: 18 (12 consequence + 2 last stand + 4 final reckoning)
+- NarrativeGenerator: forChoiceEvent (12 mappings) + forConsequenceEvent (12 entries: reputation 4 + veteran 4 + final 4)
 - ConsequenceResolver extracted from MidGameEventResolver (C891)
-- **Dead zones**: fight 0-39 (no choice)
+- **Dead zones**: fight 0-39 (no choice), fight 576-600 (only Last Stand remnant ~0.6%)
 
-## 달성 사항 (C890-C892)
-- C890 [system]: Last Stand Challenge (fight 400-600, +40% ATK/-20% HP or heal+gold)
-- C890a [fix]: Wire shield DR + EXP buffs into combat (critic fix)
-- C891 [structure]: Extract ConsequenceResolver (MidGameEventResolver 325→277 LOC)
-- C892 [balance+collab]: Last Stand EV rebalance (ATK 40%, HP cost 20%, chance 5%)
+## 달성 사항 (C896-C898)
+- C896 [system]: Final Reckoning consequence event (fight 500-600, 4 styles, shield DR 0.30, 11 tests)
+- C897 [structure]: Merchant 575, Mercenary 290, collab records, 2 toast key tests
+- C898 [balance+collab]: Narrative tests, collab dispatch (critic+level+planner)
 
-## 달성 사항 (C884-C886)
-- C884 [system]: Wire ChoiceHistory into EncounterEngine + reputation buffs
-- C885 [structure]: Extend choice event windows (proving 40, mercenary 225, merchant 350)
-- C886 [balance]: Reputation tuning (CHANCE 0.06, MIN_CHOICES 3)
+## 달성 사항 (C893-C895)
+- C893 [system]: NarrativeGenerator production wiring into CycleControllerV2
+- C893a [fix]: Last Stand UI modal (3s auto-decline) — critic C892 CRITICAL fix
+- C894 [structure]: applyMidGameBuffs extraction + type debt fixes
+- C895 [balance+collab]: Level-designer balance pass (ATK_MUL 0.30, decline gold 50, mercenary 275, merchant 500)
 
 ## 달성 사항 (C881-C883)
 - C881 [system]: Wandering Merchant 3-way player choice (heal/atk/gamble)

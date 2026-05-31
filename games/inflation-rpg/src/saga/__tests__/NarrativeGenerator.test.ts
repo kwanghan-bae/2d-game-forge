@@ -348,5 +348,22 @@ describe('Cycle 101 F2 — NarrativeGenerator realm forward (integration)', () =
       const txt = NarrativeGenerator.forConsequenceEvent({ age: 60, eventType: 'unknown', style: 'x' });
       expect(txt).toContain('시련을 마쳤다');
     });
+    // C896: Final Reckoning narration
+    it('final reckoning aggressive', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 70, eventType: 'final_reckoning', style: 'aggressive' });
+      expect(txt).toContain('파괴적인 힘');
+    });
+    it('final reckoning defensive', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 70, eventType: 'final_reckoning', style: 'defensive' });
+      expect(txt).toContain('철벽 방어');
+    });
+    it('final reckoning greedy', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 70, eventType: 'final_reckoning', style: 'greedy' });
+      expect(txt).toContain('보물');
+    });
+    it('final reckoning balanced', () => {
+      const txt = NarrativeGenerator.forConsequenceEvent({ age: 70, eventType: 'final_reckoning', style: 'balanced' });
+      expect(txt).toContain('지혜롭게');
+    });
   });
 });
