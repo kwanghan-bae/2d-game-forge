@@ -217,6 +217,7 @@ export const HIGH_GOLD_DEATH_THRESHOLD = 500_000;
 export const HIGH_GOLD_DEATH_PENALTY_CAP = 0.20;
 // C854: Crossroads Choice Event — once-per-run, 3 paths (95-130)
 export const CROSSROADS_CHANCE = 0.03;
+export const CROSSROADS_PITY_THRESHOLD = 40; // C868: force crossroads if 40 fights without one
 export const CROSSROADS_MIN_FIGHTS = 95;
 export const CROSSROADS_MAX_FIGHTS = 130;
 export const CROSSROADS_ATK_DURATION = 5;
@@ -226,7 +227,7 @@ export const CROSSROADS_EXP_MUL = 1.30; // ×1.3 EXP for duration
 export const CROSSROADS_GOLD_BURST_MUL = 120; // level × 120 gold
 // C860: Early-game Momentum — fight 1-50 micro-rewards on combo milestones
 export const EARLY_MOMENTUM_MAX_FIGHT = 50;
-export const EARLY_MOMENTUM_ATK_MUL = 0.06; // C865: 0.03→0.06 (floor fix: ATK 17+ = +1 guaranteed)
+export const EARLY_MOMENTUM_ATK_MUL = 0.08; // C868: 0.06→0.08 (stronger early feel)
 export const EARLY_MOMENTUM_ATK_DURATION = 2;
 export const EARLY_MOMENTUM_EXP_MUL = 1.15; // ×1.15 EXP for 3 fights
 export const EARLY_MOMENTUM_EXP_DURATION = 3;
