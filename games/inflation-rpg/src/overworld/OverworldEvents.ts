@@ -130,6 +130,8 @@ export type OverworldEvent =
   // C863: Storm drain visual feedback
   | { type: 'storm_drain'; value: number; hpAfter: number }
   | { type: 'storm_drain_critical'; value: number; hpAfter: number }
+  // C974: Veteran's Challenge HP drain per fight
+  | { type: 'vc_hp_drain'; value: number; hpAfter: number }
   // C866: Proving Grounds mid-game challenge
   | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number; declined?: boolean; shardGranted?: boolean }
   // C875: Proving Grounds player choice pending

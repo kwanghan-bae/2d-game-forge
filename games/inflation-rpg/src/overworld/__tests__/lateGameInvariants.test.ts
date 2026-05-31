@@ -13,6 +13,7 @@ import {
   MID_GAME_PITY_FIGHT_MIN,
   VETERANS_CHALLENGE_EXP_MUL,
   VETERANS_CHALLENGE_ATK_PENALTY,
+  VETERANS_CHALLENGE_HP_DRAIN,
   VETERANS_CHALLENGE_MIN_FIGHT,
   VETERANS_CHALLENGE_MAX_FIGHT,
   VETERANS_CHALLENGE_DURATION,
@@ -152,5 +153,16 @@ describe('C955: Mid-game pity invariants', () => {
     // Duration = 6 / 200 = 3% — within intentional band
     expect(ratio).toBeGreaterThanOrEqual(0.01); // at least 1%
     expect(ratio).toBeLessThanOrEqual(0.05);    // at most 5%
+  });
+
+  it('C974: VC HP drain creates real death risk over full duration', () => {
+    // Total HP drain over full VC duration must be meaningful (>= 15% maxHP)
+    const totalDrain = VETERANS_CHALLENGE_HP_DRAIN * VETERANS_CHALLENGE_DURATION;
+    expect(totalDrain).toBeGreaterThanOrEqual(0.15); // 18% currently
+    // But not so high that it's instant death (< 50% maxHP)
+    expect(totalDrain).toBeLessThan(0.50);
+    // Single fight drain must be small enough to not feel unfair
+    expect(VETERANS_CHALLENGE_HP_DRAIN).toBeGreaterThanOrEqual(0.01);
+    expect(VETERANS_CHALLENGE_HP_DRAIN).toBeLessThanOrEqual(0.05);
   });
 });
