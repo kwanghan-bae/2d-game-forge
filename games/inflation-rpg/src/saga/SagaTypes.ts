@@ -39,7 +39,10 @@ export type SagaEventType =
   | 'realmFork'
   // C786: opt-in event trigger/resolve saga.
   // payload: { eventId, action: 'trigger'|'accept'|'decline' }
-  | 'eventChoice';
+  | 'eventChoice'
+  // C893: mid-game choice/consequence event saga records
+  | 'choiceEvent'
+  | 'consequenceEvent';
 
 // Cycle-5 F3: '무위' = pathfinder candidates-exhausted (출구 없음 / 길을 잃다).
 // 진짜 자연 수명 도달과 명확히 구분되어야 동급 stale-realm bug 가 즉시 보임.

@@ -1193,9 +1193,11 @@ export class CycleControllerV2 {
         });
       }
       // C893: Wire choice/consequence events into saga
-      if (ev.type === 'event_wandering_merchant' || ev.type === 'event_proving_grounds'
-        || ev.type === 'event_crossroads' || ev.type === 'event_mercenary_offer'
-        || ev.type === 'event_last_stand') {
+      // C894: Use string comparison — event types from resolvers not all in OverworldEvent union
+      const evType = ev.type as string;
+      if (evType === 'event_wandering_merchant' || evType === 'event_proving_grounds'
+        || evType === 'event_crossroads' || evType === 'event_mercenary_offer'
+        || evType === 'event_last_stand') {
         const choice = (ev as { choice?: string; path?: string }).choice
           ?? (ev as { path?: string }).path ?? 'unknown';
         this.recordToStore({
@@ -1203,23 +1205,23 @@ export class CycleControllerV2 {
           type: 'choiceEvent',
           narrativeText: NarrativeGenerator.forChoiceEvent({
             age: this.hero.age,
-            eventType: ev.type.replace('event_', ''),
+            eventType: evType.replace('event_', ''),
             choice,
           }, this.rng.int(100000)),
-          payload: { eventType: ev.type, choice },
+          payload: { eventType: evType, choice },
         });
       }
-      if (ev.type === 'event_reputation' || ev.type === 'event_veterans_trial') {
+      if (evType === 'event_reputation' || evType === 'event_veterans_trial') {
         const style = (ev as { style?: string }).style ?? 'balanced';
         this.recordToStore({
           age: this.hero.age,
           type: 'consequenceEvent',
           narrativeText: NarrativeGenerator.forConsequenceEvent({
             age: this.hero.age,
-            eventType: ev.type.replace('event_', ''),
+            eventType: evType.replace('event_', ''),
             style,
           }, this.rng.int(100000)),
-          payload: { eventType: ev.type, style },
+          payload: { eventType: evType, style },
         });
       }
       if (ev.type === 'hero_died') {

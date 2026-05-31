@@ -124,7 +124,7 @@ export type OverworldEvent =
   // C826: Risk Gambit — early-game decision event (risk HP for gold)
   | { type: 'event_risk_gambit'; accepted: boolean; hpCost: number; goldReward: number }
   // C832: Wandering Merchant — heal or ATK buff
-  | { type: 'event_wandering_merchant'; choice: 'heal' | 'atk'; value: number }
+  | { type: 'event_wandering_merchant'; choice: 'heal' | 'atk' | 'gamble_win' | 'gamble_lose'; value: number }
   // C841: Sparring Grounds — skill-check micro-event
   | { type: 'event_sparring_grounds'; won: boolean; expGained: number; hpLost: number }
   // C863: Storm drain visual feedback

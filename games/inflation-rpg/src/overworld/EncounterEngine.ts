@@ -466,7 +466,8 @@ export class EncounterEngine {
   getSoulForgeStacks(): number { return this.soulForgeStacks; }
 
   // C801: Generic event accessors — replaces per-event boilerplate in controllers
-  private readonly eventRemainingMap: Record<EventId, () => number> = {
+  // C894: Type widened to include mid-game buff remaining accessors alongside EventId
+  private readonly eventRemainingMap: Record<string, () => number> = {
     colosseum: () => this.colosseumRemaining,
     void_rift: () => this.voidRiftRemaining,
     trial_grounds: () => this.trialGroundsRemaining,
@@ -489,7 +490,7 @@ export class EncounterEngine {
     astral_paradox: () => this.astralParadoxRemaining,
     soul_forge: () => this.soulForgeRemaining,
   };
-  getEventRemaining(id: EventId): number { return this.eventRemainingMap[id](); }
+  getEventRemaining(id: EventId | string): number { return this.eventRemainingMap[id]?.() ?? 0; }
   getEventPending(id: EventId): boolean { return this.eventOrch.getPending(id); }
   resolveEvent(id: EventId, accept: boolean): void { this.applyEventResolve(id, accept); }
   // C788: Apply resolve effects from orchestrator to local state
@@ -609,7 +610,7 @@ export class EncounterEngine {
   setProvingChoice(accept: boolean): void {
     this.provingChoiceResolved = accept ? 'accept' : 'decline';
     if (accept) this.provingGroundsManualAccept = true;
-    this.choiceHistory.record(this.totalFights, 'proving', accept ? 'accept' : 'decline', classifyChoice('proving', accept ? 'accept' : 'decline'));
+    this.choiceHistory.record(this.getTotalFights(), 'proving', accept ? 'accept' : 'decline', classifyChoice('proving', accept ? 'accept' : 'decline'));
     this.choiceEngine.resolveProvingChoice();
   }
 
@@ -617,7 +618,7 @@ export class EncounterEngine {
   hasPendingMercenaryChoice(): boolean { return this.choiceEngine.hasPendingMercenaryChoice(); }
   setMercenaryChoice(accept: boolean): void {
     this.mercenaryChoiceResolved = accept ? 'accept' : 'decline';
-    this.choiceHistory.record(this.totalFights, 'mercenary', accept ? 'accept' : 'decline', classifyChoice('mercenary', accept ? 'accept' : 'decline'));
+    this.choiceHistory.record(this.getTotalFights(), 'mercenary', accept ? 'accept' : 'decline', classifyChoice('mercenary', accept ? 'accept' : 'decline'));
     this.choiceEngine.resolveMercenaryChoice();
   }
 
@@ -625,7 +626,7 @@ export class EncounterEngine {
   hasPendingCrossroadsChoice(): boolean { return this.choiceEngine.hasPendingCrossroadsChoice(); }
   setCrossroadsChoice(path: 'atk' | 'exp' | 'gold'): void {
     this.crossroadsChoiceResolved = path;
-    this.choiceHistory.record(this.totalFights, 'crossroads', path, classifyChoice('crossroads', path));
+    this.choiceHistory.record(this.getTotalFights(), 'crossroads', path, classifyChoice('crossroads', path));
     this.choiceEngine.resolveCrossroadsChoice();
   }
 
@@ -633,7 +634,7 @@ export class EncounterEngine {
   hasPendingWanderingMerchantChoice(): boolean { return this.choiceEngine.hasPendingWanderingMerchantChoice(); }
   setWanderingMerchantChoice(choice: 'heal' | 'atk' | 'gamble'): void {
     this.wanderingMerchantChoiceResolved = choice;
-    this.choiceHistory.record(this.totalFights, 'merchant', choice, classifyChoice('merchant', choice));
+    this.choiceHistory.record(this.getTotalFights(), 'merchant', choice, classifyChoice('merchant', choice));
     this.choiceEngine.resolveWanderingMerchantChoice();
   }
 
@@ -642,7 +643,7 @@ export class EncounterEngine {
   setLastStandChoice(choice: 'accept' | 'decline'): void {
     this.lastStandChoiceResolved = choice;
     this.lastStandPending = false;
-    this.choiceHistory.record(this.totalFights, 'last_stand', choice, classifyChoice('last_stand', choice));
+    this.choiceHistory.record(this.getTotalFights(), 'last_stand', choice, classifyChoice('last_stand', choice));
   }
 
   // C578: combat stats summary for visual overlay
@@ -1156,7 +1157,7 @@ export class EncounterEngine {
         }
       }
       // C860: Early-game Momentum — micro-rewards on combo milestones (fight 1-50 only)
-      if (this.totalFights <= EARLY_MOMENTUM_MAX_FIGHT) {
+      if (this.getTotalFights() <= EARLY_MOMENTUM_MAX_FIGHT) {
         const milestone = Math.floor(this.comboStreak / EARLY_MOMENTUM_STREAK_INTERVAL);
         if (milestone > this.earlyMomentumLastMilestone && this.comboStreak > 0) {
           this.earlyMomentumLastMilestone = milestone;
@@ -1949,7 +1950,7 @@ export class EncounterEngine {
   // C846: Build PostCombatContext from current engine state
   private buildPostCombatContext(hero: HeroEntity, isElite: boolean, isBoss: boolean): PostCombatContext {
     return {
-      totalFights: this.totalFights,
+      totalFights: this.getTotalFights(),
       comboStreak: this.comboStreak,
       heroHp: hero.hp,
       heroHpMax: hero.hpMax,
@@ -2029,7 +2030,7 @@ export class EncounterEngine {
       r.eventType?.startsWith('event_titan') || r.eventType?.startsWith('event_crimson') ||
       r.eventType?.startsWith('event_gold_crucible') || r.eventType?.startsWith('event_astral') ||
       r.eventType?.startsWith('event_soul_forge');
-    this.lateGameScheduler.recordFight(this.totalFights, !!isLateEvent);
+    this.lateGameScheduler.recordFight(this.getTotalFights(), !!isLateEvent);
 
     // Apply hero deltas
     if (r.heroHpDelta !== 0) hero.hp = Math.max(1, hero.hp + r.heroHpDelta);
@@ -2129,9 +2130,9 @@ export class EncounterEngine {
     const midGameResult = resolveMidGameEvents(
       {
         hero: { hp: hero.hp, hpMax: hero.hpMax, gold: hero.gold, level: hero.level, atk: hero.atk },
-        totalFights: this.totalFights,
+        totalFights: this.getTotalFights(),
         crossroadsUsed: this.crossroadsUsed,
-        rngFloat: () => this.rng.float(),
+        rngFloat: () => this.rng.next(),
         rngChance: (rate: number) => this.rng.chance(rate),
       },
       {
@@ -2184,53 +2185,8 @@ export class EncounterEngine {
       if (hero.gold < 0) hero.gold = 0;
     }
     if (midGameResult.heroMutations.expGain) hero.gainExp(midGameResult.heroMutations.expGain);
-    // Apply buff state
-    if (midGameResult.buffs.wanderingMerchantAtkRemaining !== undefined) {
-      this.wanderingMerchantAtkRemaining = midGameResult.buffs.wanderingMerchantAtkRemaining;
-    }
-    if (midGameResult.buffs.provingGroundsExpRemaining !== undefined) {
-      this.provingGroundsExpRemaining = midGameResult.buffs.provingGroundsExpRemaining;
-    }
-    if (midGameResult.buffs.mercenaryShieldRemaining !== undefined) {
-      this.mercenaryShieldRemaining = midGameResult.buffs.mercenaryShieldRemaining;
-    }
-    if (midGameResult.buffs.crossroadsAtkRemaining !== undefined) {
-      this.crossroadsAtkRemaining = midGameResult.buffs.crossroadsAtkRemaining;
-    }
-    if (midGameResult.buffs.crossroadsExpRemaining !== undefined) {
-      this.crossroadsExpRemaining = midGameResult.buffs.crossroadsExpRemaining;
-    }
-    if (midGameResult.buffs.reputationAtkRemaining !== undefined) {
-      this.reputationAtkRemaining = midGameResult.buffs.reputationAtkRemaining;
-    }
-    if (midGameResult.buffs.reputationShieldRemaining !== undefined) {
-      this.reputationShieldRemaining = midGameResult.buffs.reputationShieldRemaining;
-    }
-    if (midGameResult.buffs.reputationExpRemaining !== undefined) {
-      this.reputationExpRemaining = midGameResult.buffs.reputationExpRemaining;
-    }
-    if (midGameResult.reputationFired) this.reputationFired = true;
-    if (midGameResult.buffs.veteransTrialAtkRemaining !== undefined) {
-      this.veteransTrialAtkRemaining = midGameResult.buffs.veteransTrialAtkRemaining;
-    }
-    if (midGameResult.buffs.veteransTrialShieldRemaining !== undefined) {
-      this.veteransTrialShieldRemaining = midGameResult.buffs.veteransTrialShieldRemaining;
-    }
-    if (midGameResult.buffs.veteransTrialExpRemaining !== undefined) {
-      this.veteransTrialExpRemaining = midGameResult.buffs.veteransTrialExpRemaining;
-    }
-    if (midGameResult.veteransTrialFired) this.veteransTrialFired = true;
-    // C890: Last Stand wiring
-    if (midGameResult.buffs.lastStandAtkRemaining !== undefined) {
-      this.lastStandAtkRemaining = midGameResult.buffs.lastStandAtkRemaining;
-    }
-    if (midGameResult.lastStandChoicePending) {
-      // Trigger choice modal — handled by OverworldRunner
-    }
-    if (this.lastStandChoiceResolved) {
-      this.lastStandFired = true;
-      this.lastStandChoiceResolved = null;
-    }
+    // C894: Delegate buff application
+    this.applyMidGameBuffs(midGameResult);
     if (midGameResult.crossroadsUsed) this.crossroadsUsed = true;
     events.push(...midGameResult.events);
     }
@@ -2372,6 +2328,30 @@ export class EncounterEngine {
     this.lastDeathEnemyId = landmarkId;
     events.push({ type: 'hero_died', cause: '전사', enemyId: landmarkId, oldLevel, newLevel });
     return events;
+  }
+
+  /** C894: Apply mid-game event buff state from resolver result */
+  private applyMidGameBuffs(result: import('./encounter/MidGameEventResolver').MidGameResult): void {
+    const b = result.buffs;
+    if (b.wanderingMerchantAtkRemaining !== undefined) this.wanderingMerchantAtkRemaining = b.wanderingMerchantAtkRemaining;
+    if (b.provingGroundsExpRemaining !== undefined) this.provingGroundsExpRemaining = b.provingGroundsExpRemaining;
+    if (b.mercenaryShieldRemaining !== undefined) this.mercenaryShieldRemaining = b.mercenaryShieldRemaining;
+    if (b.crossroadsAtkRemaining !== undefined) this.crossroadsAtkRemaining = b.crossroadsAtkRemaining;
+    if (b.crossroadsExpRemaining !== undefined) this.crossroadsExpRemaining = b.crossroadsExpRemaining;
+    if (b.reputationAtkRemaining !== undefined) this.reputationAtkRemaining = b.reputationAtkRemaining;
+    if (b.reputationShieldRemaining !== undefined) this.reputationShieldRemaining = b.reputationShieldRemaining;
+    if (b.reputationExpRemaining !== undefined) this.reputationExpRemaining = b.reputationExpRemaining;
+    if (result.reputationFired) this.reputationFired = true;
+    if (b.veteransTrialAtkRemaining !== undefined) this.veteransTrialAtkRemaining = b.veteransTrialAtkRemaining;
+    if (b.veteransTrialShieldRemaining !== undefined) this.veteransTrialShieldRemaining = b.veteransTrialShieldRemaining;
+    if (b.veteransTrialExpRemaining !== undefined) this.veteransTrialExpRemaining = b.veteransTrialExpRemaining;
+    if (result.veteransTrialFired) this.veteransTrialFired = true;
+    if (b.lastStandAtkRemaining !== undefined) this.lastStandAtkRemaining = b.lastStandAtkRemaining;
+    // lastStandPending is set in the pending event emit block above, not here
+    if (this.lastStandChoiceResolved) {
+      this.lastStandFired = true;
+      this.lastStandChoiceResolved = null;
+    }
   }
 
   // C819/C837: Batch decrement for simple duration counters (no side effects)
