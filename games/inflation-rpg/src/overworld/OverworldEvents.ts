@@ -122,4 +122,6 @@ export type OverworldEvent =
   // C818: Awakening hint — narrative whisper in fights 1-5
   | { type: 'awakening_hint'; hintIndex: number }
   // C826: Risk Gambit — early-game decision event (risk HP for gold)
-  | { type: 'event_risk_gambit'; accepted: boolean; hpCost: number; goldReward: number };
+  | { type: 'event_risk_gambit'; accepted: boolean; hpCost: number; goldReward: number }
+  // C832: Wandering Merchant — heal or ATK buff
+  | { type: 'event_wandering_merchant'; choice: 'heal' | 'atk'; value: number };
