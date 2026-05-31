@@ -43,6 +43,8 @@ import {
   FIRST_TRIAL_HEAL_RATE,
   FIRST_TRIAL_ATK_MUL,
   FIRST_TRIAL_ATK_DURATION,
+  FIRST_TRIAL_EXP_MUL,
+  FIRST_TRIAL_EXP_DURATION,
 } from './constants-events';
 
 export interface MidGameHeroState {
@@ -78,7 +80,7 @@ export interface MidGamePending {
   lastStandChoiceResolved?: 'accept' | 'decline'; // C890: player's choice
   lastStandFired?: boolean; // C890: already triggered this run
   firstTrialFired?: boolean; // C905: already triggered this run
-  firstTrialChoiceResolved?: 'heal' | 'atk'; // C911: player's choice
+  firstTrialChoiceResolved?: 'heal' | 'atk' | 'exp'; // C920: 3-way player choice
 }
 
 export interface MidGameResult {
@@ -105,6 +107,7 @@ export interface MidGameResult {
     finalReckoningExpRemaining?: number; // C896
     greedyGoldRemaining?: number; // C902
     firstTrialAtkRemaining?: number; // C905
+    firstTrialExpRemaining?: number; // C920: EXP rush duration
     lastStandAtkRemaining?: number; // C890
   };
   greedyGoldMul?: number; // C902: greedy gold gain multiplier
@@ -248,6 +251,9 @@ export function resolveMidGameEvents(
       const healAmt = Math.floor(ctx.hero.hpMax * FIRST_TRIAL_HEAL_RATE);
       heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
       events.push({ type: 'event_first_trial', style: 'heal', value: healAmt } as OverworldEvent);
+    } else if (pending.firstTrialChoiceResolved === 'exp') {
+      buffs.firstTrialExpRemaining = FIRST_TRIAL_EXP_DURATION;
+      events.push({ type: 'event_first_trial', style: 'exp', value: FIRST_TRIAL_EXP_MUL } as OverworldEvent);
     } else {
       buffs.firstTrialAtkRemaining = FIRST_TRIAL_ATK_DURATION;
       events.push({ type: 'event_first_trial', style: 'atk', value: FIRST_TRIAL_ATK_MUL } as OverworldEvent);

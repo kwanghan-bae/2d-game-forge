@@ -192,6 +192,8 @@ export const FIRST_TRIAL_CHANCE = 0.08; // high chance for reliable early hook
 export const FIRST_TRIAL_HEAL_RATE = 0.30; // heal option: 30% maxHP
 export const FIRST_TRIAL_ATK_MUL = 0.15; // ATK option: +15% ATK for 5 fights
 export const FIRST_TRIAL_ATK_DURATION = 5;
+export const FIRST_TRIAL_EXP_MUL = 1.5; // C920: EXP option: ×1.5 EXP for 8 fights
+export const FIRST_TRIAL_EXP_DURATION = 8; // C920: EXP rush duration
 // C826: Risk Gambit — early-game decision event (fights 40-90)
 export const RISK_GAMBIT_CHANCE = 0.05;
 export const RISK_GAMBIT_MIN_FIGHTS = 40;

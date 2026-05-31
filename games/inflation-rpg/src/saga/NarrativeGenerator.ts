@@ -62,6 +62,7 @@ export class NarrativeGenerator {
       // C911: First Trial
       first_trial_heal: '첫 시련에서 치유의 길을 택했다',
       first_trial_atk: '첫 시련에서 힘의 길을 택했다',
+      first_trial_exp: '첫 시련에서 지혜의 길을 택했다',
     };
     const key = `${opts.eventType}_${opts.choice}`;
     return `${opts.age}세에 ${labels[key] ?? '선택을 내렸다'}.`;

@@ -74,6 +74,6 @@ export function classifyChoice(event: string, choice: string): ChoiceCategory {
   // C890: Last Stand: accept=aggressive, decline=defensive
   if (event === 'last_stand') return choice === 'accept' ? 'aggressive' : 'defensive';
   // C911: First Trial: heal=defensive, atk=aggressive
-  if (event === 'first_trial') return choice === 'heal' ? 'defensive' : 'aggressive';
+  if (event === 'first_trial') return choice === 'heal' ? 'defensive' : choice === 'exp' ? 'balanced' : 'aggressive';
   return 'defensive';
 }

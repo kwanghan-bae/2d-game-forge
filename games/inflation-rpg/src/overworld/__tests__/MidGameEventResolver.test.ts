@@ -140,6 +140,15 @@ describe('resolveMidGameEvents', () => {
     expect(result.firstTrialChoicePending).toBeUndefined();
   });
 
+  // C920: First Trial EXP choice
+  it('first trial gives EXP buff when player chooses exp', () => {
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 20, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialChoiceResolved: 'exp' });
+    expect(result.events[0]).toMatchObject({ type: 'event_first_trial', style: 'exp' });
+    expect(result.buffs.firstTrialExpRemaining).toBeGreaterThan(0);
+    expect(result.firstTrialFired).toBe(true);
+  });
+
   it('mercenary offer returns pending when no choice resolved', () => {
     const ctx = makeCtx({ hero: { hp: 800, hpMax: 1000, gold: 500, level: 10, atk: 20 }, totalFights: 115 });
     const result = resolveMidGameEvents(ctx, { mercenaryOfferPending: true });
