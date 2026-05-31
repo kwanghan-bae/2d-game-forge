@@ -4,7 +4,7 @@ import { resolveMidGameEvents, MidGameContext, MidGamePending } from '../encount
 function makeCtx(overrides: Partial<MidGameContext> = {}): MidGameContext {
   return {
     hero: { hp: 500, hpMax: 1000, gold: 200, level: 10, atk: 20 },
-    totalFights: 60,
+    totalFights: 30,
     crossroadsUsed: false,
     rngFloat: () => 0.5,
     rngChance: () => true,

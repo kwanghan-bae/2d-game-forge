@@ -202,7 +202,7 @@ export const SPARRING_GROUNDS_WIN_CHANCE = 0.6; // 60% win based on hero level a
 // C848: Mercenary Offer — gold investment → shared combat (3 fights, damage reduced)
 export const MERCENARY_OFFER_CHANCE = 0.03;
 export const MERCENARY_OFFER_MIN_FIGHTS = 115; // C856: 100→115 (separate from Crossroads window)
-export const MERCENARY_OFFER_MAX_FIGHTS = 175; // C880: 145→175 (spread density cliff)
+export const MERCENARY_OFFER_MAX_FIGHTS = 225; // C885: 175→225 (overlap reputation window) (spread density cliff)
 export const MERCENARY_OFFER_GOLD_COST_RATE = 0.15; // 15% of current gold
 export const MERCENARY_OFFER_DURATION = 3; // 3 fights of reduced damage
 export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
@@ -234,7 +234,7 @@ export const EARLY_MOMENTUM_EXP_DURATION = 3;
 export const EARLY_MOMENTUM_GOLD_MUL = 30; // level × 30 gold burst
 export const EARLY_MOMENTUM_STREAK_INTERVAL = 5; // every 5 consecutive wins
 // C866: Proving Grounds — mid-game challenge event (fight 55-90)
-export const PROVING_GROUNDS_MIN_FIGHT = 55;
+export const PROVING_GROUNDS_MIN_FIGHT = 40; // C885: 55→40 (fill early choice gap)
 export const PROVING_GROUNDS_MAX_FIGHT = 110; // C874: 90→110 (overlap with density ramp)
 export const PROVING_GROUNDS_CHANCE = 0.06; // C874: 4→6% per fight → expected ~2.1/run
 export const PROVING_GROUNDS_REWARD_EXP_MUL = 2.00; // C869: 1.50→2.00 (meaningful EXP boost)
@@ -245,7 +245,7 @@ export const PROVING_GROUNDS_MANUAL_BONUS = 0.25; // C877: +25% EXP mul when pla
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
-export const WANDERING_MERCHANT_MAX_FIGHTS = 250;
+export const WANDERING_MERCHANT_MAX_FIGHTS = 350; // C885: 250→350 (fill late-game choice void)
 export const WANDERING_MERCHANT_HEAL_RATE = 0.25; // C835: 0.30→0.25 (balance ATK path attractiveness)
 export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, stronger identity)
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
