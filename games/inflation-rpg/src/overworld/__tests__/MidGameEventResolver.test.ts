@@ -76,7 +76,7 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('proving grounds does not trigger outside window', () => {
-    const ctx = makeCtx({ totalFights: 30, rngChance: () => true, rngFloat: () => 0.3 });
+    const ctx = makeCtx({ totalFights: 15, rngChance: () => true, rngFloat: () => 0.3 });
     const result = resolveMidGameEvents(ctx, { provingChoiceResolved: 'accept', firstTrialFired: true });
     expect(result.events).toHaveLength(0);
   });
@@ -117,7 +117,7 @@ describe('resolveMidGameEvents', () => {
   });
 
   it('first trial gives ATK buff when player chooses atk', () => {
-    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 20, rngChance: () => true });
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { firstTrialChoiceResolved: 'atk' });
     expect(result.events[0]).toMatchObject({ type: 'event_first_trial', style: 'atk' });
     expect(result.buffs.firstTrialAtkRemaining).toBeGreaterThan(0);
@@ -142,7 +142,7 @@ describe('resolveMidGameEvents', () => {
 
   // C920: First Trial EXP choice
   it('first trial gives EXP buff when player chooses exp', () => {
-    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 20, rngChance: () => true });
+    const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, { firstTrialChoiceResolved: 'exp' });
     expect(result.events[0]).toMatchObject({ type: 'event_first_trial', style: 'exp' });
     expect(result.buffs.firstTrialExpRemaining).toBeGreaterThan(0);

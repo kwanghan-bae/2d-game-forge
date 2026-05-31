@@ -243,7 +243,7 @@ export const EARLY_MOMENTUM_EXP_DURATION = 3;
 export const EARLY_MOMENTUM_GOLD_MUL = 30; // level × 30 gold burst
 export const EARLY_MOMENTUM_STREAK_INTERVAL = 5; // every 5 consecutive wins
 // C866: Proving Grounds — mid-game challenge event (fight 55-90)
-export const PROVING_GROUNDS_MIN_FIGHT = 35; // C909: 40→35 (fight 31-39 Mentor-only gap fix)
+export const PROVING_GROUNDS_MIN_FIGHT = 20; // C935: 35→20 (early desert fix, first choice at fight 20)
 export const PROVING_GROUNDS_MAX_FIGHT = 110; // C874: 90→110 (overlap with density ramp)
 export const PROVING_GROUNDS_CHANCE = 0.06; // C874: 4→6% per fight → expected ~2.1/run
 export const PROVING_GROUNDS_REWARD_EXP_MUL = 2.00; // C869: 1.50→2.00 (meaningful EXP boost)
