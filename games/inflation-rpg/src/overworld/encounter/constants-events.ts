@@ -193,7 +193,7 @@ export const RISK_GAMBIT_HP_COST_RATE = 0.20; // costs 20% of current HP
 export const RISK_GAMBIT_GOLD_MUL = 3; // reward = hero.level × 3
 // C841: Sparring Grounds — mid-early event filling dead zone (fights 80-119)
 export const SPARRING_GROUNDS_CHANCE = 0.04; // C844: 0.03→0.04 (reduce miss rate)
-export const SPARRING_GROUNDS_MIN_FIGHTS = 80;
+export const SPARRING_GROUNDS_MIN_FIGHTS = 70; // C877: 80→70 (fill fight 66-79 gap)
 export const SPARRING_GROUNDS_MAX_FIGHTS = 129; // C844: 119→129 (wider window)
 export const SPARRING_GROUNDS_EXP_REWARD_MUL = 2.0; // win → 2× base EXP
 export const SPARRING_GROUNDS_HP_COST_RATE = 0.10; // lose → 10% current HP
@@ -226,7 +226,7 @@ export const CROSSROADS_EXP_DURATION = 5;
 export const CROSSROADS_EXP_MUL = 1.30; // ×1.3 EXP for duration
 export const CROSSROADS_GOLD_BURST_MUL = 120; // level × 120 gold
 // C860: Early-game Momentum — fight 1-50 micro-rewards on combo milestones
-export const EARLY_MOMENTUM_MAX_FIGHT = 65; // C869: 50→65 (overlap with proving grounds, shrink dead zone)
+export const EARLY_MOMENTUM_MAX_FIGHT = 70; // C877: 65→70 (overlap with sparring start)
 export const EARLY_MOMENTUM_ATK_MUL = 0.08; // C868: 0.06→0.08 (stronger early feel)
 export const EARLY_MOMENTUM_ATK_DURATION = 2;
 export const EARLY_MOMENTUM_EXP_MUL = 1.15; // ×1.15 EXP for 3 fights
@@ -241,6 +241,7 @@ export const PROVING_GROUNDS_REWARD_EXP_MUL = 2.00; // C869: 1.50→2.00 (meanin
 export const PROVING_GROUNDS_REWARD_DURATION = 5; // C869: 3→5 (longer window)
 export const PROVING_GROUNDS_FAIL_HP_COST = 0.10; // fail: 10% max HP loss
 export const PROVING_GROUNDS_WIN_CHANCE = 0.70; // C871: 0.65→0.70 (reduce fail frustration)
+export const PROVING_GROUNDS_MANUAL_BONUS = 0.25; // C877: +25% EXP mul when player manually accepts
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
