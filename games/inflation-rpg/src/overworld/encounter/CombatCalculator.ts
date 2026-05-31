@@ -59,7 +59,18 @@ export interface ActiveAtkBuffs {
   earlyMomentumMul: number; // e.g. 1.03 (1 + EARLY_MOMENTUM_ATK_MUL)
 }
 
+// C865: Maximum composite buff multiplier (prevents degenerate N-stack)
+export const BUFF_STACK_CAP = 2.00;
+
 export function computeBuffedHeroAtk(baseAtk: number, buffs: ActiveAtkBuffs): number {
+  const product = (buffs.stormNexus ? buffs.stormNexusMul : 1)
+    * (buffs.clearSky ? buffs.clearSkyMul : 1)
+    * (buffs.crossroads ? buffs.crossroadsMul : 1)
+    * (buffs.earlyMomentum ? buffs.earlyMomentumMul : 1);
+  if (product > BUFF_STACK_CAP) {
+    return Math.floor(baseAtk * BUFF_STACK_CAP);
+  }
+  // Preserve original float chain for bit-exact compatibility
   return Math.floor(baseAtk
     * (buffs.stormNexus ? buffs.stormNexusMul : 1)
     * (buffs.clearSky ? buffs.clearSkyMul : 1)

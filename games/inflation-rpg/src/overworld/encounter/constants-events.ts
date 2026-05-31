@@ -226,7 +226,7 @@ export const CROSSROADS_EXP_MUL = 1.30; // ×1.3 EXP for duration
 export const CROSSROADS_GOLD_BURST_MUL = 120; // level × 120 gold
 // C860: Early-game Momentum — fight 1-50 micro-rewards on combo milestones
 export const EARLY_MOMENTUM_MAX_FIGHT = 50;
-export const EARLY_MOMENTUM_ATK_MUL = 0.03; // +3% composable ATK buff
+export const EARLY_MOMENTUM_ATK_MUL = 0.06; // C865: 0.03→0.06 (floor fix: ATK 17+ = +1 guaranteed)
 export const EARLY_MOMENTUM_ATK_DURATION = 2;
 export const EARLY_MOMENTUM_EXP_MUL = 1.15; // ×1.15 EXP for 3 fights
 export const EARLY_MOMENTUM_EXP_DURATION = 3;
@@ -241,7 +241,8 @@ export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, st
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
 export const WANDERING_MERCHANT_GAMBLE_CHANCE = 0.35; // C844: probability AI picks double-or-nothing over safe ATK
 export const WANDERING_MERCHANT_GAMBLE_WIN_RATE = 0.55; // C856: 0.50→0.55 (strengthen gamble identity)
-export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = 0; // C856: 20→0 (free gamble, identity = variance)
+export const WANDERING_MERCHANT_GAMBLE_LOSS_GOLD = -1; // C865: sentinel -1 = use rate-based loss
+export const WANDERING_MERCHANT_GAMBLE_LOSS_RATE = 0.15; // C865: lose 15% gold on gamble loss
 export const TIME_RIFT_CHANCE = 0.01;
 export const EVENT_CHAIN_THRESHOLD = 3;
 export const EVENT_CHAIN_REWARD_EXP = 1000;
