@@ -123,5 +123,18 @@ describe('EventChoiceToastLogic', () => {
     it('veterans trial balanced', () => {
       expect(getEventToastLabel('event_veterans_trial_balanced')).toContain('ATK');
     });
+    // C896: Final Reckoning toast labels
+    it('final reckoning aggressive', () => {
+      expect(getEventToastLabel('event_final_reckoning_aggressive')).toContain('ATK');
+    });
+    it('final reckoning defensive', () => {
+      expect(getEventToastLabel('event_final_reckoning_defensive')).toContain('방패');
+    });
+    it('final reckoning greedy', () => {
+      expect(getEventToastLabel('event_final_reckoning_greedy')).toContain('골드');
+    });
+    it('final reckoning balanced', () => {
+      expect(getEventToastLabel('event_final_reckoning_balanced')).toContain('ATK');
+    });
   });
 });

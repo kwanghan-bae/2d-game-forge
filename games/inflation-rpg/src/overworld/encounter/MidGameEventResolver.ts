@@ -68,6 +68,7 @@ export interface MidGamePending {
   reputationTotalChoices?: number; // C883: how many choices player has made
   reputationFired?: boolean; // C883: already triggered this run
   veteransTrialFired?: boolean; // C887: already triggered this run
+  finalReckoningFired?: boolean; // C896: already triggered this run
   lastStandChoiceResolved?: 'accept' | 'decline'; // C890: player's choice
   lastStandFired?: boolean; // C890: already triggered this run
 }
@@ -91,6 +92,9 @@ export interface MidGameResult {
     veteransTrialAtkRemaining?: number; // C887
     veteransTrialShieldRemaining?: number; // C887
     veteransTrialExpRemaining?: number; // C887
+    finalReckoningAtkRemaining?: number; // C896
+    finalReckoningShieldRemaining?: number; // C896
+    finalReckoningExpRemaining?: number; // C896
     lastStandAtkRemaining?: number; // C890
   };
   crossroadsUsed?: boolean;
@@ -101,6 +105,7 @@ export interface MidGameResult {
   lastStandChoicePending?: boolean; // C890: true = player choice needed
   reputationFired?: boolean; // C883: true = reputation payoff event triggered
   veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
+  finalReckoningFired?: boolean; // C896: true = final reckoning event triggered
 }
 
 export function resolveMidGameEvents(
@@ -228,6 +233,7 @@ export function resolveMidGameEvents(
     {
       reputationFired: pending.reputationFired ?? false,
       veteransTrialFired: pending.veteransTrialFired ?? false,
+      finalReckoningFired: pending.finalReckoningFired ?? false,
     },
   );
   if (consequenceResult) {
@@ -243,6 +249,7 @@ export function resolveMidGameEvents(
       events, heroMutations, buffs, crossroadsUsed,
       reputationFired: consequenceResult.reputationFired,
       veteransTrialFired: consequenceResult.veteransTrialFired,
+      finalReckoningFired: consequenceResult.finalReckoningFired,
     };
   }
 

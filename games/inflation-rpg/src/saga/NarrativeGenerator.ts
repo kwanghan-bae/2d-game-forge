@@ -84,6 +84,15 @@ export class NarrativeGenerator {
       };
       return `${opts.age}세에 ${styleLabels[opts.style] ?? '노련한 시련을 마쳤다.'}`;
     }
+    if (opts.eventType === 'final_reckoning') {
+      const styleLabels: Record<string, string> = {
+        aggressive: '최종 심판에서 파괴적인 힘이 폭발했다!',
+        defensive: '최종 심판에서 철벽 방어로 생존을 확정했다!',
+        greedy: '최종 심판에서 축적된 보물이 쏟아졌다!',
+        balanced: '최종 심판을 지혜롭게 완수했다!',
+      };
+      return `${opts.age}세에 ${styleLabels[opts.style] ?? '최종 심판을 마쳤다.'}`;
+    }
     return `${opts.age}세에 시련을 마쳤다.`;
   }
 

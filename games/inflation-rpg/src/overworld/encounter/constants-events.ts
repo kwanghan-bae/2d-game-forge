@@ -425,3 +425,24 @@ export const LAST_STAND_HP_COST = 0.20; // costs 20% maxHP (was 25%)
 // Decline: safe heal + small gold
 export const LAST_STAND_DECLINE_HEAL_RATE = 0.18; // C895: 0.12→0.18 (improve decline EV)
 export const LAST_STAND_DECLINE_GOLD_MUL = 50; // C895: 2.5→50 (decline EV parity with Crossroads gold)
+
+// C896: Final Reckoning — ultra-late consequence event (fight 500-600)
+// Strongest consequence payoff — rewards players who survive to 500+
+export const FINAL_RECKONING_MIN_FIGHT = 500;
+export const FINAL_RECKONING_MAX_FIGHT = 600;
+export const FINAL_RECKONING_CHANCE = 0.08; // 8% per fight (higher than others — reward survival)
+export const FINAL_RECKONING_MIN_CHOICES = 8; // requires extensive choice history
+// Aggressive: massive ATK buff, but permanent HP sacrifice
+export const FINAL_RECKONING_AGG_ATK_MUL = 0.35;
+export const FINAL_RECKONING_AGG_DURATION = 20;
+export const FINAL_RECKONING_AGG_HP_COST = 0.25;
+// Defensive: full heal + long shield
+export const FINAL_RECKONING_DEF_SHIELD_DURATION = 20;
+export const FINAL_RECKONING_DEF_SHIELD_DR = 0.30; // C896: 30% damage reduction (strongest consequence)
+export const FINAL_RECKONING_DEF_HEAL_RATE = 0.50;
+// Greedy: massive gold burst
+export const FINAL_RECKONING_GREEDY_GOLD_MUL = 200;
+// Balanced: all-around boost (ATK + EXP)
+export const FINAL_RECKONING_BALANCED_ALL_DURATION = 15;
+export const FINAL_RECKONING_BALANCED_ATK_MUL = 0.20;
+export const FINAL_RECKONING_BALANCED_EXP_MUL = 0.25;

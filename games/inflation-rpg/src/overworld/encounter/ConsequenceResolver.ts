@@ -30,6 +30,19 @@ import {
   VETERANS_TRIAL_BALANCED_ALL_DURATION,
   VETERANS_TRIAL_BALANCED_ATK_MUL,
   VETERANS_TRIAL_BALANCED_EXP_MUL,
+  FINAL_RECKONING_MIN_FIGHT,
+  FINAL_RECKONING_MAX_FIGHT,
+  FINAL_RECKONING_CHANCE,
+  FINAL_RECKONING_MIN_CHOICES,
+  FINAL_RECKONING_AGG_ATK_MUL,
+  FINAL_RECKONING_AGG_DURATION,
+  FINAL_RECKONING_AGG_HP_COST,
+  FINAL_RECKONING_DEF_SHIELD_DURATION,
+  FINAL_RECKONING_DEF_HEAL_RATE,
+  FINAL_RECKONING_GREEDY_GOLD_MUL,
+  FINAL_RECKONING_BALANCED_ALL_DURATION,
+  FINAL_RECKONING_BALANCED_ATK_MUL,
+  FINAL_RECKONING_BALANCED_EXP_MUL,
 } from './constants-events';
 
 export interface ConsequenceContext {
@@ -43,6 +56,7 @@ export interface ConsequenceContext {
 export interface ConsequenceState {
   reputationFired: boolean;
   veteransTrialFired: boolean;
+  finalReckoningFired: boolean;
 }
 
 export interface ConsequenceResult {
@@ -55,9 +69,13 @@ export interface ConsequenceResult {
     veteransTrialAtkRemaining?: number;
     veteransTrialShieldRemaining?: number;
     veteransTrialExpRemaining?: number;
+    finalReckoningAtkRemaining?: number;
+    finalReckoningShieldRemaining?: number;
+    finalReckoningExpRemaining?: number;
   };
   reputationFired?: boolean;
   veteransTrialFired?: boolean;
+  finalReckoningFired?: boolean;
 }
 
 /** Resolve reputation + veteran's trial consequence events. Returns null if nothing fired. */
@@ -81,6 +99,15 @@ export function resolveConsequenceEvents(
     && ctx.reputationTotalChoices >= VETERANS_TRIAL_MIN_CHOICES
     && ctx.rngChance(VETERANS_TRIAL_CHANCE)) {
     return resolveVeteransTrial(ctx);
+  }
+
+  // C896: Final Reckoning — ultra-late consequence (fight 500-600)
+  if (!state.finalReckoningFired
+    && ctx.totalFights >= FINAL_RECKONING_MIN_FIGHT
+    && ctx.totalFights <= FINAL_RECKONING_MAX_FIGHT
+    && ctx.reputationTotalChoices >= FINAL_RECKONING_MIN_CHOICES
+    && ctx.rngChance(FINAL_RECKONING_CHANCE)) {
+    return resolveFinalReckoning(ctx);
   }
 
   return null;
@@ -139,4 +166,33 @@ function resolveVeteransTrial(ctx: ConsequenceContext): ConsequenceResult {
   }
 
   return { events, heroMutations, buffs, veteransTrialFired: true };
+}
+
+function resolveFinalReckoning(ctx: ConsequenceContext): ConsequenceResult {
+  const events: OverworldEvent[] = [];
+  const heroMutations: { hpDelta?: number; goldDelta?: number } = {};
+  const buffs: ConsequenceResult['buffs'] = {};
+  const style = ctx.reputationStyle;
+
+  if (style === 'aggressive') {
+    buffs.finalReckoningAtkRemaining = FINAL_RECKONING_AGG_DURATION;
+    const hpCost = Math.floor(ctx.hero.hpMax * FINAL_RECKONING_AGG_HP_COST);
+    heroMutations.hpDelta = -hpCost;
+    events.push({ type: 'event_final_reckoning', style, value: FINAL_RECKONING_AGG_ATK_MUL } as OverworldEvent);
+  } else if (style === 'defensive') {
+    buffs.finalReckoningShieldRemaining = FINAL_RECKONING_DEF_SHIELD_DURATION;
+    const healAmt = Math.floor(ctx.hero.hpMax * FINAL_RECKONING_DEF_HEAL_RATE);
+    heroMutations.hpDelta = healAmt;
+    events.push({ type: 'event_final_reckoning', style, value: healAmt } as OverworldEvent);
+  } else if (style === 'greedy') {
+    const goldBurst = Math.floor(ctx.hero.level * FINAL_RECKONING_GREEDY_GOLD_MUL);
+    heroMutations.goldDelta = goldBurst;
+    events.push({ type: 'event_final_reckoning', style, value: goldBurst } as OverworldEvent);
+  } else {
+    buffs.finalReckoningAtkRemaining = FINAL_RECKONING_BALANCED_ALL_DURATION;
+    buffs.finalReckoningExpRemaining = FINAL_RECKONING_BALANCED_ALL_DURATION;
+    events.push({ type: 'event_final_reckoning', style: 'balanced', value: FINAL_RECKONING_BALANCED_ATK_MUL } as OverworldEvent);
+  }
+
+  return { events, heroMutations, buffs, finalReckoningFired: true };
 }

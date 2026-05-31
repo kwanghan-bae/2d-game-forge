@@ -38,6 +38,11 @@ const EVENT_LABELS: Record<string, string> = {
   // C890: Last Stand toast labels
   event_last_stand_accept: '🔥 최후의 항전: 수락! ATK 폭발 (HP 대가)',
   event_last_stand_decline: '🛡️ 최후의 항전: 거절! 안전하게 진행',
+  // C896: Final Reckoning toast labels
+  event_final_reckoning_aggressive: '⚔️ 최종 심판: 공격! ATK 폭발 (HP 대가)',
+  event_final_reckoning_defensive: '🛡️ 최종 심판: 방어! 대량 회복 + 방패!',
+  event_final_reckoning_greedy: '💰 최종 심판: 탐욕! 골드 대박!',
+  event_final_reckoning_balanced: '⚖️ 최종 심판: 균형! ATK + EXP!',
 };
 
 export function getEventToastLabel(eventType: string): string | null {
@@ -62,6 +67,8 @@ export function resolveEventToastKey(event: { type: string; [k: string]: unknown
       return `event_reputation_${event.style}`;
     case 'event_veterans_trial':
       return `event_veterans_trial_${event.style}`;
+    case 'event_final_reckoning':
+      return `event_final_reckoning_${event.style}`;
     case 'event_last_stand':
       return `event_last_stand_${event.choice}`;
     case 'storm_drain':

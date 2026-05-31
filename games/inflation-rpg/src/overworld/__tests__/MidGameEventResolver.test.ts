@@ -283,4 +283,85 @@ describe('resolveMidGameEvents', () => {
     const lsEvents = result.events.filter(e => e.type === 'event_last_stand');
     expect(lsEvents).toHaveLength(0);
   });
+
+  // C896: Final Reckoning consequence event tests
+  it('final reckoning fires in fight 500-600 window with aggressive style', () => {
+    const ctx = makeCtx({ totalFights: 550, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {
+      reputationFired: true,
+      veteransTrialFired: true,
+      lastStandFired: true,
+      reputationStyle: 'aggressive',
+      reputationTotalChoices: 10,
+    });
+    expect(result.finalReckoningFired).toBe(true);
+    expect(result.buffs.finalReckoningAtkRemaining).toBeGreaterThan(0);
+    expect(result.heroMutations.hpDelta).toBeLessThan(0); // HP cost
+  });
+
+  it('final reckoning fires defensive style with shield + heal', () => {
+    const ctx = makeCtx({ totalFights: 520, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {
+      reputationFired: true,
+      veteransTrialFired: true,
+      lastStandFired: true,
+      reputationStyle: 'defensive',
+      reputationTotalChoices: 10,
+    });
+    expect(result.finalReckoningFired).toBe(true);
+    expect(result.buffs.finalReckoningShieldRemaining).toBeGreaterThan(0);
+    expect(result.heroMutations.hpDelta).toBeGreaterThan(0); // heal
+  });
+
+  it('final reckoning fires greedy style with gold burst', () => {
+    const ctx = makeCtx({ totalFights: 510, rngChance: () => true, hero: { hp: 800, hpMax: 1000, gold: 200, level: 50, atk: 20 } });
+    const result = resolveMidGameEvents(ctx, {
+      reputationFired: true,
+      veteransTrialFired: true,
+      lastStandFired: true,
+      reputationStyle: 'greedy',
+      reputationTotalChoices: 10,
+    });
+    expect(result.finalReckoningFired).toBe(true);
+    expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
+  });
+
+  it('final reckoning balanced style gives ATK + EXP', () => {
+    const ctx = makeCtx({ totalFights: 560, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {
+      reputationFired: true,
+      veteransTrialFired: true,
+      lastStandFired: true,
+      reputationStyle: 'balanced',
+      reputationTotalChoices: 10,
+    });
+    expect(result.finalReckoningFired).toBe(true);
+    expect(result.buffs.finalReckoningAtkRemaining).toBeGreaterThan(0);
+    expect(result.buffs.finalReckoningExpRemaining).toBeGreaterThan(0);
+  });
+
+  it('final reckoning does not fire below fight 500', () => {
+    const ctx = makeCtx({ totalFights: 499, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {
+      reputationFired: true,
+      veteransTrialFired: true,
+      lastStandFired: true,
+      reputationStyle: 'aggressive',
+      reputationTotalChoices: 10,
+    });
+    expect(result.finalReckoningFired).toBeUndefined();
+  });
+
+  it('final reckoning does not re-fire', () => {
+    const ctx = makeCtx({ totalFights: 550, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, {
+      reputationFired: true,
+      veteransTrialFired: true,
+      lastStandFired: true,
+      finalReckoningFired: true,
+      reputationStyle: 'aggressive',
+      reputationTotalChoices: 10,
+    });
+    expect(result.finalReckoningFired).toBeUndefined();
+  });
 });

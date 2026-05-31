@@ -56,6 +56,7 @@ export interface ActiveAtkBuffs {
   reputation: boolean; // C883
   veteransTrial: boolean; // C887
   lastStand: boolean; // C890
+  finalReckoning: boolean; // C896
   stormNexusMul: number;   // e.g. 1.35
   clearSkyMul: number;     // e.g. 1.12
   crossroadsMul: number;   // e.g. 1.18 (1 + CROSSROADS_ATK_MUL)
@@ -63,6 +64,7 @@ export interface ActiveAtkBuffs {
   reputationMul: number;   // e.g. 1.20 (1 + REPUTATION_AGG_ATK_MUL)
   veteransTrialMul: number; // e.g. 1.25 (1 + VETERANS_TRIAL_AGG_ATK_MUL)
   lastStandMul: number; // e.g. 1.35 (1 + LAST_STAND_ATK_MUL)
+  finalReckoningMul: number; // e.g. 1.35 (1 + FINAL_RECKONING_AGG_ATK_MUL)
 }
 
 // C865: Maximum composite buff multiplier (prevents degenerate N-stack)
@@ -75,7 +77,8 @@ export function computeBuffedHeroAtk(baseAtk: number, buffs: ActiveAtkBuffs): nu
     * (buffs.earlyMomentum ? buffs.earlyMomentumMul : 1)
     * (buffs.reputation ? buffs.reputationMul : 1)
     * (buffs.veteransTrial ? buffs.veteransTrialMul : 1)
-    * (buffs.lastStand ? buffs.lastStandMul : 1);
+    * (buffs.lastStand ? buffs.lastStandMul : 1)
+    * (buffs.finalReckoning ? buffs.finalReckoningMul : 1);
   if (product > BUFF_STACK_CAP) {
     return Math.floor(baseAtk * BUFF_STACK_CAP);
   }
@@ -87,5 +90,6 @@ export function computeBuffedHeroAtk(baseAtk: number, buffs: ActiveAtkBuffs): nu
     * (buffs.earlyMomentum ? buffs.earlyMomentumMul : 1)
     * (buffs.reputation ? buffs.reputationMul : 1)
     * (buffs.veteransTrial ? buffs.veteransTrialMul : 1)
-    * (buffs.lastStand ? buffs.lastStandMul : 1));
+    * (buffs.lastStand ? buffs.lastStandMul : 1)
+    * (buffs.finalReckoning ? buffs.finalReckoningMul : 1));
 }
