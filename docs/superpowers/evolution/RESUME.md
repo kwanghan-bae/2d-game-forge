@@ -1,29 +1,34 @@
 # RESUME — v7
 
 ## 상태
-- Cycle: 844
+- Cycle: 847
 - Target: 600+ (연속 진화)
-- Last commit: C844 Merchant gamble choice + Sparring/Merchant tuning
+- Last commit: C847 late-game density ramp + gamble loss consolation
 - Vitest: 2224 pass / 0 fail
-- EncounterEngine: ~2310 lines (−50 from C843 extraction)
-- Critic score: 30.0/40 (C844 collab, +0.5)
+- EncounterEngine: ~2320 lines
+- Critic score: 30.0/40 (C847 collab, 유지)
 
-## 레이어 카운터 (C842-C844 era)
-- 시스템: 1 (C842)
-- 구조: 1 (C843)
-- 밸런스: 1 (C844)
-- 콜라보: 1 (C844)
+## 레이어 카운터 (C845-C847 era)
+- 시스템: 1 (C845)
+- 구조: 1 (C846)
+- 밸런스: 1 (C847)
+- 콜라보: 1 (C847)
 
 ## 제약
-- cycles_since_collab: 0 (C844 was collab)
-- Next collab: C847
-- EncounterEngine: ~2310 lines
-- Layer rotation: system → structure → balance (C845=system, C846=structure, C847=balance+collab)
+- cycles_since_collab: 0 (C847 was collab)
+- Next collab: C850
+- EncounterEngine: ~2320 lines
+- Layer rotation: system → structure → balance (C848=system, C849=structure, C850=balance+collab)
 
-## 다음 3사이클 (C844 합의)
-1. C845 [system]: LateGameEventScheduler — pity timer + density 관리 데이터 클래스
-2. C846 [structure]: SacrificeSubsystem 추출 (gold burn, combo reset, exp offering, danger bet, health tax)
-3. C847 [balance+collab]: Late density 1.5→1.8 @250+ + gamble loss consolation gold 50
+## 다음 3사이클 (C847 합의)
+1. C848 [system]: Mercenary Offer choice event (fight 90-120, 골드 투자 → 3전투 공동전투)
+2. C849 [structure]: tickAtkMultiplierContext 추출 (88줄 → private method)
+3. C850 [balance+collab]: gamble consolation 50→35 + pity gate 250→200 + dead constant 제거
+
+## 달성 사항 (C845-C847)
+- C845 [system]: LateGameScheduler — late-event pity timer (15-fight, ×1.5 boost)
+- C846 [structure]: buildPostCombatContext 추출 (30-field → private method)
+- C847 [balance+collab]: density ramp steepened (×1.8@250) + gamble loss consolation +50g
 
 ## 달성 사항 (C842-C844)
 - C842 [system]: RunStatisticsSummary — top-3 highlight computation (11 categories)
