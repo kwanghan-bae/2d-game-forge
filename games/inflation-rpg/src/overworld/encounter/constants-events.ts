@@ -210,7 +210,7 @@ export const MERCENARY_OFFER_DAMAGE_REDUCTION = 0.30; // 30% less damage taken
 export const CLEAR_SKY_PATH_CHANCE = 0.03;
 export const CLEAR_SKY_PATH_MIN_FIGHTS = 95; // C856: 80→95 (align with Crossroads start)
 export const CLEAR_SKY_PATH_MAX_FIGHTS = 130;
-export const CLEAR_SKY_PATH_ATK_MUL = 1.15; // ×1.15 ATK for duration
+export const CLEAR_SKY_PATH_ATK_MUL = 1.12; // C859: 1.15→1.12 (composable stack rebalance)
 export const CLEAR_SKY_PATH_DURATION = 3; // 3 fights
 // C853: High-gold death penalty ramp (500k+ gold → up to 20% penalty)
 export const HIGH_GOLD_DEATH_THRESHOLD = 500_000;
@@ -220,7 +220,7 @@ export const CROSSROADS_CHANCE = 0.05;
 export const CROSSROADS_MIN_FIGHTS = 95;
 export const CROSSROADS_MAX_FIGHTS = 130;
 export const CROSSROADS_ATK_DURATION = 5;
-export const CROSSROADS_ATK_MUL = 0.20; // +20% ATK for duration
+export const CROSSROADS_ATK_MUL = 0.18; // C859: 0.20→0.18 (composable stack rebalance)
 export const CROSSROADS_EXP_DURATION = 5;
 export const CROSSROADS_EXP_MUL = 1.30; // ×1.3 EXP for duration
 export const CROSSROADS_GOLD_BURST_MUL = 50; // level × 50 gold
@@ -280,8 +280,8 @@ export const TRIAL_GROUNDS_EXP_MUL = 1.40; // C779: tuned from 1.50 (R:R 2.80→
 export const TRIAL_GROUNDS_LEVEL_MUL = 1.20; // C774: tuned from 1.10 (R:R 1:5→1:2.5, meaningful decision)
 export const TRIAL_GROUNDS_DURATION = 3;
 
-export const STORM_NEXUS_ATK_MUL = 1.40; // C770: Storm Nexus ATK buff
-export const STORM_NEXUS_HP_DRAIN_RATE = 0.05; // C770: 5% HP drain per fight
+export const STORM_NEXUS_ATK_MUL = 1.35; // C859: 1.40→1.35 (composable stack rebalance)
+export const STORM_NEXUS_HP_DRAIN_RATE = 0.06; // C859: 0.05→0.06 (risk compensation for lower ATK)
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
 
 export const VOID_RIFT_SCALE_PER_TIER = 0.05; // C771: 5% per tier (lv200: +5%, lv800: +15%)
