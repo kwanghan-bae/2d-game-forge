@@ -291,6 +291,7 @@ export const TRIAL_GROUNDS_DURATION = 3;
 export const STORM_NEXUS_ATK_MUL = 1.35; // C859: 1.40→1.35 (composable stack rebalance)
 export const STORM_NEXUS_HP_DRAIN_RATE = 0.06; // C859: 0.05→0.06 (risk compensation for lower ATK)
 export const STORM_NEXUS_DURATION = 4; // C770: 4 fights
+export const STORM_DRAIN_WARN_HP_THRESHOLD = 0.40; // C863: emit critical warning below 40% HP
 
 export const VOID_RIFT_SCALE_PER_TIER = 0.05; // C771: 5% per tier (lv200: +5%, lv800: +15%)
 export const VOID_RIFT_EXP_PER_TIER = 0.09; // C781: tuned from 0.06 (R:R 1.20→1.80, meaningful accept)
