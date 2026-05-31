@@ -78,6 +78,7 @@ export interface MidGamePending {
   lastStandChoiceResolved?: 'accept' | 'decline'; // C890: player's choice
   lastStandFired?: boolean; // C890: already triggered this run
   firstTrialFired?: boolean; // C905: already triggered this run
+  firstTrialChoiceResolved?: 'heal' | 'atk'; // C911: player's choice
 }
 
 export interface MidGameResult {
@@ -117,6 +118,7 @@ export interface MidGameResult {
   veteransTrialFired?: boolean; // C887: true = veteran's trial event triggered
   finalReckoningFired?: boolean; // C896: true = final reckoning event triggered
   firstTrialFired?: boolean; // C905: true = first trial event triggered
+  firstTrialChoicePending?: boolean; // C911: true = player choice needed
 }
 
 export function resolveMidGameEvents(
@@ -232,19 +234,21 @@ export function resolveMidGameEvents(
     }
   }
 
-  // C905: First Trial — earliest player choice (fight 10-30, once per run, auto-resolve)
+  // C911: First Trial — earliest player choice (fight 10-40, once per run, 2-phase pending)
   if (!pending.firstTrialFired
     && ctx.totalFights >= FIRST_TRIAL_MIN_FIGHTS
     && ctx.totalFights <= FIRST_TRIAL_MAX_FIGHTS
     && ctx.rngChance(FIRST_TRIAL_CHANCE)) {
-    const hpRatio = ctx.hero.hp / ctx.hero.hpMax;
-    if (hpRatio < 0.6) {
-      // Low HP → heal path
+    if (!pending.firstTrialChoiceResolved) {
+      // Phase 1: trigger pending — UI will show choice modal
+      return { events, heroMutations, buffs, crossroadsUsed, firstTrialChoicePending: true };
+    }
+    // Phase 2: resolve player choice
+    if (pending.firstTrialChoiceResolved === 'heal') {
       const healAmt = Math.floor(ctx.hero.hpMax * FIRST_TRIAL_HEAL_RATE);
       heroMutations.hpDelta = (heroMutations.hpDelta ?? 0) + healAmt;
       events.push({ type: 'event_first_trial', style: 'heal', value: healAmt } as OverworldEvent);
     } else {
-      // Healthy → ATK buff path
       buffs.firstTrialAtkRemaining = FIRST_TRIAL_ATK_DURATION;
       events.push({ type: 'event_first_trial', style: 'atk', value: FIRST_TRIAL_ATK_MUL } as OverworldEvent);
     }

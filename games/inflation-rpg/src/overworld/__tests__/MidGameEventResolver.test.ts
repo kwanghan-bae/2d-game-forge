@@ -101,18 +101,24 @@ describe('resolveMidGameEvents', () => {
     expect(result.heroMutations.goldDelta).toBeGreaterThan(0);
   });
 
-  // C905: First Trial tests
-  it('first trial heals when HP < 60%', () => {
+  // C911: First Trial 2-phase pending tests
+  it('first trial returns pending when no choice resolved', () => {
     const ctx = makeCtx({ hero: { hp: 400, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });
     const result = resolveMidGameEvents(ctx, {});
+    expect(result.firstTrialChoicePending).toBe(true);
+  });
+
+  it('first trial heals when player chooses heal', () => {
+    const ctx = makeCtx({ hero: { hp: 400, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 15, rngChance: () => true });
+    const result = resolveMidGameEvents(ctx, { firstTrialChoiceResolved: 'heal' });
     expect(result.events[0]).toMatchObject({ type: 'event_first_trial', style: 'heal' });
     expect(result.heroMutations.hpDelta).toBeGreaterThan(0);
     expect(result.firstTrialFired).toBe(true);
   });
 
-  it('first trial gives ATK buff when HP >= 60%', () => {
+  it('first trial gives ATK buff when player chooses atk', () => {
     const ctx = makeCtx({ hero: { hp: 700, hpMax: 1000, gold: 200, level: 10, atk: 20 }, totalFights: 20, rngChance: () => true });
-    const result = resolveMidGameEvents(ctx, {});
+    const result = resolveMidGameEvents(ctx, { firstTrialChoiceResolved: 'atk' });
     expect(result.events[0]).toMatchObject({ type: 'event_first_trial', style: 'atk' });
     expect(result.buffs.firstTrialAtkRemaining).toBeGreaterThan(0);
     expect(result.firstTrialFired).toBe(true);
@@ -123,6 +129,7 @@ describe('resolveMidGameEvents', () => {
     const result = resolveMidGameEvents(ctx, { firstTrialFired: true });
     const ftEvents = result.events.filter((e: { type: string }) => e.type === 'event_first_trial');
     expect(ftEvents).toHaveLength(0);
+    expect(result.firstTrialChoicePending).toBeUndefined();
   });
 
   it('first trial does not fire outside window', () => {
@@ -130,6 +137,7 @@ describe('resolveMidGameEvents', () => {
     const result = resolveMidGameEvents(ctx, {});
     const ftEvents = result.events.filter((e: { type: string }) => e.type === 'event_first_trial');
     expect(ftEvents).toHaveLength(0);
+    expect(result.firstTrialChoicePending).toBeUndefined();
   });
 
   it('mercenary offer returns pending when no choice resolved', () => {

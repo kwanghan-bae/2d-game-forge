@@ -252,6 +252,8 @@ export class EncounterEngine {
   private greedyGoldMul = 1; // C902: greedy gold gain multiplier
   private firstTrialFired = false; // C905: first trial triggered
   private firstTrialAtkRemaining = 0; // C905: first trial ATK buff
+  private firstTrialPending = false; // C911: waiting for player choice
+  private firstTrialChoiceResolved: 'heal' | 'atk' | null = null; // C911
   private readonly choiceHistory = new ChoiceHistory(); // C883: tracks player choices for consequence events
   private snowDriftRemaining = 0; // C782: Snow Drift duration (enemy SPD-30%, ATK-10%)
   private abyssalConvergenceRemaining = 0; // C789: Abyssal Convergence (EXP×1.5, ATK×1.6, drain)
@@ -652,6 +654,14 @@ export class EncounterEngine {
     this.lastStandChoiceResolved = choice;
     this.lastStandPending = false;
     this.choiceHistory.record(this.getTotalFights(), 'last_stand', choice, classifyChoice('last_stand', choice));
+  }
+
+  // C911: First Trial choice
+  hasPendingFirstTrialChoice(): boolean { return this.firstTrialPending; }
+  setFirstTrialChoice(choice: 'heal' | 'atk'): void {
+    this.firstTrialChoiceResolved = choice;
+    this.firstTrialPending = false;
+    this.choiceHistory.record(this.getTotalFights(), 'first_trial', choice, classifyChoice('first_trial', choice));
   }
 
   // C578: combat stats summary for visual overlay
@@ -2136,7 +2146,8 @@ export class EncounterEngine {
       || this.choiceEngine.hasPendingMercenaryChoice()
       || this.choiceEngine.hasPendingCrossroadsChoice()
       || this.choiceEngine.hasPendingWanderingMerchantChoice()
-      || this.lastStandPending) {
+      || this.lastStandPending
+      || this.firstTrialPending) {
       // Waiting for player input — don't re-roll events
     } else {
     const provingResolved = this.provingChoiceResolved;
@@ -2172,6 +2183,7 @@ export class EncounterEngine {
         lastStandChoiceResolved: this.lastStandChoiceResolved ?? undefined,
         lastStandFired: this.lastStandFired,
         firstTrialFired: this.firstTrialFired,
+        firstTrialChoiceResolved: this.firstTrialChoiceResolved ?? undefined,
       },
     );
     // C875/C878/C881: If any event needs player choice, trigger and emit
@@ -2195,6 +2207,11 @@ export class EncounterEngine {
       // C890: Last Stand uses own pending mechanism (no choiceEngine)
       this.lastStandPending = true;
       events.push({ type: 'last_stand_choice' });
+      events.push(...midGameResult.events);
+    } else if (midGameResult.firstTrialChoicePending) {
+      // C911: First Trial uses own pending mechanism
+      this.firstTrialPending = true;
+      events.push({ type: 'first_trial_choice' });
       events.push(...midGameResult.events);
     } else {
     // Apply hero mutations
