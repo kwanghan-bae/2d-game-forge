@@ -245,7 +245,7 @@ export const PROVING_GROUNDS_MANUAL_BONUS = 0.25; // C877: +25% EXP mul when pla
 // C832: Wandering Merchant — mid-game event (heal OR ATK buff)
 export const WANDERING_MERCHANT_CHANCE = 0.03;
 export const WANDERING_MERCHANT_MIN_FIGHTS = 125; // C844: 120→125
-export const WANDERING_MERCHANT_MAX_FIGHTS = 350; // C885: 250→350 (fill late-game choice void)
+export const WANDERING_MERCHANT_MAX_FIGHTS = 400; // C889: 350→400 (overlap with veteran's trial)
 export const WANDERING_MERCHANT_HEAL_RATE = 0.25; // C835: 0.30→0.25 (balance ATK path attractiveness)
 export const WANDERING_MERCHANT_ATK_DURATION = 12; // C835: 15→12 (shorter, stronger identity)
 export const WANDERING_MERCHANT_ATK_MUL = 0.15; // C835: 0.10→0.15 (above perception threshold)
@@ -398,12 +398,12 @@ export const REPUTATION_BALANCED_EXP_MUL = 0.15;
 
 // C887: Veteran's Trial — 2nd consequence event (fight 275-400)
 export const VETERANS_TRIAL_MIN_FIGHT = 275;
-export const VETERANS_TRIAL_MAX_FIGHT = 400;
+export const VETERANS_TRIAL_MAX_FIGHT = 450; // C889: 400→450 (extend late-game coverage)
 export const VETERANS_TRIAL_CHANCE = 0.05;
 export const VETERANS_TRIAL_MIN_CHOICES = 4;
 export const VETERANS_TRIAL_AGG_ATK_MUL = 0.25; // aggressive path: +25% ATK for 10 fights
 export const VETERANS_TRIAL_AGG_DURATION = 10;
-export const VETERANS_TRIAL_AGG_HP_COST = 0.15; // but costs 15% maxHP
+export const VETERANS_TRIAL_AGG_HP_COST = 0.12; // C889: 0.15→0.12 (less punishing aggressive)
 export const VETERANS_TRIAL_DEF_SHIELD_DURATION = 10; // defensive: 10-fight shield
 export const VETERANS_TRIAL_DEF_HEAL_RATE = 0.20; // +20% maxHP heal
 export const VETERANS_TRIAL_GREEDY_GOLD_MUL = 4.0; // greedy: gold ×4× level
