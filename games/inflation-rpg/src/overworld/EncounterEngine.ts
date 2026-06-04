@@ -942,9 +942,11 @@ export class EncounterEngine {
         events.push({ type: 'inflation_burst' });
       }
 
-      // C983: Inflation Rush — post-burst ×2 EXP for 5 fights (momentum carry)
+      // C983: Inflation Rush — post-burst ×2 EXP (duration scales with HP condition)
       if (hadInflBurst && !this.midGameBuffs.isActive('inflation_burst')) {
-        this.midGameBuffs.activate('inflation_rush', INFLATION_RUSH_DURATION);
+        // C985: healthy hero gets extended rush (soft HP management reward)
+        const rushDur = hero.hp > hero.hpMax * 0.5 ? INFLATION_RUSH_DURATION + 3 : INFLATION_RUSH_DURATION;
+        this.midGameBuffs.activate('inflation_rush', rushDur);
         events.push({ type: 'inflation_rush_start' });
       }
 
