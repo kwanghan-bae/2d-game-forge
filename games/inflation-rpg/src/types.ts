@@ -269,6 +269,7 @@ export interface MetaState {
   jpCap: Record<string, number>;
   jpFirstKillAwarded: Record<string, Record<string, true>>;
   jpCharLvAwarded: Record<string, number>;
+  jpPerksOwned: Record<string, string[]>; // C1007: char → owned perk IDs
   skillLevels: Record<string, Record<string, number>>;
   ultSlotPicks: Record<string, [string | null, string | null, string | null, string | null]>;
   // Phase D — Modifiers reroll count

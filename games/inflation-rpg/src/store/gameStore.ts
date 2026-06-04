@@ -121,6 +121,7 @@ export const INITIAL_META: MetaState = {
   jpCap: { hwarang: 50, mudang: 50, choeui: 50 },
   jpFirstKillAwarded: {},
   jpCharLvAwarded: {},
+  jpPerksOwned: {},
   skillLevels: {},
   ultSlotPicks: {
     hwarang: [null, null, null, null],
