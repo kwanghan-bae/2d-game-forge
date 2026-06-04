@@ -1083,6 +1083,11 @@ export class EncounterEngine {
         const critHealScale = Math.min(CRIT_HEAL_SCALE_CAP, Math.floor(this.totalCrits / 100) * CRIT_HEAL_SCALE_PER_100);
         if (isCrit) { didCrit = true; this.totalCrits++; hero.heal(Math.max(1, Math.floor(hero.hpMax * (CRIT_HEAL_RATE + critHealScale) * (this.hasRelic(1) ? MISER_POUCH_HEAL_PENALTY : 1)))); this.critExpChain++; if (this.hasRelic(0)) this.emberCrownStacks++; }
         else { this.critExpChain = 0; }
+        // C1013: crit cascade — bonus damage on crit (perk effect)
+        let cascadeDmg = 0;
+        if (isCrit && (this.opts.perkCritCascadeChance ?? 0) > 0 && this.rng.chance(this.opts.perkCritCascadeChance!)) {
+          cascadeDmg = Math.floor(heroAtk * 0.5);
+        }
         // C192: boss rage reset on crit
         if (isCrit && isBoss && BOSS_RAGE_RESET_ON_CRIT) rageTurn = 0;
         hitCount++;
@@ -1103,8 +1108,8 @@ export class EncounterEngine {
         if (!bossImmune && isBoss && hitCount > 1 && (hitCount - 1) % BOSS_IMMUNITY_INTERVAL === 0) {
           hero.gold += SHIELD_BREAK_GOLD;
         }
-        totalDamageDealt += effectiveAtk;
-        eHp -= effectiveAtk;
+        totalDamageDealt += effectiveAtk + cascadeDmg;
+        eHp -= effectiveAtk + cascadeDmg;
         // C306: lifesteal — every 10th hit
         if (hitCount > 0 && hitCount % LIFESTEAL_INTERVAL === 0) {
           hero.heal(Math.max(1, Math.floor(hero.hpMax * LIFESTEAL_HIT_RATE)));
@@ -1429,7 +1434,8 @@ export class EncounterEngine {
       // C983: Inflation Rush — ×2 EXP for 5 fights after burst
       const inflRushMul = this.midGameBuffs.isActive('inflation_rush') ? INFLATION_RUSH_EXP_MUL : 1;
       if (inflRushMul > 1) this.runStats.recordRushFight();
-      const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul * vcExpMul * inflRushMul * (1 + (this.opts.equipExpBonus ?? 0) / 100));
+      const expMomentumMul = 1 + (this.opts.perkExpMomentumRate ?? 0) * Math.min(this.comboStreak, 50);
+      const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul * vcExpMul * inflRushMul * (1 + (this.opts.equipExpBonus ?? 0) / 100) * expMomentumMul);
       if (this.declineStackExpDuration > 0) this.declineStackExpDuration--;
       // C711: drop chance via extracted pure function
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
@@ -1498,6 +1504,10 @@ export class EncounterEngine {
       if (this.abyssalConvergenceRemaining > 0) goldEarned = Math.floor(goldEarned * ABYSSAL_CONVERGENCE_GOLD_MUL);
       // C902: Greedy gold gain buff
       if (this.midGameBuffs.isActive('greedy_gold')) goldEarned = Math.floor(goldEarned * this.greedyGoldMul);
+      // C1013: JP perk boss_bounty gold multiplier
+      if (isBoss && (this.opts.perkBossGoldMul ?? 1) > 1) {
+        goldEarned = Math.floor(goldEarned * (this.opts.perkBossGoldMul ?? 1));
+      }
       hero.gold += goldEarned;
       hero.gold -= goldResult.greedPenalty;
       hero.gold -= goldResult.sacrificeGold;
