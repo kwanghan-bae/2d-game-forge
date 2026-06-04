@@ -215,9 +215,9 @@ export class CycleControllerV2 {
       getRealmForkAtkMul: () => this.getRealmForkAtkMul(),
       // C1002: luck meta → crit bonus + C1008 directive crit
       luckCritBonus: (opts.luckCritBonus ?? 0) + (opts.directiveCritBonus ?? 0),
-      // C1003: equipment exp/gold bonuses × C1008 directive multipliers
+      // C1003: equipment exp/gold bonuses (C1012: directive gold applied only at endCycle)
       equipExpBonus: (opts.equipExpBonus ?? 0) * (opts.directiveExpMul ?? 1),
-      equipGoldBonus: (opts.equipGoldBonus ?? 0) * (opts.directiveGoldMul ?? 1),
+      equipGoldBonus: opts.equipGoldBonus ?? 0,
       // C1011: JP perk effects
       perkCritCascadeChance: opts.perkCritCascadeChance ?? 0,
       perkBossGoldMul: opts.perkBossGoldMul ?? 1,
