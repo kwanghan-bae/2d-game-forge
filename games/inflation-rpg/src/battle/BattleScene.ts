@@ -389,7 +389,9 @@ export class BattleScene extends Phaser.Scene {
       this.activeSkills = buildActiveSkillsForCombat(run.characterId, meta);
       const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
       const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
-      this.comboShieldThresholdValue = comboShieldThreshold(getActiveSpecialEffects(allEquipped));      const charLv = meta.characterLevels[run.characterId] ?? 0;
+      const equipEffects = getActiveSpecialEffects(allEquipped);
+      this.comboShieldThresholdValue = comboShieldThreshold(equipEffects);
+      const charLv = meta.characterLevels[run.characterId] ?? 0;
       const charLevelMult = 1 + charLv * 0.1;
       const ascTierMult = 1 + 0.1 * meta.ascTier;
       const ascTree = meta.ascTree;
@@ -411,6 +413,7 @@ export class BattleScene extends Phaser.Scene {
 
     const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
     const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
+    const equipEffectsLocal = getActiveSpecialEffects(allEquipped);
     const charLv = meta.characterLevels[run.characterId] ?? 0;
     const charLevelMult = 1 + charLv * 0.1;
     const ascTierMult = 1 + 0.1 * meta.ascTier;
@@ -429,7 +432,7 @@ export class BattleScene extends Phaser.Scene {
     const playerAGI = Math.floor(calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, agiMetaMult) * pb.statBoostMult);
     const playerLUC = Math.floor(calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, lucMetaMult) * pb.statBoostMult);
 
-    const crit = Math.random() < calcCritChance(playerAGI, playerLUC) + pb.critRateBonus + (meta.luckBaseBonus ?? 0) * 0.005 + totalBurstChanceBonus(allEquipped);
+    const crit = Math.random() < calcCritChance(playerAGI, playerLUC) + pb.critRateBonus + (meta.luckBaseBonus ?? 0) * 0.005 + totalBurstChanceBonus(equipEffectsLocal);
     const combo = Math.random() < 0.05 + playerAGI * 0.0005;
     const hits = combo ? 3 : 1;
     let totalDmg = 0;
@@ -583,8 +586,8 @@ export class BattleScene extends Phaser.Scene {
         playSfx('hit', 0.9 + Math.random() * 0.2);
       }
 
-      const equipExpBonus = totalExpBonus(allEquipped);
-      const equipGoldBonus = totalGoldBonus(allEquipped);
+      const equipExpBonus = totalExpBonus(equipEffectsLocal);
+      const equipGoldBonus = totalGoldBonus(equipEffectsLocal);
       const expGain = Math.floor(10 * Math.pow(run.level, 2.0) * pb.expBoostMult * (1 + equipExpBonus / 100));
       const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1) * pb.goldBoostMult * (1 + equipGoldBonus / 100));
       const goldGain = applyMetaDropMult(rawGoldGain, 'gold', meta);

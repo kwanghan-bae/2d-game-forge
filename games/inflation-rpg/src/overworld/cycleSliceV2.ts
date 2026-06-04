@@ -14,7 +14,7 @@ import { pickStartingRealm, spawnColumnForRealm } from './realmRotation';
 import { GRID_H } from './mapLayout';
 import { applyEndCycleMeta } from './cycleSlice.helpers';
 import type { RunStatisticsData } from './EncounterEngine';
-import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus } from '../systems/equipmentEffects';
+import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus, getActiveSpecialEffects } from '../systems/equipmentEffects';
 import { getEquippedInstances } from '../systems/equipment';
 
 type Status = 'idle' | 'running' | 'ended';
@@ -70,19 +70,19 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       ...opts,
       heroSnapshot: savedSnapshot,
       gambitPolicy: opts.gambitPolicy ?? useGameStore.getState().meta.gambitPolicy,
-      luckCritBonus: (useGameStore.getState().meta.luckBaseBonus ?? 0) * 0.005
-        + totalBurstChanceBonus(getEquippedInstances(
-            useGameStore.getState().meta.inventory,
-            useGameStore.getState().meta.equippedItemIds,
-          )),
-      equipExpBonus: totalExpBonus(getEquippedInstances(
-        useGameStore.getState().meta.inventory,
-        useGameStore.getState().meta.equippedItemIds,
-      )),
-      equipGoldBonus: totalGoldBonus(getEquippedInstances(
-        useGameStore.getState().meta.inventory,
-        useGameStore.getState().meta.equippedItemIds,
-      )),
+      ...(() => {
+        const eqInst = getEquippedInstances(
+          useGameStore.getState().meta.inventory,
+          useGameStore.getState().meta.equippedItemIds,
+        );
+        const effects = getActiveSpecialEffects(eqInst);
+        return {
+          luckCritBonus: (useGameStore.getState().meta.luckBaseBonus ?? 0) * 0.005
+            + totalBurstChanceBonus(effects),
+          equipExpBonus: totalExpBonus(effects),
+          equipGoldBonus: totalGoldBonus(effects),
+        };
+      })(),
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
         const state = useGameStore.getState();
         const meta = state.meta;
@@ -179,7 +179,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       useGameStore.getState().meta.inventory,
       useGameStore.getState().meta.equippedItemIds,
     );
-    const goldBonusPct = totalGoldBonus(equipped);
+    const goldBonusPct = totalGoldBonus(getActiveSpecialEffects(equipped));
     const finalGold = Math.floor(gold * (1 + goldBonusPct / 100));
     // Cycle 116 — organic crackStones supply. cycle 108 fate roll backlog
     // 회수. boss kill 당 1 stone, max 3/cycle. fate roll modal 활성화 +
