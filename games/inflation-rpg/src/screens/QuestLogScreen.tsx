@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { QUESTS } from '../data/quests';
 import type { Quest } from '../types';
@@ -10,9 +10,12 @@ interface Props {
 export function QuestLogScreen({ onBack }: Props) {
   const questsCompleted = useGameStore(s => s.meta.questsCompleted ?? []);
   const questProgress = useGameStore(s => s.meta.questProgress ?? {});
+  const [selectedRegion, setSelectedRegion] = useState<string>('all');
 
-  const completed = QUESTS.filter(q => questsCompleted.includes(q.id));
-  const inProgress = QUESTS.filter(q => !questsCompleted.includes(q.id));
+  const regions = ['all', ...Array.from(new Set(QUESTS.map(q => q.regionId)))];
+  const filtered = selectedRegion === 'all' ? QUESTS : QUESTS.filter(q => q.regionId === selectedRegion);
+  const completed = filtered.filter(q => questsCompleted.includes(q.id));
+  const inProgress = filtered.filter(q => !questsCompleted.includes(q.id));
 
   return (
     <div data-testid="quest-log-screen" style={{ padding: 24, color: '#eee', maxWidth: 480, margin: '0 auto' }}>
@@ -28,8 +31,32 @@ export function QuestLogScreen({ onBack }: Props) {
         </button>
       </div>
 
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 12, paddingBottom: 4 }}>
+        {regions.map(r => {
+          const count = (r === 'all' ? QUESTS : QUESTS.filter(q => q.regionId === r))
+            .filter(q => questsCompleted.includes(q.id)).length;
+          const total = r === 'all' ? QUESTS.length : QUESTS.filter(q => q.regionId === r).length;
+          return (
+            <button
+              key={r}
+              type="button"
+              data-testid={`quest-tab-${r}`}
+              onClick={() => setSelectedRegion(r)}
+              style={{
+                background: selectedRegion === r ? '#fbbf24' : '#1f2937',
+                color: selectedRegion === r ? '#000' : '#eee',
+                border: 'none', borderRadius: 4, padding: '4px 8px', fontSize: 11,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              {r === 'all' ? '전체' : r} ({count}/{total})
+            </button>
+          );
+        })}
+      </div>
+
       <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 16 }}>
-        완료 {completed.length}/{QUESTS.length}
+        완료 {completed.length}/{filtered.length}
       </div>
 
       {inProgress.length > 0 && (
