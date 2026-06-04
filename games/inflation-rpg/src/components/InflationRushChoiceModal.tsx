@@ -1,15 +1,34 @@
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
+import { useEffect, useState } from 'react';
 
 interface Props {
   onClose: () => void;
 }
 
+const TIMEOUT_MS = 10000; // C993: 10s auto-resolve for idle compatibility
+
 /**
- * C989: Inflation Rush choice — ride (×2 EXP for 5-8 fights) or cash out (level×50 gold).
- * No timeout: this is a meaningful decision the player should make consciously.
+ * C989+C993: Inflation Rush choice — ride (×2 EXP) or cash out (level×50 gold).
+ * Auto-resolves to 'ride' after 10s (EXP is the safe idle default).
  */
 export function InflationRushChoiceModal({ onClose }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
+  const [timeLeft, setTimeLeft] = useState(TIMEOUT_MS);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 100) {
+          controller?.setInflationRushChoice('ride');
+          onClose();
+          return 0;
+        }
+        return t - 100;
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, [controller, onClose]);
+
   if (!controller) return null;
 
   const handleRide = () => {
@@ -21,6 +40,8 @@ export function InflationRushChoiceModal({ onClose }: Props) {
     controller.setInflationRushChoice('cashout');
     onClose();
   };
+
+  const progress = timeLeft / TIMEOUT_MS;
 
   return (
     <div style={{
@@ -59,6 +80,20 @@ export function InflationRushChoiceModal({ onClose }: Props) {
             💰 현금화<br />
             <span style={{ fontSize: 11, opacity: 0.85 }}>즉시 Gold 획득</span>
           </button>
+        </div>
+        {/* C993: countdown progress bar */}
+        <div style={{
+          marginTop: 12, height: 4, borderRadius: 2,
+          background: '#333', overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%', width: `${progress * 100}%`,
+            background: 'linear-gradient(90deg, #2196f3, #ffc107)',
+            transition: 'width 0.1s linear',
+          }} />
+        </div>
+        <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>
+          {Math.ceil(timeLeft / 1000)}초 후 자동 질주
         </div>
       </div>
     </div>
