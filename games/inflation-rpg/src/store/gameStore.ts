@@ -152,6 +152,7 @@ export const INITIAL_META: MetaState = {
   sponsorGold: 0,
   atkBaseBonus: 0,
   hpBaseBonus: 0,
+  luckBaseBonus: 0,
   // Phase V3-B — 빛 에너지 (회춘 비용)
   light: 0,
   // Phase V3-C — buff catalog 누적 Lv

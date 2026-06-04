@@ -59,6 +59,7 @@ export function applyEndCycleMeta<S extends EndCycleStateSlice>(state: S, args: 
     gold: totalGold,
     atkBaseBonus: state.meta.atkBaseBonus ?? 0,
     hpBaseBonus: state.meta.hpBaseBonus ?? 0,
+    luckBaseBonus: state.meta.luckBaseBonus ?? 0,
     strategy: 'balanced',
   });
   return {
@@ -68,6 +69,7 @@ export function applyEndCycleMeta<S extends EndCycleStateSlice>(state: S, args: 
       sponsorGold: out.goldRemaining,
       atkBaseBonus: out.atkBaseBonus,
       hpBaseBonus: out.hpBaseBonus,
+      luckBaseBonus: out.luckBaseBonus,
     },
     run: {
       ...state.run,
