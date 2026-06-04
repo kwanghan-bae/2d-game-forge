@@ -6,7 +6,7 @@ import { applyExpGain } from '../systems/experience';
 import { playSfx, playBgm, playAmbient, stopAmbient } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedInstances } from '../systems/equipment';
-import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus } from '../systems/equipmentEffects';
+import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus, comboShieldThreshold, getActiveSpecialEffects } from '../systems/equipmentEffects';
 import { getCharacterById } from '../data/characters';
 import { pickMonsterFromPool } from '../data/monsters';
 import { getDungeonById } from '../data/dungeons';
@@ -110,6 +110,8 @@ export class BattleScene extends Phaser.Scene {
   private killStreak = 0;
   private streakText?: Phaser.GameObjects.Text;
   private tookDamageThisFight = false;
+  private hitsReceivedThisFight = 0;
+  private comboShieldThresholdValue = 0;
   private battleStartTime = 0;
   private timerText?: Phaser.GameObjects.Text;
   private heartbeatActive = false;
@@ -387,7 +389,7 @@ export class BattleScene extends Phaser.Scene {
       this.activeSkills = buildActiveSkillsForCombat(run.characterId, meta);
       const baseAbility = calcBaseAbilityMult(meta.baseAbilityLevel);
       const allEquipped = getEquippedInstances(meta.inventory, meta.equippedItemIds);
-      const charLv = meta.characterLevels[run.characterId] ?? 0;
+      this.comboShieldThresholdValue = comboShieldThreshold(getActiveSpecialEffects(allEquipped));      const charLv = meta.characterLevels[run.characterId] ?? 0;
       const charLevelMult = 1 + charLv * 0.1;
       const ascTierMult = 1 + 0.1 * meta.ascTier;
       const ascTree = meta.ascTree;
@@ -744,7 +746,13 @@ export class BattleScene extends Phaser.Scene {
     const reduction = calcDamageReduction(playerDEF);
     const rawDmgTaken = resolveDamageTaken({ enemyATK, reduction });
     const incomingResult = processIncomingDamage(this.effectsState, rawDmgTaken);
-    const finalDmgTaken = incomingResult.damageAfterShield;
+    this.hitsReceivedThisFight++;
+    // C1004: combo_shield — halve damage after threshold consecutive hits
+    const comboShieldActive = this.comboShieldThresholdValue > 0
+      && this.hitsReceivedThisFight > this.comboShieldThresholdValue;
+    const finalDmgTaken = comboShieldActive
+      ? Math.floor(incomingResult.damageAfterShield * 0.5)
+      : incomingResult.damageAfterShield;
     // Phase E — mythic on_player_hit_received procs (thorns).
     const hitProcs = evaluateMythicProcs(this.effectsState, 'on_player_hit_received', { damageReceived: finalDmgTaken });
     const totalReflect = incomingResult.reflectDamage + hitProcs.thornsReflect;

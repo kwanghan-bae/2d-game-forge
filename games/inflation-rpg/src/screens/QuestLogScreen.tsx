@@ -79,7 +79,8 @@ function QuestCard({ quest, progress, completed }: { quest: Quest; progress: num
       <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 4 }}>
         보상: {quest.reward.gold ? `${quest.reward.gold.toLocaleString()}G` : ''}
         {quest.reward.bp ? ` +${quest.reward.bp}BP` : ''}
-        {quest.reward.equipmentId ? ` 🎁${quest.reward.equipmentId}` : ''}
+        {quest.reward.equipmentId ? ` 🎁장비` : ''}
+        {!quest.reward.gold && !quest.reward.bp && !quest.reward.equipmentId ? '없음' : ''}
       </div>
     </div>
   );
