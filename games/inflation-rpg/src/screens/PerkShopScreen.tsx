@@ -61,26 +61,40 @@ export function PerkShopScreen({ onBack }: Props) {
                   필요: {JP_PERKS.find(p => p.id === perk.requires)?.name}
                 </div>
               )}
-              {!owned && canBuy && (
+              {!owned && canBuy && !buying && (
                 <button
                   type="button"
                   data-testid={`btn-buy-${perk.id}`}
-                  onClick={() => handleBuy(perk.id)}
+                  onClick={() => setBuying(perk.id)}
                   style={buyBtnStyle}
                 >
                   구매
                 </button>
+              )}
+              {buying === perk.id && (
+                <div style={{ marginTop: 6, display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    data-testid={`btn-confirm-${perk.id}`}
+                    onClick={() => handleBuy(perk.id)}
+                    style={{ ...buyBtnStyle, background: '#22c55e' }}
+                  >
+                    확인
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBuying(null)}
+                    style={{ ...buyBtnStyle, background: '#6b7280' }}
+                  >
+                    취소
+                  </button>
+                </div>
               )}
             </div>
           );
         })}
       </div>
 
-      {buying && (
-        <div style={{ marginTop: 16, textAlign: 'center', fontSize: 13 }}>
-          구매 확인: {JP_PERKS.find(p => p.id === buying)?.name}
-        </div>
-      )}
     </div>
   );
 }
