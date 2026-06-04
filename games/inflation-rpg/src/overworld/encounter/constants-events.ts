@@ -544,4 +544,4 @@ export const VETERANS_CHALLENGE_SURVIVAL_BURST = 3.0; // C977: survive 10 fights
 export const INFLATION_BURST_ATK_MUL = 100; // ×100 ATK for exactly 1 fight
 export const INFLATION_BURST_MIN_FIGHT = 300; // late-mid game only
 export const INFLATION_BURST_MAX_FIGHT = 600; // before endgame
-export const INFLATION_BURST_CHANCE = 0.02; // 2% per fight in window (rare treat)
+export const INFLATION_BURST_CHANCE = 0.01; // 1% per fight in window (rare treat, ~3 expected)
