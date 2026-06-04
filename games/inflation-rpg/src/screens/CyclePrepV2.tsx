@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { HeroSpawner } from '../hero/HeroSpawner';
 import { SeededRng } from '../cycle/SeededRng';
 import { useGameStore } from '../store/gameStore';
+import { DIRECTIVE_INFO, type DirectiveInfo } from '../systems/sponsorDirective';
+import type { SponsorDirective } from '../types';
 
 interface Props {
   onStart: () => void;
@@ -16,6 +18,7 @@ export function CyclePrepV2({ onStart, onCancel, onClearSnapshot }: Props) {
   const atkBaseBonus = useGameStore(s => s.meta.atkBaseBonus ?? 0);
   const hpBaseBonus = useGameStore(s => s.meta.hpBaseBonus ?? 0);
   const sponsorGold = useGameStore(s => s.meta.sponsorGold ?? 0);
+  const [selectedDirective, setSelectedDirective] = useState<SponsorDirective | null>(null);
 
   // Preview today's hero with deterministic seed-of-the-moment
   const previewSeed = useMemo(() => Date.now() & 0xffffffff, []);
@@ -24,6 +27,8 @@ export function CyclePrepV2({ onStart, onCancel, onClearSnapshot }: Props) {
   const handleStart = () => {
     // V3-H B2: clear any persisted snapshot so fresh hero spawns (not resume).
     onClearSnapshot?.();
+    // C1008: save directive to run state before starting
+    useGameStore.setState(s => ({ run: { ...s.run, directive: selectedDirective } }));
     startCycle({
       seed: previewSeed,
       traits: [],
@@ -48,6 +53,30 @@ export function CyclePrepV2({ onStart, onCancel, onClearSnapshot }: Props) {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.7 }}>
           {preview.age}세 · {preview.job} · LV {preview.level}
+        </div>
+      </div>
+
+      {/* C1010: Sponsor Directive selection */}
+      <div style={{ marginTop: 24, marginBottom: 8 }}>
+        <h3 style={{ fontSize: 14, marginBottom: 8, opacity: 0.8 }}>후원 교서 (선택)</h3>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {DIRECTIVE_INFO.map((d: DirectiveInfo) => (
+            <button
+              key={d.id}
+              type="button"
+              data-testid={`directive-${d.id}`}
+              onClick={() => setSelectedDirective(selectedDirective === d.id ? null : d.id)}
+              style={{
+                ...directiveCardStyle,
+                border: selectedDirective === d.id ? '2px solid #fbbf24' : '1px solid #374151',
+                background: selectedDirective === d.id ? '#1e293b' : '#0f172a',
+              }}
+            >
+              <div style={{ fontWeight: 'bold', fontSize: 13 }}>{d.name}</div>
+              <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>{d.description}</div>
+              <div style={{ fontSize: 10, opacity: 0.5, marginTop: 4 }}>⚠ {d.tradeoff}</div>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -86,4 +115,12 @@ const ghostBtnStyle: React.CSSProperties = {
   border: '1px solid #475569',
   borderRadius: 4,
   cursor: 'pointer',
+};
+const directiveCardStyle: React.CSSProperties = {
+  padding: '10px 12px',
+  borderRadius: 6,
+  cursor: 'pointer',
+  textAlign: 'left',
+  maxWidth: 140,
+  color: '#e2e8f0',
 };
