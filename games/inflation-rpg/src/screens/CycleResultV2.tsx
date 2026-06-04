@@ -14,6 +14,7 @@ interface Props {
 export function CycleResultV2({ onBackToMenu }: Props) {
   const saga = useCycleStoreV2(s => s.lastSaga);
   const combatStats = useCycleStoreV2(s => s.lastCycleStats);
+  const jpEarned = useCycleStoreV2(s => s.lastJpEarned);
   const reset = useCycleStoreV2(s => s.reset);
   const characterId = useGameStore(s => s.run.characterId);
   const victoryQuote = characterId ? getVictoryQuote(characterId) : null;
@@ -53,6 +54,11 @@ export function CycleResultV2({ onBackToMenu }: Props) {
       </div>
 
       {combatStats && <CombatStatsPanel stats={combatStats} />}
+      {jpEarned > 0 && (
+        <div data-testid="result-jp-earned" style={{ fontSize: 12, color: '#a78bfa', marginTop: 8 }}>
+          ⚔️ JP 획득: +{jpEarned}
+        </div>
+      )}
       {combatStats?.runStats && <RunHighlightsPanel runStats={combatStats.runStats} />}
       <QuestCompletionBanner />
 

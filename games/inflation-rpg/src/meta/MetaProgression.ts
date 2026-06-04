@@ -29,6 +29,11 @@ export function goldFromCycle(stats: CycleStats): number {
   );
 }
 
+/** C1000: JP earned per cycle. Scales with boss kills + peak level. */
+export function jpFromCycle(stats: CycleStats): number {
+  return Math.max(1, Math.floor(1 + stats.bossKills * 2 + stats.maxLevel / 1000));
+}
+
 /** Cost of the (N+1)-th atk upgrade. N = current atkBaseBonus. */
 export function costForNextAtk(currentBonus: number): number {
   return 50 + currentBonus * 10;

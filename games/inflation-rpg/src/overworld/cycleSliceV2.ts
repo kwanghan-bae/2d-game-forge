@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { CycleControllerV2, type CycleControllerV2Opts } from './CycleControllerV2';
 import { SagaStorage } from '../saga/SagaStorage';
 import type { CycleSaga, DeathCause } from '../saga/SagaTypes';
-import { goldFromCycle } from '../meta/MetaProgression';
+import { goldFromCycle, jpFromCycle } from '../meta/MetaProgression';
 import { useGameStore } from '../store/gameStore';
 import { rejuvenationCost } from '../hero/rejuvenation';
 import { getRejuvDiscount, getDropChanceBonus, getAgingSpeedMul, getFieldDiffThreshold } from '../buff/buffEffects';
@@ -36,6 +36,8 @@ interface CycleStoreV2State {
   lastCycleStats: CycleCombatStats | null;
   /** C996: Quest IDs completed during most recent cycle end. */
   questsCompletedThisCycle: string[];
+  /** C1000: JP earned during most recent cycle end. */
+  lastJpEarned: number;
   start: (opts: CycleControllerV2Opts) => void;
   /** Cycle-5 F3: optional cause forwarded into the controller before
    *  `finalize()`. Used by OverworldRunner when the scene emits
@@ -53,6 +55,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
   lastGoldEarned: 0,
   lastCycleStats: null,
   questsCompletedThisCycle: [],
+  lastJpEarned: 0,
   start(opts) {
     // V3-H B2: resolve which hero snapshot to use.
     //  - opts.heroSnapshot === undefined → check run.heroSnapshot (auto-resume from save).
@@ -118,7 +121,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     }
     ctrl.setCurrentRealmId(activeRealmId);
     ctrl.setUnlockedRealms(useGameStore.getState().meta.unlockedRealms);
-    set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null, questsCompletedThisCycle: [] });
+    set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0, lastJpEarned: 0, lastCycleStats: null, questsCompletedThisCycle: [] });
   },
   endCycle(cause?: DeathCause) {
     const ctrl = get().controller;
@@ -163,6 +166,24 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     if (crackStoneReward > 0) {
       useGameStore.getState().gainCrackStones(crackStoneReward);
     }
+    // C1000: Award JP from cycle stats
+    const jpReward = jpFromCycle({
+      maxLevel: hero.level,
+      kills: stats.kills,
+      bossKills: stats.bossKills,
+      drops: stats.drops,
+    });
+    if (jpReward > 0) {
+      const charId = useGameStore.getState().run.characterId;
+      if (charId) {
+        useGameStore.setState(s => {
+          const currentJp = s.meta.jp?.[charId] ?? 0;
+          const cap = s.meta.jpCap?.[charId] ?? 100;
+          const newJp = Math.min(currentJp + jpReward, cap);
+          return { meta: { ...s.meta, jp: { ...s.meta.jp, [charId]: newJp } } };
+        });
+      }
+    }
     // Cycle-18 — sim/real parity. The pure transform (`applyEndCycleMeta`)
     // owns sponsorGold spend + stale-realm reset + npcs clear. Mirror in
     // `scripts/sim-cycle-v2.ts` calls the same helper so future changes
@@ -178,7 +199,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     }
     const questsAfter = useGameStore.getState().meta.questsCompleted;
     const newlyCompleted = questsAfter.filter(q => !questsBefore.includes(q));
-    set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, questsCompletedThisCycle: newlyCompleted, lastCycleStats: {
+    set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, lastJpEarned: jpReward, questsCompletedThisCycle: newlyCompleted, lastCycleStats: {
       kills: stats.kills,
       bossKills: stats.bossKills,
       drops: stats.drops,
@@ -206,6 +227,6 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     useGameStore.getState().recordSagaRejuvenation();
   },
   reset() {
-    set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null, questsCompletedThisCycle: [] });
+    set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0, lastJpEarned: 0, lastCycleStats: null, questsCompletedThisCycle: [] });
   },
 }));
