@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { goldFromCycle, spend, costForNextAtk, costForNextHp } from '../MetaProgression';
+import { goldFromCycle, jpFromCycle, spend, costForNextAtk, costForNextHp } from '../MetaProgression';
 
 describe('MetaProgression.goldFromCycle', () => {
   it('rewards more for higher maxLevel and kills', () => {
@@ -65,5 +65,29 @@ describe('MetaProgression.spend', () => {
     const r = spend({ gold: 200, atkBaseBonus: 0, hpBaseBonus: 0, strategy: 'balanced' });
     // 50 atk → 30 hp → 60 atk → 36 hp = 176. 24 leftover; 70 atk too expensive, 42 hp too. stops.
     expect(r.goldRemaining).toBeLessThan(70);
+  });
+});
+
+describe('MetaProgression.jpFromCycle', () => {
+  it('returns at least 1 for empty stats', () => {
+    expect(jpFromCycle({ maxLevel: 0, kills: 0, bossKills: 0, drops: 0 })).toBe(1);
+  });
+
+  it('performance bonuses increase JP', () => {
+    const base = jpFromCycle({ maxLevel: 5000, kills: 50, bossKills: 2, drops: 5 });
+    const withPerf = jpFromCycle({ maxLevel: 5000, kills: 50, bossKills: 2, drops: 5, overkillCount: 30, critCount: 60 });
+    expect(withPerf).toBeGreaterThan(base);
+  });
+
+  it('overkillCount adds floor(count/10) JP', () => {
+    const without = jpFromCycle({ maxLevel: 1000, kills: 10, bossKills: 1, drops: 0 });
+    const with50 = jpFromCycle({ maxLevel: 1000, kills: 10, bossKills: 1, drops: 0, overkillCount: 50 });
+    expect(with50 - without).toBe(5);
+  });
+
+  it('critCount adds floor(count/20) JP', () => {
+    const without = jpFromCycle({ maxLevel: 1000, kills: 10, bossKills: 1, drops: 0 });
+    const with40 = jpFromCycle({ maxLevel: 1000, kills: 10, bossKills: 1, drops: 0, critCount: 40 });
+    expect(with40 - without).toBe(2);
   });
 });

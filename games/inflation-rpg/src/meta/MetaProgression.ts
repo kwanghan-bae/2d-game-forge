@@ -14,6 +14,9 @@ export interface CycleStats {
   kills: number;
   bossKills: number;
   drops: number;
+  /** C1006: optional performance stats for JP bonus */
+  overkillCount?: number;
+  critCount?: number;
 }
 
 export function goldFromCycle(stats: CycleStats): number {
@@ -29,9 +32,12 @@ export function goldFromCycle(stats: CycleStats): number {
   );
 }
 
-/** C1000: JP earned per cycle. Scales with boss kills + peak level. */
+/** C1000+C1006: JP earned per cycle. Scales with boss kills + peak level + performance. */
 export function jpFromCycle(stats: CycleStats): number {
-  return Math.max(1, Math.floor(1 + stats.bossKills * 2 + stats.maxLevel / 1000));
+  const base = 1 + stats.bossKills * 2 + stats.maxLevel / 1000;
+  const overkillBonus = Math.floor((stats.overkillCount ?? 0) / 10);
+  const critBonus = Math.floor((stats.critCount ?? 0) / 20);
+  return Math.max(1, Math.floor(base + overkillBonus + critBonus));
 }
 
 /** Cost of the (N+1)-th atk upgrade. N = current atkBaseBonus. */

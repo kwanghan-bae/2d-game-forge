@@ -188,12 +188,16 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     if (crackStoneReward > 0) {
       useGameStore.getState().gainCrackStones(crackStoneReward);
     }
+    // C836: Capture run statistics snapshot before finalization
+    const runStats = ctrl.getRunStatistics();
     // C1000: Award JP from cycle stats
     const jpReward = jpFromCycle({
       maxLevel: hero.level,
       kills: stats.kills,
       bossKills: stats.bossKills,
       drops: stats.drops,
+      overkillCount: runStats?.overkills ?? 0,
+      critCount: runStats?.criticalHits ?? 0,
     });
     if (jpReward > 0) {
       const charId = useGameStore.getState().run.characterId;
@@ -211,8 +215,6 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     // `scripts/sim-cycle-v2.ts` calls the same helper so future changes
     // propagate to both paths automatically. See cycleSlice.helpers.ts.
     useGameStore.setState(s => applyEndCycleMeta(s, { gold: finalGold }));
-    // C836: Capture run statistics snapshot before finalization
-    const runStats = ctrl.getRunStatistics();
     // C995: Track run_stat quests from final statistics
     // C996: Capture newly completed quests for result screen banner
     const questsBefore = [...useGameStore.getState().meta.questsCompleted];
