@@ -26,6 +26,7 @@ import { ExpBreakdownBadge } from '../components/ExpBreakdownBadge';
 import { EventChoiceToast } from '../components/EventChoiceToast';
 import { resolveEventToastKey } from '../components/EventChoiceToastLogic';
 import { ChainFlavorToast } from '../components/ChainFlavorToast';
+import { EventSpectacleLayer, type SpectacleItem } from '../components/EventSpectacleLayer';
 import { RiskGambitToast } from '../components/RiskGambitToast';
 import { HealBreakdownBadge } from '../components/HealBreakdownBadge';
 import type { ExpBreakdownEntry } from '../components/ExpBreakdownBadgeLogic';
@@ -157,6 +158,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [eventSubType, setEventSubType] = useState<string | null>(null);
   const [chainFlavor, setChainFlavor] = useState<string | null>(null);
   const [gambitResult, setGambitResult] = useState<{ accepted: boolean; hpCost: number; goldReward: number } | null>(null);
+  const [spectacleQueue, setSpectacleQueue] = useState<SpectacleItem[]>([]);
   const [healResult, setHealResult] = useState<PostCombatHealResult | null>(null);
   const [statDeltaEntries, setStatDeltaEntries] = useState<import('../components/StatDeltaPopupLogic').StatDeltaEntry[]>([]);
   const [currentWeather, setCurrentWeather] = useState<Weather>('normal');
@@ -464,6 +466,19 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
                 atAge: ev.atAge,
               });
             }
+           // C984: Spectacle events → push to VFX queue
+           if (ev.type === 'inflation_burst') {
+             setSpectacleQueue(q => [...q, { id: `ib-${Date.now()}`, kind: 'inflation_burst', atkMul: 100 }]);
+           }
+           if (ev.type === 'inflation_rush_start') {
+             setSpectacleQueue(q => [...q, { id: `ir-${Date.now()}`, kind: 'inflation_rush' }]);
+           }
+           if (ev.type === 'vc_progress') {
+             setSpectacleQueue(q => [...q, { id: `vp-${Date.now()}`, kind: 'vc_progress', current: ev.current, total: ev.total, hpPercent: ev.hpPercent }]);
+           }
+           if (ev.type === 'vc_survival_burst') {
+             setSpectacleQueue(q => [...q, { id: `vs-${Date.now()}`, kind: 'vc_survival_burst', value: ev.value }]);
+           }
           }
           // V3-H F6: season changed → update scene bg tint. Store already updated by controller.
           const seasonChanged = evs.find(e => e.type === 'season_changed');
@@ -752,6 +767,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       <HealBreakdownBadge healResult={healResult} heroHpMax={hero.hpMax} />
       <EventChoiceToast eventSubType={eventSubType} onDone={() => setEventSubType(null)} />
       <ChainFlavorToast flavor={chainFlavor} onDone={() => setChainFlavor(null)} />
+      <EventSpectacleLayer queue={spectacleQueue} onDone={(id) => setSpectacleQueue(q => q.filter(i => i.id !== id))} />
       <RiskGambitToast result={gambitResult} onDone={() => setGambitResult(null)} />
       {showAtkBreakdown && (
         <div style={{ position: 'absolute', top: 60, left: 8, zIndex: 20 }}>
