@@ -138,6 +138,8 @@ export type OverworldEvent =
   | { type: 'vc_progress'; current: number; total: number; hpPercent: number }
   // C980: Inflation Burst — rare ×100 ATK for 1 fight
   | { type: 'inflation_burst' }
+  // C981: Inflation Burst result — post-fight spectacle data
+  | { type: 'inflation_burst_result'; overkill: boolean; atkMul: number }
   // C866: Proving Grounds mid-game challenge
   | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number; declined?: boolean; shardGranted?: boolean }
   // C875: Proving Grounds player choice pending
