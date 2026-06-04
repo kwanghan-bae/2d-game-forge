@@ -6,6 +6,8 @@ import { useGameStore } from '../store/gameStore';
 import { getVictoryQuote } from '../data/victoryQuotes';
 import { getQuestById } from '../data/quests';
 import { formatCompact } from '../systems/numberFormat';
+import { DIRECTIVE_INFO } from '../systems/sponsorDirective';
+import type { SponsorDirective } from '../types';
 
 interface Props {
   onBackToMenu: () => void;
@@ -17,7 +19,9 @@ export function CycleResultV2({ onBackToMenu }: Props) {
   const jpEarned = useCycleStoreV2(s => s.lastJpEarned);
   const reset = useCycleStoreV2(s => s.reset);
   const characterId = useGameStore(s => s.run.characterId);
+  const directive = useGameStore(s => s.run.directive) as SponsorDirective | null;
   const victoryQuote = characterId ? getVictoryQuote(characterId) : null;
+  const directiveInfo = directive ? DIRECTIVE_INFO.find(d => d.id === directive) : null;
 
   if (!saga) {
     return <div style={{ padding: 24, color: '#eee' }}>결과가 없습니다.</div>;
@@ -57,6 +61,11 @@ export function CycleResultV2({ onBackToMenu }: Props) {
       {jpEarned > 0 && (
         <div data-testid="result-jp-earned" style={{ fontSize: 12, color: '#a78bfa', marginTop: 8 }}>
           ⚔️ JP 획득: +{jpEarned}
+        </div>
+      )}
+      {directiveInfo && (
+        <div data-testid="result-directive" style={{ fontSize: 12, color: '#60a5fa', marginTop: 6 }}>
+          📋 교서: {directiveInfo.name} — {directiveInfo.description}
         </div>
       )}
       {combatStats?.runStats && <RunHighlightsPanel runStats={combatStats.runStats} />}
