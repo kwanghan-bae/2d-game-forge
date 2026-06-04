@@ -64,6 +64,8 @@ export interface CycleControllerV2Opts {
   heroSnapshot?: HeroSnapshot | null;
   /** C830 — Risk Gambit auto-resolve policy. default='always'. */
   gambitPolicy?: 'always' | 'never' | 'hp_above_half';
+  /** C1002 — additive crit bonus from luckBaseBonus meta (0.005 per level). */
+  luckCritBonus?: number;
 }
 
 export class CycleControllerV2 {
@@ -199,6 +201,8 @@ export class CycleControllerV2 {
       getBossIntroDropBonus: () => this.getBossIntroDropBonus(),
       // Cycle 110 F1: realm fork atk mul (applies to all combat, not just boss).
       getRealmForkAtkMul: () => this.getRealmForkAtkMul(),
+      // C1002: luck meta → crit bonus
+      luckCritBonus: opts.luckCritBonus ?? 0,
     });
     if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);

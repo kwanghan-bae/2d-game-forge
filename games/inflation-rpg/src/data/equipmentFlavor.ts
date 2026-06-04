@@ -55,4 +55,10 @@ export const EQUIPMENT_FLAVOR: Record<string, string> = {
   'a-mythic-aura': '신의 가호가 물질화된 결계. 모든 공격이 빗나간다.',
   'acc-mythic-gem': '운명 자체를 좌우하는 보석. 소유자의 길이 열린다.',
   'acc-mythic-ring': '하늘과 땅의 기운을 담은 반지. 차원이 다른 힘.',
+
+  // ── Special Effect ──
+  'acc-burst-charm': '폭발의 기운이 서린 부적. 치명적 순간을 불러온다.',
+  'acc-gold-magnet': '황금을 끌어당기는 자석. 전투가 끝나면 금이 모인다.',
+  'w-exp-katana': '수련의 정수가 깃든 검. 벤 적에게서 깨달음을 얻는다.',
+  'a-iron-will': '의지를 형상화한 갑옷. 연속 타격에도 흔들리지 않는다.',
 };

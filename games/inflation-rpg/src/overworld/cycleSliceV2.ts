@@ -14,6 +14,8 @@ import { pickStartingRealm, spawnColumnForRealm } from './realmRotation';
 import { GRID_H } from './mapLayout';
 import { applyEndCycleMeta } from './cycleSlice.helpers';
 import type { RunStatisticsData } from './EncounterEngine';
+import { totalBurstChanceBonus } from '../systems/equipmentEffects';
+import { getEquippedInstances } from '../systems/equipment';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -68,6 +70,11 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       ...opts,
       heroSnapshot: savedSnapshot,
       gambitPolicy: opts.gambitPolicy ?? useGameStore.getState().meta.gambitPolicy,
+      luckCritBonus: (useGameStore.getState().meta.luckBaseBonus ?? 0) * 0.005
+        + totalBurstChanceBonus(getEquippedInstances(
+            useGameStore.getState().meta.inventory,
+            useGameStore.getState().meta.equippedItemIds,
+          )),
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
         const state = useGameStore.getState();
         const meta = state.meta;

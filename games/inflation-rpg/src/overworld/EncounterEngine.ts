@@ -108,6 +108,8 @@ export interface EncounterEngineOpts {
    *  which is boss-only). PRD §F1.동작(5) — separate channel from boss intro,
    *  engine multiplies both. */
   getRealmForkAtkMul?: () => number;
+  /** C1002: additive crit chance bonus from luckBaseBonus meta stat (0.005 per level). */
+  luckCritBonus?: number;
 }
 
 export class EncounterEngine {
@@ -1046,7 +1048,7 @@ export class EncounterEngine {
           isBoss,
           bossCritBonus: BOSS_CRIT_BONUS,
           deathProxCritActive,
-          baseCritChance: CRIT_CHANCE,
+          baseCritChance: CRIT_CHANCE + (this.opts.luckCritBonus ?? 0),
           weatherCritMul,
           critMasteryBonus: this.critMasteryBonus,
           rngChance: (rate: number) => this.rng.chance(rate),

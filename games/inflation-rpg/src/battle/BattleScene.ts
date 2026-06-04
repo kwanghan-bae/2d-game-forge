@@ -6,6 +6,7 @@ import { applyExpGain } from '../systems/experience';
 import { playSfx, playBgm, playAmbient, stopAmbient } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedInstances } from '../systems/equipment';
+import { totalBurstChanceBonus } from '../systems/equipmentEffects';
 import { getCharacterById } from '../data/characters';
 import { pickMonsterFromPool } from '../data/monsters';
 import { getDungeonById } from '../data/dungeons';
@@ -426,7 +427,7 @@ export class BattleScene extends Phaser.Scene {
     const playerAGI = Math.floor(calcFinalStat('agi', run.allocated.agi, char.statMultipliers.agi, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, agiMetaMult) * pb.statBoostMult);
     const playerLUC = Math.floor(calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult, ascTierMult, 1, lucMetaMult) * pb.statBoostMult);
 
-    const crit = Math.random() < calcCritChance(playerAGI, playerLUC) + pb.critRateBonus;
+    const crit = Math.random() < calcCritChance(playerAGI, playerLUC) + pb.critRateBonus + (meta.luckBaseBonus ?? 0) * 0.005 + totalBurstChanceBonus(allEquipped);
     const combo = Math.random() < 0.05 + playerAGI * 0.0005;
     const hits = combo ? 3 : 1;
     let totalDmg = 0;
