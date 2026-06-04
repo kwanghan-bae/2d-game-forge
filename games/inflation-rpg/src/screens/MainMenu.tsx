@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { HallScreen } from './HallScreen';
 import { SeasonPassScreen } from './SeasonPassScreen';
+import { QuestLogScreen } from './QuestLogScreen';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
 import { getClaimerTier, nextTierThreshold, getClaimerTierProgress } from '../data/claimerTier';
@@ -20,6 +21,7 @@ export function MainMenu() {
   const questsCompleted = useGameStore(s => s.meta.questsCompleted?.length ?? 0);
   const [hallOpen, setHallOpen] = useState(false);
   const [seasonPassOpen, setSeasonPassOpen] = useState(false);
+  const [questLogOpen, setQuestLogOpen] = useState(false);
 
   // Idle musing ticker — rotates character quips every 15s
   const CHAR_IDS = ['hwarang','mudang','choeui','geomgaek','tiger_hunter','dosa','yacha','gungsu','uinyeo','jangsu','seungbyeong','geosa','cheongwan','yongnyeo','gwisin','seonin'];
@@ -78,12 +80,6 @@ export function MainMenu() {
           </div>
         );
       })()}
-
-      {questsCompleted > 0 && (
-        <div data-testid="mm-quest-progress" style={{ fontSize: 11, color: '#4ade80', marginBottom: 12 }}>
-          📜 퀘스트 {questsCompleted}/{QUESTS.length} 완료
-        </div>
-      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 280, margin: '0 auto' }}>
         {heroSnapshot && (
@@ -149,6 +145,14 @@ export function MainMenu() {
         </button>
         <button
           type="button"
+          data-testid="btn-quest-log"
+          onClick={() => setQuestLogOpen(true)}
+          style={menuBtnStyle}
+        >
+          📜 퀘스트 ({questsCompleted}/{QUESTS.length})
+        </button>
+        <button
+          type="button"
           data-testid="btn-bestiary"
           onClick={() => setScreen('bestiary')}
           style={menuBtnStyle}
@@ -180,6 +184,11 @@ export function MainMenu() {
 
       {hallOpen && <HallScreen onClose={() => setHallOpen(false)} />}
       {seasonPassOpen && <SeasonPassScreen onClose={() => setSeasonPassOpen(false)} />}
+      {questLogOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: '#0a0a0f', zIndex: 100, overflow: 'auto' }}>
+          <QuestLogScreen onBack={() => setQuestLogOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }
