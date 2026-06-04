@@ -14,7 +14,7 @@ import { pickStartingRealm, spawnColumnForRealm } from './realmRotation';
 import { GRID_H } from './mapLayout';
 import { applyEndCycleMeta } from './cycleSlice.helpers';
 import type { RunStatisticsData } from './EncounterEngine';
-import { totalBurstChanceBonus } from '../systems/equipmentEffects';
+import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus } from '../systems/equipmentEffects';
 import { getEquippedInstances } from '../systems/equipment';
 
 type Status = 'idle' | 'running' | 'ended';
@@ -75,6 +75,14 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
             useGameStore.getState().meta.inventory,
             useGameStore.getState().meta.equippedItemIds,
           )),
+      equipExpBonus: totalExpBonus(getEquippedInstances(
+        useGameStore.getState().meta.inventory,
+        useGameStore.getState().meta.equippedItemIds,
+      )),
+      equipGoldBonus: totalGoldBonus(getEquippedInstances(
+        useGameStore.getState().meta.inventory,
+        useGameStore.getState().meta.equippedItemIds,
+      )),
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
         const state = useGameStore.getState();
         const meta = state.meta;
@@ -166,6 +174,13 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       bossKills: stats.bossKills,
       drops: stats.drops,
     });
+    // C1003: apply equipment gold/exp bonuses
+    const equipped = getEquippedInstances(
+      useGameStore.getState().meta.inventory,
+      useGameStore.getState().meta.equippedItemIds,
+    );
+    const goldBonusPct = totalGoldBonus(equipped);
+    const finalGold = Math.floor(gold * (1 + goldBonusPct / 100));
     // Cycle 116 — organic crackStones supply. cycle 108 fate roll backlog
     // 회수. boss kill 당 1 stone, max 3/cycle. fate roll modal 활성화 +
     // ascension 비용 supply.
@@ -195,7 +210,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     // owns sponsorGold spend + stale-realm reset + npcs clear. Mirror in
     // `scripts/sim-cycle-v2.ts` calls the same helper so future changes
     // propagate to both paths automatically. See cycleSlice.helpers.ts.
-    useGameStore.setState(s => applyEndCycleMeta(s, { gold }));
+    useGameStore.setState(s => applyEndCycleMeta(s, { gold: finalGold }));
     // C836: Capture run statistics snapshot before finalization
     const runStats = ctrl.getRunStatistics();
     // C995: Track run_stat quests from final statistics
@@ -206,12 +221,12 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     }
     const questsAfter = useGameStore.getState().meta.questsCompleted;
     const newlyCompleted = questsAfter.filter(q => !questsBefore.includes(q));
-    set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, lastJpEarned: jpReward, questsCompletedThisCycle: newlyCompleted, lastCycleStats: {
+    set({ status: 'ended', lastSaga: saga, lastGoldEarned: finalGold, lastJpEarned: jpReward, questsCompletedThisCycle: newlyCompleted, lastCycleStats: {
       kills: stats.kills,
       bossKills: stats.bossKills,
       drops: stats.drops,
       maxLevel: hero.level,
-      goldEarned: gold,
+      goldEarned: finalGold,
       runStats,
     } });
   },

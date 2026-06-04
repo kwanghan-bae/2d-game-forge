@@ -110,6 +110,10 @@ export interface EncounterEngineOpts {
   getRealmForkAtkMul?: () => number;
   /** C1002: additive crit chance bonus from luckBaseBonus meta stat (0.005 per level). */
   luckCritBonus?: number;
+  /** C1003: multiplicative exp bonus from equipment (percent, e.g. 10 = +10%). */
+  equipExpBonus?: number;
+  /** C1003: multiplicative gold bonus from equipment (percent, e.g. 15 = +15%). */
+  equipGoldBonus?: number;
 }
 
 export class EncounterEngine {
@@ -1420,7 +1424,7 @@ export class EncounterEngine {
       // C983: Inflation Rush — ×2 EXP for 5 fights after burst
       const inflRushMul = this.midGameBuffs.isActive('inflation_rush') ? INFLATION_RUSH_EXP_MUL : 1;
       if (inflRushMul > 1) this.runStats.recordRushFight();
-      const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul * vcExpMul * inflRushMul);
+      const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul * vcExpMul * inflRushMul * (1 + (this.opts.equipExpBonus ?? 0) / 100));
       if (this.declineStackExpDuration > 0) this.declineStackExpDuration--;
       // C711: drop chance via extracted pure function
       const eliteComboGuarantee = isElite && this.eliteCombo >= ELITE_COMBO_THRESHOLD;
@@ -1479,6 +1483,8 @@ export class EncounterEngine {
       // Apply side-effects: decrement cooldown counters read by GoldCalculator
       // Apply gold to hero
       let goldEarned = goldResult.goldEarned;
+      // C1003: equipment gold bonus
+      goldEarned = Math.floor(goldEarned * (1 + (this.opts.equipGoldBonus ?? 0) / 100));
       // C773: Rain Sanctuary gold penalty
       if (this.midGameBuffs.isActive('rain_sanctuary')) goldEarned = Math.floor(goldEarned * RAIN_SANCTUARY_GOLD_MUL);
       // C785: Wind Gale gold penalty (trade-off for EXP+dodge)

@@ -66,6 +66,9 @@ export interface CycleControllerV2Opts {
   gambitPolicy?: 'always' | 'never' | 'hp_above_half';
   /** C1002 — additive crit bonus from luckBaseBonus meta (0.005 per level). */
   luckCritBonus?: number;
+  /** C1003 — equipment exp/gold bonus percents. */
+  equipExpBonus?: number;
+  equipGoldBonus?: number;
 }
 
 export class CycleControllerV2 {
@@ -203,6 +206,9 @@ export class CycleControllerV2 {
       getRealmForkAtkMul: () => this.getRealmForkAtkMul(),
       // C1002: luck meta → crit bonus
       luckCritBonus: opts.luckCritBonus ?? 0,
+      // C1003: equipment exp/gold bonuses
+      equipExpBonus: opts.equipExpBonus ?? 0,
+      equipGoldBonus: opts.equipGoldBonus ?? 0,
     });
     if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);

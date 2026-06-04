@@ -6,7 +6,7 @@ import { applyExpGain } from '../systems/experience';
 import { playSfx, playBgm, playAmbient, stopAmbient } from '../systems/sound';
 import { calcBaseAbilityMult } from '../systems/progression';
 import { getEquippedInstances } from '../systems/equipment';
-import { totalBurstChanceBonus } from '../systems/equipmentEffects';
+import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus } from '../systems/equipmentEffects';
 import { getCharacterById } from '../data/characters';
 import { pickMonsterFromPool } from '../data/monsters';
 import { getDungeonById } from '../data/dungeons';
@@ -581,8 +581,10 @@ export class BattleScene extends Phaser.Scene {
         playSfx('hit', 0.9 + Math.random() * 0.2);
       }
 
-      const expGain = Math.floor(10 * Math.pow(run.level, 2.0) * pb.expBoostMult);
-      const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1) * pb.goldBoostMult);
+      const equipExpBonus = totalExpBonus(allEquipped);
+      const equipGoldBonus = totalGoldBonus(allEquipped);
+      const expGain = Math.floor(10 * Math.pow(run.level, 2.0) * pb.expBoostMult * (1 + equipExpBonus / 100));
+      const rawGoldGain = Math.floor(run.level * 5 * (run.isHardMode ? 5 : 1) * pb.goldBoostMult * (1 + equipGoldBonus / 100));
       const goldGain = applyMetaDropMult(rawGoldGain, 'gold', meta);
       const xpMetaMult = getMythicXpMult(meta) * getRelicXpMult(meta);
       const { newLevel, newExp, spGained } = applyExpGain(run.exp, run.level, expGain, run.isHardMode, meta.ascTree.sp_per_lvl, xpMetaMult);
