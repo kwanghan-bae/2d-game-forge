@@ -167,6 +167,10 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     useGameStore.setState(s => applyEndCycleMeta(s, { gold }));
     // C836: Capture run statistics snapshot before finalization
     const runStats = ctrl.getRunStatistics();
+    // C995: Track run_stat quests from final statistics
+    if (runStats) {
+      useGameStore.getState().trackRunStats(runStats);
+    }
     set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, lastCycleStats: {
       kills: stats.kills,
       bossKills: stats.bossKills,

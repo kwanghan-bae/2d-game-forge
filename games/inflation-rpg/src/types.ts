@@ -126,12 +126,13 @@ export interface MapArea {
   finalStageIsBoss: boolean;
 }
 
-export type QuestType = 'kill_count' | 'boss_defeat' | 'item_collect';
+export type QuestType = 'kill_count' | 'boss_defeat' | 'item_collect' | 'run_stat';
 
 export interface QuestTarget {
   monsterId?: string;
   bossId?: string;
   equipmentId?: string;
+  statField?: string; // C995: RunStatisticsData field name for run_stat type
   count: number;
 }
 

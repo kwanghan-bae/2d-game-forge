@@ -203,6 +203,7 @@ interface GameStore {
   trackKill: (monsterId: string) => void;
   trackBossDefeat: (bossId: string) => void;
   trackItemCollect: (equipmentId: string) => void;
+  trackRunStats: (stats: Record<string, number>) => void;
   markRegionVisited: (regionId: string) => void;
   setTutorialStep: (index: number) => void;
   advanceTutorial: () => void;
@@ -1030,6 +1031,23 @@ export const useGameStore = create<GameStore>()(
           if (q.target.equipmentId !== equipmentId) continue;
           if (state.meta.questsCompleted.includes(q.id)) continue;
           get().incrementQuestProgress(q.id);
+        }
+      },
+
+      trackRunStats: (stats) => {
+        const state = get();
+        for (const q of QUESTS) {
+          if (q.type !== 'run_stat') continue;
+          if (state.meta.questsCompleted.includes(q.id)) continue;
+          const field = q.target.statField;
+          if (!field) continue;
+          const value = stats[field] ?? 0;
+          if (value >= q.target.count) {
+            set((s) => ({
+              meta: { ...s.meta, questProgress: { ...s.meta.questProgress, [q.id]: value } },
+            }));
+            get().completeQuest(q.id);
+          }
         }
       },
 

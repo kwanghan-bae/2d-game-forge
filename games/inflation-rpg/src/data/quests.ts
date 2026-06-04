@@ -130,6 +130,24 @@ export const QUESTS: Quest[] = [
     description: '최종보스 처치',
     type: 'boss_defeat', target: { bossId: 'final-boss', count: 1 },
     reward: { gold: 5000000, equipmentId: 'w-mythic-sword', bp: 8 } },
+
+  // ── cross-region run_stat quests (C995) ──
+  { id: 'q-stat-burst-1', regionId: 'plains', nameKR: '인플레이션의 서막',
+    description: '한 런에서 인플레이션 버스트 3회 달성',
+    type: 'run_stat', target: { statField: 'burstCount', count: 3 },
+    reward: { gold: 15000, bp: 2 } },
+  { id: 'q-stat-cashout-1', regionId: 'forest', nameKR: '현금화의 달인',
+    description: '한 런에서 캐시아웃 3회 달성',
+    type: 'run_stat', target: { statField: 'cashOutCount', count: 3 },
+    reward: { gold: 20000, bp: 2 } },
+  { id: 'q-stat-deathless-1', regionId: 'mountains', nameKR: '불사신',
+    description: '한 런에서 50전 무패',
+    type: 'run_stat', target: { statField: 'peakCombo', count: 50 },
+    reward: { gold: 30000, bp: 3 } },
+  { id: 'q-stat-overkill-1', regionId: 'volcano', nameKR: '압도적 파괴력',
+    description: '한 런에서 오버킬 10회 달성',
+    type: 'run_stat', target: { statField: 'overkills', count: 10 },
+    reward: { gold: 25000, bp: 2 } },
 ];
 
 export function getQuestsForRegion(regionId: string): Quest[] {
