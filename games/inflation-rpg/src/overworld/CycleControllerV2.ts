@@ -73,6 +73,11 @@ export interface CycleControllerV2Opts {
   directiveCritBonus?: number;
   directiveGoldMul?: number;
   directiveExpMul?: number;
+  /** C1011 — JP perk effects wired into combat. */
+  perkCritCascadeChance?: number;
+  perkBossGoldMul?: number;
+  perkDropRateBonus?: number;
+  perkExpMomentumRate?: number;
 }
 
 export class CycleControllerV2 {
@@ -213,6 +218,11 @@ export class CycleControllerV2 {
       // C1003: equipment exp/gold bonuses × C1008 directive multipliers
       equipExpBonus: (opts.equipExpBonus ?? 0) * (opts.directiveExpMul ?? 1),
       equipGoldBonus: (opts.equipGoldBonus ?? 0) * (opts.directiveGoldMul ?? 1),
+      // C1011: JP perk effects
+      perkCritCascadeChance: opts.perkCritCascadeChance ?? 0,
+      perkBossGoldMul: opts.perkBossGoldMul ?? 1,
+      perkDropRateBonus: opts.perkDropRateBonus ?? 0,
+      perkExpMomentumRate: opts.perkExpMomentumRate ?? 0,
     });
     if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);

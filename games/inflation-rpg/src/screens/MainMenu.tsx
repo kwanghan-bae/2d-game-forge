@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { HallScreen } from './HallScreen';
 import { SeasonPassScreen } from './SeasonPassScreen';
 import { QuestLogScreen } from './QuestLogScreen';
+import { PerkShopScreen } from './PerkShopScreen';
 import { getClaimableCount } from '../data/achievementsSelectors';
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
 import { getClaimerTier, nextTierThreshold, getClaimerTierProgress } from '../data/claimerTier';
@@ -22,6 +23,7 @@ export function MainMenu() {
   const [hallOpen, setHallOpen] = useState(false);
   const [seasonPassOpen, setSeasonPassOpen] = useState(false);
   const [questLogOpen, setQuestLogOpen] = useState(false);
+  const [perkShopOpen, setPerkShopOpen] = useState(false);
 
   // Idle musing ticker — rotates character quips every 15s
   const CHAR_IDS = ['hwarang','mudang','choeui','geomgaek','tiger_hunter','dosa','yacha','gungsu','uinyeo','jangsu','seungbyeong','geosa','cheongwan','yongnyeo','gwisin','seonin'];
@@ -153,6 +155,14 @@ export function MainMenu() {
         </button>
         <button
           type="button"
+          data-testid="btn-perk-shop"
+          onClick={() => setPerkShopOpen(true)}
+          style={menuBtnStyle}
+        >
+          ⚡ 퍽 상점
+        </button>
+        <button
+          type="button"
           data-testid="btn-bestiary"
           onClick={() => setScreen('bestiary')}
           style={menuBtnStyle}
@@ -187,6 +197,11 @@ export function MainMenu() {
       {questLogOpen && (
         <div style={{ position: 'fixed', inset: 0, background: '#0a0a0f', zIndex: 100, overflow: 'auto' }}>
           <QuestLogScreen onBack={() => setQuestLogOpen(false)} />
+        </div>
+      )}
+      {perkShopOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: '#0a0a0f', zIndex: 100, overflow: 'auto' }}>
+          <PerkShopScreen onBack={() => setPerkShopOpen(false)} />
         </div>
       )}
     </div>

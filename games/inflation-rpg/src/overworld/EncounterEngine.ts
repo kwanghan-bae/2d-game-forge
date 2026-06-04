@@ -114,6 +114,11 @@ export interface EncounterEngineOpts {
   equipExpBonus?: number;
   /** C1003: multiplicative gold bonus from equipment (percent, e.g. 15 = +15%). */
   equipGoldBonus?: number;
+  /** C1011: JP perk effects */
+  perkCritCascadeChance?: number;
+  perkBossGoldMul?: number;
+  perkDropRateBonus?: number;
+  perkExpMomentumRate?: number;
 }
 
 export class EncounterEngine {

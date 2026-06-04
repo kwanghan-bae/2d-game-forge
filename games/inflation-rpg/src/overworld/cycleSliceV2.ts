@@ -87,6 +87,9 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         );
         const effects = getActiveSpecialEffects(eqInst);
         const dEff = getDirectiveEffects(useGameStore.getState().run.directive ?? null);
+        const charId = useGameStore.getState().run.characterId;
+        const perks = (useGameStore.getState().meta.jpPerksOwned?.[charId] ?? []) as JpPerkId[];
+        const perkFx = getActivePerkEffects(perks);
         return {
           luckCritBonus: (useGameStore.getState().meta.luckBaseBonus ?? 0) * 0.005
             + totalBurstChanceBonus(effects),
@@ -95,6 +98,10 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           directiveCritBonus: dEff.critBonus,
           directiveGoldMul: dEff.goldMul,
           directiveExpMul: dEff.expMul,
+          perkCritCascadeChance: perkFx.critCascadeChance,
+          perkBossGoldMul: perkFx.bossGoldMul,
+          perkDropRateBonus: perkFx.dropRateBonus,
+          perkExpMomentumRate: perkFx.expMomentumRate,
         };
       })(),
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
@@ -110,9 +117,15 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         // V3-H F6: apply season bonuses — atkMul folded into damping, dropMul
         // applied to drop-chance bonus. dampingThresholdBonus added to buff6.
         const sBonus = seasonBonus(meta.season.current);
+        const perkDropBonus = (() => {
+          const cId = state.run.characterId;
+          const prks = (meta.jpPerksOwned?.[cId] ?? []) as JpPerkId[];
+          return getActivePerkEffects(prks).dropRateBonus;
+        })();
         return {
           dropChanceBonus: getDropChanceBonus(meta) * sBonus.dropMul
-            + getDirectiveEffects(state.run.directive ?? null).dropRateBonus,
+            + getDirectiveEffects(state.run.directive ?? null).dropRateBonus
+            + perkDropBonus,
           agingSpeedMul: getAgingSpeedMul(meta),
           damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul,
         };
