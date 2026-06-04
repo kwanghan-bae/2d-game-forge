@@ -13,6 +13,12 @@ export interface EquipmentStats {
   percent?: Partial<Record<StatKey, number>>;
 }
 
+export type EquipmentSpecialEffect =
+  | { type: 'burst_chance'; bonus: number }     // +N% burst probability
+  | { type: 'gold_bonus'; percent: number }     // +N% gold from kills
+  | { type: 'exp_bonus'; percent: number }      // +N% exp gain
+  | { type: 'combo_shield'; threshold: number } // lose combo only after N consecutive deaths
+
 export interface EquipmentBase {
   id: string;
   name: string;
@@ -21,6 +27,7 @@ export interface EquipmentBase {
   baseStats: EquipmentStats;
   dropAreaIds: string[];
   price: number;
+  specialEffect?: EquipmentSpecialEffect;
 }
 
 export interface EquipmentInstance {

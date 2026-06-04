@@ -64,6 +64,11 @@ export const EQUIPMENT_BASES: EquipmentBase[] = [
   { id: 'acc-spirit-talisman', name: '영부적', slot: 'accessory',rarity: 'rare',      baseStats: { percent: { hp: 80 } },            dropAreaIds: ['cursed-fields'],      price: 4000 },
   { id: 'w-rust-blade',    name: '녹슨검',     slot: 'weapon',    rarity: 'common',    baseStats: { flat: { atk: 40 } },              dropAreaIds: ['ruined-village'],     price: 150 },
   { id: 'a-tribal-armor',  name: '부족갑',     slot: 'armor',     rarity: 'rare',      baseStats: { flat: { def: 100 }, percent: { hp: 20 } }, dropAreaIds: ['wanderer-camp'], price: 1100 },
+  // C1001 — special effect equipment
+  { id: 'acc-burst-charm', name: '폭발부적',   slot: 'accessory', rarity: 'epic',      baseStats: { percent: { luc: 50 } }, dropAreaIds: ['volcano-core'],     price: 12000, specialEffect: { type: 'burst_chance', bonus: 20 } },
+  { id: 'acc-gold-magnet', name: '황금자석',   slot: 'accessory', rarity: 'rare',      baseStats: { flat: { luc: 30 } },    dropAreaIds: ['merchants-road'],   price: 5000,  specialEffect: { type: 'gold_bonus', percent: 15 } },
+  { id: 'w-exp-katana',    name: '수련도',     slot: 'weapon',    rarity: 'epic',      baseStats: { flat: { atk: 120 } },   dropAreaIds: ['sacred-mountain'],  price: 9000,  specialEffect: { type: 'exp_bonus', percent: 10 } },
+  { id: 'a-iron-will',     name: '불굴의갑',   slot: 'armor',     rarity: 'legendary', baseStats: { flat: { def: 300, hp: 200 } }, dropAreaIds: ['chaos-land'],  price: 25000, specialEffect: { type: 'combo_shield', threshold: 3 } },
 ];
 
 export function getEquipmentBase(id: string): EquipmentBase | undefined {
