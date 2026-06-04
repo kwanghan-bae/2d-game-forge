@@ -80,6 +80,8 @@ export const INITIAL_RUN: RunState = {
   npcs: [],
   // Phase V3-H B2 — hero snapshot (null = 새 cycle 시작)
   heroSnapshot: null,
+  // C1008 — sponsor directive
+  directive: null,
 };
 
 export const INITIAL_META: MetaState = {

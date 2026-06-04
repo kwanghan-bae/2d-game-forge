@@ -69,6 +69,10 @@ export interface CycleControllerV2Opts {
   /** C1003 — equipment exp/gold bonus percents. */
   equipExpBonus?: number;
   equipGoldBonus?: number;
+  /** C1008 — sponsor directive multipliers applied to cycle. */
+  directiveCritBonus?: number;
+  directiveGoldMul?: number;
+  directiveExpMul?: number;
 }
 
 export class CycleControllerV2 {
@@ -204,11 +208,11 @@ export class CycleControllerV2 {
       getBossIntroDropBonus: () => this.getBossIntroDropBonus(),
       // Cycle 110 F1: realm fork atk mul (applies to all combat, not just boss).
       getRealmForkAtkMul: () => this.getRealmForkAtkMul(),
-      // C1002: luck meta → crit bonus
-      luckCritBonus: opts.luckCritBonus ?? 0,
-      // C1003: equipment exp/gold bonuses
-      equipExpBonus: opts.equipExpBonus ?? 0,
-      equipGoldBonus: opts.equipGoldBonus ?? 0,
+      // C1002: luck meta → crit bonus + C1008 directive crit
+      luckCritBonus: (opts.luckCritBonus ?? 0) + (opts.directiveCritBonus ?? 0),
+      // C1003: equipment exp/gold bonuses × C1008 directive multipliers
+      equipExpBonus: (opts.equipExpBonus ?? 0) * (opts.directiveExpMul ?? 1),
+      equipGoldBonus: (opts.equipGoldBonus ?? 0) * (opts.directiveGoldMul ?? 1),
     });
     if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);

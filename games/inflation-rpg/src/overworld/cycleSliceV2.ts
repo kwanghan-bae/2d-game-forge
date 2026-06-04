@@ -16,6 +16,7 @@ import { applyEndCycleMeta } from './cycleSlice.helpers';
 import type { RunStatisticsData } from './EncounterEngine';
 import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus, getActiveSpecialEffects } from '../systems/equipmentEffects';
 import { getEquippedInstances } from '../systems/equipment';
+import { getDirectiveEffects } from '../systems/sponsorDirective';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -76,11 +77,15 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           useGameStore.getState().meta.equippedItemIds,
         );
         const effects = getActiveSpecialEffects(eqInst);
+        const dEff = getDirectiveEffects(useGameStore.getState().run.directive ?? null);
         return {
           luckCritBonus: (useGameStore.getState().meta.luckBaseBonus ?? 0) * 0.005
             + totalBurstChanceBonus(effects),
           equipExpBonus: totalExpBonus(effects),
           equipGoldBonus: totalGoldBonus(effects),
+          directiveCritBonus: dEff.critBonus,
+          directiveGoldMul: dEff.goldMul,
+          directiveExpMul: dEff.expMul,
         };
       })(),
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
@@ -191,7 +196,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     // C836: Capture run statistics snapshot before finalization
     const runStats = ctrl.getRunStatistics();
     // C1000: Award JP from cycle stats
-    const jpReward = jpFromCycle({
+    const jpRaw = jpFromCycle({
       maxLevel: hero.level,
       kills: stats.kills,
       bossKills: stats.bossKills,
@@ -199,6 +204,9 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       overkillCount: runStats?.overkills ?? 0,
       critCount: runStats?.criticalHits ?? 0,
     });
+    // C1008: apply directive JP multiplier
+    const dJp = getDirectiveEffects(useGameStore.getState().run.directive ?? null);
+    const jpReward = Math.floor(jpRaw * dJp.jpMul);
     if (jpReward > 0) {
       const charId = useGameStore.getState().run.characterId;
       if (charId) {

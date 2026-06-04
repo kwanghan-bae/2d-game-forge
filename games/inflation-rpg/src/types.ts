@@ -13,6 +13,9 @@ export interface EquipmentStats {
   percent?: Partial<Record<StatKey, number>>;
 }
 
+/** C1008: Pre-cycle sponsor directive — player chooses strategy emphasis */
+export type SponsorDirective = 'aggression' | 'hoarding' | 'training';
+
 export type EquipmentSpecialEffect =
   | { type: 'burst_chance'; bonus: number }     // +N% burst probability
   | { type: 'gold_bonus'; percent: number }     // +N% gold from kills
@@ -189,6 +192,8 @@ export interface RunState {
   npcs: NpcEntity[];
   /** V3-H B2 — 마지막 저장 시점의 hero snapshot. null = 새 cycle 시작 필요. */
   heroSnapshot: import('./hero/HeroEntity').HeroSnapshot | null;
+  /** C1008 — chosen sponsor directive for current cycle. null = no directive. */
+  directive: SponsorDirective | null;
 }
 
 export type BuffId =
