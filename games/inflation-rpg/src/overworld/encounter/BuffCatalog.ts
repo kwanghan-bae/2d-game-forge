@@ -88,6 +88,7 @@ const BUFF_CATALOG: Record<string, BuffMeta> = {
   revenge_gold: { nameKR: '복수 골드', category: 'combat' },
   vc_exp: { nameKR: '도전자 경험', category: 'event' },
   vc_atk: { nameKR: '도전의 대가', category: 'event' },
+  inflation_burst: { nameKR: '인플레이션 폭발', category: 'event' },
 };
 
 /** Get display name for a buff ID. Falls back to ID if not found. */

@@ -31,6 +31,10 @@ import {
   ELDERS_JUDGMENT_AGG_ATK_MUL,
   ENDGAME_SURGE_ATK_MUL,
   ECHO_MEMORY_ATK_MUL,
+  INFLATION_BURST_ATK_MUL,
+  INFLATION_BURST_MIN_FIGHT,
+  INFLATION_BURST_MAX_FIGHT,
+  INFLATION_BURST_CHANCE,
 } from '../encounter/constants-events';
 import { LATE_GAME_EVENTS } from '../encounter/EventGateConfig';
 
@@ -187,5 +191,15 @@ describe('C955: Mid-game pity invariants', () => {
     expect(VETERANS_CHALLENGE_SURVIVAL_BURST).toBeGreaterThanOrEqual(2.0);
     // But not so high it breaks inflation curve (≤ 10× level)
     expect(VETERANS_CHALLENGE_SURVIVAL_BURST).toBeLessThanOrEqual(10.0);
+  });
+
+  it('C980: Inflation Burst ATK multiplier is dramatic but bounded', () => {
+    expect(INFLATION_BURST_ATK_MUL).toBeGreaterThanOrEqual(50);
+    expect(INFLATION_BURST_ATK_MUL).toBeLessThanOrEqual(200);
+    // Window is mid-game only
+    expect(INFLATION_BURST_MIN_FIGHT).toBeGreaterThanOrEqual(200);
+    expect(INFLATION_BURST_MAX_FIGHT).toBeLessThanOrEqual(800);
+    // Rare enough to be special (≤ 5%)
+    expect(INFLATION_BURST_CHANCE).toBeLessThanOrEqual(0.05);
   });
 });

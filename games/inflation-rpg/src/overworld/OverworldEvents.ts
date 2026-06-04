@@ -136,6 +136,8 @@ export type OverworldEvent =
   | { type: 'vc_survival_burst'; value: number }
   // C978: Veteran's Challenge progress (UI tension feedback)
   | { type: 'vc_progress'; current: number; total: number; hpPercent: number }
+  // C980: Inflation Burst — rare ×100 ATK for 1 fight
+  | { type: 'inflation_burst' }
   // C866: Proving Grounds mid-game challenge
   | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number; declined?: boolean; shardGranted?: boolean }
   // C875: Proving Grounds player choice pending

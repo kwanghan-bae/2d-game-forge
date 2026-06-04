@@ -539,3 +539,9 @@ export const VETERANS_CHALLENGE_ATK_PENALTY = 0.60; // 40% ATK reduction (net EX
 export const VETERANS_CHALLENGE_DURATION = 10; // C976: 10 fights (was 6) — HP drain 30% total, meaningful tension
 export const VETERANS_CHALLENGE_HP_DRAIN = 0.03; // C974: 3% maxHP lost per fight (real death risk)
 export const VETERANS_CHALLENGE_SURVIVAL_BURST = 3.0; // C977: survive 10 fights → EXP burst = level × 3.0
+
+// C980: Inflation Burst — rare ×100 ATK for 1 fight (power fantasy moment)
+export const INFLATION_BURST_ATK_MUL = 100; // ×100 ATK for exactly 1 fight
+export const INFLATION_BURST_MIN_FIGHT = 300; // late-mid game only
+export const INFLATION_BURST_MAX_FIGHT = 600; // before endgame
+export const INFLATION_BURST_CHANCE = 0.02; // 2% per fight in window (rare treat)
