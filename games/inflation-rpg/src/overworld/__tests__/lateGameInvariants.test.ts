@@ -214,4 +214,21 @@ describe('C955: Mid-game pity invariants', () => {
     expect(INFLATION_RUSH_DURATION).toBeGreaterThanOrEqual(3);
     expect(INFLATION_RUSH_EXP_MUL).toBeGreaterThanOrEqual(1.5);
   });
+
+  it('C991: Rush vs Cashout value parity at reference level', () => {
+    // At level 100: cashout = 100×50 = 5000 gold
+    // Rush = 5 fights × 2× EXP multiplier (equivalent to +5 fights of EXP)
+    // Gold-to-progress ratio should make neither dominant:
+    // - Cashout gold (5000) should buy ~2-4 shop items at that level
+    // - Rush EXP (+5 fights equivalent) should be ~1-2% of level-up
+    // Key: CASH_OUT_GOLD_MUL × level should not exceed 1000 × level
+    //       (would make cashout always dominant at shop prices)
+    const cashoutAt100 = 100 * INFLATION_CASH_OUT_GOLD_MUL;
+    expect(cashoutAt100).toBeGreaterThanOrEqual(2000); // meaningful
+    expect(cashoutAt100).toBeLessThanOrEqual(10000); // not dominant
+    // Rush total EXP bonus = duration × (EXP_MUL - 1) = 5 × 1 = 5 fights worth
+    const rushFightsEquivalent = INFLATION_RUSH_DURATION * (INFLATION_RUSH_EXP_MUL - 1);
+    expect(rushFightsEquivalent).toBeGreaterThanOrEqual(3); // at least 3 fights worth
+    expect(rushFightsEquivalent).toBeLessThanOrEqual(10); // not overwhelming
+  });
 });
