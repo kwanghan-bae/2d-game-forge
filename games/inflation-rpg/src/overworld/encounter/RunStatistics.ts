@@ -25,6 +25,8 @@ export interface RunStatisticsData {
   merchantAtkBuffs: number;
   gambitGoldNet: number; // C839: gold gained minus gold from gambit bets
   gambitHpCost: number; // C839: total HP lost from gambit failures
+  burstCount: number; // C987: inflation burst procs this run
+  rushFights: number; // C987: total fights spent in inflation rush
 }
 
 export function createEmptyRunStatistics(): RunStatisticsData {
@@ -48,6 +50,8 @@ export function createEmptyRunStatistics(): RunStatisticsData {
     merchantAtkBuffs: 0,
     gambitGoldNet: 0,
     gambitHpCost: 0,
+    burstCount: 0,
+    rushFights: 0,
   };
 }
 
@@ -122,6 +126,14 @@ export class RunStatistics {
     this.data.gambitHpCost += hpCost;
   }
 
+  recordBurst(): void {
+    this.data.burstCount++;
+  }
+
+  recordRushFight(): void {
+    this.data.rushFights++;
+  }
+
   // C842: Pick top-3 highlights from run stats for player summary
   computeHighlights(): RunHighlight[] {
     const candidates: RunHighlight[] = [];
@@ -136,6 +148,9 @@ export class RunStatistics {
     if (d.gambitsWon >= 2) candidates.push({ key: 'gambits_won', value: d.gambitsWon, priority: d.gambitsWon * 5 });
     if (d.deaths === 0 && d.totalFights >= 20) candidates.push({ key: 'deathless', value: d.totalFights, priority: d.totalFights });
     if (d.peakLevel >= 5) candidates.push({ key: 'peak_level', value: d.peakLevel, priority: d.peakLevel * 2 });
+    // C987: Inflation burst/rush highlights
+    if (d.burstCount >= 1) candidates.push({ key: 'inflation_burst', value: d.burstCount, priority: d.burstCount * 15 });
+    if (d.rushFights >= 5) candidates.push({ key: 'rush_fights', value: d.rushFights, priority: d.rushFights * 2 });
     const eventCount = Object.values(d.eventsTriggered).reduce((a, b) => a + b, 0);
     if (eventCount >= 5) candidates.push({ key: 'events_total', value: eventCount, priority: eventCount });
     candidates.sort((a, b) => b.priority - a.priority);

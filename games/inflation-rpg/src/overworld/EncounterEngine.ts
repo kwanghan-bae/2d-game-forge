@@ -1392,6 +1392,7 @@ export class EncounterEngine {
       }
       // C983: Inflation Rush — ×2 EXP for 5 fights after burst
       const inflRushMul = this.midGameBuffs.isActive('inflation_rush') ? INFLATION_RUSH_EXP_MUL : 1;
+      if (inflRushMul > 1) this.runStats.recordRushFight();
       const expGain = Math.floor(baseExpGainPost * provingMul * reputationExpMul * veteransTrialExpMul * finalReckoningExpMul * firstTrialExpMul * wanderingSageExpMul * eldersJudgmentExpMul * vcExpMul * inflRushMul);
       if (this.declineStackExpDuration > 0) this.declineStackExpDuration--;
       // C711: drop chance via extracted pure function
@@ -1820,6 +1821,7 @@ export class EncounterEngine {
     for (const e of events) {
       if (e.type === 'critical_hit') this.runStats.recordCriticalHit();
       else if (e.type === 'overkill') this.runStats.recordOverkill();
+      else if (e.type === 'inflation_burst') this.runStats.recordBurst();
       else if (e.type === 'event_wandering_merchant') {
         this.runStats.recordMerchant(e.choice);
         this.runStats.recordEvent('wandering_merchant');
