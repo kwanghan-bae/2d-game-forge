@@ -35,6 +35,9 @@ import {
   INFLATION_BURST_MIN_FIGHT,
   INFLATION_BURST_MAX_FIGHT,
   INFLATION_BURST_CHANCE,
+  INFLATION_RUSH_DURATION,
+  INFLATION_RUSH_EXP_MUL,
+  INFLATION_CASH_OUT_GOLD_MUL,
 } from '../encounter/constants-events';
 import { LATE_GAME_EVENTS } from '../encounter/EventGateConfig';
 
@@ -201,5 +204,14 @@ describe('C955: Mid-game pity invariants', () => {
     expect(INFLATION_BURST_MAX_FIGHT).toBeLessThanOrEqual(800);
     // Rare enough to be special (≤ 5%)
     expect(INFLATION_BURST_CHANCE).toBeLessThanOrEqual(0.05);
+  });
+
+  it('C989: Cash Out gold multiplier balances vs Rush EXP value', () => {
+    // Cash Out must be meaningful (level × 50 = visible gold spike)
+    expect(INFLATION_CASH_OUT_GOLD_MUL).toBeGreaterThanOrEqual(20);
+    expect(INFLATION_CASH_OUT_GOLD_MUL).toBeLessThanOrEqual(100);
+    // Rush duration must make ×2 EXP worthwhile as alternative
+    expect(INFLATION_RUSH_DURATION).toBeGreaterThanOrEqual(3);
+    expect(INFLATION_RUSH_EXP_MUL).toBeGreaterThanOrEqual(1.5);
   });
 });

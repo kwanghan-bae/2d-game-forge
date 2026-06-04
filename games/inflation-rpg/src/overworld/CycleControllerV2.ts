@@ -929,6 +929,9 @@ export class CycleControllerV2 {
   // C893a: Last Stand choice proxy
   setLastStandChoice(choice: 'accept' | 'decline') { this.encounter.setLastStandChoice(choice); }
   hasPendingLastStandChoice() { return this.encounter.hasPendingLastStandChoice(); }
+  // C989: Inflation Rush choice proxy
+  setInflationRushChoice(choice: 'ride' | 'cashout') { this.encounter.setInflationRushChoice(choice); }
+  hasPendingInflationRushChoice() { return this.encounter.hasPendingInflationRushChoice(); }
   getAbyssalConvergenceRemaining() { return this.encounter.getEventRemaining('abyssal_convergence'); }
   getAbyssalConvergencePending() { return this.encounter.getEventPending('abyssal_convergence'); }
   resolveAbyssalConvergence(accept: boolean) { this.resolveEventGeneric('abyssal_convergence', accept); }

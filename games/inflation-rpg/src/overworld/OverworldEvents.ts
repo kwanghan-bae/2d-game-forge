@@ -142,6 +142,9 @@ export type OverworldEvent =
   | { type: 'inflation_burst_result'; overkill: boolean; atkMul: number }
   // C983: Inflation Rush — post-burst EXP momentum
   | { type: 'inflation_rush_start' }
+  // C989: Inflation Rush choice pending + cashout result
+  | { type: 'inflation_rush_pending' }
+  | { type: 'inflation_rush_cashout'; gold: number }
   // C866: Proving Grounds mid-game challenge
   | { type: 'event_proving_grounds'; won: boolean; expMul: number; hpCost: number; declined?: boolean; shardGranted?: boolean }
   // C875: Proving Grounds player choice pending

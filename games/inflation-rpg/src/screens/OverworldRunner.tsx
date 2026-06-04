@@ -49,6 +49,7 @@ import { CrossroadsChoiceModal } from '../components/CrossroadsChoiceModal';
 import { ActiveBuffHUD } from '../components/ActiveBuffHUD';
 import { WanderingMerchantChoiceModal } from '../components/WanderingMerchantChoiceModal';
 import { LastStandChoiceModal } from '../components/LastStandChoiceModal';
+import { InflationRushChoiceModal } from '../components/InflationRushChoiceModal';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -179,6 +180,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [crossroadsModalOpen, setCrossroadsModalOpen] = useState(false); // C878
   const [wanderingMerchantModalOpen, setWanderingMerchantModalOpen] = useState(false); // C881
   const [lastStandModalOpen, setLastStandModalOpen] = useState(false); // C893a
+  const [inflationRushModalOpen, setInflationRushModalOpen] = useState(false); // C989
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   // Cycle 108 F1 — fate roll modal state.
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
@@ -472,6 +474,12 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
            }
            if (ev.type === 'inflation_rush_start') {
              setSpectacleQueue(q => [...q, { id: `ir-${Date.now()}`, kind: 'inflation_rush' }]);
+           }
+           if (ev.type === 'inflation_rush_pending') {
+             setInflationRushModalOpen(true);
+           }
+           if (ev.type === 'inflation_rush_cashout') {
+             setSpectacleQueue(q => [...q, { id: `irc-${Date.now()}`, kind: 'inflation_rush', atkMul: ev.gold }]);
            }
            if (ev.type === 'vc_progress') {
              // C988: replace (not stack) to avoid FIFO flooding at high speed
@@ -794,6 +802,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {crossroadsModalOpen && <CrossroadsChoiceModal onClose={() => setCrossroadsModalOpen(false)} />}
       {wanderingMerchantModalOpen && <WanderingMerchantChoiceModal onClose={() => setWanderingMerchantModalOpen(false)} />}
       {lastStandModalOpen && <LastStandChoiceModal onClose={() => setLastStandModalOpen(false)} />}
+      {inflationRushModalOpen && <InflationRushChoiceModal onClose={() => setInflationRushModalOpen(false)} />}
       <ActiveBuffHUD />
       {fateRollModal && (
         <FateRollModal

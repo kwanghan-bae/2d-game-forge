@@ -547,3 +547,4 @@ export const INFLATION_BURST_MAX_FIGHT = 600; // before endgame
 export const INFLATION_BURST_CHANCE = 0.01; // 1% per fight in window (rare treat, ~3 expected)
 export const INFLATION_RUSH_DURATION = 5; // C983: post-burst ×2 EXP for 5 fights
 export const INFLATION_RUSH_EXP_MUL = 2.0; // C983: EXP multiplier during rush
+export const INFLATION_CASH_OUT_GOLD_MUL = 50; // C989: gold per level on cash-out choice
