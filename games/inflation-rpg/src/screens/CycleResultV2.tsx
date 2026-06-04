@@ -1,5 +1,6 @@
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import type { CycleCombatStats } from '../overworld/cycleSliceV2';
+import { RunStatistics, type RunHighlight } from '../overworld/encounter/RunStatistics';
 import { InflationCurveChart } from './InflationCurveChart';
 import { useGameStore } from '../store/gameStore';
 import { getVictoryQuote } from '../data/victoryQuotes';
@@ -51,6 +52,7 @@ export function CycleResultV2({ onBackToMenu }: Props) {
       </div>
 
       {combatStats && <CombatStatsPanel stats={combatStats} />}
+      {combatStats?.runStats && <RunHighlightsPanel runStats={combatStats.runStats} />}
 
       <div data-testid="result-curve-section" style={{ marginTop: 16 }}>
         <h3 style={{ marginBottom: 8, fontSize: 14 }}>인플레이션 곡선</h3>
@@ -102,6 +104,57 @@ function CombatStatsPanel({ stats }: { stats: CycleCombatStats }) {
       <div>📦 드랍: {stats.drops}</div>
       <div>⭐ 최고 레벨: {formatCompact(stats.maxLevel)}</div>
       <div style={{ gridColumn: '1 / -1' }}>💰 획득 골드: {formatCompact(stats.goldEarned)}</div>
+    </div>
+  );
+}
+
+const HIGHLIGHT_LABELS: Record<string, { icon: string; label: string }> = {
+  peak_combo: { icon: '🔥', label: '최대 콤보' },
+  boss_kills: { icon: '👑', label: '보스 처치' },
+  elite_kills: { icon: '⚔️', label: '엘리트 처치' },
+  critical_hits: { icon: '💥', label: '크리티컬' },
+  overkills: { icon: '💀', label: '오버킬' },
+  gold_earned: { icon: '💰', label: '골드 획득' },
+  gambit_profit: { icon: '🎲', label: '도박 수익' },
+  gambits_won: { icon: '🎯', label: '도박 승리' },
+  deathless: { icon: '🛡️', label: '무사고 전투' },
+  peak_level: { icon: '⭐', label: '최고 레벨' },
+  events_total: { icon: '✨', label: '이벤트 수' },
+  inflation_burst: { icon: '⚡', label: '인플레이션 폭발' },
+  rush_fights: { icon: '🏃', label: '러시 전투' },
+  cash_outs: { icon: '💎', label: '현금화' },
+};
+
+function RunHighlightsPanel({ runStats }: { runStats: import('../overworld/encounter/RunStatistics').RunStatisticsData }) {
+  const stats = new RunStatistics(runStats);
+  const highlights = stats.computeHighlights();
+  if (highlights.length === 0) return null;
+
+  return (
+    <div data-testid="result-highlights" style={{
+      background: '#1a1a2e', border: '1px solid #ffd700', borderRadius: 8,
+      padding: 12, marginTop: 12,
+    }}>
+      <div style={{ fontWeight: 'bold', fontSize: 14, color: '#ffd700', marginBottom: 8 }}>
+        🏆 이번 런 하이라이트
+      </div>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+        {highlights.map(h => {
+          const meta = HIGHLIGHT_LABELS[h.key] ?? { icon: '📊', label: h.key };
+          return (
+            <div key={h.key} style={{
+              background: '#16213e', borderRadius: 8, padding: '10px 14px',
+              textAlign: 'center', flex: 1, maxWidth: 120,
+            }}>
+              <div style={{ fontSize: 24 }}>{meta.icon}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#ffd700' }}>
+                {formatCompact(h.value)}
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>{meta.label}</div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
