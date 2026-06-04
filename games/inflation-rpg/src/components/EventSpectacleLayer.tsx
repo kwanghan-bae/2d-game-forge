@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { playSfx } from '../systems/sound';
 
 type SpectacleItem =
   | { id: string; kind: 'inflation_burst'; atkMul: number }
@@ -24,6 +25,10 @@ export function EventSpectacleLayer({ queue, onDone }: Props) {
 
   useEffect(() => {
     if (!current) return;
+    // C986: SFX on spectacle display (reuse existing SFX with silent fallback)
+    if (current.kind === 'inflation_burst') playSfx('crit', 1.2);
+    else if (current.kind === 'inflation_rush') playSfx('levelup');
+    else if (current.kind === 'vc_survival_burst') playSfx('boss-victory');
     const timer = setTimeout(() => {
       onDone(current.id);
       setCurrent(null);
