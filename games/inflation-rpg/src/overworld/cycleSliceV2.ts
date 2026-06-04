@@ -17,8 +17,17 @@ import type { RunStatisticsData } from './EncounterEngine';
 import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus, getActiveSpecialEffects } from '../systems/equipmentEffects';
 import { getEquippedInstances } from '../systems/equipment';
 import { getDirectiveEffects } from '../systems/sponsorDirective';
+import { getActivePerkEffects, type JpPerkId } from '../systems/jpPerks';
 
 type Status = 'idle' | 'running' | 'ended';
+
+/** C1009: Read current character's JP perks and return gold interest rate */
+function getGoldInterestRate(): number {
+  const state = useGameStore.getState();
+  const charId = state.run.characterId;
+  const perks = (state.meta.jpPerksOwned?.[charId] ?? []) as JpPerkId[];
+  return getActivePerkEffects(perks).goldInterestRate;
+}
 
 export interface CycleCombatStats {
   kills: number;
@@ -102,7 +111,8 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         // applied to drop-chance bonus. dampingThresholdBonus added to buff6.
         const sBonus = seasonBonus(meta.season.current);
         return {
-          dropChanceBonus: getDropChanceBonus(meta) * sBonus.dropMul,
+          dropChanceBonus: getDropChanceBonus(meta) * sBonus.dropMul
+            + getDirectiveEffects(state.run.directive ?? null).dropRateBonus,
           agingSpeedMul: getAgingSpeedMul(meta),
           damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul,
         };
@@ -185,7 +195,10 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       useGameStore.getState().meta.equippedItemIds,
     );
     const goldBonusPct = totalGoldBonus(getActiveSpecialEffects(equipped));
-    const finalGold = Math.floor(gold * (1 + goldBonusPct / 100));
+    // C1009: apply directive gold multiplier + gold_interest perk
+    const dGold = getDirectiveEffects(useGameStore.getState().run.directive ?? null);
+    const interestGold = Math.floor((useGameStore.getState().meta.gold ?? 0) * getGoldInterestRate());
+    const finalGold = Math.floor(gold * (1 + goldBonusPct / 100) * dGold.goldMul) + interestGold;
     // Cycle 116 — organic crackStones supply. cycle 108 fate roll backlog
     // 회수. boss kill 당 1 stone, max 3/cycle. fate roll modal 활성화 +
     // ascension 비용 supply.
