@@ -479,7 +479,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
              setInflationRushModalOpen(true);
            }
            if (ev.type === 'inflation_rush_cashout') {
-             setSpectacleQueue(q => [...q, { id: `irc-${Date.now()}`, kind: 'inflation_rush', atkMul: ev.gold }]);
+             setSpectacleQueue(q => [...q, { id: `irc-${Date.now()}`, kind: 'inflation_rush_cashout', gold: ev.gold }]);
            }
            if (ev.type === 'vc_progress') {
              // C988: replace (not stack) to avoid FIFO flooding at high speed

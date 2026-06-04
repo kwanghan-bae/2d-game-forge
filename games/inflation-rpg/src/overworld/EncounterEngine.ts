@@ -965,6 +965,7 @@ export class EncounterEngine {
           const cashoutGold = Math.floor(hero.level * INFLATION_CASH_OUT_GOLD_MUL);
           hero.gold += cashoutGold;
           events.push({ type: 'inflation_rush_cashout', gold: cashoutGold });
+          this.runStats.recordCashOut();
           this.inflationRushChoiceResolved = null;
         } else if (!this.inflationRushPending) {
           // First time detecting burst expiry — present choice

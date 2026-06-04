@@ -27,6 +27,7 @@ export interface RunStatisticsData {
   gambitHpCost: number; // C839: total HP lost from gambit failures
   burstCount: number; // C987: inflation burst procs this run
   rushFights: number; // C987: total fights spent in inflation rush
+  cashOutCount: number; // C990: times player chose cash out over rush
 }
 
 export function createEmptyRunStatistics(): RunStatisticsData {
@@ -52,6 +53,7 @@ export function createEmptyRunStatistics(): RunStatisticsData {
     gambitHpCost: 0,
     burstCount: 0,
     rushFights: 0,
+    cashOutCount: 0,
   };
 }
 
@@ -134,6 +136,10 @@ export class RunStatistics {
     this.data.rushFights++;
   }
 
+  recordCashOut(): void {
+    this.data.cashOutCount++;
+  }
+
   // C842: Pick top-3 highlights from run stats for player summary
   computeHighlights(): RunHighlight[] {
     const candidates: RunHighlight[] = [];
@@ -151,6 +157,7 @@ export class RunStatistics {
     // C987: Inflation burst/rush highlights
     if (d.burstCount >= 1) candidates.push({ key: 'inflation_burst', value: d.burstCount, priority: d.burstCount * 15 });
     if (d.rushFights >= 5) candidates.push({ key: 'rush_fights', value: d.rushFights, priority: d.rushFights * 2 });
+    if (d.cashOutCount >= 1) candidates.push({ key: 'cash_outs', value: d.cashOutCount, priority: d.cashOutCount * 12 });
     const eventCount = Object.values(d.eventsTriggered).reduce((a, b) => a + b, 0);
     if (eventCount >= 5) candidates.push({ key: 'events_total', value: eventCount, priority: eventCount });
     candidates.sort((a, b) => b.priority - a.priority);

@@ -4,6 +4,7 @@ import { playSfx } from '../systems/sound';
 type SpectacleItem =
   | { id: string; kind: 'inflation_burst'; atkMul: number }
   | { id: string; kind: 'inflation_rush' }
+  | { id: string; kind: 'inflation_rush_cashout'; gold: number }
   | { id: string; kind: 'vc_progress'; current: number; total: number; hpPercent: number }
   | { id: string; kind: 'vc_survival_burst'; value: number };
 
@@ -28,6 +29,7 @@ export function EventSpectacleLayer({ queue, onDone }: Props) {
     // C986: SFX on spectacle display (reuse existing SFX with silent fallback)
     if (current.kind === 'inflation_burst') playSfx('crit', 1.2);
     else if (current.kind === 'inflation_rush') playSfx('levelup');
+    else if (current.kind === 'inflation_rush_cashout') playSfx('coin');
     else if (current.kind === 'vc_survival_burst') playSfx('boss-victory');
     const timer = setTimeout(() => {
       onDone(current.id);
@@ -58,6 +60,15 @@ export function EventSpectacleLayer({ queue, onDone }: Props) {
           textShadow: '0 0 10px #00ff00',
         }}>
           🔥 RUSH MODE — ×2 EXP 🔥
+        </div>
+      )}
+      {current.kind === 'inflation_rush_cashout' && (
+        <div style={{
+          fontSize: 22, fontWeight: 800, color: '#ffc107',
+          textShadow: '0 0 15px #ff8f00',
+          animation: 'spectacle-pop 0.3s ease-out',
+        }}>
+          💰 CASH OUT — +{current.gold.toLocaleString()} Gold 💰
         </div>
       )}
       {current.kind === 'vc_progress' && (
