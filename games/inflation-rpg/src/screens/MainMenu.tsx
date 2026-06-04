@@ -6,6 +6,7 @@ import { getClaimableCount } from '../data/achievementsSelectors';
 import { INITIAL_ACHIEVEMENTS } from '../data/achievementsTypes';
 import { getClaimerTier, nextTierThreshold, getClaimerTierProgress } from '../data/claimerTier';
 import { getIdleMusing } from '../data/idleMusings';
+import { QUESTS } from '../data/quests';
 
 export function MainMenu() {
   const setScreen = useGameStore(s => s.setScreen);
@@ -16,6 +17,7 @@ export function MainMenu() {
   const totalClaims = useGameStore(s => s.meta.totalClaimsCount ?? 0);
   const tier = getClaimerTier(totalClaims);
   const heroSnapshot = useGameStore(s => s.run.heroSnapshot);
+  const questsCompleted = useGameStore(s => s.meta.questsCompleted?.length ?? 0);
   const [hallOpen, setHallOpen] = useState(false);
   const [seasonPassOpen, setSeasonPassOpen] = useState(false);
 
@@ -76,6 +78,12 @@ export function MainMenu() {
           </div>
         );
       })()}
+
+      {questsCompleted > 0 && (
+        <div data-testid="mm-quest-progress" style={{ fontSize: 11, color: '#4ade80', marginBottom: 12 }}>
+          📜 퀘스트 {questsCompleted}/{QUESTS.length} 완료
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 280, margin: '0 auto' }}>
         {heroSnapshot && (

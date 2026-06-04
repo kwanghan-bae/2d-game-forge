@@ -4,6 +4,7 @@ import { RunStatistics, type RunHighlight } from '../overworld/encounter/RunStat
 import { InflationCurveChart } from './InflationCurveChart';
 import { useGameStore } from '../store/gameStore';
 import { getVictoryQuote } from '../data/victoryQuotes';
+import { getQuestById } from '../data/quests';
 import { formatCompact } from '../systems/numberFormat';
 
 interface Props {
@@ -172,11 +173,22 @@ function QuestCompletionBanner() {
       <div style={{ fontSize: 13, fontWeight: 600, color: '#4ade80', marginBottom: 6 }}>
         🏆 퀘스트 완료!
       </div>
-      {questIds.map(id => (
-        <div key={id} style={{ fontSize: 12, color: '#a7f3d0', marginLeft: 8 }}>
-          ✓ {id}
-        </div>
-      ))}
+      {questIds.map(id => {
+        const quest = getQuestById(id);
+        const name = quest?.nameKR ?? id;
+        const reward = quest?.reward;
+        return (
+          <div key={id} style={{ fontSize: 12, color: '#a7f3d0', marginLeft: 8, marginBottom: 4 }}>
+            ✓ {name}
+            {reward && (
+              <span style={{ marginLeft: 8, opacity: 0.7 }}>
+                {reward.gold ? `+${formatCompact(reward.gold)}G` : ''}
+                {reward.bp ? ` +${reward.bp}BP` : ''}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
