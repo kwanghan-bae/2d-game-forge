@@ -474,7 +474,11 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
              setSpectacleQueue(q => [...q, { id: `ir-${Date.now()}`, kind: 'inflation_rush' }]);
            }
            if (ev.type === 'vc_progress') {
-             setSpectacleQueue(q => [...q, { id: `vp-${Date.now()}`, kind: 'vc_progress', current: ev.current, total: ev.total, hpPercent: ev.hpPercent }]);
+             // C988: replace (not stack) to avoid FIFO flooding at high speed
+             setSpectacleQueue(q => [
+               ...q.filter(i => i.kind !== 'vc_progress'),
+               { id: `vp-${Date.now()}`, kind: 'vc_progress', current: ev.current, total: ev.total, hpPercent: ev.hpPercent },
+             ]);
            }
            if (ev.type === 'vc_survival_burst') {
              setSpectacleQueue(q => [...q, { id: `vs-${Date.now()}`, kind: 'vc_survival_burst', value: ev.value }]);

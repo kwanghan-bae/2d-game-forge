@@ -1195,9 +1195,10 @@ export class EncounterEngine {
       if (this.midGameBuffs.isActive('elite_fury')) this.eliteFuryRemaining--;
       // C336: decrement danger cascade
       const isOverkill = hitCount === 1 && !hero.staggered;
-      // C981: Inflation Burst result — emit spectacle data when burst was active
+      // C981+C988: Inflation Burst result — meaningful overkill requires damage ≥ 3× enemy HP
       if (this.midGameBuffs.isActive('inflation_burst') && isOverkill) {
-        events.push({ type: 'inflation_burst_result', overkill: true, atkMul: INFLATION_BURST_ATK_MUL });
+        const meaningfulOverkill = totalDamageDealt >= enemyHp * 3;
+        events.push({ type: 'inflation_burst_result', overkill: meaningfulOverkill, atkMul: INFLATION_BURST_ATK_MUL });
       }
       // C261: multi-kill tracking
       if (isOverkill) { this.consecutiveOneHits++; } else { this.consecutiveOneHits = 0; }
