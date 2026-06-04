@@ -53,6 +53,7 @@ export function CycleResultV2({ onBackToMenu }: Props) {
 
       {combatStats && <CombatStatsPanel stats={combatStats} />}
       {combatStats?.runStats && <RunHighlightsPanel runStats={combatStats.runStats} />}
+      <QuestCompletionBanner />
 
       <div data-testid="result-curve-section" style={{ marginTop: 16 }}>
         <h3 style={{ marginBottom: 8, fontSize: 14 }}>인플레이션 곡선</h3>
@@ -155,6 +156,27 @@ function RunHighlightsPanel({ runStats }: { runStats: import('../overworld/encou
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function QuestCompletionBanner() {
+  const questIds = useCycleStoreV2(s => s.questsCompletedThisCycle);
+  if (!questIds || questIds.length === 0) return null;
+  return (
+    <div data-testid="quest-completion-banner" style={{
+      marginTop: 12, padding: 12, borderRadius: 8,
+      background: 'linear-gradient(135deg, #1a2a1a, #0a1a0a)',
+      border: '1px solid #4ade80',
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#4ade80', marginBottom: 6 }}>
+        🏆 퀘스트 완료!
+      </div>
+      {questIds.map(id => (
+        <div key={id} style={{ fontSize: 12, color: '#a7f3d0', marginLeft: 8 }}>
+          ✓ {id}
+        </div>
+      ))}
     </div>
   );
 }

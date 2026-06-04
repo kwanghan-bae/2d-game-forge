@@ -34,6 +34,8 @@ interface CycleStoreV2State {
   lastGoldEarned: number;
   /** Combat stats snapshot from the most recent cycle end. */
   lastCycleStats: CycleCombatStats | null;
+  /** C996: Quest IDs completed during most recent cycle end. */
+  questsCompletedThisCycle: string[];
   start: (opts: CycleControllerV2Opts) => void;
   /** Cycle-5 F3: optional cause forwarded into the controller before
    *  `finalize()`. Used by OverworldRunner when the scene emits
@@ -50,6 +52,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
   lastSaga: null,
   lastGoldEarned: 0,
   lastCycleStats: null,
+  questsCompletedThisCycle: [],
   start(opts) {
     // V3-H B2: resolve which hero snapshot to use.
     //  - opts.heroSnapshot === undefined → check run.heroSnapshot (auto-resume from save).
@@ -115,7 +118,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     }
     ctrl.setCurrentRealmId(activeRealmId);
     ctrl.setUnlockedRealms(useGameStore.getState().meta.unlockedRealms);
-    set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null });
+    set({ status: 'running', controller: ctrl, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null, questsCompletedThisCycle: [] });
   },
   endCycle(cause?: DeathCause) {
     const ctrl = get().controller;
@@ -168,10 +171,14 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     // C836: Capture run statistics snapshot before finalization
     const runStats = ctrl.getRunStatistics();
     // C995: Track run_stat quests from final statistics
+    // C996: Capture newly completed quests for result screen banner
+    const questsBefore = [...useGameStore.getState().meta.questsCompleted];
     if (runStats) {
       useGameStore.getState().trackRunStats(runStats);
     }
-    set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, lastCycleStats: {
+    const questsAfter = useGameStore.getState().meta.questsCompleted;
+    const newlyCompleted = questsAfter.filter(q => !questsBefore.includes(q));
+    set({ status: 'ended', lastSaga: saga, lastGoldEarned: gold, questsCompletedThisCycle: newlyCompleted, lastCycleStats: {
       kills: stats.kills,
       bossKills: stats.bossKills,
       drops: stats.drops,
@@ -199,6 +206,6 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
     useGameStore.getState().recordSagaRejuvenation();
   },
   reset() {
-    set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null });
+    set({ status: 'idle', controller: null, lastSaga: null, lastGoldEarned: 0, lastCycleStats: null, questsCompletedThisCycle: [] });
   },
 }));
