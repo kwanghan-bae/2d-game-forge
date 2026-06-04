@@ -147,13 +147,13 @@ export class RunStatistics {
     if (d.peakCombo >= 10) candidates.push({ key: 'peak_combo', value: d.peakCombo, priority: d.peakCombo });
     if (d.bossKills >= 1) candidates.push({ key: 'boss_kills', value: d.bossKills, priority: d.bossKills * 10 });
     if (d.eliteKills >= 3) candidates.push({ key: 'elite_kills', value: d.eliteKills, priority: d.eliteKills * 3 });
-    if (d.criticalHits >= 5) candidates.push({ key: 'critical_hits', value: d.criticalHits, priority: d.criticalHits });
-    if (d.overkills >= 3) candidates.push({ key: 'overkills', value: d.overkills, priority: d.overkills * 2 });
-    if (d.goldEarned >= 100) candidates.push({ key: 'gold_earned', value: d.goldEarned, priority: Math.floor(d.goldEarned / 50) });
+    if (d.criticalHits >= 10) candidates.push({ key: 'critical_hits', value: d.criticalHits, priority: d.criticalHits });
+    if (d.overkills >= 5) candidates.push({ key: 'overkills', value: d.overkills, priority: d.overkills * 2 });
+    if (d.goldEarned >= 500) candidates.push({ key: 'gold_earned', value: d.goldEarned, priority: Math.floor(d.goldEarned / 100) });
     if (d.gambitGoldNet > 0) candidates.push({ key: 'gambit_profit', value: d.gambitGoldNet, priority: Math.floor(d.gambitGoldNet / 10) });
     if (d.gambitsWon >= 2) candidates.push({ key: 'gambits_won', value: d.gambitsWon, priority: d.gambitsWon * 5 });
-    if (d.deaths === 0 && d.totalFights >= 20) candidates.push({ key: 'deathless', value: d.totalFights, priority: d.totalFights });
-    if (d.peakLevel >= 5) candidates.push({ key: 'peak_level', value: d.peakLevel, priority: d.peakLevel * 2 });
+    if (d.deaths === 0 && d.totalFights >= 50) candidates.push({ key: 'deathless', value: d.totalFights, priority: d.totalFights });
+    if (d.peakLevel >= 15) candidates.push({ key: 'peak_level', value: d.peakLevel, priority: d.peakLevel * 2 });
     // C987: Inflation burst/rush highlights
     if (d.burstCount >= 1) candidates.push({ key: 'inflation_burst', value: d.burstCount, priority: d.burstCount * 15 });
     if (d.rushFights >= 5) candidates.push({ key: 'rush_fights', value: d.rushFights, priority: d.rushFights * 2 });
