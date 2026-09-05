@@ -1047,6 +1047,7 @@ export class EncounterEngine {
       let totalDamageDealt = 0; // C174: track for lifesteal
       let goldHealUsed = false; // C195: once per fight
       let dodgeCount = 0; // C268: dodges this fight
+      let bossPhaseShiftTriggered = false; // C1029: boss phase 2 trigger
       const MAX_COMBAT_TURNS = 500;
       while (eHp > 0 && !hero.staggered && hitCount < MAX_COMBAT_TURNS) {
         // C719: crit resolution via HeroTurnCalc pure function
@@ -1146,13 +1147,25 @@ export class EncounterEngine {
         }
         if (eHp > 0) {
           // C727: enemy turn ATK via pure EnemyTurnCalc module
-          const { rageAtk } = computeEnemyTurnAtk({
+          const { rageAtk, isEnraged } = computeEnemyTurnAtk({
             baseEnemyAtk: enemyAtk,
             isBoss,
             rageTurn,
             currentEnemyHp: eHp,
             maxEnemyHp: enemyHp,
           });
+          // C1029: Boss phase shift at <= 50% HP (Enrage + 10% phase barrier)
+          if (isBoss && isEnraged && !bossPhaseShiftTriggered) {
+            bossPhaseShiftTriggered = true;
+            events.push({
+              type: 'boss_phase_shift',
+              enemyId: landmarkId,
+              phase: 2,
+              enrageAtkMul: BOSS_ENRAGE_ATK_MUL,
+            });
+            const phaseBarrier = Math.floor(enemyHp * 0.10);
+            eHp += phaseBarrier;
+          }
           // C137: mercy damage reduction after death streak
           // C171: dodge chance based on kill count
           // C723: rain weather boosts dodge chance

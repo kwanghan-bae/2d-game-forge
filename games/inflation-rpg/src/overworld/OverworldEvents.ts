@@ -168,4 +168,6 @@ export type OverworldEvent =
   // C959: Veteran's Challenge resolved
   | { type: 'event_veterans_challenge'; accepted: boolean; duration: number }
   // C1016: Revive perk activated
-  | { type: 'perk_revive'; enemyId: string };
+  | { type: 'perk_revive'; enemyId: string }
+  // C1029: Boss HP <= 50% Phase Shift event
+  | { type: 'boss_phase_shift'; enemyId: string; phase: 2; enrageAtkMul: number };

@@ -409,6 +409,27 @@ describe('EncounterEngine — C132 boss rage', () => {
   });
 });
 
+describe('EncounterEngine — C1029 boss phase shift', () => {
+  it('emits boss_phase_shift when boss drops to <= 50% HP in multi-turn fight', () => {
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 100000, heroAtkBase: 15 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    const events = engine.resolveEncounter(hero, 'boss', 'boss_test');
+    const phaseShift = events.find(e => e.type === 'boss_phase_shift');
+    expect(phaseShift).toBeDefined();
+    if (phaseShift?.type === 'boss_phase_shift') {
+      expect(phaseShift.phase).toBe(2);
+      expect(phaseShift.enrageAtkMul).toBeGreaterThan(1);
+    }
+  });
+
+  it('does not emit boss_phase_shift for regular enemy encounters', () => {
+    const hero = HeroEntity.create({ seed: 1, heroHpMax: 10000, heroAtkBase: 5 });
+    const engine = new EncounterEngine(new SeededRng(1));
+    const events = engine.resolveEncounter(hero, 'enemy', 'e_0');
+    expect(events.some(e => e.type === 'boss_phase_shift')).toBe(false);
+  });
+});
+
 describe('EncounterEngine — C133 elite enemy', () => {
   it('elite_spawned event fires on elite encounters', () => {
     // Run enough encounters — 5% chance means ~1 in 20
