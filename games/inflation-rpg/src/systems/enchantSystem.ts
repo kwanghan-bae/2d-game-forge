@@ -124,3 +124,25 @@ export function getEffectiveElement(instance: EquipmentInstance): ElementType {
   }
   return getEquipmentElement(instance.baseId);
 }
+
+/**
+ * Returns damage bonus multiplier from elemental rune enchant resonance (+15%).
+ */
+export function getEnchantDamageBonus(instance: EquipmentInstance): number {
+  if (instance.enchantElement && instance.enchantElement !== 'neutral') {
+    return 0.15;
+  }
+  return 0;
+}
+
+/**
+ * Returns aggregated enchant damage bonus across all equipped items.
+ */
+export function getEquippedEnchantBonus(equipped: EquipmentInstance[]): number {
+  let bonus = 0;
+  for (const item of equipped) {
+    bonus += getEnchantDamageBonus(item);
+  }
+  return bonus;
+}
+

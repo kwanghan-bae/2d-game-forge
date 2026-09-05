@@ -6,6 +6,8 @@ import {
   canEnchantWithRune,
   applyRuneEnchant,
   getEffectiveElement,
+  getEnchantDamageBonus,
+  getEquippedEnchantBonus,
 } from './enchantSystem';
 import type { EquipmentInstance } from '../types';
 
@@ -63,4 +65,25 @@ describe('C1046: enchantSystem (Elemental Rune Enchanting)', () => {
     };
     expect(getEffectiveElement(plainSword)).toBe('neutral');
   });
+
+  it('computes enchant damage resonance bonus correctly for single and equipped sets', () => {
+    const neutralWeapon: EquipmentInstance = {
+      instanceId: 'w-plain',
+      baseId: 'w-sword',
+      enhanceLv: 0,
+    };
+    expect(getEnchantDamageBonus(neutralWeapon)).toBe(0);
+
+    const fireWeapon = applyRuneEnchant(neutralWeapon, 'rune_fire');
+    expect(getEnchantDamageBonus(fireWeapon)).toBe(0.15);
+
+    const equipped: EquipmentInstance[] = [
+      fireWeapon,
+      neutralWeapon,
+      applyRuneEnchant({ instanceId: 'a-1', baseId: 'a-plate', enhanceLv: 0 }, 'rune_water'),
+    ];
+    // Two enchanted items: 0.15 + 0.15 = 0.30
+    expect(getEquippedEnchantBonus(equipped)).toBeCloseTo(0.30);
+  });
 });
+
