@@ -12,6 +12,7 @@ import { EquipmentSetBadge, EquipmentSetSummaryPanel } from '../components/Equip
 import { ReforgeModal } from '../components/ReforgeModal';
 import { AscensionTrialsModal } from '../components/AscensionTrialsModal';
 import { PetSanctuaryModal } from '../components/PetSanctuaryModal';
+import { ZodiacConstellationModal } from '../components/ZodiacConstellationModal';
 
 interface Props {
   onClose: () => void;
@@ -25,6 +26,7 @@ export function StatusModal({ onClose }: Props) {
   const [showReforge, setShowReforge] = useState(false);
   const [showTrials, setShowTrials] = useState(false);
   const [showPets, setShowPets] = useState(false);
+  const [showZodiac, setShowZodiac] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -218,6 +220,22 @@ export function StatusModal({ onClose }: Props) {
                 >
                   🐾 영수 성소
                 </button>
+                <button
+                  data-testid="open-zodiac-modal-btn"
+                  onClick={() => setShowZodiac(true)}
+                  style={{
+                    background: '#7e22ce',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  🌌 성좌도
+                </button>
               </div>
             </div>
             {equippedItems.length === 0 ? (
@@ -293,6 +311,7 @@ export function StatusModal({ onClose }: Props) {
       {showReforge && <ReforgeModal onClose={() => setShowReforge(false)} />}
       {showTrials && <AscensionTrialsModal onClose={() => setShowTrials(false)} />}
       {showPets && <PetSanctuaryModal onClose={() => setShowPets(false)} />}
+      {showZodiac && <ZodiacConstellationModal onClose={() => setShowZodiac(false)} />}
     </div>
   );
 }
