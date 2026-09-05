@@ -38,6 +38,8 @@ export interface EquipmentInstance {
   baseId: string;
   enhanceLv: number;
   modifiers: Modifier[];
+  /** C1046: Optional infused elemental rune */
+  enchantElement?: 'fire' | 'water' | 'lightning' | 'dark' | 'neutral';
 }
 
 export interface PassiveSkill {
