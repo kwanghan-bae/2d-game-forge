@@ -14,6 +14,7 @@ import {
   formatEnhancedName,
   type ReforgeOutcome,
 } from '../systems/reforgeSystem';
+import { getBlacksmithDialogue, getCharacterReforgeReaction } from '../data/blacksmithFlavor';
 
 interface Props {
   onClose: () => void;
@@ -97,20 +98,24 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
       },
     }));
 
+    const charId = run.characterId ?? 'hwarang';
+    const bsLine = getBlacksmithDialogue(result.outcome);
+    const heroLine = getCharacterReforgeReaction(charId, result.outcome);
+
     if (result.outcome === 'great_success') {
       setFeedback({
         type: 'success',
-        message: `🎉 대성공! [${selectedBase.name}] 강화 +2 달성! (+${result.newLv})`,
+        message: `🎉 대성공! [${selectedBase.name}] 강화 +2 달성! (+${result.newLv}) | 대장장이: "${bsLine}" | 영웅: "${heroLine}"`,
       });
     } else if (result.outcome === 'success') {
       setFeedback({
         type: 'success',
-        message: `✨ 성공! [${selectedBase.name}] 강화 +1 성공! (+${result.newLv})`,
+        message: `✨ 성공! [${selectedBase.name}] 강화 +1 성공! (+${result.newLv}) | 대장장이: "${bsLine}" | 영웅: "${heroLine}"`,
       });
     } else {
       setFeedback({
         type: 'failure',
-        message: `💨 실패... 재료가 소모되었으나 장비는 안전하게 보호되었습니다. (+${result.newLv})`,
+        message: `💨 실패... 재료가 소모되었으나 장비는 안전하게 보호되었습니다. (+${result.newLv}) | 대장장이: "${bsLine}" | 영웅: "${heroLine}"`,
       });
     }
   };
