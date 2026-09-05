@@ -11,6 +11,7 @@ import { formatCompact } from '../systems/numberFormat';
 import { EquipmentSetBadge, EquipmentSetSummaryPanel } from '../components/EquipmentSetBadge';
 import { ReforgeModal } from '../components/ReforgeModal';
 import { AscensionTrialsModal } from '../components/AscensionTrialsModal';
+import { PetSanctuaryModal } from '../components/PetSanctuaryModal';
 
 interface Props {
   onClose: () => void;
@@ -23,6 +24,7 @@ export function StatusModal({ onClose }: Props) {
   const hero = controller?.getHero();
   const [showReforge, setShowReforge] = useState(false);
   const [showTrials, setShowTrials] = useState(false);
+  const [showPets, setShowPets] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -200,6 +202,22 @@ export function StatusModal({ onClose }: Props) {
                 >
                   ⚔️ 승천 시련
                 </button>
+                <button
+                  data-testid="open-pets-modal-btn"
+                  onClick={() => setShowPets(true)}
+                  style={{
+                    background: '#047857',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  🐾 영수 성소
+                </button>
               </div>
             </div>
             {equippedItems.length === 0 ? (
@@ -274,6 +292,7 @@ export function StatusModal({ onClose }: Props) {
       </div>
       {showReforge && <ReforgeModal onClose={() => setShowReforge(false)} />}
       {showTrials && <AscensionTrialsModal onClose={() => setShowTrials(false)} />}
+      {showPets && <PetSanctuaryModal onClose={() => setShowPets(false)} />}
     </div>
   );
 }
