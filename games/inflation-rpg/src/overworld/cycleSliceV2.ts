@@ -18,6 +18,7 @@ import { totalBurstChanceBonus, totalGoldBonus, totalExpBonus, getActiveSpecialE
 import { getEquippedInstances } from '../systems/equipment';
 import { getDirectiveEffects } from '../systems/sponsorDirective';
 import { getActivePerkEffects, type JpPerkId } from '../systems/jpPerks';
+import { aggregateSetEffects } from '../systems/equipmentSets';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -86,6 +87,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           useGameStore.getState().meta.equippedItemIds,
         );
         const effects = getActiveSpecialEffects(eqInst);
+        const setEffects = aggregateSetEffects(eqInst.map(e => e.baseId));
         const dEff = getDirectiveEffects(useGameStore.getState().run.directive ?? null);
         const charId = useGameStore.getState().run.characterId;
         const perks = (useGameStore.getState().meta.jpPerksOwned?.[charId] ?? []) as JpPerkId[];
@@ -93,8 +95,8 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         return {
           luckCritBonus: (useGameStore.getState().meta.luckBaseBonus ?? 0) * 0.005
             + totalBurstChanceBonus(effects),
-          equipExpBonus: totalExpBonus(effects),
-          equipGoldBonus: totalGoldBonus(effects),
+          equipExpBonus: totalExpBonus(effects) + setEffects.expBonus,
+          equipGoldBonus: totalGoldBonus(effects) + setEffects.goldBonus,
           directiveCritBonus: dEff.critBonus,
           directiveGoldMul: dEff.goldMul,
           directiveExpMul: dEff.expMul,
@@ -104,7 +106,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           perkExpMomentumRate: perkFx.expMomentumRate,
           perkReviveEnabled: perkFx.reviveEnabled,
           perkCritDamageBonus: perkFx.critDamageBonus,
-          perkBossDamageBonus: perkFx.bossDamageBonus,
+          perkBossDamageBonus: (perkFx.bossDamageBonus ?? 0) + (setEffects.bossDamageBonus ?? 0),
           perkGoldBarrierRate: perkFx.goldBarrierRate,
           perkRelicFindBonus: perkFx.relicFindBonus,
         };
@@ -127,12 +129,17 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           const prks = (meta.jpPerksOwned?.[cId] ?? []) as JpPerkId[];
           return getActivePerkEffects(prks).dropRateBonus;
         })();
+        const setEffects = (() => {
+          const eqInst = getEquippedInstances(meta.inventory, meta.equippedItemIds);
+          return aggregateSetEffects(eqInst.map(e => e.baseId));
+        })();
         return {
           dropChanceBonus: getDropChanceBonus(meta) * sBonus.dropMul
             + getDirectiveEffects(state.run.directive ?? null).dropRateBonus
-            + perkDropBonus,
+            + perkDropBonus
+            + setEffects.dropRateBonus,
           agingSpeedMul: getAgingSpeedMul(meta),
-          damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul,
+          damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul * (1 + setEffects.atkMulBonus),
         };
       }),
       onBossKill: opts.onBossKill ?? ((current) => {
