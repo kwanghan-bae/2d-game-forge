@@ -20,6 +20,7 @@ import {
   type FoodType,
 } from '../systems/petSystem';
 import { ElementalBadge } from './ElementalBadge';
+import { getPetBark } from '../data/petFlavor';
 
 interface Props {
   onClose: () => void;
@@ -81,7 +82,8 @@ export function PetSanctuaryModal({ onClose }: Props) {
       },
     }));
 
-    setFeedback(res.message);
+    const extraBark = res.leveledUp ? ` "${getPetBark(selectedId, 'levelUp')}"` : '';
+    setFeedback(`${res.message}${extraBark}`);
   };
 
   return (
