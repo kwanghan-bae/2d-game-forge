@@ -25,6 +25,91 @@ export function PerkShopScreen({ onBack }: Props) {
     setBuying(null);
   };
 
+  const tier1Perks = JP_PERKS.filter(p => (p.tier ?? 1) === 1);
+  const tier2Perks = JP_PERKS.filter(p => p.tier === 2);
+
+  const renderPerkGrid = (perks: JpPerkDef[]) => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      {perks.map((perk: JpPerkDef) => {
+        const owned = ownedPerks.includes(perk.id);
+        const { canBuy, reason } = canPurchasePerk(perk.id, ownedPerks, jp);
+        const locked = reason === 'missing_prerequisite';
+        const reqName = perk.requires ? JP_PERKS.find(p => p.id === perk.requires)?.name : undefined;
+
+        return (
+          <div
+            key={perk.id}
+            data-testid={`perk-node-${perk.id}`}
+            style={{
+              ...perkCardStyle,
+              border: owned
+                ? '2px solid #22c55e'
+                : locked
+                ? '1px solid #374151'
+                : perk.tier === 2
+                ? '1px solid #f59e0b'
+                : '1px solid #6366f1',
+              opacity: locked ? 0.5 : 1,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontWeight: 'bold', fontSize: 13 }}>{perk.name}</div>
+              {locked && <span style={{ fontSize: 11 }}>🔒</span>}
+              {owned && <span style={{ fontSize: 11, color: '#22c55e' }}>✓</span>}
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>{perk.description}</div>
+            <div
+              style={{
+                fontSize: 11,
+                marginTop: 6,
+                color: owned ? '#22c55e' : jp < perk.cost ? '#ef4444' : '#a5b4fc',
+              }}
+            >
+              {owned ? '보유 완료' : `${perk.cost} JP`}
+            </div>
+            {locked && reqName && (
+              <div
+                data-testid={`perk-req-${perk.id}`}
+                style={{ fontSize: 10, color: '#f97316', marginTop: 4, background: 'rgba(249, 115, 22, 0.1)', padding: '2px 4px', borderRadius: 4 }}
+              >
+                필요: {reqName}
+              </div>
+            )}
+            {!owned && canBuy && !buying && (
+              <button
+                type="button"
+                data-testid={`btn-buy-${perk.id}`}
+                onClick={() => setBuying(perk.id)}
+                style={buyBtnStyle}
+              >
+                구매
+              </button>
+            )}
+            {buying === perk.id && (
+              <div style={{ marginTop: 6, display: 'flex', gap: 4 }}>
+                <button
+                  type="button"
+                  data-testid={`btn-confirm-${perk.id}`}
+                  onClick={() => handleBuy(perk.id)}
+                  style={{ ...buyBtnStyle, background: '#22c55e' }}
+                >
+                  확인
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBuying(null)}
+                  style={{ ...buyBtnStyle, background: '#6b7280' }}
+                >
+                  취소
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div data-testid="perk-shop" style={{ padding: 24, color: '#eee', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -35,66 +120,16 @@ export function PerkShopScreen({ onBack }: Props) {
         JP 잔고: <span data-testid="perk-jp-balance" style={{ color: '#fbbf24', fontWeight: 'bold' }}>{jp}</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {JP_PERKS.map((perk: JpPerkDef) => {
-          const owned = ownedPerks.includes(perk.id);
-          const { canBuy, reason } = canPurchasePerk(perk.id, ownedPerks, jp);
-          const locked = reason === 'missing_prerequisite';
+      <section style={{ marginBottom: 24 }}>
+        <h3 data-testid="section-tier-1" style={{ fontSize: 14, color: '#818cf8', marginBottom: 8 }}>🌱 Tier 1 — 기본 퍽</h3>
+        {renderPerkGrid(tier1Perks)}
+      </section>
 
-          return (
-            <div
-              key={perk.id}
-              data-testid={`perk-node-${perk.id}`}
-              style={{
-                ...perkCardStyle,
-                border: owned ? '2px solid #22c55e' : locked ? '1px solid #374151' : '1px solid #6366f1',
-                opacity: locked ? 0.4 : 1,
-              }}
-            >
-              <div style={{ fontWeight: 'bold', fontSize: 13 }}>{perk.name}</div>
-              <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>{perk.description}</div>
-              <div style={{ fontSize: 11, marginTop: 6, color: owned ? '#22c55e' : jp < perk.cost ? '#ef4444' : '#a5b4fc' }}>
-                {owned ? '✓ 보유' : `${perk.cost} JP`}
-              </div>
-              {perk.requires && !ownedPerks.includes(perk.requires) && (
-                <div style={{ fontSize: 10, color: '#f97316', marginTop: 2 }}>
-                  필요: {JP_PERKS.find(p => p.id === perk.requires)?.name}
-                </div>
-              )}
-              {!owned && canBuy && !buying && (
-                <button
-                  type="button"
-                  data-testid={`btn-buy-${perk.id}`}
-                  onClick={() => setBuying(perk.id)}
-                  style={buyBtnStyle}
-                >
-                  구매
-                </button>
-              )}
-              {buying === perk.id && (
-                <div style={{ marginTop: 6, display: 'flex', gap: 4 }}>
-                  <button
-                    type="button"
-                    data-testid={`btn-confirm-${perk.id}`}
-                    onClick={() => handleBuy(perk.id)}
-                    style={{ ...buyBtnStyle, background: '#22c55e' }}
-                  >
-                    확인
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBuying(null)}
-                    style={{ ...buyBtnStyle, background: '#6b7280' }}
-                  >
-                    취소
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
+      <section style={{ marginBottom: 16 }}>
+        <h3 data-testid="section-tier-2" style={{ fontSize: 14, color: '#f59e0b', marginBottom: 4 }}>⭐ Tier 2 — 심화 퍽</h3>
+        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 8 }}>선행 퍽을 보유하면 해금되는 강력한 특화 퍽입니다.</div>
+        {renderPerkGrid(tier2Perks)}
+      </section>
     </div>
   );
 }
