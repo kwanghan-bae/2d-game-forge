@@ -90,6 +90,74 @@ const BOSS_DEFEAT_REACTIONS: Record<Archetype, string[]> = {
   ],
 };
 
+// C1025: Character reactions on unlocking JP perks
+const PERK_UNLOCK_REACTIONS: Record<Archetype, string[]> = {
+  warrior: [
+    '새로운 힘이 칼날에 깃드는 것이 느껴진다.',
+    '더 강한 기술을 손에 넣었군. 시험해볼 상대가 필요하다.',
+    '이 힘이라면 다음 전투는 확실한 승리다.',
+  ],
+  mage: [
+    '심오한 힘의 이치를 깨우쳤군.',
+    '마력의 구조가 한층 더 정교해졌다.',
+    '새로운 비의가 내 영혼을 일깨운다.',
+  ],
+  healer: [
+    '이 힘으로 더 많은 위험을 극복할 수 있겠어.',
+    '마음이 한결 든든해지는군.',
+    '모두를 지킬 수 있는 새로운 지혜야.',
+  ],
+  rogue: [
+    '흥, 치명적인 무기가 하나 더 생겼군.',
+    '그림자 속에서 쓸 패가 늘었어.',
+    '상대가 방심할 때 쓰기 딱 좋은 수법이야.',
+  ],
+  tank: [
+    '방벽이 더 두터워진 느낌이다.',
+    '어떤 충격도 흡수할 수 있겠군.',
+    '더욱 흔들리지 않는 반석이 되겠다.',
+  ],
+  hunter: [
+    '사냥의 감각이 더 예리해졌군.',
+    '새로운 사냥 도구를 챙긴 기분이야.',
+    '어떤 맹수라도 이제 두렵지 않다.',
+  ],
+};
+
+// C1025: Character reactions upon surviving via revive_once perk
+const PERK_REVIVE_REACTIONS: Record<Archetype, string[]> = {
+  warrior: [
+    '아직… 끝이 아니다! 칼을 다시 쥐어라!',
+    '불굴의 의지는 꺾이지 않는다. 승부는 지금부터다!',
+    '한 번 쓰러졌다고 패배한 것이 아니다!',
+  ],
+  mage: [
+    '생과 사의 경계를 넘어… 다시 일어선다!',
+    '영혼의 파동이 육신을 다시 꿰매었다.',
+    '죽음조차 이 지혜를 덮을 순 없다.',
+  ],
+  healer: [
+    '숨이… 다시 돌아왔어! 포기하지 마!',
+    '생명의 불꽃은 아직 꺼지지 않았어.',
+    '기적이 일어났어… 다시 싸울 수 있어!',
+  ],
+  rogue: [
+    '큭… 저승 문턱을 살짝 밟고 왔군.',
+    '죽은 척하는 것도 전략의 일부지. 이제 반격이다.',
+    '두 번 당할 줄 알고? 이번엔 내 차례다.',
+  ],
+  tank: [
+    '크하하! 이 정도 일격으로 날 무너뜨릴 수 없다!',
+    '방패는 부서져도 내 뼈는 아직 튼튼하다!',
+    '다시 일어섰다. 벽은 무너지지 않는다!',
+  ],
+  hunter: [
+    '사냥꾼이 사냥감에게 죽을 순 없지.',
+    '거친 숨을 가다듬고… 다시 겨눈다.',
+    '반격의 화살은 더 깊게 박힐 것이다.',
+  ],
+};
+
 function seededRandom(seed: string): number {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
@@ -98,19 +166,45 @@ function seededRandom(seed: string): number {
   return Math.abs(hash % 1000) / 1000;
 }
 
+export type ReactionEventType = 'region_enter' | 'boss_defeat' | 'perk_unlock' | 'perk_revive';
+
 export function getCharacterReaction(
   characterId: string,
-  storyType: 'region_enter' | 'boss_defeat',
+  storyType: ReactionEventType,
   storyId: string,
 ): string | null {
   const archetype = CHARACTER_ARCHETYPES[characterId];
   if (!archetype) return null;
 
-  const pool = storyType === 'region_enter'
-    ? REGION_REACTIONS[archetype]
-    : BOSS_DEFEAT_REACTIONS[archetype];
+  let pool: string[];
+  switch (storyType) {
+    case 'region_enter':
+      pool = REGION_REACTIONS[archetype];
+      break;
+    case 'boss_defeat':
+      pool = BOSS_DEFEAT_REACTIONS[archetype];
+      break;
+    case 'perk_unlock':
+      pool = PERK_UNLOCK_REACTIONS[archetype];
+      break;
+    case 'perk_revive':
+      pool = PERK_REVIVE_REACTIONS[archetype];
+      break;
+    default:
+      return null;
+  }
 
   const seed = `${characterId}-${storyId}`;
   const idx = Math.floor(seededRandom(seed) * pool.length);
   return pool[idx] ?? null;
+}
+
+/** C1025: Convenience helper for perk unlock dialogue */
+export function getPerkUnlockReaction(characterId: string, perkId: string): string | null {
+  return getCharacterReaction(characterId, 'perk_unlock', perkId);
+}
+
+/** C1025: Convenience helper for perk revive combat quote */
+export function getPerkReviveReaction(characterId: string, tick = 0): string | null {
+  return getCharacterReaction(characterId, 'perk_revive', `revive-${tick}`);
 }

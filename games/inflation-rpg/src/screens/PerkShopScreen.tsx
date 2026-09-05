@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { JP_PERKS, canPurchasePerk, purchasePerk, type JpPerkId, type JpPerkDef } from '../systems/jpPerks';
+import { getPerkUnlockReaction } from '../data/characterReactions';
 
 interface Props {
   onBack: () => void;
@@ -11,6 +12,7 @@ export function PerkShopScreen({ onBack }: Props) {
   const jp = useGameStore(s => s.meta.jp?.[charId] ?? 0);
   const ownedPerks = useGameStore(s => (s.meta.jpPerksOwned?.[charId] ?? []) as JpPerkId[]);
   const [buying, setBuying] = useState<JpPerkId | null>(null);
+  const [reaction, setReaction] = useState<string | null>(null);
 
   const handleBuy = (perkId: JpPerkId) => {
     const result = purchasePerk(perkId, ownedPerks, jp);
@@ -23,6 +25,8 @@ export function PerkShopScreen({ onBack }: Props) {
       },
     }));
     setBuying(null);
+    const quote = getPerkUnlockReaction(charId, perkId);
+    if (quote) setReaction(quote);
   };
 
   const tier1Perks = JP_PERKS.filter(p => (p.tier ?? 1) === 1);
@@ -119,6 +123,21 @@ export function PerkShopScreen({ onBack }: Props) {
       <div style={{ marginBottom: 16, fontSize: 14 }}>
         JP 잔고: <span data-testid="perk-jp-balance" style={{ color: '#fbbf24', fontWeight: 'bold' }}>{jp}</span>
       </div>
+
+      {reaction && (
+        <div data-testid="perk-reaction-quote" style={{
+          marginBottom: 16,
+          padding: '8px 12px',
+          background: 'rgba(251, 191, 36, 0.1)',
+          border: '1px solid rgba(251, 191, 36, 0.3)',
+          borderRadius: 6,
+          color: '#fef08a',
+          fontSize: 12,
+          fontStyle: 'italic',
+        }}>
+          💬 "{reaction}"
+        </div>
+      )}
 
       <section style={{ marginBottom: 24 }}>
         <h3 data-testid="section-tier-1" style={{ fontSize: 14, color: '#818cf8', marginBottom: 8 }}>🌱 Tier 1 — 기본 퍽</h3>

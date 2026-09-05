@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { getCharacterReaction } from './characterReactions';
+import {
+  getCharacterReaction,
+  getPerkUnlockReaction,
+  getPerkReviveReaction,
+} from './characterReactions';
 
 describe('getCharacterReaction', () => {
   it('returns a warrior reaction for hwarang on region enter', () => {
@@ -30,5 +34,28 @@ describe('getCharacterReaction', () => {
   it('returns null for unknown character', () => {
     const r = getCharacterReaction('nonexistent', 'region_enter', 's-region-plains');
     expect(r).toBeNull();
+  });
+
+  it('C1025: returns perk_unlock reaction for warrior (hwarang) and mage (mudang)', () => {
+    const warrior = getCharacterReaction('hwarang', 'perk_unlock', 'crit_mastery');
+    expect(warrior).toBeTruthy();
+    expect(typeof warrior).toBe('string');
+
+    const mage = getCharacterReaction('mudang', 'perk_unlock', 'crit_mastery');
+    expect(mage).toBeTruthy();
+    expect(warrior).not.toBe(mage);
+  });
+
+  it('C1025: returns perk_revive reaction for tank (choeui)', () => {
+    const tank = getCharacterReaction('choeui', 'perk_revive', 'revive-1');
+    expect(tank).toBeTruthy();
+    expect(typeof tank).toBe('string');
+  });
+
+  it('C1025: helper getPerkUnlockReaction and getPerkReviveReaction return valid quotes', () => {
+    const unlock = getPerkUnlockReaction('hwarang', 'boss_slayer');
+    expect(unlock).toBeTruthy();
+    const revive = getPerkReviveReaction('choeui', 5);
+    expect(revive).toBeTruthy();
   });
 });

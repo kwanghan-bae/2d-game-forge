@@ -73,5 +73,10 @@ describe('PerkShopScreen — C1022', () => {
     const state = useGameStore.getState();
     expect(state.meta.jpPerksOwned['hwarang']).toContain('crit_mastery');
     expect(state.meta.jp['hwarang']).toBe(50 - 16); // 16 cost
+
+    // C1025: Verify character reaction quote is rendered
+    const reactionBanner = screen.getByTestId('perk-reaction-quote');
+    expect(reactionBanner).toBeInTheDocument();
+    expect(reactionBanner.textContent).toBeTruthy();
   });
 });
