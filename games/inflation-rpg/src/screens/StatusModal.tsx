@@ -10,6 +10,7 @@ import { EQUIPMENT_FLAVOR } from '../data/equipmentFlavor';
 import { formatCompact } from '../systems/numberFormat';
 import { EquipmentSetBadge, EquipmentSetSummaryPanel } from '../components/EquipmentSetBadge';
 import { ReforgeModal } from '../components/ReforgeModal';
+import { AscensionTrialsModal } from '../components/AscensionTrialsModal';
 
 interface Props {
   onClose: () => void;
@@ -21,6 +22,7 @@ export function StatusModal({ onClose }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
   const hero = controller?.getHero();
   const [showReforge, setShowReforge] = useState(false);
+  const [showTrials, setShowTrials] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -165,22 +167,40 @@ export function StatusModal({ onClose }: Props) {
               <div style={{ fontSize: 12, color: '#aaa' }}>
                 장착 장비 ({equippedItems.length}/{meta.equipSlotCount})
               </div>
-              <button
-                data-testid="open-reforge-modal-btn"
-                onClick={() => setShowReforge(true)}
-                style={{
-                  background: '#2563eb',
-                  border: 'none',
-                  borderRadius: 4,
-                  padding: '2px 8px',
-                  color: '#fff',
-                  fontSize: 11,
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                }}
-              >
-                ⚒️ 대장간 (강화/분해)
-              </button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  data-testid="open-reforge-modal-btn"
+                  onClick={() => setShowReforge(true)}
+                  style={{
+                    background: '#2563eb',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  ⚒️ 대장간
+                </button>
+                <button
+                  data-testid="open-trials-modal-btn"
+                  onClick={() => setShowTrials(true)}
+                  style={{
+                    background: '#b91c1c',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  ⚔️ 승천 시련
+                </button>
+              </div>
             </div>
             {equippedItems.length === 0 ? (
               <div style={{ fontSize: 13, opacity: 0.5 }}>(장착 없음)</div>
@@ -253,6 +273,7 @@ export function StatusModal({ onClose }: Props) {
         </div>
       </div>
       {showReforge && <ReforgeModal onClose={() => setShowReforge(false)} />}
+      {showTrials && <AscensionTrialsModal onClose={() => setShowTrials(false)} />}
     </div>
   );
 }
