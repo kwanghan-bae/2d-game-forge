@@ -15,10 +15,19 @@ import {
   type ReforgeOutcome,
 } from '../systems/reforgeSystem';
 import { getBlacksmithDialogue, getCharacterReforgeReaction } from '../data/blacksmithFlavor';
+import {
+  ALL_RUNES,
+  getRuneDef,
+  applyRuneEnchant,
+  getEffectiveElement,
+  canEnchantWithRune,
+  type RuneType,
+} from '../systems/enchantSystem';
+import { ElementalBadge } from './ElementalBadge';
 
 interface Props {
   onClose: () => void;
-  initialTab?: 'reforge' | 'dismantle';
+  initialTab?: 'reforge' | 'dismantle' | 'enchant';
 }
 
 const RARITY_COLORS: Record<EquipmentRarity, string> = {
@@ -43,8 +52,9 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
   const meta = useGameStore(s => s.meta);
   const run = useGameStore(s => s.run);
 
-  const [activeTab, setActiveTab] = useState<'reforge' | 'dismantle'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'reforge' | 'dismantle' | 'enchant'>(initialTab);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
+  const [selectedRune, setSelectedRune] = useState<RuneType>('rune_fire');
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'failure' | 'info';
     message: string;
@@ -182,6 +192,39 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
     });
   };
 
+  const handleEnchant = () => {
+    if (!selectedItem || !selectedBase) return;
+    const runeDef = getRuneDef(selectedRune);
+    if (!canEnchantWithRune(selectedRune, run.goldThisRun, meta.enhanceStones)) return;
+
+    const updatedItem = applyRuneEnchant(selectedItem, selectedRune);
+    const updateList = (list: EquipmentInstance[]) =>
+      list.map(it => (it.instanceId === selectedItem.instanceId ? updatedItem : it));
+
+    const updatedInventory: Inventory = {
+      weapons: updateList(meta.inventory.weapons),
+      armors: updateList(meta.inventory.armors),
+      accessories: updateList(meta.inventory.accessories),
+    };
+
+    useGameStore.setState(s => ({
+      run: {
+        ...s.run,
+        goldThisRun: s.run.goldThisRun - runeDef.costGold,
+      },
+      meta: {
+        ...s.meta,
+        enhanceStones: s.meta.enhanceStones - runeDef.costStones,
+        inventory: updatedInventory,
+      },
+    }));
+
+    setFeedback({
+      type: 'success',
+      message: `🔮 [${selectedBase.name}]에 [${runeDef.nameKR}] 각인 완료! (${runeDef.element} 속성 부여, 속성 피해 +${runeDef.elementalBonusPercent}%)`,
+    });
+  };
+
   return (
     <div
       data-testid="reforge-modal-backdrop"
@@ -282,6 +325,23 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
             }}
           >
             장비 분해 (재료 획득)
+          </button>
+          <button
+            data-testid="tab-enchant"
+            onClick={() => { setActiveTab('enchant'); setFeedback(null); }}
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              background: activeTab === 'enchant' ? '#252a3a' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'enchant' ? '2px solid #a855f7' : 'none',
+              color: activeTab === 'enchant' ? '#a855f7' : '#888',
+              fontWeight: activeTab === 'enchant' ? 'bold' : 'normal',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            속성 각인 (인챈트)
           </button>
         </div>
 
@@ -494,7 +554,7 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
                 </div>
               ) : null}
             </div>
-          ) : (
+          ) : activeTab === 'dismantle' ? (
             /* Dismantle Tab */
             <div>
               {/* Batch dismantle actions */}
@@ -609,6 +669,130 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
                   })
                 )}
               </div>
+            </div>
+          ) : (
+            /* Enchant Tab */
+            <div>
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>각인할 장비 선택:</div>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 16 }}>
+                {allItems.length === 0 ? (
+                  <div style={{ fontSize: 13, color: '#666' }}>보유 중인 장비가 없습니다.</div>
+                ) : (
+                  allItems.map(it => {
+                    const base = getEquipmentBase(it.baseId);
+                    if (!base) return null;
+                    const isSelected = (selectedItem?.instanceId ?? '') === it.instanceId;
+                    const currentElem = getEffectiveElement(it);
+                    return (
+                      <button
+                        key={it.instanceId}
+                        data-testid={`enchant-select-item-${it.instanceId}`}
+                        onClick={() => { setSelectedInstanceId(it.instanceId); setFeedback(null); }}
+                        style={{
+                          flexShrink: 0,
+                          padding: '6px 10px',
+                          borderRadius: 8,
+                          border: `1px solid ${isSelected ? '#a855f7' : '#333'}`,
+                          background: isSelected ? '#2e1065' : '#181b26',
+                          color: RARITY_COLORS[base.rarity],
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontSize: 12,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span>{formatEnhancedName(base.name, it.enhanceLv)}</span>
+                          <ElementalBadge element={currentElem} size="sm" hideNeutral />
+                        </div>
+                        <div style={{ fontSize: 10, color: '#666' }}>{base.slot}</div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {selectedItem && selectedBase && (
+                <div style={{ background: '#1e2230', borderRadius: 8, padding: 16, border: '1px solid #2e3440' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div>
+                      <strong style={{ fontSize: 16, color: RARITY_COLORS[selectedBase.rarity] }}>
+                        {formatEnhancedName(selectedBase.name, selectedItem.enhanceLv)}
+                      </strong>
+                      <span style={{ marginLeft: 8 }}>
+                        <ElementalBadge element={getEffectiveElement(selectedItem)} size="md" />
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>각인할 속성 룬 선택:</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+                    {ALL_RUNES.map(r => {
+                      const rDef = getRuneDef(r);
+                      const isRuneSelected = selectedRune === r;
+                      return (
+                        <button
+                          key={r}
+                          data-testid={`rune-btn-${r}`}
+                          onClick={() => setSelectedRune(r)}
+                          style={{
+                            padding: 10,
+                            borderRadius: 6,
+                            border: `1px solid ${isRuneSelected ? rDef.color : '#334155'}`,
+                            background: isRuneSelected ? '#252a3a' : '#151822',
+                            color: rDef.color,
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>
+                            {rDef.emoji} {rDef.nameKR}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                            💰 {rDef.costGold.toLocaleString()}G + 💎 {rDef.costStones}개
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {(() => {
+                    const rDef = getRuneDef(selectedRune);
+                    const canAfford = canEnchantWithRune(selectedRune, run.goldThisRun, meta.enhanceStones);
+                    return (
+                      <div>
+                        <div style={{ background: '#151822', padding: 10, borderRadius: 6, marginBottom: 14, fontSize: 12 }}>
+                          <div style={{ color: rDef.color, fontWeight: 'bold', marginBottom: 4 }}>
+                            {rDef.emoji} {rDef.nameKR} 각인 효과:
+                          </div>
+                          <div style={{ color: '#ccc', marginBottom: 4 }}>{rDef.description}</div>
+                          <div style={{ color: '#fbbf24' }}>
+                            소모: {rDef.costGold.toLocaleString()}G + 강화석 {rDef.costStones}개
+                          </div>
+                        </div>
+
+                        <button
+                          data-testid="enchant-btn"
+                          disabled={!canAfford}
+                          onClick={handleEnchant}
+                          style={{
+                            width: '100%',
+                            padding: '12px 0',
+                            borderRadius: 8,
+                            border: 'none',
+                            background: canAfford ? '#7c3aed' : '#334155',
+                            color: canAfford ? '#fff' : '#64748b',
+                            fontWeight: 'bold',
+                            fontSize: 15,
+                            cursor: canAfford ? 'pointer' : 'not-allowed',
+                          }}
+                        >
+                          {!canAfford ? '비용 부족 (골드 또는 강화석)' : '룬 각인 실행'}
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           )}
         </div>

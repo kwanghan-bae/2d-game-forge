@@ -109,4 +109,24 @@ describe('C1034: ReforgeModal Component Tests', () => {
     expect(state.meta.inventory.weapons).toHaveLength(1);
     expect(state.meta.inventory.weapons[0].instanceId).toBe('w-knife-1');
   });
+
+  it('enchant tab infuses elemental rune and updates equipment enchantElement', () => {
+    render(<ReforgeModal onClose={() => {}} initialTab="enchant" />);
+
+    expect(screen.getByText('각인할 속성 룬 선택:')).toBeDefined();
+
+    // Select lightning rune
+    const lightningRuneBtn = screen.getByTestId('rune-btn-rune_lightning');
+    fireEvent.click(lightningRuneBtn);
+
+    const enchantBtn = screen.getByTestId('enchant-btn');
+    expect(enchantBtn).not.toBeDisabled();
+
+    fireEvent.click(enchantBtn);
+
+    const state = useGameStore.getState();
+    const enchantedItem = state.meta.inventory.weapons[0];
+    expect(enchantedItem.enchantElement).toBe('lightning');
+    expect(screen.getByTestId('reforge-feedback').textContent).toContain('각인 완료');
+  });
 });
