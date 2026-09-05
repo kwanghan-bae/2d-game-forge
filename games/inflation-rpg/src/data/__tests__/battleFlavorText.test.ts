@@ -5,6 +5,7 @@ import {
   getCloseCallMessage,
   getCriticalHitMessage,
   getComboMessage,
+  getPerkReviveMessage,
 } from '../battleFlavorText';
 
 describe('battleFlavorText — C130', () => {
@@ -38,5 +39,12 @@ describe('battleFlavorText — C130', () => {
     expect(getComboMessage(5)).toBe('연타 개시!');
     expect(getComboMessage(10)).toBe('멈출 수 없는 기세!');
     expect(getComboMessage(20)).toBe('전설의 연격!');
+  });
+
+  it('C1017: getPerkReviveMessage returns non-empty revive message', () => {
+    const msg = getPerkReviveMessage(0);
+    expect(msg).toContain('불굴의 의지');
+    expect(msg).toContain('부활');
+    expect(getPerkReviveMessage(1)).toContain('30%');
   });
 });

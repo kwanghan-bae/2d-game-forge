@@ -6,7 +6,8 @@ type SpectacleItem =
   | { id: string; kind: 'inflation_rush' }
   | { id: string; kind: 'inflation_rush_cashout'; gold: number }
   | { id: string; kind: 'vc_progress'; current: number; total: number; hpPercent: number }
-  | { id: string; kind: 'vc_survival_burst'; value: number };
+  | { id: string; kind: 'vc_survival_burst'; value: number }
+  | { id: string; kind: 'perk_revive' };
 
 interface Props {
   queue: readonly SpectacleItem[];
@@ -31,6 +32,7 @@ export function EventSpectacleLayer({ queue, onDone }: Props) {
     else if (current.kind === 'inflation_rush') playSfx('levelup');
     else if (current.kind === 'inflation_rush_cashout') playSfx('coin');
     else if (current.kind === 'vc_survival_burst') playSfx('boss-victory');
+    else if (current.kind === 'perk_revive') playSfx('levelup', 1.2);
     const timer = setTimeout(() => {
       onDone(current.id);
       setCurrent(null);
@@ -85,6 +87,15 @@ export function EventSpectacleLayer({ queue, onDone }: Props) {
           textShadow: '0 0 15px #ffaa00',
         }}>
           🏆 돌파 성공! +{current.value} EXP 🏆
+        </div>
+      )}
+      {current.kind === 'perk_revive' && (
+        <div style={{
+          fontSize: 24, fontWeight: 900, color: '#44ddff',
+          textShadow: '0 0 20px #0088ff, 0 0 35px #0044cc',
+          animation: 'spectacle-pop 0.3s ease-out',
+        }}>
+          🛡️ 불굴의 의지 발동! (HP 30% 부활) 🛡️
         </div>
       )}
     </div>

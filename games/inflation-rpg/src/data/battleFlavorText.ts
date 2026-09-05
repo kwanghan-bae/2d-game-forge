@@ -134,6 +134,17 @@ export function getMercyMessage(seed: number): string {
   return MERCY_MESSAGES[seed % MERCY_MESSAGES.length];
 }
 
+// C1017: Perk revive messages
+const PERK_REVIVE_MESSAGES = [
+  '🛡️ 불굴의 의지! 죽음의 문턱에서 부활했습니다!',
+  '🛡️ 꺾이지 않는 영혼! 기적처럼 일어섰다! (HP 30%)',
+  '🛡️ 불굴의 투혼! 아직 쓰러질 때가 아니다!',
+] as const;
+
+export function getPerkReviveMessage(seed: number): string {
+  return PERK_REVIVE_MESSAGES[seed % PERK_REVIVE_MESSAGES.length];
+}
+
 // C150: wave mechanic messages
 const WAVE_STARTED_MESSAGES = [
   '웨이브 시작! 연속 전투!',

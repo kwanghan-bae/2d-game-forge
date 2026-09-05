@@ -6,7 +6,7 @@ import { getLightRateMul, getMoveSpeedMul } from '../buff/buffEffects';
 import { REALM_CATALOG } from '../data/realms';
 import { getRealmLore } from '../data/realmLore';
 import { formatCompact } from '../systems/numberFormat';
-import { getOverkillMessage, getDangerZoneMessage, getCloseCallMessage, getCriticalHitMessage, getBossRageMessage, getEliteMessage, getVillageRestMessage, getFirstBloodMessage, getRevengeKillMessage, getLuckyDodgeMessage, getMercyMessage } from '../data/battleFlavorText';
+import { getOverkillMessage, getDangerZoneMessage, getCloseCallMessage, getCriticalHitMessage, getBossRageMessage, getEliteMessage, getVillageRestMessage, getFirstBloodMessage, getRevengeKillMessage, getLuckyDodgeMessage, getMercyMessage, getPerkReviveMessage } from '../data/battleFlavorText';
 import type { SagaEvent } from '../saga/SagaTypes';
 import { getNpcKindEmoji } from '../data/npcs';
 import type { NpcEntity } from '../types';
@@ -398,6 +398,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             evs.some(e => e.type === 'event_fairy') ? '🧚 요정의 축복!' :
             evs.some(e => e.type === 'event_time_rift') ? '⏳ 시간의 균열!' :
             evs.some(e => e.type === 'event_chain_reward') ? '🎊 이벤트 체인 보상!' :
+            evs.some(e => e.type === 'perk_revive') ? getPerkReviveMessage(tick) :
             evs.some(e => e.type === 'lucky_dodge') ? getLuckyDodgeMessage(tick) :
             evs.some(e => e.type === 'revenge_kill') ? getRevengeKillMessage(tick) :
             evs.some(e => e.type === 'first_blood') ? getFirstBloodMessage(tick) :
@@ -491,6 +492,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
            if (ev.type === 'vc_survival_burst') {
              setSpectacleQueue(q => [...q, { id: `vs-${Date.now()}`, kind: 'vc_survival_burst', value: ev.value }]);
            }
+            if (ev.type === 'perk_revive') {
+              setSpectacleQueue(q => [...q, { id: `pr-${Date.now()}`, kind: 'perk_revive' }]);
+            }
           }
           // V3-H F6: season changed → update scene bg tint. Store already updated by controller.
           const seasonChanged = evs.find(e => e.type === 'season_changed');
