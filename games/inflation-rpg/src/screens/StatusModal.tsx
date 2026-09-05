@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { BUFF_CATALOG } from '../buff/catalog';
@@ -9,6 +9,7 @@ import { getBackstory } from '../data/characterBackstories';
 import { EQUIPMENT_FLAVOR } from '../data/equipmentFlavor';
 import { formatCompact } from '../systems/numberFormat';
 import { EquipmentSetBadge, EquipmentSetSummaryPanel } from '../components/EquipmentSetBadge';
+import { ReforgeModal } from '../components/ReforgeModal';
 
 interface Props {
   onClose: () => void;
@@ -19,6 +20,7 @@ export function StatusModal({ onClose }: Props) {
   const run = useGameStore(s => s.run);
   const controller = useCycleStoreV2(s => s.controller);
   const hero = controller?.getHero();
+  const [showReforge, setShowReforge] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -159,8 +161,26 @@ export function StatusModal({ onClose }: Props) {
 
           {/* 장비 */}
           <section>
-            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 4 }}>
-              장착 장비 ({equippedItems.length}/{meta.equipSlotCount})
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontSize: 12, color: '#aaa' }}>
+                장착 장비 ({equippedItems.length}/{meta.equipSlotCount})
+              </div>
+              <button
+                data-testid="open-reforge-modal-btn"
+                onClick={() => setShowReforge(true)}
+                style={{
+                  background: '#2563eb',
+                  border: 'none',
+                  borderRadius: 4,
+                  padding: '2px 8px',
+                  color: '#fff',
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                ⚒️ 대장간 (강화/분해)
+              </button>
             </div>
             {equippedItems.length === 0 ? (
               <div style={{ fontSize: 13, opacity: 0.5 }}>(장착 없음)</div>
@@ -232,6 +252,7 @@ export function StatusModal({ onClose }: Props) {
           <DeathCountSection />
         </div>
       </div>
+      {showReforge && <ReforgeModal onClose={() => setShowReforge(false)} />}
     </div>
   );
 }
