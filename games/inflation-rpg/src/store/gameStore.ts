@@ -177,10 +177,11 @@ export const INITIAL_META: MetaState = {
   battleSpeed: 1,
   gambitPolicy: 'always',
   bestiary: {},
-  // C1043 & C1051 — Ascension Trials & Pet Systems
+  // C1043 & C1051 & C1057 — Ascension Trials, Pet, & Zodiac Systems
   ascensionTrialClearedFloor: 0,
   pets: createInitialPets(),
   activePetId: 'white_tiger',
+  zodiacUnlocked: [],
 };
 
 interface GameStore {

@@ -352,6 +352,8 @@ export interface MetaState {
   pets?: Record<string, import('./systems/petSystem').PetState>;
   /** C1051 — 현재 동행 중인 영수 ID. */
   activePetId?: import('./systems/petSystem').PetType | null;
+  /** C1057 — 해금된 십이지신 성좌 목록. */
+  zodiacUnlocked?: import('./systems/zodiacSystem').ZodiacSign[];
 }
 
 // Phase G — Ascension Tree (성좌)
