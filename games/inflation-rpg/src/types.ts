@@ -346,6 +346,12 @@ export interface MetaState {
   gambitPolicy: 'always' | 'never' | 'hp_above_half';
   /** Cycle 10 — 몬스터 도감 처치 횟수. monsterId → kill count. */
   bestiary: Record<string, number>;
+  /** C1043 — 승천의 시련 최고 클리어 층수. */
+  ascensionTrialClearedFloor?: number;
+  /** C1051 — 4대 영수/신수 상태 딕셔너리. */
+  pets?: Record<string, import('./systems/petSystem').PetState>;
+  /** C1051 — 현재 동행 중인 영수 ID. */
+  activePetId?: import('./systems/petSystem').PetType | null;
 }
 
 // Phase G — Ascension Tree (성좌)

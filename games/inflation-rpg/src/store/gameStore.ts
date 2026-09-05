@@ -41,6 +41,7 @@ import { evaluateAchievements } from '../data/achievementsLogic';
 import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCatalog';
 import { getTierUnlockBonus } from '../data/claimerTier';
 import type { AchievementProgress } from '../data/achievementsTypes';
+import { createInitialPets } from '../systems/petSystem';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -176,6 +177,10 @@ export const INITIAL_META: MetaState = {
   battleSpeed: 1,
   gambitPolicy: 'always',
   bestiary: {},
+  // C1043 & C1051 — Ascension Trials & Pet Systems
+  ascensionTrialClearedFloor: 0,
+  pets: createInitialPets(),
+  activePetId: 'white_tiger',
 };
 
 interface GameStore {
