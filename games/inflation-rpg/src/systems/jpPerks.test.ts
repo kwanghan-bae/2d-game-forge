@@ -36,6 +36,20 @@ describe('jpPerks', () => {
       const result = canPurchasePerk('exp_momentum', ['cycle_speed'], 100);
       expect(result.canBuy).toBe(true);
     });
+
+    it('C1021: Tier 2 perks enforce prerequisites correctly', () => {
+      expect(canPurchasePerk('crit_mastery', [], 50).canBuy).toBe(false);
+      expect(canPurchasePerk('crit_mastery', ['crit_cascade'], 50).canBuy).toBe(true);
+
+      expect(canPurchasePerk('boss_slayer', [], 50).canBuy).toBe(false);
+      expect(canPurchasePerk('boss_slayer', ['boss_bounty'], 50).canBuy).toBe(true);
+
+      expect(canPurchasePerk('wealth_barrier', [], 50).canBuy).toBe(false);
+      expect(canPurchasePerk('wealth_barrier', ['gold_interest'], 50).canBuy).toBe(true);
+
+      expect(canPurchasePerk('relic_affinity', [], 50).canBuy).toBe(false);
+      expect(canPurchasePerk('relic_affinity', ['drop_luck'], 50).canBuy).toBe(true);
+    });
   });
 
   describe('purchasePerk', () => {
@@ -62,6 +76,14 @@ describe('jpPerks', () => {
       expect(fx.cycleSpeedMul).toBe(0.9);
       expect(fx.bossGoldMul).toBe(1.5);
       expect(fx.reviveEnabled).toBe(true);
+    });
+
+    it('C1021: activates Tier 2 advanced perks', () => {
+      const fx = getActivePerkEffects(['crit_mastery', 'boss_slayer', 'wealth_barrier', 'relic_affinity']);
+      expect(fx.critDamageBonus).toBe(0.5);
+      expect(fx.bossDamageBonus).toBe(0.25);
+      expect(fx.goldBarrierRate).toBe(0.01);
+      expect(fx.relicFindBonus).toBe(0.2);
     });
   });
 
