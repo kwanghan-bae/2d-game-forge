@@ -6,6 +6,7 @@ import {
   getCriticalHitMessage,
   getComboMessage,
   getPerkReviveMessage,
+  getBossPhaseShiftMessage,
 } from '../battleFlavorText';
 
 describe('battleFlavorText — C130', () => {
@@ -46,5 +47,13 @@ describe('battleFlavorText — C130', () => {
     expect(msg).toContain('불굴의 의지');
     expect(msg).toContain('부활');
     expect(getPerkReviveMessage(1)).toContain('30%');
+  });
+
+  it('C1030: getBossPhaseShiftMessage returns phase 2 warning message', () => {
+    const msg0 = getBossPhaseShiftMessage(0);
+    expect(msg0).toContain('폭주');
+    expect(msg0).toContain('페이즈 2');
+    const msg1 = getBossPhaseShiftMessage(1);
+    expect(msg1).toContain('페이즈 2');
   });
 });

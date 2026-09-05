@@ -145,6 +145,17 @@ export function getPerkReviveMessage(seed: number): string {
   return PERK_REVIVE_MESSAGES[seed % PERK_REVIVE_MESSAGES.length];
 }
 
+// C1030: Boss Phase Shift messages
+const BOSS_PHASE_SHIFT_MESSAGES = [
+  '⚠️ 보스 폭주! 페이즈 2에 돌입했습니다! (공격력 급증 & 방벽 전개)',
+  '⚠️ 보스가 진정한 힘을 드러냅니다! 페이즈 2 전환!',
+  '⚠️ 전장에 위압감이 감돕니다! 보스 페이즈 2 폭주!',
+] as const;
+
+export function getBossPhaseShiftMessage(seed: number): string {
+  return BOSS_PHASE_SHIFT_MESSAGES[seed % BOSS_PHASE_SHIFT_MESSAGES.length];
+}
+
 // C150: wave mechanic messages
 const WAVE_STARTED_MESSAGES = [
   '웨이브 시작! 연속 전투!',

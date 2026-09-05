@@ -7,7 +7,8 @@ type SpectacleItem =
   | { id: string; kind: 'inflation_rush_cashout'; gold: number }
   | { id: string; kind: 'vc_progress'; current: number; total: number; hpPercent: number }
   | { id: string; kind: 'vc_survival_burst'; value: number }
-  | { id: string; kind: 'perk_revive' };
+  | { id: string; kind: 'perk_revive' }
+  | { id: string; kind: 'boss_phase_shift'; enrageAtkMul: number };
 
 interface Props {
   queue: readonly SpectacleItem[];
@@ -33,6 +34,7 @@ export function EventSpectacleLayer({ queue, onDone }: Props) {
     else if (current.kind === 'inflation_rush_cashout') playSfx('coin');
     else if (current.kind === 'vc_survival_burst') playSfx('boss-victory');
     else if (current.kind === 'perk_revive') playSfx('levelup', 1.2);
+    else if (current.kind === 'boss_phase_shift') playSfx('boss-victory', 0.8);
     const timer = setTimeout(() => {
       onDone(current.id);
       setCurrent(null);
@@ -96,6 +98,15 @@ export function EventSpectacleLayer({ queue, onDone }: Props) {
           animation: 'spectacle-pop 0.3s ease-out',
         }}>
           🛡️ 불굴의 의지 발동! (HP 30% 부활) 🛡️
+        </div>
+      )}
+      {current.kind === 'boss_phase_shift' && (
+        <div data-testid="spectacle-boss-phase-shift" style={{
+          fontSize: 26, fontWeight: 900, color: '#ff3344',
+          textShadow: '0 0 20px #cc0000, 0 0 35px #880000',
+          animation: 'spectacle-pop 0.3s ease-out',
+        }}>
+          ⚠️ BOSS PHASE 2: 폭주 돌입! (공격력 ×{current.enrageAtkMul}) ⚠️
         </div>
       )}
     </div>
