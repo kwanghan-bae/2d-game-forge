@@ -300,3 +300,34 @@ export function formatEnhancedName(baseName: string, enhanceLv: number): string 
   if (!enhanceLv || enhanceLv <= 0) return baseName;
   return `+${enhanceLv} ${baseName}`;
 }
+
+/**
+ * C1037: Aggregates combat stat amplification from all currently equipped enhanced gear.
+ * - Weapons: Grants additive ATK multiplier bonus based on enhancement stat multiplier.
+ * - Armors: Grants 1% Damage Reduction per enhance level (capped at 15%).
+ */
+export function aggregateReforgeBonus(equipped: EquipmentInstance[]): {
+  atkMulBonus: number;
+  armorDrBonus: number;
+} {
+  let atkMulBonus = 0;
+  let armorDrBonus = 0;
+
+  for (const inst of equipped) {
+    const lv = inst.enhanceLv ?? 0;
+    if (lv <= 0) continue;
+    const base = getEquipmentBase(inst.baseId);
+    if (!base) continue;
+
+    if (base.slot === 'weapon') {
+      atkMulBonus += (getReforgedStatMultiplier(base.rarity, lv) - 1);
+    } else if (base.slot === 'armor') {
+      armorDrBonus += lv * 0.01;
+    }
+  }
+
+  return {
+    atkMulBonus,
+    armorDrBonus: Math.min(0.15, armorDrBonus),
+  };
+}

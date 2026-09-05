@@ -19,6 +19,7 @@ import { getEquippedInstances } from '../systems/equipment';
 import { getDirectiveEffects } from '../systems/sponsorDirective';
 import { getActivePerkEffects, type JpPerkId } from '../systems/jpPerks';
 import { aggregateSetEffects } from '../systems/equipmentSets';
+import { aggregateReforgeBonus } from '../systems/reforgeSystem';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -88,6 +89,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         );
         const effects = getActiveSpecialEffects(eqInst);
         const setEffects = aggregateSetEffects(eqInst.map(e => e.baseId));
+        const reforgeBonus = aggregateReforgeBonus(eqInst);
         const dEff = getDirectiveEffects(useGameStore.getState().run.directive ?? null);
         const charId = useGameStore.getState().run.characterId;
         const perks = (useGameStore.getState().meta.jpPerksOwned?.[charId] ?? []) as JpPerkId[];
@@ -109,6 +111,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           perkBossDamageBonus: (perkFx.bossDamageBonus ?? 0) + (setEffects.bossDamageBonus ?? 0),
           perkGoldBarrierRate: perkFx.goldBarrierRate,
           perkRelicFindBonus: perkFx.relicFindBonus,
+          reforgeArmorDrBonus: reforgeBonus.armorDrBonus,
         };
       })(),
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {
@@ -129,17 +132,16 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           const prks = (meta.jpPerksOwned?.[cId] ?? []) as JpPerkId[];
           return getActivePerkEffects(prks).dropRateBonus;
         })();
-        const setEffects = (() => {
-          const eqInst = getEquippedInstances(meta.inventory, meta.equippedItemIds);
-          return aggregateSetEffects(eqInst.map(e => e.baseId));
-        })();
+        const eqInst = getEquippedInstances(meta.inventory, meta.equippedItemIds);
+        const setEffects = aggregateSetEffects(eqInst.map(e => e.baseId));
+        const reforgeBonus = aggregateReforgeBonus(eqInst);
         return {
           dropChanceBonus: getDropChanceBonus(meta) * sBonus.dropMul
             + getDirectiveEffects(state.run.directive ?? null).dropRateBonus
             + perkDropBonus
             + setEffects.dropRateBonus,
           agingSpeedMul: getAgingSpeedMul(meta),
-          damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul * (1 + setEffects.atkMulBonus),
+          damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul * (1 + setEffects.atkMulBonus + reforgeBonus.atkMulBonus),
         };
       }),
       onBossKill: opts.onBossKill ?? ((current) => {

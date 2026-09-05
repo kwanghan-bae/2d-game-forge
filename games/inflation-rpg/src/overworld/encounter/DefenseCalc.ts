@@ -43,6 +43,7 @@ export interface DefenseContext {
   titanArenaActive: boolean; // C797: enemy ATK×1.3
   astralParadoxActive: boolean; // C800: enemy ATK×1.8
   perkGoldBarrierRate?: number; // C1023: damage reduction per 10k gold (cap 25%)
+  reforgeArmorDrBonus?: number; // C1037: damage reduction from enhanced armor (cap 15%)
 }
 
 /**
@@ -79,7 +80,12 @@ export function computeDamageReduction(ctx: DefenseContext): number {
     : 0;
   const goldBarrierMul = 1 - goldBarrierDr;
 
-  const drDefenseMuls = mercyMul * shieldMul * armorMul * goldArmorMul * vigorMul * goldBarrierMul;
+  // C1037: reforge armor DR — capped at 15% (0.15)
+  const reforgeArmorMul = (ctx.reforgeArmorDrBonus && ctx.reforgeArmorDrBonus > 0)
+    ? (1 - Math.min(0.15, ctx.reforgeArmorDrBonus))
+    : 1;
+
+  const drDefenseMuls = mercyMul * shieldMul * armorMul * goldArmorMul * vigorMul * goldBarrierMul * reforgeArmorMul;
   const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
   const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul * colosseumDmgMul * fogAmbushDmgMul * snowDriftDmgMul * titanArenaDmgMul * astralParadoxDmgMul;
 

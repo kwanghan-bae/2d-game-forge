@@ -126,6 +126,8 @@ export interface EncounterEngineOpts {
   perkBossDamageBonus?: number;
   perkGoldBarrierRate?: number;
   perkRelicFindBonus?: number;
+  /** C1037: Armor reforge damage reduction */
+  reforgeArmorDrBonus?: number;
 }
 
 export class EncounterEngine {
@@ -1210,6 +1212,7 @@ export class EncounterEngine {
             abyssalConvergenceActive: this.abyssalConvergenceRemaining > 0,
             titanArenaActive: this.midGameBuffs.isActive('titan_arena'), astralParadoxActive: this.midGameBuffs.isActive('astral_paradox'), crimsonTitheActive: this.midGameBuffs.isActive('crimson_tithe'),
             perkGoldBarrierRate: this.opts.perkGoldBarrierRate,
+            reforgeArmorDrBonus: this.opts.reforgeArmorDrBonus,
           });
           const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.midGameBuffs.isActive('merc_shield') ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.midGameBuffs.isActive('rep_shield') ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('vt_shield') ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('fr_shield') ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
           // C380: prestige shield blocks hits

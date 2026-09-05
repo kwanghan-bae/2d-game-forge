@@ -85,6 +85,8 @@ export interface CycleControllerV2Opts {
   perkBossDamageBonus?: number;
   perkGoldBarrierRate?: number;
   perkRelicFindBonus?: number;
+  /** C1037: Reforged armor damage reduction */
+  reforgeArmorDrBonus?: number;
 }
 
 export class CycleControllerV2 {
@@ -236,6 +238,7 @@ export class CycleControllerV2 {
       perkBossDamageBonus: opts.perkBossDamageBonus ?? 0,
       perkGoldBarrierRate: opts.perkGoldBarrierRate ?? 0,
       perkRelicFindBonus: opts.perkRelicFindBonus ?? 0,
+      reforgeArmorDrBonus: opts.reforgeArmorDrBonus ?? 0,
     });
     if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);
