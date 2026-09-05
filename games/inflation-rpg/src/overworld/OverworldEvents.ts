@@ -166,4 +166,6 @@ export type OverworldEvent =
   // C959: Veteran's Challenge player choice pending
   | { type: 'veterans_challenge_choice' }
   // C959: Veteran's Challenge resolved
-  | { type: 'event_veterans_challenge'; accepted: boolean; duration: number };
+  | { type: 'event_veterans_challenge'; accepted: boolean; duration: number }
+  // C1016: Revive perk activated
+  | { type: 'perk_revive'; enemyId: string };

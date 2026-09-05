@@ -119,6 +119,8 @@ export interface EncounterEngineOpts {
   perkBossGoldMul?: number;
   perkDropRateBonus?: number;
   perkExpMomentumRate?: number;
+  /** C1016: revive perk — once per cycle, prevent death */
+  perkReviveEnabled?: boolean;
 }
 
 export class EncounterEngine {
@@ -157,6 +159,7 @@ export class EncounterEngine {
   private arenaActive = false; // C212: next fight is arena
   private caveVisits = 0; // C214: total cave visits
   private expShieldUsed = false; // C215: one-time exp preservation
+  private perkReviveUsed = false; // C1016: one-time perk revive
   private eliteCombo = 0; // C216: consecutive elite kills
   private fightsSinceSpend = 0; // C218: fights without spending gold
   private totalDeaths = 0; // C219: total death count
@@ -958,7 +961,7 @@ export class EncounterEngine {
       // C980: Inflation Burst — rare ×100 ATK for 1 fight (power fantasy moment)
       const inflBurstFights = this.totalWins + this.totalDeaths;
       if (inflBurstFights >= INFLATION_BURST_MIN_FIGHT && inflBurstFights <= INFLATION_BURST_MAX_FIGHT
-        && !this.midGameBuffs.isActive('inflation_burst') && this.rng() < INFLATION_BURST_CHANCE) {
+        && !this.midGameBuffs.isActive('inflation_burst') && this.rng.chance(INFLATION_BURST_CHANCE)) {
         this.midGameBuffs.activate('inflation_burst', 1);
         events.push({ type: 'inflation_burst' });
       }
@@ -2505,6 +2508,14 @@ export class EncounterEngine {
       const oldLevel = hero.level;
       const pendingDeathPenaltyNewLevel = Math.max(1, Math.floor(hero.level * 0.90));
       events.push({ type: 'fate_roll_required', enemyId: landmarkId, oldLevel, pendingDeathPenaltyNewLevel });
+      return events;
+    }
+    // C1016: revive_once perk — save from death once per cycle (30% HP)
+    if (!this.perkReviveUsed && this.opts.perkReviveEnabled) {
+      this.perkReviveUsed = true;
+      hero.staggered = false;
+      hero.hp = Math.max(1, Math.floor(hero.hpMax * 0.3));
+      events.push({ type: 'perk_revive', enemyId: landmarkId });
       return events;
     }
     // V3-H E1: hero died in battle — apply -10% level penalty and emit event.

@@ -193,7 +193,7 @@ export interface RunState {
   /** V3-H B2 — 마지막 저장 시점의 hero snapshot. null = 새 cycle 시작 필요. */
   heroSnapshot: import('./hero/HeroEntity').HeroSnapshot | null;
   /** C1008 — chosen sponsor directive for current cycle. null = no directive. */
-  directive: SponsorDirective | null;
+  directive?: SponsorDirective | null;
 }
 
 export type BuffId =

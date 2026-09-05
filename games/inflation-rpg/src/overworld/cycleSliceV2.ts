@@ -102,6 +102,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
           perkBossGoldMul: perkFx.bossGoldMul,
           perkDropRateBonus: perkFx.dropRateBonus,
           perkExpMomentumRate: perkFx.expMomentumRate,
+          perkReviveEnabled: perkFx.reviveEnabled,
         };
       })(),
       getBuffSnapshot: opts.getBuffSnapshot ?? (() => {

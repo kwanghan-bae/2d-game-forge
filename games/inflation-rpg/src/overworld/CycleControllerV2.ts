@@ -78,6 +78,8 @@ export interface CycleControllerV2Opts {
   perkBossGoldMul?: number;
   perkDropRateBonus?: number;
   perkExpMomentumRate?: number;
+  /** C1016 — revive perk */
+  perkReviveEnabled?: boolean;
 }
 
 export class CycleControllerV2 {
@@ -223,6 +225,7 @@ export class CycleControllerV2 {
       perkBossGoldMul: opts.perkBossGoldMul ?? 1,
       perkDropRateBonus: opts.perkDropRateBonus ?? 0,
       perkExpMomentumRate: opts.perkExpMomentumRate ?? 0,
+      perkReviveEnabled: opts.perkReviveEnabled ?? false,
     });
     if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);

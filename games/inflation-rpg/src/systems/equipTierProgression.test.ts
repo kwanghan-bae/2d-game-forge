@@ -11,20 +11,21 @@ describe('equipment tier progression', () => {
   });
 
   it('higher rarity equipment tends to have higher total stats (top tier > bottom tier)', () => {
-    function avgFlat(rarity: EquipmentRarity): number {
+    function avgTotalStats(rarity: EquipmentRarity): number {
       const items = EQUIPMENT_BASES.filter(e => e.rarity === rarity);
       if (items.length === 0) return 0;
       const total = items.reduce((sum, e) => {
-        const flats = Object.values(e.baseStats.flat ?? {});
-        return sum + flats.reduce((s, v) => s + (v ?? 0), 0);
+        const flats = Object.values(e.baseStats.flat ?? {}).reduce((s, v) => s + (v ?? 0), 0);
+        const pcts = Object.values(e.baseStats.percent ?? {}).reduce((s, v) => s + (v ?? 0), 0);
+        return sum + flats + pcts;
       }, 0);
       return total / items.length;
     }
 
     // Top tier (epic+) should beat bottom tier (common)
-    const commonAvg = avgFlat('common');
-    const epicAvg = avgFlat('epic');
-    const legendaryAvg = avgFlat('legendary');
+    const commonAvg = avgTotalStats('common');
+    const epicAvg = avgTotalStats('epic');
+    const legendaryAvg = avgTotalStats('legendary');
     if (epicAvg > 0) expect(epicAvg).toBeGreaterThan(commonAvg);
     if (legendaryAvg > 0) expect(legendaryAvg).toBeGreaterThan(commonAvg);
   });

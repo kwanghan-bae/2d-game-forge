@@ -6,6 +6,9 @@ import {
   JP_PERKS,
   getPerkDef,
 } from './jpPerks';
+import { EncounterEngine } from '../overworld/EncounterEngine';
+import { HeroEntity } from '../hero/HeroEntity';
+import { SeededRng } from '../cycle/SeededRng';
 
 describe('jpPerks', () => {
   describe('canPurchasePerk', () => {
@@ -79,6 +82,29 @@ describe('jpPerks', () => {
 
     it('getPerkDef returns correct perk', () => {
       expect(getPerkDef('gold_interest')?.cost).toBe(10);
+    });
+  });
+
+  describe('C1016: revive_once perk combat effect', () => {
+    it('revives hero on first fatal combat and restores 30% HP', () => {
+      const hero = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 1 });
+      const engine = new EncounterEngine(new SeededRng(1), { perkReviveEnabled: true });
+      const events1 = engine.resolveEncounter(hero, 'boss', 'dragon_1');
+      expect(events1.some(e => e.type === 'perk_revive')).toBe(true);
+      expect(events1.some(e => e.type === 'hero_died')).toBe(false);
+      expect(hero.hp).toBe(Math.max(1, Math.floor(hero.hpMax * 0.3)));
+
+      const events2 = engine.resolveEncounter(hero, 'boss', 'dragon_1');
+      expect(events2.some(e => e.type === 'perk_revive')).toBe(false);
+      expect(events2.some(e => e.type === 'hero_died')).toBe(true);
+    });
+
+    it('does not revive if perkReviveEnabled is false', () => {
+      const hero = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 1 });
+      const engine = new EncounterEngine(new SeededRng(1), { perkReviveEnabled: false });
+      const events = engine.resolveEncounter(hero, 'boss', 'dragon_1');
+      expect(events.some(e => e.type === 'perk_revive')).toBe(false);
+      expect(events.some(e => e.type === 'hero_died')).toBe(true);
     });
   });
 });
