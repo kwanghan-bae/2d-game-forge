@@ -1,25 +1,25 @@
-# RESUME — v11
+# RESUME — v12
 
 ## 상태
-- Cycle: 1038
-- Target: 1050+ (연속 진화)
-- Last commit: C1038 milestone critic report and next mega-phase roadmap
-- Vitest: 274 passed / 2609 passed / 0 fail
+- Cycle: 1044
+- Target: 1050+ (대망의 C1050 마일스톤 목전)
+- Last commit: C1044 milestone critic report and next mega-phase roadmap
+- Vitest: 279 passed / 2639 passed / 0 fail
 - EncounterEngine: ~2885 lines
-- Critic score: 37.7/40 (C1038: 흥행 9.4 / 재미 9.5 / 몰입 9.3 / 플레이타임 9.5)
+- Critic score: 38.4/40 (C1044: 흥행 9.6 / 재미 9.6 / 몰입 9.5 / 플레이타임 9.7)
 
-## 주요 마일스톤 달성 사항 (C1033 ~ C1038)
-- **장비 분해 및 재연마 코어 엔진 (C1033)**: `reforgeSystem.ts` 구현, 미착용 장비 분해(강화석+골드 환급), 일괄 분해(`batchDismantleItems`), 파괴 없는 안전 강화(+1~+10, 대성공 +2 도약), 스탯 배율 계산기 구축
-- **대장간 재연마/분해 전용 모달 UI (C1034)**: `ReforgeModal.tsx` 구현 및 `StatusModal.tsx`에 '⚒️ 대장간 (강화/분해)' 버튼 결선, 실시간 강화석/골드 소모 및 강화 프리뷰 제공
-- **대장간 경제 & 강화 확률 밸런스 검증 (C1035)**: `reforgeBalance.test.ts` 500회/200회 몬테카를로 시뮬레이션을 통해 +5 도달 평균 ~5회, +10 도달 평균 ~20회, 무파괴 인밸리언트 및 +10 전설 3.0배 스탯 검증
-- **대장장이 NPC 대사 & 캐릭터 리액션 (C1036)**: `blacksmithFlavor.ts`를 통해 대장장이 작업/성공/대성공/실패 멘트 및 6대 캐릭터 아키타입별 고유 감정 대사 작성 및 `ReforgeModal` 피드백 결선
-- **강화 레벨 전투 스탯 실전 결선 (C1037)**: `reforgeCombatIntegration.test.ts`, `DefenseCalc.ts`(`reforgeArmorDrBonus`), `EncounterEngine.ts`, `CycleControllerV2.ts`, `cycleSliceV2.ts`(`damping` ATK 증폭 및 방어구 DR) 완전 바인딩
-- **C1038 마일스톤 비평 & 차기 메가 페이즈 수립 (C1038)**: 비평 보고서 발행 및 C1039~C1044 4대 속성 상성 및 승천 시련 로드맵 확정
+## 주요 마일스톤 달성 사항 (C1039 ~ C1044)
+- **4대 속성 상성 매트릭스 엔진 (C1039)**: `elementalSystem.ts` 화/수/뇌 3원소 환상 상성(1.5x 약점, 0.7x 저항) 및 암(1.25x 상호 격돌) 시스템 구축 및 주요 무기/보스 속성 바인딩
+- **속성 뱃지 & 약점 타격 배너 UI (C1040)**: `ElementalBadge.tsx` 구현, 이모지/컬러 속성 뱃지 및 `WEAKNESS! (1.5x)`, `RESIST (0.7x)`, `DARK CLASH! (1.25x)` 타격 인디케이터 배너 연동
+- **속성 상성 밸런스 & 보스 TTK 시뮬레이션 (C1041)**: `elementalBalance.test.ts` 상성비 2.14x 인밸리언트 검증 및 번개 보스 대상 불 무기 7턴 vs 물 무기 15턴(33% 턴 단축) 증명
+- **속성 전투 외침 & 보스 약점 도감 (C1042)**: `elementalFlavor.ts` 6대 아키타입별 약점/역상성 반응 대사 및 7대 보스 약점 해설 도감 플레이버 구축
+- **승천의 시련 10층 보스 러시 엔진 (C1043)**: `ascensionTrials.ts` 1층~10층 속성 보스 가운틀릿, 속성 배율/방어구 DR 전투 시뮬레이션 및 층별 강화석/골드/JP 보상 체계 완성
+- **C1044 마일스톤 비평 & 차기 메가 페이즈 수립 (C1044)**: 비평 보고서 발행 및 C1045~C1050 승천 시련 UI & 속성 룬 인챈트 로드맵 확정
 
-## 다음 진화 로드맵 (C1039–C1044: 속성 상성 & 승천 시련)
-- C1039 [system]: 4대 속성 상성(Elemental Affinities) 매트릭스 엔진 (`elementalSystem.ts`)
-- C1040 [ui]: 몬스터/보스 속성 뱃지 및 약점 타격 인디케이터 UI
-- C1041 [balance]: 속성 상성 대미지 배율(1.5x 약점, 0.7x 저항) 및 밸런스 시뮬레이션
-- C1042 [narrative]: 속성 반응 대사 및 마물 약점 해설록
-- C1043 [system]: 승천 시련(Ascension Trials) 보스 러시 엔진 및 `cycleSliceV2` 통합
-- C1044 [critic+collab]: C1044 마일스톤 비평 및 다음 Phase 기획
+## 다음 진화 로드맵 (C1045–C1050: 승천 시련 UI & 룬 인챈트)
+- C1045 [ui]: 승천의 시련(Ascension Trials) 전용 모달 UI (`AscensionTrialsModal.tsx`)
+- C1046 [system]: 대장간 룬 인챈트(Elemental Rune Enchanting) 엔진 (`enchantSystem.ts`)
+- C1047 [ui]: 대장간 인챈트 탭 및 룬 각인 연출 UI
+- C1048 [balance]: 룬 인챈트 경제 및 시련 10층 정복 시뮬레이션
+- C1049 [narrative]: 승천 칭호(Titles) 및 대장장이 룬 각인 플레이버
+- C1050 [critic+collab]: C1050 대망의 마일스톤 비평 및 2D Game Forge 총괄 회고
