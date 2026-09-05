@@ -8,6 +8,7 @@ import { findSkillById } from '../data/heroSkills';
 import { getBackstory } from '../data/characterBackstories';
 import { EQUIPMENT_FLAVOR } from '../data/equipmentFlavor';
 import { formatCompact } from '../systems/numberFormat';
+import { EquipmentSetBadge, EquipmentSetSummaryPanel } from '../components/EquipmentSetBadge';
 
 interface Props {
   onClose: () => void;
@@ -172,10 +173,13 @@ export function StatusModal({ onClose }: Props) {
                 const flavor = EQUIPMENT_FLAVOR[item.baseId];
                 return (
                   <div key={item.instanceId} style={{ marginBottom: 4 }}>
-                    <div style={{ fontSize: 13 }}>
-                      {name}
-                      {enhanceSuffix}
-                      {base ? ` (${base.slot})` : ''}
+                    <div style={{ fontSize: 13, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span>
+                        {name}
+                        {enhanceSuffix}
+                        {base ? ` (${base.slot})` : ''}
+                      </span>
+                      <EquipmentSetBadge baseId={item.baseId} />
                     </div>
                     {flavor && (
                       <div style={{ fontSize: 10, fontStyle: 'italic', color: '#6b7280', marginLeft: 8 }}>
@@ -186,6 +190,7 @@ export function StatusModal({ onClose }: Props) {
                 );
               })
             )}
+            <EquipmentSetSummaryPanel equippedBaseIds={equippedItems.map(i => i.baseId)} />
           </section>
 
           {/* 학습 스킬 */}
