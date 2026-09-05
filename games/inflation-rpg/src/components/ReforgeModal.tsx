@@ -15,6 +15,7 @@ import {
   type ReforgeOutcome,
 } from '../systems/reforgeSystem';
 import { getBlacksmithDialogue, getCharacterReforgeReaction } from '../data/blacksmithFlavor';
+import { getRuneEnchantBlacksmithQuote } from '../data/ascensionTitles';
 import {
   ALL_RUNES,
   getRuneDef,
@@ -219,9 +220,10 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
       },
     }));
 
+    const blacksmithQuote = getRuneEnchantBlacksmithQuote(selectedRune);
     setFeedback({
       type: 'success',
-      message: `🔮 [${selectedBase.name}]에 [${runeDef.nameKR}] 각인 완료! (${runeDef.element} 속성 부여, 속성 피해 +${runeDef.elementalBonusPercent}%)`,
+      message: `🔮 [${selectedBase.name}]에 [${runeDef.nameKR}] 각인 완료! "${blacksmithQuote}"`,
     });
   };
 

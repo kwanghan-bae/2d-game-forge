@@ -72,4 +72,19 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
     expect(state.meta.enhanceStones).toBeGreaterThan(10);
     expect(state.run.goldThisRun).toBeGreaterThan(1000);
   });
+
+  it('displays highest unlocked ascension title badge when cleared floor reaches milestone', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        ascensionTrialClearedFloor: 3,
+      } as any,
+    }));
+
+    render(<AscensionTrialsModal onClose={() => {}} />);
+    const badge = screen.getByTestId('ascension-title-badge');
+    expect(badge).toBeDefined();
+    expect(badge.textContent).toContain('시련의 도전자');
+  });
 });
+

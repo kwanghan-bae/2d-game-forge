@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 import { getEquippedInstances } from '../systems/equipment';
-import { getEquipmentElement } from '../systems/elementalSystem';
+import { getEffectiveElement } from '../systems/enchantSystem';
+import { getUnlockedTitles } from '../data/ascensionTitles';
 import { aggregateReforgeBonus } from '../systems/reforgeSystem';
 import { ElementalBadge, AffinityMatchBanner } from './ElementalBadge';
 import {
@@ -26,10 +27,12 @@ export function AscensionTrialsModal({ onClose }: Props) {
   // Determine hero attack element & armor DR bonus from equipped gear
   const eqInst = getEquippedInstances(meta.inventory, meta.equippedItemIds);
   const equippedWeapon = eqInst.find(i => i.baseId.startsWith('w-'));
-  const heroWeaponElement = equippedWeapon ? getEquipmentElement(equippedWeapon.baseId) : 'neutral';
+  const heroWeaponElement = equippedWeapon ? getEffectiveElement(equippedWeapon) : 'neutral';
   const reforgeBonus = aggregateReforgeBonus(eqInst);
 
   const clearedFloor = (meta as unknown as { ascensionTrialClearedFloor?: number }).ascensionTrialClearedFloor ?? 0;
+  const unlockedTitles = getUnlockedTitles(clearedFloor);
+  const highestTitle = unlockedTitles.length > 0 ? unlockedTitles[unlockedTitles.length - 1] : null;
 
   const [selectedFloor, setSelectedFloor] = useState<number>(
     Math.min(MAX_TRIAL_FLOOR, clearedFloor + 1),
@@ -117,6 +120,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 8 }}>
                 진행도: {clearedFloor}/{MAX_TRIAL_FLOOR}층
               </span>
+              {highestTitle && (
+                <span
+                  data-testid="ascension-title-badge"
+                  style={{
+                    fontSize: 11,
+                    color: '#fbbf24',
+                    background: '#451a03',
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    marginLeft: 8,
+                    border: '1px solid #d97706',
+                  }}
+                >
+                  {highestTitle.badge} {highestTitle.nameKR}
+                </span>
+              )}
             </div>
           </div>
           <button
