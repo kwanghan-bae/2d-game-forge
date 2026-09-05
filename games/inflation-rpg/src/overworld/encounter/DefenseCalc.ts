@@ -42,6 +42,7 @@ export interface DefenseContext {
   snowDriftActive: boolean; // C782: reduces enemy ATK
   titanArenaActive: boolean; // C797: enemy ATK×1.3
   astralParadoxActive: boolean; // C800: enemy ATK×1.8
+  perkGoldBarrierRate?: number; // C1023: damage reduction per 10k gold (cap 25%)
 }
 
 /**
@@ -72,8 +73,13 @@ export function computeDamageReduction(ctx: DefenseContext): number {
   const snowDriftDmgMul = ctx.snowDriftActive ? SNOW_DRIFT_DMG_MUL : 1; // C785: separated SPD≠DMG
   const titanArenaDmgMul = ctx.titanArenaActive ? TITAN_ARENA_ENEMY_ATK_MUL : 1; // C797
   const astralParadoxDmgMul = ctx.astralParadoxActive ? ASTRAL_PARADOX_ENEMY_ATK_MUL : 1; // C800
+  // C1023: wealth_barrier perk — 1% DR per 10,000 gold, capped at 25% (0.25)
+  const goldBarrierDr = (ctx.perkGoldBarrierRate && ctx.perkGoldBarrierRate > 0)
+    ? Math.min(0.25, Math.floor(ctx.heroGold / 10000) * ctx.perkGoldBarrierRate)
+    : 0;
+  const goldBarrierMul = 1 - goldBarrierDr;
 
-  const drDefenseMuls = mercyMul * shieldMul * armorMul * goldArmorMul * vigorMul;
+  const drDefenseMuls = mercyMul * shieldMul * armorMul * goldArmorMul * vigorMul * goldBarrierMul;
   const drShieldMuls = goldShieldMul * comboShieldMul * goldOverflowMul * bossShieldMul;
   const drContextMuls = nightDmgMul * prestigeDangerMasteryMul * goldThresholdDefMul * cursedAltarDmgMul * colosseumDmgMul * fogAmbushDmgMul * snowDriftDmgMul * titanArenaDmgMul * astralParadoxDmgMul;
 

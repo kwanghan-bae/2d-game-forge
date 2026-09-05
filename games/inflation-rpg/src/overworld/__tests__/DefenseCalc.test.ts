@@ -87,4 +87,21 @@ describe('DefenseCalc', () => {
     const colosseum = computeDamageReduction(makeCtx({ colosseumActive: true }));
     expect(colosseum).toBeCloseTo(base * 1.7, 5);
   });
+
+  it('C1023: perkGoldBarrierRate scales DR with gold and caps at 25%', () => {
+    // 10,000 gold with 0.01 rate = 1% reduction (multiplier 0.99)
+    const base10k = computeDamageReduction(makeCtx({ heroGold: 10000, perkGoldBarrierRate: 0 }));
+    const with10k = computeDamageReduction(makeCtx({ heroGold: 10000, perkGoldBarrierRate: 0.01 }));
+    expect(with10k).toBeCloseTo(base10k * 0.99, 5);
+
+    // 200,000 gold with 0.01 rate = 20% reduction (multiplier 0.80)
+    const base200k = computeDamageReduction(makeCtx({ heroGold: 200000, perkGoldBarrierRate: 0 }));
+    const with200k = computeDamageReduction(makeCtx({ heroGold: 200000, perkGoldBarrierRate: 0.01 }));
+    expect(with200k).toBeCloseTo(base200k * 0.80, 5);
+
+    // 300,000 gold capped at 25% reduction (multiplier 0.75)
+    const base300k = computeDamageReduction(makeCtx({ heroGold: 300000, perkGoldBarrierRate: 0 }));
+    const with300k = computeDamageReduction(makeCtx({ heroGold: 300000, perkGoldBarrierRate: 0.01 }));
+    expect(with300k).toBeCloseTo(base300k * 0.75, 5);
+  });
 });

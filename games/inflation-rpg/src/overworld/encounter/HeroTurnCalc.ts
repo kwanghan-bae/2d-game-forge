@@ -35,6 +35,8 @@ export interface HeroTurnInput {
   critComboSynergyBonus: number;
   desperateTradeActive: boolean;
   desperateTradeCritMul: number;
+  /** C1023: Tier 2 JP perk crit_mastery (+50% crit damage) */
+  perkCritDamageBonus?: number;
 }
 
 export interface HeroTurnResult {
@@ -63,7 +65,8 @@ export function computeHeroTurn(input: HeroTurnInput): HeroTurnResult {
   // Crit damage calculation — lazy eval rngLuckyCrit to preserve RNG sequence
   const critBaseMul = input.rngLuckyCrit() ? input.luckyCritMul : input.critDamageMul;
   const prestigeMul = 1 + input.prestigeCount * input.prestigeCritDmgBonus;
-  const baseCritAtk = input.baseHeroAtk * critBaseMul * prestigeMul;
+  const perkCritMul = 1 + (input.perkCritDamageBonus ?? 0);
+  const baseCritAtk = input.baseHeroAtk * critBaseMul * prestigeMul * perkCritMul;
 
   // Conditional multipliers
   const comboCritBonus = input.comboStreak >= input.comboCritSynergyThreshold ? (1 + input.comboCritDmgBonus) : 1;

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   canPurchasePerk,
   purchasePerk,
@@ -127,6 +127,60 @@ describe('jpPerks', () => {
       const events = engine.resolveEncounter(hero, 'boss', 'dragon_1');
       expect(events.some(e => e.type === 'perk_revive')).toBe(false);
       expect(events.some(e => e.type === 'hero_died')).toBe(true);
+    });
+  });
+
+  describe('C1023: Tier 2 perk combat effects', () => {
+    it('boss_slayer increases damage to boss', () => {
+      // Normal engine without boss slayer
+      const heroA = HeroEntity.create({ seed: 42, heroHpMax: 1000, heroAtkBase: 100 });
+      const engineNormal = new EncounterEngine(new SeededRng(100), { perkBossDamageBonus: 0 });
+      engineNormal.resolveEncounter(heroA, 'boss', 'dragon_1');
+
+      // Engine with boss slayer (+25%)
+      const heroB = HeroEntity.create({ seed: 42, heroHpMax: 1000, heroAtkBase: 100 });
+      const engineSlayer = new EncounterEngine(new SeededRng(100), { perkBossDamageBonus: 0.25 });
+      engineSlayer.resolveEncounter(heroB, 'boss', 'dragon_1');
+
+      // With higher damage dealt to boss, hero should defeat boss faster and take less or equal retaliation damage
+      expect(heroB.hp).toBeGreaterThanOrEqual(heroA.hp);
+    });
+
+    it('wealth_barrier reduces damage taken based on gold', () => {
+      const heroA = HeroEntity.create({ seed: 42, heroHpMax: 10000, heroAtkBase: 5 });
+      heroA.gold = 200000;
+      const spyA = vi.spyOn(heroA, 'takeDamage');
+      const engineNormal = new EncounterEngine(new SeededRng(50), { perkGoldBarrierRate: 0 });
+      engineNormal.resolveEncounter(heroA, 'enemy', 'wolf_1');
+
+      const heroB = HeroEntity.create({ seed: 42, heroHpMax: 10000, heroAtkBase: 5 });
+      heroB.gold = 200000;
+      const spyB = vi.spyOn(heroB, 'takeDamage');
+      const engineBarrier = new EncounterEngine(new SeededRng(50), { perkGoldBarrierRate: 0.01 });
+      engineBarrier.resolveEncounter(heroB, 'enemy', 'wolf_1');
+
+      const totalDmgA = spyA.mock.calls.reduce((sum, [dmg]) => sum + (dmg as number), 0);
+      const totalDmgB = spyB.mock.calls.reduce((sum, [dmg]) => sum + (dmg as number), 0);
+
+      expect(totalDmgA).toBeGreaterThan(0);
+      expect(totalDmgB).toBeLessThan(totalDmgA);
+    });
+
+    it('relic_affinity increases relic drop odds from bosses', () => {
+      let normalRelicDrops = 0;
+      let affinityRelicDrops = 0;
+      for (let s = 0; s < 50; s++) {
+        const heroA = HeroEntity.create({ seed: s, heroHpMax: 10000, heroAtkBase: 5000 });
+        const engineA = new EncounterEngine(new SeededRng(s), { perkRelicFindBonus: 0 });
+        engineA.resolveEncounter(heroA, 'boss', 'boss_1');
+        if (engineA.getRelics().length > 0) normalRelicDrops++;
+
+        const heroB = HeroEntity.create({ seed: s, heroHpMax: 10000, heroAtkBase: 5000 });
+        const engineB = new EncounterEngine(new SeededRng(s), { perkRelicFindBonus: 5.0 });
+        engineB.resolveEncounter(heroB, 'boss', 'boss_1');
+        if (engineB.getRelics().length > 0) affinityRelicDrops++;
+      }
+      expect(affinityRelicDrops).toBeGreaterThan(normalRelicDrops);
     });
   });
 });

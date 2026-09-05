@@ -97,4 +97,14 @@ describe('HeroTurnCalc', () => {
     // 100 * 2.0 * 3.0 = 600
     expect(result.heroAtk).toBe(600);
   });
+
+  it('C1023: perkCritDamageBonus increases crit damage by +50%', () => {
+    const normalCrit = computeHeroTurn({ ...baseInput, critStreak: 3 });
+    // base: 100 * 2.0 = 200
+    expect(normalCrit.heroAtk).toBe(200);
+
+    const perkCrit = computeHeroTurn({ ...baseInput, critStreak: 3, perkCritDamageBonus: 0.5 });
+    // perk: 100 * 2.0 * (1 + 0.5) = 300
+    expect(perkCrit.heroAtk).toBe(300);
+  });
 });

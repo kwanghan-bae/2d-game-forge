@@ -80,6 +80,11 @@ export interface CycleControllerV2Opts {
   perkExpMomentumRate?: number;
   /** C1016 — revive perk */
   perkReviveEnabled?: boolean;
+  /** C1023 — Tier 2 JP perk effects */
+  perkCritDamageBonus?: number;
+  perkBossDamageBonus?: number;
+  perkGoldBarrierRate?: number;
+  perkRelicFindBonus?: number;
 }
 
 export class CycleControllerV2 {
@@ -226,6 +231,11 @@ export class CycleControllerV2 {
       perkDropRateBonus: opts.perkDropRateBonus ?? 0,
       perkExpMomentumRate: opts.perkExpMomentumRate ?? 0,
       perkReviveEnabled: opts.perkReviveEnabled ?? false,
+      // C1023: Tier 2 JP perk effects
+      perkCritDamageBonus: opts.perkCritDamageBonus ?? 0,
+      perkBossDamageBonus: opts.perkBossDamageBonus ?? 0,
+      perkGoldBarrierRate: opts.perkGoldBarrierRate ?? 0,
+      perkRelicFindBonus: opts.perkRelicFindBonus ?? 0,
     });
     if (opts.gambitPolicy) this.encounter.setGambitPolicy(opts.gambitPolicy);
     this.rng = new SeededRng(opts.seed ^ 0xc0ffee);

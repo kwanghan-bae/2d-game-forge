@@ -121,6 +121,11 @@ export interface EncounterEngineOpts {
   perkExpMomentumRate?: number;
   /** C1016: revive perk — once per cycle, prevent death */
   perkReviveEnabled?: boolean;
+  /** C1023: Tier 2 JP perk effects */
+  perkCritDamageBonus?: number;
+  perkBossDamageBonus?: number;
+  perkGoldBarrierRate?: number;
+  perkRelicFindBonus?: number;
 }
 
 export class EncounterEngine {
@@ -1078,6 +1083,7 @@ export class EncounterEngine {
           critComboSynergyBonus: CRIT_COMBO_SYNERGY_BONUS,
           desperateTradeActive,
           desperateTradeCritMul: DESPERATE_TRADE_CRIT_MUL,
+          perkCritDamageBonus: this.opts.perkCritDamageBonus,
         });
         const { isCrit, heroAtk } = turnResult;
         this.critStreak = turnResult.newCritStreak;
@@ -1106,7 +1112,9 @@ export class EncounterEngine {
         const focusStrikeMul = (hitCount > 0 && hitCount % FOCUS_STRIKE_INTERVAL === 0) ? FOCUS_STRIKE_MUL : 1;
         // C327: boss weakness — boss takes +15% if hero full HP
         const bossWeakMul = (isBoss && hero.hp >= hero.hpMax) ? (1 + BOSS_WEAKNESS_BONUS) : 1;
-        const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul * (1 + dodgeAtkBonus) * armorBreakMul * focusStrikeMul * bossWeakMul);
+        // C1023: Tier 2 JP perk boss_slayer (+25% damage to bosses)
+        const bossSlayerMul = isBoss ? (1 + (this.opts.perkBossDamageBonus ?? 0)) : 1;
+        const effectiveAtk = bossImmune ? 0 : Math.floor(heroAtk * firstHitMul * (1 + dodgeAtkBonus) * armorBreakMul * focusStrikeMul * bossWeakMul * bossSlayerMul);
         // C353: shield break gold — hit landing after immunity phase
         if (!bossImmune && isBoss && hitCount > 1 && (hitCount - 1) % BOSS_IMMUNITY_INTERVAL === 0) {
           hero.gold += SHIELD_BREAK_GOLD;
@@ -1188,6 +1196,7 @@ export class EncounterEngine {
             snowDriftActive: this.midGameBuffs.isActive('snow_drift'),
             abyssalConvergenceActive: this.abyssalConvergenceRemaining > 0,
             titanArenaActive: this.midGameBuffs.isActive('titan_arena'), astralParadoxActive: this.midGameBuffs.isActive('astral_paradox'), crimsonTitheActive: this.midGameBuffs.isActive('crimson_tithe'),
+            perkGoldBarrierRate: this.opts.perkGoldBarrierRate,
           });
           const incomingDmg = Math.max(1, Math.floor(rageAtk * totalDrMul * (this.midGameBuffs.isActive('merc_shield') ? (1 - MERCENARY_OFFER_DAMAGE_REDUCTION) : 1) * (this.midGameBuffs.isActive('rep_shield') ? (1 - REPUTATION_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('vt_shield') ? (1 - VETERANS_TRIAL_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('fr_shield') ? (1 - FINAL_RECKONING_DEF_SHIELD_DR) : 1) * (this.midGameBuffs.isActive('ej_shield') ? (1 - ELDERS_JUDGMENT_DEF_SHIELD_DR) : 1)));
           // C380: prestige shield blocks hits
@@ -1570,8 +1579,10 @@ export class EncounterEngine {
         if (foundItem) hero.addEquipment(foundItem);
       }
       // C551-C552: Relic drop — chance after elite/boss kills (C733: via resolver)
+      // C1023: relic_affinity perk (+20% chance to find relics)
       if (this.relicResolver.count < 3) {
-        const relicChance = isElite ? RELIC_DROP_CHANCE_ELITE : (isBoss ? RELIC_DROP_CHANCE_BOSS : 0);
+        const baseRelicChance = isElite ? RELIC_DROP_CHANCE_ELITE : (isBoss ? RELIC_DROP_CHANCE_BOSS : 0);
+        const relicChance = baseRelicChance * (1 + (this.opts.perkRelicFindBonus ?? 0));
         if (relicChance > 0 && this.rng.chance(relicChance)) {
           const available = [0, 1, 2, 3, 4, 5].filter(id => !this.relicResolver.hasRelic(id));
           if (available.length > 0) {
