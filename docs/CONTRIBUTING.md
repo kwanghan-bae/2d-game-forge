@@ -544,7 +544,7 @@ dev-shell 의 `tsconfig.json` 과 `next.config.ts` 에 새 게임의 `@/componen
 새 게임은 `eslint.config.mjs` 의 `games/*/**` 패턴에 의해 자동으로 `game` element 로 분류된다.
 별도 설정 불필요.
 
-## §15 Monetization (Phase 5+)
+## §15 수익화 (Phase 5+)
 
 inflation-rpg uses three monetization channels:
 
@@ -570,3 +570,29 @@ package. The 3-rule applies.
 
 For Google Play / App Store cuts (Phase 5b/5c), see future specs at
 `docs/superpowers/specs/2026-*-phase-5b-*.md` / `phase-5c-*.md`.
+
+## §16 한글 우선 작업 기록
+
+이 레포의 대화, 설계 문서, 구현 계획, 작업 현황, 비평·리서치 보고서, PR 설명과
+커밋 메시지는 한국어로 작성한다. 문장은 평서문 `~다`체를 사용한다.
+
+커밋 제목은 아래 분류 중 하나로 시작하고 변경 목적을 한국어로 적는다.
+
+```text
+기능(<영역>): <변경 내용>
+수정(<영역>): <변경 내용>
+문서: <변경 내용>
+정리(<영역>): <변경 내용>
+리팩터링(<영역>): <변경 내용>
+테스트(<영역>): <변경 내용>
+병합: <변경 내용>
+```
+
+본문에는 변경 이유, 영향 범위, 실행한 검증 명령과 결과를 한국어로 남긴다. 코드
+식별자, 파일 경로, 패키지명, 명령, API 이름, 표준명과 제품명은 복사·실행에 필요한
+원문을 유지할 수 있다. 기존 영어 파일명은 기록 연결성을 위해 유지하고, 파일
+내용과 새 파일의 설명은 한국어로 작성한다.
+
+작업을 시작하거나 마칠 때 [`docs/작업-현황.md`](작업-현황.md)의 현재 상태와 다음
+작업 순서를 갱신한다. 자율 진화 cycle을 진행하면 해당 cycle 산출물과 검증 결과를
+같은 cycle 번호로 연결한다.

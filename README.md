@@ -53,7 +53,7 @@
   player-felt landing). 진척 = `docs/superpowers/evolution/INDEX.md` + 매 10
   cycle `STATUS-YYYY-MM-DD-cycle-N.md`.
 
-## Quick start
+## 빠른 시작
 
 요구 사항: Node.js 22 LTS 이상, pnpm 9 (Corepack 권장).
 
@@ -155,6 +155,7 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
   엔트리 원칙.
 - [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) — 새 게임 추가 단계별 가이드와
   자주 하는 실수.
+- [docs/작업-현황.md](docs/작업-현황.md) — 현재 작업 범위와 다음 개발 순서.
 - [apps/dev-shell/README.md](apps/dev-shell/README.md) — 포털 라우팅과
   게임 등록 위치.
 - [packages/2d-core/README.md](packages/2d-core/README.md) — 코어 패키지

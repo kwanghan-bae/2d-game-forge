@@ -1,47 +1,50 @@
-# Inflation RPG Phase 3 — 메타 진행 시스템 구현 계획
+# 인플레이션 RPG 3단계 — 메타 진행 시스템 구현 계획
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> 이 문서는 3단계 구현 당시의 상세 계획이다. 현재 완료 상태와 다음 작업은
+> [작업 현황](../../작업-현황.md)에서 관리한다.
 
-**Goal:** 런 간 캐릭터 레벨·장비 슬롯·장비 계승을 구현해 "반복 플레이 이유"를 만든다.
+**목표:** 런 간 캐릭터 레벨·장비 슬롯·장비 계승을 구현해 "반복 플레이 이유"를 만든다.
 
-**Architecture:** MetaState에 `equippedItemIds`, `equipSlotCount`, `lastPlayedCharId` 3개 필드를 추가한다. `stats.ts`의 `calcFinalStat`에 `charLevelMult` 파라미터를 추가하고, `BattleScene`이 전체 인벤토리 대신 `equippedItemIds` 기반 아이템만 사용하도록 수정한다. UI는 Inventory(장착 슬롯 영역 추가), Shop(goldThisRun으로 구매), ClassSelect(레벨 배지), GameOver(레벨업 연출) 순으로 변경한다.
+**구조:** `MetaState`에 `equippedItemIds`, `equipSlotCount`, `lastPlayedCharId` 3개 필드를 추가한다. `stats.ts`의 `calcFinalStat`에 `charLevelMult` 파라미터를 추가하고, `BattleScene`이 전체 인벤토리 대신 `equippedItemIds` 기반 아이템만 사용하도록 수정한다. 화면은 인벤토리(장착 슬롯 영역 추가), 상점(`goldThisRun`으로 구매), 캐릭터 선택(레벨 배지), 런 종료(레벨업 연출) 순으로 변경한다.
 
-**Tech Stack:** Zustand 5, React 18, Phaser 3, @testing-library/react, Vitest 4
+**기술 스택:** Zustand 5, React 19, Phaser 3, @testing-library/react, Vitest 4
+
+**상태:** 구현 완료
 
 ---
 
-## File Map
+## 변경 파일 목록
 
 | 파일 | 변경 | 역할 |
 |------|------|------|
-| `games/inflation-rpg/src/types.ts` | Modify | MetaState에 3개 필드 추가 |
-| `games/inflation-rpg/src/systems/stats.ts` | Modify | `calcFinalStat`에 `charLevelMult` 6번째 파라미터 추가 |
-| `games/inflation-rpg/src/systems/stats.test.ts` | Modify | charLevelMult 테스트 추가 |
-| `games/inflation-rpg/src/systems/equipment.ts` | Modify | `getEquippedItemsList(inv, ids)` 추가 |
-| `games/inflation-rpg/src/systems/equipment.test.ts` | Modify | getEquippedItemsList 테스트 추가 |
-| `games/inflation-rpg/src/store/gameStore.ts` | Modify | INITIAL_META 업데이트, SLOT_COSTS 상수, 5개 새 action, endRun·sellEquipment 수정 |
-| `games/inflation-rpg/src/store/gameStore.test.ts` | Modify | 새 action 테스트 추가 |
-| `games/inflation-rpg/src/battle/BattleScene.ts` | Modify | equippedItemIds 기반 + charLevelMult 적용 |
-| `games/inflation-rpg/src/screens/Inventory.tsx` | Modify | 장착 슬롯 영역 + 장착/해제 버튼 |
-| `games/inflation-rpg/src/screens/Inventory.test.tsx` | Modify | 장착 슬롯 테스트 추가 |
-| `games/inflation-rpg/src/screens/Shop.tsx` | Modify | goldThisRun 수정 + 슬롯 확장 섹션 |
-| `games/inflation-rpg/src/screens/Shop.test.tsx` | Create | Shop 테스트 (신규) |
-| `games/inflation-rpg/src/screens/ClassSelect.tsx` | Modify | CharCard에 캐릭터 레벨 배지 |
-| `games/inflation-rpg/src/screens/ClassSelect.test.tsx` | Modify | 레벨 배지 테스트 추가 |
-| `games/inflation-rpg/src/screens/GameOver.tsx` | Modify | 캐릭터 레벨업 연출 |
+| `games/inflation-rpg/src/types.ts` | 수정 | MetaState에 3개 필드 추가 |
+| `games/inflation-rpg/src/systems/stats.ts` | 수정 | `calcFinalStat`에 `charLevelMult` 6번째 파라미터 추가 |
+| `games/inflation-rpg/src/systems/stats.test.ts` | 수정 | charLevelMult 테스트 추가 |
+| `games/inflation-rpg/src/systems/equipment.ts` | 수정 | `getEquippedItemsList(inv, ids)` 추가 |
+| `games/inflation-rpg/src/systems/equipment.test.ts` | 수정 | getEquippedItemsList 테스트 추가 |
+| `games/inflation-rpg/src/store/gameStore.ts` | 수정 | INITIAL_META 업데이트, SLOT_COSTS 상수, 5개 새 action, endRun·sellEquipment 수정 |
+| `games/inflation-rpg/src/store/gameStore.test.ts` | 수정 | 새 action 테스트 추가 |
+| `games/inflation-rpg/src/battle/BattleScene.ts` | 수정 | equippedItemIds 기반 + charLevelMult 적용 |
+| `games/inflation-rpg/src/screens/Inventory.tsx` | 수정 | 장착 슬롯 영역 + 장착/해제 버튼 |
+| `games/inflation-rpg/src/screens/Inventory.test.tsx` | 수정 | 장착 슬롯 테스트 추가 |
+| `games/inflation-rpg/src/screens/Shop.tsx` | 수정 | goldThisRun 수정 + 슬롯 확장 섹션 |
+| `games/inflation-rpg/src/screens/Shop.test.tsx` | 생성 | Shop 테스트 (신규) |
+| `games/inflation-rpg/src/screens/ClassSelect.tsx` | 수정 | CharCard에 캐릭터 레벨 배지 |
+| `games/inflation-rpg/src/screens/ClassSelect.test.tsx` | 수정 | 레벨 배지 테스트 추가 |
+| `games/inflation-rpg/src/screens/GameOver.tsx` | 수정 | 캐릭터 레벨업 연출 |
 
 ---
 
-## Task 1: types.ts + gameStore — MetaState 확장 + 새 actions
+## 작업 1: types.ts + gameStore — MetaState 확장과 새 동작
 
-**Files:**
+**파일:**
 - Modify: `games/inflation-rpg/src/types.ts`
 - Modify: `games/inflation-rpg/src/store/gameStore.ts`
 - Test: `games/inflation-rpg/src/store/gameStore.test.ts`
 
 > **주의:** types.ts와 gameStore.ts는 같은 커밋에 묶는다. types.ts만 바꾸면 INITIAL_META가 새 필드를 포함하지 않아 타입체크가 깨진다.
 
-- [ ] **Step 0: types.ts MetaState 필드 추가**
+- [x] **단계 0: types.ts MetaState 필드 추가**
 
 `games/inflation-rpg/src/types.ts`의 `MetaState` 인터페이스를 다음으로 교체:
 
@@ -62,7 +65,7 @@ export interface MetaState {
 }
 ```
 
-- [ ] **Step 1: 실패 테스트 작성**
+- [x] **단계 1: 실패 테스트 작성**
 
 `games/inflation-rpg/src/store/gameStore.test.ts` 파일 끝(기존 `describe` 블록 밖)에 추가:
 
@@ -166,15 +169,15 @@ describe('GameStore — Phase 3 메타 진행', () => {
 });
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **단계 2: 테스트 실패 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/store/gameStore.test.ts
 ```
 
-Expected: FAIL — `INITIAL_META` 새 필드 없음, 새 actions 없음
+예상 결과: FAIL — `INITIAL_META` 새 필드 없음, 새 actions 없음
 
-- [ ] **Step 3: gameStore.ts 구현**
+- [x] **단계 3: gameStore.ts 구현**
 
 `games/inflation-rpg/src/store/gameStore.ts`를 다음으로 교체:
 
@@ -373,38 +376,51 @@ export const useGameStore = create<GameStore>()(
 );
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **단계 4: 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/store/gameStore.test.ts
 ```
 
-Expected: 모든 테스트 통과 (기존 8 + 신규 13 = 21 tests)
+예상 결과: 모든 테스트 통과 (기존 8 + 신규 13 = 21 tests)
 
-- [ ] **Step 5: typecheck 통과 확인**
+- [x] **단계 5: typecheck 통과 확인**
 
 ```bash
 pnpm --filter @forge/game-inflation-rpg typecheck
 ```
 
-Expected: 0 errors
+예상 결과: 0 errors
 
-- [ ] **Step 6: 커밋 (types.ts 포함)**
+- [x] **단계 6: 커밋 (types.ts 포함)**
 
 ```bash
 git add games/inflation-rpg/src/types.ts games/inflation-rpg/src/store/gameStore.ts games/inflation-rpg/src/store/gameStore.test.ts
-git commit -m "feat(game-inflation-rpg): add equip slots, char level, buyEquipSlot to store"
+git commit -m "기능(인플레이션 RPG): 장비 슬롯·캐릭터 레벨·슬롯 구매 저장소 기능 추가"
 ```
 
 ---
 
-## Task 3: stats.ts — charLevelMult 파라미터 추가
+## 작업 2: 저장 데이터 호환과 장비 슬롯 상한
 
-**Files:**
+작업 1 이후 이전 저장 데이터를 계속 읽을 수 있도록 저장 버전을 올리고,
+장비 슬롯의 최대치를 상수로 고정한다.
+
+- [x] `MAX_EQUIP_SLOTS = 10` 상수 추가
+- [x] 저장 버전 1과 이전 데이터 마이그레이션 추가
+- [x] 이전 저장 데이터의 기본값 보충 테스트 추가
+
+구현 커밋: `수정(인플레이션 RPG): Phase 3 저장 데이터 마이그레이션과 장비 슬롯 최대치 추가`
+
+---
+
+## 작업 3: stats.ts — charLevelMult 파라미터 추가
+
+**파일:**
 - Modify: `games/inflation-rpg/src/systems/stats.ts`
 - Test: `games/inflation-rpg/src/systems/stats.test.ts`
 
-- [ ] **Step 1: 실패 테스트 작성**
+- [x] **단계 1: 실패 테스트 작성**
 
 `games/inflation-rpg/src/systems/stats.test.ts`의 `describe('Stats System')` 블록 안에 추가:
 
@@ -420,15 +436,15 @@ it('calcFinalStat: charLevelMult defaults to 1 (backward compat)', () => {
 });
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **단계 2: 테스트 실패 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/systems/stats.test.ts
 ```
 
-Expected: FAIL — `calcFinalStat`이 6번째 인자를 받지 않음
+예상 결과: FAIL — `calcFinalStat`이 6번째 인자를 받지 않음
 
-- [ ] **Step 3: stats.ts 구현**
+- [x] **단계 3: stats.ts 구현**
 
 `games/inflation-rpg/src/systems/stats.ts`의 `calcFinalStat`을 다음으로 교체:
 
@@ -448,30 +464,30 @@ export function calcFinalStat(
 }
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **단계 4: 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/systems/stats.test.ts
 ```
 
-Expected: 모든 테스트 통과
+예상 결과: 모든 테스트 통과
 
-- [ ] **Step 5: 커밋**
+- [x] **단계 5: 커밋**
 
 ```bash
 git add games/inflation-rpg/src/systems/stats.ts games/inflation-rpg/src/systems/stats.test.ts
-git commit -m "feat(game-inflation-rpg): add charLevelMult param to calcFinalStat"
+git commit -m "기능(인플레이션 RPG): 최종 스탯 계산에 캐릭터 레벨 배율 추가"
 ```
 
 ---
 
-## Task 4: equipment.ts — getEquippedItemsList 추가
+## 작업 4: equipment.ts — getEquippedItemsList 추가
 
-**Files:**
+**파일:**
 - Modify: `games/inflation-rpg/src/systems/equipment.ts`
 - Test: `games/inflation-rpg/src/systems/equipment.test.ts`
 
-- [ ] **Step 1: 실패 테스트 작성**
+- [x] **단계 1: 실패 테스트 작성**
 
 `games/inflation-rpg/src/systems/equipment.test.ts` 파일의 **상단 import 구역에** 다음을 추가 (기존 import 아래):
 
@@ -515,15 +531,15 @@ describe('getEquippedItemsList', () => {
 });
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **단계 2: 테스트 실패 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/systems/equipment.test.ts
 ```
 
-Expected: FAIL — `getEquippedItemsList is not a function`
+예상 결과: FAIL — `getEquippedItemsList is not a function`
 
-- [ ] **Step 3: equipment.ts 구현**
+- [x] **단계 3: equipment.ts 구현**
 
 `games/inflation-rpg/src/systems/equipment.ts` 파일 끝에 추가:
 
@@ -536,31 +552,31 @@ export function getEquippedItemsList(inv: Inventory, equippedItemIds: string[]):
 }
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **단계 4: 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/systems/equipment.test.ts
 ```
 
-Expected: 모든 테스트 통과
+예상 결과: 모든 테스트 통과
 
-- [ ] **Step 5: 커밋**
+- [x] **단계 5: 커밋**
 
 ```bash
 git add games/inflation-rpg/src/systems/equipment.ts games/inflation-rpg/src/systems/equipment.test.ts
-git commit -m "feat(game-inflation-rpg): add getEquippedItemsList to equipment system"
+git commit -m "기능(인플레이션 RPG): 장착 장비 목록 조회 기능 추가"
 ```
 
 ---
 
-## Task 5: BattleScene.ts — equippedItemIds + charLevelMult 적용
+## 작업 5: BattleScene.ts — equippedItemIds와 charLevelMult 적용
 
-**Files:**
+**파일:**
 - Modify: `games/inflation-rpg/src/battle/BattleScene.ts`
 
 이 파일은 Phaser Scene이라 Vitest로 직접 테스트하지 않는다. 변경 후 전체 테스트 스위트로 회귀 확인한다.
 
-- [ ] **Step 1: import 라인 수정**
+- [x] **단계 1: import 라인 수정**
 
 `games/inflation-rpg/src/battle/BattleScene.ts` line 6을 다음으로 변경:
 
@@ -568,7 +584,7 @@ git commit -m "feat(game-inflation-rpg): add getEquippedItemsList to equipment s
 import { getAllEquipped, getEquippedItemsList } from '../systems/equipment';
 ```
 
-- [ ] **Step 2: doRound() 메서드 내 스탯 계산 수정**
+- [x] **단계 2: doRound() 메서드 내 스탯 계산 수정**
 
 `games/inflation-rpg/src/battle/BattleScene.ts`의 `doRound()` 메서드에서 다음 두 줄을:
 
@@ -586,7 +602,7 @@ const charLv = meta.characterLevels[run.characterId] ?? 0;
 const charLevelMult = 1 + charLv * 0.1;
 ```
 
-- [ ] **Step 3: calcFinalStat 호출 5개에 charLevelMult 추가**
+- [x] **단계 3: calcFinalStat 호출 5개에 charLevelMult 추가**
 
 다음 5줄을:
 
@@ -608,30 +624,30 @@ const playerAGI = calcFinalStat('agi', run.allocated.agi, char.statMultipliers.a
 const playerLUC = calcFinalStat('luc', run.allocated.luc, char.statMultipliers.luc, allEquipped, baseAbility, charLevelMult);
 ```
 
-- [ ] **Step 4: 전체 테스트 통과 확인**
+- [x] **단계 4: 전체 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run
 ```
 
-Expected: 모든 테스트 통과
+예상 결과: 모든 테스트 통과
 
-- [ ] **Step 5: 커밋**
+- [x] **단계 5: 커밋**
 
 ```bash
 git add games/inflation-rpg/src/battle/BattleScene.ts
-git commit -m "feat(game-inflation-rpg): apply equippedItemIds and charLevelMult in battle"
+git commit -m "기능(인플레이션 RPG): 전투에 장착 장비와 캐릭터 레벨 배율 적용"
 ```
 
 ---
 
-## Task 6: Inventory.tsx — 장착 슬롯 UI + 장착/해제 버튼
+## 작업 6: Inventory.tsx — 장착 슬롯 화면과 장착·해제 버튼
 
-**Files:**
+**파일:**
 - Modify: `games/inflation-rpg/src/screens/Inventory.tsx`
 - Modify: `games/inflation-rpg/src/screens/Inventory.test.tsx`
 
-- [ ] **Step 1: 실패 테스트 작성**
+- [x] **단계 1: 실패 테스트 작성**
 
 `games/inflation-rpg/src/screens/Inventory.test.tsx`를 다음으로 교체:
 
@@ -732,15 +748,15 @@ describe('Inventory — 장착 슬롯', () => {
 });
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **단계 2: 테스트 실패 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/screens/Inventory.test.tsx
 ```
 
-Expected: 신규 장착 슬롯 테스트들 FAIL
+예상 결과: 신규 장착 슬롯 테스트들 FAIL
 
-- [ ] **Step 3: Inventory.tsx 구현**
+- [x] **단계 3: Inventory.tsx 구현**
 
 `games/inflation-rpg/src/screens/Inventory.tsx`를 다음으로 교체:
 
@@ -927,30 +943,30 @@ function EquipmentCard({ item, isEquipped, canEquip, onEquip, onUnequip, onSell 
 }
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **단계 4: 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/screens/Inventory.test.tsx
 ```
 
-Expected: 모든 테스트 통과
+예상 결과: 모든 테스트 통과
 
-- [ ] **Step 5: 커밋**
+- [x] **단계 5: 커밋**
 
 ```bash
 git add games/inflation-rpg/src/screens/Inventory.tsx games/inflation-rpg/src/screens/Inventory.test.tsx
-git commit -m "feat(game-inflation-rpg): redesign inventory with equip slots section"
+git commit -m "기능(인플레이션 RPG): 장착 슬롯 영역을 포함하도록 인벤토리 개편"
 ```
 
 ---
 
-## Task 7: Shop.tsx — goldThisRun 수정 + 슬롯 확장 + Shop.test.tsx
+## 작업 7: Shop.tsx — goldThisRun 수정과 슬롯 확장
 
-**Files:**
+**파일:**
 - Modify: `games/inflation-rpg/src/screens/Shop.tsx`
 - Create: `games/inflation-rpg/src/screens/Shop.test.tsx`
 
-- [ ] **Step 1: 실패 테스트 작성**
+- [x] **단계 1: 실패 테스트 작성**
 
 `games/inflation-rpg/src/screens/Shop.test.tsx` 파일을 새로 생성:
 
@@ -1027,15 +1043,15 @@ describe('Shop — 장비 구매', () => {
 });
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **단계 2: 테스트 실패 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/screens/Shop.test.tsx
 ```
 
-Expected: FAIL — Shop이 goldThisRun 표시/사용 안 함, 슬롯 확장 없음
+예상 결과: FAIL — Shop이 goldThisRun 표시/사용 안 함, 슬롯 확장 없음
 
-- [ ] **Step 3: Shop.tsx 구현**
+- [x] **단계 3: Shop.tsx 구현**
 
 `games/inflation-rpg/src/screens/Shop.tsx`를 다음으로 교체:
 
@@ -1138,30 +1154,30 @@ export function Shop() {
 }
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **단계 4: 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/screens/Shop.test.tsx
 ```
 
-Expected: 모든 테스트 통과
+예상 결과: 모든 테스트 통과
 
-- [ ] **Step 5: 커밋**
+- [x] **단계 5: 커밋**
 
 ```bash
 git add games/inflation-rpg/src/screens/Shop.tsx games/inflation-rpg/src/screens/Shop.test.tsx
-git commit -m "feat(game-inflation-rpg): implement shop with goldThisRun and slot expansion"
+git commit -m "기능(인플레이션 RPG): 이번 런 골드와 장비 슬롯 확장 상점 구현"
 ```
 
 ---
 
-## Task 8: ClassSelect.tsx — 캐릭터 레벨 배지
+## 작업 8: ClassSelect.tsx — 캐릭터 레벨 배지
 
-**Files:**
+**파일:**
 - Modify: `games/inflation-rpg/src/screens/ClassSelect.tsx`
 - Modify: `games/inflation-rpg/src/screens/ClassSelect.test.tsx`
 
-- [ ] **Step 1: 실패 테스트 작성**
+- [x] **단계 1: 실패 테스트 작성**
 
 `games/inflation-rpg/src/screens/ClassSelect.test.tsx`의 `describe('ClassSelect')` 블록 끝에 추가:
 
@@ -1180,15 +1196,15 @@ it('does not show level badge when charLv is 0 or absent', () => {
 });
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **단계 2: 테스트 실패 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/screens/ClassSelect.test.tsx
 ```
 
-Expected: 신규 2개 테스트 FAIL
+예상 결과: 신규 2개 테스트 FAIL
 
-- [ ] **Step 3: ClassSelect.tsx 수정**
+- [x] **단계 3: ClassSelect.tsx 수정**
 
 `games/inflation-rpg/src/screens/ClassSelect.tsx`에서 `ClassSelect` 컴포넌트와 `CharCard` 함수를 다음으로 교체:
 
@@ -1293,31 +1309,31 @@ function CharCard({ char, unlocked, selected, charLv, onSelect }: {
 
 `CharDetail` 함수는 기존 그대로 유지.
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **단계 4: 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run src/screens/ClassSelect.test.tsx
 ```
 
-Expected: 모든 테스트 통과
+예상 결과: 모든 테스트 통과
 
-- [ ] **Step 5: 커밋**
+- [x] **단계 5: 커밋**
 
 ```bash
 git add games/inflation-rpg/src/screens/ClassSelect.tsx games/inflation-rpg/src/screens/ClassSelect.test.tsx
-git commit -m "feat(game-inflation-rpg): show character level badge in class select"
+git commit -m "기능(인플레이션 RPG): 캐릭터 선택 화면에 레벨 배지 표시"
 ```
 
 ---
 
-## Task 9: GameOver.tsx — 캐릭터 레벨업 연출
+## 작업 9: GameOver.tsx — 캐릭터 레벨업 연출
 
-**Files:**
+**파일:**
 - Modify: `games/inflation-rpg/src/screens/GameOver.tsx`
 
 GameOver는 단순한 표시 변경이므로 테스트 없이 수정한다. (기존 GameOver 테스트 없음)
 
-- [ ] **Step 1: GameOver.tsx 수정**
+- [x] **단계 1: GameOver.tsx 수정**
 
 `games/inflation-rpg/src/screens/GameOver.tsx`를 다음으로 교체:
 
@@ -1369,64 +1385,64 @@ export function GameOver() {
 }
 ```
 
-- [ ] **Step 2: 전체 테스트 통과 확인**
+- [x] **단계 2: 전체 테스트 통과 확인**
 
 ```bash
 cd games/inflation-rpg && pnpm exec vitest run
 ```
 
-Expected: 모든 테스트 통과
+예상 결과: 모든 테스트 통과
 
-- [ ] **Step 3: 커밋**
+- [x] **단계 3: 커밋**
 
 ```bash
 git add games/inflation-rpg/src/screens/GameOver.tsx
-git commit -m "feat(game-inflation-rpg): show character level up on game over screen"
+git commit -m "기능(인플레이션 RPG): 런 종료 화면에 캐릭터 레벨 상승 표시"
 ```
 
 ---
 
-## Task 10: 최종 검증 및 머지
+## 작업 10: 최종 검증 및 병합
 
-- [ ] **Step 1: 전체 테스트**
+- [x] **단계 1: 전체 테스트**
 
 ```bash
 pnpm --filter @forge/game-inflation-rpg test
 ```
 
-Expected: 전체 통과. 기존 69 tests + Task 2의 13 + Task 3의 2 + Task 4의 3 + Task 6의 5 + Task 7의 5 + Task 8의 2 = **99+ tests passed**
+예상 결과: 전체 통과. 기존 69 tests + Task 2의 13 + Task 3의 2 + Task 4의 3 + Task 6의 5 + Task 7의 5 + Task 8의 2 = **99+ tests passed**
 
-- [ ] **Step 2: typecheck**
+- [x] **단계 2: typecheck**
 
 ```bash
 pnpm --filter @forge/game-inflation-rpg typecheck
 ```
 
-Expected: 0 errors
+예상 결과: 0 errors
 
-- [ ] **Step 3: lint**
+- [x] **단계 3: lint**
 
 ```bash
 pnpm --filter @forge/game-inflation-rpg lint
 ```
 
-Expected: 0 errors
+예상 결과: 0 errors
 
-- [ ] **Step 4: circular dependency check**
+- [x] **단계 4: circular dependency check**
 
 ```bash
 pnpm circular
 ```
 
-Expected: No circular dependency found
+예상 결과: No circular dependency found
 
-- [ ] **Step 5: 브랜치 머지 및 태그**
+- [x] **단계 5: 브랜치 머지 및 태그**
 
 feature 브랜치에서 작업했다면:
 
 ```bash
 git checkout main
-git merge --no-ff feat/inflation-rpg-phase3 -m "Merge branch 'feat/inflation-rpg-phase3' — Phase 3 complete"
+git merge --no-ff feat/inflation-rpg-phase3 -m "병합: 인플레이션 RPG 3단계 구현 완료"
 ```
 
 main에서 직접 작업했다면 머지 불필요. 공통으로 태그 부여:

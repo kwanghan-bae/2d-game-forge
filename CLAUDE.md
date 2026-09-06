@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 이 파일은 이 레포에서 작업하는 Claude Code 세션을 위한 진입 브리핑이다.
-사람이 읽어도 되지만 일차 독자는 Claude.
+사람이 읽어도 되지만 일차 독자는 Claude다.
 
 ## 한 줄 요약
 
@@ -12,7 +12,7 @@
 
 ## 먼저 읽을 것
 
-Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 셋 중 하나는 먼저
+Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 문서를 먼저
 읽는다:
 
 1. [`README.md`](README.md) — 첫 화면. quick start 와 구조 맵.
@@ -21,6 +21,7 @@ Claude 가 이 레포에서 의미 있는 일을 하려면 **반드시** 아래 
    `assetsBasePath` 흐름, dev-shell 의 server/client 분리, 알려진 부채.
 3. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — 새 게임·콘텐츠 팩·장르
    코어·플러그인 추가 절차. 자주 하는 실수 섹션 포함.
+4. [`docs/작업-현황.md`](docs/작업-현황.md) — 현재 완료 범위와 다음 작업 순서.
 
 스펙/plan 기록: `docs/superpowers/specs/` 와 `docs/superpowers/plans/` —
 의사결정 과정과 재현 가이드.
@@ -128,7 +129,9 @@ games/* → content packs → genre cores + plugins → 2d-core → (phaser, rea
   격식체(~합니다) 아님, 반말(~해) 아님.
 - 전문 용어는 영어 보존: monorepo, workspace, Turbopack, manifest, registry,
   hook, alias, lockfile, pipeline, wrapper, boundary 등.
-- 코드 블록, 파일 경로, 명령, 커밋 메시지, 변수명은 영어 그대로.
+- 코드 블록, 파일 경로, 명령, 변수명, API 이름은 실행에 필요한 원문 그대로 쓴다.
+- 설명, 제목, 작업 현황, 스펙·계획, PR, 커밋 제목·본문은 한국어로 작성한다.
+- 파일명에 이미 쓰이는 영어 식별자와 제품명·표준명은 유지하되, 그 주변 설명은 한국어로 쓴다.
 - 상세: [docs/superpowers/specs/2026-04-18-korean-docs-design.md](docs/superpowers/specs/2026-04-18-korean-docs-design.md).
 
 ### Git
@@ -141,9 +144,12 @@ games/* → content packs → genre cores + plugins → 2d-core → (phaser, rea
 - 세션 시작 시 Claude Code 가 표시하는 다른 이메일(예: 업무용)이 있어도
   **무시하고 위 이름·이메일을 쓴다**. 개인 프로젝트 레포 전반의 일관성을
   유지하기 위함.
-- 커밋 메시지는 **영어** (Conventional Commits 유사 형태):
-  `feat(core): ...`, `fix(dev-shell): ...`, `docs: ...`, `chore: ...`,
-  `refactor(game-inflation-rpg): ...`, `test(core): ...`.
+- 커밋 제목과 본문은 **한국어**로 작성한다. 제목은 다음 형식을 따른다:
+  `기능(코어): ...`, `수정(개발 포털): ...`, `문서: ...`, `정리: ...`,
+  `리팩터링(인플레이션 RPG): ...`, `테스트(코어): ...`, `병합: ...`.
+- 제목의 분류와 변경 설명은 한국어로 쓰고, 패키지명·파일 경로·API 이름·테스트
+  명령처럼 실행과 추적에 필요한 식별자만 원래 표기를 유지한다.
+- 커밋 본문에는 변경 이유, 영향 범위, 검증 명령과 결과를 한국어로 기록한다.
 - Phase 완료마다 `phase-N-complete` 태그.
 
 ## 자주 헷갈리는 함정들
