@@ -107,6 +107,8 @@ export interface ExpeditionResult {
   recommendedFacilityId: FacilityId;
   recommendedEquipmentId: string | null;
   retryAfterSeconds: number;
+  /** Deterministic forecast shown before the encounter is resolved. */
+  successChance?: number;
   encountersCleared?: number;
   totalEncounterCount?: number;
 }

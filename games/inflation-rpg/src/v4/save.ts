@@ -95,6 +95,7 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
     && FACILITY_IDS.includes(value.recommendedFacilityId as typeof FACILITY_IDS[number])
     && (value.recommendedEquipmentId === null || typeof value.recommendedEquipmentId === 'string')
     && isNonNegativeNumber(value.retryAfterSeconds)
+    && (value.successChance === undefined || (isNonNegativeNumber(value.successChance) && value.successChance <= 1))
     && (value.encountersCleared === undefined
       || (isNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
     && (value.totalEncounterCount === undefined

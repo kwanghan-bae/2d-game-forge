@@ -88,8 +88,15 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
       if (!raw) throw new Error('v4 save was not created');
-      const save = JSON.parse(raw) as { run: { expedition: { completesAt: number; encounterIndex: number } | null } };
+      const save = JSON.parse(raw) as {
+        meta: { agents: Array<{ id: string; activeTaskId: string | null }> };
+        run: { expedition: { id: string; completesAt: number; encounterIndex: number } | null };
+      };
       if (!save.run.expedition) throw new Error('expedition was not started');
+      save.run.expedition.id = 'e2e-victory-4';
+      const guide = save.meta.agents.find((agent) => agent.id === 'guide');
+      if (!guide) throw new Error('guide was not created');
+      guide.activeTaskId = save.run.expedition.id;
       save.run.expedition.encounterIndex = 2;
       save.run.expedition.completesAt = Date.now() - 1;
       localStorage.setItem(key, JSON.stringify(save));
@@ -114,9 +121,10 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       if (!raw) throw new Error('v4 save was not created');
       const save = JSON.parse(raw) as {
         meta: { unlockedRealms: string[] };
-        run: { expedition: { realmId: string; completesAt: number; encounterIndex: number } | null };
+        run: { hero: { hp: number }; expedition: { realmId: string; completesAt: number; encounterIndex: number } | null };
       };
       if (!save.run.expedition) throw new Error('expedition was not started');
+      save.run.hero.hp = 1;
       save.meta.unlockedRealms.push('deep_forest');
       save.run.expedition.realmId = 'deep_forest';
       save.run.expedition.encounterIndex = 2;

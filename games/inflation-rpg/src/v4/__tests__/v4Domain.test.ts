@@ -15,6 +15,8 @@ import {
   advanceHeroActions,
   getFacilityTaskPreview,
   getFacilityUpgradeCost,
+  getExpeditionSuccessChance,
+  getV4HeroPower,
   getHeroNextAction,
   grantInterventionCharge,
   grantOfflineResourceBonus,
@@ -605,6 +607,27 @@ describe('v4 save and domain', () => {
     expect(boss.run.lastExpeditionResult).toMatchObject({
       outcome: 'victory', encountersCleared: 3, totalEncounterCount: 3,
     });
+  });
+
+  it('forecasts target success bands and makes support policy effects visible', () => {
+    const atRecommendedPower = createInitialV4Save(92);
+    atRecommendedPower.run.hero.atk = 30;
+    const normal = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 0, null);
+    const elite = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 1, null);
+    const boss = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 2, null);
+
+    expect(getV4HeroPower(atRecommendedPower)).toBe(120);
+    expect(normal).toBeGreaterThanOrEqual(0.9);
+    expect(normal).toBeLessThanOrEqual(0.97);
+    expect(elite).toBeGreaterThanOrEqual(0.65);
+    expect(elite).toBeLessThanOrEqual(0.8);
+    expect(boss).toBeGreaterThanOrEqual(0.45);
+    expect(boss).toBeLessThanOrEqual(0.65);
+
+    const guide = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 2, 'guide');
+    const hoarding = getExpeditionSuccessChance(setV4Policy(atRecommendedPower, 'hoarding', atRecommendedPower.createdAt + 1), 'joseon_plains', 2, null);
+    expect(guide).toBeGreaterThan(boss);
+    expect(hoarding).toBeGreaterThan(boss);
   });
 
   it('uses the V4 hero battle adapter instead of power alone', () => {

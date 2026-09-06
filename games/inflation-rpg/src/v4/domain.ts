@@ -355,9 +355,50 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
   return { ok: true, save, result };
 }
 
-function calculateHeroPower(save: V4SaveEnvelope): number {
+export function getV4HeroPower(save: V4SaveEnvelope): number {
   const hero = save.run.hero;
-  return hero.atk + hero.def + Math.floor(hero.hpMax / 100) + hero.equipmentIds.length * 30;
+  return hero.atk + hero.def + Math.floor(hero.hpMax / 100);
+}
+
+const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
+
+function clampSuccessChance(value: number): number {
+  return Math.min(0.97, Math.max(0.05, value));
+}
+
+export function getExpeditionSuccessChance(
+  source: V4SaveEnvelope,
+  realmId: RealmId,
+  encounterIndex = 2,
+  assignedAgentId: SupportAgentId | null = null,
+): number {
+  const realm = REALM_DEFINITIONS[realmId];
+  const encounter = realm?.encounters[Math.min(realm.encounters.length - 1, Math.max(0, Math.floor(encounterIndex)))];
+  if (!realm || !encounter) return 0.05;
+
+  const readiness = getV4HeroPower(source) / Math.max(1, encounter.recommendedPower);
+  const readinessBonus = Math.max(-0.35, Math.min(0.2, (readiness - 1) * 0.3));
+  const guide = assignedAgentId === 'guide' ? source.meta.agents.find((agent) => agent.id === 'guide') : undefined;
+  const guideBonus = guide ? Math.min(0.08, guide.trust / 1_250) : 0;
+  const policyBonus = source.run.policy === 'hoarding'
+    ? 0.04
+    : source.run.policy === 'training'
+      ? (encounter.tier === 'boss' ? -0.02 : 0.02)
+      : 0;
+  const healthPenalty = source.run.hero.hp / Math.max(1, source.run.hero.hpMax) < 0.35 ? 0.15 : 0;
+  return clampSuccessChance(
+    SUCCESS_BASE_BY_TIER[encounter.tier] + readinessBonus + guideBonus + policyBonus
+      - encounter.risk * 0.05 - healthPenalty,
+  );
+}
+
+function deterministicRoll(key: string): number {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < key.length; index += 1) {
+    hash ^= key.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return (hash >>> 0) / 4_294_967_296;
 }
 
 function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlock: boolean, efficiency: number): void {
@@ -381,7 +422,6 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     }
 
     const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
-    const guideBonus = guide ? Math.min(0.12, guide.trust / 500) : 0;
     const runtime = createV4HeroRuntime(save.run.hero);
     const battle = runtime.resolveBattle({
       heroAtk: save.run.hero.atk,
@@ -394,8 +434,14 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     // the clock at encounter granularity makes aging predictable and keeps it
     // independent from the number of turns inside the battle loop.
     advanceHeroActionsInPlace(save, 1, now);
-    const heroPower = calculateHeroPower(save);
-    const won = battle.won && heroPower >= encounter.recommendedPower * (1 - guideBonus);
+    const heroPower = getV4HeroPower(save);
+    const successChance = getExpeditionSuccessChance(
+      save,
+      expedition.realmId,
+      encounterIndex,
+      expedition.assignedAgentId,
+    );
+    const won = battle.won && deterministicRoll(`${expedition.id}:${encounter.id}`) < successChance;
     save.run.hero.hp = battle.heroRemainingHp;
     expedition.encountersCleared = (expedition.encountersCleared ?? 0) + 1;
     expedition.totalTurns = (expedition.totalTurns ?? 0) + battle.turns;
@@ -446,6 +492,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
       recommendedFacilityId,
       recommendedEquipmentId: save.run.hero.equipmentIds.includes('v4_iron_sword') ? null : 'v4_iron_sword',
       retryAfterSeconds: won ? 0 : encounter.durationSeconds,
+      successChance,
       encountersCleared,
       totalEncounterCount,
     };

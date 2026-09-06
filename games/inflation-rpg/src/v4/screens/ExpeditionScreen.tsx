@@ -1,4 +1,5 @@
 import { FACILITY_DEFINITIONS, REALM_DEFINITIONS } from '../data';
+import { getExpeditionSuccessChance, getV4HeroPower } from '../domain';
 import type { InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 
 interface Props {
@@ -45,6 +46,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
             <div className="v4-detail-stat"><small>전투력</small><strong>{result.heroPower.toLocaleString('ko-KR')}</strong><span className="v4-muted">/ 권장 {result.recommendedPower.toLocaleString('ko-KR')}</span></div>
             <div className="v4-detail-stat"><small>전투</small><strong>{result.turns}턴</strong><span className="v4-muted">받은 피해 {result.totalDamageTaken.toLocaleString('ko-KR')}</span></div>
           </div>
+          {result.successChance !== undefined && <p className="v4-muted">판정 당시 예상 승률 {Math.round(result.successChance * 100)}%</p>}
           {result.encountersCleared !== undefined && <p className="v4-muted">원정 단계 {result.encountersCleared}/{result.totalEncounterCount ?? result.encountersCleared} 정산</p>}
           {result.outcome === 'victory' ? (
             <div className="v4-alert">획득 보상 · {Object.entries(result.reward).map(([key, value]) => `${key} +${value}`).join(' · ') || '없음'}</div>
@@ -63,6 +65,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
           <h2>{expedition.status === 'awaiting_confirmation' ? '원정 결과 확인 필요' : '원정 진행 중'}</h2>
           <p>{activeRealm?.icon} {activeRealm?.nameKR} · {activeEncounter?.nameKR ?? activeRealm?.boss}</p>
           {activeEncounter && <div className="v4-stat-line"><span className="v4-chip">현재 단계 {activeEncounter.tier === 'normal' ? '일반' : activeEncounter.tier === 'elite' ? '정예' : '보스'}</span><span className="v4-chip">{(expedition.encounterIndex ?? activeRealm!.encounters.length - 1) + 1}/{activeRealm!.encounters.length}</span><span className="v4-chip">권장 {activeEncounter.recommendedPower}</span></div>}
+          {activeEncounter && <p className="v4-muted">현재 전투력 {getV4HeroPower(save).toLocaleString('ko-KR')} · 예상 승률 {Math.round(getExpeditionSuccessChance(save, expedition.realmId, expedition.encounterIndex ?? activeRealm!.encounters.length - 1, expedition.assignedAgentId) * 100)}%</p>}
           {expedition.status === 'awaiting_confirmation' && <div className="v4-alert">오프라인 동안 위험 구간에 도착했습니다. 보스 결과와 보상을 확인한 뒤 귀환을 확정하세요.</div>}
           <div className="v4-progress"><span style={{ width: `${Math.min(100, Math.max(0, ((now - expedition.startedAt) / (expedition.completesAt - expedition.startedAt)) * 100))}%` }} /></div>
           <p>{expedition.status === 'awaiting_confirmation' ? '귀환 판정 대기 중' : `귀환까지 ${Math.max(0, Math.ceil((expedition.completesAt - now) / 1000))}초`}</p>
@@ -84,6 +87,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
                 <div className="v4-realm-head"><h3 className="v4-realm-title">{realm.icon} {realm.nameKR}</h3><span className="v4-realm-risk">위험도 {Math.round(realm.risk * 100)}%</span></div>
                 <p>{realm.description}</p>
                 <div className="v4-stat-line"><span className="v4-chip">권장 전투력 {realm.recommendedPower}</span><span className="v4-chip">{realm.durationSeconds}초</span><span className="v4-chip">신력 {realm.cost.spirit ?? 0}</span></div>
+                <p className="v4-muted">보스 예상 승률 {Math.round(getExpeditionSuccessChance(save, realmId, 2, guide?.activeTaskId ? null : 'guide') * 100)}% · 현재 전투력 {getV4HeroPower(save).toLocaleString('ko-KR')}</p>
                 <div className="v4-encounter-row" aria-label={`${realm.nameKR} 원정 단계`}>
                   {realm.encounters.map((encounter) => <span className="v4-encounter" key={encounter.id}><strong>{ENCOUNTER_LABELS[encounter.tier]}</strong><br />{encounter.durationSeconds}초 · {encounter.recommendedPower}</span>)}
                 </div>
