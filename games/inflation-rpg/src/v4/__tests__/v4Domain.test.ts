@@ -105,6 +105,23 @@ describe('v4 save and domain', () => {
     expect(() => persistV4Save(createInitialV4Save(15), brokenStorage)).not.toThrow();
   });
 
+  it('does not overwrite a valid save with an invalid runtime snapshot', () => {
+    const initial = createInitialV4Save(16);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+
+    persistV4Save(initial, fakeStorage);
+    persistV4Save({
+      ...initial,
+      meta: { ...initial.meta, currencies: { ...initial.meta.currencies, gold: Number.NaN } },
+    }, fakeStorage);
+
+    expect(loadV4Save(fakeStorage)?.meta.currencies.gold).toBe(initial.meta.currencies.gold);
+  });
+
   it('rejects malformed task and expedition records before they reach the domain', () => {
     const save = createInitialV4Save(14);
     const storage = new Map<string, string>();

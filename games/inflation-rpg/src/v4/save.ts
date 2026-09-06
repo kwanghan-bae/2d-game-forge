@@ -617,7 +617,7 @@ export function startFreshV4Save(
 }
 
 export function persistV4Save(save: V4SaveEnvelope, storage: Storage | undefined = defaultStorage()): void {
-  if (!storage) return;
+  if (!storage || !isV4SaveEnvelope(save)) return;
   try {
     storage.setItem(V4_SAVE_KEY, JSON.stringify(save));
   } catch {
