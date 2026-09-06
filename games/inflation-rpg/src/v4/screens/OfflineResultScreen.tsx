@@ -13,6 +13,7 @@ interface Props {
 
 export function OfflineResultScreen({ summary, onClose, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
   const resourceEntries = Object.entries(summary.resourcesGained);
+  const hasPositiveResourceReward = resourceEntries.some(([, value]) => Number.isFinite(value) && value > 0);
 
   return (
     <div className="v4-overlay" role="dialog" aria-modal="true" aria-label="오프라인 결과">
@@ -31,8 +32,8 @@ export function OfflineResultScreen({ summary, onClose, onDoubleReward, canDoubl
         </div>
         {summary.equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {summary.equipmentGained.map(getV4EquipmentName).join(', ')}</div>}
         <p>{summary.completedTaskIds.length}개 작업 완료 · {summary.completedExpedition ? '원정 귀환 완료 · 다음 Realm 해금은 원정 화면에서 확인' : '선택형 사건은 보류됨'}</p>
-        {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!canDoubleReward || (!adFree && adsToday >= 5)} onClick={onDoubleReward}>
-          {!canDoubleReward ? '보상 2배 적용 완료' : !adFree && adsToday >= 5 ? '오늘 광고 한도 도달' : adFree ? '광고 제거 적용 · 오프라인 재화 2배' : '광고 보고 오프라인 재화 2배'}
+        {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasPositiveResourceReward || !canDoubleReward || (!adFree && adsToday >= 5)} onClick={onDoubleReward}>
+          {!hasPositiveResourceReward ? '이번 정산은 2배 대상 없음' : !canDoubleReward ? '보상 2배 적용 완료' : !adFree && adsToday >= 5 ? '오늘 광고 한도 도달' : adFree ? '광고 제거 적용 · 오프라인 재화 2배' : '광고 보고 오프라인 재화 2배'}
         </button>}
         <button type="button" className="v4-btn v4-btn--primary" onClick={onClose}>마을 확인</button>
       </section>

@@ -75,6 +75,32 @@ describe('useV4Game monetization actions', () => {
     await waitFor(() => expect(screen.getByTestId('spirit')).toHaveTextContent('124'));
     expect(monetization.getAdsToday()).toBe(1);
   });
+
+  it('does not request an ad when offline settlement has no positive currency reward', async () => {
+    const base = createInitialV4Save(89);
+    const startedAt = Date.now() - 60_000;
+    base.createdAt = startedAt;
+    base.lastProcessedAt = startedAt;
+    base.updatedAt = startedAt;
+    const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt;
+    started.save.meta.tasks[started.task.id].outputPreview = {};
+    persistV4Save(started.save);
+
+    let providerCalls = 0;
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => { providerCalls += 1; return true; },
+    }, null);
+    render(<Harness monetization={monetization} />);
+    await waitFor(() => expect(screen.getByTestId('offline-state')).toHaveTextContent('ready'));
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'double' })); });
+
+    expect(providerCalls).toBe(0);
+    expect(screen.getByTestId('spirit')).toHaveTextContent('100');
+  });
 });
 
 describe('useV4Game save recovery', () => {

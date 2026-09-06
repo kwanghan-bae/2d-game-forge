@@ -130,7 +130,9 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, [monetization]);
 
   const doubleOfflineReward = useCallback(async () => {
-    if (!offlineSummary || offlineRewardDoubled || offlineRewardClaimInFlight.current) return;
+    const hasPositiveResourceReward = Boolean(offlineSummary
+      && Object.values(offlineSummary.resourcesGained).some((value) => Number.isFinite(value) && value > 0));
+    if (!offlineSummary || !hasPositiveResourceReward || offlineRewardDoubled || offlineRewardClaimInFlight.current) return;
     offlineRewardClaimInFlight.current = true;
     try {
       if (!(await watchRewarded('offline_double'))) return;

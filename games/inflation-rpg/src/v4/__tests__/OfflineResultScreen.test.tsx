@@ -36,9 +36,10 @@ describe('V4 offline result screen', () => {
   });
 
   it('makes an empty offline reward explicit', () => {
-    render(<OfflineResultScreen summary={summary({ resourcesGained: {} })} onClose={() => {}} />);
+    render(<OfflineResultScreen summary={summary({ resourcesGained: {} })} onClose={() => {}} onDoubleReward={() => {}} />);
 
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('획득 재화 없음');
+    expect(screen.getByRole('button', { name: '이번 정산은 2배 대상 없음' })).toBeDisabled();
   });
 
   it('does not expose an unknown resource storage key to players', () => {
