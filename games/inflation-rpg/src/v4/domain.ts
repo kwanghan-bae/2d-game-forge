@@ -5,6 +5,7 @@ import type {
   FacilityId,
   FacilityTask,
   ExpeditionResult,
+  HeroAction,
   InterventionType,
   RealmId,
   SupportAgentId,
@@ -110,6 +111,23 @@ export function advanceHeroActions(source: V4SaveEnvelope, actions: number, now:
   advanceHeroActionsInPlace(save, amount, now);
   save.updatedAt = now;
   return save;
+}
+
+/**
+ * Exposes the same next-action decision used by the hero runtime to the hub.
+ * It is a read-only forecast; starting a task or expedition remains an
+ * explicit player action and therefore cannot be triggered by rendering.
+ */
+export function getHeroNextAction(source: V4SaveEnvelope): HeroAction {
+  const hero = source.run.hero;
+  if (source.run.expedition) return 'expedition';
+  if (Object.values(source.meta.tasks).some((task) => task.facilityId === 'training')) return 'train';
+  return createV4HeroRuntime(hero).chooseAction({
+    hp: hero.hp,
+    hpMax: hero.hpMax,
+    policy: source.run.policy,
+    expeditionAvailable: source.meta.unlockedRealms.length > 0,
+  });
 }
 
 function facilityTaskEconomy(

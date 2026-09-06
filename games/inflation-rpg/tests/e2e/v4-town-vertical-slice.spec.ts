@@ -12,6 +12,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-app')).toBeVisible();
     await expect(page.getByTestId('v4-app').getByRole('heading', { name: '신의 마을: 영원의 후원자' })).toBeVisible();
     await expect(page.getByTestId('v4-town-hub')).toContainText('17세');
+    await expect(page.getByText('다음 판단 · 원정 준비')).toBeVisible();
 
     await page.getByRole('button', { name: '작업 시작' }).first().click();
     await expect(page.getByText('진행 확인')).toBeVisible();

@@ -1,5 +1,5 @@
 import { FACILITY_DEFINITIONS, POLICY_LABELS } from '../data';
-import { getFacilityTaskPreview, getFacilityUpgradeCost } from '../domain';
+import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction } from '../domain';
 import type { FacilityId, InterventionType, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 
 interface Props {
@@ -29,6 +29,7 @@ const formatNumber = (value: number) => value.toLocaleString('ko-KR');
 const RESOURCE_LABELS: Record<string, string> = {
   spirit: '신력', gold: '금화', materials: '재료', rift: '균열석',
 };
+const HERO_ACTION_LABELS = { rest: '마을에서 회복', train: '훈련소에서 성장', expedition: '원정 준비' } as const;
 
 function formatResources(resources: Partial<Record<string, number>>): string {
   const entries = Object.entries(resources).filter(([, value]) => (value ?? 0) > 0);
@@ -44,6 +45,7 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
 
 export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
   const hero = save.run.hero;
+  const nextAction = getHeroNextAction(save);
   return (
     <main className="v4-container" data-testid="v4-town-hub">
       <section className="v4-panel v4-hero-card">
@@ -62,7 +64,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
 
       <section className="v4-panel">
         <h2>후원 정책</h2>
-        <p>영웅의 다음 행동을 정합니다. HP가 35% 아래면 자동으로 회복을 우선합니다.</p>
+        <p>영웅의 다음 행동을 정합니다. HP가 35% 아래면 자동으로 회복을 우선합니다.<br />다음 판단 · <span className="v4-action">{HERO_ACTION_LABELS[nextAction]}</span></p>
         <div className="v4-policy-row">
           {(Object.keys(POLICY_LABELS) as V4Policy[]).map((policy) => (
             <button

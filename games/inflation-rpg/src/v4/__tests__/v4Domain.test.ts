@@ -15,10 +15,12 @@ import {
   advanceHeroActions,
   getFacilityTaskPreview,
   getFacilityUpgradeCost,
+  getHeroNextAction,
   grantInterventionCharge,
   grantOfflineResourceBonus,
   rejuvenateHero,
   restAgent,
+  setV4Policy,
   confirmPendingExpedition,
   startExpedition,
   startFacilityTask,
@@ -621,5 +623,17 @@ describe('v4 save and domain', () => {
     expect(runtime.chooseAction({ hp: 1_000, hpMax: 1_000, policy: 'aggression', expeditionAvailable: true })).toBe('expedition');
     expect(runtime.resolveBattle({ heroAtk: 100, heroDef: 20, heroHp: 100, enemyHp: 250, enemyAtk: 25 }).won).toBe(true);
     expect(runtime.rejuvenate(3).yearsReduced).toBe(3);
+  });
+
+  it('turns the sponsor policy and hero condition into a visible next-action decision', () => {
+    const initial = createInitialV4Save(89);
+    expect(getHeroNextAction(initial)).toBe('expedition');
+    expect(getHeroNextAction(setV4Policy(initial, 'training', initial.createdAt + 1_000))).toBe('train');
+
+    const wounded = {
+      ...initial,
+      run: { ...initial.run, hero: { ...initial.run.hero, hp: 300 } },
+    };
+    expect(getHeroNextAction(wounded)).toBe('rest');
   });
 });
