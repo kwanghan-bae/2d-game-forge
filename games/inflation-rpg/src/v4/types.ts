@@ -57,6 +57,7 @@ export interface FacilityTask {
   input: Partial<Record<V4CurrencyKey, number>>;
   outputPreview: Partial<Record<V4CurrencyKey, number>>;
   outputEquipmentIds?: string[];
+  heroExpGain?: number;
   assignedAgentId: SupportAgentId | null;
 }
 

@@ -295,6 +295,38 @@ describe('v4 save and domain', () => {
     expect(agent).toMatchObject({ trust: 50, level: 2, activeTaskId: null });
   });
 
+  it('turns training work into hero experience, level, and combat stats', () => {
+    const initial = createInitialV4Save(82);
+    initial.run.hero.exp = 80;
+    const started = startFacilityTask(initial, 'training', initial.createdAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const completed = completeFacilityTasks(started.save, started.task.completesAt);
+
+    expect(completed.run.hero.level).toBe(2);
+    expect(completed.run.hero.exp).toBe(20);
+    expect(completed.run.hero.atk).toBeGreaterThan(initial.run.hero.atk);
+    expect(completed.run.hero.hpMax).toBeGreaterThan(initial.run.hero.hpMax);
+    expect(completed.run.hero.currentAction).toBe('rest');
+  });
+
+  it('keeps hero training and expedition actions mutually exclusive', () => {
+    const initial = createInitialV4Save(83);
+    const training = startFacilityTask(initial, 'training', initial.createdAt, null);
+    expect(training.ok).toBe(true);
+    if (!training.ok) return;
+
+    const expeditionWhileTraining = startExpedition(training.save, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(expeditionWhileTraining.ok).toBe(false);
+
+    const expedition = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(expedition.ok).toBe(true);
+    if (!expedition.ok) return;
+    const trainingDuringExpedition = startFacilityTask(expedition.save, 'training', initial.createdAt, null);
+    expect(trainingDuringExpedition.ok).toBe(false);
+  });
+
   it('applies monetization effects through pure V4 domain helpers', () => {
     const initial = createInitialV4Save(72);
     const started = startFacilityTask(initial, 'temple', initial.createdAt, null);

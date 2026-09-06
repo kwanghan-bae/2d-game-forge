@@ -51,6 +51,7 @@ function isFacilityTaskRecord(value: unknown): boolean {
     || !isCurrencyRecord(value.input) || !isCurrencyRecord(value.outputPreview)
     || (value.outputEquipmentIds !== undefined
       && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) => typeof id === 'string')))
+    || (value.heroExpGain !== undefined && !isNonNegativeNumber(value.heroExpGain))
     || (value.assignedAgentId !== null && typeof value.assignedAgentId !== 'string')) return false;
   return true;
 }

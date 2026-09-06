@@ -10,6 +10,7 @@ export interface FacilityDefinition {
   input: Partial<Record<V4CurrencyKey, number>>;
   output: Partial<Record<V4CurrencyKey, number>>;
   outputEquipmentIds?: string[];
+  heroExpGain?: number;
 }
 
 export const FACILITY_DEFINITIONS: Record<FacilityId, FacilityDefinition> = {
@@ -31,7 +32,7 @@ export const FACILITY_DEFINITIONS: Record<FacilityId, FacilityDefinition> = {
   },
   training: {
     id: 'training', nameKR: '훈련소', icon: '🎯',
-    description: '영웅의 전투 경험을 쌓고 다음 행동을 준비합니다.', taskLabelKR: '기초 훈련',
+    description: '영웅의 전투 경험을 쌓고 다음 행동을 준비합니다.', taskLabelKR: '기초 훈련', heroExpGain: 40,
     baseDurationSeconds: 40, input: { gold: 15 }, output: { spirit: 8 },
   },
   mudang: {

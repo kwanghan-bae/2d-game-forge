@@ -67,6 +67,33 @@ function nextTaskId(save: V4SaveEnvelope, prefix: string, now: number): string {
   return `${prefix}-${now}-${Object.keys(save.meta.tasks).length + 1}`;
 }
 
+function syncHeroAction(save: V4SaveEnvelope): void {
+  if (save.run.expedition) {
+    save.run.hero.currentAction = 'expedition';
+    return;
+  }
+  save.run.hero.currentAction = Object.values(save.meta.tasks).some((task) => task.facilityId === 'training')
+    ? 'train'
+    : 'rest';
+}
+
+function applyHeroExperience(save: V4SaveEnvelope, amount: number): number {
+  const hero = save.run.hero;
+  hero.exp += Math.max(0, Math.floor(amount));
+  let levelsGained = 0;
+  while (hero.exp >= hero.level * 100) {
+    hero.exp -= hero.level * 100;
+    hero.level += 1;
+    hero.atk += 20;
+    hero.def += 10;
+    hero.defBase += 10;
+    hero.hpMax += 100;
+    hero.hp = Math.min(hero.hpMax, hero.hp + 100);
+    levelsGained += 1;
+  }
+  return levelsGained;
+}
+
 export function startFacilityTask(
   source: V4SaveEnvelope,
   facilityId: FacilityId,
@@ -82,6 +109,9 @@ export function startFacilityTask(
   }
   if (facility.activeTaskId) {
     return { ok: false, save: source, error: '이 시설에는 이미 진행 중인 작업이 있습니다.' };
+  }
+  if (facilityId === 'training' && save.run.expedition) {
+    return { ok: false, save: source, error: '원정 중인 영웅은 훈련소 작업을 시작할 수 없습니다.' };
   }
   if (assignedAgentId && (!agent || agent.activeTaskId)) {
     return { ok: false, save: source, error: '해당 지원 에이전트가 다른 작업 중입니다.' };
@@ -114,12 +144,13 @@ export function startFacilityTask(
       Object.entries(definition.output).map(([key, value]) => [key, Math.floor((value ?? 0) * outputMultiplier)]),
     ),
     outputEquipmentIds: definition.outputEquipmentIds ? [...definition.outputEquipmentIds] : undefined,
+    heroExpGain: definition.heroExpGain,
     assignedAgentId,
   };
   save.meta.tasks[task.id] = task;
   facility.activeTaskId = task.id;
   if (agent) agent.activeTaskId = task.id;
-  save.run.hero.currentAction = facilityId === 'training' ? 'train' : 'rest';
+  syncHeroAction(save);
   save.updatedAt = now;
   return { ok: true, save, task };
 }
@@ -144,7 +175,7 @@ export function cancelFacilityTask(
     const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);
     if (agent) agent.activeTaskId = null;
   }
-  save.run.hero.currentAction = save.run.expedition ? 'expedition' : 'rest';
+  syncHeroAction(save);
   save.updatedAt = now;
   return { ok: true, save, task };
 }
@@ -312,6 +343,18 @@ export function completeFacilityTasks(
     if (task.outputEquipmentIds) {
       save.run.hero.equipmentIds.push(...task.outputEquipmentIds);
     }
+    if (task.heroExpGain) {
+      const levelsGained = applyHeroExperience(save, task.heroExpGain * outputEfficiency);
+      if (levelsGained > 0) {
+        save.meta.sagaEntries.unshift({
+          id: `saga-level-${task.id}`,
+          kind: 'milestone',
+          createdAt: now,
+          title: '영웅의 성장',
+          text: `${save.run.hero.name}이(가) ${levelsGained}단계 성장해 Lv.${save.run.hero.level}이 되었다.`,
+        });
+      }
+    }
     if (facility) facility.activeTaskId = null;
     if (task.assignedAgentId) {
       const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);
@@ -335,6 +378,7 @@ export function completeFacilityTasks(
     delete save.meta.tasks[task.id];
   }
   resolveExpedition(save, now, allowPermanentUnlock, outputEfficiency);
+  syncHeroAction(save);
   save.updatedAt = now;
   save.lastProcessedAt = Math.max(save.lastProcessedAt, now);
   return save;
@@ -464,6 +508,9 @@ export function startExpedition(
   }
   if (save.run.hero.hp <= 0) {
     return { ok: false, save: source, error: '영웅이 쓰러져 있습니다. 회복당에서 먼저 회복하세요.' };
+  }
+  if (Object.values(save.meta.tasks).some((task) => task.facilityId === 'training')) {
+    return { ok: false, save: source, error: '영웅이 훈련 중입니다. 훈련을 마친 뒤 원정을 시작하세요.' };
   }
   if (assignedAgentId && assignedAgentId !== 'guide') {
     return { ok: false, save: source, error: '원정에는 길잡이만 배정할 수 있습니다.' };
