@@ -17,6 +17,7 @@ import { AscendantRushModal } from './AscendantRushModal';
 import { ChaosRiftModal } from './ChaosRiftModal';
 import { ApexTrialModal } from './ApexTrialModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
+import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
 
 interface Props {
   onClose: () => void;
@@ -145,6 +146,9 @@ export function AscensionTrialsModal({ onClose }: Props) {
               )}
               <span style={{ marginLeft: 6 }}>
                 <RiftLeaderboardBadge highestDepth={meta.highestRiftDepth ?? 0} hideZero size="sm" />
+              </span>
+              <span style={{ marginLeft: 6 }}>
+                <ZenithSanctuaryBadge clearedTiers={meta.apexTrialsCleared ?? []} hideZero size="sm" />
               </span>
             </div>
           </div>

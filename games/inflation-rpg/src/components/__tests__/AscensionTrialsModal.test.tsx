@@ -121,6 +121,21 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
     expect(riftBadge.textContent).toContain('[심도 15층]');
     expect(riftBadge.textContent).toContain('균열의 탐색자');
   });
+
+  it('renders ZenithSanctuaryBadge when apexTrialsCleared has entries', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        apexTrialsCleared: [1, 2],
+      },
+    }));
+
+    render(<AscensionTrialsModal onClose={() => {}} />);
+    const badge = screen.getByTestId('zenith-sanctuary-badge');
+    expect(badge).toBeDefined();
+    expect(badge.textContent).toContain('황혼의 정복자');
+    expect(badge.textContent).toContain('[2/3]');
+  });
 });
 
 
