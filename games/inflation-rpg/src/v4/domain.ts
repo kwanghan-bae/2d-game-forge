@@ -882,6 +882,7 @@ export function startExpedition(
 }
 
 export function setV4Policy(source: V4SaveEnvelope, policy: V4Policy, now: number): V4SaveEnvelope {
+  if (!['aggression', 'hoarding', 'training'].includes(policy as string)) return source;
   const save = cloneSave(source);
   save.run.policy = policy;
   touchSave(save, now);
@@ -889,7 +890,9 @@ export function setV4Policy(source: V4SaveEnvelope, policy: V4Policy, now: numbe
 }
 
 function clampVolume(value: number | undefined, fallback: number): number {
-  return value === undefined || !Number.isFinite(value) ? fallback : Math.min(1, Math.max(0, value));
+  return typeof value !== 'number' || !Number.isFinite(value)
+    ? fallback
+    : Math.min(1, Math.max(0, value));
 }
 
 export function updateV4Settings(
@@ -901,7 +904,7 @@ export function updateV4Settings(
   save.meta.settings = {
     music: clampVolume(patch.music, source.meta.settings.music),
     sfx: clampVolume(patch.sfx, source.meta.settings.sfx),
-    muted: patch.muted ?? source.meta.settings.muted,
+    muted: typeof patch.muted === 'boolean' ? patch.muted : source.meta.settings.muted,
   };
   touchSave(save, now);
   return save;

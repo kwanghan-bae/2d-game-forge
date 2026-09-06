@@ -1146,6 +1146,19 @@ describe('v4 save and domain', () => {
     expect(initial.meta.settings).toEqual({ music: 0.7, sfx: 0.8, muted: false });
   });
 
+  it('keeps runtime policy and audio settings valid when callers pass unknown values', () => {
+    const initial = createInitialV4Save(106);
+    const policy = setV4Policy(initial, 'unsafe' as never, initial.updatedAt + 1_000);
+    const settings = updateV4Settings(initial, {
+      music: 'broken' as never,
+      sfx: Number.NaN,
+      muted: 'yes' as never,
+    }, initial.updatedAt + 1_000);
+
+    expect(policy).toBe(initial);
+    expect(settings.meta.settings).toEqual(initial.meta.settings);
+  });
+
   it('ignores non-finite, negative, and unknown offline bonus values', () => {
     const initial = createInitialV4Save(94);
     const updated = grantOfflineResourceBonus(initial, {
