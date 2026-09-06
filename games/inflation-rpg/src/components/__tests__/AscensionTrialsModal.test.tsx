@@ -156,6 +156,21 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
 
     expect(screen.getByTestId('primordial-ascension-modal')).toBeDefined();
   });
+
+  it('renders PrimordialConstellationBadge when primordialRanks has entries', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        primordialRanks: { primordial_genesis: 2 },
+      },
+    }));
+
+    render(<AscensionTrialsModal onClose={() => {}} />);
+    const badge = screen.getByTestId('primordial-constellation-badge');
+    expect(badge).toBeDefined();
+    expect(badge.textContent).toContain('창세의 불씨');
+    expect(badge.textContent).toContain('[2/18]');
+  });
 });
 
 

@@ -20,6 +20,7 @@ import { AbyssalCorridorModal } from './AbyssalCorridorModal';
 import { PrimordialAscensionModal } from './PrimordialAscensionModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
+import { PrimordialConstellationBadge } from './PrimordialConstellationBadge';
 
 interface Props {
   onClose: () => void;
@@ -153,6 +154,9 @@ export function AscensionTrialsModal({ onClose }: Props) {
               </span>
               <span style={{ marginLeft: 6 }}>
                 <ZenithSanctuaryBadge clearedTiers={meta.apexTrialsCleared ?? []} hideZero size="sm" />
+              </span>
+              <span style={{ marginLeft: 6 }}>
+                <PrimordialConstellationBadge />
               </span>
             </div>
           </div>
