@@ -1,5 +1,6 @@
 import { HeroDecisionAI } from '../cycle/HeroDecisionAI';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
+import { resolveDamageTaken, resolvePlayerHit } from '../battle/resolver';
 import type {
   BattleInput,
   BattleResult,
@@ -16,6 +17,20 @@ function cloneSnapshot(snapshot: V4HeroSnapshot): V4HeroSnapshot {
     equipmentIds: [...snapshot.equipmentIds],
     equipmentLevels: snapshot.equipmentLevels ? { ...snapshot.equipmentLevels } : undefined,
   };
+}
+
+function deterministicRoll(key: string): number {
+  let hash = 2_166_136_261;
+  for (let index = 0; index < key.length; index += 1) {
+    hash ^= key.charCodeAt(index);
+    hash = Math.imul(hash, 16_777_619);
+  }
+  return (hash >>> 0) / 4_294_967_296;
+}
+
+function defenseReduction(defense: number): number {
+  const safeDefense = Math.max(0, defense);
+  return Math.min(0.9, safeDefense / (safeDefense + 100));
 }
 
 /**
@@ -50,11 +65,20 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
 
       while (heroHp > 0 && enemyHp > 0 && turns < maxTurns) {
         turns += 1;
-        const dealt = Math.max(1, Math.floor(input.heroAtk));
+        const turnKey = `${snapshot.name}:${snapshot.age}:${turns}:${input.heroAtk}:${input.enemyHp}`;
+        const critChance = Math.max(0, Math.min(1, snapshot.critRateBase));
+        const dealt = Math.max(1, resolvePlayerHit({
+          playerATK: Math.max(0, input.heroAtk),
+          crit: deterministicRoll(`${turnKey}:crit`) < critChance,
+          rngRoll: deterministicRoll(`${turnKey}:damage`),
+        }));
         enemyHp = Math.max(0, enemyHp - dealt);
         totalDamageDealt += dealt;
         if (enemyHp <= 0) break;
-        const taken = Math.max(1, Math.floor(input.enemyAtk - input.heroDef));
+        const taken = Math.max(1, resolveDamageTaken({
+          enemyATK: Math.max(0, input.enemyAtk),
+          reduction: defenseReduction(input.heroDef),
+        }));
         heroHp = Math.max(0, heroHp - taken);
         totalDamageTaken += taken;
       }

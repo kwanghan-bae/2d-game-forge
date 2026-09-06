@@ -47,8 +47,9 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
       if (!raw) throw new Error('v4 save was not created');
-      const save = JSON.parse(raw) as { lastProcessedAt: number };
-      save.lastProcessedAt = Date.now() - 9 * 60 * 60 * 1000;
+      const save = JSON.parse(raw) as { createdAt: number; lastProcessedAt: number };
+      save.createdAt = Date.now() - 9 * 60 * 60 * 1000;
+      save.lastProcessedAt = save.createdAt;
       localStorage.setItem(key, JSON.stringify(save));
     }, V4_SAVE_KEY);
     await page.reload();
@@ -152,6 +153,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       const raw = localStorage.getItem(key);
       if (!raw) throw new Error('v4 save was not created');
       const save = JSON.parse(raw) as {
+        createdAt: number;
         lastProcessedAt: number;
         meta: { agents: Array<{ id: string; activeTaskId: string | null }> };
         run: { expedition: { id: string; startedAt: number; completesAt: number; encounterIndex: number } | null };
@@ -163,7 +165,8 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       guide.activeTaskId = save.run.expedition.id;
       save.run.expedition.encounterIndex = 2;
       save.run.expedition.completesAt = Date.now() - 1;
-      save.lastProcessedAt = Date.now() - 60_000;
+      save.createdAt = Date.now() - 60_000;
+      save.lastProcessedAt = save.createdAt;
       localStorage.setItem(key, JSON.stringify(save));
     }, V4_SAVE_KEY);
     await page.reload();

@@ -813,6 +813,20 @@ describe('v4 save and domain', () => {
     expect(runtime.rejuvenate(3).yearsReduced).toBe(3);
   });
 
+  it('carries V3 hit variance, crits, and defense mitigation into V4 battles', () => {
+    const critical = createInitialV4Save(11);
+    critical.run.hero.critRateBase = 1;
+    const criticalResult = createV4HeroRuntime(critical.run.hero).resolveBattle({
+      heroAtk: 100, heroDef: 20, heroHp: 500, enemyHp: 100, enemyAtk: 25,
+    });
+    expect(criticalResult.totalDamageDealt).toBeGreaterThan(100);
+
+    const attrition = createV4HeroRuntime(critical.run.hero).resolveBattle({
+      heroAtk: 1, heroDef: 20, heroHp: 500, enemyHp: 1_000, enemyAtk: 25, maxTurns: 2,
+    });
+    expect(attrition.totalDamageTaken).toBeGreaterThan(10);
+  });
+
   it('turns the sponsor policy and hero condition into a visible next-action decision', () => {
     const initial = createInitialV4Save(89);
     expect(getHeroNextAction(initial)).toBe('expedition');
