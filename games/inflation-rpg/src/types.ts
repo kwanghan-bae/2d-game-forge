@@ -376,6 +376,8 @@ export interface MetaState {
   highestRiftDepth?: number;
   /** C1087 — 보유 중인 천상 보옥 목록. */
   carvedGems?: import('./systems/celestialGemCarving').CarvedGem[];
+  /** C1099 — 초월 진화 완료된 천상 성유물 목록. */
+  transmutedRelics?: import('./systems/celestialRelicTransmutation').TransmutedRelicType[];
 }
 
 // Phase G — Ascension Tree (성좌)

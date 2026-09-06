@@ -40,6 +40,7 @@ import {
 import type { CelestialRelicType } from '../types';
 import { getRelicSocketChant, getRelicUnsocketQuote } from '../data/relicFlavor';
 import { ElementalBadge } from './ElementalBadge';
+import { RelicTransmutationModal } from './RelicTransmutationModal';
 
 interface Props {
   onClose: () => void;
@@ -76,6 +77,7 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
     type: 'success' | 'failure' | 'info';
     message: string;
   } | null>(null);
+  const [showTransmute, setShowTransmute] = useState(false);
 
   const allItems: EquipmentInstance[] = [
     ...meta.inventory.weapons,
@@ -895,7 +897,25 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
           ) : (
             /* Relic Tab */
             <div>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>성유물을 장착할 장비 선택:</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ fontSize: 12, color: '#888' }}>성유물을 장착할 장비 선택:</div>
+                <button
+                  data-testid="open-transmute-modal-btn"
+                  onClick={() => setShowTransmute(true)}
+                  style={{
+                    background: '#7c3aed',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '3px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🔮 성유물 초월 진화
+                </button>
+              </div>
               <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 16 }}>
                 {allItems.length === 0 ? (
                   <div style={{ fontSize: 13, color: '#666' }}>보유 중인 장비가 없습니다.</div>
@@ -1086,6 +1106,7 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
           )}
         </div>
       </div>
+      {showTransmute && <RelicTransmutationModal onClose={() => setShowTransmute(false)} />}
     </div>
   );
 }

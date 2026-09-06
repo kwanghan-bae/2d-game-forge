@@ -186,4 +186,15 @@ describe('C1034: ReforgeModal Component Tests', () => {
     expect(state.meta.starlightShards).toBe(10); // 20 - 10
     expect(screen.getByTestId('reforge-feedback').textContent).toContain('추출');
   });
+
+  it('opens RelicTransmutationModal when clicking open-transmute-modal-btn', () => {
+    render(<ReforgeModal onClose={() => {}} initialTab="relic" />);
+
+    const openTransmuteBtn = screen.getByTestId('open-transmute-modal-btn');
+    expect(openTransmuteBtn).toBeDefined();
+
+    fireEvent.click(openTransmuteBtn);
+    expect(screen.getByTestId('relic-transmutation-modal')).toBeDefined();
+  });
 });
+
