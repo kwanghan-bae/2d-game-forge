@@ -33,6 +33,12 @@ export interface EquipmentBase {
   specialEffect?: EquipmentSpecialEffect;
 }
 
+export type CelestialRelicType =
+  | 'polaris_eye'
+  | 'sirius_fang'
+  | 'vega_veil'
+  | 'antares_heart';
+
 export interface EquipmentInstance {
   instanceId: string;
   baseId: string;
@@ -40,6 +46,8 @@ export interface EquipmentInstance {
   modifiers: Modifier[];
   /** C1046: Optional infused elemental rune */
   enchantElement?: 'fire' | 'water' | 'lightning' | 'dark' | 'neutral';
+  /** C1067: Celestial Star Relic socketed into equipment */
+  celestialRelic?: CelestialRelicType;
 }
 
 export interface PassiveSkill {
