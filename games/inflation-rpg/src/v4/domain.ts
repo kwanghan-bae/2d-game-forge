@@ -39,6 +39,7 @@ export interface FacilityTaskPreview {
   input: Partial<Record<V4CurrencyKey, number>>;
   output: Partial<Record<V4CurrencyKey, number>>;
   outputEquipmentIds: string[];
+  heroExpGain: number;
   assignedAgentId: SupportAgentId | null;
   canStart: boolean;
   error: string | null;
@@ -136,7 +137,7 @@ function facilityTaskEconomy(
   save: V4SaveEnvelope,
   facilityId: FacilityId,
   assignedAgentId: SupportAgentId | null,
-): Pick<FacilityTaskPreview, 'durationSeconds' | 'input' | 'output' | 'outputEquipmentIds'> {
+): Pick<FacilityTaskPreview, 'durationSeconds' | 'input' | 'output' | 'outputEquipmentIds' | 'heroExpGain'> {
   const facility = save.meta.facilities[facilityId];
   const definition = FACILITY_DEFINITIONS[facilityId];
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
@@ -157,6 +158,7 @@ function facilityTaskEconomy(
       Object.entries(definition?.output ?? {}).map(([key, value]) => [key, Math.floor((value ?? 0) * outputMultiplier)]),
     ) as Partial<Record<V4CurrencyKey, number>>,
     outputEquipmentIds: definition?.outputEquipmentIds ? [...definition.outputEquipmentIds] : [],
+    heroExpGain: Math.floor((definition?.heroExpGain ?? 0) * outputMultiplier),
   };
 }
 
@@ -184,6 +186,8 @@ export function getFacilityTaskPreview(
     error = '원정 중인 영웅은 훈련소 작업을 시작할 수 없습니다.';
   } else if (assignedAgentId && (!agent || agent.activeTaskId)) {
     error = '해당 지원 에이전트가 다른 작업 중입니다.';
+  } else if (assignedAgentId && agent && AGENT_DEFINITIONS[agent.id].specialty !== facilityId) {
+    error = '해당 지원 에이전트는 이 시설의 전문 담당자가 아닙니다.';
   } else if (agent && agent.fatigue >= 100) {
     error = '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.';
   } else if (!canPay(source, economy.input)) {
@@ -263,7 +267,7 @@ export function startFacilityTask(
     input: preview.input,
     outputPreview: preview.output,
     outputEquipmentIds: preview.outputEquipmentIds.length > 0 ? preview.outputEquipmentIds : undefined,
-    heroExpGain: definition.heroExpGain,
+    heroExpGain: preview.heroExpGain > 0 ? preview.heroExpGain : undefined,
     assignedAgentId,
   };
   save.meta.tasks[task.id] = task;
@@ -385,10 +389,11 @@ export function getExpeditionSuccessChance(
     : source.run.policy === 'training'
       ? (encounter.tier === 'boss' ? -0.02 : 0.02)
       : 0;
+  const mudangBlessing = Math.min(0.06, Math.max(0, (source.meta.facilities.mudang?.level ?? 1) - 1) * 0.02);
   const healthPenalty = source.run.hero.hp / Math.max(1, source.run.hero.hpMax) < 0.35 ? 0.15 : 0;
   return clampSuccessChance(
     SUCCESS_BASE_BY_TIER[encounter.tier] + readinessBonus + guideBonus + policyBonus
-      - encounter.risk * 0.05 - healthPenalty,
+      + mudangBlessing - encounter.risk * 0.05 - healthPenalty,
   );
 }
 
@@ -403,6 +408,13 @@ function deterministicRoll(key: string): number {
     hash = Math.imul(hash, 16_777_619);
   }
   return (hash >>> 0) / 4_294_967_296;
+}
+
+function expeditionDurationSeconds(save: V4SaveEnvelope, baseDurationSeconds: number, hasGuide: boolean): number {
+  const expeditionFacilityLevel = save.meta.facilities.expedition?.level ?? 1;
+  return Math.max(1, Math.round(
+    baseDurationSeconds * Math.pow(0.94, expeditionFacilityLevel - 1) * (hasGuide ? 0.9 : 1),
+  ));
 }
 
 function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlock: boolean, efficiency: number): void {
@@ -457,7 +469,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
       if (!nextEncounter) return;
       expedition.encounterIndex = encounterIndex + 1;
       expedition.startedAt = expedition.completesAt;
-      expedition.completesAt = expedition.startedAt + Math.max(1, Math.round(nextEncounter.durationSeconds * (guide ? 0.9 : 1))) * 1000;
+      expedition.completesAt = expedition.startedAt + expeditionDurationSeconds(save, nextEncounter.durationSeconds, Boolean(guide)) * 1000;
       continue;
     }
 
@@ -749,8 +761,11 @@ export function startExpedition(
     return { ok: false, save: source, error: '길잡이가 다른 작업 중입니다.' };
   }
   pay(save, realm.cost);
-  const guideBonus = assignedAgentId === 'guide' ? 0.9 : 1;
-  const firstEncounterDuration = realm.encounters[0]?.durationSeconds ?? realm.durationSeconds;
+  const firstEncounterDuration = expeditionDurationSeconds(
+    save,
+    realm.encounters[0]?.durationSeconds ?? realm.durationSeconds,
+    assignedAgentId === 'guide',
+  );
   const id = `expedition-${realmId}-${now}`;
   save.run.expedition = {
     id,
@@ -758,7 +773,7 @@ export function startExpedition(
     policy,
     assignedAgentId,
     startedAt: now,
-    completesAt: now + Math.max(1, Math.round(firstEncounterDuration * guideBonus)) * 1000,
+    completesAt: now + firstEncounterDuration * 1000,
     status: 'traveling',
     encounterIndex: 0,
     encountersCleared: 0,

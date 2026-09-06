@@ -461,6 +461,35 @@ describe('v4 save and domain', () => {
     expect(blocked.error).toContain('재화');
   });
 
+  it('allows only a specialist agent to own its designated facility work', () => {
+    const initial = createInitialV4Save(94);
+    const preview = getFacilityTaskPreview(initial, 'blacksmith', 'guide');
+    const result = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'guide');
+
+    expect(preview.canStart).toBe(false);
+    expect(preview.error).toContain('전문');
+    expect(result.ok).toBe(false);
+  });
+
+  it('makes training and expedition facility levels affect the live economy', () => {
+    const base = createInitialV4Save(95);
+    const upgraded = createInitialV4Save(96);
+    upgraded.meta.facilities.training.level = 3;
+    upgraded.meta.facilities.expedition.level = 3;
+
+    const baseTraining = getFacilityTaskPreview(base, 'training', null);
+    const upgradedTraining = getFacilityTaskPreview(upgraded, 'training', null);
+    expect(upgradedTraining.heroExpGain).toBeGreaterThan(baseTraining.heroExpGain);
+
+    const baseExpedition = startExpedition(base, 'joseon_plains', base.createdAt, 'aggression', null);
+    const upgradedExpedition = startExpedition(upgraded, 'joseon_plains', upgraded.createdAt, 'aggression', null);
+    expect(baseExpedition.ok).toBe(true);
+    expect(upgradedExpedition.ok).toBe(true);
+    if (!baseExpedition.ok || !upgradedExpedition.ok) return;
+    expect(upgradedExpedition.task.completesAt - upgradedExpedition.task.startedAt)
+      .toBeLessThan(baseExpedition.task.completesAt - baseExpedition.task.startedAt);
+  });
+
   it('exposes the scaled facility upgrade cost without mutating the save', () => {
     const initial = createInitialV4Save(86);
     initial.meta.facilities.temple.level = 3;
@@ -646,8 +675,13 @@ describe('v4 save and domain', () => {
 
     const guide = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 2, 'guide');
     const hoarding = getExpeditionSuccessChance(setV4Policy(atRecommendedPower, 'hoarding', atRecommendedPower.createdAt + 1), 'joseon_plains', 2, null);
+    const blessedSave = createInitialV4Save(97);
+    blessedSave.run.hero.atk = 30;
+    blessedSave.meta.facilities.mudang.level = 3;
+    const blessed = getExpeditionSuccessChance(blessedSave, 'joseon_plains', 2, null);
     expect(guide).toBeGreaterThan(boss);
     expect(hoarding).toBeGreaterThan(boss);
+    expect(blessed).toBeGreaterThan(boss);
   });
 
   it('uses the V4 hero battle adapter instead of power alone', () => {
