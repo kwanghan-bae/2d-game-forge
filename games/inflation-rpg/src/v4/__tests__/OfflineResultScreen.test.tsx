@@ -31,4 +31,10 @@ describe('V4 offline result screen', () => {
     rerender(<OfflineResultScreen summary={summary({ clockAnomaly: 'future' })} onClose={() => {}} />);
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('저장 시각이 현재보다 미래입니다');
   });
+
+  it('makes an empty offline reward explicit', () => {
+    render(<OfflineResultScreen summary={summary({ resourcesGained: {} })} onClose={() => {}} />);
+
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('획득 재화 없음');
+  });
 });
