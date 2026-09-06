@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { HeroSnapshot } from '../../hero/HeroEntity';
+import { HeroLifecycle } from '../../hero/HeroLifecycle';
 import {
   createInitialV4Save,
   importV3HeroSnapshot,
@@ -425,6 +426,25 @@ describe('v4 save and domain', () => {
 
     expect(hero.equipmentIds).toEqual(['w-knife']);
     expect(hero.equipmentLevels).toEqual({ 'w-knife': 1 });
+  });
+
+  it('normalizes malformed V3 core stats into a valid V4 hero snapshot', () => {
+    const source = {
+      name: 42, emoji: null, age: Number.NaN, chapter: '청년기', job: '검객', level: 0,
+      exp: Number.POSITIVE_INFINITY, hp: Number.POSITIVE_INFINITY, hpMax: 0,
+      atk: Number.NaN, atkBase: 160, hpBase: 1_000, actionCount: -1,
+      rejuvenationCount: Number.NaN, gridX: 0, gridY: 0, equipment: [],
+      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
+    } as unknown as HeroSnapshot;
+
+    const hero = migrateV3HeroSnapshot(source);
+
+    expect(hero).toMatchObject({
+      name: '이름 없는 영웅', emoji: '⚔️', age: 17, level: 1, exp: 0,
+      hp: 1_000, hpMax: 1_000, atk: 160, actionCount: HeroLifecycle.actionsForAge(17),
+      rejuvenationCount: 0, currentAction: 'rest',
+    });
   });
 
   it('settles completed facility work once and applies the 70% offline efficiency', () => {

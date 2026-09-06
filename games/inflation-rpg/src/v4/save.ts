@@ -52,6 +52,22 @@ function finiteNonNegativeOr(value: unknown, fallback: number): number {
   return isNonNegativeNumber(value) ? value : fallback;
 }
 
+function finitePositiveOr(value: unknown, fallback: number): number {
+  return isFiniteNumber(value) && value > 0 ? value : fallback;
+}
+
+function finiteStringOr(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.length > 0 ? value : fallback;
+}
+
+function positiveIntegerOr(value: unknown, fallback: number): number {
+  return isFiniteNumber(value) && Number.isInteger(value) && value >= 1 ? value : fallback;
+}
+
+function nonNegativeIntegerOr(value: unknown, fallback: number): number {
+  return isNonNegativeNumber(value) && Number.isInteger(value) ? value : fallback;
+}
+
 function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey, number>> {
   return isRecord(value) && Object.entries(value).every(([key, amount]) =>
     CURRENCY_KEYS.includes(key as V4CurrencyKey) && isNonNegativeNumber(amount));
@@ -348,28 +364,39 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
   const equipmentLevels = Object.fromEntries(
     equipmentIds.map((id) => [id, Math.min(20, Math.max(1, legacyEquipment.filter((candidate) => candidate === id).length))]),
   );
-  const hpMax = Math.max(1, finiteNonNegativeOr(input.hpMax, 1_000));
+  const name = finiteStringOr(input.name, '이름 없는 영웅');
+  const emoji = finiteStringOr(input.emoji, '⚔️');
+  const age = Math.max(5, positiveIntegerOr(input.age, 17));
+  const level = positiveIntegerOr(input.level, 1);
+  const expLimit = level * 100;
+  const rawExp = finiteNonNegativeOr(input.exp, 0);
+  const exp = Number.isFinite(expLimit) ? Math.min(rawExp, Math.max(0, expLimit - 1)) : rawExp;
+  const hpMax = finitePositiveOr(input.hpMax, 1_000);
+  const hp = Math.min(hpMax, finiteNonNegativeOr(input.hp, hpMax));
+  const atk = finiteNonNegativeOr(input.atk, finiteNonNegativeOr(input.atkBase, 160));
   const fallbackDefBase = Math.round(finiteNonNegativeOr(input.hpBase, hpMax) * 0.1);
   const defBase = finiteNonNegativeOr(input.defBase, fallbackDefBase);
   const fallbackDef = Math.round(hpMax * 0.1);
-  const def = finiteNonNegativeOr(input.def, defBase);
+  const def = finiteNonNegativeOr(input.def, finiteNonNegativeOr(input.defBase, fallbackDef));
+  const actionCount = nonNegativeIntegerOr(input.actionCount, HeroLifecycle.actionsForAge(age));
+  const rejuvenationCount = nonNegativeIntegerOr(input.rejuvenationCount, 0);
   return {
-    name: input.name,
-    emoji: input.emoji,
-    age: input.age,
-    level: input.level,
-    exp: input.exp,
-    hp: input.hp,
+    name,
+    emoji,
+    age,
+    level,
+    exp,
+    hp,
     hpMax,
-    atk: input.atk,
+    atk,
     def,
     defBase,
     critRateBase: Math.min(1, finiteNonNegativeOr(input.critRateBase, 0.05)),
     realmId: 'joseon_plains',
     equipmentIds,
     equipmentLevels,
-    actionCount: input.actionCount,
-    rejuvenationCount: input.rejuvenationCount,
+    actionCount,
+    rejuvenationCount,
     currentAction: 'rest',
   };
 }
