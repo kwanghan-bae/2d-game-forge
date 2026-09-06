@@ -652,10 +652,14 @@ export function completeFacilityTasks(
   now: number,
   outputEfficiency = 1,
   allowPermanentUnlock = true,
+  allowHistoricalSettlement = false,
 ): V4SaveEnvelope {
-  if (!Number.isFinite(now) || now < source.updatedAt) return source;
+  if (!Number.isFinite(now) || (!allowHistoricalSettlement && now < source.updatedAt)) return source;
   const save = cloneSave(source);
-  const eventAt = eventTimestamp(save, now);
+  // Offline settlement may intentionally resolve the capped historical
+  // window before a later manual write timestamp. Real-time callers keep the
+  // stricter persisted-write clock guard above.
+  const eventAt = allowHistoricalSettlement ? now : eventTimestamp(save, now);
   const efficiency = normalizeSettlementEfficiency(outputEfficiency);
   for (const task of Object.values(save.meta.tasks)) {
     if (task.completesAt > eventAt) continue;
@@ -676,7 +680,7 @@ export function completeFacilityTasks(
         });
       }
     }
-    if (task.facilityId === 'training') advanceHeroActionsInPlace(save, 1, now);
+    if (task.facilityId === 'training') advanceHeroActionsInPlace(save, 1, eventAt);
     if (facility) facility.activeTaskId = null;
     if (task.assignedAgentId) {
       const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);

@@ -499,6 +499,21 @@ describe('v4 save and domain', () => {
     expect(replay.save.meta.currencies).toEqual(offline.save.meta.currencies);
   });
 
+  it('settles overdue work inside the capped window after a later manual save', () => {
+    const initial = createInitialV4Save(118);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const now = initial.createdAt + 10 * HOUR;
+    started.save.updatedAt = now;
+    const offline = simulateOfflineProgress(started.save, now);
+
+    expect(offline.summary.wasClamped).toBe(true);
+    expect(offline.summary.completedTaskIds).toContain(started.task.id);
+    expect(offline.save.meta.tasks[started.task.id]).toBeUndefined();
+  });
+
   it('falls back to full efficiency when settlement receives a non-finite multiplier', () => {
     const initial = createInitialV4Save(28);
     const started = startFacilityTask(initial, 'training', initial.createdAt);
