@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
-import { startExpedition } from '../domain';
+import { getExpeditionSuccessChance, startExpedition } from '../domain';
 import { ExpeditionScreen } from '../screens/ExpeditionScreen';
 import type { ExpeditionResult, V4SaveEnvelope } from '../types';
 
@@ -87,6 +87,7 @@ describe('V4 expedition result screen', () => {
     if (!plains) return;
     const guideButton = within(plains).getByRole('button', { name: '길잡이 휴식 필요' });
     expect(guideButton).toBeDisabled();
+    expect(plains).toHaveTextContent(`보스 예상 승률 ${Math.round(getExpeditionSuccessChance(save, 'joseon_plains', 2, null) * 100)}%`);
     fireEvent.click(within(plains).getByRole('button', { name: '혼자 출발' }));
     expect(onStart).toHaveBeenCalledWith('joseon_plains', null);
   });
