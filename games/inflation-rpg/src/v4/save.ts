@@ -337,8 +337,9 @@ export function createInitialV4Save(seed: number): V4SaveEnvelope {
 }
 
 export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
+  const equipmentIds = [...new Set(input.equipment)];
   const equipmentLevels = Object.fromEntries(
-    input.equipment.map((id) => [id, Math.max(1, (input.equipment.filter((candidate) => candidate === id)).length)]),
+    equipmentIds.map((id) => [id, Math.min(20, Math.max(1, input.equipment.filter((candidate) => candidate === id).length))]),
   );
   return {
     name: input.name,
@@ -353,7 +354,7 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
     defBase: input.defBase ?? Math.round(input.hpBase * 0.1),
     critRateBase: input.critRateBase ?? 0.05,
     realmId: 'joseon_plains',
-    equipmentIds: [...input.equipment],
+    equipmentIds,
     equipmentLevels,
     actionCount: input.actionCount,
     rejuvenationCount: input.rejuvenationCount,

@@ -377,6 +377,23 @@ describe('v4 save and domain', () => {
     expect(importedAfterClockRollback.meta.sagaEntries[0]?.createdAt).toBe(staleDestination.lastProcessedAt);
   });
 
+  it('normalizes duplicate V3 equipment records during explicit import', () => {
+    const source = {
+      name: '중복 장비 영웅', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,
+      exp: 4, hp: 900, hpMax: 1000, atk: 250, atkBase: 200, hpBase: 800,
+      actionCount: 492, rejuvenationCount: 1, gridX: 2, gridY: 3,
+      equipment: Array.from({ length: 21 }, () => 'w-knife'),
+      personality: { courage: 1, curiosity: 0, greed: -1, compassion: 1, discipline: 0 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 99,
+      def: 80, defBase: 70, critRateBase: 0.08,
+    } as unknown as HeroSnapshot;
+
+    const hero = migrateV3HeroSnapshot(source);
+
+    expect(hero.equipmentIds).toEqual(['w-knife']);
+    expect(hero.equipmentLevels).toEqual({ 'w-knife': 20 });
+  });
+
   it('settles completed facility work once and applies the 70% offline efficiency', () => {
     vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
     const initial = createInitialV4Save(7);
