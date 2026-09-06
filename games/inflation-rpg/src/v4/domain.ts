@@ -90,6 +90,31 @@ export function startFacilityTask(
   return { ok: true, save, task };
 }
 
+export function cancelFacilityTask(
+  source: V4SaveEnvelope,
+  facilityId: FacilityId,
+  now: number,
+): DomainResult {
+  const save = cloneSave(source);
+  const facility = save.meta.facilities[facilityId];
+  const taskId = facility?.activeTaskId;
+  const task = taskId ? save.meta.tasks[taskId] : undefined;
+  if (!facility || !task) {
+    return { ok: false, save: source, error: '취소할 작업이 없습니다.' };
+  }
+
+  give(save, task.input);
+  facility.activeTaskId = null;
+  delete save.meta.tasks[task.id];
+  if (task.assignedAgentId) {
+    const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);
+    if (agent) agent.activeTaskId = null;
+  }
+  save.run.hero.currentAction = save.run.expedition ? 'expedition' : 'rest';
+  save.updatedAt = now;
+  return { ok: true, save, task };
+}
+
 function calculateHeroPower(save: V4SaveEnvelope): number {
   const hero = save.run.hero;
   return hero.atk + hero.def + Math.floor(hero.hpMax / 100) + hero.equipmentIds.length * 30;

@@ -7,6 +7,7 @@ import {
   simulateOfflineProgress,
 } from '../save';
 import {
+  cancelFacilityTask,
   completeFacilityTasks,
   startExpedition,
   startFacilityTask,
@@ -69,6 +70,21 @@ describe('v4 save and domain', () => {
     const replay = simulateOfflineProgress(offline.save, initial.createdAt + HOUR);
     expect(replay.summary.processedSeconds).toBe(0);
     expect(replay.summary.completedTaskIds).toEqual([]);
+  });
+
+  it('cancels facility work with a full input refund and releases the agent', () => {
+    const initial = createInitialV4Save(71);
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const canceled = cancelFacilityTask(started.save, 'blacksmith', initial.createdAt + 1_000);
+    expect(canceled.ok).toBe(true);
+    if (!canceled.ok) return;
+    expect(canceled.save.meta.currencies).toEqual(initial.meta.currencies);
+    expect(canceled.save.meta.facilities.blacksmith.activeTaskId).toBeNull();
+    expect(canceled.save.meta.tasks).toEqual({});
+    expect(canceled.save.meta.agents.find((agent) => agent.id === 'blacksmith')?.activeTaskId).toBeNull();
   });
 
   it('clamps offline processing to 8 hours and rejects backwards time', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { V4MonetizationAdapter } from '../monetization';
+import { createV4MonetizationAdapter, V4MonetizationAdapter } from '../monetization';
 
 describe('v4 monetization adapter', () => {
   it('limits rewarded ads to five successful views and never blocks play', async () => {
@@ -21,6 +21,18 @@ describe('v4 monetization adapter', () => {
 
   it('persists ad-free state in the adapter after a successful purchase', async () => {
     const adapter = new V4MonetizationAdapter(null, { purchase: async () => 'purchased' });
+    expect((await adapter.buyAdFree()).granted).toBe(true);
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
+  it('bridges the existing MonetizationService contract without leaking provider details into V4', async () => {
+    const service = {
+      showRewardedAd: async () => true,
+      purchase: async (productId: 'ad_free') => productId === 'ad_free',
+    };
+    const adapter = createV4MonetizationAdapter(service);
+
+    expect((await adapter.watchRewarded('offline_double')).granted).toBe(true);
     expect((await adapter.buyAdFree()).granted).toBe(true);
     expect(adapter.isAdFree()).toBe(true);
   });

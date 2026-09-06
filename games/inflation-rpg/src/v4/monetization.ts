@@ -8,12 +8,30 @@ export interface V4PurchaseProvider {
   purchase(productId: 'ad_free'): Promise<'purchased' | 'cancelled' | 'failed'>;
 }
 
+/** The smallest surface needed from the existing MonetizationService. */
+export interface V4MonetizationServiceBridge {
+  showRewardedAd(): Promise<boolean>;
+  purchase(productId: 'ad_free'): Promise<boolean>;
+}
+
 export interface V4MonetizationResult {
   granted: boolean;
   reason: 'granted' | 'daily_limit' | 'provider_failed' | 'not_purchased';
 }
 
 export const V4_DAILY_REWARDED_LIMIT = 5;
+
+/**
+ * Converts the existing AdMob/IAP service contract into the V4 provider
+ * boundary. V4 screens only depend on the adapter and remain playable when
+ * the native service is unavailable.
+ */
+export function createV4MonetizationAdapter(service: V4MonetizationServiceBridge): V4MonetizationAdapter {
+  return new V4MonetizationAdapter(
+    { showRewarded: () => service.showRewardedAd() },
+    { purchase: async () => (await service.purchase('ad_free') ? 'purchased' : 'failed') },
+  );
+}
 
 /**
  * Thin adapter for AdMob/IAP. The game remains playable when either provider

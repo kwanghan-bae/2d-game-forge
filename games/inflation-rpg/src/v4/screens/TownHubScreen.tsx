@@ -6,6 +6,7 @@ interface Props {
   now: number;
   onPolicyChange: (policy: V4Policy) => void;
   onStartTask: (facilityId: FacilityId, agentId?: SupportAgentId | null) => void;
+  onCancelTask: (facilityId: FacilityId) => void;
   onRefresh: () => void;
   onUpgrade: (facilityId: FacilityId) => void;
   onNavigate: (screen: 'hero' | 'expedition' | 'saga') => void;
@@ -22,7 +23,7 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onRefresh, onUpgrade, onNavigate }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRefresh, onUpgrade, onNavigate }: Props) {
   const hero = save.run.hero;
   return (
     <main className="v4-container" data-testid="v4-town-hub">
@@ -83,7 +84,10 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onRefres
                 )}
                 <div className="v4-button-row">
                   {task ? (
-                    <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>진행 확인</button>
+                    <>
+                      <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>진행 확인</button>
+                      <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onCancelTask(facilityId)}>취소</button>
+                    </>
                   ) : (
                     <button type="button" className="v4-btn v4-btn--primary" onClick={() => onStartTask(facilityId, agentId)}>작업 시작</button>
                   )}

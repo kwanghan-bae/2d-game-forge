@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  cancelFacilityTask,
   completeFacilityTasks,
   setV4Policy,
   startExpedition,
@@ -62,6 +63,12 @@ export function useV4Game() {
     else setMessage(result.error);
   }, [commit, save]);
 
+  const cancelTask = useCallback((facilityId: FacilityId) => {
+    const result = cancelFacilityTask(save, facilityId, Date.now());
+    if (result.ok) commit(result.save, '작업을 취소하고 투입 재화를 돌려받았습니다.');
+    else setMessage(result.error);
+  }, [commit, save]);
+
   const startRun = useCallback((realmId: RealmId, agentId: SupportAgentId | null = null) => {
     const result = startExpedition(save, realmId, Date.now(), save.run.policy, agentId);
     if (result.ok) commit(result.save, '원정을 출발시켰습니다.');
@@ -97,6 +104,7 @@ export function useV4Game() {
     refresh,
     changePolicy,
     startTask,
+    cancelTask,
     startRun,
     upgrade,
     importLegacyHero,
