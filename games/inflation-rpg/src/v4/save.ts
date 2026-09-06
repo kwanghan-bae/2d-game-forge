@@ -462,8 +462,10 @@ export function importV3HeroSnapshot(
   input: HeroSnapshot,
   now: number,
 ): V4SaveEnvelope {
-  const eventAt = Number.isFinite(now) ? Math.max(source.updatedAt, now) : source.updatedAt;
-  const updatedAt = Math.max(source.updatedAt, source.lastProcessedAt, eventAt);
+  const eventAt = isPersistableNonNegativeNumber(now)
+    ? Math.max(source.updatedAt, now)
+    : source.updatedAt;
+  const updatedAt = Math.min(MAX_PERSISTED_NUMBER, Math.max(source.updatedAt, source.lastProcessedAt, eventAt));
   const next = cloneV4Save(source);
   const hero = {
     ...migrateV3HeroSnapshot(input),

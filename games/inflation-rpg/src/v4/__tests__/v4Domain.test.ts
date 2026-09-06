@@ -441,6 +441,10 @@ describe('v4 save and domain', () => {
     const importedAfterClockRollback = importV3HeroSnapshot(staleDestination, source, staleDestination.createdAt + 1_000);
     expect(importedAfterClockRollback.updatedAt).toBe(staleDestination.lastProcessedAt);
     expect(importedAfterClockRollback.meta.sagaEntries[0]?.createdAt).toBe(staleDestination.lastProcessedAt);
+
+    const importedWithUnsafeClock = importV3HeroSnapshot(destination, source, Number.MAX_VALUE);
+    expect(importedWithUnsafeClock.updatedAt).toBe(destination.updatedAt);
+    expect(importedWithUnsafeClock.meta.sagaEntries[0]?.createdAt).toBe(destination.updatedAt);
   });
 
   it('preserves the destination hero action while explicitly importing a V3 hero', () => {
