@@ -8,7 +8,12 @@ import type { GameManifestValue } from '@forge/core/manifest';
 export const manifests: GameManifestValue[] = [
   {
     slug: 'inflation-rpg',
-    title: '조선 인플레이션 RPG',
+    title: '신의 마을: 영원의 후원자',
+    assetsBasePath: '/games/inflation-rpg/assets',
+  },
+  {
+    slug: 'inflation-rpg-legacy',
+    title: '조선 인플레이션 RPG (Legacy)',
     assetsBasePath: '/games/inflation-rpg/assets',
   },
 ];

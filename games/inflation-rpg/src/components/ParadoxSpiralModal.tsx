@@ -19,7 +19,7 @@ import {
   type ParadoxCombatResult,
 } from '../systems/paradoxSpiral';
 import { getEquippedInstances } from '../systems/equipment';
-import { getEffectiveElement } from '../systems/elementalSystem';
+import { getEffectiveElement } from '../systems/enchantSystem';
 import { aggregateReforgeBonus } from '../systems/reforgeSystem';
 import { HeroEntity } from '../hero/HeroEntity';
 

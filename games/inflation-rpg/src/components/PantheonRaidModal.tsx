@@ -18,7 +18,7 @@ import {
   type PantheonPhase,
 } from '../systems/pantheonRaid';
 import { getEquippedInstances } from '../systems/equipment';
-import { getEffectiveElement } from '../systems/elementalSystem';
+import { getEffectiveElement } from '../systems/enchantSystem';
 import { aggregateReforgeBonus } from '../systems/reforgeSystem';
 import { HeroEntity } from '../hero/HeroEntity';
 import { getPantheonTitanLore, PANTHEON_VICTORY_EPILOGUE } from '../data/pantheonRaidLore';

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const GAME_URL = '/games/inflation-rpg';
+const GAME_URL = '/games/inflation-rpg-legacy';
 const SAVE_KEY = 'korea_inflation_rpg_save';
 
 test.describe('V3-DEF — Multi-zone + NPC + Saga', () => {

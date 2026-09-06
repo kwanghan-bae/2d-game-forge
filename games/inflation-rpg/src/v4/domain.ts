@@ -1,0 +1,265 @@
+import { FACILITY_DEFINITIONS, AGENT_DEFINITIONS, REALM_DEFINITIONS } from './data';
+import type {
+  FacilityId,
+  FacilityTask,
+  RealmId,
+  SupportAgentId,
+  V4CurrencyKey,
+  V4Policy,
+  V4SaveEnvelope,
+} from './types';
+
+export type DomainResult<T extends V4SaveEnvelope = V4SaveEnvelope> =
+  | { ok: true; save: T; task: FacilityTask }
+  | { ok: false; save: V4SaveEnvelope; error: string };
+
+function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
+  return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
+}
+
+function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
+  return Object.entries(input).every(([key, value]) => save.meta.currencies[key as V4CurrencyKey] >= (value ?? 0));
+}
+
+function pay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): void {
+  for (const [key, value] of Object.entries(input)) {
+    const currency = key as V4CurrencyKey;
+    save.meta.currencies[currency] -= value ?? 0;
+  }
+}
+
+function give(save: V4SaveEnvelope, output: Partial<Record<V4CurrencyKey, number>>, multiplier = 1): void {
+  for (const [key, value] of Object.entries(output)) {
+    const currency = key as V4CurrencyKey;
+    save.meta.currencies[currency] += Math.floor((value ?? 0) * multiplier);
+  }
+}
+
+function nextTaskId(save: V4SaveEnvelope, prefix: string, now: number): string {
+  return `${prefix}-${now}-${Object.keys(save.meta.tasks).length + 1}`;
+}
+
+export function startFacilityTask(
+  source: V4SaveEnvelope,
+  facilityId: FacilityId,
+  now: number,
+  assignedAgentId: SupportAgentId | null = null,
+): DomainResult {
+  const save = cloneSave(source);
+  const facility = save.meta.facilities[facilityId];
+  const definition = FACILITY_DEFINITIONS[facilityId];
+  if (!facility || !definition || facility.level < 1) {
+    return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
+  }
+  if (facility.activeTaskId) {
+    return { ok: false, save: source, error: '이 시설에는 이미 진행 중인 작업이 있습니다.' };
+  }
+  if (assignedAgentId && !save.meta.agents.some((agent) => agent.id === assignedAgentId && !agent.activeTaskId)) {
+    return { ok: false, save: source, error: '해당 지원 에이전트가 다른 작업 중입니다.' };
+  }
+  if (!canPay(save, definition.input)) {
+    return { ok: false, save: source, error: '작업에 필요한 재화가 부족합니다.' };
+  }
+
+  pay(save, definition.input);
+  const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
+  const specialty = assignedAgentId && AGENT_DEFINITIONS[assignedAgentId].specialty === facilityId;
+  const durationSeconds = Math.max(10, Math.round(
+    definition.baseDurationSeconds * Math.pow(0.94, facility.level - 1) * (specialty ? 0.85 : 1),
+  ));
+  const outputMultiplier = specialty ? 1.2 : 1;
+  const task: FacilityTask = {
+    id: nextTaskId(save, facilityId, now),
+    facilityId,
+    type: definition.taskLabelKR,
+    startedAt: now,
+    completesAt: now + durationSeconds * 1000,
+    input: { ...definition.input },
+    outputPreview: Object.fromEntries(
+      Object.entries(definition.output).map(([key, value]) => [key, Math.floor((value ?? 0) * outputMultiplier)]),
+    ),
+    outputEquipmentIds: definition.outputEquipmentIds ? [...definition.outputEquipmentIds] : undefined,
+    assignedAgentId,
+  };
+  save.meta.tasks[task.id] = task;
+  facility.activeTaskId = task.id;
+  if (agent) agent.activeTaskId = task.id;
+  save.run.hero.currentAction = facilityId === 'training' ? 'train' : 'rest';
+  save.updatedAt = now;
+  return { ok: true, save, task };
+}
+
+function calculateHeroPower(save: V4SaveEnvelope): number {
+  const hero = save.run.hero;
+  return hero.atk + hero.def + Math.floor(hero.hpMax / 100) + hero.equipmentIds.length * 30;
+}
+
+function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlock: boolean, efficiency: number): void {
+  const expedition = save.run.expedition;
+  if (!expedition || expedition.completesAt > now) return;
+  const realm = REALM_DEFINITIONS[expedition.realmId];
+  const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
+  const guideBonus = guide ? Math.min(0.12, guide.trust / 500) : 0;
+  const won = calculateHeroPower(save) >= realm.recommendedPower * (1 - guideBonus);
+  if (won) {
+    const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
+    give(save, realm.reward, policyBonus * efficiency);
+    save.run.hero.realmId = expedition.realmId;
+    save.run.hero.currentAction = 'rest';
+    if (allowPermanentUnlock) {
+      const next: RealmId | undefined = expedition.realmId === 'joseon_plains'
+        ? 'deep_forest' : expedition.realmId === 'deep_forest' ? 'underworld' : undefined;
+      if (next && !save.meta.unlockedRealms.includes(next)) save.meta.unlockedRealms.push(next);
+    }
+    save.meta.sagaEntries.unshift({
+      id: `saga-expedition-${expedition.id}`,
+      kind: 'expedition',
+      createdAt: now,
+      title: `${realm.nameKR} 원정 성공`,
+      text: `${save.run.hero.name}이(가) ${realm.boss}을(를) 넘어 마을로 돌아왔다.`,
+    });
+  } else {
+    save.run.hero.currentAction = 'rest';
+    save.meta.sagaEntries.unshift({
+      id: `saga-expedition-${expedition.id}`,
+      kind: 'expedition',
+      createdAt: now,
+      title: `${realm.nameKR} 원정 중단`,
+      text: `힘이 부족해 ${realm.nameKR}의 안개 속에서 돌아왔다. 다음 시설과 장비를 준비하자.`,
+    });
+  }
+  save.run.expedition = null;
+  if (guide) {
+    guide.activeTaskId = null;
+    guide.fatigue = Math.min(100, guide.fatigue + 8);
+    guide.trust = Math.min(100, guide.trust + (won ? 2 : 1));
+  }
+}
+
+export function completeFacilityTasks(
+  source: V4SaveEnvelope,
+  now: number,
+  outputEfficiency = 1,
+  allowPermanentUnlock = true,
+): V4SaveEnvelope {
+  const save = cloneSave(source);
+  for (const task of Object.values(save.meta.tasks)) {
+    if (task.completesAt > now) continue;
+    const facility = save.meta.facilities[task.facilityId];
+    give(save, task.outputPreview, outputEfficiency);
+    if (task.outputEquipmentIds) {
+      save.run.hero.equipmentIds.push(...task.outputEquipmentIds);
+    }
+    if (facility) facility.activeTaskId = null;
+    if (task.assignedAgentId) {
+      const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);
+      if (agent) {
+        agent.activeTaskId = null;
+        agent.fatigue = Math.min(100, agent.fatigue + 5);
+        agent.trust = Math.min(100, agent.trust + 1);
+      }
+    }
+    if (task.facilityId === 'recovery') {
+      save.run.hero.hp = save.run.hero.hpMax;
+    }
+    save.meta.sagaEntries.unshift({
+      id: `saga-facility-${task.id}`,
+      kind: 'facility',
+      createdAt: now,
+      title: `${FACILITY_DEFINITIONS[task.facilityId].nameKR} 작업 완료`,
+      text: `${task.type} 작업이 완료되어 마을에 결과가 쌓였다.`,
+    });
+    delete save.meta.tasks[task.id];
+  }
+  resolveExpedition(save, now, allowPermanentUnlock, outputEfficiency);
+  save.updatedAt = now;
+  return save;
+}
+
+export function startExpedition(
+  source: V4SaveEnvelope,
+  realmId: RealmId,
+  now: number,
+  policy: V4Policy,
+  assignedAgentId: SupportAgentId | null,
+): DomainResult {
+  const save = cloneSave(source);
+  const realm = REALM_DEFINITIONS[realmId];
+  if (!save.meta.unlockedRealms.includes(realmId)) {
+    return { ok: false, save: source, error: '아직 기록되지 않은 Realm입니다.' };
+  }
+  if (save.run.expedition) {
+    return { ok: false, save: source, error: '동시에 진행할 수 있는 원정은 1개뿐입니다.' };
+  }
+  if (!canPay(save, realm.cost)) {
+    return { ok: false, save: source, error: '원정 준비에 필요한 신력 또는 재료가 부족합니다.' };
+  }
+  if (assignedAgentId && !save.meta.agents.some((agent) => agent.id === assignedAgentId && !agent.activeTaskId)) {
+    return { ok: false, save: source, error: '길잡이가 다른 작업 중입니다.' };
+  }
+  pay(save, realm.cost);
+  const guideBonus = assignedAgentId === 'guide' ? 0.9 : 1;
+  const id = `expedition-${realmId}-${now}`;
+  save.run.expedition = {
+    id,
+    realmId,
+    policy,
+    assignedAgentId,
+    startedAt: now,
+    completesAt: now + Math.round(realm.durationSeconds * guideBonus) * 1000,
+    status: 'traveling',
+  };
+  save.run.hero.currentAction = 'expedition';
+  if (assignedAgentId) {
+    const agent = save.meta.agents.find((item) => item.id === assignedAgentId);
+    if (agent) agent.activeTaskId = id;
+  }
+  save.updatedAt = now;
+  return {
+    ok: true,
+    save,
+    task: {
+      id,
+      facilityId: 'expedition',
+      type: '원정',
+      startedAt: now,
+      completesAt: save.run.expedition.completesAt,
+      input: realm.cost,
+      outputPreview: realm.reward,
+      assignedAgentId,
+    },
+  };
+}
+
+export function setV4Policy(source: V4SaveEnvelope, policy: V4Policy, now: number): V4SaveEnvelope {
+  const save = cloneSave(source);
+  save.run.policy = policy;
+  save.updatedAt = now;
+  return save;
+}
+
+export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, now: number): DomainResult {
+  const save = cloneSave(source);
+  const facility = save.meta.facilities[facilityId];
+  if (!facility) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
+  if (facility.activeTaskId) return { ok: false, save: source, error: '작업 중인 시설은 강화할 수 없습니다.' };
+  const cost = { gold: facility.level * 80, materials: facility.level * 4 };
+  if (!canPay(save, cost)) return { ok: false, save: source, error: '시설 강화 재료가 부족합니다.' };
+  pay(save, cost);
+  facility.level += 1;
+  save.updatedAt = now;
+  return {
+    ok: true,
+    save,
+    task: {
+      id: `upgrade-${facilityId}-${now}`,
+      facilityId,
+      type: '시설 강화',
+      startedAt: now,
+      completesAt: now,
+      input: cost,
+      outputPreview: {},
+      assignedAgentId: null,
+    },
+  };
+}
