@@ -20,6 +20,7 @@ import {
   type CosmicAffixType,
 } from '../systems/cosmicInfusion';
 import type { EquipmentInstance } from '../types';
+import { AstralResonanceBanner } from './AstralResonanceBanner';
 
 interface Props {
   onClose: () => void;
@@ -209,6 +210,9 @@ export function CelestialInfusionModal({ onClose }: Props) {
               </div>
             </div>
           )}
+
+          {/* Astral Resonance Status */}
+          <AstralResonanceBanner equippedInstances={allItems} />
 
           {/* Affix Selection Cards */}
           <div style={{ fontSize: 13, fontWeight: 'bold', color: '#cbd5e1' }}>
