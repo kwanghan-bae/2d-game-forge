@@ -386,6 +386,8 @@ export interface MetaState {
   dimensionalEssence?: number;
   /** C1123/C1124 — 완파 완료된 우주적 심연 회랑 섹터 목록 (1 ~ 5). */
   corridorSectorsCleared?: number[];
+  /** C1127 — 태초 승천 노드별 랭크 딕셔너리. */
+  primordialRanks?: Partial<Record<import('./systems/primordialAscension').PrimordialNodeId, number>>;
 }
 
 // Phase G — Ascension Tree (성좌)

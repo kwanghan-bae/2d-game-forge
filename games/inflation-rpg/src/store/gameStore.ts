@@ -190,6 +190,7 @@ export const INITIAL_META: MetaState = {
   apexTrialsCleared: [],
   dimensionalEssence: 0,
   corridorSectorsCleared: [],
+  primordialRanks: {},
 };
 
 interface GameStore {
