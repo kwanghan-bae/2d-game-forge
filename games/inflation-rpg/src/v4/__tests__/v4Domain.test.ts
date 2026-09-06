@@ -1141,6 +1141,15 @@ describe('v4 save and domain', () => {
     ].every((value) => Number.isFinite(value))).toBe(true);
   });
 
+  it('keeps hero power and expedition forecast finite for malformed hero stats', () => {
+    const save = createInitialV4Save(114);
+    save.run.hero.atk = Number.NaN;
+    save.run.hero.hp = Number.NaN;
+
+    expect(getV4HeroPower(save)).toBe(0);
+    expect(Number.isFinite(getExpeditionSuccessChance(save, 'joseon_plains', 2, null))).toBe(true);
+  });
+
   it('carries V3 hit variance, crits, and defense mitigation into V4 battles', () => {
     const critical = createInitialV4Save(11);
     critical.run.hero.critRateBase = 1;

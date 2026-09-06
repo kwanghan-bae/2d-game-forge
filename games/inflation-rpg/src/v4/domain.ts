@@ -417,13 +417,14 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
 
 export function getV4HeroPower(save: V4SaveEnvelope): number {
   const hero = save.run.hero;
-  return hero.atk + hero.def + Math.floor(hero.hpMax / 100);
+  const power = hero.atk + hero.def + Math.floor(hero.hpMax / 100);
+  return Number.isFinite(power) ? Math.max(0, power) : 0;
 }
 
 const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
 
 function clampSuccessChance(value: number): number {
-  return Math.min(0.97, Math.max(0.05, value));
+  return Number.isFinite(value) ? Math.min(0.97, Math.max(0.05, value)) : 0.05;
 }
 
 export function getExpeditionSuccessChance(
