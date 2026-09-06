@@ -451,7 +451,8 @@ describe('v4 save and domain', () => {
     expect(completed.run.hero.level).toBe(2);
     expect(completed.run.hero.exp).toBe(20);
     expect(completed.run.hero.atk).toBeGreaterThan(initial.run.hero.atk);
-    expect(completed.run.hero.hpMax).toBeGreaterThan(initial.run.hero.hpMax);
+    expect(completed.run.hero.hpMax).toBe(initial.run.hero.hpMax + 100);
+    expect(completed.run.hero.hp).toBe(initial.run.hero.hp + 100);
     expect(completed.run.hero.actionCount).toBe(initial.run.hero.actionCount + 1);
     expect(completed.run.hero.currentAction).toBe('rest');
   });
