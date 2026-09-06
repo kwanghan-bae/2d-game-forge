@@ -59,7 +59,7 @@ function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
 }
 
 function eventTimestamp(save: V4SaveEnvelope, now: number): number {
-  return Number.isFinite(now) ? now : save.updatedAt;
+  return Number.isFinite(now) ? Math.max(save.updatedAt, now) : save.updatedAt;
 }
 
 function touchSave(save: V4SaveEnvelope, now: number): void {
@@ -119,7 +119,7 @@ function nextSaveId(save: V4SaveEnvelope, base: string): string {
 }
 
 function nextTaskId(save: V4SaveEnvelope, prefix: string, now: number): string {
-  const timestamp = Number.isFinite(now) ? now : save.updatedAt;
+  const timestamp = eventTimestamp(save, now);
   return nextSaveId(save, `${prefix}-${timestamp}-${Object.keys(save.meta.tasks).length + 1}`);
 }
 
@@ -301,7 +301,7 @@ export function startFacilityTask(
 
   pay(save, preview.input);
   const task: FacilityTask = {
-    id: nextTaskId(save, facilityId, now),
+    id: nextTaskId(save, facilityId, eventAt),
     facilityId,
     type: definition.taskLabelKR,
     startedAt: eventAt,
@@ -598,10 +598,9 @@ export function completeFacilityTasks(
   outputEfficiency = 1,
   allowPermanentUnlock = true,
 ): V4SaveEnvelope {
-  if (!Number.isFinite(now)) return source;
+  if (!Number.isFinite(now) || now < source.updatedAt) return source;
   const save = cloneSave(source);
   const eventAt = eventTimestamp(save, now);
-  if (eventAt < save.updatedAt) return source;
   const efficiency = normalizeSettlementEfficiency(outputEfficiency);
   for (const task of Object.values(save.meta.tasks)) {
     if (task.completesAt > eventAt) continue;
@@ -670,7 +669,7 @@ export function completeFacilityTaskNow(
   if (!Number.isFinite(now)) return { ok: false, save: source, error: '기기 시각을 확인할 수 없어 작업을 완료하지 않았습니다.' };
   const prepared = cloneSave(source);
   const eventAt = eventTimestamp(prepared, now);
-  if (eventAt < prepared.updatedAt) return { ok: false, save: source, error: '저장 시각이 미래라 작업을 즉시 완료하지 않았습니다.' };
+  if (now < prepared.updatedAt) return { ok: false, save: source, error: '저장 시각이 미래라 작업을 즉시 완료하지 않았습니다.' };
   const facility = prepared.meta.facilities[facilityId];
   const taskId = facility?.activeTaskId;
   const task = taskId ? prepared.meta.tasks[taskId] : undefined;

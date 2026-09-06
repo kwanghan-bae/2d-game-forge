@@ -389,7 +389,7 @@ export function importV3HeroSnapshot(
   input: HeroSnapshot,
   now: number,
 ): V4SaveEnvelope {
-  const eventAt = Number.isFinite(now) ? now : source.updatedAt;
+  const eventAt = Number.isFinite(now) ? Math.max(source.updatedAt, now) : source.updatedAt;
   const updatedAt = Math.max(source.updatedAt, source.lastProcessedAt, eventAt);
   const hero = migrateV3HeroSnapshot(input);
   return {

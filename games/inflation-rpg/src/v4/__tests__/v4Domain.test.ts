@@ -374,6 +374,7 @@ describe('v4 save and domain', () => {
     staleDestination.updatedAt = staleDestination.lastProcessedAt;
     const importedAfterClockRollback = importV3HeroSnapshot(staleDestination, source, staleDestination.createdAt + 1_000);
     expect(importedAfterClockRollback.updatedAt).toBe(staleDestination.lastProcessedAt);
+    expect(importedAfterClockRollback.meta.sagaEntries[0]?.createdAt).toBe(staleDestination.lastProcessedAt);
   });
 
   it('settles completed facility work once and applies the 70% offline efficiency', () => {
@@ -846,6 +847,25 @@ describe('v4 save and domain', () => {
     } as unknown as Storage;
     persistV4Save(changed, fakeStorage);
     expect(loadV4Save(fakeStorage)).not.toBeNull();
+  });
+
+  it('normalizes backwards task and expedition action clocks to the last saved time', () => {
+    const staleTaskSave = createInitialV4Save(31);
+    staleTaskSave.lastProcessedAt += HOUR;
+    staleTaskSave.updatedAt = staleTaskSave.lastProcessedAt;
+    const task = startFacilityTask(staleTaskSave, 'temple', staleTaskSave.createdAt);
+    expect(task.ok).toBe(true);
+    if (!task.ok) return;
+    expect(task.task.startedAt).toBe(staleTaskSave.updatedAt);
+    expect(task.task.id).toContain(`${staleTaskSave.updatedAt}`);
+
+    const staleExpeditionSave = createInitialV4Save(32);
+    staleExpeditionSave.lastProcessedAt += HOUR;
+    staleExpeditionSave.updatedAt = staleExpeditionSave.lastProcessedAt;
+    const expedition = startExpedition(staleExpeditionSave, 'joseon_plains', staleExpeditionSave.createdAt, 'aggression', null);
+    expect(expedition.ok).toBe(true);
+    if (!expedition.ok) return;
+    expect(expedition.save.run.expedition?.startedAt).toBe(staleExpeditionSave.updatedAt);
   });
 
   it('does not auto-confirm a risky Realm boss during offline processing', () => {

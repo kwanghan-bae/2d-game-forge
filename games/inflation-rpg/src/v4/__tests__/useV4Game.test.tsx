@@ -127,10 +127,10 @@ describe('useV4Game save recovery', () => {
     base.createdAt = now - 60_000;
     base.lastProcessedAt = base.createdAt;
     base.updatedAt = now + 60 * 60 * 1000;
-    const started = startFacilityTask(base, 'temple', now - 30_000);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
-    started.save.meta.tasks[started.task.id].completesAt = now - 1_000;
+    started.save.meta.tasks[started.task.id].completesAt = started.save.updatedAt + 1_000;
     persistV4Save(started.save);
 
     render(<RefreshHarness />);
