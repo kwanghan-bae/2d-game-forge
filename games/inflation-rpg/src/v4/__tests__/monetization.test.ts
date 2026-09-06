@@ -25,6 +25,29 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('shares one in-flight ad-free purchase across concurrent callers', async () => {
+    let purchaseCalls = 0;
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const adapter = new V4MonetizationAdapter(null, {
+      purchase: async () => {
+        purchaseCalls += 1;
+        await pending;
+        return 'purchased';
+      },
+    });
+
+    const first = adapter.buyAdFree();
+    const second = adapter.buyAdFree();
+    await Promise.resolve();
+    expect(purchaseCalls).toBe(1);
+    release();
+
+    const results = await Promise.all([first, second]);
+    expect(results.every((result) => result.granted)).toBe(true);
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('removes the rewarded provider and daily cap after ad-free purchase', async () => {
     let providerCalls = 0;
     const adapter = new V4MonetizationAdapter({

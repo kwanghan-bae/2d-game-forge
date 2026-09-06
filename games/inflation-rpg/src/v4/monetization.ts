@@ -160,6 +160,7 @@ export class V4MonetizationAdapter {
   private adFree = false;
   private rewardedDay = localDayKey();
   private rewardedInFlight = 0;
+  private adFreePurchaseInFlight: Promise<V4MonetizationResult> | null = null;
 
   constructor(
     private readonly ads: V4AdProvider | null,
@@ -206,16 +207,26 @@ export class V4MonetizationAdapter {
 
   async buyAdFree(): Promise<V4MonetizationResult> {
     if (this.adFree) return { granted: true, reason: 'granted' };
-    if (!this.purchases) return { granted: false, reason: 'provider_failed' };
-    try {
-      const result = await this.purchases.purchase('ad_free');
-      if (result === 'purchased') {
-        this.adFree = true;
-        return { granted: true, reason: 'granted' };
+    if (this.adFreePurchaseInFlight) return this.adFreePurchaseInFlight;
+    const purchases = this.purchases;
+    if (!purchases) return { granted: false, reason: 'provider_failed' };
+    const pending = (async (): Promise<V4MonetizationResult> => {
+      try {
+        const result = await purchases.purchase('ad_free');
+        if (result === 'purchased') {
+          this.adFree = true;
+          return { granted: true, reason: 'granted' };
+        }
+        return { granted: false, reason: result === 'cancelled' ? 'not_purchased' : 'provider_failed' };
+      } catch {
+        return { granted: false, reason: 'provider_failed' };
       }
-      return { granted: false, reason: result === 'cancelled' ? 'not_purchased' : 'provider_failed' };
-    } catch {
-      return { granted: false, reason: 'provider_failed' };
+    })();
+    this.adFreePurchaseInFlight = pending;
+    try {
+      return await pending;
+    } finally {
+      if (this.adFreePurchaseInFlight === pending) this.adFreePurchaseInFlight = null;
     }
   }
 }
