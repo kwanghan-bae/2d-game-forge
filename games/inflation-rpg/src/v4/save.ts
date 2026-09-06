@@ -58,11 +58,11 @@ function isPersistableNonNegativeNumber(value: unknown): value is number {
 }
 
 function finiteNonNegativeOr(value: unknown, fallback: number): number {
-  return isNonNegativeNumber(value) ? value : fallback;
+  return isNonNegativeNumber(value) && value <= MAX_PERSISTED_NUMBER ? value : fallback;
 }
 
 function finitePositiveOr(value: unknown, fallback: number): number {
-  return isFiniteNumber(value) && value > 0 ? value : fallback;
+  return isFiniteNumber(value) && value > 0 && value <= MAX_PERSISTED_NUMBER ? value : fallback;
 }
 
 function finiteStringOr(value: unknown, fallback: string): string {
@@ -72,11 +72,15 @@ function finiteStringOr(value: unknown, fallback: string): string {
 }
 
 function positiveIntegerOr(value: unknown, fallback: number): number {
-  return isFiniteNumber(value) && Number.isInteger(value) && value >= 1 ? value : fallback;
+  return isFiniteNumber(value) && Number.isInteger(value) && value >= 1 && value <= MAX_PERSISTED_NUMBER
+    ? value
+    : fallback;
 }
 
 function nonNegativeIntegerOr(value: unknown, fallback: number): number {
-  return isNonNegativeNumber(value) && Number.isInteger(value) ? value : fallback;
+  return isNonNegativeNumber(value) && Number.isInteger(value) && value <= MAX_PERSISTED_NUMBER
+    ? value
+    : fallback;
 }
 
 function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey, number>> {

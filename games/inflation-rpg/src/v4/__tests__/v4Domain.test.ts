@@ -494,9 +494,9 @@ describe('v4 save and domain', () => {
 
   it('normalizes malformed V3 core stats into a valid V4 hero snapshot', () => {
     const source = {
-      name: 42, emoji: null, age: Number.NaN, chapter: '청년기', job: '검객', level: 0,
-      exp: Number.POSITIVE_INFINITY, hp: Number.POSITIVE_INFINITY, hpMax: 0,
-      atk: Number.NaN, atkBase: 160, hpBase: 1_000, actionCount: -1,
+      name: 42, emoji: null, age: Number.MAX_VALUE, chapter: '청년기', job: '검객', level: Number.MAX_VALUE,
+      exp: Number.POSITIVE_INFINITY, hp: Number.MAX_VALUE, hpMax: Number.MAX_VALUE,
+      atk: Number.MAX_VALUE, atkBase: 160, hpBase: 1_000, actionCount: Number.MAX_VALUE,
       rejuvenationCount: Number.NaN, gridX: 0, gridY: 0, equipment: [],
       personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
       unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
