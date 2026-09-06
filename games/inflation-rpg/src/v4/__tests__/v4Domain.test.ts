@@ -1169,6 +1169,19 @@ describe('v4 save and domain', () => {
     expect(initial.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
   });
 
+  it('rejects an unknown intervention before consuming a charge or retreating', () => {
+    const initial = createInitialV4Save(108);
+    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt + 1_000, 'aggression', null);
+    if (!started.ok) throw new Error(started.error);
+
+    const result = useIntervention(started.save, 'teleport' as never, started.save.updatedAt + 1_000);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(started.save);
+    expect(started.save.run.expedition).not.toBeNull();
+    expect(started.save.run.interventionCharges).toBe(initial.run.interventionCharges);
+  });
+
   it('ignores non-finite, negative, and unknown offline bonus values', () => {
     const initial = createInitialV4Save(94);
     const updated = grantOfflineResourceBonus(initial, {

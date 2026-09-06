@@ -75,6 +75,10 @@ function isV4Policy(value: unknown): value is V4Policy {
   return value === 'aggression' || value === 'hoarding' || value === 'training';
 }
 
+function isInterventionType(value: unknown): value is InterventionType {
+  return value === 'heal' || value === 'retreat';
+}
+
 function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
   return Object.entries(input).every(([key, value]) => save.meta.currencies[key as V4CurrencyKey] >= (value ?? 0));
 }
@@ -750,6 +754,9 @@ export function useIntervention(
   intervention: InterventionType,
   now: number,
 ): InterventionDomainResult {
+  if (!isInterventionType(intervention)) {
+    return { ok: false, save: source, error: '알 수 없는 신의 개입입니다.' };
+  }
   if (source.run.interventionCharges <= 0) {
     return { ok: false, save: source, error: '신의 개입 충전이 없습니다.' };
   }
