@@ -1,24 +1,24 @@
-# RESUME — v28
+# RESUME — v29
 
 ## 상태
-- Cycle: 1140 (Astral Archive & Cosmic Chronicle Sprint Complete)
-- Target: 1141+ (시공 도약 & 특이점 환생 시스템)
-- Last commit: C1139 dynamic injection of astral archive mastery perks into combat and progression
-- Vitest: 357 passed / 3066 passed / 0 fail
-- Critic score: 40.0/40.0 (C1140: 아키텍처 10.0 / 간결성 10.0 / 밸런스 10.0 / 몰입도 10.0 - SSS Rank)
+- Cycle: 1146 (Chrono-Rift Warp & Singularity Rebirth Sprint Complete)
+- Target: 1147+ (시공의 베틀 & 인과율 직조 시스템)
+- Last commit: C1145 chrono rebirth drop rate and hero spawner integration
+- Vitest: 362 passed / 3090 passed / 0 fail
+- Critic score: 40.0/40.0 (C1146: 아키텍처 10.0 / 간결성 10.0 / 밸런스 10.0 / 몰입도 10.0 - SSS Rank)
 
-## 주요 마일스톤 달성 사항 (C1135 ~ C1140)
-- **성간 아카이브(Astral Archive) 16대 마일스톤 & 마스터리 퍽 엔진 (C1135)**: [`astralArchive.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/astralArchive.ts) 구축. 승천 시련, 혼돈 균열, 초월 시련, 심연 회랑, 태초 성좌, 초월 성유물 6개 범주 총 16개 엔드게임 업적 자동 평가 및 계정 단위 마스터리 퍽(+골드, +경험치, +올스탯, +치명타 피해) 설계.
-- **성간 아카이브 모달 UI & 시련 허브 연동 (C1136)**: [`AstralArchiveModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AstralArchiveModal.tsx) 구축 및 [`AscensionTrialsModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AscensionTrialsModal.tsx) 연동 (`open-archive-modal-btn`). 범주별 탭 필터링, 업적 달성 상태 판정, 별빛 파편 보상 수령 인터랙션 및 상단 누적 퍽 대시보드 완성.
-- **아카이브 5,870개 파편 공급 & 선형 마스터리 밸런스 시뮬레이션 (C1137)**: [`astralArchiveBalance.test.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/astralArchiveBalance.test.ts) 작성. 16개 업적 총합 5,870개 파편이 태초 성좌 완각성 비용의 41.2%를 유기적으로 커버함을 증명, 마일스톤별 선형 비례 증가(최대 +32% 골드/경험치, +16% 올스탯, +48% 치명타 피해) 및 수치 안정성 입증.
-- **우주적 기록관 메타트론 대서사 & 대원만 전승록 (C1138)**: [`astralArchiveLore.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/data/astralArchiveLore.ts) 구축. 달성도에 따른 메타트론 4단계 상호작용 대사(필멸의 도전자 -> 성간의 개척자 -> 우주의 대영웅 -> 태초의 절대신), 수령 찬가 및 16개 완파 [우주의 기록을 완성한 자 (Archival Sovereign)] 대원만 전승 증명서 구현.
-- **아카이브 마스터리 퍽 전투 및 재화 획득 동적 인젝션 (C1139)**: [`astralArchivePerks.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/astralArchivePerks.ts) 구현. 영웅 전투 스탯(HP, ATK, DEF, 치명타 배율) 및 골드/경험치 보상 계산 시 아카이브 마스터리 퍽이 즉각 반영되도록 모듈화.
-- **C1140 성간 아카이브 종합 비평 & SSS 랭크 연속 달성 (C1140)**: [`cycle-1140-critic.md`](file:///Users/joel/Desktop/git/2d-game-forge/docs/superpowers/evolution/cycle-1140-critic.md) 발행 (40.0/40.0 SSS 랭크), 357개 테스트 파일 3,066개 전수 테스트 100% 무결성 확인 및 C1141~C1146 시공 도약 & 환생 로드맵 수립.
+## 주요 마일스톤 달성 사항 (C1141 ~ C1146)
+- **시공 도약 & 특이점 대환생 4대 티어 엔진 (C1141)**: [`chronoRebirth.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/chronoRebirth.ts) 구축. 아카이브 마스터리 랭크(4~16랭크)에 기반한 4계위 환생 시스템(`apprentice_warp`, `astral_warp`, `primordial_warp`, `singularity_rebirth`) 구현. 시작 레벨(Lv 50~200), 초기 금고(5M~100M G), 드랍률 배율(1.1x~2.0x) 및 시공 정수(1~5개) 지급 로직 완성.
+- **시공 환생 인터랙티브 모달 UI & 이중 안전 확인 (C1142)**: [`ChronoRebirthModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/ChronoRebirthModal.tsx) 구축 및 [`AscensionTrialsModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AscensionTrialsModal.tsx) 연동 (`open-rebirth-modal-btn`). 4계위 비교 그리드, 자격 충족 쇼케이스, 오클릭 방지 체크박스 안전 잠금장치 및 환생 대성공 축하 카드 완성.
+- **초반 TTK 극단 단축(100턴->1턴) 및 인플레이션 안전성 검증 (C1143)**: [`chronoRebirthBalance.test.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/chronoRebirthBalance.test.ts) 작성. 200레벨 시작 시 초반 보스 TTK가 100턴에서 1턴 즉시 처치로 100배 가속됨을 증명하고, 1억 골드가 50회 5티어 재연마를 즉각 제공하면서도 후반부 조 단위 경제의 0.01%에 불과하여 초인플레이션 건전성을 해치지 않음을 수리적으로 입증.
+- **시공의 방직자 우로보로스 영창 & 환생 대서사 기록 (C1144)**: [`chronoRebirthLore.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/data/chronoRebirthLore.ts) 구축. 4계위별 방직자 영창(weaverIncantation), 환생 에필로그(rebirthEpilogue) 및 영웅의 전당 시공 환생 사가 전승록 포맷터 구현. 모달 UI 및 결과 카드에 유기적 인용문 삽입.
+- **드랍률 증폭 훅 & 영웅 생성기/사이클 리셋 엔진 실시간 연동 (C1145)**: [`chronoRebirthIntegration.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/chronoRebirthIntegration.ts) 구축 및 [`cycleSliceV2.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/overworld/cycleSliceV2.ts) 연동. 사이클 시작 시 활성화된 환생 티어에 따라 신규 영웅의 레벨/골드/스탯 즉각 도약 및 필드 드랍률 증폭(최대 2.0배) 완전 연계.
+- **C1146 시공 환생 스프린트 종합 비평 & SSS 랭크 연속 달성 (C1146)**: [`cycle-1146-critic.md`](file:///Users/joel/Desktop/git/2d-game-forge/docs/superpowers/evolution/cycle-1146-critic.md) 발행 (40.0/40.0 SSS 랭크), 362개 테스트 파일 3,090개 전수 테스트 100% 통과 확인 및 C1147~C1152 시공의 베틀 로드맵 수립.
 
-## 다음 진화 로드맵 (C1141–C1146: 시공 도약 & 특이점 환생 시스템)
-- C1141 [system]: 시공 도약 & 특이점 환생 엔진 (`chronoRebirth.ts`)
-- C1142 [ui]: 시공 도약 & 환생 모달 UI (`ChronoRebirthModal.tsx`)
-- C1143 [balance]: 환생 주기 페이싱 & 보스 도달 시간 단축 시뮬레이션 (`chronoRebirthBalance.test.ts`)
-- C1144 [narrative]: 시공의 방직자 영창 & 환생 대서사 (`chronoRebirthLore.ts`)
-- C1145 [system]: 영웅 생성기 및 사이클 리셋 연동 (`chronoRebirthIntegration.ts`)
-- C1146 [critic+collab]: C1146 종합 비평 및 로드맵 갱신
+## 다음 진화 로드맵 (C1147–C1152: 시공의 베틀 & 인과율 직조 시스템)
+- C1147 [system]: 시공의 베틀 테크 매트릭스 & 해금 엔진 (`chronoLoom.ts`)
+- C1148 [ui]: 시공의 베틀 인터랙티브 직조 모달 UI (`ChronoLoomModal.tsx`)
+- C1149 [balance]: 시공 정수 소모 곡선 & 전투 배율 시뮬레이션 (`chronoLoomBalance.test.ts`)
+- C1150 [narrative]: 운명의 여신 노른 전승록 & 직조 성전 (`chronoLoomLore.ts`)
+- C1151 [system]: 시공의 베틀 영구 퍽 전투/탐험 실시간 인젝션 (`chronoLoomPerks.ts`)
+- C1152 [critic+collab]: C1152 종합 비평 및 로드맵 갱신
