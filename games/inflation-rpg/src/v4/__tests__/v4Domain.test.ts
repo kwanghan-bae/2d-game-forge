@@ -1010,13 +1010,17 @@ describe('v4 save and domain', () => {
 
     const rested = restAgent(initial, 'blacksmith', Number.NaN);
     const started = startFacilityTask(initial, 'temple', Number.POSITIVE_INFINITY);
+    const unsafeClockSave = createInitialV4Save(28);
+    const startedWithUnsafeClock = startFacilityTask(unsafeClockSave, 'temple', Number.MAX_VALUE);
 
     expect(rested.ok).toBe(true);
     expect(started.ok).toBe(true);
-    if (!rested.ok || !started.ok) return;
+    expect(startedWithUnsafeClock.ok).toBe(true);
+    if (!rested.ok || !started.ok || !startedWithUnsafeClock.ok) return;
     expect(rested.save.meta.sagaEntries[0]?.createdAt).toBe(initial.updatedAt);
     expect(started.task.startedAt).toBe(initial.updatedAt);
     expect(started.task.completesAt).toBeGreaterThan(started.task.startedAt);
+    expect(startedWithUnsafeClock.task.startedAt).toBe(unsafeClockSave.updatedAt);
   });
 
   it('does not settle due work before a future persisted write time', () => {

@@ -94,12 +94,15 @@ function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
 }
 
 function eventTimestamp(save: V4SaveEnvelope, now: number): number {
-  return Number.isFinite(now) ? Math.max(save.updatedAt, now) : save.updatedAt;
+  const requested = Number.isFinite(now) && now >= 0 && now <= MAX_ECONOMY_VALUE
+    ? now
+    : save.updatedAt;
+  return Math.min(MAX_ECONOMY_VALUE, Math.max(save.updatedAt, requested));
 }
 
 function touchSave(save: V4SaveEnvelope, now: number): void {
   const requested = eventTimestamp(save, now);
-  save.updatedAt = Math.max(save.updatedAt, save.lastProcessedAt, requested);
+  save.updatedAt = Math.min(MAX_ECONOMY_VALUE, Math.max(save.updatedAt, save.lastProcessedAt, requested));
   if (save.meta.sagaEntries.length > V4_MAX_SAGA_ENTRIES) {
     save.meta.sagaEntries.length = V4_MAX_SAGA_ENTRIES;
   }
