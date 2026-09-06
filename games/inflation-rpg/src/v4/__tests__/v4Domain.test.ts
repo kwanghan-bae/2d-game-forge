@@ -1509,6 +1509,20 @@ describe('v4 save and domain', () => {
     expect(completed.meta.currencies.gold).toBe(1e308);
   });
 
+  it('does not upgrade a facility beyond the persistable level ceiling', () => {
+    const capped = createInitialV4Save(120);
+    capped.meta.facilities.temple.level = Number.MAX_SAFE_INTEGER;
+    capped.meta.currencies.gold = Number.MAX_SAFE_INTEGER;
+    capped.meta.currencies.materials = Number.MAX_SAFE_INTEGER;
+
+    const result = upgradeFacility(capped, 'temple', capped.updatedAt + 1_000);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(capped);
+    expect(capped.meta.facilities.temple.level).toBe(Number.MAX_SAFE_INTEGER);
+    expect(capped.meta.currencies).toMatchObject({ gold: Number.MAX_SAFE_INTEGER, materials: Number.MAX_SAFE_INTEGER });
+  });
+
   it('does not grant rewarded currency or intervention charges on an invalid action clock', () => {
     const initial = createInitialV4Save(96);
     const invalidBonus = grantOfflineResourceBonus(initial, { gold: 10 }, Number.NaN);

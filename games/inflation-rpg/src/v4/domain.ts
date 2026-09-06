@@ -996,6 +996,12 @@ export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, 
   const facility = save.meta.facilities[facilityId];
   if (!facility) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
   if (facility.activeTaskId) return { ok: false, save: source, error: '작업 중인 시설은 강화할 수 없습니다.' };
+  if (!Number.isFinite(facility.level) || !Number.isInteger(facility.level) || facility.level < 1) {
+    return { ok: false, save: source, error: '시설 레벨을 확인할 수 없습니다.' };
+  }
+  if (facility.level >= MAX_ECONOMY_VALUE) {
+    return { ok: false, save: source, error: '시설 레벨이 더 이상 오르지 않습니다.' };
+  }
   const cost = getFacilityUpgradeCost(source, facilityId);
   if (!cost) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
   if (!canPay(save, cost)) return { ok: false, save: source, error: '시설 강화 재료가 부족합니다.' };
