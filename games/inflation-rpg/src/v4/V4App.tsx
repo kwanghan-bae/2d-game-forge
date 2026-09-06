@@ -49,7 +49,7 @@ export function V4App({ config }: Props) {
 
       {screen === 'town' && <TownHubScreen save={game.save} now={game.now} onPolicyChange={game.changePolicy} onStartTask={game.startTask} onCancelTask={game.cancelTask} onInstantTask={game.monetizationAvailable ? game.instantTask : undefined} onRefresh={game.refresh} onUpgrade={game.upgrade} onNavigate={setScreen} onIntervention={game.intervene} monetizationAvailable={game.monetizationAvailable} adsToday={game.adsToday} onInterventionCharge={game.addInterventionCharge} onBuyAdFree={game.buyAdFree} />}
       {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} gold={game.save.meta.currencies.gold} expeditionActive={Boolean(game.save.run.expedition)} onBack={() => setScreen('town')} onImportLegacy={game.importLegacyHero} onRejuvenate={game.rejuvenate} />}
-      {screen === 'expedition' && <ExpeditionScreen save={game.save} now={game.now} onStart={game.startRun} onRefresh={game.refresh} onIntervention={game.intervene} onBack={() => setScreen('town')} />}
+      {screen === 'expedition' && <ExpeditionScreen save={game.save} now={game.now} onStart={game.startRun} onConfirm={game.confirmRun} onRefresh={game.refresh} onIntervention={game.intervene} onBack={() => setScreen('town')} />}
       {screen === 'saga' && <SagaScreen entries={game.save.meta.sagaEntries} onBack={() => setScreen('town')} />}
 
       <nav className="v4-nav" aria-label="주요 메뉴"><div className="v4-nav-inner">

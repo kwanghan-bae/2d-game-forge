@@ -15,6 +15,7 @@ import {
   grantInterventionCharge,
   grantOfflineResourceBonus,
   rejuvenateHero,
+  confirmPendingExpedition,
   startExpedition,
   startFacilityTask,
   useIntervention,
@@ -279,6 +280,14 @@ describe('v4 save and domain', () => {
 
     expect(offline.summary.completedExpedition).toBe(false);
     expect(offline.save.run.expedition?.realmId).toBe('deep_forest');
+    expect(offline.save.run.expedition?.status).toBe('awaiting_confirmation');
+
+    const refreshed = completeFacilityTasks(offline.save, offline.save.lastProcessedAt + 1_000);
+    expect(refreshed.run.expedition?.status).toBe('awaiting_confirmation');
+
+    const confirmed = confirmPendingExpedition(refreshed, refreshed.lastProcessedAt + 1_000);
+    expect(confirmed.run.expedition).toBeNull();
+    expect(confirmed.run.lastExpeditionResult?.realmId).toBe('deep_forest');
   });
 
   it('allows one expedition and resolves it into rewards', () => {

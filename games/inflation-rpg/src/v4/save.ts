@@ -61,7 +61,7 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
     && ['aggression', 'hoarding', 'training'].includes(value.policy as string)
     && (value.assignedAgentId === null || value.assignedAgentId === 'guide')
     && isNonNegativeNumber(value.startedAt) && isNonNegativeNumber(value.completesAt)
-    && value.status === 'traveling';
+    && (value.status === 'traveling' || value.status === 'awaiting_confirmation');
 }
 
 function isExpeditionResultRecord(value: unknown): value is Record<string, unknown> {

@@ -5,12 +5,13 @@ interface Props {
   save: V4SaveEnvelope;
   now: number;
   onStart: (realmId: RealmId, agentId: SupportAgentId | null) => void;
+  onConfirm: () => void;
   onRefresh: () => void;
   onIntervention: (type: InterventionType) => void;
   onBack: () => void;
 }
 
-export function ExpeditionScreen({ save, now, onStart, onRefresh, onIntervention, onBack }: Props) {
+export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onIntervention, onBack }: Props) {
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
@@ -48,12 +49,15 @@ export function ExpeditionScreen({ save, now, onStart, onRefresh, onIntervention
 
       {expedition ? (
         <section className="v4-panel" data-testid="v4-active-expedition">
-          <h2>원정 진행 중</h2>
+          <h2>{expedition.status === 'awaiting_confirmation' ? '원정 결과 확인 필요' : '원정 진행 중'}</h2>
           <p>{REALM_DEFINITIONS[expedition.realmId].icon} {REALM_DEFINITIONS[expedition.realmId].nameKR} · {REALM_DEFINITIONS[expedition.realmId].boss}</p>
+          {expedition.status === 'awaiting_confirmation' && <div className="v4-alert">오프라인 동안 위험 구간에 도착했습니다. 보스 결과와 보상을 확인한 뒤 귀환을 확정하세요.</div>}
           <div className="v4-progress"><span style={{ width: `${Math.min(100, Math.max(0, ((now - expedition.startedAt) / (expedition.completesAt - expedition.startedAt)) * 100))}%` }} /></div>
-          <p>귀환까지 {Math.max(0, Math.ceil((expedition.completesAt - now) / 1000))}초</p>
+          <p>{expedition.status === 'awaiting_confirmation' ? '귀환 판정 대기 중' : `귀환까지 ${Math.max(0, Math.ceil((expedition.completesAt - now) / 1000))}초`}</p>
           <div className="v4-button-row">
-            <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>시간 진행 확인</button>
+            {expedition.status === 'awaiting_confirmation'
+              ? <button type="button" className="v4-btn v4-btn--primary" onClick={onConfirm}>보스 결과 확인</button>
+              : <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>시간 진행 확인</button>}
             <button type="button" className="v4-btn v4-btn--quiet" disabled={save.run.interventionCharges <= 0} onClick={() => onIntervention('retreat')}>신의 개입: 후퇴 ({save.run.interventionCharges})</button>
           </div>
         </section>

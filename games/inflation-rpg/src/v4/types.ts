@@ -67,7 +67,7 @@ export interface ExpeditionState {
   assignedAgentId: SupportAgentId | null;
   startedAt: number;
   completesAt: number;
-  status: 'traveling';
+  status: 'traveling' | 'awaiting_confirmation';
 }
 
 export interface ExpeditionResult {

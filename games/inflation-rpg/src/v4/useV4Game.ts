@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   cancelFacilityTask,
+  confirmPendingExpedition,
   completeFacilityTasks,
   completeFacilityTaskNow,
   grantInterventionCharge,
@@ -143,6 +144,11 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     else setMessage(result.error);
   }, [commit, save]);
 
+  const confirmRun = useCallback(() => {
+    if (save.run.expedition?.status !== 'awaiting_confirmation') return;
+    commit(confirmPendingExpedition(save, Date.now()), '보류된 원정 결과를 확인했습니다.');
+  }, [commit, save]);
+
   const upgrade = useCallback((facilityId: FacilityId) => {
     const result = upgradeFacility(save, facilityId, Date.now());
     if (result.ok) commit(result.save, '시설 레벨이 올랐습니다.');
@@ -183,6 +189,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     intervene,
     buyAdFree,
     startRun,
+    confirmRun,
     upgrade,
     importLegacyHero,
     closeOffline,

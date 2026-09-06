@@ -176,8 +176,12 @@ function calculateHeroPower(save: V4SaveEnvelope): number {
 function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlock: boolean, efficiency: number): void {
   const expedition = save.run.expedition;
   if (!expedition || expedition.completesAt > now) return;
+  if (expedition.status === 'awaiting_confirmation') return;
   const realm = REALM_DEFINITIONS[expedition.realmId];
-  if (!allowPermanentUnlock && !realm.offlineSafe) return;
+  if (!allowPermanentUnlock && !realm.offlineSafe) {
+    expedition.status = 'awaiting_confirmation';
+    return;
+  }
   const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
   const guideBonus = guide ? Math.min(0.12, guide.trust / 500) : 0;
   const runtime = createV4HeroRuntime(save.run.hero);
@@ -312,6 +316,15 @@ export function completeFacilityTaskNow(
   }
   task.completesAt = now;
   return { ok: true, save: completeFacilityTasks(prepared, now), task };
+}
+
+/** Explicit player confirmation for a risky expedition held by offline settlement. */
+export function confirmPendingExpedition(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
+  if (source.run.expedition?.status !== 'awaiting_confirmation') return source;
+  const save = cloneSave(source);
+  if (!save.run.expedition) return source;
+  save.run.expedition.status = 'traveling';
+  return completeFacilityTasks(save, now, 1, true);
 }
 
 export function grantOfflineResourceBonus(
