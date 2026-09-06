@@ -82,6 +82,19 @@ describe('v4 save and domain', () => {
       meta: { ...save.meta, sagaEntries: [save.meta.sagaEntries[0], save.meta.sagaEntries[0]] },
     }));
     expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      run: {
+        ...save.run,
+        hero: {
+          ...save.run.hero,
+          equipmentIds: ['v4_iron_sword', 'v4_iron_sword'],
+          equipmentLevels: { v4_iron_sword: 1 },
+        },
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
   it('keeps gameplay alive when local persistence is unavailable', () => {

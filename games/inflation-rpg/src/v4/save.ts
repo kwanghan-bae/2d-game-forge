@@ -257,6 +257,13 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || (hero.equipmentLevels !== undefined && (!isRecord(hero.equipmentLevels)
       || !Object.entries(hero.equipmentLevels).every(([id, level]) => typeof id === 'string'
         && isPersistableNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)))) return false;
+  const equipmentIds = hero.equipmentIds as string[];
+  if (hero.equipmentLevels !== undefined) {
+    const equipmentLevels = hero.equipmentLevels as Record<string, unknown>;
+    if (new Set(equipmentIds).size !== equipmentIds.length
+      || Object.keys(equipmentLevels).length !== equipmentIds.length
+      || !equipmentIds.every((id) => Object.prototype.hasOwnProperty.call(equipmentLevels, id))) return false;
+  }
   if (!meta.unlockedRealms.includes(hero.realmId as typeof REALM_IDS[number])) return false;
   const heroAge = hero.age;
   const heroLevel = hero.level;
