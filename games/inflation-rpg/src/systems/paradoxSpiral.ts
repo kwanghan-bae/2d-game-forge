@@ -138,9 +138,9 @@ export function generateParadoxGuardian(floor: number): ParadoxGuardian {
   const element = GUARDIAN_ELEMENTS[(floor - 1) % GUARDIAN_ELEMENTS.length];
 
   // Progressive base stats scaling
-  // Base HP: 80M at Floor 1, scaling ~1.08x per floor plus linear buffer
+  // Base HP: 80M at Floor 1, scaling ~1.065x per floor plus linear buffer
   const maxHp = Math.round(
-    80_000_000 * Math.pow(1.075, floor - 1) + (floor * 30_000_000)
+    80_000_000 * Math.pow(1.065, floor - 1) + (floor * 20_000_000)
   );
   const atk = Math.round(
     500_000 * Math.pow(1.06, floor - 1) + (floor * 50_000)
@@ -205,8 +205,9 @@ export function resolveParadoxFloorCombat(
   const { maxHp: heroMaxHp } = applyRegaliaHpBonus(hero.hpMax, meta);
   let heroCurrentHp = heroMaxHp;
 
-  // Hero ATK with Loom Omni-stat
+  // Hero ATK & DEF with Loom Omni-stat
   const heroAtk = Math.round(hero.atk * (1 + loomPerks.omniStatMultiplierBonus));
+  const heroDef = Math.round((hero.def || Math.round(hero.hpMax * 0.1)) * (1 + loomPerks.omniStatMultiplierBonus));
 
   // Guardian effective DEF with Ouroboros Blade
   const guardianDef = applyRegaliaDefPenetration(guardian.def, meta);
@@ -232,7 +233,7 @@ export function resolveParadoxFloorCombat(
   let totalDamageDealt = 0;
   let totalDamageTaken = 0;
   let turn = 0;
-  const MAX_TURNS = 50;
+  const MAX_TURNS = 100;
 
   const turnLogs: ParadoxCombatTurnLog[] = [];
 
@@ -260,7 +261,10 @@ export function resolveParadoxFloorCombat(
 
     if (guardianCurrentHp > 0) {
       // Guardian attacks hero
-      let rawGuardianDmg = guardian.atk;
+      // Keep the defense contract consistent with the other endgame combat
+      // engines: defense absorbs the guardian's flat attack value before
+      // multipliers are applied.
+      let rawGuardianDmg = Math.max(1, guardian.atk - heroDef);
       if (hasTemporalDilation) {
         rawGuardianDmg = Math.round(rawGuardianDmg * 1.20);
       }

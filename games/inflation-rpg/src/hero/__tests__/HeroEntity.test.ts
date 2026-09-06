@@ -26,6 +26,25 @@ describe('HeroEntity', () => {
     expect(h.staggered).toBe(false);
   });
 
+  it('preserves optional defense and crit stats for endgame combat systems', () => {
+    const h = HeroEntity.create({
+      seed: 42,
+      heroHpMax: 100,
+      heroAtkBase: 50,
+      heroDefBase: 25,
+      heroCritRateBase: 0.05,
+    });
+
+    expect(h.defBase).toBe(25);
+    expect(h.def).toBe(25);
+    expect(h.critRateBase).toBe(0.05);
+
+    const restored = HeroEntity.restore(h.serialize(42));
+    expect(restored.defBase).toBe(25);
+    expect(restored.def).toBe(25);
+    expect(restored.critRateBase).toBe(0.05);
+  });
+
   it('gainExp adds and triggers level up at threshold', () => {
     const h = makeHero();
     h.gainExp(100); // threshold = 10 at lv1

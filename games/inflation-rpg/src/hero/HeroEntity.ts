@@ -26,6 +26,10 @@ export interface HeroCreateOpts {
   seed: number;
   heroHpMax: number;
   heroAtkBase: number;
+  /** Optional defensive base stat used by endgame combat systems. */
+  heroDefBase?: number;
+  /** Optional base critical-hit chance, represented as a 0–1 ratio. */
+  heroCritRateBase?: number;
 }
 
 /** V3-H B2 — 직렬화 가능한 hero state snapshot. persist v22 의 run.heroSnapshot 에 저장됨. */
@@ -42,6 +46,9 @@ export interface HeroSnapshot {
   atk: number;
   atkBase: number;
   hpBase: number;
+  def?: number;
+  defBase?: number;
+  critRateBase?: number;
   actionCount: number;
   rejuvenationCount: number;
   gridX: number;
@@ -71,6 +78,9 @@ export class HeroEntity {
   atk: number;
   atkBase: number;
   hpBase: number;
+  def: number;
+  defBase: number;
+  critRateBase: number;
   actionCount: number;
   rejuvenationCount: number;
   staggered: boolean = false;
@@ -134,6 +144,9 @@ export class HeroEntity {
     this.atk = 0;
     this.atkBase = 0;
     this.hpBase = 0;
+    this.def = 0;
+    this.defBase = 0;
+    this.critRateBase = 0.05;
     this.actionCount = 0;
     this.rejuvenationCount = 0;
     this.personality = new PersonalityState();
@@ -151,8 +164,11 @@ export class HeroEntity {
     h.exp = 0;
     h.atkBase = opts.heroAtkBase;
     h.hpBase = opts.heroHpMax;
+    h.defBase = opts.heroDefBase ?? Math.round(opts.heroHpMax * 0.1);
+    h.critRateBase = opts.heroCritRateBase ?? 0.05;
     h.atk = heroAtkAtLevel(h.atkBase, h.level);
     h.hpMax = heroHpMaxAtLevel(h.hpBase, h.level);
+    h.def = h.defBase;
     h.hp = h.hpMax;
     h.personality = PersonalityState.fromTraitPriors(spawned.personalityPriors);
     return h;
@@ -177,6 +193,7 @@ export class HeroEntity {
     const debuff = getAgingDebuff(this.age);
     this.atk = Math.floor(heroAtkAtLevel(this.atkBase, this.level) * debuff.atkMul);
     this.hpMax = Math.floor(heroHpMaxAtLevel(this.hpBase, this.level) * debuff.hpMul);
+    this.def = Math.max(0, Math.floor(this.defBase));
     if (this.hp > this.hpMax) this.hp = this.hpMax;
   }
 
@@ -259,6 +276,9 @@ export class HeroEntity {
       atk: this.atk,
       atkBase: this.atkBase,
       hpBase: this.hpBase,
+      def: this.def,
+      defBase: this.defBase,
+      critRateBase: this.critRateBase,
       actionCount: this.actionCount,
       rejuvenationCount: this.rejuvenationCount,
       gridX: this.gridX,
@@ -289,6 +309,8 @@ export class HeroEntity {
     h.exp = snap.exp;
     h.atkBase = snap.atkBase;
     h.hpBase = snap.hpBase;
+    h.defBase = snap.defBase ?? Math.round(snap.hpBase * 0.1);
+    h.critRateBase = snap.critRateBase ?? 0.05;
     h.rejuvenationCount = snap.rejuvenationCount;
     h.gridX = snap.gridX;
     h.gridY = snap.gridY;
