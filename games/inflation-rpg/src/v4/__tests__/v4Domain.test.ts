@@ -846,6 +846,19 @@ describe('v4 save and domain', () => {
     expect(result.save.meta.sagaEntries[0]?.title).toBe('신의 개입: 원정 후퇴');
   });
 
+  it('does not spend an intervention charge on a stale action clock', () => {
+    const initial = createInitialV4Save(119);
+    initial.run.hero.hp = 120;
+
+    const result = useIntervention(initial, 'heal', initial.updatedAt - 1);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.save).toBe(initial);
+    expect(initial.run.interventionCharges).toBe(1);
+    expect(initial.run.hero.hp).toBe(120);
+  });
+
   it('clamps offline processing to 8 hours and rejects backwards time', () => {
     const initial = createInitialV4Save(8);
     const future = simulateOfflineProgress(initial, initial.lastProcessedAt + 24 * HOUR);

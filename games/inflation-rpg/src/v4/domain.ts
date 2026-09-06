@@ -799,6 +799,9 @@ export function useIntervention(
   if (!isInterventionType(intervention)) {
     return { ok: false, save: source, error: '알 수 없는 신의 개입입니다.' };
   }
+  if (!isActionClockValid(source, now)) {
+    return { ok: false, save: source, error: '저장 시각을 확인할 수 없어 신의 개입을 적용하지 않았습니다.' };
+  }
   if (source.run.interventionCharges <= 0) {
     return { ok: false, save: source, error: '신의 개입 충전이 없습니다.' };
   }
