@@ -339,6 +339,8 @@ describe('v4 save and domain', () => {
     const replay = simulateOfflineProgress(offline.save, initial.createdAt + HOUR);
     expect(replay.summary.processedSeconds).toBe(0);
     expect(replay.summary.completedTaskIds).toEqual([]);
+    expect(replay.summary.resourcesGained).toEqual({});
+    expect(replay.save.meta.currencies).toEqual(offline.save.meta.currencies);
   });
 
   it('advances the processing watermark when work is completed online', () => {
@@ -732,6 +734,7 @@ describe('v4 save and domain', () => {
     const confirmed = confirmPendingExpedition(refreshed, refreshed.lastProcessedAt + 1_000);
     expect(confirmed.run.expedition).toBeNull();
     expect(confirmed.run.lastExpeditionResult?.realmId).toBe('deep_forest');
+    expect(confirmPendingExpedition(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 
   it('requires explicit confirmation before an offline victory unlocks the next Realm', () => {
