@@ -7,9 +7,14 @@ interface Props {
   onPolicyChange: (policy: V4Policy) => void;
   onStartTask: (facilityId: FacilityId, agentId?: SupportAgentId | null) => void;
   onCancelTask: (facilityId: FacilityId) => void;
+  onInstantTask?: (facilityId: FacilityId) => void;
   onRefresh: () => void;
   onUpgrade: (facilityId: FacilityId) => void;
   onNavigate: (screen: 'hero' | 'expedition' | 'saga') => void;
+  monetizationAvailable: boolean;
+  adsToday: number;
+  onInterventionCharge: () => void;
+  onBuyAdFree: () => void;
 }
 
 const AGENT_BY_FACILITY: Partial<Record<FacilityId, SupportAgentId>> = {
@@ -23,7 +28,7 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRefresh, onUpgrade, onNavigate }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onInstantTask, onRefresh, onUpgrade, onNavigate, monetizationAvailable, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
   const hero = save.run.hero;
   return (
     <main className="v4-container" data-testid="v4-town-hub">
@@ -87,6 +92,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                     <>
                       <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>진행 확인</button>
                       <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onCancelTask(facilityId)}>취소</button>
+                      {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onInstantTask(facilityId)}>광고 즉시 완료</button>}
                     </>
                   ) : (
                     <button type="button" className="v4-btn v4-btn--primary" onClick={() => onStartTask(facilityId, agentId)}>작업 시작</button>
@@ -119,6 +125,15 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
           <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onNavigate('saga')}>사가 보기</button>
         </div>
       </section>
+
+      {monetizationAvailable && <section className="v4-panel">
+        <h2>후원 혜택</h2>
+        <p>오늘 보상형 광고 {adsToday}/5회 · 게임 진행을 막지 않는 선택형 혜택입니다.</p>
+        <div className="v4-button-row">
+          <button type="button" className="v4-btn v4-btn--quiet" disabled={adsToday >= 5} onClick={onInterventionCharge}>개입 충전 광고</button>
+          <button type="button" className="v4-btn v4-btn--quiet" onClick={onBuyAdFree}>광고 제거 구매</button>
+        </div>
+      </section>}
     </main>
   );
 }

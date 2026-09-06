@@ -37,6 +37,16 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('mirrors an already-restored ad-free entitlement from the existing service', () => {
+    const adapter = createV4MonetizationAdapter({
+      showRewardedAd: async () => true,
+      purchase: async () => true,
+      isAdFreeOwned: () => true,
+    });
+
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('resets the rewarded limit when the local calendar day changes', async () => {
     vi.setSystemTime(new Date(2026, 8, 6, 23, 59));
     const adapter = new V4MonetizationAdapter({ showRewarded: async () => true }, null);

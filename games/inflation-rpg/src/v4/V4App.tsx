@@ -21,7 +21,7 @@ const RESOURCES = [
 ] as const;
 
 export function V4App({ config }: Props) {
-  const game = useV4Game();
+  const game = useV4Game(config.v4Monetization);
   const [screen, setScreen] = useState<V4Screen>('town');
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export function V4App({ config }: Props) {
         {game.message && <div className="v4-alert" role="status">{game.message}<button type="button" className="v4-btn v4-btn--quiet" style={{ float: 'right', minHeight: 24, padding: '2px 6px' }} onClick={game.closeMessage}>닫기</button></div>}
       </div>
 
-      {screen === 'town' && <TownHubScreen save={game.save} now={game.now} onPolicyChange={game.changePolicy} onStartTask={game.startTask} onCancelTask={game.cancelTask} onRefresh={game.refresh} onUpgrade={game.upgrade} onNavigate={setScreen} />}
+      {screen === 'town' && <TownHubScreen save={game.save} now={game.now} onPolicyChange={game.changePolicy} onStartTask={game.startTask} onCancelTask={game.cancelTask} onInstantTask={game.monetizationAvailable ? game.instantTask : undefined} onRefresh={game.refresh} onUpgrade={game.upgrade} onNavigate={setScreen} monetizationAvailable={game.monetizationAvailable} adsToday={game.adsToday} onInterventionCharge={game.addInterventionCharge} onBuyAdFree={game.buyAdFree} />}
       {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} gold={game.save.meta.currencies.gold} expeditionActive={Boolean(game.save.run.expedition)} onBack={() => setScreen('town')} onImportLegacy={game.importLegacyHero} onRejuvenate={game.rejuvenate} />}
       {screen === 'expedition' && <ExpeditionScreen save={game.save} now={game.now} onStart={game.startRun} onRefresh={game.refresh} onBack={() => setScreen('town')} />}
       {screen === 'saga' && <SagaScreen entries={game.save.meta.sagaEntries} onBack={() => setScreen('town')} />}
@@ -56,7 +56,7 @@ export function V4App({ config }: Props) {
         {([['town', '🏘️ 마을'], ['hero', '⚔️ 영웅'], ['expedition', '🧭 원정'], ['saga', '📜 사가']] as Array<[V4Screen, string]>).map(([id, label]) => <button type="button" key={id} className={`v4-nav-btn ${screen === id ? 'v4-nav-btn--active' : ''}`} onClick={() => setScreen(id)}>{label}</button>)}
       </div></nav>
 
-      {game.offlineSummary && <OfflineResultScreen summary={game.offlineSummary} onClose={game.closeOffline} />}
+      {game.offlineSummary && <OfflineResultScreen summary={game.offlineSummary} onClose={game.closeOffline} onDoubleReward={game.monetizationAvailable ? game.doubleOfflineReward : undefined} canDoubleReward={!game.offlineRewardDoubled} adsToday={game.adsToday} />}
     </div>
   );
 }

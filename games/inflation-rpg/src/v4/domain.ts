@@ -246,6 +246,43 @@ export function completeFacilityTasks(
   return save;
 }
 
+export function completeFacilityTaskNow(
+  source: V4SaveEnvelope,
+  facilityId: FacilityId,
+  now: number,
+): DomainResult {
+  const prepared = cloneSave(source);
+  const facility = prepared.meta.facilities[facilityId];
+  const taskId = facility?.activeTaskId;
+  const task = taskId ? prepared.meta.tasks[taskId] : undefined;
+  if (!facility || !task) {
+    return { ok: false, save: source, error: '즉시 완료할 작업이 없습니다.' };
+  }
+  task.completesAt = now;
+  return { ok: true, save: completeFacilityTasks(prepared, now), task };
+}
+
+export function grantOfflineResourceBonus(
+  source: V4SaveEnvelope,
+  gains: Partial<Record<V4CurrencyKey, number>>,
+  now: number,
+): V4SaveEnvelope {
+  const save = cloneSave(source);
+  const positiveGains = Object.fromEntries(
+    Object.entries(gains).map(([key, value]) => [key, Math.max(0, value ?? 0)]),
+  ) as Partial<Record<V4CurrencyKey, number>>;
+  give(save, positiveGains);
+  save.updatedAt = now;
+  return save;
+}
+
+export function grantInterventionCharge(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
+  const save = cloneSave(source);
+  save.run.interventionCharges += 1;
+  save.updatedAt = now;
+  return save;
+}
+
 export function startExpedition(
   source: V4SaveEnvelope,
   realmId: RealmId,

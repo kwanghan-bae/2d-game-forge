@@ -9,3 +9,9 @@ export const gameManifest: GameManifestValue = parseGameManifest({
 
 export { StartGame, StartLegacyGame } from './startGame';
 export type { StartGameConfig } from './startGame';
+export { createNativeV4Monetization } from './v4/monetization';
+export type {
+  NativeV4MonetizationHandle,
+  NativeV4MonetizationOptions,
+  V4MonetizationAdapter,
+} from './v4/monetization';

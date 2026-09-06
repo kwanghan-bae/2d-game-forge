@@ -11,6 +11,9 @@ import {
 import {
   cancelFacilityTask,
   completeFacilityTasks,
+  completeFacilityTaskNow,
+  grantInterventionCharge,
+  grantOfflineResourceBonus,
   rejuvenateHero,
   startExpedition,
   startFacilityTask,
@@ -128,6 +131,24 @@ describe('v4 save and domain', () => {
     expect(canceled.save.meta.facilities.blacksmith.activeTaskId).toBeNull();
     expect(canceled.save.meta.tasks).toEqual({});
     expect(canceled.save.meta.agents.find((agent) => agent.id === 'blacksmith')?.activeTaskId).toBeNull();
+  });
+
+  it('applies monetization effects through pure V4 domain helpers', () => {
+    const initial = createInitialV4Save(72);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const instant = completeFacilityTaskNow(started.save, 'temple', initial.createdAt + 1_000);
+    expect(instant.ok).toBe(true);
+    if (!instant.ok) return;
+    expect(instant.save.meta.currencies.spirit).toBe(118);
+    expect(instant.save.meta.tasks).toEqual({});
+
+    const doubled = grantOfflineResourceBonus(instant.save, { spirit: 18, gold: 4 }, initial.createdAt + 2_000);
+    expect(doubled.meta.currencies).toMatchObject({ spirit: 136, gold: 104 });
+    const charged = grantInterventionCharge(doubled, initial.createdAt + 3_000);
+    expect(charged.run.interventionCharges).toBe(2);
   });
 
   it('clamps offline processing to 8 hours and rejects backwards time', () => {

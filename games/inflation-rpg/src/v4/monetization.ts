@@ -12,6 +12,7 @@ export interface V4PurchaseProvider {
 export interface V4MonetizationServiceBridge {
   showRewardedAd(): Promise<boolean>;
   purchase(productId: 'ad_free'): Promise<boolean>;
+  isAdFreeOwned?: () => boolean;
 }
 
 export interface V4RewardedUsageStore {
@@ -73,11 +74,81 @@ export function createV4MonetizationAdapter(
   service: V4MonetizationServiceBridge,
   usageStore: V4RewardedUsageStore = createLocalV4RewardedUsageStore(),
 ): V4MonetizationAdapter {
-  return new V4MonetizationAdapter(
+  const adapter = new V4MonetizationAdapter(
     { showRewarded: () => service.showRewardedAd() },
     { purchase: async () => (await service.purchase('ad_free') ? 'purchased' : 'failed') },
     usageStore,
   );
+  if (service.isAdFreeOwned?.()) adapter.setAdFreeOwned(true);
+  return adapter;
+}
+
+export interface NativeV4MonetizationOptions {
+  adFreeOwned?: boolean;
+  usageStore?: V4RewardedUsageStore;
+  onAdFreeChanged?: (owned: boolean) => void;
+  onCrackStonesAwarded?: (amount: number) => void;
+}
+
+export interface NativeV4MonetizationHandle {
+  adapter: V4MonetizationAdapter;
+  initialize(): Promise<boolean>;
+  restorePurchases(): Promise<boolean>;
+}
+
+/**
+ * Lazily wires V4 to the existing Capacitor AdMob/OneStore service. The
+ * dynamic imports keep web tests and the dev-shell free from native startup
+ * side effects; the returned boolean makes provider failure non-fatal.
+ */
+export async function createNativeV4Monetization(
+  options: NativeV4MonetizationOptions = {},
+): Promise<NativeV4MonetizationHandle> {
+  const [{ MonetizationService }, { ADMOB_CONFIG }] = await Promise.all([
+    import('../services/MonetizationService'),
+    import('../config/monetization.config'),
+  ]);
+  let adFreeOwned = options.adFreeOwned ?? false;
+  const service = new MonetizationService({
+    adFreeOwned,
+    onAdFreeChanged: (owned) => {
+      adFreeOwned = owned;
+      options.onAdFreeChanged?.(owned);
+    },
+    onCrackStonesAwarded: (amount) => options.onCrackStonesAwarded?.(amount),
+    licenseKey: ADMOB_CONFIG.iapLicenseKey,
+    rewardedUnitId: ADMOB_CONFIG.rewarded.android,
+    bannerUnitId: ADMOB_CONFIG.banner.android,
+  });
+  const adapter = createV4MonetizationAdapter(service, options.usageStore);
+  adapter.setAdFreeOwned(adFreeOwned);
+  const syncEntitlement = () => {
+    const owned = service.isAdFreeOwned();
+    adapter.setAdFreeOwned(owned);
+    return owned;
+  };
+
+  return {
+    adapter,
+    async initialize() {
+      try {
+        await service.initialize();
+        syncEntitlement();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    async restorePurchases() {
+      try {
+        await service.restorePurchasesManually();
+        syncEntitlement();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  };
 }
 
 /**
@@ -109,6 +180,7 @@ export class V4MonetizationAdapter {
     return this.adsToday;
   }
   isAdFree(): boolean { return this.adFree; }
+  setAdFreeOwned(owned: boolean): void { this.adFree = owned; }
 
   async watchRewarded(placement: V4RewardedPlacement): Promise<V4MonetizationResult> {
     this.resetForCurrentDay();

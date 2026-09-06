@@ -1,6 +1,7 @@
 import type { CycleHistoryEntry } from './cycle/cycleEvents';
 import type { TraitId } from './cycle/traits';
 import type { CycleSaga } from './saga/SagaTypes';
+import type { V4MonetizationAdapter } from './v4/monetization';
 
 export type StatKey = 'hp' | 'atk' | 'def' | 'agi' | 'luc';
 
@@ -509,6 +510,8 @@ export interface StartGameConfig {
   parent: string;
   assetsBasePath: string;
   exposeTestHooks: boolean;
+  /** Optional native bridge. Web/dev-shell runs without ads or IAP. */
+  v4Monetization?: V4MonetizationAdapter;
 }
 
 // ── Phase B (300h redesign) — Dungeon/Floor 모델 ──

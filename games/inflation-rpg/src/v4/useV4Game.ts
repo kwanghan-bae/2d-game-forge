@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   cancelFacilityTask,
   completeFacilityTasks,
+  completeFacilityTaskNow,
+  grantInterventionCharge,
+  grantOfflineResourceBonus,
   rejuvenateHero,
   setV4Policy,
   startExpedition,
@@ -17,12 +20,14 @@ import {
 } from './save';
 import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
+import type { V4MonetizationAdapter, V4RewardedPlacement } from './monetization';
 import type { FacilityId, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from './types';
 
-export function useV4Game() {
+export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [save, setSave] = useState<V4SaveEnvelope>(() => loadV4Save() ?? createInitialV4Save(Date.now()));
   const [clock, setClock] = useState(() => Date.now());
   const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
+  const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,6 +36,7 @@ export function useV4Game() {
     persistV4Save(result.save);
     if (result.summary.processedSeconds > 0 || result.summary.clockAnomaly) {
       setOfflineSummary(result.summary);
+      setOfflineRewardDoubled(false);
     }
     // The initial state is intentionally processed once on mount. Subsequent
     // mutations use commit() and do not replay this effect.
@@ -76,6 +82,51 @@ export function useV4Game() {
     else setMessage(result.error);
   }, [commit, save]);
 
+  const watchRewarded = useCallback(async (placement: V4RewardedPlacement): Promise<boolean> => {
+    if (!monetization) {
+      setMessage('현재 환경에서는 광고 혜택을 사용할 수 없습니다. 게임은 계속 진행됩니다.');
+      return false;
+    }
+    const result = await monetization.watchRewarded(placement);
+    if (result.granted) return true;
+    const messages = {
+      daily_limit: '오늘의 보상형 광고 횟수를 모두 사용했습니다.',
+      provider_failed: '광고를 불러오지 못했습니다. 게임은 계속 진행됩니다.',
+      not_purchased: '구매가 완료되지 않았습니다.',
+      granted: '',
+    } as const;
+    setMessage(messages[result.reason]);
+    return false;
+  }, [monetization]);
+
+  const doubleOfflineReward = useCallback(async () => {
+    if (!offlineSummary || offlineRewardDoubled || !(await watchRewarded('offline_double'))) return;
+    const next = grantOfflineResourceBonus(save, offlineSummary.resourcesGained, Date.now());
+    commit(next, '오프라인 재화 보상을 2배로 적용했습니다.');
+    setOfflineRewardDoubled(true);
+  }, [commit, offlineRewardDoubled, offlineSummary, save, watchRewarded]);
+
+  const instantTask = useCallback(async (facilityId: FacilityId) => {
+    if (!(await watchRewarded('instant_task'))) return;
+    const result = completeFacilityTaskNow(save, facilityId, Date.now());
+    if (result.ok) commit(result.save, '광고 혜택으로 작업을 즉시 완료했습니다.');
+    else setMessage(result.error);
+  }, [commit, save, watchRewarded]);
+
+  const addInterventionCharge = useCallback(async () => {
+    if (!(await watchRewarded('intervention_charge'))) return;
+    commit(grantInterventionCharge(save, Date.now()), '개입 충전을 1회 얻었습니다.');
+  }, [commit, save, watchRewarded]);
+
+  const buyAdFree = useCallback(async () => {
+    if (!monetization) {
+      setMessage('현재 환경에서는 결제를 사용할 수 없습니다. 게임은 계속 진행됩니다.');
+      return;
+    }
+    const result = await monetization.buyAdFree();
+    setMessage(result.granted ? '광고 제거가 적용되었습니다.' : '구매가 완료되지 않았습니다.');
+  }, [monetization]);
+
   const startRun = useCallback((realmId: RealmId, agentId: SupportAgentId | null = null) => {
     const result = startExpedition(save, realmId, Date.now(), save.run.policy, agentId);
     if (result.ok) commit(result.save, '원정을 출발시켰습니다.');
@@ -113,6 +164,13 @@ export function useV4Game() {
     startTask,
     cancelTask,
     rejuvenate,
+    monetizationAvailable: Boolean(monetization),
+    adsToday: monetization?.getAdsToday() ?? 0,
+    offlineRewardDoubled,
+    doubleOfflineReward,
+    instantTask,
+    addInterventionCharge,
+    buyAdFree,
     startRun,
     upgrade,
     importLegacyHero,

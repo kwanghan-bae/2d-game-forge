@@ -1,6 +1,12 @@
 import type { OfflineSummary } from '../types';
 
-interface Props { summary: OfflineSummary; onClose: () => void; }
+interface Props {
+  summary: OfflineSummary;
+  onClose: () => void;
+  onDoubleReward?: () => void;
+  canDoubleReward?: boolean;
+  adsToday?: number;
+}
 
 const RESOURCE_LABELS: Record<string, string> = {
   spirit: '신력',
@@ -9,7 +15,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   rift: '균열석',
 };
 
-export function OfflineResultScreen({ summary, onClose }: Props) {
+export function OfflineResultScreen({ summary, onClose, onDoubleReward, canDoubleReward = true, adsToday = 0 }: Props) {
   return (
     <div className="v4-overlay" role="dialog" aria-modal="true" aria-label="오프라인 결과">
       <section className="v4-modal" data-testid="v4-offline-result">
@@ -23,6 +29,9 @@ export function OfflineResultScreen({ summary, onClose }: Props) {
         </div>
         {summary.equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {summary.equipmentGained.join(', ')}</div>}
         <p>{summary.completedTaskIds.length}개 작업 완료 · {summary.completedExpedition ? '원정 귀환 완료' : '선택형 사건은 보류됨'}</p>
+        {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!canDoubleReward || adsToday >= 5} onClick={onDoubleReward}>
+          {!canDoubleReward ? '보상 2배 적용 완료' : adsToday >= 5 ? '오늘 광고 한도 도달' : '광고 보고 오프라인 재화 2배'}
+        </button>}
         <button type="button" className="v4-btn v4-btn--primary" onClick={onClose}>마을 확인</button>
       </section>
     </div>
