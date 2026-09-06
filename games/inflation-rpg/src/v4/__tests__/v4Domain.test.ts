@@ -1110,6 +1110,17 @@ describe('v4 save and domain', () => {
     expect(runtime.rejuvenate(3).yearsReduced).toBe(3);
   });
 
+  it('keeps the hero runtime snapshot valid for an unknown rejuvenation input', () => {
+    const save = createInitialV4Save(111);
+    const runtime = createV4HeroRuntime(save.run.hero);
+
+    const result = runtime.rejuvenate('unknown' as never);
+
+    expect(result.yearsReduced).toBe(0);
+    expect(result.cost).toBe(0);
+    expect(result.snapshot).toEqual(save.run.hero);
+  });
+
   it('carries V3 hit variance, crits, and defense mitigation into V4 battles', () => {
     const critical = createInitialV4Save(11);
     critical.run.hero.critRateBase = 1;

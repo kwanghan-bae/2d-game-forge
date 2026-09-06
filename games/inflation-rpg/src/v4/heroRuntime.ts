@@ -93,7 +93,9 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
     },
 
     rejuvenate(years: number): RejuvenationResult {
-      const safeYears = Math.max(0, Math.floor(years));
+      const safeYears = typeof years === 'number' && Number.isFinite(years)
+        ? Math.max(0, Math.floor(years))
+        : 0;
       const beforeAge = snapshot.age;
       const nextAge = Math.max(5, beforeAge - safeYears);
       snapshot = {
