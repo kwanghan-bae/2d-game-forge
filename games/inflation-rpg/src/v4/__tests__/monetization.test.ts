@@ -132,6 +132,19 @@ describe('v4 monetization adapter', () => {
     expect((await adapter.watchRewarded('offline_double')).granted).toBe(true);
   });
 
+  it('clamps a corrupted restored usage count to the daily cap', async () => {
+    let providerCalls = 0;
+    const adapter = new V4MonetizationAdapter(
+      { showRewarded: async () => { providerCalls += 1; return true; } },
+      null,
+      { read: () => Number.MAX_SAFE_INTEGER, write: () => {} },
+    );
+
+    expect(adapter.getAdsToday()).toBe(V4_DAILY_REWARDED_LIMIT);
+    expect((await adapter.watchRewarded('offline_double')).reason).toBe('daily_limit');
+    expect(providerCalls).toBe(0);
+  });
+
   it('reserves the daily quota across concurrent rewarded requests', async () => {
     let calls = 0;
     let release!: () => void;

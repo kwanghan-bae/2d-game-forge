@@ -28,6 +28,12 @@ export interface V4MonetizationResult {
 export const V4_DAILY_REWARDED_LIMIT = 5;
 export const V4_REWARDED_USAGE_KEY = 'shin-ui-eternal-sponsor-v4-rewarded-usage-v1';
 
+function normalizeDailyUsage(count: number): number {
+  return Number.isFinite(count)
+    ? Math.min(V4_DAILY_REWARDED_LIMIT, Math.max(0, Math.floor(count)))
+    : 0;
+}
+
 function defaultStorage(): Storage | undefined {
   try {
     return typeof window === 'undefined' ? undefined : window.localStorage;
@@ -49,7 +55,7 @@ export function createLocalV4RewardedUsageStore(
       if (!storage) return 0;
       try {
         const parsed = JSON.parse(storage.getItem(V4_REWARDED_USAGE_KEY) ?? '{}') as { day?: string; count?: number };
-        return parsed.day === day && Number.isFinite(parsed.count) ? Math.max(0, Math.floor(parsed.count ?? 0)) : 0;
+        return parsed.day === day ? normalizeDailyUsage(parsed.count ?? 0) : 0;
       } catch {
         return 0;
       }
@@ -57,7 +63,7 @@ export function createLocalV4RewardedUsageStore(
     write(day, count) {
       if (!storage) return;
       try {
-        storage.setItem(V4_REWARDED_USAGE_KEY, JSON.stringify({ day, count }));
+        storage.setItem(V4_REWARDED_USAGE_KEY, JSON.stringify({ day, count: normalizeDailyUsage(count) }));
       } catch {
         // A storage quota/private-mode failure must never block gameplay.
       }
@@ -173,7 +179,7 @@ export class V4MonetizationAdapter {
   private readStoredUsage(day: string): number {
     try {
       const count = this.usageStore?.read(day) ?? 0;
-      return Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+      return normalizeDailyUsage(count);
     } catch {
       return 0;
     }
