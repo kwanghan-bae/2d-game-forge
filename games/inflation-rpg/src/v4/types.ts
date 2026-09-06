@@ -1,5 +1,6 @@
 export type V4CurrencyKey = 'spirit' | 'gold' | 'materials' | 'rift';
 export type V4Policy = 'aggression' | 'hoarding' | 'training';
+export type InterventionType = 'heal' | 'retreat';
 export type FacilityId =
   | 'temple'
   | 'recovery'

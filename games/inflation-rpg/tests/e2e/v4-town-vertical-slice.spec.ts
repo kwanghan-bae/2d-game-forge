@@ -39,4 +39,24 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-offline-result')).toBeVisible();
     await expect(page.getByTestId('v4-offline-result')).toContainText('최대 8시간');
   });
+
+  test('신의 개입으로 영웅을 즉시 회복하고 충전을 소비한다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('v4 save was not created');
+      const save = JSON.parse(raw) as { run: { hero: { hp: number }; interventionCharges: number } };
+      save.run.hero.hp = 1;
+      save.run.interventionCharges = 1;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, V4_SAVE_KEY);
+    await page.reload();
+
+    await page.getByRole('button', { name: '즉시 회복' }).click();
+    await expect(page.getByTestId('v4-town-hub')).toContainText('HP 1,000/1,000');
+    await expect(page.getByTestId('v4-town-hub')).toContainText('충전 0/3');
+  });
 });

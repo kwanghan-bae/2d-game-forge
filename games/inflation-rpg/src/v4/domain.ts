@@ -3,6 +3,7 @@ import { createV4HeroRuntime } from './heroRuntime';
 import type {
   FacilityId,
   FacilityTask,
+  InterventionType,
   RealmId,
   SupportAgentId,
   V4CurrencyKey,
@@ -18,6 +19,12 @@ export type DomainResult<T extends V4SaveEnvelope = V4SaveEnvelope> =
 export type HeroDomainResult =
   | { ok: true; save: V4SaveEnvelope; result: RejuvenationResult }
   | { ok: false; save: V4SaveEnvelope; error: string };
+
+export type InterventionDomainResult =
+  | { ok: true; save: V4SaveEnvelope; intervention: InterventionType }
+  | { ok: false; save: V4SaveEnvelope; error: string };
+
+export const MAX_INTERVENTION_CHARGES = 3;
 
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
@@ -278,9 +285,70 @@ export function grantOfflineResourceBonus(
 
 export function grantInterventionCharge(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
   const save = cloneSave(source);
-  save.run.interventionCharges += 1;
+  save.run.interventionCharges = Math.min(
+    MAX_INTERVENTION_CHARGES,
+    save.run.interventionCharges + 1,
+  );
   save.updatedAt = now;
   return save;
+}
+
+export function useIntervention(
+  source: V4SaveEnvelope,
+  intervention: InterventionType,
+  now: number,
+): InterventionDomainResult {
+  if (source.run.interventionCharges <= 0) {
+    return { ok: false, save: source, error: '신의 개입 충전이 없습니다.' };
+  }
+
+  const save = cloneSave(source);
+  const hero = save.run.hero;
+  if (intervention === 'heal') {
+    if (hero.hp >= hero.hpMax) {
+      return { ok: false, save: source, error: '영웅의 HP가 이미 가득 찼습니다.' };
+    }
+    hero.hp = hero.hpMax;
+    save.run.interventionCharges -= 1;
+    save.meta.sagaEntries.unshift({
+      id: `saga-intervention-heal-${now}`,
+      kind: 'milestone',
+      createdAt: now,
+      title: '신의 개입: 즉시 회복',
+      text: `${hero.name}의 상처가 신력으로 즉시 아물었다.`,
+    });
+    save.updatedAt = now;
+    return { ok: true, save, intervention };
+  }
+
+  const expedition = save.run.expedition;
+  if (!expedition) {
+    return { ok: false, save: source, error: '후퇴할 원정이 없습니다.' };
+  }
+
+  const realm = REALM_DEFINITIONS[expedition.realmId];
+  // A retreat refunds half of the preparation cost. It preserves the
+  // no-permanent-loss rule while making the charge a meaningful safety valve.
+  give(save, realm.cost, 0.5);
+  save.run.expedition = null;
+  hero.currentAction = 'rest';
+  save.run.interventionCharges -= 1;
+  if (expedition.assignedAgentId) {
+    const agent = save.meta.agents.find((item) => item.id === expedition.assignedAgentId);
+    if (agent) {
+      agent.activeTaskId = null;
+      agent.fatigue = Math.min(100, agent.fatigue + 2);
+    }
+  }
+  save.meta.sagaEntries.unshift({
+    id: `saga-intervention-retreat-${now}`,
+    kind: 'expedition',
+    createdAt: now,
+    title: '신의 개입: 원정 후퇴',
+    text: `${hero.name}이(가) 신의 명을 받아 ${realm.nameKR}에서 안전하게 돌아왔다.`,
+  });
+  save.updatedAt = now;
+  return { ok: true, save, intervention };
 }
 
 export function startExpedition(

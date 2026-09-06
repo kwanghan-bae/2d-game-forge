@@ -10,6 +10,7 @@ import {
   startExpedition,
   startFacilityTask,
   upgradeFacility,
+  useIntervention,
 } from './domain';
 import {
   createInitialV4Save,
@@ -21,7 +22,7 @@ import {
 import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
 import type { V4MonetizationAdapter, V4RewardedPlacement } from './monetization';
-import type { FacilityId, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from './types';
+import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from './types';
 
 export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [save, setSave] = useState<V4SaveEnvelope>(() => loadV4Save() ?? createInitialV4Save(Date.now()));
@@ -118,6 +119,15 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     commit(grantInterventionCharge(save, Date.now()), '개입 충전을 1회 얻었습니다.');
   }, [commit, save, watchRewarded]);
 
+  const intervene = useCallback((type: InterventionType) => {
+    const result = useIntervention(save, type, Date.now());
+    if (result.ok) {
+      commit(result.save, type === 'heal' ? '신의 개입으로 영웅을 즉시 회복했습니다.' : '신의 개입으로 원정에서 안전하게 후퇴했습니다.');
+    } else {
+      setMessage(result.error);
+    }
+  }, [commit, save]);
+
   const buyAdFree = useCallback(async () => {
     if (!monetization) {
       setMessage('현재 환경에서는 결제를 사용할 수 없습니다. 게임은 계속 진행됩니다.');
@@ -170,6 +180,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     doubleOfflineReward,
     instantTask,
     addInterventionCharge,
+    intervene,
     buyAdFree,
     startRun,
     upgrade,

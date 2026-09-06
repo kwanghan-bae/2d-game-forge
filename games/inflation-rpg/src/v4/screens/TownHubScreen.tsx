@@ -1,5 +1,5 @@
 import { FACILITY_DEFINITIONS, POLICY_LABELS } from '../data';
-import type { FacilityId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
+import type { FacilityId, InterventionType, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 
 interface Props {
   save: V4SaveEnvelope;
@@ -11,6 +11,7 @@ interface Props {
   onRefresh: () => void;
   onUpgrade: (facilityId: FacilityId) => void;
   onNavigate: (screen: 'hero' | 'expedition' | 'saga') => void;
+  onIntervention: (type: InterventionType) => void;
   monetizationAvailable: boolean;
   adsToday: number;
   onInterventionCharge: () => void;
@@ -28,7 +29,7 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onInstantTask, onRefresh, onUpgrade, onNavigate, monetizationAvailable, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
   const hero = save.run.hero;
   return (
     <main className="v4-container" data-testid="v4-town-hub">
@@ -123,6 +124,18 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <div className="v4-button-row">
           <button type="button" className="v4-btn v4-btn--primary" onClick={() => onNavigate('hero')}>영웅 상세</button>
           <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onNavigate('saga')}>사가 보기</button>
+        </div>
+      </section>
+
+      <section className="v4-panel">
+        <div className="v4-panel-head">
+          <h2>신의 개입</h2>
+          <span className="v4-action">충전 {save.run.interventionCharges}/3</span>
+        </div>
+        <p>자동 흐름을 바꾸는 안전장치입니다. 사용해도 장비나 영구 재화를 잃지 않습니다.</p>
+        <div className="v4-button-row">
+          <button type="button" className="v4-btn v4-btn--quiet" disabled={save.run.interventionCharges <= 0 || hero.hp >= hero.hpMax} onClick={() => onIntervention('heal')}>즉시 회복</button>
+          {save.run.expedition && <button type="button" className="v4-btn v4-btn--quiet" disabled={save.run.interventionCharges <= 0} onClick={() => onIntervention('retreat')}>원정 후퇴</button>}
         </div>
       </section>
 

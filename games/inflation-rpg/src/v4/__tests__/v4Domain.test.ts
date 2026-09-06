@@ -17,6 +17,7 @@ import {
   rejuvenateHero,
   startExpedition,
   startFacilityTask,
+  useIntervention,
 } from '../domain';
 import { createV4HeroRuntime } from '../heroRuntime';
 
@@ -149,6 +150,37 @@ describe('v4 save and domain', () => {
     expect(doubled.meta.currencies).toMatchObject({ spirit: 136, gold: 104 });
     const charged = grantInterventionCharge(doubled, initial.createdAt + 3_000);
     expect(charged.run.interventionCharges).toBe(2);
+    expect(grantInterventionCharge({ ...charged, run: { ...charged.run, interventionCharges: 3 } }, initial.createdAt + 4_000).run.interventionCharges).toBe(3);
+  });
+
+  it('spends an intervention charge on a full heal and records the choice', () => {
+    const initial = createInitialV4Save(73);
+    initial.run.hero.hp = 120;
+    const result = useIntervention(initial, 'heal', initial.createdAt + 1_000);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.run.interventionCharges).toBe(0);
+    expect(result.save.run.hero.hp).toBe(result.save.run.hero.hpMax);
+    expect(result.save.meta.sagaEntries[0]?.title).toBe('신의 개입: 즉시 회복');
+  });
+
+  it('uses an intervention to retreat safely and releases the guide', () => {
+    const initial = createInitialV4Save(74);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const result = useIntervention(started.save, 'retreat', initial.createdAt + 1_000);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.run.interventionCharges).toBe(0);
+    expect(result.save.run.expedition).toBeNull();
+    expect(result.save.run.hero.currentAction).toBe('rest');
+    expect(result.save.meta.agents.find((agent) => agent.id === 'guide')?.activeTaskId).toBeNull();
+    expect(result.save.meta.currencies.spirit).toBe(94);
+    expect(result.save.meta.sagaEntries[0]?.title).toBe('신의 개입: 원정 후퇴');
   });
 
   it('clamps offline processing to 8 hours and rejects backwards time', () => {
