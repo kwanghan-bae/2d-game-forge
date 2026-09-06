@@ -124,6 +124,10 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   const settings = meta.settings;
   if (!isRecord(settings) || !isNonNegativeNumber(settings.music) || settings.music > 1
     || !isNonNegativeNumber(settings.sfx) || settings.sfx > 1 || typeof settings.muted !== 'boolean') return false;
+  const agentIds = meta.agents.map((agent) => isRecord(agent) ? agent.id : undefined);
+  if (meta.agents.length !== Object.keys(AGENT_DEFINITIONS).length
+    || new Set(agentIds).size !== meta.agents.length
+    || !Object.keys(AGENT_DEFINITIONS).every((id) => agentIds.includes(id))) return false;
   if (!meta.agents.every((agent) => isRecord(agent)
     && typeof agent.id === 'string' && Object.prototype.hasOwnProperty.call(AGENT_DEFINITIONS, agent.id)
     && typeof agent.nameKR === 'string' && typeof agent.roleKR === 'string' && typeof agent.trait === 'string'

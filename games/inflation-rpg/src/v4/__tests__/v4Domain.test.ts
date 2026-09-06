@@ -119,6 +119,15 @@ describe('v4 save and domain', () => {
       },
     }));
     expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      meta: {
+        ...save.meta,
+        agents: [save.meta.agents[0], save.meta.agents[0], save.meta.agents[2]],
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
   it('rejects saves whose facility task links are inconsistent', () => {
