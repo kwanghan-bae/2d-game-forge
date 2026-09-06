@@ -71,6 +71,8 @@ export interface RealmDefinition {
   icon: string;
   description: string;
   risk: number;
+  /** Only low-risk routes may be settled without a player confirmation. */
+  offlineSafe: boolean;
   durationSeconds: number;
   recommendedPower: number;
   cost: Partial<Record<V4CurrencyKey, number>>;
@@ -82,19 +84,19 @@ export interface RealmDefinition {
 export const REALM_DEFINITIONS: Record<RealmId, RealmDefinition> = {
   joseon_plains: {
     id: 'joseon_plains', nameKR: '조선 평야', icon: '🌾',
-    description: '첫 원정지. 떠돌이 도깨비와 맞서 마을의 이름을 알립니다.', risk: 0.08,
+    description: '첫 원정지. 떠돌이 도깨비와 맞서 마을의 이름을 알립니다.', risk: 0.08, offlineSafe: true,
     durationSeconds: 20, recommendedPower: 120, cost: { spirit: 12 }, reward: { gold: 55, materials: 4 },
     enemies: ['도깨비', '들개', '부적 까마귀'], boss: '장승 수문장',
   },
   deep_forest: {
     id: 'deep_forest', nameKR: '깊은 숲', icon: '🌲',
-    description: '길잡이의 감각이 빛나는 숲. 정예 요괴가 나타납니다.', risk: 0.22,
+    description: '길잡이의 감각이 빛나는 숲. 정예 요괴가 나타납니다.', risk: 0.22, offlineSafe: false,
     durationSeconds: 45, recommendedPower: 260, cost: { spirit: 25, materials: 1 }, reward: { gold: 130, materials: 9, rift: 1 },
     enemies: ['산군의 사자', '목각 귀', '안개 여우'], boss: '흑송 산군',
   },
   underworld: {
     id: 'underworld', nameKR: '저승', icon: '🌑',
-    description: '영원한 영웅의 사가가 시험받는 곳. 귀환에는 결심이 필요합니다.', risk: 0.45,
+    description: '영원한 영웅의 사가가 시험받는 곳. 귀환에는 결심이 필요합니다.', risk: 0.45, offlineSafe: false,
     durationSeconds: 90, recommendedPower: 480, cost: { spirit: 50, materials: 3 }, reward: { gold: 300, materials: 20, rift: 3 },
     enemies: ['망자의 행렬', '저승 사자', '업화 귀'], boss: '염라의 대리인',
   },

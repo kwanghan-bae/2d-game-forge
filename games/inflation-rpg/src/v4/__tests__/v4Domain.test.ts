@@ -110,6 +110,30 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('rejects saves whose expedition and guide links are inconsistent', () => {
+    const initial = createInitialV4Save(18);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    const broken = {
+      ...started.save,
+      meta: {
+        ...started.save.meta,
+        agents: started.save.meta.agents.map((agent) => agent.id === 'guide'
+          ? { ...agent, activeTaskId: null }
+          : agent),
+      },
+    };
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(broken));
+
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
   it('maps a V3 hero snapshot without sharing the V3 store shape', () => {
     const source = {
       name: '홍길동', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,
@@ -237,6 +261,19 @@ describe('v4 save and domain', () => {
     const backwards = simulateOfflineProgress(future.save, initial.lastProcessedAt - 1);
     expect(backwards.summary.processedSeconds).toBe(0);
     expect(backwards.summary.clockAnomaly).toBe('backwards');
+  });
+
+  it('does not auto-confirm a risky Realm boss during offline processing', () => {
+    const initial = createInitialV4Save(19);
+    initial.meta.unlockedRealms.push('deep_forest');
+    const started = startExpedition(initial, 'deep_forest', initial.lastProcessedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const offline = simulateOfflineProgress(started.save, started.save.run.expedition!.completesAt);
+
+    expect(offline.summary.completedExpedition).toBe(false);
+    expect(offline.save.run.expedition?.realmId).toBe('deep_forest');
   });
 
   it('allows one expedition and resolves it into rewards', () => {

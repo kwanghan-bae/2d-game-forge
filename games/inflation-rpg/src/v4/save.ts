@@ -55,7 +55,7 @@ function isFacilityTaskRecord(value: unknown): boolean {
   return true;
 }
 
-function isExpeditionRecord(value: unknown): boolean {
+function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
   return isRecord(value) && typeof value.id === 'string'
     && typeof value.realmId === 'string' && REALM_IDS.includes(value.realmId as typeof REALM_IDS[number])
     && ['aggression', 'hoarding', 'training'].includes(value.policy as string)
@@ -105,6 +105,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     && isNonNegativeNumber(agent.level) && isNonNegativeNumber(agent.trust) && isNonNegativeNumber(agent.fatigue)
     && (agent.activeTaskId === null || typeof agent.activeTaskId === 'string'))) return false;
 
+  const expedition = run.expedition;
+  if (expedition !== null && !isExpeditionRecord(expedition)) return false;
+
   // Facility, task, and agent links must be symmetric. This prevents a
   // partially-written save from making a task impossible to finish or
   // leaving an agent permanently marked as busy.
@@ -128,7 +131,20 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   for (const candidate of meta.agents) {
     if (!isRecord(candidate) || candidate.activeTaskId === null) continue;
     const task = tasks[candidate.activeTaskId as string];
-    if (!isRecord(task) || task.assignedAgentId !== candidate.id) return false;
+    const assignedExpedition = expedition !== null
+      && isRecord(expedition)
+      && expedition.id === candidate.activeTaskId
+      && expedition.assignedAgentId === candidate.id;
+    if ((!isRecord(task) || task.assignedAgentId !== candidate.id) && !assignedExpedition) return false;
+  }
+  if (expedition !== null) {
+    const expeditionAgents = meta.agents.filter((agent) => isRecord(agent) && agent.activeTaskId === expedition.id);
+    if (expedition.assignedAgentId === 'guide') {
+      const guide = meta.agents.find((agent) => isRecord(agent) && agent.id === 'guide');
+      if (!guide || guide.activeTaskId !== expedition.id || expeditionAgents.some((agent) => agent.id !== 'guide')) return false;
+    } else if (expeditionAgents.length > 0) {
+      return false;
+    }
   }
 
   const hero = run.hero;
@@ -139,8 +155,7 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   const heroNumbers = ['age', 'level', 'exp', 'hp', 'hpMax', 'atk', 'def', 'defBase', 'critRateBase', 'actionCount', 'rejuvenationCount'];
   if (!heroNumbers.every((key) => isFiniteNumber(hero[key]))) return false;
   return ['aggression', 'hoarding', 'training'].includes(run.policy as string)
-    && isNonNegativeNumber(run.interventionCharges)
-    && (run.expedition === null || isExpeditionRecord(run.expedition));
+    && isNonNegativeNumber(run.interventionCharges);
 }
 
 function emptyFacilities(): Record<string, FacilityState> {

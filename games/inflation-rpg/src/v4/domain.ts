@@ -167,6 +167,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
   const expedition = save.run.expedition;
   if (!expedition || expedition.completesAt > now) return;
   const realm = REALM_DEFINITIONS[expedition.realmId];
+  if (!allowPermanentUnlock && !realm.offlineSafe) return;
   const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
   const guideBonus = guide ? Math.min(0.12, guide.trust / 500) : 0;
   const runtime = createV4HeroRuntime(save.run.hero);
