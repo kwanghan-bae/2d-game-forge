@@ -250,6 +250,7 @@ export function completeFacilityTasks(
   }
   resolveExpedition(save, now, allowPermanentUnlock, outputEfficiency);
   save.updatedAt = now;
+  save.lastProcessedAt = Math.max(save.lastProcessedAt, now);
   return save;
 }
 

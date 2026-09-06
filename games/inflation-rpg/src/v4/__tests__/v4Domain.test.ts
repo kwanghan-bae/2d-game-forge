@@ -53,6 +53,14 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('keeps gameplay alive when local persistence is unavailable', () => {
+    const brokenStorage = {
+      setItem: () => { throw new Error('quota'); },
+    } as unknown as Storage;
+
+    expect(() => persistV4Save(createInitialV4Save(15), brokenStorage)).not.toThrow();
+  });
+
   it('rejects malformed task and expedition records before they reach the domain', () => {
     const save = createInitialV4Save(14);
     const storage = new Map<string, string>();
@@ -74,6 +82,31 @@ describe('v4 save and domain', () => {
       ...save,
       run: { ...save.run, expedition: { id: 'broken', realmId: 'unknown', status: 'traveling' } },
     }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
+  it('rejects saves whose facility task links are inconsistent', () => {
+    const initial = createInitialV4Save(16);
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    const broken = {
+      ...started.save,
+      meta: {
+        ...started.save.meta,
+        facilities: {
+          ...started.save.meta.facilities,
+          blacksmith: { ...started.save.meta.facilities.blacksmith, activeTaskId: null },
+        },
+      },
+    };
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(broken));
+
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
@@ -117,6 +150,18 @@ describe('v4 save and domain', () => {
     const replay = simulateOfflineProgress(offline.save, initial.createdAt + HOUR);
     expect(replay.summary.processedSeconds).toBe(0);
     expect(replay.summary.completedTaskIds).toEqual([]);
+  });
+
+  it('advances the processing watermark when work is completed online', () => {
+    const initial = createInitialV4Save(17);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const completedAt = started.task.completesAt;
+
+    const completed = completeFacilityTasks(started.save, completedAt);
+
+    expect(completed.lastProcessedAt).toBe(completedAt);
   });
 
   it('cancels facility work with a full input refund and releases the agent', () => {

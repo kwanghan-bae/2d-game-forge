@@ -89,7 +89,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
       && isFiniteNumber(facility.level) && facility.level >= 1
       && (facility.activeTaskId === null || typeof facility.activeTaskId === 'string');
   })) return false;
-  if (!isRecord(meta.tasks) || !Object.values(meta.tasks).every(isFacilityTaskRecord)
+  const tasks = meta.tasks;
+  if (!isRecord(tasks) || !Object.entries(tasks).every(([id, task]) =>
+    isRecord(task) && isFacilityTaskRecord(task) && task.id === id)
     || !Array.isArray(meta.agents) || !Array.isArray(meta.unlockedRealms) || !Array.isArray(meta.sagaEntries)
     || !meta.sagaEntries.every(isSagaEntryRecord)) return false;
   if (!meta.unlockedRealms.every((id) => typeof id === 'string' && REALM_IDS.includes(id as typeof REALM_IDS[number]))) return false;
@@ -98,10 +100,36 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(settings) || !isNonNegativeNumber(settings.music) || settings.music > 1
     || !isNonNegativeNumber(settings.sfx) || settings.sfx > 1 || typeof settings.muted !== 'boolean') return false;
   if (!meta.agents.every((agent) => isRecord(agent)
-    && typeof agent.id === 'string' && agent.id in AGENT_DEFINITIONS
+    && typeof agent.id === 'string' && Object.prototype.hasOwnProperty.call(AGENT_DEFINITIONS, agent.id)
     && typeof agent.nameKR === 'string' && typeof agent.roleKR === 'string' && typeof agent.trait === 'string'
     && isNonNegativeNumber(agent.level) && isNonNegativeNumber(agent.trust) && isNonNegativeNumber(agent.fatigue)
     && (agent.activeTaskId === null || typeof agent.activeTaskId === 'string'))) return false;
+
+  // Facility, task, and agent links must be symmetric. This prevents a
+  // partially-written save from making a task impossible to finish or
+  // leaving an agent permanently marked as busy.
+  for (const facilityId of FACILITY_IDS) {
+    const facility = facilities[facilityId];
+    const taskId = isRecord(facility) ? facility.activeTaskId : null;
+    if (taskId !== null) {
+      const task = tasks[taskId as string];
+      if (!isRecord(task) || task.facilityId !== facilityId) return false;
+    }
+  }
+  for (const [taskId, candidate] of Object.entries(tasks)) {
+    if (!isRecord(candidate)) return false;
+    const facility = facilities[candidate.facilityId as string];
+    if (!isRecord(facility) || facility.activeTaskId !== taskId) return false;
+    if (candidate.assignedAgentId !== null) {
+      const agent = meta.agents.find((item) => isRecord(item) && item.id === candidate.assignedAgentId);
+      if (!agent || agent.activeTaskId !== taskId) return false;
+    }
+  }
+  for (const candidate of meta.agents) {
+    if (!isRecord(candidate) || candidate.activeTaskId === null) continue;
+    const task = tasks[candidate.activeTaskId as string];
+    if (!isRecord(task) || task.assignedAgentId !== candidate.id) return false;
+  }
 
   const hero = run.hero;
   if (!isRecord(hero) || typeof hero.name !== 'string' || typeof hero.emoji !== 'string'
@@ -314,5 +342,10 @@ export function loadV4Save(storage: Storage | undefined = defaultStorage()): V4S
 
 export function persistV4Save(save: V4SaveEnvelope, storage: Storage | undefined = defaultStorage()): void {
   if (!storage) return;
-  storage.setItem(V4_SAVE_KEY, JSON.stringify(save));
+  try {
+    storage.setItem(V4_SAVE_KEY, JSON.stringify(save));
+  } catch {
+    // Persistence is best-effort on local-only builds. Quota, private-mode,
+    // or platform storage errors must never interrupt active gameplay.
+  }
 }
