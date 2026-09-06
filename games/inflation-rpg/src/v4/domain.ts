@@ -730,7 +730,7 @@ export function grantOfflineResourceBonus(
 }
 
 export function grantInterventionCharge(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
-  if (!isActionClockValid(source, now)) return source;
+  if (!isActionClockValid(source, now) || source.run.interventionCharges >= MAX_INTERVENTION_CHARGES) return source;
   const save = cloneSave(source);
   save.run.interventionCharges = Math.min(
     MAX_INTERVENTION_CHARGES,

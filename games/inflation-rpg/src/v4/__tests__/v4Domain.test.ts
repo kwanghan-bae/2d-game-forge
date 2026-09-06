@@ -1151,4 +1151,11 @@ describe('v4 save and domain', () => {
     expect(invalidCharge).toBe(initial);
     expect(staleCharge).toBe(initial);
   });
+
+  it('does not mutate a full intervention reserve', () => {
+    const full = createInitialV4Save(97);
+    full.run.interventionCharges = 3;
+
+    expect(grantInterventionCharge(full, full.updatedAt + 1_000)).toBe(full);
+  });
 });
