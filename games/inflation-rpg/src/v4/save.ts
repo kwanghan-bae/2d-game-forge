@@ -48,6 +48,10 @@ function isNonNegativeNumber(value: unknown): value is number {
   return isFiniteNumber(value) && value >= 0;
 }
 
+function finiteNonNegativeOr(value: unknown, fallback: number): number {
+  return isNonNegativeNumber(value) ? value : fallback;
+}
+
 function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey, number>> {
   return isRecord(value) && Object.entries(value).every(([key, amount]) =>
     CURRENCY_KEYS.includes(key as V4CurrencyKey) && isNonNegativeNumber(amount));
@@ -341,6 +345,11 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
   const equipmentLevels = Object.fromEntries(
     equipmentIds.map((id) => [id, Math.min(20, Math.max(1, input.equipment.filter((candidate) => candidate === id).length))]),
   );
+  const hpMax = Math.max(1, finiteNonNegativeOr(input.hpMax, 1_000));
+  const fallbackDefBase = Math.round(finiteNonNegativeOr(input.hpBase, hpMax) * 0.1);
+  const defBase = finiteNonNegativeOr(input.defBase, fallbackDefBase);
+  const fallbackDef = Math.round(hpMax * 0.1);
+  const def = finiteNonNegativeOr(input.def, defBase);
   return {
     name: input.name,
     emoji: input.emoji,
@@ -348,11 +357,11 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
     level: input.level,
     exp: input.exp,
     hp: input.hp,
-    hpMax: input.hpMax,
+    hpMax,
     atk: input.atk,
-    def: input.def ?? input.defBase ?? Math.round(input.hpMax * 0.1),
-    defBase: input.defBase ?? Math.round(input.hpBase * 0.1),
-    critRateBase: input.critRateBase ?? 0.05,
+    def,
+    defBase,
+    critRateBase: Math.min(1, finiteNonNegativeOr(input.critRateBase, 0.05)),
     realmId: 'joseon_plains',
     equipmentIds,
     equipmentLevels,

@@ -394,6 +394,23 @@ describe('v4 save and domain', () => {
     expect(hero.equipmentLevels).toEqual({ 'w-knife': 20 });
   });
 
+  it('falls back when optional V3 defensive stats are malformed', () => {
+    const source = {
+      name: '손상된 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
+      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
+      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
+      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
+      def: Number.NaN, defBase: 'broken', critRateBase: Number.POSITIVE_INFINITY,
+    } as unknown as HeroSnapshot;
+
+    const hero = migrateV3HeroSnapshot(source);
+
+    expect(hero.def).toBe(100);
+    expect(hero.defBase).toBe(100);
+    expect(hero.critRateBase).toBe(0.05);
+  });
+
   it('settles completed facility work once and applies the 70% offline efficiency', () => {
     vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
     const initial = createInitialV4Save(7);
