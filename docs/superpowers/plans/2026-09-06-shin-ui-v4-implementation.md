@@ -148,6 +148,7 @@ pnpm circular
 - 장비 bonus 계산도 비숫자 레벨을 Lv.1로 fallback해 영웅 공격력·방어력·HP에 `NaN`이 전파되지 않게 한다.
 - malformed 영웅 스탯의 전투력·원정 승률 forecast도 0 또는 최소 확률로 제한해 UI에 비유한 수치를 노출하지 않는다.
 - 장비 bonus 적용 단계도 비유한 필드를 0으로 무시해 직접 adapter 호출이 영웅 snapshot을 오염시키지 않게 한다.
+- 영원의 사가는 최신 200개 기록만 유지해 장기 플레이에서도 localStorage와 기록관 DOM이 무한히 커지지 않게 한다.
 - 전투 adapter의 유한하지만 overflow를 일으킬 수 있는 스탯·피해 합산을 안전한 상한으로 포화시키고, 외부 턴 예산도 100턴으로 제한한다.
 - 시설 정산의 malformed 경험치 보상과 기존 영웅 EXP도 1회 상한·레벨업 반복 상한으로 제한해 비정상 저장이 무한 정산 루프를 만들지 않게 한다.
 - 시설 레벨이 극단값이어도 작업 산출량·경험치·소요 시간·강화 비용을 유한한 경제 수치로 제한해 UI와 저장 schema 오염을 막는다.
@@ -179,7 +180,7 @@ pnpm circular
 
 ### 누적 검증 기록
 
-- V4 단위/컴포넌트 테스트: 394개 파일, 3,345개 테스트 통과.
+- V4 단위/컴포넌트 테스트: 394개 파일, 3,346개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 24/24 통과(각 프로젝트 12/12).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.

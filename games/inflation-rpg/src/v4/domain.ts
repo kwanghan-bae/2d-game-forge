@@ -3,6 +3,7 @@ import {
   getV4FacilityDefinition,
   getV4RealmDefinition,
 } from './data';
+import { V4_MAX_SAGA_ENTRIES } from './types';
 import { applyV4EquipmentBonuses, getV4EquipmentBonuses } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
@@ -99,6 +100,9 @@ function eventTimestamp(save: V4SaveEnvelope, now: number): number {
 function touchSave(save: V4SaveEnvelope, now: number): void {
   const requested = eventTimestamp(save, now);
   save.updatedAt = Math.max(save.updatedAt, save.lastProcessedAt, requested);
+  if (save.meta.sagaEntries.length > V4_MAX_SAGA_ENTRIES) {
+    save.meta.sagaEntries.length = V4_MAX_SAGA_ENTRIES;
+  }
 }
 
 function isActionClockValid(save: V4SaveEnvelope, now: number): boolean {

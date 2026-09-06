@@ -13,6 +13,8 @@ export type SupportAgentId = 'blacksmith' | 'mudang' | 'guide';
 export type RealmId = 'joseon_plains' | 'deep_forest' | 'underworld';
 export type EncounterTier = 'normal' | 'elite' | 'boss';
 
+export const V4_MAX_SAGA_ENTRIES = 200;
+
 export interface RealmEncounterDefinition {
   id: string;
   tier: EncounterTier;

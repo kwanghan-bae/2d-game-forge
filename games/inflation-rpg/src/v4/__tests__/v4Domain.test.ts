@@ -33,6 +33,7 @@ import {
   useIntervention,
 } from '../domain';
 import { createV4HeroRuntime } from '../heroRuntime';
+import { V4_MAX_SAGA_ENTRIES } from '../types';
 import type { FacilityId, RealmId } from '../types';
 
 const HOUR = 60 * 60 * 1000;
@@ -51,6 +52,23 @@ describe('v4 save and domain', () => {
     expect(save.run.lastExpeditionResult).toBeNull();
     expect(save.run.hero.realmId).toBe('joseon_plains');
     expect(save.run.hero.actionCount).toBe(185);
+  });
+
+  it('keeps the saga history bounded to the newest records', () => {
+    const initial = createInitialV4Save(43);
+    initial.meta.sagaEntries = Array.from({ length: V4_MAX_SAGA_ENTRIES + 5 }, (_, index) => ({
+      id: `saga-${index}`,
+      kind: 'milestone' as const,
+      createdAt: initial.createdAt + index,
+      title: `기록 ${index}`,
+      text: `내용 ${index}`,
+    })).reverse();
+
+    const updated = setV4Policy(initial, 'training', initial.updatedAt + 1_000);
+
+    expect(updated.meta.sagaEntries).toHaveLength(V4_MAX_SAGA_ENTRIES);
+    expect(updated.meta.sagaEntries[0]?.id).toBe(`saga-${V4_MAX_SAGA_ENTRIES + 4}`);
+    expect(updated.meta.sagaEntries.at(-1)?.id).toBe('saga-5');
   });
 
   it('round-trips valid V4 saves and rejects malformed schema data', () => {
