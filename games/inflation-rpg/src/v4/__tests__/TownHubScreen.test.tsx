@@ -105,4 +105,30 @@ describe('V4 town hub support assignment', () => {
     expect(temple.textContent).not.toContain('Infinity');
     expect(temple.textContent).not.toContain('NaN');
   });
+
+  it('disables intervention charging when the safety reserve is already full', () => {
+    const save = createInitialV4Save(100);
+    save.run.interventionCharges = 3;
+    renderHub({ save, monetizationAvailable: true });
+
+    const benefits = screen.getByRole('heading', { name: /후원 혜택/ }).closest('section');
+    expect(benefits).not.toBeNull();
+    if (!benefits) return;
+    const charge = within(benefits).getByRole('button', { name: '개입 충전 가득 참' });
+    expect(charge).toBeDisabled();
+  });
+
+  it('disables instant facility completion after the daily ad limit', () => {
+    const initial = createInitialV4Save(101);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    renderHub({ save: started.save, monetizationAvailable: true, adsToday: 5, onInstantTask: vi.fn() });
+
+    const temple = screen.getByText('신전').closest('article');
+    expect(temple).not.toBeNull();
+    if (!temple) return;
+    expect(within(temple).getByRole('button', { name: '광고 즉시 완료' })).toBeDisabled();
+  });
 });

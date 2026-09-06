@@ -67,6 +67,7 @@ function getTownObjective(save: V4SaveEnvelope): string {
 export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
+  const interventionFull = save.run.interventionCharges >= 3;
   return (
     <main className="v4-container" data-testid="v4-town-hub">
       <section className="v4-panel v4-hero-card">
@@ -142,7 +143,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                     <>
                       <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>진행 확인</button>
                       <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onCancelTask(facilityId)}>취소</button>
-                      {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onInstantTask(facilityId)}>광고 즉시 완료</button>}
+                      {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" disabled={!adFree && adsToday >= 5} onClick={() => onInstantTask(facilityId)}>광고 즉시 완료</button>}
                     </>
                   ) : (
                     <button type="button" className="v4-btn v4-btn--primary" disabled={!preview.canStart} onClick={() => onStartTask(facilityId, assignedAgentId)}>작업 시작</button>
@@ -197,7 +198,9 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <h2>후원 혜택 {adFree && <span className="v4-action">광고 제거 적용</span>}</h2>
         <p>{adFree ? '광고 제거 구매가 적용되었습니다. 보상 혜택을 계속 사용할 수 있습니다.' : `오늘 보상형 광고 ${adsToday}/5회 · 게임 진행을 막지 않는 선택형 혜택입니다.`}</p>
         <div className="v4-button-row">
-          <button type="button" className="v4-btn v4-btn--quiet" disabled={!adFree && adsToday >= 5} onClick={onInterventionCharge}>{adFree ? '개입 충전' : '개입 충전 광고'}</button>
+          <button type="button" className="v4-btn v4-btn--quiet" disabled={interventionFull || (!adFree && adsToday >= 5)} onClick={onInterventionCharge}>
+            {interventionFull ? '개입 충전 가득 참' : adFree ? '개입 충전' : '개입 충전 광고'}
+          </button>
           {!adFree && <button type="button" className="v4-btn v4-btn--quiet" onClick={onBuyAdFree}>광고 제거 구매</button>}
         </div>
       </section>}
