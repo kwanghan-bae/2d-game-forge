@@ -11,6 +11,9 @@ import type {
   V4HeroSnapshot,
 } from './types';
 
+const MAX_BATTLE_VALUE = Number.MAX_SAFE_INTEGER;
+const MAX_BATTLE_TURNS = 100;
+
 function cloneSnapshot(snapshot: V4HeroSnapshot): V4HeroSnapshot {
   return {
     ...snapshot,
@@ -34,7 +37,13 @@ function defenseReduction(defense: number): number {
 }
 
 function nonNegativeFinite(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(MAX_BATTLE_VALUE, Math.max(0, value))
+    : fallback;
+}
+
+function addBattleDamage(total: number, amount: number): number {
+  return Math.min(MAX_BATTLE_VALUE, total + amount);
 }
 
 /**
@@ -69,27 +78,27 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
       const heroDef = nonNegativeFinite(input.heroDef, 0);
       const enemyAtk = nonNegativeFinite(input.enemyAtk, 0);
       const maxTurns = typeof input.maxTurns === 'number' && Number.isFinite(input.maxTurns)
-        ? Math.max(0, Math.floor(input.maxTurns))
-        : 100;
+        ? Math.min(MAX_BATTLE_TURNS, Math.max(0, Math.floor(input.maxTurns)))
+        : MAX_BATTLE_TURNS;
 
       while (heroHp > 0 && enemyHp > 0 && turns < maxTurns) {
         turns += 1;
-        const turnKey = `${snapshot.name}:${snapshot.age}:${turns}:${input.heroAtk}:${input.enemyHp}`;
-        const critChance = Math.max(0, Math.min(1, snapshot.critRateBase));
-        const dealt = Math.max(1, resolvePlayerHit({
+        const turnKey = `${snapshot.name}:${snapshot.age}:${turns}:${heroAtk}:${enemyHp}`;
+        const critChance = Math.max(0, Math.min(1, nonNegativeFinite(snapshot.critRateBase, 0.05)));
+        const dealt = Math.min(MAX_BATTLE_VALUE, Math.max(1, nonNegativeFinite(resolvePlayerHit({
           playerATK: heroAtk,
           crit: deterministicRoll(`${turnKey}:crit`) < critChance,
           rngRoll: deterministicRoll(`${turnKey}:damage`),
-        }));
+        }), 1)));
         enemyHp = Math.max(0, enemyHp - dealt);
-        totalDamageDealt += dealt;
+        totalDamageDealt = addBattleDamage(totalDamageDealt, dealt);
         if (enemyHp <= 0) break;
-        const taken = Math.max(1, resolveDamageTaken({
+        const taken = Math.min(MAX_BATTLE_VALUE, Math.max(1, nonNegativeFinite(resolveDamageTaken({
           enemyATK: enemyAtk,
           reduction: defenseReduction(heroDef),
-        }));
+        }), 1)));
         heroHp = Math.max(0, heroHp - taken);
-        totalDamageTaken += taken;
+        totalDamageTaken = addBattleDamage(totalDamageTaken, taken);
       }
 
       return {

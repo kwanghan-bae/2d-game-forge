@@ -1211,6 +1211,31 @@ describe('v4 save and domain', () => {
     ].every((value) => Number.isFinite(value))).toBe(true);
   });
 
+  it('bounds finite-but-overflowing battle inputs and turn budgets', () => {
+    const save = createInitialV4Save(115);
+    const runtime = createV4HeroRuntime(save.run.hero);
+    const overflowing = runtime.resolveBattle({
+      heroAtk: Number.MAX_VALUE,
+      heroDef: Number.MAX_VALUE,
+      heroHp: Number.MAX_VALUE,
+      enemyHp: Number.MAX_VALUE,
+      enemyAtk: Number.MAX_VALUE,
+      maxTurns: Number.MAX_VALUE,
+    });
+    const bounded = runtime.resolveBattle({
+      heroAtk: 1, heroDef: 0, heroHp: 10_000, enemyHp: 10_000, enemyAtk: 1, maxTurns: 101,
+    });
+
+    expect([
+      overflowing.turns,
+      overflowing.totalDamageDealt,
+      overflowing.totalDamageTaken,
+      overflowing.heroRemainingHp,
+    ].every((value) => Number.isFinite(value))).toBe(true);
+    expect(overflowing.turns).toBeLessThanOrEqual(100);
+    expect(bounded.turns).toBe(100);
+  });
+
   it('keeps hero power and expedition forecast finite for malformed hero stats', () => {
     const save = createInitialV4Save(114);
     save.run.hero.atk = Number.NaN;

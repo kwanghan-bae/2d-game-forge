@@ -147,6 +147,7 @@ pnpm circular
 - 장비 bonus 계산도 비숫자 레벨을 Lv.1로 fallback해 영웅 공격력·방어력·HP에 `NaN`이 전파되지 않게 한다.
 - malformed 영웅 스탯의 전투력·원정 승률 forecast도 0 또는 최소 확률로 제한해 UI에 비유한 수치를 노출하지 않는다.
 - 장비 bonus 적용 단계도 비유한 필드를 0으로 무시해 직접 adapter 호출이 영웅 snapshot을 오염시키지 않게 한다.
+- 전투 adapter의 유한하지만 overflow를 일으킬 수 있는 스탯·피해 합산을 안전한 상한으로 포화시키고, 외부 턴 예산도 100턴으로 제한한다.
 - V3 영웅 명시 import에서 중복 장비 ID를 dedupe하고 장비 레벨을 20 이하로 제한해 v4 저장 schema와 UI를 보존한다.
 - V3 명시 import의 선택적 방어력·치명타·HP 최대값도 유한 범위로 보정해 손상된 legacy snapshot이 v4에 `NaN`을 유입하지 않게 한다.
 - V3 명시 import의 장비 배열은 문자열 항목만 남겨 비정상 payload가 v4 장비 UI와 레벨 map을 오염시키지 않게 한다.
@@ -155,7 +156,7 @@ pnpm circular
 
 ### 누적 검증 기록
 
-- V4 단위/컴포넌트 테스트: 394개 파일, 3,316개 테스트 통과.
+- V4 단위/컴포넌트 테스트: 394개 파일, 3,317개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 22/22 통과(각 프로젝트 11/11).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
