@@ -196,7 +196,11 @@ export class V4MonetizationAdapter {
       const watched = await this.ads.showRewarded(placement);
       if (!watched) return { granted: false, reason: 'provider_failed' };
       this.adsToday += 1;
-      this.usageStore?.write(this.rewardedDay, this.adsToday);
+      try {
+        this.usageStore?.write(this.rewardedDay, this.adsToday);
+      } catch {
+        // Reward delivery remains successful when local usage persistence is unavailable.
+      }
       return { granted: true, reason: 'granted' };
     } catch {
       return { granted: false, reason: 'provider_failed' };
