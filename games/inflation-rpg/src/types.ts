@@ -404,6 +404,8 @@ export interface MetaState {
   pantheonClears?: number;
   /** C1153 — 보유 중인 만신전 문장 (Pantheon Crests) 수량. */
   pantheonCrests?: number;
+  /** C1159 — 주조 완료된 신격 보구 ID 목록. */
+  forgedRegalia?: import('./systems/omniverseRegalia').OmniverseRegaliaId[];
 }
 
 // Phase G — Ascension Tree (성좌)

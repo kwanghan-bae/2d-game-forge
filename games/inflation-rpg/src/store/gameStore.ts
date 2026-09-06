@@ -199,6 +199,7 @@ export const INITIAL_META: MetaState = {
   pantheonHighestPhase: 0,
   pantheonClears: 0,
   pantheonCrests: 0,
+  forgedRegalia: [],
 };
 
 interface GameStore {
