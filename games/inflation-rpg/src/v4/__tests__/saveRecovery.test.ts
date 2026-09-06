@@ -7,6 +7,7 @@ import {
   V4_RECOVERY_BACKUP_KEY,
   V4_SAVE_KEY,
 } from '../save';
+import { V4_MAX_SAGA_ENTRIES } from '../types';
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const values = new Map(Object.entries(initial));
@@ -67,5 +68,23 @@ describe('V4 save recovery boundary', () => {
 
     expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
     expect(loadV4Save(storage)).toBeNull();
+  });
+
+  it('trims oversized saga history while hydrating an older valid save', () => {
+    const save = createInitialV4Save(654);
+    save.meta.sagaEntries = Array.from({ length: V4_MAX_SAGA_ENTRIES + 5 }, (_, index) => ({
+      id: `legacy-saga-${index}`,
+      kind: 'milestone' as const,
+      createdAt: save.createdAt + index,
+      title: `기록 ${index}`,
+      text: `내용 ${index}`,
+    })).reverse();
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(save) });
+
+    const loaded = loadV4Save(storage);
+
+    expect(loaded?.meta.sagaEntries).toHaveLength(V4_MAX_SAGA_ENTRIES);
+    expect(loaded?.meta.sagaEntries[0]?.id).toBe(`legacy-saga-${V4_MAX_SAGA_ENTRIES + 4}`);
+    expect(loaded?.meta.sagaEntries.at(-1)?.id).toBe('legacy-saga-5');
   });
 });

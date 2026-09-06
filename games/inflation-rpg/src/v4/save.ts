@@ -11,6 +11,7 @@ import type {
   V4HeroSnapshot,
   V4SaveEnvelope,
 } from './types';
+import { V4_MAX_SAGA_ENTRIES } from './types';
 
 export const V4_SAVE_KEY = 'shin-ui-eternal-sponsor-v4-save-v1';
 export const V4_SCHEMA_VERSION = 1 as const;
@@ -426,16 +427,22 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
 }
 
 function hydrateEquipmentStats(save: V4SaveEnvelope): V4SaveEnvelope {
-  if (save.run.hero.equipmentLevels !== undefined) return save;
-  const equipmentIds = [...new Set(save.run.hero.equipmentIds)];
-  const equipmentLevels = Object.fromEntries(
-    equipmentIds.map((id) => [id, Math.min(20, save.run.hero.equipmentIds.filter((candidate) => candidate === id).length)]),
-  );
-  const next = JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
-  next.run.hero.equipmentIds = equipmentIds;
-  next.run.hero.equipmentLevels = equipmentLevels;
-  applyV4EquipmentBonuses(next.run.hero, getV4EquipmentBonuses(equipmentIds, equipmentLevels));
-  next.run.hero.hp = Math.min(next.run.hero.hpMax, next.run.hero.hp);
+  let next = save;
+  if (save.run.hero.equipmentLevels === undefined) {
+    const equipmentIds = [...new Set(save.run.hero.equipmentIds)];
+    const equipmentLevels = Object.fromEntries(
+      equipmentIds.map((id) => [id, Math.min(20, save.run.hero.equipmentIds.filter((candidate) => candidate === id).length)]),
+    );
+    next = JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
+    next.run.hero.equipmentIds = equipmentIds;
+    next.run.hero.equipmentLevels = equipmentLevels;
+    applyV4EquipmentBonuses(next.run.hero, getV4EquipmentBonuses(equipmentIds, equipmentLevels));
+    next.run.hero.hp = Math.min(next.run.hero.hpMax, next.run.hero.hp);
+  }
+  if (next.meta.sagaEntries.length > V4_MAX_SAGA_ENTRIES) {
+    if (next === save) next = JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
+    next.meta.sagaEntries = next.meta.sagaEntries.slice(0, V4_MAX_SAGA_ENTRIES);
+  }
   return next;
 }
 
