@@ -38,6 +38,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     };
   });
   const [save, setSave] = useState<V4SaveEnvelope>(() => boot.save);
+  const saveRef = useRef(save);
   const [storageStatus, setStorageStatus] = useState(() => boot.loaded.status);
   const [storageIssue] = useState(() => boot.loaded.status === 'invalid' ? boot.loaded.reason : null);
   const [clock, setClock] = useState(() => Date.now());
@@ -51,6 +52,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   useEffect(() => {
     if (boot.loaded.status === 'invalid') return;
     const result = simulateOfflineProgress(save, Date.now());
+    saveRef.current = result.save;
     setSave(result.save);
     persistV4Save(result.save);
     if (result.summary.processedSeconds > 0 || result.summary.clockAnomaly) {
@@ -62,6 +64,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, []);
 
   const commit = useCallback((next: V4SaveEnvelope, nextMessage?: string) => {
+    saveRef.current = next;
     setSave(next);
     persistV4Save(next);
     if (nextMessage) setMessage(nextMessage);
@@ -138,7 +141,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     offlineRewardClaimInFlight.current = true;
     try {
       if (!(await watchRewarded('offline_double'))) return;
-      const next = grantOfflineResourceBonus(save, offlineSummary.resourcesGained, Date.now());
+      const next = grantOfflineResourceBonus(saveRef.current, offlineSummary.resourcesGained, Date.now());
       commit(next, '오프라인 재화 보상을 2배로 적용했습니다.');
       setOfflineRewardDoubled(true);
     } finally {
@@ -151,7 +154,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     instantTaskInFlight.current.add(facilityId);
     try {
       if (!(await watchRewarded('instant_task'))) return;
-      const result = completeFacilityTaskNow(save, facilityId, Date.now());
+      const result = completeFacilityTaskNow(saveRef.current, facilityId, Date.now());
       if (result.ok) commit(result.save, '광고 혜택으로 작업을 즉시 완료했습니다.');
       else setMessage(result.error);
     } finally {
@@ -164,7 +167,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     interventionChargeInFlight.current = true;
     try {
       if (!(await watchRewarded('intervention_charge'))) return;
-      commit(grantInterventionCharge(save, Date.now()), '개입 충전을 1회 얻었습니다.');
+      commit(grantInterventionCharge(saveRef.current, Date.now()), '개입 충전을 1회 얻었습니다.');
     } finally {
       interventionChargeInFlight.current = false;
     }
@@ -227,6 +230,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const startFreshSave = useCallback(() => {
     if (storageStatus !== 'invalid') return;
     const next = startFreshV4Save(undefined, Date.now());
+    saveRef.current = next;
     setSave(next);
     setStorageStatus('valid');
     setOfflineSummary(null);

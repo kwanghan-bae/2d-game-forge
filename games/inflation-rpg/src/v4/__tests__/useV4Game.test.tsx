@@ -23,8 +23,10 @@ function InstantTaskHarness({ monetization }: { monetization: V4MonetizationAdap
       <div data-testid="instant-task-count">{Object.keys(game.save.meta.tasks).length}</div>
       <div data-testid="instant-spirit">{game.save.meta.currencies.spirit}</div>
       <div data-testid="intervention-charges">{game.save.run.interventionCharges}</div>
+      <div data-testid="policy">{game.save.run.policy}</div>
       <button type="button" onClick={() => { void game.instantTask('temple'); }}>instant</button>
       <button type="button" onClick={() => { void game.addInterventionCharge(); }}>charge</button>
+      <button type="button" onClick={() => game.changePolicy('training')}>policy</button>
     </>
   );
 }
@@ -164,6 +166,33 @@ describe('useV4Game monetization actions', () => {
     await act(async () => { release(); });
     await waitFor(() => expect(screen.getByTestId('intervention-charges')).toHaveTextContent('2'));
     expect(monetization.getAdsToday()).toBe(1);
+  });
+
+  it('preserves a newer policy change while an instant-task ad is pending', async () => {
+    const base = createInitialV4Save(110);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    persistV4Save(started.save);
+
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        await pending;
+        return true;
+      },
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+    await waitFor(() => expect(monetization.getAdsToday()).toBe(0));
+    fireEvent.click(screen.getByRole('button', { name: 'policy' }));
+    await waitFor(() => expect(screen.getByTestId('policy')).toHaveTextContent('training'));
+
+    await act(async () => { release(); });
+    await waitFor(() => expect(screen.getByTestId('instant-task-count')).toHaveTextContent('0'));
+    expect(screen.getByTestId('policy')).toHaveTextContent('training');
   });
 });
 
