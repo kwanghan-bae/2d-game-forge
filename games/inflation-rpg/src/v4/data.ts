@@ -132,6 +132,22 @@ export const REALM_DEFINITIONS: Record<RealmId, RealmDefinition> = {
   },
 };
 
+function getOwnDefinition<T>(definitions: Record<string, T>, id: string): T | undefined {
+  return Object.prototype.hasOwnProperty.call(definitions, id) ? definitions[id] : undefined;
+}
+
+export function getV4FacilityDefinition(id: string): FacilityDefinition | undefined {
+  return getOwnDefinition(FACILITY_DEFINITIONS, id);
+}
+
+export function getV4AgentDefinition(id: string): AgentDefinition | undefined {
+  return getOwnDefinition(AGENT_DEFINITIONS, id);
+}
+
+export function getV4RealmDefinition(id: string): RealmDefinition | undefined {
+  return getOwnDefinition(REALM_DEFINITIONS, id);
+}
+
 export const POLICY_LABELS: Record<V4Policy, string> = {
   aggression: '공격 우선',
   hoarding: '안전 비축',

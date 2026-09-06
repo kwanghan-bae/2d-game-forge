@@ -169,6 +169,7 @@ pnpm circular
 - V4 Chromium·iPhone 14 E2E: 22/22 통과(각 프로젝트 11/11).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
+- 시설·에이전트·Realm 정의 lookup을 own-property accessor로 통일해 외부 문자열이 `constructor` 같은 상속 키로 해석되지 않게 했다.
 - legacy `v2-vertical-slice`는 기존 장시간 자동 진행 경로가 10분 제한에 걸리는 별도 baseline 이슈로 남아 있다. 모달 자동 선택 재시작 결함은 수정했고, 관련 V3 smoke는 통과했다. 이 케이스는 제품 코드 회귀와 분리해 다음 QA 사이클에서 결정론적 테스트 시간 단축을 검토한다.
 
 ### 다음 자동 사이클 우선순위

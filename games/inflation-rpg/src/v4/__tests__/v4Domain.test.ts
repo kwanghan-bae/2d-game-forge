@@ -33,6 +33,7 @@ import {
   useIntervention,
 } from '../domain';
 import { createV4HeroRuntime } from '../heroRuntime';
+import type { FacilityId, RealmId } from '../types';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -1404,6 +1405,21 @@ describe('v4 save and domain', () => {
     expect(result.save).toBe(initial);
     expect(initial.run.expedition).toBeNull();
     expect(initial.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
+  });
+
+  it('rejects inherited definition keys at public domain boundaries', () => {
+    const initial = createInitialV4Save(113);
+    const invalidFacility = 'constructor' as FacilityId;
+    const invalidRealm = 'constructor' as RealmId;
+
+    expect(getFacilityTaskPreview(initial, invalidFacility)).toMatchObject({
+      canStart: false,
+      error: '아직 사용할 수 없는 시설입니다.',
+    });
+    expect(startFacilityTask(initial, invalidFacility, initial.createdAt, null)).toMatchObject({ ok: false });
+    expect(getFacilityUpgradeCost(initial, invalidFacility)).toBeNull();
+    expect(() => getExpeditionSuccessChance(initial, invalidRealm)).not.toThrow();
+    expect(getExpeditionSuccessChance(initial, invalidRealm)).toBe(0.05);
   });
 
   it('rejects an unknown Realm before checking unlocks or charging', () => {

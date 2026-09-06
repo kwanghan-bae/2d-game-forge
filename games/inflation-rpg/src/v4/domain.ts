@@ -1,4 +1,8 @@
-import { FACILITY_DEFINITIONS, AGENT_DEFINITIONS, REALM_DEFINITIONS } from './data';
+import {
+  getV4AgentDefinition,
+  getV4FacilityDefinition,
+  getV4RealmDefinition,
+} from './data';
 import { applyV4EquipmentBonuses, getV4EquipmentBonuses } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
@@ -213,12 +217,12 @@ function facilityTaskEconomy(
   assignedAgentId: SupportAgentId | null,
 ): Pick<FacilityTaskPreview, 'durationSeconds' | 'input' | 'output' | 'outputEquipmentIds' | 'heroExpGain'> {
   const facility = save.meta.facilities[facilityId];
-  const definition = FACILITY_DEFINITIONS[facilityId];
+  const definition = getV4FacilityDefinition(facilityId);
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
   const facilityLevel = positiveFiniteLevel(facility?.level);
   const agentLevel = positiveFiniteLevel(agent?.level);
   const specialty = Boolean(
-    agent && agent.trust >= 50 && AGENT_DEFINITIONS[agent.id].specialty === facilityId,
+    agent && agent.trust >= 50 && getV4AgentDefinition(agent.id)?.specialty === facilityId,
   );
   const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
   const agentSpeedMultiplier = agent ? Math.pow(1 - AGENT_SPEED_PER_LEVEL, Math.max(0, agentLevel - 1)) : 1;
@@ -251,7 +255,7 @@ export function getFacilityTaskPreview(
   assignedAgentId: SupportAgentId | null = null,
 ): FacilityTaskPreview {
   const facility = source.meta.facilities[facilityId];
-  const definition = FACILITY_DEFINITIONS[facilityId];
+  const definition = getV4FacilityDefinition(facilityId);
   const agent = assignedAgentId ? source.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
   const economy = facilityTaskEconomy(source, facilityId, assignedAgentId);
   let error: string | null = null;
@@ -264,7 +268,7 @@ export function getFacilityTaskPreview(
     error = '원정 중인 영웅은 훈련소 작업을 시작할 수 없습니다.';
   } else if (assignedAgentId && (!agent || agent.activeTaskId)) {
     error = '해당 지원 에이전트가 다른 작업 중입니다.';
-  } else if (assignedAgentId && agent && AGENT_DEFINITIONS[agent.id].specialty !== facilityId) {
+  } else if (assignedAgentId && agent && getV4AgentDefinition(agent.id)?.specialty !== facilityId) {
     error = '해당 지원 에이전트는 이 시설의 전문 담당자가 아닙니다.';
   } else if (agent && agent.fatigue >= 100) {
     error = '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.';
@@ -344,7 +348,7 @@ export function startFacilityTask(
   const save = cloneSave(source);
   const eventAt = eventTimestamp(save, now);
   const facility = save.meta.facilities[facilityId];
-  const definition = FACILITY_DEFINITIONS[facilityId];
+  const definition = getV4FacilityDefinition(facilityId);
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
   if (!facility || !definition) return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
 
@@ -470,7 +474,7 @@ export function getExpeditionSuccessChance(
   encounterIndex = 2,
   assignedAgentId: SupportAgentId | null = null,
 ): number {
-  const realm = REALM_DEFINITIONS[realmId];
+  const realm = getV4RealmDefinition(realmId);
   const encounter = realm?.encounters[Math.min(realm.encounters.length - 1, Math.max(0, Math.floor(encounterIndex)))];
   if (!realm || !encounter) return 0.05;
 
@@ -517,7 +521,8 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     const expedition = save.run.expedition;
     if (expedition.completesAt > eventAt || expedition.status === 'awaiting_confirmation') return;
 
-    const realm = REALM_DEFINITIONS[expedition.realmId];
+    const realm = getV4RealmDefinition(expedition.realmId);
+    if (!realm) return;
     // Saves created before staged expeditions have no encounterIndex. Treat
     // them as already at the boss so schema 1 resumes without replaying work.
     const isLegacySingleEncounter = expedition.encounterIndex === undefined;
@@ -699,7 +704,7 @@ export function completeFacilityTasks(
       id: nextSaveId(save, `saga-facility-${task.id}`),
       kind: 'facility',
       createdAt: eventAt,
-      title: `${FACILITY_DEFINITIONS[task.facilityId].nameKR} 작업 완료`,
+      title: `${getV4FacilityDefinition(task.facilityId)?.nameKR ?? '시설'} 작업 완료`,
       text: `${task.type} 작업이 완료되어 마을에 결과가 쌓였다.`,
     });
     delete save.meta.tasks[task.id];
@@ -747,6 +752,8 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
   if (!result || result.outcome !== 'victory') return source;
   const next = getNextRealmId(result.realmId);
   if (!next || source.meta.unlockedRealms.includes(next)) return source;
+  const nextRealm = getV4RealmDefinition(next);
+  if (!nextRealm) return source;
   if (!isActionClockValid(source, now)) return source;
 
   const save = cloneSave(source);
@@ -756,8 +763,8 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
     id: nextSaveId(save, `saga-realm-unlock-${next}-${eventAt}`),
     kind: 'milestone',
     createdAt: eventAt,
-    title: `${REALM_DEFINITIONS[next].nameKR} 기록 해금`,
-    text: `${REALM_DEFINITIONS[next].nameKR}으로 향하는 다음 장이 사가에 기록되었다.`,
+    title: `${nextRealm.nameKR} 기록 해금`,
+    text: `${nextRealm.nameKR}으로 향하는 다음 장이 사가에 기록되었다.`,
   });
   touchSave(save, now);
   return save;
@@ -831,7 +838,8 @@ export function useIntervention(
     return { ok: false, save: source, error: '후퇴할 원정이 없습니다.' };
   }
 
-  const realm = REALM_DEFINITIONS[expedition.realmId];
+  const realm = getV4RealmDefinition(expedition.realmId);
+  if (!realm) return { ok: false, save: source, error: '원정 기록을 확인할 수 없습니다.' };
   // A retreat refunds half of the preparation cost. It preserves the
   // no-permanent-loss rule while making the charge a meaningful safety valve.
   give(save, realm.cost, 0.5);
@@ -867,7 +875,7 @@ export function startExpedition(
     return { ok: false, save: source, error: '알 수 없는 원정 정책입니다.' };
   }
   const save = cloneSave(source);
-  const realm = REALM_DEFINITIONS[realmId];
+  const realm = getV4RealmDefinition(realmId);
   if (!realm) {
     return { ok: false, save: source, error: '알 수 없는 Realm입니다.' };
   }
@@ -1005,7 +1013,7 @@ export function getFacilityUpgradeCost(
   facilityId: FacilityId,
 ): FacilityUpgradeCost | null {
   const facility = source.meta.facilities[facilityId];
-  if (!facility) return null;
+  if (!facility || !getV4FacilityDefinition(facilityId)) return null;
   const growth = Math.pow(FACILITY_UPGRADE_GROWTH, positiveFiniteLevel(facility.level) - 1);
   return {
     gold: safeScaledEconomyAmount(80, growth),
