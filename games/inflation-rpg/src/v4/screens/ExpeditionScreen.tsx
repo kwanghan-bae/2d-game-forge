@@ -1,6 +1,7 @@
 import { FACILITY_DEFINITIONS, REALM_DEFINITIONS } from '../data';
 import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
-import type { InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
+import { getV4EquipmentName } from '../equipment';
+import type { InterventionType, RealmId, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from '../types';
 
 interface Props {
   save: V4SaveEnvelope;
@@ -18,6 +19,20 @@ const ENCOUNTER_LABELS = {
   elite: '정예',
   boss: '보스',
 } as const;
+
+const RESOURCE_LABELS: Record<V4CurrencyKey, string> = {
+  spirit: '신력',
+  gold: '금화',
+  materials: '재료',
+  rift: '균열석',
+};
+
+function formatResources(resources: Partial<Record<V4CurrencyKey, number>>): string {
+  return Object.entries(resources)
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value !== 0)
+    .map(([key, value]) => `${RESOURCE_LABELS[key as V4CurrencyKey] ?? key} +${value!.toLocaleString('ko-KR')}`)
+    .join(' · ') || '없음';
+}
 
 export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnlock, onRefresh, onIntervention, onBack }: Props) {
   const expedition = save.run.expedition;
@@ -53,14 +68,14 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
           {result.encountersCleared !== undefined && <p className="v4-muted">원정 단계 {result.encountersCleared}/{result.totalEncounterCount ?? result.encountersCleared} 정산</p>}
           {result.outcome === 'victory' ? (
             <>
-              <div className="v4-alert">획득 보상 · {Object.entries(result.reward).map(([key, value]) => `${key} +${value}`).join(' · ') || '없음'}</div>
+              <div className="v4-alert">획득 보상 · {formatResources(result.reward)}</div>
               {nextRealmPending && nextRealmId && <div className="v4-button-row"><p className="v4-muted">오프라인 승리는 다음 Realm 해금을 자동 확정하지 않습니다.</p><button type="button" className="v4-btn v4-btn--primary" onClick={onConfirmUnlock}>{REALM_DEFINITIONS[nextRealmId].nameKR} 기록하기</button></div>}
             </>
           ) : (
             <>
               <div className="v4-alert">부족한 점 · {result.weaknessKR}</div>
               <p>추천 시설 · {FACILITY_DEFINITIONS[result.recommendedFacilityId].nameKR} · 예상 재도전 {result.retryAfterSeconds}초</p>
-              {result.recommendedEquipmentId && <p>추천 장비 · {result.recommendedEquipmentId === 'v4_iron_sword' ? '마을의 철검' : result.recommendedEquipmentId}</p>}
+              {result.recommendedEquipmentId && <p>추천 장비 · {getV4EquipmentName(result.recommendedEquipmentId)}</p>}
             </>
           )}
         </section>
