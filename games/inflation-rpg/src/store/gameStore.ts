@@ -192,6 +192,8 @@ export const INITIAL_META: MetaState = {
   corridorSectorsCleared: [],
   primordialRanks: {},
   claimedArchiveMilestones: [],
+  totalRebirths: 0,
+  chronoEssence: 0,
 };
 
 interface GameStore {

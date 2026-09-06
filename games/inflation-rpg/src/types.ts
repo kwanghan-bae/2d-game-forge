@@ -390,6 +390,10 @@ export interface MetaState {
   primordialRanks?: Partial<Record<import('./systems/primordialAscension').PrimordialNodeId, number>>;
   /** C1135 — 수령 완료된 성간 아카이브 마일스톤 ID 목록. */
   claimedArchiveMilestones?: string[];
+  /** C1141 — 시공 도약 총 환생 횟수. */
+  totalRebirths?: number;
+  /** C1141 — 보유 중인 시공 정수 (Chrono Essence) 수량. */
+  chronoEssence?: number;
 }
 
 // Phase G — Ascension Tree (성좌)
