@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BossIntroBuffId, BossIntroBuffTier } from '../buff/bossIntroCatalog';
 
 /**
@@ -38,6 +38,8 @@ const TIER_COLORS: Record<BossIntroBuffTier, { bg: string; border: string; accen
 export function BossIntroModal({ cards, onResolve }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(Math.ceil(TIMEOUT_MS / 1000));
   const [resolved, setResolved] = useState(false);
+  const onResolveRef = useRef(onResolve);
+  onResolveRef.current = onResolve;
 
   useEffect(() => {
     if (resolved) return;
@@ -47,14 +49,14 @@ export function BossIntroModal({ cards, onResolve }: Props) {
     const timeout = setTimeout(() => {
       if (!resolved) {
         setResolved(true);
-        onResolve(0); // PRD §F1.동작(6): auto-choose cards[0] on timeout
+        onResolveRef.current(0); // PRD §F1.동작(6): auto-choose cards[0] on timeout
       }
     }, TIMEOUT_MS);
     return () => {
       clearInterval(tick);
       clearTimeout(timeout);
     };
-  }, [onResolve, resolved]);
+  }, [resolved]);
 
   // Keyboard 1/2/3 shortcuts (a11y + speedrun).
   useEffect(() => {
@@ -63,23 +65,23 @@ export function BossIntroModal({ cards, onResolve }: Props) {
       if (resolved) return;
       if (e.key === '1') {
         setResolved(true);
-        onResolve(0);
+        onResolveRef.current(0);
       } else if (e.key === '2') {
         setResolved(true);
-        onResolve(1);
+        onResolveRef.current(1);
       } else if (e.key === '3') {
         setResolved(true);
-        onResolve(2);
+        onResolveRef.current(2);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onResolve, resolved]);
+  }, [resolved]);
 
   const choose = (idx: 0 | 1 | 2) => {
     if (resolved) return;
     setResolved(true);
-    onResolve(idx);
+    onResolveRef.current(idx);
   };
 
   return (

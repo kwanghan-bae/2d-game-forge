@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 /**
@@ -28,6 +28,8 @@ export function FateRollModal({ oldLevel, pendingDeathPenaltyNewLevel, onResolve
   const crackStones = useGameStore(s => s.meta.crackStones);
   const [secondsLeft, setSecondsLeft] = useState(Math.ceil(TIMEOUT_MS / 1000));
   const [resolved, setResolved] = useState(false);
+  const onResolveRef = useRef(onResolve);
+  onResolveRef.current = onResolve;
 
   // PRD §F1.동작(6): 5s hard timeout → auto-decline. Cleanup on resolve so
   // the timer never fires post-click (double-resolve guarded in controller).
@@ -39,19 +41,19 @@ export function FateRollModal({ oldLevel, pendingDeathPenaltyNewLevel, onResolve
     const timeout = setTimeout(() => {
       if (!resolved) {
         setResolved(true);
-        onResolve('decline');
+        onResolveRef.current('decline');
       }
     }, TIMEOUT_MS);
     return () => {
       clearInterval(tick);
       clearTimeout(timeout);
     };
-  }, [onResolve, resolved]);
+  }, [resolved]);
 
   const choose = (choice: 'accept' | 'decline') => {
     if (resolved) return;
     setResolved(true);
-    onResolve(choice);
+    onResolveRef.current(choice);
   };
 
   const acceptDisabled = crackStones < 1;

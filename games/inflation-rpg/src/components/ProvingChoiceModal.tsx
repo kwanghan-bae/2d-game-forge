@@ -1,5 +1,5 @@
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   onClose: () => void;
@@ -14,6 +14,8 @@ const TIMEOUT_MS = 2000; // 2-second decision window
 export function ProvingChoiceModal({ onClose }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
   const [timeLeft, setTimeLeft] = useState(TIMEOUT_MS);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -21,14 +23,14 @@ export function ProvingChoiceModal({ onClose }: Props) {
         if (t <= 100) {
           // Timeout → auto-accept (AI default)
           controller?.setProvingChoice(true);
-          onClose();
+          onCloseRef.current();
           return 0;
         }
         return t - 100;
       });
     }, 100);
     return () => clearInterval(interval);
-  }, [controller, onClose]);
+  }, [controller]);
 
   if (!controller) return null;
 

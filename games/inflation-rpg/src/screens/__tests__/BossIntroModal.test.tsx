@@ -92,6 +92,20 @@ describe('BossIntroModal interaction', () => {
     expect(onResolve).toHaveBeenCalledWith(0);
   });
 
+  it('keeps the original timeout when the parent rerenders with a new callback', () => {
+    const firstResolve = vi.fn();
+    const latestResolve = vi.fn();
+    const { rerender } = render(<BossIntroModal cards={SAMPLE_CARDS} onResolve={firstResolve} />);
+
+    act(() => { vi.advanceTimersByTime(7000); });
+    rerender(<BossIntroModal cards={SAMPLE_CARDS} onResolve={latestResolve} />);
+    act(() => { vi.advanceTimersByTime(1000); });
+
+    expect(firstResolve).not.toHaveBeenCalled();
+    expect(latestResolve).toHaveBeenCalledTimes(1);
+    expect(latestResolve).toHaveBeenCalledWith(0);
+  });
+
   it('keyboard 1/2/3 selects respective card', () => {
     const onResolve = vi.fn();
     render(<BossIntroModal cards={SAMPLE_CARDS} onResolve={onResolve} />);

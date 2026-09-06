@@ -1,5 +1,5 @@
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   onClose: () => void;
@@ -14,20 +14,22 @@ const TIMEOUT_MS = 10000; // C993: 10s auto-resolve for idle compatibility
 export function InflationRushChoiceModal({ onClose }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
   const [timeLeft, setTimeLeft] = useState(TIMEOUT_MS);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 100) {
           controller?.setInflationRushChoice('ride');
-          onClose();
+          onCloseRef.current();
           return 0;
         }
         return t - 100;
       });
     }, 100);
     return () => clearInterval(interval);
-  }, [controller, onClose]);
+  }, [controller]);
 
   if (!controller) return null;
 

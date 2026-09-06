@@ -24,6 +24,11 @@ test.describe('Phase V1a vertical slice', () => {
     // OverworldRunner mounts
     await expect(page.getByTestId('overworld-runner')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('overworld-hud')).toBeVisible();
+    // Keep the long legacy regression deterministic in CI. The other V3
+    // smoke flows already use the documented speed control; without it this
+    // scenario can sit in a timed choice card until the ten-minute timeout.
+    await page.getByTestId('speed-10x').click();
+    await expect(page.getByTestId('speed-10x')).toHaveAttribute('data-active', 'true');
 
     // Wait for cycle-result (bpMax=100 ⇒ ~5-10 min live)
     await expect(page.getByTestId('cycle-result-v2')).toBeVisible({ timeout: 600_000 });

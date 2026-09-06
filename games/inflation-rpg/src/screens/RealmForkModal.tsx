@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import type { RealmForkCard, RealmForkCardId } from '../buff/realmForkCatalog';
 import type { RealmId } from '../types';
 import { getRegionLore } from '../data/regionLore';
@@ -38,6 +38,8 @@ const CARD_COLORS: Record<RealmForkCardId, { bg: string; border: string; accent:
 export function RealmForkModal({ newRealm, newRealmNameKR, riskCard, safeCard, autoChoice, onResolve }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(Math.ceil(TIMEOUT_MS / 1000));
   const [resolved, setResolved] = useState(false);
+  const onResolveRef = useRef(onResolve);
+  onResolveRef.current = onResolve;
   const loreText = useMemo(() => getRegionLore(newRealm), [newRealm]);
 
   useEffect(() => {
@@ -48,14 +50,14 @@ export function RealmForkModal({ newRealm, newRealmNameKR, riskCard, safeCard, a
     const timeout = setTimeout(() => {
       if (!resolved) {
         setResolved(true);
-        onResolve(autoChoice);
+        onResolveRef.current(autoChoice);
       }
     }, TIMEOUT_MS);
     return () => {
       clearInterval(tick);
       clearTimeout(timeout);
     };
-  }, [onResolve, resolved, autoChoice]);
+  }, [resolved, autoChoice]);
 
   // Keyboard 1/2 shortcuts.
   useEffect(() => {
@@ -64,20 +66,20 @@ export function RealmForkModal({ newRealm, newRealmNameKR, riskCard, safeCard, a
       if (resolved) return;
       if (e.key === '1') {
         setResolved(true);
-        onResolve('risk');
+        onResolveRef.current('risk');
       } else if (e.key === '2') {
         setResolved(true);
-        onResolve('safe');
+        onResolveRef.current('safe');
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onResolve, resolved]);
+  }, [resolved]);
 
   const choose = (choice: RealmForkCardId) => {
     if (resolved) return;
     setResolved(true);
-    onResolve(choice);
+    onResolveRef.current(choice);
   };
 
   const cards: ReadonlyArray<{ idx: 0 | 1; card: RealmForkCard }> = [
