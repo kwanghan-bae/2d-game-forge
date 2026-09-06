@@ -34,6 +34,7 @@ describe('C1129: PrimordialAscensionModal Component Tests', () => {
     expect(screen.getByTestId('primordial-node-card-primordial_annihilation')).toBeDefined();
     expect(screen.getByTestId('primordial-node-card-primordial_eternity')).toBeDefined();
     expect(screen.getByTestId('primordial-node-card-primordial_singularity')).toBeDefined();
+    expect(screen.getByTestId('primordial-hymn-primordial_genesis')).toBeDefined();
 
     fireEvent.click(screen.getByTestId('close-btn'));
     expect(onClose).toHaveBeenCalledTimes(1);

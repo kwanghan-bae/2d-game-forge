@@ -18,6 +18,7 @@ import {
   computeCumulativePrimordialBonuses,
   getPrimordialTotalRanks,
 } from '../systems/primordialAscension';
+import { getPrimordialLore } from '../data/primordialAscensionLore';
 
 interface Props {
   onClose: () => void;
@@ -66,7 +67,8 @@ export function PrimordialAscensionModal({ onClose }: Props) {
     }));
 
     const def = PRIMORDIAL_NODES[nodeId];
-    setFeedbackMessage(`✨ [${def.nameKR}] 랭크 ${result.newRanks[nodeId]} 각성 완료!`);
+    const lore = getPrimordialLore(nodeId);
+    setFeedbackMessage(`✨ [${def.nameKR}] 랭크 ${result.newRanks[nodeId]} 각성 완료! "${lore.awakeningQuote}"`);
   };
 
   return (
@@ -208,6 +210,7 @@ export function PrimordialAscensionModal({ onClose }: Props) {
         >
           {ALL_NODE_IDS.map(nodeId => {
             const def = PRIMORDIAL_NODES[nodeId];
+            const lore = getPrimordialLore(nodeId);
             const currentRank = primordialRanks[nodeId] ?? 0;
             const isMax = currentRank >= def.maxRank;
             const nextRank = currentRank + 1;
@@ -237,11 +240,16 @@ export function PrimordialAscensionModal({ onClose }: Props) {
               >
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 18 }}>{def.icon}</span>
-                      <strong style={{ fontSize: 14, color: '#faf5ff' }}>
-                        {def.nameKR} ({def.hanja})
-                      </strong>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 18 }}>{def.icon}</span>
+                        <strong style={{ fontSize: 14, color: '#faf5ff' }}>
+                          {def.nameKR} ({def.hanja})
+                        </strong>
+                      </div>
+                      <div style={{ fontSize: 10, color: '#c084fc', marginTop: 2, paddingLeft: 24 }}>
+                        {lore.constellationTitle}
+                      </div>
                     </div>
                     <span
                       style={{
@@ -255,6 +263,23 @@ export function PrimordialAscensionModal({ onClose }: Props) {
                     >
                       {isMax ? 'MAX RANK' : `${currentRank} / ${def.maxRank} 랭크`}
                     </span>
+                  </div>
+
+                  {/* Scripture Hymn */}
+                  <div
+                    data-testid={`primordial-hymn-${nodeId}`}
+                    style={{
+                      marginTop: 6,
+                      fontSize: 10,
+                      color: '#94a3b8',
+                      fontStyle: 'italic',
+                      background: '#070614',
+                      padding: '4px 8px',
+                      borderRadius: 4,
+                      borderLeft: '2px solid #a855f7',
+                    }}
+                  >
+                    "{lore.scriptureHymn}"
                   </div>
 
                   <p style={{ fontSize: 11, color: '#c4b5fd', margin: '6px 0 0', lineHeight: 1.4 }}>
