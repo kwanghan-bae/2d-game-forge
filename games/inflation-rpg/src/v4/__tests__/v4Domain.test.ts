@@ -1386,6 +1386,15 @@ describe('v4 save and domain', () => {
     expect(Number.isFinite(getExpeditionSuccessChance(save, 'joseon_plains', 2, null))).toBe(true);
   });
 
+  it('saturates hero power before it can invalidate a result save', () => {
+    const save = createInitialV4Save(124);
+    save.run.hero.atk = Number.MAX_SAFE_INTEGER;
+    save.run.hero.def = Number.MAX_SAFE_INTEGER;
+    save.run.hero.hpMax = Number.MAX_SAFE_INTEGER;
+
+    expect(getV4HeroPower(save)).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
   it('carries V3 hit variance, crits, and defense mitigation into V4 battles', () => {
     const critical = createInitialV4Save(11);
     critical.run.hero.critRateBase = 1;
