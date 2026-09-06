@@ -165,7 +165,7 @@ export class V4MonetizationAdapter {
   private adsToday = 0;
   private adFree = false;
   private rewardedDay = localDayKey();
-  private rewardedInFlight = 0;
+  private rewardedInFlightByDay = new Map<string, number>();
   private adFreePurchaseInFlight: Promise<V4MonetizationResult> | null = null;
 
   constructor(
@@ -202,17 +202,22 @@ export class V4MonetizationAdapter {
   async watchRewarded(placement: V4RewardedPlacement): Promise<V4MonetizationResult> {
     this.resetForCurrentDay();
     if (this.adFree) return { granted: true, reason: 'granted' };
-    if (this.adsToday + this.rewardedInFlight >= V4_DAILY_REWARDED_LIMIT) {
+    const requestDay = this.rewardedDay;
+    const inFlightForDay = this.rewardedInFlightByDay.get(requestDay) ?? 0;
+    if (this.adsToday + inFlightForDay >= V4_DAILY_REWARDED_LIMIT) {
       return { granted: false, reason: 'daily_limit' };
     }
     if (!this.ads) return { granted: false, reason: 'provider_failed' };
-    this.rewardedInFlight += 1;
+    this.rewardedInFlightByDay.set(requestDay, inFlightForDay + 1);
     try {
       const watched = await this.ads.showRewarded(placement);
       if (!watched) return { granted: false, reason: 'provider_failed' };
-      this.adsToday += 1;
+      const usage = requestDay === this.rewardedDay
+        ? normalizeDailyUsage(this.adsToday + 1)
+        : normalizeDailyUsage(this.readStoredUsage(requestDay) + 1);
+      if (requestDay === this.rewardedDay) this.adsToday = usage;
       try {
-        this.usageStore?.write(this.rewardedDay, this.adsToday);
+        this.usageStore?.write(requestDay, usage);
       } catch {
         // Reward delivery remains successful when local usage persistence is unavailable.
       }
@@ -220,7 +225,9 @@ export class V4MonetizationAdapter {
     } catch {
       return { granted: false, reason: 'provider_failed' };
     } finally {
-      this.rewardedInFlight -= 1;
+      const remaining = (this.rewardedInFlightByDay.get(requestDay) ?? 1) - 1;
+      if (remaining > 0) this.rewardedInFlightByDay.set(requestDay, remaining);
+      else this.rewardedInFlightByDay.delete(requestDay);
     }
   }
 

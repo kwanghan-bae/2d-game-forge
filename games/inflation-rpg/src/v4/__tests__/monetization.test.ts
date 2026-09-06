@@ -97,6 +97,29 @@ describe('v4 monetization adapter', () => {
     expect(adapter.getAdsToday()).toBe(1);
   });
 
+  it('does not count an in-flight ad from yesterday against today', async () => {
+    vi.setSystemTime(new Date(2026, 8, 6, 23, 59));
+    const releases: Array<(watched: boolean) => void> = [];
+    const adapter = new V4MonetizationAdapter({
+      showRewarded: () => new Promise<boolean>((resolve) => { releases.push(resolve); }),
+    }, null);
+
+    const yesterday = adapter.watchRewarded('offline_double');
+    await Promise.resolve();
+    vi.setSystemTime(new Date(2026, 8, 7, 0, 1));
+    const today = adapter.watchRewarded('offline_double');
+    await Promise.resolve();
+
+    releases[0]?.(true);
+    await yesterday;
+    expect(adapter.getAdsToday()).toBe(0);
+
+    releases[1]?.(true);
+    await today;
+    expect(adapter.getAdsToday()).toBe(1);
+    vi.useRealTimers();
+  });
+
   it('restores the daily usage count when the adapter is recreated', async () => {
     const counts = new Map<string, number>();
     const usageStore = {
