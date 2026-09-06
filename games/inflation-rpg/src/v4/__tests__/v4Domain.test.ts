@@ -1159,6 +1159,16 @@ describe('v4 save and domain', () => {
     expect(settings.meta.settings).toEqual(initial.meta.settings);
   });
 
+  it('rejects an unknown expedition policy before charging or dispatching', () => {
+    const initial = createInitialV4Save(107);
+    const result = startExpedition(initial, 'joseon_plains', initial.updatedAt + 1_000, 'unsafe' as never, null);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(initial);
+    expect(initial.run.expedition).toBeNull();
+    expect(initial.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
+  });
+
   it('ignores non-finite, negative, and unknown offline bonus values', () => {
     const initial = createInitialV4Save(94);
     const updated = grantOfflineResourceBonus(initial, {

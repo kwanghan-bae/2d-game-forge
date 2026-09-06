@@ -71,6 +71,10 @@ function isActionClockValid(save: V4SaveEnvelope, now: number): boolean {
   return Number.isFinite(now) && now >= save.updatedAt;
 }
 
+function isV4Policy(value: unknown): value is V4Policy {
+  return value === 'aggression' || value === 'hoarding' || value === 'training';
+}
+
 function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
   return Object.entries(input).every(([key, value]) => save.meta.currencies[key as V4CurrencyKey] >= (value ?? 0));
 }
@@ -807,6 +811,9 @@ export function startExpedition(
   policy: V4Policy,
   assignedAgentId: SupportAgentId | null,
 ): DomainResult {
+  if (!isV4Policy(policy)) {
+    return { ok: false, save: source, error: '알 수 없는 원정 정책입니다.' };
+  }
   const save = cloneSave(source);
   const realm = REALM_DEFINITIONS[realmId];
   if (!save.meta.unlockedRealms.includes(realmId)) {
@@ -882,7 +889,7 @@ export function startExpedition(
 }
 
 export function setV4Policy(source: V4SaveEnvelope, policy: V4Policy, now: number): V4SaveEnvelope {
-  if (!['aggression', 'hoarding', 'training'].includes(policy as string)) return source;
+  if (!isV4Policy(policy)) return source;
   const save = cloneSave(source);
   save.run.policy = policy;
   touchSave(save, now);
