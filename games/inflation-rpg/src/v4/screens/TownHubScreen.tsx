@@ -37,7 +37,7 @@ function formatResources(resources: Partial<Record<string, number>>): string {
 }
 
 function remainingSeconds(completesAt: number | undefined, now: number): number {
-  if (!completesAt) return 0;
+  if (typeof completesAt !== 'number' || !Number.isFinite(completesAt) || !Number.isFinite(now)) return 0;
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 

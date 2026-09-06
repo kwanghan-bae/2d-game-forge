@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { startFacilityTask } from '../domain';
 import { createInitialV4Save } from '../save';
 import { TownHubScreen } from '../screens/TownHubScreen';
 
@@ -87,5 +88,21 @@ describe('V4 town hub support assignment', () => {
     renderHub({ save });
 
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정이 진행 중입니다.');
+  });
+
+  it('does not expose an infinite remaining time for malformed facility clocks', () => {
+    const initial = createInitialV4Save(99);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = Number.POSITIVE_INFINITY;
+
+    renderHub({ save: started.save, now: started.save.createdAt });
+
+    const temple = screen.getByText('신전').closest('article');
+    expect(temple).not.toBeNull();
+    if (!temple) return;
+    expect(temple.textContent).not.toContain('Infinity');
+    expect(temple.textContent).not.toContain('NaN');
   });
 });
