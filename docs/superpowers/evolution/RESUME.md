@@ -1,24 +1,24 @@
-# RESUME — v30
+# RESUME — v31
 
 ## 상태
-- Cycle: 1152 (Chrono Loom & Spacetime Weaver Sprint Complete)
-- Target: 1153+ (초월의 만신전 4대 거신 연전 레이드 시스템)
-- Last commit: C1151 chrono loom dynamic perks injection into combat and loot engines
-- Vitest: 367 passed / 3114 passed / 0 fail
-- Critic score: 40.0/40.0 (C1152: 아키텍처 10.0 / 간결성 10.0 / 밸런스 10.0 / 몰입도 10.0 - SSS Rank)
+- Cycle: 1158 (Eternal Pantheon of Transcendence Sprint Complete)
+- Target: 1159+ (신격 보구 & 옴니버스 무기고 시스템)
+- Last commit: C1157 pantheon crests and omniverse sovereign title integration
+- Vitest: 372 passed / 3138 passed / 0 fail
+- Critic score: 40.0/40.0 (C1158: 아키텍처 10.0 / 간결성 10.0 / 밸런스 10.0 / 몰입도 10.0 - SSS Rank)
 
-## 주요 마일스톤 달성 사항 (C1147 ~ C1152)
-- **시공의 베틀(Chrono Loom) 4대 인과 직조 노드 & 테크 매트릭스 엔진 (C1147)**: [`chronoLoom.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/chronoLoom.ts) 구축. 시공 환생에서 획득한 시공 정수(Chrono Essence)를 소모하는 4대 직조 노드(`warp_accelerant`, `singularity_aegis`, `chrono_duplication`, `temporal_sovereign`) 설계. 랭크당 1~5 정수 소모(노드당 15개, 총 60개 완각성) 및 종합 퍽 평가기 완성.
-- **시공의 베틀 인터랙티브 모달 UI & 시련 허브 연동 (C1148)**: [`ChronoLoomModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/ChronoLoomModal.tsx) 구축 및 [`AscensionTrialsModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AscensionTrialsModal.tsx) 연동 (`open-loom-modal-btn`). 실시간 정수 잔액, 누적 퍽 대시보드(턴 가속, 피해 경감, 전리품 복제, 올스탯 증폭), 노드별 랭크 진행도 바 및 승급 인터랙션 완성.
-- **60정수 완소모 경제 & 전투 생존력/복제 기댓값 시뮬레이션 (C1149)**: [`chronoLoomBalance.test.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/chronoLoomBalance.test.ts) 작성. 12회 특이점 대환생을 통한 60정수 완각성 경제를 증명하고, 1,000만 피해 기준 200만 완화 및 즉사 방어 결계 생존, 1,000회 보스 처치 시 1.30배 전리품 복제 기댓값, +50% 올스탯 수치 안정성을 엄밀하게 입증.
-- **운명의 여신 베르단디 전승록 & 직조 성전 서사 (C1150)**: [`chronoLoomLore.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/data/chronoLoomLore.ts) 구축. 4계위별 베르단디 상호작용 대사(직조의 입문자 -> 인과율의 조율자 -> 시공의 마에스트로 -> 무한 윤회의 직조신) 및 4대 노드별 직조 성전(weavingScripture)과 마스터리 에필로그 구현. 모달 UI 카드에 유기적 인용문 삽입.
-- **베틀 영구 퍽 전투 및 전리품 계산 실시간 동적 인젝션 (C1151)**: [`chronoLoomPerks.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/chronoLoomPerks.ts) 구축. 영웅 기초 능력치(+50% 올스탯 증폭), 받는 피해 경감(-20%), 즉사 방어 결계(치명적 피해 시 1회 1 HP 생존) 및 보스 전리품 2배 복제(최대 30% 확률) 훅 완성.
-- **C1152 시공의 베틀 종합 비평 & SSS 랭크 연속 달성 (C1152)**: [`cycle-1152-critic.md`](file:///Users/joel/Desktop/git/2d-game-forge/docs/superpowers/evolution/cycle-1152-critic.md) 발행 (40.0/40.0 SSS 랭크), 367개 테스트 파일 3,114개 전수 테스트 100% 통과 확인 및 C1153~C1158 초월의 만신전 로드맵 수립.
+## 주요 마일스톤 달성 사항 (C1153 ~ C1158)
+- **초월의 만신전(Eternal Pantheon) 4대 거신 55억 체력 연전 엔진 (C1153)**: [`pantheonRaid.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/pantheonRaid.ts) 구축. 4대 우주 거신(우로보로스 5억, 이미르 10억, 닉스 15억, 아이온 25억; 총합 55억 HP)과의 연속 결전 시스템, 자격 검증(환생 1회 이상 or 회랑 5구역) 및 베틀 퍽 연계 턴제 전투 엔진 완성.
+- **초월의 만신전 인터랙티브 레이드 모달 UI & 허브 연동 (C1154)**: [`PantheonRaidModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/PantheonRaidModal.tsx) 구축 및 [`AscensionTrialsModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AscensionTrialsModal.tsx) 연동 (`open-pantheon-modal-btn`). 4개 페이즈 전환 탭, 실시간 거신 스탯 및 종말 기믹 카드, 4연전 원클릭 결행 및 결과 상세 대시보드 구현.
+- **55억 체력 페이싱(20~70턴) 및 상성 격차(2.14배) 시뮬레이션 (C1155)**: [`pantheonRaidBalance.test.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/pantheonRaidBalance.test.ts) 작성. 엔드게임 영웅 기준 100턴 타임아웃 이전 쾌적한 격파 페이싱, 속성 상성 우위-열위 간 2.14배 데미지 격차 검증, 즉사 방어 결계의 클러치 생존력 및 5억 골드 보상의 인플레이션 무결성 증명.
+- **4대 우주 거신 종말의 선고 & 진 우주 주재신 전승록 (C1156)**: [`pantheonRaidLore.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/data/pantheonRaidLore.ts) 구축. 거신별 개전 선고(entryDecree) 및 패배 탄식(defeatLament), [진 우주 주재신] 완파 찬가(PANTHEON_VICTORY_EPILOGUE)와 영웅의 전당 만신전 완파 사가 포맷터 완성.
+- **만신전 문장 수령 & 진 우주 주재신 계정 영구 퍽 연동 (C1157)**: [`pantheonIntegration.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/pantheonIntegration.ts) 구축. 완파 시 만신전 문장 5개 지급 및 완파 횟수 갱신, [진 우주 주재신] 칭호에 따른 계정 전역 영구 퍽(가하는 최종 피해 +10%, 받는 피해 -5%) 및 사가 연계 완성.
+- **C1158 초월의 만신전 종합 비평 & SSS 랭크 연속 달성 (C1158)**: [`cycle-1158-critic.md`](file:///Users/joel/Desktop/git/2d-game-forge/docs/superpowers/evolution/cycle-1158-critic.md) 발행 (40.0/40.0 SSS 랭크), 372개 테스트 파일 3,138개 전수 테스트 100% 무결성 확인 및 C1159~C1164 신격 보구 & 옴니버스 무기고 로드맵 수립.
 
-## 다음 진화 로드맵 (C1153–C1158: 초월의 만신전 4대 거신 연전 레이드 시스템)
-- C1153 [system]: 초월의 만신전 4대 거신 연전 엔진 (`pantheonRaid.ts`)
-- C1154 [ui]: 초월의 만신전 인터랙티브 레이드 모달 UI (`PantheonRaidModal.tsx`)
-- C1155 [balance]: 4단계 대격변 55억 누적 체력 & DPS 밸런스 시뮬레이션 (`pantheonRaidBalance.test.ts`)
-- C1156 [narrative]: 4대 우주 거신 종말 찬가 & 만신전 사가 (`pantheonRaidLore.ts`)
-- C1157 [system]: 만신전 문장 및 진 우주 주재신 칭호 연동 (`pantheonIntegration.ts`)
-- C1158 [critic+collab]: C1158 종합 비평 및 로드맵 갱신
+## 다음 진화 로드맵 (C1159–C1164: 신격 보구 & 옴니버스 무기고 시스템)
+- C1159 [system]: 4대 신격 보구 카탈로그 & 문장 주조 엔진 (`omniverseRegalia.ts`)
+- C1160 [ui]: 옴니버스 무기고 모달 UI & 보구 주조 인터랙션 (`OmniverseArmoryModal.tsx`)
+- C1161 [balance]: 20문장 주조 비용 & 초월 스탯 배율 밸런스 시뮬레이션 (`omniverseRegaliaBalance.test.ts`)
+- C1162 [narrative]: 대장장이 헤파이스토스 신화 성전 & 보구 전승록 (`omniverseRegaliaLore.ts`)
+- C1163 [system]: 신격 보구 장착 효과 & 전투 패시브 동적 인젝션 (`omniverseRegaliaIntegration.ts`)
+- C1164 [critic+collab]: C1164 종합 비평 및 로드맵 갱신
