@@ -96,6 +96,14 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
           {(Object.keys(REALM_DEFINITIONS) as RealmId[]).map((realmId) => {
             const realm = REALM_DEFINITIONS[realmId];
             const unlocked = save.meta.unlockedRealms.includes(realmId);
+            const guideReady = Boolean(guide && !guide.activeTaskId && (guide.fatigue ?? 0) < 100);
+            const guideButtonLabel = !unlocked
+              ? '미해금'
+              : guideReady
+                ? '길잡이와 출발'
+                : (guide?.fatigue ?? 0) >= 100
+                  ? '길잡이 휴식 필요'
+                  : '길잡이 사용 중';
             return (
               <article key={realmId} className={`v4-realm-card ${unlocked ? '' : 'v4-realm-card--locked'}`}>
                 <div className="v4-realm-head"><h3 className="v4-realm-title">{realm.icon} {realm.nameKR}</h3><span className="v4-realm-risk">위험도 {Math.round(realm.risk * 100)}%</span></div>
@@ -106,7 +114,14 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
                   {realm.encounters.map((encounter) => <span className="v4-encounter" key={encounter.id}><strong>{ENCOUNTER_LABELS[encounter.tier]}</strong><br />{encounter.durationSeconds}초 · {encounter.recommendedPower}</span>)}
                 </div>
                 <div className="v4-button-row" style={{ marginTop: 7 }}>
-                  <button type="button" className="v4-btn v4-btn--primary" disabled={!unlocked} onClick={() => onStart(realmId, guide?.activeTaskId ? null : 'guide')}>{unlocked ? '길잡이와 출발' : '미해금'}</button>
+                  <button
+                    type="button"
+                    className="v4-btn v4-btn--primary"
+                    disabled={!unlocked || !guideReady}
+                    onClick={() => onStart(realmId, 'guide')}
+                  >
+                    {guideButtonLabel}
+                  </button>
                   <button type="button" className="v4-btn v4-btn--quiet" disabled={!unlocked} onClick={() => onStart(realmId, null)}>혼자 출발</button>
                 </div>
               </article>

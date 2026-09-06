@@ -933,6 +933,19 @@ describe('v4 save and domain', () => {
     });
   });
 
+  it('does not assign a fully fatigued guide to a new expedition', () => {
+    const initial = createInitialV4Save(103);
+    initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, fatigue: 100 }
+      : agent);
+
+    const result = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain('피로');
+  });
+
   it('does not reuse task ids after a same-clock completion and restart', () => {
     const initial = createInitialV4Save(101);
     const first = startFacilityTask(initial, 'temple', initial.createdAt, null);

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
 import { ExpeditionScreen } from '../screens/ExpeditionScreen';
@@ -61,5 +61,32 @@ describe('V4 expedition result screen', () => {
     const result = screen.getByTestId('v4-expedition-result');
     expect(result).toHaveTextContent('추천 장비 · 수호 갑옷');
     expect(result.textContent).not.toContain('v4_guardian_armor');
+  });
+
+  it('does not present a fully fatigued guide as ready for dispatch', () => {
+    const save = createInitialV4Save(102);
+    save.meta.agents = save.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, fatigue: 100 }
+      : agent);
+    const onStart = vi.fn();
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart,
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+    render(<ExpeditionScreen {...props} />);
+
+    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    expect(plains).not.toBeNull();
+    if (!plains) return;
+    const guideButton = within(plains).getByRole('button', { name: '길잡이 휴식 필요' });
+    expect(guideButton).toBeDisabled();
+    fireEvent.click(within(plains).getByRole('button', { name: '혼자 출발' }));
+    expect(onStart).toHaveBeenCalledWith('joseon_plains', null);
   });
 });

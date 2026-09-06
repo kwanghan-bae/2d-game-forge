@@ -822,6 +822,12 @@ export function startExpedition(
   if (assignedAgentId && !save.meta.agents.some((agent) => agent.id === assignedAgentId && !agent.activeTaskId)) {
     return { ok: false, save: source, error: '길잡이가 다른 작업 중입니다.' };
   }
+  const assignedGuide = assignedAgentId === 'guide'
+    ? save.meta.agents.find((agent) => agent.id === 'guide')
+    : undefined;
+  if (assignedAgentId === 'guide' && (assignedGuide?.fatigue ?? 0) >= 100) {
+    return { ok: false, save: source, error: '길잡이가 너무 피로합니다. 휴식 후 다시 출발하세요.' };
+  }
   pay(save, realm.cost);
   const eventAt = eventTimestamp(save, now);
   const firstEncounterDuration = expeditionDurationSeconds(
