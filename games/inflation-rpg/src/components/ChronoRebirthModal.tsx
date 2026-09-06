@@ -15,6 +15,7 @@ import {
   executeChronoRebirth,
   type ChronoRebirthSummary,
 } from '../systems/chronoRebirth';
+import { getChronoRebirthLore } from '../data/chronoRebirthLore';
 import { evaluateArchiveMastery } from '../systems/astralArchive';
 
 interface Props {
@@ -217,6 +218,7 @@ export function ChronoRebirthModal({ onClose }: Props) {
               {CHRONO_REBIRTH_TIERS.map(t => {
                 const isCurrent = eligibility.tier?.id === t.id;
                 const isUnlocked = perks.masteryRank >= t.minMasteryRank;
+                const tLore = getChronoRebirthLore(t.id);
 
                 return (
                   <div
@@ -244,6 +246,9 @@ export function ChronoRebirthModal({ onClose }: Props) {
                     </div>
                     <div style={{ color: '#cbd5e1' }}>
                       Lv. {t.startingLevel} 시작 | {(t.startingGold / 1_000_000).toLocaleString()}M G | {t.dropRateMultiplier}x 드랍 | 정수 +{t.chronoEssenceReward}개
+                    </div>
+                    <div style={{ fontSize: 10, color: '#c084fc', fontStyle: 'italic', marginTop: 2 }}>
+                      "{tLore.weaverIncantation}"
                     </div>
                   </div>
                 );
@@ -329,6 +334,12 @@ export function ChronoRebirthModal({ onClose }: Props) {
               </div>
               <div style={{ fontSize: 12, color: '#d1fae5' }}>
                 시작 레벨: Lv. {rebirthSummary.startingLevel} | 시작 골드: {rebirthSummary.startingGold.toLocaleString()}G | 시공 정수 +{rebirthSummary.chronoEssenceGained}개 획득!
+              </div>
+              <div
+                data-testid="rebirth-epilogue"
+                style={{ fontSize: 11, color: '#6ee7b7', fontStyle: 'italic', marginTop: 4 }}
+              >
+                "{getChronoRebirthLore(rebirthSummary.tier.id).rebirthEpilogue}"
               </div>
               <button
                 data-testid="rebirth-done-btn"

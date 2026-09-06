@@ -79,6 +79,10 @@ describe('C1142: ChronoRebirthModal Component Tests', () => {
     expect(successCard.textContent).toContain('환생 대성공');
     expect(successCard.textContent).toContain('성간의 시공 도약');
 
+    const epilogue = screen.getByTestId('rebirth-epilogue');
+    expect(epilogue).toBeDefined();
+    expect(epilogue.textContent).toContain('수많은 별빛의 가호');
+
     const state = useGameStore.getState();
     expect(state.run.level).toBe(100);
     expect(state.run.goldThisRun).toBe(15_000_000);
