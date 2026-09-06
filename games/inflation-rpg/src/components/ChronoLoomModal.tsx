@@ -16,6 +16,7 @@ import {
   evaluateChronoLoomPerks,
   type ChronoLoomNodeId,
 } from '../systems/chronoLoom';
+import { getVerdandiDialogue, getChronoLoomNodeLore } from '../data/chronoLoomLore';
 
 interface Props {
   onClose: () => void;
@@ -26,6 +27,7 @@ export function ChronoLoomModal({ onClose }: Props) {
 
   const essence = (meta as unknown as { chronoEssence?: number }).chronoEssence ?? 0;
   const perks = evaluateChronoLoomPerks(meta);
+  const verdandi = getVerdandiDialogue(perks.totalLoomRanks);
 
   const handleUpgrade = (nodeId: ChronoLoomNodeId) => {
     const check = canUpgradeChronoLoomNode(meta, nodeId);
@@ -118,6 +120,27 @@ export function ChronoLoomModal({ onClose }: Props) {
             >
               ✕
             </button>
+          </div>
+        </div>
+
+        {/* Verdandi Dialogue */}
+        <div
+          data-testid="verdandi-dialogue"
+          style={{
+            padding: '10px 20px',
+            background: '#042f2e',
+            borderBottom: '1px solid #115e59',
+            fontSize: 12,
+            color: '#ccfbf1',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>🧝‍♀️</span>
+          <div>
+            <strong style={{ color: '#5eead4' }}>{verdandi.title}: </strong>
+            <span style={{ fontStyle: 'italic' }}>"{verdandi.quote}"</span>
           </div>
         </div>
 
@@ -242,6 +265,11 @@ export function ChronoLoomModal({ onClose }: Props) {
                 {/* Description */}
                 <div style={{ fontSize: 11, color: '#a1a1aa', flex: 1 }}>
                   {node.description}
+                </div>
+
+                {/* Scripture Quote */}
+                <div style={{ fontSize: 10, color: '#2dd4bf', fontStyle: 'italic' }}>
+                  "{getChronoLoomNodeLore(node.id).weavingScripture}"
                 </div>
 
                 {/* Upgrade Button */}

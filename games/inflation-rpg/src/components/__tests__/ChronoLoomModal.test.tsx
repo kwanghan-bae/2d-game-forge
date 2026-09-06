@@ -25,6 +25,7 @@ describe('C1148: ChronoLoomModal Component Tests', () => {
 
     expect(screen.getByTestId('chrono-loom-modal')).toBeDefined();
     expect(screen.getByTestId('chrono-essence-count').textContent).toContain('시공 정수: 0개');
+    expect(screen.getByTestId('verdandi-dialogue').textContent).toContain('직조의 입문자');
     expect(screen.getByTestId('loom-perks-banner')).toBeDefined();
 
     expect(screen.getByTestId('loom-node-warp_accelerant')).toBeDefined();
