@@ -1102,6 +1102,10 @@ describe('v4 save and domain', () => {
     }
     expect(completed.run.expedition).toBeNull();
     expect(completed.meta.sagaEntries[0]?.kind).toBe('expedition');
+    expect(completed.meta.sagaEntries[0]).toMatchObject({
+      title: '조선 평야 원정 성공',
+      text: expect.stringContaining('마을로 돌아왔다'),
+    });
     expect(completed.run.lastExpeditionResult).toMatchObject({
       realmId: 'joseon_plains', outcome: 'victory', retryAfterSeconds: 0,
     });
