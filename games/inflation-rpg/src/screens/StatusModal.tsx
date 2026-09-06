@@ -16,6 +16,7 @@ import { ZodiacConstellationModal } from '../components/ZodiacConstellationModal
 import { AstralAlchemyModal } from '../components/AstralAlchemyModal';
 import { CelestialAwakeningModal } from '../components/CelestialAwakeningModal';
 import { GemCarvingModal } from '../components/GemCarvingModal';
+import { MythicAwakeningModal } from '../components/MythicAwakeningModal';
 
 interface Props {
   onClose: () => void;
@@ -33,6 +34,7 @@ export function StatusModal({ onClose }: Props) {
   const [showAlchemy, setShowAlchemy] = useState(false);
   const [showAwakening, setShowAwakening] = useState(false);
   const [showGemCarving, setShowGemCarving] = useState(false);
+  const [showMythicAwakening, setShowMythicAwakening] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -290,6 +292,22 @@ export function StatusModal({ onClose }: Props) {
                 >
                   💎 보옥제련
                 </button>
+                <button
+                  data-testid="open-mythic-awakening-modal-btn"
+                  onClick={() => setShowMythicAwakening(true)}
+                  style={{
+                    background: '#9333ea',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  🌌 성운각성
+                </button>
               </div>
             </div>
             {equippedItems.length === 0 ? (
@@ -369,6 +387,7 @@ export function StatusModal({ onClose }: Props) {
       {showAlchemy && <AstralAlchemyModal onClose={() => setShowAlchemy(false)} />}
       {showAwakening && <CelestialAwakeningModal onClose={() => setShowAwakening(false)} />}
       {showGemCarving && <GemCarvingModal onClose={() => setShowGemCarving(false)} />}
+      {showMythicAwakening && <MythicAwakeningModal onClose={() => setShowMythicAwakening(false)} />}
     </div>
   );
 }

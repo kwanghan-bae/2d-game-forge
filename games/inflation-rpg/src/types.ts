@@ -50,6 +50,8 @@ export interface EquipmentInstance {
   celestialRelic?: CelestialRelicType;
   /** C1087: Celestial Gem carved into equipment */
   carvedGem?: import('./systems/celestialGemCarving').CarvedGem;
+  /** C1093: Mythic equipment star awakening level (0 ~ 5) */
+  mythicStars?: number;
 }
 
 export interface PassiveSkill {
