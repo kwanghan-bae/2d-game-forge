@@ -1,6 +1,6 @@
 import type { HeroSnapshot } from '../hero/HeroEntity';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
-import { FACILITY_IDS, AGENT_DEFINITIONS } from './data';
+import { FACILITY_IDS, AGENT_DEFINITIONS, REALM_IDS } from './data';
 import { completeFacilityTasks } from './domain';
 import type {
   FacilityState,
@@ -18,6 +18,102 @@ export const V4_OFFLINE_EFFICIENCY = 0.7;
 
 const CURRENCY_KEYS: V4CurrencyKey[] = ['spirit', 'gold', 'materials', 'rift'];
 const HERO_NAMES = ['연화', '도윤', '서린', '한결', '무진', '가람'];
+
+function defaultStorage(): Storage | undefined {
+  try {
+    return typeof window === 'undefined' ? undefined : window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return isFiniteNumber(value) && value >= 0;
+}
+
+function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey, number>> {
+  return isRecord(value) && Object.entries(value).every(([key, amount]) =>
+    CURRENCY_KEYS.includes(key as V4CurrencyKey) && isNonNegativeNumber(amount));
+}
+
+function isFacilityTaskRecord(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.facilityId !== 'string'
+    || !FACILITY_IDS.includes(value.facilityId as typeof FACILITY_IDS[number]) || typeof value.type !== 'string'
+    || !isNonNegativeNumber(value.startedAt) || !isNonNegativeNumber(value.completesAt)
+    || !isCurrencyRecord(value.input) || !isCurrencyRecord(value.outputPreview)
+    || (value.outputEquipmentIds !== undefined
+      && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) => typeof id === 'string')))
+    || (value.assignedAgentId !== null && typeof value.assignedAgentId !== 'string')) return false;
+  return true;
+}
+
+function isExpeditionRecord(value: unknown): boolean {
+  return isRecord(value) && typeof value.id === 'string'
+    && typeof value.realmId === 'string' && REALM_IDS.includes(value.realmId as typeof REALM_IDS[number])
+    && ['aggression', 'hoarding', 'training'].includes(value.policy as string)
+    && (value.assignedAgentId === null || value.assignedAgentId === 'guide')
+    && isNonNegativeNumber(value.startedAt) && isNonNegativeNumber(value.completesAt)
+    && value.status === 'traveling';
+}
+
+function isSagaEntryRecord(value: unknown): boolean {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.createdAt === 'number'
+    && Number.isFinite(value.createdAt) && typeof value.title === 'string' && typeof value.text === 'string'
+    && ['birth', 'facility', 'expedition', 'rejuvenation', 'milestone'].includes(value.kind as string);
+}
+
+function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
+  if (!isRecord(value) || value.schemaVersion !== V4_SCHEMA_VERSION) return false;
+  if (!isNonNegativeNumber(value.createdAt) || !isNonNegativeNumber(value.updatedAt) || !isNonNegativeNumber(value.lastProcessedAt)) return false;
+
+  const meta = value.meta;
+  const run = value.run;
+  if (!isRecord(meta) || !isRecord(run)) return false;
+
+  const currencies = meta.currencies;
+  if (!isRecord(currencies) || !CURRENCY_KEYS.every((key) => isNonNegativeNumber(currencies[key]))) return false;
+
+  const facilities = meta.facilities;
+  if (!isRecord(facilities) || !FACILITY_IDS.every((id) => {
+    const facility = facilities[id];
+    return isRecord(facility)
+      && facility.id === id
+      && isFiniteNumber(facility.level) && facility.level >= 1
+      && (facility.activeTaskId === null || typeof facility.activeTaskId === 'string');
+  })) return false;
+  if (!isRecord(meta.tasks) || !Object.values(meta.tasks).every(isFacilityTaskRecord)
+    || !Array.isArray(meta.agents) || !Array.isArray(meta.unlockedRealms) || !Array.isArray(meta.sagaEntries)
+    || !meta.sagaEntries.every(isSagaEntryRecord)) return false;
+  if (!meta.unlockedRealms.every((id) => typeof id === 'string' && REALM_IDS.includes(id as typeof REALM_IDS[number]))) return false;
+
+  const settings = meta.settings;
+  if (!isRecord(settings) || !isNonNegativeNumber(settings.music) || settings.music > 1
+    || !isNonNegativeNumber(settings.sfx) || settings.sfx > 1 || typeof settings.muted !== 'boolean') return false;
+  if (!meta.agents.every((agent) => isRecord(agent)
+    && typeof agent.id === 'string' && agent.id in AGENT_DEFINITIONS
+    && typeof agent.nameKR === 'string' && typeof agent.roleKR === 'string' && typeof agent.trait === 'string'
+    && isNonNegativeNumber(agent.level) && isNonNegativeNumber(agent.trust) && isNonNegativeNumber(agent.fatigue)
+    && (agent.activeTaskId === null || typeof agent.activeTaskId === 'string'))) return false;
+
+  const hero = run.hero;
+  if (!isRecord(hero) || typeof hero.name !== 'string' || typeof hero.emoji !== 'string'
+    || !REALM_IDS.includes(hero.realmId as typeof REALM_IDS[number])
+    || !['rest', 'train', 'expedition'].includes(hero.currentAction as string)
+    || !Array.isArray(hero.equipmentIds) || !hero.equipmentIds.every((id) => typeof id === 'string')) return false;
+  const heroNumbers = ['age', 'level', 'exp', 'hp', 'hpMax', 'atk', 'def', 'defBase', 'critRateBase', 'actionCount', 'rejuvenationCount'];
+  if (!heroNumbers.every((key) => isFiniteNumber(hero[key]))) return false;
+  return ['aggression', 'hoarding', 'training'].includes(run.policy as string)
+    && isNonNegativeNumber(run.interventionCharges)
+    && (run.expedition === null || isExpeditionRecord(run.expedition));
+}
 
 function emptyFacilities(): Record<string, FacilityState> {
   return Object.fromEntries(
@@ -204,20 +300,19 @@ export function simulateOfflineProgress(
   };
 }
 
-export function loadV4Save(storage: Storage | undefined = typeof window === 'undefined' ? undefined : window.localStorage): V4SaveEnvelope | null {
+export function loadV4Save(storage: Storage | undefined = defaultStorage()): V4SaveEnvelope | null {
   if (!storage) return null;
   try {
     const raw = storage.getItem(V4_SAVE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as V4SaveEnvelope;
-    if (parsed.schemaVersion !== V4_SCHEMA_VERSION || !parsed.meta || !parsed.run) return null;
-    return parsed;
+    const parsed: unknown = JSON.parse(raw);
+    return isV4SaveEnvelope(parsed) ? parsed : null;
   } catch {
     return null;
   }
 }
 
-export function persistV4Save(save: V4SaveEnvelope, storage: Storage | undefined = typeof window === 'undefined' ? undefined : window.localStorage): void {
+export function persistV4Save(save: V4SaveEnvelope, storage: Storage | undefined = defaultStorage()): void {
   if (!storage) return;
   storage.setItem(V4_SAVE_KEY, JSON.stringify(save));
 }

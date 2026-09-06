@@ -3,7 +3,9 @@ import type { HeroSnapshot } from '../../hero/HeroEntity';
 import {
   createInitialV4Save,
   importV3HeroSnapshot,
+  loadV4Save,
   migrateV3HeroSnapshot,
+  persistV4Save,
   simulateOfflineProgress,
 } from '../save';
 import {
@@ -30,6 +32,45 @@ describe('v4 save and domain', () => {
     expect(save.run.expedition).toBeNull();
     expect(save.run.hero.realmId).toBe('joseon_plains');
     expect(save.run.hero.actionCount).toBe(185);
+  });
+
+  it('round-trips valid V4 saves and rejects malformed schema data', () => {
+    const save = createInitialV4Save(13);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+
+    persistV4Save(save, fakeStorage);
+    expect(loadV4Save(fakeStorage)).toMatchObject({ schemaVersion: 1, run: { hero: { name: save.run.hero.name } } });
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({ ...save, meta: { ...save.meta, currencies: { ...save.meta.currencies, gold: 'broken' } } }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
+  it('rejects malformed task and expedition records before they reach the domain', () => {
+    const save = createInitialV4Save(14);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      meta: {
+        ...save.meta,
+        tasks: { broken: { id: 'broken', facilityId: 'blacksmith', input: { gold: 'NaN' } } },
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      run: { ...save.run, expedition: { id: 'broken', realmId: 'unknown', status: 'traveling' } },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
   it('maps a V3 hero snapshot without sharing the V3 store shape', () => {
@@ -109,6 +150,9 @@ describe('v4 save and domain', () => {
 
     const second = startExpedition(started.save, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
     expect(second.ok).toBe(false);
+
+    const invalidAgent = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'blacksmith');
+    expect(invalidAgent.ok).toBe(false);
 
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     expect(completed.run.expedition).toBeNull();

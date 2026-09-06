@@ -261,6 +261,9 @@ export function startExpedition(
   if (save.run.expedition) {
     return { ok: false, save: source, error: '동시에 진행할 수 있는 원정은 1개뿐입니다.' };
   }
+  if (assignedAgentId && assignedAgentId !== 'guide') {
+    return { ok: false, save: source, error: '원정에는 길잡이만 배정할 수 있습니다.' };
+  }
   if (!canPay(save, realm.cost)) {
     return { ok: false, save: source, error: '원정 준비에 필요한 신력 또는 재료가 부족합니다.' };
   }
