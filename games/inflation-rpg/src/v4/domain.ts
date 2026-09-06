@@ -92,8 +92,22 @@ function scaleResources(
   ) as Partial<Record<V4CurrencyKey, number>>;
 }
 
+function isSaveIdUsed(save: V4SaveEnvelope, id: string): boolean {
+  if (Object.prototype.hasOwnProperty.call(save.meta.tasks, id)) return true;
+  if (save.run.expedition?.id === id || save.run.lastExpeditionResult?.id === id) return true;
+  return save.meta.sagaEntries.some((entry) => entry.id === id || entry.id.endsWith(`-${id}`));
+}
+
+function nextSaveId(save: V4SaveEnvelope, base: string): string {
+  if (!isSaveIdUsed(save, base)) return base;
+  let suffix = 2;
+  while (isSaveIdUsed(save, `${base}-${suffix}`)) suffix += 1;
+  return `${base}-${suffix}`;
+}
+
 function nextTaskId(save: V4SaveEnvelope, prefix: string, now: number): string {
-  return `${prefix}-${now}-${Object.keys(save.meta.tasks).length + 1}`;
+  const timestamp = Number.isFinite(now) ? now : save.updatedAt;
+  return nextSaveId(save, `${prefix}-${timestamp}-${Object.keys(save.meta.tasks).length + 1}`);
 }
 
 function advanceHeroActionsInPlace(save: V4SaveEnvelope, actions: number, now: number): void {
@@ -106,7 +120,7 @@ function advanceHeroActionsInPlace(save: V4SaveEnvelope, actions: number, now: n
   hero.age = Math.max(previousAge, HeroLifecycle.ageFromActions(hero.actionCount));
   if (hero.age > previousAge) {
     save.meta.sagaEntries.unshift({
-      id: `saga-aging-${now}-${hero.actionCount}`,
+      id: nextSaveId(save, `saga-aging-${Number.isFinite(now) ? now : save.updatedAt}-${hero.actionCount}`),
       kind: 'milestone',
       createdAt: now,
       title: '영웅의 시간',
@@ -329,7 +343,7 @@ export function restAgent(
   if (!agent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
   agent.fatigue = Math.max(0, agent.fatigue - AGENT_REST_RECOVERY);
   save.meta.sagaEntries.unshift({
-    id: `saga-agent-rest-${agentId}-${now}`,
+    id: nextSaveId(save, `saga-agent-rest-${agentId}-${Number.isFinite(now) ? now : save.updatedAt}`),
     kind: 'facility',
     createdAt: now,
     title: `${agent.nameKR} 휴식`,
@@ -360,7 +374,7 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
   save.meta.currencies.gold -= result.cost;
   save.run.hero = result.snapshot;
   save.meta.sagaEntries.unshift({
-    id: `saga-rejuvenation-${now}`,
+    id: nextSaveId(save, `saga-rejuvenation-${Number.isFinite(now) ? now : save.updatedAt}`),
     kind: 'rejuvenation',
     createdAt: now,
     title: '영원의 회춘 의식',
@@ -532,7 +546,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
         if (next && !save.meta.unlockedRealms.includes(next)) save.meta.unlockedRealms.push(next);
       }
       save.meta.sagaEntries.unshift({
-        id: `saga-expedition-${expedition.id}`,
+        id: nextSaveId(save, `saga-expedition-${expedition.id}`),
         kind: 'expedition',
         createdAt: now,
         title: `${realm.nameKR} 원정 성공`,
@@ -541,7 +555,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     } else {
       save.run.hero.currentAction = 'rest';
       save.meta.sagaEntries.unshift({
-        id: `saga-expedition-${expedition.id}`,
+        id: nextSaveId(save, `saga-expedition-${expedition.id}`),
         kind: 'expedition',
         createdAt: now,
         title: `${realm.nameKR} 원정 중단`,
@@ -576,7 +590,7 @@ export function completeFacilityTasks(
       const levelsGained = applyHeroExperience(save, task.heroExpGain * outputEfficiency);
       if (levelsGained > 0) {
         save.meta.sagaEntries.unshift({
-          id: `saga-level-${task.id}`,
+          id: nextSaveId(save, `saga-level-${task.id}`),
           kind: 'milestone',
           createdAt: now,
           title: '영웅의 성장',
@@ -596,7 +610,7 @@ export function completeFacilityTasks(
         agent.level = Math.max(agent.level, Math.min(3, 1 + Math.floor(agent.trust / 50)));
         if (previousTrust < 100 && agent.trust === 100) {
           save.meta.sagaEntries.unshift({
-            id: `saga-agent-trust-${agent.id}-${task.id}`,
+            id: nextSaveId(save, `saga-agent-trust-${agent.id}-${task.id}`),
             kind: 'milestone',
             createdAt: now,
             title: `${agent.nameKR} 신뢰 최고점`,
@@ -609,7 +623,7 @@ export function completeFacilityTasks(
       save.run.hero.hp = save.run.hero.hpMax;
     }
     save.meta.sagaEntries.unshift({
-      id: `saga-facility-${task.id}`,
+      id: nextSaveId(save, `saga-facility-${task.id}`),
       kind: 'facility',
       createdAt: now,
       title: `${FACILITY_DEFINITIONS[task.facilityId].nameKR} 작업 완료`,
@@ -659,7 +673,7 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
   const save = cloneSave(source);
   save.meta.unlockedRealms.push(next);
   save.meta.sagaEntries.unshift({
-    id: `saga-realm-unlock-${next}-${now}`,
+    id: nextSaveId(save, `saga-realm-unlock-${next}-${Number.isFinite(now) ? now : save.updatedAt}`),
     kind: 'milestone',
     createdAt: now,
     title: `${REALM_DEFINITIONS[next].nameKR} 기록 해금`,
@@ -713,7 +727,7 @@ export function useIntervention(
     hero.hp = hero.hpMax;
     save.run.interventionCharges -= 1;
     save.meta.sagaEntries.unshift({
-      id: `saga-intervention-heal-${now}`,
+      id: nextSaveId(save, `saga-intervention-heal-${Number.isFinite(now) ? now : save.updatedAt}`),
       kind: 'milestone',
       createdAt: now,
       title: '신의 개입: 즉시 회복',
@@ -743,7 +757,7 @@ export function useIntervention(
     }
   }
   save.meta.sagaEntries.unshift({
-    id: `saga-intervention-retreat-${now}`,
+    id: nextSaveId(save, `saga-intervention-retreat-${expedition.id}`),
     kind: 'expedition',
     createdAt: now,
     title: '신의 개입: 원정 후퇴',
@@ -789,7 +803,7 @@ export function startExpedition(
     realm.encounters[0]?.durationSeconds ?? realm.durationSeconds,
     assignedAgentId === 'guide',
   );
-  const id = `expedition-${realmId}-${now}`;
+  const id = nextSaveId(save, `expedition-${realmId}-${Number.isFinite(now) ? now : save.updatedAt}`);
   save.run.expedition = {
     id,
     realmId,
@@ -868,7 +882,7 @@ export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, 
     ok: true,
     save,
     task: {
-      id: `upgrade-${facilityId}-${now}`,
+      id: nextSaveId(save, `upgrade-${facilityId}-${Number.isFinite(now) ? now : save.updatedAt}`),
       facilityId,
       type: '시설 강화',
       startedAt: now,

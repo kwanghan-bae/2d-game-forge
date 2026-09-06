@@ -143,7 +143,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(tasks) || !Object.entries(tasks).every(([id, task]) =>
     isRecord(task) && isFacilityTaskRecord(task) && task.id === id)
     || !Array.isArray(meta.agents) || !Array.isArray(meta.unlockedRealms) || !Array.isArray(meta.sagaEntries)
-    || !meta.sagaEntries.every(isSagaEntryRecord)) return false;
+    || !meta.sagaEntries.every(isSagaEntryRecord)
+    || new Set(meta.sagaEntries.map((entry) => entry.id)).size !== meta.sagaEntries.length) return false;
   if (meta.unlockedRealms.length === 0
     || new Set(meta.unlockedRealms).size !== meta.unlockedRealms.length
     || !meta.unlockedRealms.includes('joseon_plains')
@@ -370,6 +371,14 @@ function hydrateEquipmentStats(save: V4SaveEnvelope): V4SaveEnvelope {
   return next;
 }
 
+function nextSagaId(source: V4SaveEnvelope, base: string): string {
+  const used = new Set(source.meta.sagaEntries.map((entry) => entry.id));
+  if (!used.has(base)) return base;
+  let suffix = 2;
+  while (used.has(`${base}-${suffix}`)) suffix += 1;
+  return `${base}-${suffix}`;
+}
+
 /** Explicit user-triggered import. V4 never calls this during normal loading. */
 export function importV3HeroSnapshot(
   source: V4SaveEnvelope,
@@ -386,7 +395,7 @@ export function importV3HeroSnapshot(
     meta: {
       ...source.meta,
       sagaEntries: [{
-        id: `saga-import-${eventAt}`,
+        id: nextSagaId(source, `saga-import-${eventAt}`),
         kind: 'milestone',
         createdAt: eventAt,
         title: 'V3 영웅 가져오기',

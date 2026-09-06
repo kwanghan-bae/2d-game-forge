@@ -68,6 +68,12 @@ describe('v4 save and domain', () => {
 
     storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({ ...save, meta: { ...save.meta, currencies: { ...save.meta.currencies, gold: 'broken' } } }));
     expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      meta: { ...save.meta, sagaEntries: [save.meta.sagaEntries[0], save.meta.sagaEntries[0]] },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
   it('keeps gameplay alive when local persistence is unavailable', () => {
@@ -313,6 +319,8 @@ describe('v4 save and domain', () => {
     const imported = importV3HeroSnapshot(createInitialV4Save(1), source, 1234);
     expect(imported.run.hero.name).toBe('홍길동');
     expect(imported.meta.sagaEntries[0]?.title).toBe('V3 영웅 가져오기');
+    const importedAgain = importV3HeroSnapshot(imported, source, 1234);
+    expect(importedAgain.meta.sagaEntries[0]?.id).not.toBe(imported.meta.sagaEntries[0]?.id);
 
     const staleDestination = createInitialV4Save(2);
     staleDestination.lastProcessedAt = staleDestination.createdAt + HOUR;
@@ -778,6 +786,36 @@ describe('v4 save and domain', () => {
     expect(completed.run.lastExpeditionResult).toMatchObject({
       realmId: 'joseon_plains', outcome: 'victory', retryAfterSeconds: 0,
     });
+  });
+
+  it('does not reuse task ids after a same-clock completion and restart', () => {
+    const initial = createInitialV4Save(101);
+    const first = startFacilityTask(initial, 'temple', initial.createdAt, null);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    const completed = completeFacilityTasks(first.save, first.task.completesAt);
+    const second = startFacilityTask(completed, 'temple', initial.createdAt, null);
+
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.task.id).not.toBe(first.task.id);
+  });
+
+  it('does not reuse an expedition id after same-clock intervention retreat', () => {
+    const initial = createInitialV4Save(102);
+    const first = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    const retreated = useIntervention(first.save, 'retreat', initial.createdAt);
+    expect(retreated.ok).toBe(true);
+    if (!retreated.ok) return;
+    const second = startExpedition(retreated.save, 'joseon_plains', initial.createdAt, 'aggression', null);
+
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.task.id).not.toBe(first.task.id);
   });
 
   it('advances a new expedition through normal, elite, and boss encounters', () => {
