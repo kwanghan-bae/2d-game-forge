@@ -388,6 +388,8 @@ export interface MetaState {
   corridorSectorsCleared?: number[];
   /** C1127 — 태초 승천 노드별 랭크 딕셔너리. */
   primordialRanks?: Partial<Record<import('./systems/primordialAscension').PrimordialNodeId, number>>;
+  /** C1135 — 수령 완료된 성간 아카이브 마일스톤 ID 목록. */
+  claimedArchiveMilestones?: string[];
 }
 
 // Phase G — Ascension Tree (성좌)

@@ -191,6 +191,7 @@ export const INITIAL_META: MetaState = {
   dimensionalEssence: 0,
   corridorSectorsCleared: [],
   primordialRanks: {},
+  claimedArchiveMilestones: [],
 };
 
 interface GameStore {
