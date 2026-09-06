@@ -171,6 +171,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
     expect(badge.textContent).toContain('창세의 불씨');
     expect(badge.textContent).toContain('[2/18]');
   });
+
+  it('opens AstralArchiveModal when clicking open-archive-modal-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openArchiveBtn = screen.getByTestId('open-archive-modal-btn');
+    expect(openArchiveBtn).toBeDefined();
+    fireEvent.click(openArchiveBtn);
+
+    expect(screen.getByTestId('astral-archive-modal')).toBeDefined();
+  });
 });
 
 
