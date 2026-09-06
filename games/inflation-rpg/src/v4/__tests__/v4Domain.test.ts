@@ -203,7 +203,10 @@ describe('v4 save and domain', () => {
     const canceled = cancelFacilityTask(started.save, 'blacksmith', initial.createdAt + 1_000);
     expect(canceled.ok).toBe(true);
     if (!canceled.ok) return;
-    expect(canceled.save.meta.currencies).toEqual(initial.meta.currencies);
+    expect(canceled.save.meta.currencies).toMatchObject({
+      gold: initial.meta.currencies.gold - 4,
+      materials: initial.meta.currencies.materials - 1,
+    });
     expect(canceled.save.meta.facilities.blacksmith.activeTaskId).toBeNull();
     expect(canceled.save.meta.tasks).toEqual({});
     expect(canceled.save.meta.agents.find((agent) => agent.id === 'blacksmith')?.activeTaskId).toBeNull();
@@ -225,7 +228,7 @@ describe('v4 save and domain', () => {
 
     const tired = createInitialV4Save(77);
     tired.meta.agents = tired.meta.agents.map((agent) => agent.id === 'blacksmith'
-      ? { ...agent, trust: 50, fatigue: 100 }
+      ? { ...agent, trust: 50, fatigue: 80 }
       : agent);
     const slowed = startFacilityTask(tired, 'blacksmith', tired.createdAt, 'blacksmith');
     expect(slowed.ok).toBe(true);
@@ -235,6 +238,19 @@ describe('v4 save and domain', () => {
       .toBeLessThan(baseline.task.completesAt - baseline.task.startedAt);
     expect(slowed.task.completesAt - slowed.task.startedAt)
       .toBeGreaterThan(specialized.task.completesAt - specialized.task.startedAt);
+  });
+
+  it('does not assign new work to an exhausted agent', () => {
+    const initial = createInitialV4Save(79);
+    initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, fatigue: 100 }
+      : agent);
+
+    const result = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain('피로');
   });
 
   it('promotes an agent after trust grows through completed work', () => {

@@ -71,25 +71,28 @@ export function startFacilityTask(
   const save = cloneSave(source);
   const facility = save.meta.facilities[facilityId];
   const definition = FACILITY_DEFINITIONS[facilityId];
+  const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
   if (!facility || !definition || facility.level < 1) {
     return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
   }
   if (facility.activeTaskId) {
     return { ok: false, save: source, error: '이 시설에는 이미 진행 중인 작업이 있습니다.' };
   }
-  if (assignedAgentId && !save.meta.agents.some((agent) => agent.id === assignedAgentId && !agent.activeTaskId)) {
+  if (assignedAgentId && (!agent || agent.activeTaskId)) {
     return { ok: false, save: source, error: '해당 지원 에이전트가 다른 작업 중입니다.' };
+  }
+  if (agent && agent.fatigue >= 100) {
+    return { ok: false, save: source, error: '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.' };
   }
   if (!canPay(save, definition.input)) {
     return { ok: false, save: source, error: '작업에 필요한 재화가 부족합니다.' };
   }
 
   pay(save, definition.input);
-  const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
   const specialty = Boolean(
     agent && agent.trust >= 50 && AGENT_DEFINITIONS[agent.id].specialty === facilityId,
   );
-  const fatigueMultiplier = agent ? 1 + Math.min(0.4, agent.fatigue / 250) : 1;
+  const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
   const durationSeconds = Math.max(10, Math.round(
     definition.baseDurationSeconds * Math.pow(0.94, facility.level - 1)
       * (specialty ? 0.85 : 1) * fatigueMultiplier,
@@ -129,7 +132,7 @@ export function cancelFacilityTask(
     return { ok: false, save: source, error: '취소할 작업이 없습니다.' };
   }
 
-  give(save, task.input);
+  give(save, task.input, 0.8);
   facility.activeTaskId = null;
   delete save.meta.tasks[task.id];
   if (task.assignedAgentId) {
