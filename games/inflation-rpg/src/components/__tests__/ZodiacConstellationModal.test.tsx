@@ -93,4 +93,22 @@ describe('C1058: ZodiacConstellationModal Component Tests', () => {
     expect(total.textContent).toContain('총 방어력: +6%');
     expect(total.textContent).toContain('받는 피해 감소: +3%');
   });
+
+  it('renders zodiac-pet-synergy-banner when active companion matches unlocked zodiac constellation', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        activePetId: 'white_tiger',
+        zodiacUnlocked: ['tiger'],
+      },
+    }));
+
+    render(<ZodiacConstellationModal onClose={() => {}} />);
+
+    const banner = screen.getByTestId('zodiac-pet-synergy-banner');
+    expect(banner).toBeDefined();
+    expect(banner.textContent).toContain('영수-성좌 융합 공명 발동');
+    expect(banner.textContent).toContain('호랑이의 영험한 포효');
+  });
 });
+

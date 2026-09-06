@@ -16,6 +16,7 @@ import {
   type ZodiacSign,
 } from '../systems/zodiacSystem';
 import { getZodiacAwakeningQuote } from '../data/zodiacFlavor';
+import { computeZodiacPetResonanceBonus } from '../systems/zodiacPetResonance';
 
 interface Props {
   onClose: () => void;
@@ -33,6 +34,7 @@ export function ZodiacConstellationModal({ onClose }: Props) {
   const isUnlocked = unlockedSigns.includes(selectedSign);
   const canUnlock = canUnlockZodiacNode(selectedSign, crackStones, unlockedSigns);
   const totalResonance = computeZodiacResonance(unlockedSigns);
+  const petSynergy = computeZodiacPetResonanceBonus(meta.activePetId ?? null, unlockedSigns);
 
   const handleUnlock = () => {
     const res = unlockZodiacNode(selectedSign, crackStones, unlockedSigns);
@@ -264,6 +266,31 @@ export function ZodiacConstellationModal({ onClose }: Props) {
               )}
             </div>
           </div>
+
+          {/* Zodiac - Pet Cross-System Resonance */}
+          {petSynergy.activeResonances.length > 0 && (
+            <div
+              data-testid="zodiac-pet-synergy-banner"
+              style={{
+                background: '#451a03',
+                border: '1px solid #d97706',
+                borderRadius: 8,
+                padding: '10px 14px',
+                marginBottom: 14,
+                color: '#fef3c7',
+                fontSize: 12,
+              }}
+            >
+              <div style={{ fontWeight: 'bold', color: '#fbbf24', marginBottom: 4 }}>
+                🌟 영수-성좌 융합 공명 발동!
+              </div>
+              {petSynergy.activeResonances.map(r => (
+                <div key={r.id}>
+                  {r.emoji} <strong>{r.nameKR}</strong>: {r.description}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Aggregate Resonance Summary */}
           <div
