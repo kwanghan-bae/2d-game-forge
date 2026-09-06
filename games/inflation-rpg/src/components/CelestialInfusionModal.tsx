@@ -189,7 +189,7 @@ export function CelestialInfusionModal({ onClose }: Props) {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    <span>{base?.nameKR ?? item.baseId}</span>
+                    <span>{base?.name ?? item.baseId}</span>
                     {item.cosmicAffix && <span style={{ marginLeft: 4 }}>✨</span>}
                   </button>
                 );
@@ -203,7 +203,7 @@ export function CelestialInfusionModal({ onClose }: Props) {
           {selectedItem && (
             <div style={{ padding: '10px 14px', background: '#090d19', borderRadius: 8, border: '1px solid #1e293b' }}>
               <div style={{ fontSize: 14, fontWeight: 'bold', color: '#f8fafc' }}>
-                선택된 장비: {itemBase?.nameKR ?? selectedItem.baseId} (+{selectedItem.enhanceLv})
+                선택된 장비: {itemBase?.name ?? selectedItem.baseId} (+{selectedItem.enhanceLv})
               </div>
               <div style={{ fontSize: 12, color: selectedItem.cosmicAffix ? '#6ee7b7' : '#94a3b8', marginTop: 4 }}>
                 현재 주입된 우주적 접사: {selectedItem.cosmicAffix ? COSMIC_AFFIXES[selectedItem.cosmicAffix].nameKR : '없음'}
