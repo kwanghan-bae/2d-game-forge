@@ -31,6 +31,8 @@ export type InterventionDomainResult =
 
 export const MAX_INTERVENTION_CHARGES = 3;
 export const AGENT_REST_RECOVERY = 25;
+const FACILITY_OUTPUT_PER_LEVEL = 0.18;
+const FACILITY_UPGRADE_GROWTH = 1.35;
 
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
@@ -132,7 +134,8 @@ export function startFacilityTask(
     definition.baseDurationSeconds * Math.pow(0.94, facility.level - 1)
       * (specialty ? 0.85 : 1) * fatigueMultiplier,
   ));
-  const outputMultiplier = specialty ? 1.2 : 1;
+  const outputMultiplier = (specialty ? 1.2 : 1)
+    * (1 + FACILITY_OUTPUT_PER_LEVEL * (facility.level - 1));
   const task: FacilityTask = {
     id: nextTaskId(save, facilityId, now),
     facilityId,
@@ -568,7 +571,11 @@ export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, 
   const facility = save.meta.facilities[facilityId];
   if (!facility) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
   if (facility.activeTaskId) return { ok: false, save: source, error: '작업 중인 시설은 강화할 수 없습니다.' };
-  const cost = { gold: facility.level * 80, materials: facility.level * 4 };
+  const growth = Math.pow(FACILITY_UPGRADE_GROWTH, facility.level - 1);
+  const cost = {
+    gold: Math.floor(80 * growth),
+    materials: Math.floor(4 * growth),
+  };
   if (!canPay(save, cost)) return { ok: false, save: source, error: '시설 강화 재료가 부족합니다.' };
   pay(save, cost);
   facility.level += 1;

@@ -19,6 +19,7 @@ import {
   confirmPendingExpedition,
   startExpedition,
   startFacilityTask,
+  upgradeFacility,
   useIntervention,
 } from '../domain';
 import { createV4HeroRuntime } from '../heroRuntime';
@@ -380,6 +381,27 @@ describe('v4 save and domain', () => {
     if (!expedition.ok) return;
     const trainingDuringExpedition = startFacilityTask(expedition.save, 'training', initial.createdAt, null);
     expect(trainingDuringExpedition.ok).toBe(false);
+  });
+
+  it('scales facility upgrade costs and task throughput by level', () => {
+    const initial = createInitialV4Save(84);
+    initial.meta.currencies.gold = 500;
+    initial.meta.currencies.materials = 100;
+
+    const firstUpgrade = upgradeFacility(initial, 'temple', initial.createdAt);
+    expect(firstUpgrade.ok).toBe(true);
+    if (!firstUpgrade.ok) return;
+    expect(firstUpgrade.task.input).toEqual({ gold: 80, materials: 4 });
+
+    const secondUpgrade = upgradeFacility(firstUpgrade.save, 'temple', initial.createdAt + 1_000);
+    expect(secondUpgrade.ok).toBe(true);
+    if (!secondUpgrade.ok) return;
+    expect(secondUpgrade.task.input).toEqual({ gold: 108, materials: 5 });
+
+    const started = startFacilityTask(secondUpgrade.save, 'temple', initial.createdAt + 2_000);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    expect(started.task.outputPreview.spirit).toBe(24);
   });
 
   it('applies monetization effects through pure V4 domain helpers', () => {
