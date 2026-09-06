@@ -15,6 +15,7 @@ import {
   computeZodiacResonance,
   type ZodiacSign,
 } from '../systems/zodiacSystem';
+import { getZodiacAwakeningQuote } from '../data/zodiacFlavor';
 
 interface Props {
   onClose: () => void;
@@ -48,7 +49,8 @@ export function ZodiacConstellationModal({ onClose }: Props) {
       },
     }));
 
-    setFeedback(res.message);
+    const quote = getZodiacAwakeningQuote(selectedSign);
+    setFeedback(`${res.message} "${quote}"`);
   };
 
   return (
