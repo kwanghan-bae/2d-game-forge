@@ -13,6 +13,7 @@ import {
   evaluateArchiveMastery,
   type ArchiveCategory,
 } from '../systems/astralArchive';
+import { getArchivistDialogue } from '../data/astralArchiveLore';
 
 interface Props {
   onClose: () => void;
@@ -36,6 +37,7 @@ export function AstralArchiveModal({ onClose }: Props) {
   const [claimFeedback, setClaimFeedback] = useState<string | null>(null);
 
   const { perks, milestoneStates } = evaluateArchiveMastery(meta);
+  const archivist = getArchivistDialogue(perks.unlockedCount);
 
   const filteredMilestones =
     selectedCategory === 'all'
@@ -123,6 +125,30 @@ export function AstralArchiveModal({ onClose }: Props) {
           >
             ✕
           </button>
+        </div>
+
+        {/* Cosmic Archivist Persona Dialogue */}
+        <div
+          data-testid="archivist-greeting"
+          style={{
+            padding: '8px 18px',
+            background: '#0a0e1a',
+            borderBottom: '1px solid #1e293b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontSize: 11,
+            color: '#94a3b8',
+            fontStyle: 'italic',
+          }}
+        >
+          <span style={{ fontStyle: 'normal', fontSize: 16 }}>🧙‍♂️</span>
+          <div>
+            <strong style={{ color: '#60a5fa', fontStyle: 'normal' }}>
+              기록관 메타트론 [{archivist.stageTitle}]:
+            </strong>{' '}
+            "{archivist.dialogue}"
+          </div>
         </div>
 
         {/* Top Account-Wide Perks Banner */}

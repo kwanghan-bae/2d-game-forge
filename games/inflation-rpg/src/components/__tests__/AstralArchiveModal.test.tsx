@@ -29,6 +29,7 @@ describe('C1136: AstralArchiveModal Component Tests', () => {
     expect(screen.getByTestId('astral-archive-modal')).toBeDefined();
     expect(screen.getByText(/성간 아카이브/)).toBeDefined();
     expect(screen.getByTestId('archive-perks-banner')).toBeDefined();
+    expect(screen.getByTestId('archivist-greeting')).toBeDefined();
 
     expect(screen.getByTestId('category-tab-all')).toBeDefined();
     expect(screen.getByTestId('category-tab-trials')).toBeDefined();
