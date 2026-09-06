@@ -48,6 +48,8 @@ export interface EquipmentInstance {
   enchantElement?: 'fire' | 'water' | 'lightning' | 'dark' | 'neutral';
   /** C1067: Celestial Star Relic socketed into equipment */
   celestialRelic?: CelestialRelicType;
+  /** C1087: Celestial Gem carved into equipment */
+  carvedGem?: import('./systems/celestialGemCarving').CarvedGem;
 }
 
 export interface PassiveSkill {
@@ -370,6 +372,8 @@ export interface MetaState {
   awakeningTier?: number;
   /** C1081 — 무한 혼돈의 균열 최고 도달 심도. */
   highestRiftDepth?: number;
+  /** C1087 — 보유 중인 천상 보옥 목록. */
+  carvedGems?: import('./systems/celestialGemCarving').CarvedGem[];
 }
 
 // Phase G — Ascension Tree (성좌)

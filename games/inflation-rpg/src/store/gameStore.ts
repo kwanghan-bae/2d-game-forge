@@ -185,6 +185,7 @@ export const INITIAL_META: MetaState = {
   starlightShards: 0,
   elixirDoses: {},
   highestRiftDepth: 0,
+  carvedGems: [],
 };
 
 interface GameStore {
