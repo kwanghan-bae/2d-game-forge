@@ -15,6 +15,7 @@ import {
   attemptAwakenNextTier,
   computeCumulativeAwakeningStats,
 } from '../systems/celestialAwakening';
+import { getBreakthroughAnnouncement, getAwakeningTitleHymn } from '../data/awakeningSagaLore';
 
 interface Props {
   onClose: () => void;
@@ -52,7 +53,8 @@ export function CelestialAwakeningModal({ onClose }: Props) {
       },
     }));
 
-    setFeedback(res.message);
+    const announcement = getBreakthroughAnnouncement(res.newTier);
+    setFeedback(`${res.message} — "${announcement}"`);
     setSelectedTierIndex(Math.min(MAX_AWAKENING_TIER - 1, res.newTier));
   };
 
