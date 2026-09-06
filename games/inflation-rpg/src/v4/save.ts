@@ -15,6 +15,7 @@ export const V4_SAVE_KEY = 'shin-ui-eternal-sponsor-v4-save-v1';
 export const V4_SCHEMA_VERSION = 1 as const;
 export const V4_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 export const V4_OFFLINE_EFFICIENCY = 0.7;
+export const V4_MAX_INTERVENTION_CHARGES = 3;
 
 const CURRENCY_KEYS: V4CurrencyKey[] = ['spirit', 'gold', 'materials', 'rift'];
 const HERO_NAMES = ['연화', '도윤', '서린', '한결', '무진', '가람'];
@@ -48,6 +49,7 @@ function isFacilityTaskRecord(value: unknown): boolean {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.facilityId !== 'string'
     || !FACILITY_IDS.includes(value.facilityId as typeof FACILITY_IDS[number]) || typeof value.type !== 'string'
     || !isNonNegativeNumber(value.startedAt) || !isNonNegativeNumber(value.completesAt)
+    || value.completesAt < value.startedAt
     || !isCurrencyRecord(value.input) || !isCurrencyRecord(value.outputPreview)
     || (value.outputEquipmentIds !== undefined
       && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) => typeof id === 'string')))
@@ -62,6 +64,7 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
     && ['aggression', 'hoarding', 'training'].includes(value.policy as string)
     && (value.assignedAgentId === null || value.assignedAgentId === 'guide')
     && isNonNegativeNumber(value.startedAt) && isNonNegativeNumber(value.completesAt)
+    && value.completesAt >= value.startedAt
     && (value.status === 'traveling' || value.status === 'awaiting_confirmation');
 }
 
@@ -106,9 +109,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   const facilities = meta.facilities;
   if (!isRecord(facilities) || !FACILITY_IDS.every((id) => {
     const facility = facilities[id];
-    return isRecord(facility)
+      return isRecord(facility)
       && facility.id === id
-      && isFiniteNumber(facility.level) && facility.level >= 1
+      && isFiniteNumber(facility.level) && Number.isInteger(facility.level) && facility.level >= 1
       && (facility.activeTaskId === null || typeof facility.activeTaskId === 'string');
   })) return false;
   const tasks = meta.tasks;
@@ -124,7 +127,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!meta.agents.every((agent) => isRecord(agent)
     && typeof agent.id === 'string' && Object.prototype.hasOwnProperty.call(AGENT_DEFINITIONS, agent.id)
     && typeof agent.nameKR === 'string' && typeof agent.roleKR === 'string' && typeof agent.trait === 'string'
-    && isNonNegativeNumber(agent.level) && isNonNegativeNumber(agent.trust) && isNonNegativeNumber(agent.fatigue)
+    && isNonNegativeNumber(agent.level) && Number.isInteger(agent.level) && agent.level >= 1 && agent.level <= 3
+    && isNonNegativeNumber(agent.trust) && agent.trust <= 100
+    && isNonNegativeNumber(agent.fatigue) && agent.fatigue <= 100
     && (agent.activeTaskId === null || typeof agent.activeTaskId === 'string'))) return false;
 
   const expedition = run.expedition;
@@ -177,10 +182,33 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || !REALM_IDS.includes(hero.realmId as typeof REALM_IDS[number])
     || !['rest', 'train', 'expedition'].includes(hero.currentAction as string)
     || !Array.isArray(hero.equipmentIds) || !hero.equipmentIds.every((id) => typeof id === 'string')) return false;
-  const heroNumbers = ['age', 'level', 'exp', 'hp', 'hpMax', 'atk', 'def', 'defBase', 'critRateBase', 'actionCount', 'rejuvenationCount'];
-  if (!heroNumbers.every((key) => isFiniteNumber(hero[key]))) return false;
+  const heroAge = hero.age;
+  const heroLevel = hero.level;
+  const heroExp = hero.exp;
+  const heroHp = hero.hp;
+  const heroHpMax = hero.hpMax;
+  const heroAtk = hero.atk;
+  const heroDef = hero.def;
+  const heroDefBase = hero.defBase;
+  const heroCritRate = hero.critRateBase;
+  const heroActionCount = hero.actionCount;
+  const heroRejuvenationCount = hero.rejuvenationCount;
+  if (!isFiniteNumber(heroAge) || !isFiniteNumber(heroLevel) || !isFiniteNumber(heroExp)
+    || !isFiniteNumber(heroHp) || !isFiniteNumber(heroHpMax) || !isFiniteNumber(heroAtk)
+    || !isFiniteNumber(heroDef) || !isFiniteNumber(heroDefBase) || !isFiniteNumber(heroCritRate)
+    || !isFiniteNumber(heroActionCount) || !isFiniteNumber(heroRejuvenationCount)) return false;
+  if (!Number.isInteger(heroAge) || heroAge < 5
+    || !Number.isInteger(heroLevel) || heroLevel < 1
+    || heroExp < 0
+    || heroHp < 0 || heroHpMax <= 0 || heroHp > heroHpMax
+    || heroAtk < 0 || heroDef < 0 || heroDefBase < 0
+    || heroCritRate < 0 || heroCritRate > 1
+    || !Number.isInteger(heroActionCount) || heroActionCount < 0
+    || !Number.isInteger(heroRejuvenationCount) || heroRejuvenationCount < 0) return false;
   return ['aggression', 'hoarding', 'training'].includes(run.policy as string)
-    && isNonNegativeNumber(run.interventionCharges);
+    && isNonNegativeNumber(run.interventionCharges)
+    && Number.isInteger(run.interventionCharges)
+    && run.interventionCharges <= V4_MAX_INTERVENTION_CHARGES;
 }
 
 function emptyFacilities(): Record<string, FacilityState> {

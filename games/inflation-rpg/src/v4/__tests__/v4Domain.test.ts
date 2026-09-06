@@ -90,6 +90,35 @@ describe('v4 save and domain', () => {
       run: { ...save.run, expedition: { id: 'broken', realmId: 'unknown', status: 'traveling' } },
     }));
     expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      run: { ...save.run, hero: { ...save.run.hero, level: 0 } },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      run: { ...save.run, hero: { ...save.run.hero, hp: save.run.hero.hpMax + 1 } },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      run: { ...save.run, interventionCharges: 99 },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      meta: {
+        ...save.meta,
+        agents: save.meta.agents.map((agent) => agent.id === 'guide'
+          ? { ...agent, fatigue: 101 }
+          : agent),
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
   it('rejects saves whose facility task links are inconsistent', () => {
@@ -113,6 +142,23 @@ describe('v4 save and domain', () => {
       },
     };
     storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(broken));
+
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
+  it('rejects tasks whose completion time precedes their start time', () => {
+    const initial = createInitialV4Save(21);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    const task = started.save.meta.tasks[started.task.id];
+    task.completesAt = task.startedAt - 1;
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(started.save));
 
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
