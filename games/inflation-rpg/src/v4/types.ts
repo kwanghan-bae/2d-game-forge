@@ -11,6 +11,18 @@ export type FacilityId =
   | 'archive';
 export type SupportAgentId = 'blacksmith' | 'mudang' | 'guide';
 export type RealmId = 'joseon_plains' | 'deep_forest' | 'underworld';
+export type EncounterTier = 'normal' | 'elite' | 'boss';
+
+export interface RealmEncounterDefinition {
+  id: string;
+  tier: EncounterTier;
+  nameKR: string;
+  durationSeconds: number;
+  risk: number;
+  recommendedPower: number;
+  enemyHpMultiplier: number;
+  enemyAtkMultiplier: number;
+}
 
 export interface V4HeroSnapshot {
   name: string;

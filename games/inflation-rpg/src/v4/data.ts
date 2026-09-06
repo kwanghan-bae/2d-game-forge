@@ -1,4 +1,4 @@
-import type { FacilityId, RealmId, SupportAgentId, V4CurrencyKey, V4Policy } from './types';
+import type { FacilityId, RealmEncounterDefinition, RealmId, SupportAgentId, V4CurrencyKey, V4Policy } from './types';
 
 export interface FacilityDefinition {
   id: FacilityId;
@@ -80,26 +80,42 @@ export interface RealmDefinition {
   reward: Partial<Record<V4CurrencyKey, number>>;
   enemies: string[];
   boss: string;
+  encounters: RealmEncounterDefinition[];
 }
 
 export const REALM_DEFINITIONS: Record<RealmId, RealmDefinition> = {
   joseon_plains: {
     id: 'joseon_plains', nameKR: '조선 평야', icon: '🌾',
     description: '첫 원정지. 떠돌이 도깨비와 맞서 마을의 이름을 알립니다.', risk: 0.08, offlineSafe: true,
-    durationSeconds: 20, recommendedPower: 120, cost: { spirit: 12 }, reward: { gold: 55, materials: 4 },
+    durationSeconds: 45, recommendedPower: 120, cost: { spirit: 12 }, reward: { gold: 55, materials: 4 },
     enemies: ['도깨비', '들개', '부적 까마귀'], boss: '장승 수문장',
+    encounters: [
+      { id: 'joseon-plains-normal', tier: 'normal', nameKR: '들판 순찰', durationSeconds: 10, risk: 0.04, recommendedPower: 80, enemyHpMultiplier: 1.5, enemyAtkMultiplier: 0.45 },
+      { id: 'joseon-plains-elite', tier: 'elite', nameKR: '도깨비 무리', durationSeconds: 25, risk: 0.08, recommendedPower: 105, enemyHpMultiplier: 2.5, enemyAtkMultiplier: 0.65 },
+      { id: 'joseon-plains-boss', tier: 'boss', nameKR: '장승 수문장', durationSeconds: 45, risk: 0.12, recommendedPower: 120, enemyHpMultiplier: 4, enemyAtkMultiplier: 0.8 },
+    ],
   },
   deep_forest: {
     id: 'deep_forest', nameKR: '깊은 숲', icon: '🌲',
     description: '길잡이의 감각이 빛나는 숲. 정예 요괴가 나타납니다.', risk: 0.22, offlineSafe: false,
-    durationSeconds: 45, recommendedPower: 260, cost: { spirit: 25, materials: 1 }, reward: { gold: 130, materials: 9, rift: 1 },
+    durationSeconds: 60, recommendedPower: 260, cost: { spirit: 25, materials: 1 }, reward: { gold: 130, materials: 9, rift: 1 },
     enemies: ['산군의 사자', '목각 귀', '안개 여우'], boss: '흑송 산군',
+    encounters: [
+      { id: 'deep-forest-normal', tier: 'normal', nameKR: '숲길 탐색', durationSeconds: 12, risk: 0.16, recommendedPower: 180, enemyHpMultiplier: 1.5, enemyAtkMultiplier: 0.55 },
+      { id: 'deep-forest-elite', tier: 'elite', nameKR: '정예 요괴', durationSeconds: 30, risk: 0.24, recommendedPower: 220, enemyHpMultiplier: 2.5, enemyAtkMultiplier: 0.7 },
+      { id: 'deep-forest-boss', tier: 'boss', nameKR: '흑송 산군', durationSeconds: 60, risk: 0.32, recommendedPower: 260, enemyHpMultiplier: 4, enemyAtkMultiplier: 0.8 },
+    ],
   },
   underworld: {
     id: 'underworld', nameKR: '저승', icon: '🌑',
     description: '영원한 영웅의 사가가 시험받는 곳. 귀환에는 결심이 필요합니다.', risk: 0.45, offlineSafe: false,
     durationSeconds: 90, recommendedPower: 480, cost: { spirit: 50, materials: 3 }, reward: { gold: 300, materials: 20, rift: 3 },
     enemies: ['망자의 행렬', '저승 사자', '업화 귀'], boss: '염라의 대리인',
+    encounters: [
+      { id: 'underworld-normal', tier: 'normal', nameKR: '황천 진입', durationSeconds: 15, risk: 0.32, recommendedPower: 320, enemyHpMultiplier: 1.5, enemyAtkMultiplier: 0.6 },
+      { id: 'underworld-elite', tier: 'elite', nameKR: '저승 재판', durationSeconds: 40, risk: 0.46, recommendedPower: 400, enemyHpMultiplier: 2.5, enemyAtkMultiplier: 0.75 },
+      { id: 'underworld-boss', tier: 'boss', nameKR: '염라의 대리인', durationSeconds: 90, risk: 0.6, recommendedPower: 480, enemyHpMultiplier: 4, enemyAtkMultiplier: 0.8 },
+    ],
   },
 };
 

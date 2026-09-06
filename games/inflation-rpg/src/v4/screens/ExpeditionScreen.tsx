@@ -11,6 +11,12 @@ interface Props {
   onBack: () => void;
 }
 
+const ENCOUNTER_LABELS = {
+  normal: '일반',
+  elite: '정예',
+  boss: '보스',
+} as const;
+
 export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onIntervention, onBack }: Props) {
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
@@ -72,6 +78,9 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
                 <div className="v4-realm-head"><h3 className="v4-realm-title">{realm.icon} {realm.nameKR}</h3><span className="v4-realm-risk">위험도 {Math.round(realm.risk * 100)}%</span></div>
                 <p>{realm.description}</p>
                 <div className="v4-stat-line"><span className="v4-chip">권장 전투력 {realm.recommendedPower}</span><span className="v4-chip">{realm.durationSeconds}초</span><span className="v4-chip">신력 {realm.cost.spirit ?? 0}</span></div>
+                <div className="v4-encounter-row" aria-label={`${realm.nameKR} 원정 단계`}>
+                  {realm.encounters.map((encounter) => <span className="v4-encounter" key={encounter.id}><strong>{ENCOUNTER_LABELS[encounter.tier]}</strong><br />{encounter.durationSeconds}초 · {encounter.recommendedPower}</span>)}
+                </div>
                 <div className="v4-button-row" style={{ marginTop: 7 }}>
                   <button type="button" className="v4-btn v4-btn--primary" disabled={!unlocked} onClick={() => onStart(realmId, guide?.activeTaskId ? null : 'guide')}>{unlocked ? '길잡이와 출발' : '미해금'}</button>
                   <button type="button" className="v4-btn v4-btn--quiet" disabled={!unlocked} onClick={() => onStart(realmId, null)}>혼자 출발</button>

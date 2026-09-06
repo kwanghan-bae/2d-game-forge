@@ -335,6 +335,8 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
   if (!expedition || expedition.completesAt > now) return;
   if (expedition.status === 'awaiting_confirmation') return;
   const realm = REALM_DEFINITIONS[expedition.realmId];
+  const bossEncounter = realm.encounters.find((encounter) => encounter.tier === 'boss');
+  const recommendedPower = bossEncounter?.recommendedPower ?? realm.recommendedPower;
   if (!allowPermanentUnlock && !realm.offlineSafe) {
     expedition.status = 'awaiting_confirmation';
     return;
@@ -346,22 +348,22 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     heroAtk: save.run.hero.atk,
     heroDef: save.run.hero.def,
     heroHp: save.run.hero.hp,
-    enemyHp: realm.recommendedPower * 4,
-    enemyAtk: realm.recommendedPower * 0.8,
+    enemyHp: recommendedPower * (bossEncounter?.enemyHpMultiplier ?? 4),
+    enemyAtk: recommendedPower * (bossEncounter?.enemyAtkMultiplier ?? 0.8),
   });
   // One resolved expedition represents one meaningful hero action. Keeping
   // the clock at encounter granularity makes aging legible and predictable
   // instead of coupling a player's lifespan to combat loop implementation.
   advanceHeroActionsInPlace(save, 1, now);
   const heroPower = calculateHeroPower(save);
-  const won = battle.won && heroPower >= realm.recommendedPower * (1 - guideBonus);
+  const won = battle.won && heroPower >= recommendedPower * (1 - guideBonus);
   const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
   const reward = won ? scaleResources(realm.reward, policyBonus * efficiency) : {};
   save.run.hero.hp = battle.heroRemainingHp;
   const lowHp = save.run.hero.hpMax > 0 && save.run.hero.hp / save.run.hero.hpMax < 0.35;
   const recommendedFacilityId = lowHp
     ? 'recovery'
-    : heroPower < realm.recommendedPower
+    : heroPower < recommendedPower
       ? 'training'
       : 'blacksmith';
   const expeditionResult: ExpeditionResult = {
@@ -371,7 +373,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     completedAt: now,
     reward,
     heroPower,
-    recommendedPower: realm.recommendedPower,
+    recommendedPower,
     turns: battle.turns,
     totalDamageDealt: battle.totalDamageDealt,
     totalDamageTaken: battle.totalDamageTaken,
