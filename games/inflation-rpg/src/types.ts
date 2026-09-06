@@ -354,6 +354,10 @@ export interface MetaState {
   activePetId?: import('./systems/petSystem').PetType | null;
   /** C1057 — 해금된 십이지신 성좌 목록. */
   zodiacUnlocked?: import('./systems/zodiacSystem').ZodiacSign[];
+  /** C1063 — 성광 연금술 별빛 파편 잔여량. */
+  starlightShards?: number;
+  /** C1063 — 천상 영약 복용 횟수 딕셔너리. */
+  elixirDoses?: Partial<Record<import('./systems/astralAlchemy').ElixirType, number>>;
 }
 
 // Phase G — Ascension Tree (성좌)
