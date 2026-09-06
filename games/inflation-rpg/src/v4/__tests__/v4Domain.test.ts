@@ -140,6 +140,44 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('rejects saves with tampered agent definitions or a locked expedition route', () => {
+    const initial = createInitialV4Save(17);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...initial,
+      meta: {
+        ...initial.meta,
+        agents: initial.meta.agents.map((agent) => agent.id === 'guide'
+          ? { ...agent, trait: '위조된 특성' }
+          : agent),
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...initial,
+      run: {
+        ...initial.run,
+        expedition: {
+          id: 'locked-route',
+          realmId: 'deep_forest',
+          policy: 'aggression',
+          assignedAgentId: null,
+          startedAt: initial.createdAt,
+          completesAt: initial.createdAt + 30_000,
+          status: 'traveling',
+          encounterIndex: 0,
+        },
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
   it('rejects saves whose facility task links are inconsistent', () => {
     const initial = createInitialV4Save(16);
     const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');

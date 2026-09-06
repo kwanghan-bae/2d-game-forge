@@ -156,9 +156,15 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     && isNonNegativeNumber(agent.trust) && agent.trust <= 100
     && isNonNegativeNumber(agent.fatigue) && agent.fatigue <= 100
     && (agent.activeTaskId === null || typeof agent.activeTaskId === 'string'))) return false;
+  for (const agent of meta.agents) {
+    if (!isRecord(agent) || typeof agent.id !== 'string') return false;
+    const definition = AGENT_DEFINITIONS[agent.id as keyof typeof AGENT_DEFINITIONS];
+    if (!definition || agent.nameKR !== definition.nameKR || agent.roleKR !== definition.roleKR || agent.trait !== definition.trait) return false;
+  }
 
   const expedition = run.expedition;
   if (expedition !== null && !isExpeditionRecord(expedition)) return false;
+  if (expedition !== null && !meta.unlockedRealms.includes(expedition.realmId as typeof REALM_IDS[number])) return false;
   if (run.lastExpeditionResult !== undefined
     && run.lastExpeditionResult !== null
     && !isExpeditionResultRecord(run.lastExpeditionResult)) return false;
