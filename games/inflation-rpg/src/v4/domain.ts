@@ -789,13 +789,14 @@ export function grantOfflineResourceBonus(
   gains: Partial<Record<V4CurrencyKey, number>>,
   now: number,
 ): V4SaveEnvelope {
-  if (!isActionClockValid(source, now)) return source;
-  const save = cloneSave(source);
+  if (!isActionClockValid(source, now) || !gains || Array.isArray(gains)) return source;
   const positiveGains = Object.fromEntries(
     Object.entries(gains).filter(([key, value]) =>
-      Object.prototype.hasOwnProperty.call(save.meta.currencies, key)
+      Object.prototype.hasOwnProperty.call(source.meta.currencies, key)
       && Number.isFinite(value) && value > 0),
   ) as Partial<Record<V4CurrencyKey, number>>;
+  if (Object.keys(positiveGains).length === 0) return source;
+  const save = cloneSave(source);
   give(save, positiveGains);
   touchSave(save, now);
   return save;

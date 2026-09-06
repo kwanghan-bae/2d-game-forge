@@ -1497,6 +1497,19 @@ describe('v4 save and domain', () => {
     expect(updated.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 15, rift: 0 });
   });
 
+  it('does not advance the save clock when an offline bonus has no valid gains', () => {
+    const initial = createInitialV4Save(121);
+    const unchanged = grantOfflineResourceBonus(initial, {
+      spirit: Number.NaN,
+      gold: -1,
+      materials: 0,
+      unknown: 10,
+    } as never, initial.updatedAt + 1_000);
+
+    expect(unchanged).toBe(initial);
+    expect(grantOfflineResourceBonus(initial, null as never, initial.updatedAt + 1_000)).toBe(initial);
+  });
+
   it('does not let an oversized task reward overflow a currency', () => {
     const initial = createInitialV4Save(109);
     const started = startFacilityTask(initial, 'temple', initial.updatedAt);
