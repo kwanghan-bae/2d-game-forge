@@ -250,6 +250,31 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('rejects saves that combine hero training with an expedition or stale action state', () => {
+    const initial = createInitialV4Save(16);
+    const training = startFacilityTask(initial, 'training', initial.createdAt);
+    const expedition = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(training.ok).toBe(true);
+    expect(expedition.ok).toBe(true);
+    if (!training.ok || !expedition.ok) return;
+
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    const conflicting = {
+      ...training.save,
+      run: { ...training.save.run, expedition: expedition.save.run.expedition },
+    };
+    persistV4Save(conflicting, fakeStorage);
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    const staleAction = { ...expedition.save, run: { ...expedition.save.run, hero: { ...expedition.save.run.hero, currentAction: 'rest' as const } } };
+    persistV4Save(staleAction, fakeStorage);
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
   it('rejects impossible save chronology, duplicate realm unlocks, and off-specialty task links', () => {
     const initial = createInitialV4Save(23);
     const storage = new Map<string, string>();

@@ -173,6 +173,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   const expedition = run.expedition;
   if (expedition !== null && !isExpeditionRecord(expedition)) return false;
   if (expedition !== null && !meta.unlockedRealms.includes(expedition.realmId as typeof REALM_IDS[number])) return false;
+  const hasTrainingTask = Object.values(tasks).some((task) => isRecord(task) && task.facilityId === 'training');
+  if (expedition !== null && hasTrainingTask) return false;
   if (run.lastExpeditionResult !== undefined
     && run.lastExpeditionResult !== null
     && !isExpeditionResultRecord(run.lastExpeditionResult)) return false;
@@ -249,6 +251,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || heroCritRate < 0 || heroCritRate > 1
     || !Number.isInteger(heroActionCount) || heroActionCount < 0
     || !Number.isInteger(heroRejuvenationCount) || heroRejuvenationCount < 0) return false;
+  const expectedHeroAction = expedition !== null ? 'expedition' : hasTrainingTask ? 'train' : 'rest';
+  if (hero.currentAction !== expectedHeroAction) return false;
   return ['aggression', 'hoarding', 'training'].includes(run.policy as string)
     && isNonNegativeNumber(run.interventionCharges)
     && Number.isInteger(run.interventionCharges)
