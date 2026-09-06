@@ -15,10 +15,21 @@ const MAX_BATTLE_VALUE = Number.MAX_SAFE_INTEGER;
 const MAX_BATTLE_TURNS = 100;
 
 function cloneSnapshot(snapshot: V4HeroSnapshot): V4HeroSnapshot {
+  const equipmentIds = Array.isArray(snapshot.equipmentIds)
+    ? snapshot.equipmentIds.filter((id): id is string => typeof id === 'string')
+    : [];
+  const equipmentLevels = snapshot.equipmentLevels
+    && typeof snapshot.equipmentLevels === 'object'
+    && !Array.isArray(snapshot.equipmentLevels)
+    ? Object.fromEntries(
+      Object.entries(snapshot.equipmentLevels)
+        .filter(([, level]) => typeof level === 'number' && Number.isFinite(level)),
+    )
+    : undefined;
   return {
     ...snapshot,
-    equipmentIds: [...snapshot.equipmentIds],
-    equipmentLevels: snapshot.equipmentLevels ? { ...snapshot.equipmentLevels } : undefined,
+    equipmentIds,
+    equipmentLevels,
   };
 }
 

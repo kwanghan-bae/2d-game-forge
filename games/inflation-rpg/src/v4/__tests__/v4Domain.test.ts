@@ -1277,6 +1277,18 @@ describe('v4 save and domain', () => {
     expect([result.yearsReduced, result.cost, result.snapshot.hp].every((value) => Number.isFinite(value))).toBe(true);
   });
 
+  it('keeps runtime snapshot cloning safe for malformed equipment collections', () => {
+    const save = createInitialV4Save(121);
+    const runtime = createV4HeroRuntime({
+      ...save.run.hero,
+      equipmentIds: undefined as never,
+      equipmentLevels: 'broken' as never,
+    });
+
+    expect(runtime.getSnapshot().equipmentIds).toEqual([]);
+    expect(runtime.getSnapshot().equipmentLevels).toBeUndefined();
+  });
+
   it('keeps battle results finite for malformed runtime input', () => {
     const save = createInitialV4Save(113);
     const result = createV4HeroRuntime(save.run.hero).resolveBattle({
