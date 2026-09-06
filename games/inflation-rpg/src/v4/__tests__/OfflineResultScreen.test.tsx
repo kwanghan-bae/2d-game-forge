@@ -48,4 +48,17 @@ describe('V4 offline result screen', () => {
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('기타 재화');
     expect(screen.getByTestId('v4-offline-result').textContent).not.toContain('unknown');
   });
+
+  it('does not expose non-finite offline summary values', () => {
+    render(<OfflineResultScreen summary={summary({
+      processedSeconds: Number.POSITIVE_INFINITY,
+      efficiency: Number.NaN,
+      resourcesGained: { gold: Number.POSITIVE_INFINITY, spirit: Number.NaN },
+    })} onClose={() => {}} />);
+
+    const result = screen.getByTestId('v4-offline-result');
+    expect(result.textContent).not.toContain('Infinity');
+    expect(result.textContent).not.toContain('NaN');
+    expect(result).toHaveTextContent('획득 재화 없음');
+  });
 });

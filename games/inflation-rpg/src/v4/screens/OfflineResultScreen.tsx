@@ -12,7 +12,14 @@ interface Props {
 }
 
 export function OfflineResultScreen({ summary, onClose, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
-  const resourceEntries = Object.entries(summary.resourcesGained);
+  const processedSeconds = typeof summary.processedSeconds === 'number' && Number.isFinite(summary.processedSeconds)
+    ? Math.max(0, summary.processedSeconds)
+    : 0;
+  const efficiency = typeof summary.efficiency === 'number' && Number.isFinite(summary.efficiency)
+    ? Math.min(1, Math.max(0, summary.efficiency))
+    : 0;
+  const resourceEntries = Object.entries(summary.resourcesGained)
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value));
   const hasPositiveResourceReward = resourceEntries.some(([, value]) => Number.isFinite(value) && value > 0);
 
   return (
@@ -20,7 +27,7 @@ export function OfflineResultScreen({ summary, onClose, onDoubleReward, canDoubl
       <section className="v4-modal" data-testid="v4-offline-result">
         <div className="v4-kicker">돌아온 후원자</div>
         <h2>마을이 당신을 기다렸습니다</h2>
-        <p>{Math.floor(summary.processedSeconds / 3600)}시간 {Math.floor((summary.processedSeconds % 3600) / 60)}분 동안 안전한 작업을 정산했습니다. 효율 {Math.round(summary.efficiency * 100)}%</p>
+        <p>{Math.floor(processedSeconds / 3600)}시간 {Math.floor((processedSeconds % 3600) / 60)}분 동안 안전한 작업을 정산했습니다. 효율 {Math.round(efficiency * 100)}%</p>
         {summary.wasClamped && <div className="v4-alert">오프라인 보상은 최대 8시간까지만 계산했습니다.</div>}
         {summary.clockAnomaly === 'backwards' && <div className="v4-alert">기기 시간이 이전 처리 시각보다 빠릅니다. 중복 보상을 막았습니다.</div>}
         {summary.clockAnomaly === 'future' && <div className="v4-alert">저장 시각이 현재보다 미래입니다. 기기 시간을 확인해 주세요.</div>}
