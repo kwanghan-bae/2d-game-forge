@@ -888,6 +888,20 @@ describe('v4 save and domain', () => {
     expect(result.meta.tasks[started.task.id]).toBeDefined();
   });
 
+  it('caps malformed training experience before settlement', () => {
+    const initial = createInitialV4Save(116);
+    const started = startFacilityTask(initial, 'training', initial.createdAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].heroExpGain = 100_001;
+
+    const result = completeFacilityTasks(started.save, started.task.completesAt);
+
+    expect(result.run.hero.level).toBe(45);
+    expect(result.run.hero.exp).toBe(1_000);
+    expect(Number.isFinite(result.run.hero.exp)).toBe(true);
+  });
+
   it('rejects instant completion before a future persisted write time', () => {
     const initial = createInitialV4Save(30);
     const started = startFacilityTask(initial, 'temple', initial.createdAt);

@@ -53,6 +53,8 @@ const FACILITY_OUTPUT_PER_LEVEL = 0.18;
 const FACILITY_UPGRADE_GROWTH = 1.35;
 const AGENT_OUTPUT_PER_LEVEL = 0.08;
 const AGENT_SPEED_PER_LEVEL = 0.03;
+const MAX_HERO_EXP_SETTLEMENT = 100_000;
+const MAX_LEVELS_PER_SETTLEMENT = 1_000;
 
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
@@ -266,9 +268,16 @@ function syncHeroAction(save: V4SaveEnvelope): void {
 
 function applyHeroExperience(save: V4SaveEnvelope, amount: number): number {
   const hero = save.run.hero;
-  hero.exp += Math.max(0, Math.floor(amount));
+  hero.level = Number.isFinite(hero.level) && Number.isInteger(hero.level) && hero.level >= 1 ? hero.level : 1;
+  const currentExp = Number.isFinite(hero.exp) && hero.exp >= 0
+    ? Math.min(MAX_HERO_EXP_SETTLEMENT, hero.exp)
+    : 0;
+  const safeAmount = Number.isFinite(amount) && amount > 0
+    ? Math.min(MAX_HERO_EXP_SETTLEMENT, Math.floor(amount))
+    : 0;
+  hero.exp = Math.min(MAX_HERO_EXP_SETTLEMENT, currentExp + safeAmount);
   let levelsGained = 0;
-  while (hero.exp >= hero.level * 100) {
+  while (hero.exp >= hero.level * 100 && levelsGained < MAX_LEVELS_PER_SETTLEMENT) {
     hero.exp -= hero.level * 100;
     hero.level += 1;
     hero.atk += 20;
@@ -277,6 +286,9 @@ function applyHeroExperience(save: V4SaveEnvelope, amount: number): number {
     hero.hpMax += 100;
     hero.hp = Math.min(hero.hpMax, hero.hp + 100);
     levelsGained += 1;
+  }
+  if (levelsGained >= MAX_LEVELS_PER_SETTLEMENT) {
+    hero.exp = Math.min(hero.exp, Math.max(0, hero.level * 100 - 1));
   }
   return levelsGained;
 }
