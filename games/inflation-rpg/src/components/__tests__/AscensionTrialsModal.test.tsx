@@ -97,6 +97,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
     expect(screen.getByTestId('chaos-rift-modal')).toBeDefined();
   });
 
+  it('opens ApexTrialModal when clicking open-apex-trial-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openApexBtn = screen.getByTestId('open-apex-trial-btn');
+    expect(openApexBtn).toBeDefined();
+    fireEvent.click(openApexBtn);
+
+    expect(screen.getByTestId('apex-trial-modal')).toBeDefined();
+  });
+
   it('renders RiftLeaderboardBadge when highestRiftDepth is greater than 0', () => {
     useGameStore.setState(s => ({
       meta: {

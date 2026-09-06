@@ -15,6 +15,7 @@ import {
 } from '../systems/ascensionTrials';
 import { AscendantRushModal } from './AscendantRushModal';
 import { ChaosRiftModal } from './ChaosRiftModal';
+import { ApexTrialModal } from './ApexTrialModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 
 interface Props {
@@ -43,6 +44,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   const [combatResult, setCombatResult] = useState<TrialCombatResult | null>(null);
   const [showBossRush, setShowBossRush] = useState(false);
   const [showChaosRift, setShowChaosRift] = useState(false);
+  const [showApexTrial, setShowApexTrial] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -178,6 +180,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               }}
             >
               🌀 혼돈의 균열
+            </button>
+            <button
+              data-testid="open-apex-trial-btn"
+              onClick={() => setShowApexTrial(true)}
+              style={{
+                background: '#4f46e5',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              🌌 초월 시련
             </button>
             <button
               data-testid="close-btn"
@@ -357,6 +375,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
       </div>
       {showBossRush && <AscendantRushModal onClose={() => setShowBossRush(false)} />}
       {showChaosRift && <ChaosRiftModal onClose={() => setShowChaosRift(false)} />}
+      {showApexTrial && <ApexTrialModal onClose={() => setShowApexTrial(false)} />}
     </div>
   );
 }
