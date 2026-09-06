@@ -70,6 +70,24 @@ export interface ExpeditionState {
   status: 'traveling';
 }
 
+export interface ExpeditionResult {
+  id: string;
+  realmId: RealmId;
+  outcome: 'victory' | 'defeat';
+  completedAt: number;
+  reward: Partial<Record<V4CurrencyKey, number>>;
+  heroPower: number;
+  recommendedPower: number;
+  turns: number;
+  totalDamageDealt: number;
+  totalDamageTaken: number;
+  heroRemainingHp: number;
+  weaknessKR: string;
+  recommendedFacilityId: FacilityId;
+  recommendedEquipmentId: string | null;
+  retryAfterSeconds: number;
+}
+
 export interface SagaEntry {
   id: string;
   kind: 'birth' | 'facility' | 'expedition' | 'rejuvenation' | 'milestone';
@@ -92,6 +110,8 @@ export interface V4RunState {
   hero: V4HeroSnapshot;
   policy: V4Policy;
   expedition: ExpeditionState | null;
+  /** Optional so schema 1 saves created before result cards remain loadable. */
+  lastExpeditionResult?: ExpeditionResult | null;
   interventionCharges: number;
 }
 

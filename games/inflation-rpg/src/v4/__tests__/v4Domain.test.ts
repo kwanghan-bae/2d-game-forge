@@ -34,6 +34,7 @@ describe('v4 save and domain', () => {
     expect(save.meta.agents.map((agent) => agent.id)).toEqual(['blacksmith', 'mudang', 'guide']);
     expect(save.meta.unlockedRealms).toEqual(['joseon_plains']);
     expect(save.run.expedition).toBeNull();
+    expect(save.run.lastExpeditionResult).toBeNull();
     expect(save.run.hero.realmId).toBe('joseon_plains');
     expect(save.run.hero.actionCount).toBe(185);
   });
@@ -48,6 +49,10 @@ describe('v4 save and domain', () => {
 
     persistV4Save(save, fakeStorage);
     expect(loadV4Save(fakeStorage)).toMatchObject({ schemaVersion: 1, run: { hero: { name: save.run.hero.name } } });
+
+    const { lastExpeditionResult: _legacyResult, ...legacyRun } = save.run;
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({ ...save, run: legacyRun }));
+    expect(loadV4Save(fakeStorage)).toMatchObject({ schemaVersion: 1, run: { expedition: null } });
 
     storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({ ...save, meta: { ...save.meta, currencies: { ...save.meta.currencies, gold: 'broken' } } }));
     expect(loadV4Save(fakeStorage)).toBeNull();
@@ -292,6 +297,9 @@ describe('v4 save and domain', () => {
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     expect(completed.run.expedition).toBeNull();
     expect(completed.meta.sagaEntries[0]?.kind).toBe('expedition');
+    expect(completed.run.lastExpeditionResult).toMatchObject({
+      realmId: 'joseon_plains', outcome: 'victory', retryAfterSeconds: 0,
+    });
   });
 
   it('uses the V4 hero battle adapter instead of power alone', () => {
@@ -305,6 +313,9 @@ describe('v4 save and domain', () => {
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     expect(completed.meta.sagaEntries[0]?.title).toBe('조선 평야 원정 중단');
     expect(completed.meta.currencies.gold).toBe(initial.meta.currencies.gold);
+    expect(completed.run.lastExpeditionResult).toMatchObject({
+      outcome: 'defeat', recommendedFacilityId: 'recovery', recommendedEquipmentId: 'v4_iron_sword',
+    });
   });
 
   it('rejuvenates the eternal hero through V4 storage with a gold cost and saga entry', () => {

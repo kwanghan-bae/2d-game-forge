@@ -3,6 +3,7 @@ import { createV4HeroRuntime } from './heroRuntime';
 import type {
   FacilityId,
   FacilityTask,
+  ExpeditionResult,
   InterventionType,
   RealmId,
   SupportAgentId,
@@ -46,6 +47,15 @@ function give(save: V4SaveEnvelope, output: Partial<Record<V4CurrencyKey, number
     const currency = key as V4CurrencyKey;
     save.meta.currencies[currency] += Math.floor((value ?? 0) * multiplier);
   }
+}
+
+function scaleResources(
+  output: Partial<Record<V4CurrencyKey, number>>,
+  multiplier: number,
+): Partial<Record<V4CurrencyKey, number>> {
+  return Object.fromEntries(
+    Object.entries(output).map(([key, value]) => [key, Math.floor((value ?? 0) * multiplier)]),
+  ) as Partial<Record<V4CurrencyKey, number>>;
 }
 
 function nextTaskId(save: V4SaveEnvelope, prefix: string, now: number): string {
@@ -178,9 +188,41 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     enemyHp: realm.recommendedPower * 4,
     enemyAtk: realm.recommendedPower * 0.8,
   });
-  const won = battle.won && calculateHeroPower(save) >= realm.recommendedPower * (1 - guideBonus);
+  const heroPower = calculateHeroPower(save);
+  const won = battle.won && heroPower >= realm.recommendedPower * (1 - guideBonus);
+  const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
+  const reward = won ? scaleResources(realm.reward, policyBonus * efficiency) : {};
+  save.run.hero.hp = battle.heroRemainingHp;
+  const lowHp = save.run.hero.hpMax > 0 && save.run.hero.hp / save.run.hero.hpMax < 0.35;
+  const recommendedFacilityId = lowHp
+    ? 'recovery'
+    : heroPower < realm.recommendedPower
+      ? 'training'
+      : 'blacksmith';
+  const expeditionResult: ExpeditionResult = {
+    id: expedition.id,
+    realmId: expedition.realmId,
+    outcome: won ? 'victory' : 'defeat',
+    completedAt: now,
+    reward,
+    heroPower,
+    recommendedPower: realm.recommendedPower,
+    turns: battle.turns,
+    totalDamageDealt: battle.totalDamageDealt,
+    totalDamageTaken: battle.totalDamageTaken,
+    heroRemainingHp: battle.heroRemainingHp,
+    weaknessKR: won
+      ? '다음 Realm에 도전하려면 장비와 지원 에이전트를 함께 점검하세요.'
+      : lowHp
+        ? '영웅의 HP가 부족했습니다. 회복당에서 먼저 회복하세요.'
+        : heroPower < realm.recommendedPower
+          ? '전투력이 부족했습니다. 훈련소와 대장간을 먼저 강화하세요.'
+          : '정책과 길잡이의 보정을 확인한 뒤 다시 도전하세요.',
+    recommendedFacilityId,
+    recommendedEquipmentId: save.run.hero.equipmentIds.includes('v4_iron_sword') ? null : 'v4_iron_sword',
+    retryAfterSeconds: won ? 0 : realm.durationSeconds,
+  };
   if (won) {
-    const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
     give(save, realm.reward, policyBonus * efficiency);
     save.run.hero.realmId = expedition.realmId;
     save.run.hero.currentAction = 'rest';
@@ -206,6 +248,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
       text: `힘이 부족해 ${realm.nameKR}의 안개 속에서 돌아왔다. 다음 시설과 장비를 준비하자.`,
     });
   }
+  save.run.lastExpeditionResult = expeditionResult;
   save.run.expedition = null;
   if (guide) {
     guide.activeTaskId = null;
@@ -389,6 +432,7 @@ export function startExpedition(
     completesAt: now + Math.round(realm.durationSeconds * guideBonus) * 1000,
     status: 'traveling',
   };
+  save.run.lastExpeditionResult = null;
   save.run.hero.currentAction = 'expedition';
   if (assignedAgentId) {
     const agent = save.meta.agents.find((item) => item.id === assignedAgentId);

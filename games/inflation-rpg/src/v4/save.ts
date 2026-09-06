@@ -64,6 +64,27 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
     && value.status === 'traveling';
 }
 
+function isExpeditionResultRecord(value: unknown): value is Record<string, unknown> {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.realmId === 'string'
+    && REALM_IDS.includes(value.realmId as typeof REALM_IDS[number])
+    && (value.outcome === 'victory' || value.outcome === 'defeat')
+    && isNonNegativeNumber(value.completedAt)
+    && isCurrencyRecord(value.reward)
+    && isNonNegativeNumber(value.heroPower)
+    && isNonNegativeNumber(value.recommendedPower)
+    && isNonNegativeNumber(value.turns)
+    && isNonNegativeNumber(value.totalDamageDealt)
+    && isNonNegativeNumber(value.totalDamageTaken)
+    && isNonNegativeNumber(value.heroRemainingHp)
+    && typeof value.weaknessKR === 'string'
+    && typeof value.recommendedFacilityId === 'string'
+    && FACILITY_IDS.includes(value.recommendedFacilityId as typeof FACILITY_IDS[number])
+    && (value.recommendedEquipmentId === null || typeof value.recommendedEquipmentId === 'string')
+    && isNonNegativeNumber(value.retryAfterSeconds);
+}
+
 function isSagaEntryRecord(value: unknown): boolean {
   return isRecord(value) && typeof value.id === 'string' && typeof value.createdAt === 'number'
     && Number.isFinite(value.createdAt) && typeof value.title === 'string' && typeof value.text === 'string'
@@ -107,6 +128,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
 
   const expedition = run.expedition;
   if (expedition !== null && !isExpeditionRecord(expedition)) return false;
+  if (run.lastExpeditionResult !== undefined
+    && run.lastExpeditionResult !== null
+    && !isExpeditionResultRecord(run.lastExpeditionResult)) return false;
 
   // Facility, task, and agent links must be symmetric. This prevents a
   // partially-written save from making a task impossible to finish or
@@ -228,6 +252,7 @@ export function createInitialV4Save(seed: number): V4SaveEnvelope {
       hero: initialHero(seed),
       policy: 'aggression',
       expedition: null,
+      lastExpeditionResult: null,
       interventionCharges: 1,
     },
   };

@@ -59,4 +59,27 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-town-hub')).toContainText('HP 1,000/1,000');
     await expect(page.getByTestId('v4-town-hub')).toContainText('충전 0/3');
   });
+
+  test('원정 귀환 후 성공 결과와 다음 준비 정보를 표시한다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+
+    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await page.getByRole('button', { name: '길잡이와 출발' }).click();
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('v4 save was not created');
+      const save = JSON.parse(raw) as { run: { expedition: { completesAt: number } | null } };
+      if (!save.run.expedition) throw new Error('expedition was not started');
+      save.run.expedition.completesAt = Date.now() - 1;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, V4_SAVE_KEY);
+    await page.reload();
+
+    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await expect(page.getByTestId('v4-expedition-result')).toContainText('원정 성공');
+    await expect(page.getByTestId('v4-expedition-result')).toContainText('전투력');
+  });
 });
