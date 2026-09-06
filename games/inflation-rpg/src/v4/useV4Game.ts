@@ -7,6 +7,7 @@ import {
   grantInterventionCharge,
   grantOfflineResourceBonus,
   rejuvenateHero,
+  restAgent,
   setV4Policy,
   startExpedition,
   startFacilityTask,
@@ -75,6 +76,12 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const cancelTask = useCallback((facilityId: FacilityId) => {
     const result = cancelFacilityTask(save, facilityId, Date.now());
     if (result.ok) commit(result.save, '작업을 취소하고 투입 재화를 돌려받았습니다.');
+    else setMessage(result.error);
+  }, [commit, save]);
+
+  const restSupportAgent = useCallback((agentId: SupportAgentId) => {
+    const result = restAgent(save, agentId, Date.now());
+    if (result.ok) commit(result.save, '지원 에이전트가 휴식을 마쳤습니다.');
     else setMessage(result.error);
   }, [commit, save]);
 
@@ -179,6 +186,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     changePolicy,
     startTask,
     cancelTask,
+    restSupportAgent,
     rejuvenate,
     monetizationAvailable: Boolean(monetization),
     adsToday: monetization?.getAdsToday() ?? 0,

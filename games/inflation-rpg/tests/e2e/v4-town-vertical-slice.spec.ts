@@ -112,4 +112,24 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-expedition-result')).toContainText('원정 중단');
     await expect(page.getByTestId('v4-expedition-result')).toContainText('추천 시설');
   });
+
+  test('피로한 지원 에이전트는 마을에서 휴식시킬 수 있다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('v4 save was not created');
+      const save = JSON.parse(raw) as { meta: { agents: Array<{ id: string; fatigue: number }> } };
+      const agent = save.meta.agents.find((candidate) => candidate.id === 'blacksmith');
+      if (!agent) throw new Error('blacksmith was not created');
+      agent.fatigue = 100;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, V4_SAVE_KEY);
+    await page.reload();
+
+    await page.getByRole('button', { name: '휴식' }).first().click();
+    await expect(page.getByTestId('v4-town-hub')).toContainText('피로 75');
+  });
 });

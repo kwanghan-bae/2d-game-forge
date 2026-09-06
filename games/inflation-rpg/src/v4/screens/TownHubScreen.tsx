@@ -7,6 +7,7 @@ interface Props {
   onPolicyChange: (policy: V4Policy) => void;
   onStartTask: (facilityId: FacilityId, agentId?: SupportAgentId | null) => void;
   onCancelTask: (facilityId: FacilityId) => void;
+  onRestAgent: (agentId: SupportAgentId) => void;
   onInstantTask?: (facilityId: FacilityId) => void;
   onRefresh: () => void;
   onUpgrade: (facilityId: FacilityId) => void;
@@ -29,7 +30,7 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
   const hero = save.run.hero;
   return (
     <main className="v4-container" data-testid="v4-town-hub">
@@ -112,7 +113,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
           {save.meta.agents.map((agent) => (
             <div key={agent.id} className="v4-agent">
               <span><span className="v4-agent-role">{agent.roleKR}</span> {agent.nameKR} · Lv.{agent.level}</span>
-              <span className="v4-agent-state">신뢰 {agent.trust} · 피로 {agent.fatigue}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}</span>
+              <span className="v4-agent-state">신뢰 {agent.trust} · 피로 {agent.fatigue}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
             </div>
           ))}
         </div>

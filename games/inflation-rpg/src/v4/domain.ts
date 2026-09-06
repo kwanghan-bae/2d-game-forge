@@ -21,11 +21,16 @@ export type HeroDomainResult =
   | { ok: true; save: V4SaveEnvelope; result: RejuvenationResult }
   | { ok: false; save: V4SaveEnvelope; error: string };
 
+export type AgentDomainResult =
+  | { ok: true; save: V4SaveEnvelope }
+  | { ok: false; save: V4SaveEnvelope; error: string };
+
 export type InterventionDomainResult =
   | { ok: true; save: V4SaveEnvelope; intervention: InterventionType }
   | { ok: false; save: V4SaveEnvelope; error: string };
 
 export const MAX_INTERVENTION_CHARGES = 3;
+export const AGENT_REST_RECOVERY = 25;
 
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
@@ -142,6 +147,31 @@ export function cancelFacilityTask(
   save.run.hero.currentAction = save.run.expedition ? 'expedition' : 'rest';
   save.updatedAt = now;
   return { ok: true, save, task };
+}
+
+export function restAgent(
+  source: V4SaveEnvelope,
+  agentId: SupportAgentId,
+  now: number,
+): AgentDomainResult {
+  const sourceAgent = source.meta.agents.find((agent) => agent.id === agentId);
+  if (!sourceAgent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
+  if (sourceAgent.activeTaskId) return { ok: false, save: source, error: '작업 중인 에이전트는 휴식할 수 없습니다.' };
+  if (sourceAgent.fatigue <= 0) return { ok: false, save: source, error: '에이전트의 피로도가 이미 0입니다.' };
+
+  const save = cloneSave(source);
+  const agent = save.meta.agents.find((candidate) => candidate.id === agentId);
+  if (!agent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
+  agent.fatigue = Math.max(0, agent.fatigue - AGENT_REST_RECOVERY);
+  save.meta.sagaEntries.unshift({
+    id: `saga-agent-rest-${agentId}-${now}`,
+    kind: 'facility',
+    createdAt: now,
+    title: `${agent.nameKR} 휴식`,
+    text: `${agent.nameKR}이(가) 잠시 숨을 고르고 피로를 ${AGENT_REST_RECOVERY} 낮췄다.`,
+  });
+  save.updatedAt = now;
+  return { ok: true, save };
 }
 
 export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: number): HeroDomainResult {

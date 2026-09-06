@@ -15,6 +15,7 @@ import {
   grantInterventionCharge,
   grantOfflineResourceBonus,
   rejuvenateHero,
+  restAgent,
   confirmPendingExpedition,
   startExpedition,
   startFacilityTask,
@@ -251,6 +252,33 @@ describe('v4 save and domain', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toContain('피로');
+  });
+
+  it('lets an idle agent rest to recover from fatigue', () => {
+    const initial = createInitialV4Save(80);
+    initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, fatigue: 100 }
+      : agent);
+
+    const result = restAgent(initial, 'blacksmith', initial.createdAt + 1_000);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.save.meta.agents.find((agent) => agent.id === 'blacksmith')?.fatigue).toBe(75);
+    expect(result.save.meta.sagaEntries[0]?.title).toContain('휴식');
+  });
+
+  it('does not rest an agent while it owns an active task', () => {
+    const initial = createInitialV4Save(81);
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const result = restAgent(started.save, 'blacksmith', initial.createdAt + 1_000);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain('작업 중');
   });
 
   it('promotes an agent after trust grows through completed work', () => {
