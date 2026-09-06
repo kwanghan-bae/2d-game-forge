@@ -848,4 +848,17 @@ describe('v4 save and domain', () => {
     expect(updated.run.hero).toEqual(initial.run.hero);
     expect(initial.meta.settings).toEqual({ music: 0.7, sfx: 0.8, muted: false });
   });
+
+  it('ignores non-finite, negative, and unknown offline bonus values', () => {
+    const initial = createInitialV4Save(94);
+    const updated = grantOfflineResourceBonus(initial, {
+      spirit: Number.NaN,
+      gold: Number.POSITIVE_INFINITY,
+      materials: 3,
+      rift: -10,
+      unknown: 999,
+    } as never, initial.createdAt + 1_000);
+
+    expect(updated.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 15, rift: 0 });
+  });
 });

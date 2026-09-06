@@ -72,7 +72,9 @@ function pay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>
 function give(save: V4SaveEnvelope, output: Partial<Record<V4CurrencyKey, number>>, multiplier = 1): void {
   for (const [key, value] of Object.entries(output)) {
     const currency = key as V4CurrencyKey;
-    save.meta.currencies[currency] += Math.floor((value ?? 0) * multiplier);
+    if (!Object.prototype.hasOwnProperty.call(save.meta.currencies, currency)
+      || !Number.isFinite(value) || !Number.isFinite(multiplier) || value <= 0 || multiplier <= 0) continue;
+    save.meta.currencies[currency] += Math.floor(value * multiplier);
   }
 }
 
@@ -669,7 +671,9 @@ export function grantOfflineResourceBonus(
 ): V4SaveEnvelope {
   const save = cloneSave(source);
   const positiveGains = Object.fromEntries(
-    Object.entries(gains).map(([key, value]) => [key, Math.max(0, value ?? 0)]),
+    Object.entries(gains).filter(([key, value]) =>
+      Object.prototype.hasOwnProperty.call(save.meta.currencies, key)
+      && Number.isFinite(value) && value > 0),
   ) as Partial<Record<V4CurrencyKey, number>>;
   give(save, positiveGains);
   save.updatedAt = now;
