@@ -677,7 +677,9 @@ export function completeFacilityTaskNow(
 
 /** Explicit player confirmation for a risky expedition held by offline settlement. */
 export function confirmPendingExpedition(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
-  if (source.run.expedition?.status !== 'awaiting_confirmation') return source;
+  const pending = source.run.expedition;
+  if (pending?.status !== 'awaiting_confirmation') return source;
+  if (!Number.isFinite(now) || now < source.updatedAt || now < pending.completesAt) return source;
   const save = cloneSave(source);
   if (!save.run.expedition) return source;
   save.run.expedition.status = 'traveling';

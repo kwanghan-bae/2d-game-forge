@@ -826,6 +826,23 @@ describe('v4 save and domain', () => {
     expect(confirmPendingExpedition(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 
+  it('keeps a risky expedition pending for invalid or premature confirmation clocks', () => {
+    const initial = createInitialV4Save(20);
+    initial.meta.unlockedRealms.push('deep_forest');
+    const started = startExpedition(initial, 'deep_forest', initial.lastProcessedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const afterNormal = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+    const afterElite = completeFacilityTasks(afterNormal, afterNormal.run.expedition!.completesAt);
+    const pending = completeFacilityTasks(afterElite, afterElite.run.expedition!.completesAt, 1, false);
+    expect(pending.run.expedition?.status).toBe('awaiting_confirmation');
+
+    expect(confirmPendingExpedition(pending, Number.NaN)).toBe(pending);
+    expect(confirmPendingExpedition(pending, pending.updatedAt - 1)).toBe(pending);
+    expect(pending.run.expedition?.status).toBe('awaiting_confirmation');
+  });
+
   it('requires explicit confirmation before an offline victory unlocks the next Realm', () => {
     const initial = createInitialV4Save(93);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);

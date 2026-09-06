@@ -56,6 +56,20 @@ export function V4App({ config }: Props) {
     return () => window.clearInterval(timer);
   }, [game.refresh, game.storageStatus]);
 
+  useEffect(() => {
+    if (game.storageStatus === 'invalid') return;
+    const refreshOnResume = () => {
+      if (document.visibilityState === 'hidden') return;
+      game.refresh();
+    };
+    document.addEventListener('visibilitychange', refreshOnResume);
+    window.addEventListener('pageshow', refreshOnResume);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshOnResume);
+      window.removeEventListener('pageshow', refreshOnResume);
+    };
+  }, [game.refresh, game.storageStatus]);
+
   if (game.storageStatus === 'invalid') {
     return (
       <div
