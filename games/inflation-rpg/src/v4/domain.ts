@@ -515,8 +515,14 @@ function expeditionDurationSeconds(save: V4SaveEnvelope, baseDurationSeconds: nu
   ));
 }
 
-function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlock: boolean, efficiency: number): void {
-  const eventAt = eventTimestamp(save, now);
+function resolveExpedition(
+  save: V4SaveEnvelope,
+  now: number,
+  allowPermanentUnlock: boolean,
+  efficiency: number,
+  allowHistoricalSettlement = false,
+): void {
+  const eventAt = allowHistoricalSettlement ? now : eventTimestamp(save, now);
   while (save.run.expedition) {
     const expedition = save.run.expedition;
     if (expedition.completesAt > eventAt || expedition.status === 'awaiting_confirmation') return;
@@ -713,7 +719,7 @@ export function completeFacilityTasks(
     });
     delete save.meta.tasks[task.id];
   }
-  resolveExpedition(save, eventAt, allowPermanentUnlock, efficiency);
+  resolveExpedition(save, eventAt, allowPermanentUnlock, efficiency, allowHistoricalSettlement);
   syncHeroAction(save);
   save.lastProcessedAt = Math.max(save.lastProcessedAt, eventAt);
   touchSave(save, eventAt);

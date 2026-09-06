@@ -514,6 +514,22 @@ describe('v4 save and domain', () => {
     expect(offline.save.meta.tasks[started.task.id]).toBeUndefined();
   });
 
+  it('does not settle an expedition that falls beyond the capped window', () => {
+    const initial = createInitialV4Save(119);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const now = initial.createdAt + 10 * HOUR;
+    started.save.run.expedition!.completesAt = initial.createdAt + 9 * HOUR;
+    started.save.updatedAt = now;
+    const offline = simulateOfflineProgress(started.save, now);
+
+    expect(offline.summary.wasClamped).toBe(true);
+    expect(offline.summary.completedExpedition).toBe(false);
+    expect(offline.save.run.expedition).not.toBeNull();
+  });
+
   it('falls back to full efficiency when settlement receives a non-finite multiplier', () => {
     const initial = createInitialV4Save(28);
     const started = startFacilityTask(initial, 'training', initial.createdAt);
