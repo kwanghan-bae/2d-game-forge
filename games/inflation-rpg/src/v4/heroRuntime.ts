@@ -42,6 +42,12 @@ function nonNegativeFinite(value: unknown, fallback: number): number {
     : fallback;
 }
 
+function positiveFinite(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.min(MAX_BATTLE_VALUE, value)
+    : fallback;
+}
+
 function addBattleDamage(total: number, amount: number): number {
   return Math.min(MAX_BATTLE_VALUE, total + amount);
 }
@@ -114,14 +120,27 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
       const safeYears = typeof years === 'number' && Number.isFinite(years)
         ? Math.max(0, Math.floor(years))
         : 0;
-      const beforeAge = snapshot.age;
+      const beforeAge = typeof snapshot.age === 'number'
+        && Number.isFinite(snapshot.age)
+        && Number.isInteger(snapshot.age)
+        && snapshot.age >= 5
+        ? Math.min(MAX_BATTLE_VALUE, snapshot.age)
+        : 17;
+      const currentRejuvenationCount = typeof snapshot.rejuvenationCount === 'number'
+        && Number.isFinite(snapshot.rejuvenationCount)
+        && Number.isInteger(snapshot.rejuvenationCount)
+        && snapshot.rejuvenationCount >= 0
+        ? Math.min(MAX_BATTLE_VALUE, snapshot.rejuvenationCount)
+        : 0;
+      const safeHpMax = positiveFinite(snapshot.hpMax, 1_000);
       const nextAge = Math.max(5, beforeAge - safeYears);
       snapshot = {
         ...snapshot,
         age: nextAge,
         actionCount: HeroLifecycle.actionsForAge(nextAge),
-        rejuvenationCount: snapshot.rejuvenationCount + (safeYears > 0 ? 1 : 0),
-        hp: snapshot.hpMax,
+        rejuvenationCount: Math.min(MAX_BATTLE_VALUE, currentRejuvenationCount + (safeYears > 0 ? 1 : 0)),
+        hpMax: safeHpMax,
+        hp: safeHpMax,
       };
       return {
         snapshot: cloneSnapshot(snapshot),

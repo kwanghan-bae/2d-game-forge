@@ -1258,6 +1258,25 @@ describe('v4 save and domain', () => {
     expect(result.snapshot).toEqual(save.run.hero);
   });
 
+  it('normalizes malformed hero state before applying rejuvenation', () => {
+    const save = createInitialV4Save(120);
+    const runtime = createV4HeroRuntime({
+      ...save.run.hero,
+      age: Number.NaN,
+      hp: Number.NaN,
+      hpMax: Number.POSITIVE_INFINITY,
+      rejuvenationCount: Number.NaN,
+    });
+
+    const result = runtime.rejuvenate(5);
+
+    expect(result.snapshot.age).toBe(12);
+    expect(result.snapshot.actionCount).toBe(HeroLifecycle.actionsForAge(12));
+    expect(result.snapshot.rejuvenationCount).toBe(1);
+    expect(result.snapshot.hp).toBe(1_000);
+    expect([result.yearsReduced, result.cost, result.snapshot.hp].every((value) => Number.isFinite(value))).toBe(true);
+  });
+
   it('keeps battle results finite for malformed runtime input', () => {
     const save = createInitialV4Save(113);
     const result = createV4HeroRuntime(save.run.hero).resolveBattle({
