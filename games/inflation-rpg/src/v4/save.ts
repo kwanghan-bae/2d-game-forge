@@ -17,6 +17,13 @@ export const V4_SCHEMA_VERSION = 1 as const;
 export const V4_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 export const V4_OFFLINE_EFFICIENCY = 0.7;
 export const V4_MAX_INTERVENTION_CHARGES = 3;
+export const V4_RECOVERY_BACKUP_KEY = `${V4_SAVE_KEY}-recovery-backup`;
+
+export type V4SaveLoadResult =
+  | { status: 'missing' }
+  | { status: 'valid'; save: V4SaveEnvelope }
+  | { status: 'invalid'; reason: 'malformed_json' | 'invalid_schema' }
+  | { status: 'unavailable' };
 
 const CURRENCY_KEYS: V4CurrencyKey[] = ['spirit', 'gold', 'materials', 'rift'];
 const HERO_NAMES = ['연화', '도윤', '서린', '한결', '무진', '가람'];
@@ -465,15 +472,56 @@ export function simulateOfflineProgress(
 }
 
 export function loadV4Save(storage: Storage | undefined = defaultStorage()): V4SaveEnvelope | null {
-  if (!storage) return null;
+  const result = readV4Save(storage);
+  return result.status === 'valid' ? result.save : null;
+}
+
+export function readV4Save(storage: Storage | undefined = defaultStorage()): V4SaveLoadResult {
+  if (!storage) return { status: 'missing' };
+
+  let raw: string | null;
   try {
-    const raw = storage.getItem(V4_SAVE_KEY);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    return isV4SaveEnvelope(parsed) ? hydrateEquipmentStats(parsed) : null;
+    raw = storage.getItem(V4_SAVE_KEY);
   } catch {
-    return null;
+    return { status: 'unavailable' };
   }
+  if (raw === null) return { status: 'missing' };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { status: 'invalid', reason: 'malformed_json' };
+  }
+
+  return isV4SaveEnvelope(parsed)
+    ? { status: 'valid', save: hydrateEquipmentStats(parsed) }
+    : { status: 'invalid', reason: 'invalid_schema' };
+}
+
+/**
+ * Explicit recovery action. A valid save is never replaced. When the stored
+ * payload is invalid, keep one recoverable copy before writing a new save.
+ */
+export function startFreshV4Save(
+  storage: Storage | undefined = defaultStorage(),
+  seed: number = Date.now(),
+): V4SaveEnvelope {
+  const current = readV4Save(storage);
+  if (current.status === 'valid') return current.save;
+
+  if (current.status === 'invalid' && storage) {
+    try {
+      const raw = storage.getItem(V4_SAVE_KEY);
+      if (raw !== null) storage.setItem(V4_RECOVERY_BACKUP_KEY, raw);
+    } catch {
+      // The new game can still start when the best-effort recovery copy fails.
+    }
+  }
+
+  const fresh = createInitialV4Save(seed);
+  persistV4Save(fresh, storage);
+  return fresh;
 }
 
 export function persistV4Save(save: V4SaveEnvelope, storage: Storage | undefined = defaultStorage()): void {

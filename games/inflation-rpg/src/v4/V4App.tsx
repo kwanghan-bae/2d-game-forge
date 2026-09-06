@@ -10,6 +10,7 @@ import { OfflineResultScreen } from './screens/OfflineResultScreen';
 import { SagaScreen } from './screens/SagaScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { TownHubScreen } from './screens/TownHubScreen';
+import { V4SaveRecoveryScreen } from './screens/V4SaveRecoveryScreen';
 import './styles.css';
 
 type V4Screen = 'town' | 'hero' | 'expedition' | 'saga' | 'settings';
@@ -50,9 +51,31 @@ export function V4App({ config }: Props) {
   }, [game.save.meta.settings.music, game.save.meta.settings.sfx, game.save.meta.settings.muted]);
 
   useEffect(() => {
+    if (game.storageStatus === 'invalid') return;
     const timer = window.setInterval(game.refresh, 1000);
     return () => window.clearInterval(timer);
-  }, [game.refresh]);
+  }, [game.refresh, game.storageStatus]);
+
+  if (game.storageStatus === 'invalid') {
+    return (
+      <div
+        className="v4-shell"
+        data-assets-base={config.assetsBasePath}
+        data-testid="v4-app"
+        style={{ '--v4-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)` } as CSSProperties}
+      >
+        <div className="v4-container">
+          <header className="v4-header">
+            <div>
+              <div className="v4-kicker">LOCAL-FIRST · V4</div>
+              <h1 className="v4-title">신의 마을: 영원의 후원자</h1>
+            </div>
+          </header>
+          <V4SaveRecoveryScreen reason={game.storageIssue ?? 'invalid_schema'} onStartFresh={game.startFreshSave} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

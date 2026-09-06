@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createInitialV4Save, persistV4Save } from '../save';
+import { createInitialV4Save, persistV4Save, V4_RECOVERY_BACKUP_KEY, V4_SAVE_KEY } from '../save';
 import { startFacilityTask } from '../domain';
 import { V4MonetizationAdapter } from '../monetization';
 import { useV4Game } from '../useV4Game';
@@ -12,6 +12,16 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
       <div data-testid="offline-state">{game.offlineSummary ? 'ready' : 'pending'}</div>
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
       <button type="button" onClick={() => { void game.doubleOfflineReward(); }}>double</button>
+    </>
+  );
+}
+
+function RecoveryHarness() {
+  const game = useV4Game();
+  return (
+    <>
+      <div data-testid="storage-status">{game.storageStatus}</div>
+      <button type="button" onClick={game.startFreshSave}>fresh</button>
     </>
   );
 }
@@ -54,5 +64,24 @@ describe('useV4Game monetization actions', () => {
     await act(async () => { release(); });
     await waitFor(() => expect(screen.getByTestId('spirit')).toHaveTextContent('124'));
     expect(monetization.getAdsToday()).toBe(1);
+  });
+});
+
+describe('useV4Game save recovery', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  it('does not overwrite an invalid save until the player explicitly starts fresh', async () => {
+    const raw = JSON.stringify({ schemaVersion: 999, preserve: true });
+    localStorage.setItem(V4_SAVE_KEY, raw);
+
+    render(<RecoveryHarness />);
+    expect(screen.getByTestId('storage-status')).toHaveTextContent('invalid');
+    expect(localStorage.getItem(V4_SAVE_KEY)).toBe(raw);
+
+    fireEvent.click(screen.getByRole('button', { name: 'fresh' }));
+    await waitFor(() => expect(screen.getByTestId('storage-status')).toHaveTextContent('valid'));
+    expect(localStorage.getItem(V4_RECOVERY_BACKUP_KEY)).toBe(raw);
+    expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
   });
 });

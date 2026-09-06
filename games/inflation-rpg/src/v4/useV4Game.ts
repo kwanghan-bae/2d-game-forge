@@ -19,9 +19,10 @@ import {
 import {
   createInitialV4Save,
   importV3HeroSnapshot,
-  loadV4Save,
   persistV4Save,
+  readV4Save,
   simulateOfflineProgress,
+  startFreshV4Save,
 } from './save';
 import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
@@ -29,7 +30,16 @@ import type { V4MonetizationAdapter, V4RewardedPlacement } from './monetization'
 import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope, V4Settings } from './types';
 
 export function useV4Game(monetization?: V4MonetizationAdapter) {
-  const [save, setSave] = useState<V4SaveEnvelope>(() => loadV4Save() ?? createInitialV4Save(Date.now()));
+  const [boot] = useState(() => {
+    const loaded = readV4Save();
+    return {
+      loaded,
+      save: loaded.status === 'valid' ? loaded.save : createInitialV4Save(Date.now()),
+    };
+  });
+  const [save, setSave] = useState<V4SaveEnvelope>(() => boot.save);
+  const [storageStatus, setStorageStatus] = useState(() => boot.loaded.status);
+  const [storageIssue] = useState(() => boot.loaded.status === 'invalid' ? boot.loaded.reason : null);
   const [clock, setClock] = useState(() => Date.now());
   const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
   const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
@@ -37,6 +47,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (boot.loaded.status === 'invalid') return;
     const result = simulateOfflineProgress(save, Date.now());
     setSave(result.save);
     persistV4Save(result.save);
@@ -196,12 +207,24 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     commit(next, 'V3 영웅 기록을 명시적으로 가져왔습니다.');
   }, [commit, save]);
 
+  const startFreshSave = useCallback(() => {
+    if (storageStatus !== 'invalid') return;
+    const next = startFreshV4Save(undefined, Date.now());
+    setSave(next);
+    setStorageStatus('valid');
+    setOfflineSummary(null);
+    setOfflineRewardDoubled(false);
+    setMessage('새 V4 저장을 시작했습니다. 기존 손상 저장은 복구 백업으로 보존되었습니다.');
+  }, [storageStatus]);
+
   const closeOffline = useCallback(() => setOfflineSummary(null), []);
   const closeMessage = useCallback(() => setMessage(null), []);
   const activeTasks = useMemo(() => Object.values(save.meta.tasks), [save.meta.tasks]);
 
   return {
     save,
+    storageStatus,
+    storageIssue,
     now,
     offlineSummary,
     message,
@@ -227,6 +250,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     confirmUnlock,
     upgrade,
     importLegacyHero,
+    startFreshSave,
     closeOffline,
     closeMessage,
   };
