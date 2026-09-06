@@ -17,6 +17,7 @@ import {
   computeElixirStatBonuses,
   type ElixirType,
 } from '../systems/astralAlchemy';
+import { getElixirIngestionQuote, getCauldronProgressQuote } from '../data/alchemyFlavor';
 
 interface Props {
   onClose: () => void;
@@ -60,7 +61,8 @@ export function AstralAlchemyModal({ onClose }: Props) {
       },
     }));
 
-    setFeedback(res.message);
+    const quote = getElixirIngestionQuote(elixirId, res.newDoseCount);
+    setFeedback(`${res.message} — "${quote}"`);
   };
 
   const handleTransmute = (sourceType: 'crackStone' | 'enhanceStone', count: number) => {
@@ -428,8 +430,14 @@ export function AstralAlchemyModal({ onClose }: Props) {
               border: '1px solid #1f2a44',
             }}
           >
-            <div style={{ fontSize: 12, color: '#38bdf8', fontWeight: 'bold', marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: '#38bdf8', fontWeight: 'bold', marginBottom: 4 }}>
               ✨ 천상 영약 누적 영구 스탯 (상시 적용):
+            </div>
+            <div
+              data-testid="cauldron-progress-quote"
+              style={{ fontSize: 11, fontStyle: 'italic', color: '#cbd5e1', marginBottom: 8 }}
+            >
+              {getCauldronProgressQuote(totalBonuses.totalDoses)}
             </div>
             {totalBonuses.totalDoses === 0 ? (
               <div style={{ fontSize: 12, color: '#64748b' }}>
