@@ -55,6 +55,29 @@ const AGENT_OUTPUT_PER_LEVEL = 0.08;
 const AGENT_SPEED_PER_LEVEL = 0.03;
 const MAX_HERO_EXP_SETTLEMENT = 100_000;
 const MAX_LEVELS_PER_SETTLEMENT = 1_000;
+const MAX_ECONOMY_VALUE = Number.MAX_SAFE_INTEGER;
+
+function positiveFiniteLevel(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 1 ? value : 1;
+}
+
+function boundedMultiplier(value: number): number {
+  if (Number.isNaN(value) || value < 0) return 1;
+  return Number.isFinite(value) ? Math.min(MAX_ECONOMY_VALUE, value) : MAX_ECONOMY_VALUE;
+}
+
+function safeScaledEconomyAmount(value: number | undefined, multiplier: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0 || multiplier <= 0) return 0;
+  const scaled = value * multiplier;
+  return Number.isFinite(scaled)
+    ? Math.min(MAX_ECONOMY_VALUE, Math.max(0, Math.floor(scaled)))
+    : MAX_ECONOMY_VALUE;
+}
+
+function safeDurationSeconds(value: number): number {
+  if (!Number.isFinite(value)) return 10;
+  return Math.min(MAX_ECONOMY_VALUE, Math.max(10, Math.round(value)));
+}
 
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
@@ -192,26 +215,28 @@ function facilityTaskEconomy(
   const facility = save.meta.facilities[facilityId];
   const definition = FACILITY_DEFINITIONS[facilityId];
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
+  const facilityLevel = positiveFiniteLevel(facility?.level);
+  const agentLevel = positiveFiniteLevel(agent?.level);
   const specialty = Boolean(
     agent && agent.trust >= 50 && AGENT_DEFINITIONS[agent.id].specialty === facilityId,
   );
   const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
-  const agentSpeedMultiplier = agent ? Math.pow(1 - AGENT_SPEED_PER_LEVEL, Math.max(0, agent.level - 1)) : 1;
-  const durationSeconds = Math.max(10, Math.round(
-    (definition?.baseDurationSeconds ?? 0) * Math.pow(0.94, (facility?.level ?? 1) - 1)
+  const agentSpeedMultiplier = agent ? Math.pow(1 - AGENT_SPEED_PER_LEVEL, Math.max(0, agentLevel - 1)) : 1;
+  const durationSeconds = safeDurationSeconds(
+    (definition?.baseDurationSeconds ?? 0) * Math.pow(0.94, facilityLevel - 1)
       * (specialty ? 0.85 : 1) * agentSpeedMultiplier * fatigueMultiplier,
-  ));
-  const outputMultiplier = (specialty ? 1.2 : 1)
-    * (1 + FACILITY_OUTPUT_PER_LEVEL * ((facility?.level ?? 1) - 1))
-    * (agent ? 1 + AGENT_OUTPUT_PER_LEVEL * Math.max(0, agent.level - 1) : 1);
+  );
+  const outputMultiplier = boundedMultiplier((specialty ? 1.2 : 1)
+    * (1 + FACILITY_OUTPUT_PER_LEVEL * (facilityLevel - 1))
+    * (agent ? 1 + AGENT_OUTPUT_PER_LEVEL * Math.max(0, agentLevel - 1) : 1));
   return {
     durationSeconds,
     input: { ...(definition?.input ?? {}) },
     output: Object.fromEntries(
-      Object.entries(definition?.output ?? {}).map(([key, value]) => [key, Math.floor((value ?? 0) * outputMultiplier)]),
+      Object.entries(definition?.output ?? {}).map(([key, value]) => [key, safeScaledEconomyAmount(value, outputMultiplier)]),
     ) as Partial<Record<V4CurrencyKey, number>>,
     outputEquipmentIds: definition?.outputEquipmentIds ? [...definition.outputEquipmentIds] : [],
-    heroExpGain: Math.floor((definition?.heroExpGain ?? 0) * outputMultiplier),
+    heroExpGain: safeScaledEconomyAmount(definition?.heroExpGain, outputMultiplier),
   };
 }
 
@@ -978,9 +1003,9 @@ export function getFacilityUpgradeCost(
 ): FacilityUpgradeCost | null {
   const facility = source.meta.facilities[facilityId];
   if (!facility) return null;
-  const growth = Math.pow(FACILITY_UPGRADE_GROWTH, facility.level - 1);
+  const growth = Math.pow(FACILITY_UPGRADE_GROWTH, positiveFiniteLevel(facility.level) - 1);
   return {
-    gold: Math.floor(80 * growth),
-    materials: Math.floor(4 * growth),
+    gold: safeScaledEconomyAmount(80, growth),
+    materials: safeScaledEconomyAmount(4, growth),
   };
 }

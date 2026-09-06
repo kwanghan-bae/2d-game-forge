@@ -755,6 +755,23 @@ describe('v4 save and domain', () => {
       .toBeLessThan(baseExpedition.task.completesAt - baseExpedition.task.startedAt);
   });
 
+  it('keeps facility economy previews finite for malformed extreme levels', () => {
+    const malformed = createInitialV4Save(117);
+    malformed.meta.facilities.blacksmith.level = Number.MAX_VALUE;
+    malformed.meta.facilities.temple.level = Number.MAX_VALUE;
+
+    const preview = getFacilityTaskPreview(malformed, 'blacksmith', null);
+    const cost = getFacilityUpgradeCost(malformed, 'temple');
+
+    expect(cost).not.toBeNull();
+    expect([
+      preview.durationSeconds,
+      preview.heroExpGain,
+      ...Object.values(preview.output),
+      ...(cost ? [cost.gold, cost.materials] : []),
+    ].every((value) => Number.isFinite(value))).toBe(true);
+  });
+
   it('exposes the scaled facility upgrade cost without mutating the save', () => {
     const initial = createInitialV4Save(86);
     initial.meta.facilities.temple.level = 3;
