@@ -13,6 +13,7 @@ import type {
   RejuvenationResult,
   V4Policy,
   V4SaveEnvelope,
+  V4Settings,
 } from './types';
 
 export type DomainResult<T extends V4SaveEnvelope = V4SaveEnvelope> =
@@ -710,6 +711,25 @@ export function startExpedition(
 export function setV4Policy(source: V4SaveEnvelope, policy: V4Policy, now: number): V4SaveEnvelope {
   const save = cloneSave(source);
   save.run.policy = policy;
+  save.updatedAt = now;
+  return save;
+}
+
+function clampVolume(value: number | undefined, fallback: number): number {
+  return value === undefined || !Number.isFinite(value) ? fallback : Math.min(1, Math.max(0, value));
+}
+
+export function updateV4Settings(
+  source: V4SaveEnvelope,
+  patch: Partial<V4Settings>,
+  now: number,
+): V4SaveEnvelope {
+  const save = cloneSave(source);
+  save.meta.settings = {
+    music: clampVolume(patch.music, source.meta.settings.music),
+    sfx: clampVolume(patch.sfx, source.meta.settings.sfx),
+    muted: patch.muted ?? source.meta.settings.muted,
+  };
   save.updatedAt = now;
   return save;
 }

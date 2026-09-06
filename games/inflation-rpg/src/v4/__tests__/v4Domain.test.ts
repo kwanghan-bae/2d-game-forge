@@ -24,6 +24,7 @@ import {
   confirmPendingExpedition,
   startExpedition,
   startFacilityTask,
+  updateV4Settings,
   upgradeFacility,
   useIntervention,
 } from '../domain';
@@ -665,5 +666,15 @@ describe('v4 save and domain', () => {
       run: { ...initial.run, hero: { ...initial.run.hero, hp: 300 } },
     };
     expect(getHeroNextAction(wounded)).toBe('rest');
+  });
+
+  it('updates only the V4 audio settings through an isolated save copy', () => {
+    const initial = createInitialV4Save(91);
+    const updated = updateV4Settings(initial, { music: 0, sfx: 0.35, muted: true }, initial.createdAt + 1_000);
+
+    expect(updated.meta.settings).toEqual({ music: 0, sfx: 0.35, muted: true });
+    expect(updated.meta.currencies).toEqual(initial.meta.currencies);
+    expect(updated.run.hero).toEqual(initial.run.hero);
+    expect(initial.meta.settings).toEqual({ music: 0.7, sfx: 0.8, muted: false });
   });
 });

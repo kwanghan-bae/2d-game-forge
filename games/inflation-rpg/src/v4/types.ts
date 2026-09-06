@@ -124,7 +124,13 @@ export interface V4MetaState {
   agents: SupportAgent[];
   unlockedRealms: RealmId[];
   sagaEntries: SagaEntry[];
-  settings: { music: number; sfx: number; muted: boolean };
+  settings: V4Settings;
+}
+
+export interface V4Settings {
+  music: number;
+  sfx: number;
+  muted: boolean;
 }
 
 export interface V4RunState {

@@ -22,6 +22,22 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 진행 중');
   });
 
+  test('설정 화면에서 V4 음소거 상태를 저장한다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+
+    await page.getByRole('button', { name: /설정/ }).click();
+    await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+    await page.getByRole('checkbox', { name: '모든 소리 음소거' }).check();
+    await page.reload();
+
+    await page.getByRole('button', { name: /설정/ }).click();
+    await expect(page.getByRole('checkbox', { name: '모든 소리 음소거' })).toBeChecked();
+    await expect(page.getByText('V4 전용 저장')).toBeVisible();
+  });
+
   test('8시간 초과 offline 정산 결과를 표시한다', async ({ page }) => {
     await page.goto(GAME_URL);
     await expect(page.getByTestId('v4-app')).toBeVisible();

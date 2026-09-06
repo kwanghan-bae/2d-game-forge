@@ -11,6 +11,7 @@ import {
   setV4Policy,
   startExpedition,
   startFacilityTask,
+  updateV4Settings,
   upgradeFacility,
   useIntervention,
 } from './domain';
@@ -24,7 +25,7 @@ import {
 import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
 import type { V4MonetizationAdapter, V4RewardedPlacement } from './monetization';
-import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from './types';
+import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope, V4Settings } from './types';
 
 export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [save, setSave] = useState<V4SaveEnvelope>(() => loadV4Save() ?? createInitialV4Save(Date.now()));
@@ -68,6 +69,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   const changePolicy = useCallback((policy: V4Policy) => {
     commit(setV4Policy(save, policy, Date.now()));
+  }, [commit, save]);
+
+  const updateSettings = useCallback((patch: Partial<V4Settings>) => {
+    commit(updateV4Settings(save, patch, Date.now()));
   }, [commit, save]);
 
   const startTask = useCallback((facilityId: FacilityId, agentId: SupportAgentId | null = null) => {
@@ -193,6 +198,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     activeTasks,
     refresh,
     changePolicy,
+    updateSettings,
     startTask,
     cancelTask,
     restSupportAgent,
