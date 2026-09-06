@@ -23,6 +23,7 @@ import { ChronoRebirthModal } from './ChronoRebirthModal';
 import { ChronoLoomModal } from './ChronoLoomModal';
 import { PantheonRaidModal } from './PantheonRaidModal';
 import { OmniverseArmoryModal } from './OmniverseArmoryModal';
+import { ParadoxSpiralModal } from './ParadoxSpiralModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
 import { PrimordialConstellationBadge } from './PrimordialConstellationBadge';
@@ -61,6 +62,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   const [showLoom, setShowLoom] = useState(false);
   const [showPantheon, setShowPantheon] = useState(false);
   const [showArmory, setShowArmory] = useState(false);
+  const [showSpiral, setShowSpiral] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -332,6 +334,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               ✨ 신격 무기고
             </button>
             <button
+              data-testid="open-paradox-spiral-btn"
+              onClick={() => setShowSpiral(true)}
+              style={{
+                background: '#4f46e5',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              🌀 역설 나선
+            </button>
+            <button
               data-testid="close-btn"
               onClick={onClose}
               style={{
@@ -517,6 +535,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
       {showLoom && <ChronoLoomModal onClose={() => setShowLoom(false)} />}
       {showPantheon && <PantheonRaidModal onClose={() => setShowPantheon(false)} />}
       {showArmory && <OmniverseArmoryModal onClose={() => setShowArmory(false)} />}
+      {showSpiral && <ParadoxSpiralModal onClose={() => setShowSpiral(false)} />}
     </div>
   );
 }
