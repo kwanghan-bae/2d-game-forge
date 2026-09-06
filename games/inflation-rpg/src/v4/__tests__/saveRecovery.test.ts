@@ -56,4 +56,16 @@ describe('V4 save recovery boundary', () => {
     expect(storage.dump(V4_RECOVERY_BACKUP_KEY)).toBeUndefined();
     expect(loadV4Save(storage)?.run.hero.name).toBe(valid.run.hero.name);
   });
+
+  it.each([
+    ['name', (save: ReturnType<typeof createInitialV4Save>) => { save.run.hero.name = ''; }],
+    ['emoji', (save: ReturnType<typeof createInitialV4Save>) => { save.run.hero.emoji = ''; }],
+  ])('rejects a save with an empty hero %s', (_field, mutate) => {
+    const invalid = createInitialV4Save(321);
+    mutate(invalid);
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(invalid) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+    expect(loadV4Save(storage)).toBeNull();
+  });
 });

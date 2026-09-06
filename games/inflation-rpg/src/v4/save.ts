@@ -249,7 +249,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   }
 
   const hero = run.hero;
-  if (!isRecord(hero) || typeof hero.name !== 'string' || typeof hero.emoji !== 'string'
+  if (!isRecord(hero) || typeof hero.name !== 'string' || hero.name.trim().length === 0
+    || typeof hero.emoji !== 'string' || hero.emoji.trim().length === 0
     || !REALM_IDS.includes(hero.realmId as typeof REALM_IDS[number])
     || !['rest', 'train', 'expedition'].includes(hero.currentAction as string)
     || !Array.isArray(hero.equipmentIds) || !hero.equipmentIds.every((id) => typeof id === 'string')

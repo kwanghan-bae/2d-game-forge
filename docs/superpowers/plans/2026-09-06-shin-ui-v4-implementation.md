@@ -179,7 +179,7 @@ pnpm circular
 
 ### 누적 검증 기록
 
-- V4 단위/컴포넌트 테스트: 394개 파일, 3,340개 테스트 통과.
+- V4 단위/컴포넌트 테스트: 394개 파일, 3,342개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 24/24 통과(각 프로젝트 12/12).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
