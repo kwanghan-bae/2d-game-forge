@@ -313,6 +313,12 @@ describe('v4 save and domain', () => {
     const imported = importV3HeroSnapshot(createInitialV4Save(1), source, 1234);
     expect(imported.run.hero.name).toBe('홍길동');
     expect(imported.meta.sagaEntries[0]?.title).toBe('V3 영웅 가져오기');
+
+    const staleDestination = createInitialV4Save(2);
+    staleDestination.lastProcessedAt = staleDestination.createdAt + HOUR;
+    staleDestination.updatedAt = staleDestination.lastProcessedAt;
+    const importedAfterClockRollback = importV3HeroSnapshot(staleDestination, source, staleDestination.createdAt + 1_000);
+    expect(importedAfterClockRollback.updatedAt).toBe(staleDestination.lastProcessedAt);
   });
 
   it('settles completed facility work once and applies the 70% offline efficiency', () => {
@@ -685,6 +691,23 @@ describe('v4 save and domain', () => {
     expect(result.summary.processedSeconds).toBe(0);
     expect(result.summary.clockAnomaly).toBe('future');
     expect(result.save).toBe(futureSave);
+  });
+
+  it('keeps the save chronology valid when an explicit action sees a backwards clock', () => {
+    const initial = createInitialV4Save(24);
+    initial.lastProcessedAt = initial.createdAt + HOUR;
+    initial.updatedAt = initial.lastProcessedAt;
+
+    const changed = setV4Policy(initial, 'training', initial.createdAt + 1_000);
+    expect(changed.updatedAt).toBe(initial.lastProcessedAt);
+
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    persistV4Save(changed, fakeStorage);
+    expect(loadV4Save(fakeStorage)).not.toBeNull();
   });
 
   it('does not auto-confirm a risky Realm boss during offline processing', () => {

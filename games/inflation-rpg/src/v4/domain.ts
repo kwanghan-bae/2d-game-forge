@@ -58,6 +58,11 @@ function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
 }
 
+function touchSave(save: V4SaveEnvelope, now: number): void {
+  const requested = Number.isFinite(now) ? now : save.updatedAt;
+  save.updatedAt = Math.max(save.updatedAt, save.lastProcessedAt, requested);
+}
+
 function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
   return Object.entries(input).every(([key, value]) => save.meta.currencies[key as V4CurrencyKey] >= (value ?? 0));
 }
@@ -116,7 +121,7 @@ export function advanceHeroActions(source: V4SaveEnvelope, actions: number, now:
   if (!Number.isFinite(actions) || amount <= 0) return source;
   const save = cloneSave(source);
   advanceHeroActionsInPlace(save, amount, now);
-  save.updatedAt = now;
+  touchSave(save, now);
   return save;
 }
 
@@ -280,7 +285,7 @@ export function startFacilityTask(
   facility.activeTaskId = task.id;
   if (agent) agent.activeTaskId = task.id;
   syncHeroAction(save);
-  save.updatedAt = now;
+  touchSave(save, now);
   return { ok: true, save, task };
 }
 
@@ -305,7 +310,7 @@ export function cancelFacilityTask(
     if (agent) agent.activeTaskId = null;
   }
   syncHeroAction(save);
-  save.updatedAt = now;
+  touchSave(save, now);
   return { ok: true, save, task };
 }
 
@@ -330,7 +335,7 @@ export function restAgent(
     title: `${agent.nameKR} 휴식`,
     text: `${agent.nameKR}이(가) 잠시 숨을 고르고 피로를 ${AGENT_REST_RECOVERY} 낮췄다.`,
   });
-  save.updatedAt = now;
+  touchSave(save, now);
   return { ok: true, save };
 }
 
@@ -361,7 +366,7 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
     title: '영원의 회춘 의식',
     text: `${save.run.hero.name}의 시간이 ${result.yearsReduced}년 되돌아갔다.`,
   });
-  save.updatedAt = now;
+  touchSave(save, now);
   return { ok: true, save, result };
 }
 
@@ -614,8 +619,8 @@ export function completeFacilityTasks(
   }
   resolveExpedition(save, now, allowPermanentUnlock, outputEfficiency);
   syncHeroAction(save);
-  save.updatedAt = now;
-  save.lastProcessedAt = Math.max(save.lastProcessedAt, now);
+  save.lastProcessedAt = Math.max(save.lastProcessedAt, Number.isFinite(now) ? now : save.lastProcessedAt);
+  touchSave(save, now);
   return save;
 }
 
@@ -660,7 +665,7 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
     title: `${REALM_DEFINITIONS[next].nameKR} 기록 해금`,
     text: `${REALM_DEFINITIONS[next].nameKR}으로 향하는 다음 장이 사가에 기록되었다.`,
   });
-  save.updatedAt = now;
+  touchSave(save, now);
   return save;
 }
 
@@ -676,7 +681,7 @@ export function grantOfflineResourceBonus(
       && Number.isFinite(value) && value > 0),
   ) as Partial<Record<V4CurrencyKey, number>>;
   give(save, positiveGains);
-  save.updatedAt = now;
+  touchSave(save, now);
   return save;
 }
 
@@ -686,7 +691,7 @@ export function grantInterventionCharge(source: V4SaveEnvelope, now: number): V4
     MAX_INTERVENTION_CHARGES,
     save.run.interventionCharges + 1,
   );
-  save.updatedAt = now;
+  touchSave(save, now);
   return save;
 }
 
@@ -714,7 +719,7 @@ export function useIntervention(
       title: '신의 개입: 즉시 회복',
       text: `${hero.name}의 상처가 신력으로 즉시 아물었다.`,
     });
-    save.updatedAt = now;
+    touchSave(save, now);
     return { ok: true, save, intervention };
   }
 
@@ -744,7 +749,7 @@ export function useIntervention(
     title: '신의 개입: 원정 후퇴',
     text: `${hero.name}이(가) 신의 명을 받아 ${realm.nameKR}에서 안전하게 돌아왔다.`,
   });
-  save.updatedAt = now;
+  touchSave(save, now);
   return { ok: true, save, intervention };
 }
 
@@ -805,7 +810,7 @@ export function startExpedition(
     const agent = save.meta.agents.find((item) => item.id === assignedAgentId);
     if (agent) agent.activeTaskId = id;
   }
-  save.updatedAt = now;
+  touchSave(save, now);
   return {
     ok: true,
     save,
@@ -825,7 +830,7 @@ export function startExpedition(
 export function setV4Policy(source: V4SaveEnvelope, policy: V4Policy, now: number): V4SaveEnvelope {
   const save = cloneSave(source);
   save.run.policy = policy;
-  save.updatedAt = now;
+  touchSave(save, now);
   return save;
 }
 
@@ -844,7 +849,7 @@ export function updateV4Settings(
     sfx: clampVolume(patch.sfx, source.meta.settings.sfx),
     muted: patch.muted ?? source.meta.settings.muted,
   };
-  save.updatedAt = now;
+  touchSave(save, now);
   return save;
 }
 
@@ -858,7 +863,7 @@ export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, 
   if (!canPay(save, cost)) return { ok: false, save: source, error: '시설 강화 재료가 부족합니다.' };
   pay(save, cost);
   facility.level += 1;
-  save.updatedAt = now;
+  touchSave(save, now);
   return {
     ok: true,
     save,

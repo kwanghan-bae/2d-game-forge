@@ -376,17 +376,19 @@ export function importV3HeroSnapshot(
   input: HeroSnapshot,
   now: number,
 ): V4SaveEnvelope {
+  const eventAt = Number.isFinite(now) ? now : source.updatedAt;
+  const updatedAt = Math.max(source.updatedAt, source.lastProcessedAt, eventAt);
   const hero = migrateV3HeroSnapshot(input);
   return {
     ...source,
-    updatedAt: now,
+    updatedAt,
     run: { ...source.run, hero },
     meta: {
       ...source.meta,
       sagaEntries: [{
-        id: `saga-import-${now}`,
+        id: `saga-import-${eventAt}`,
         kind: 'milestone',
-        createdAt: now,
+        createdAt: eventAt,
         title: 'V3 영웅 가져오기',
         text: `${hero.name}의 기록을 v4 영웅으로 가져왔습니다.`,
       }, ...source.meta.sagaEntries],
