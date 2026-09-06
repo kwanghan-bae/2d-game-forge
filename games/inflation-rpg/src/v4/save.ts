@@ -365,6 +365,18 @@ export function simulateOfflineProgress(
     };
   }
 
+  if (save.updatedAt > now) {
+    return {
+      save,
+      summary: {
+        processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [],
+        wasClamped: false, clockAnomaly: 'future',
+        notes: ['저장 시각이 현재 기기 시각보다 미래입니다. 시계를 확인한 뒤 다시 시도해 주세요.'],
+      },
+    };
+  }
+
   const rawElapsed = now - save.lastProcessedAt;
   const processedMs = Math.min(rawElapsed, V4_OFFLINE_CAP_MS);
   const processUntil = save.lastProcessedAt + processedMs;

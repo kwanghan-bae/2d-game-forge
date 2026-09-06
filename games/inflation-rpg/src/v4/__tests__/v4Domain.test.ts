@@ -433,6 +433,17 @@ describe('v4 save and domain', () => {
     expect(backwards.summary.clockAnomaly).toBe('backwards');
   });
 
+  it('rejects a save whose last write is in the future', () => {
+    const initial = createInitialV4Save(22);
+    const futureSave = { ...initial, updatedAt: initial.lastProcessedAt + HOUR };
+
+    const result = simulateOfflineProgress(futureSave, initial.lastProcessedAt + 1_000);
+
+    expect(result.summary.processedSeconds).toBe(0);
+    expect(result.summary.clockAnomaly).toBe('future');
+    expect(result.save).toBe(futureSave);
+  });
+
   it('does not auto-confirm a risky Realm boss during offline processing', () => {
     const initial = createInitialV4Save(19);
     initial.meta.unlockedRealms.push('deep_forest');
