@@ -341,9 +341,12 @@ export function createInitialV4Save(seed: number): V4SaveEnvelope {
 }
 
 export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
-  const equipmentIds = [...new Set(input.equipment)];
+  const legacyEquipment = Array.isArray(input.equipment)
+    ? input.equipment.filter((id): id is string => typeof id === 'string')
+    : [];
+  const equipmentIds = [...new Set(legacyEquipment)];
   const equipmentLevels = Object.fromEntries(
-    equipmentIds.map((id) => [id, Math.min(20, Math.max(1, input.equipment.filter((candidate) => candidate === id).length))]),
+    equipmentIds.map((id) => [id, Math.min(20, Math.max(1, legacyEquipment.filter((candidate) => candidate === id).length))]),
   );
   const hpMax = Math.max(1, finiteNonNegativeOr(input.hpMax, 1_000));
   const fallbackDefBase = Math.round(finiteNonNegativeOr(input.hpBase, hpMax) * 0.1);
