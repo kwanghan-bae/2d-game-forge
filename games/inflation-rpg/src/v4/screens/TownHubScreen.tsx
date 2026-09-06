@@ -1,6 +1,6 @@
-import { FACILITY_DEFINITIONS, POLICY_LABELS } from '../data';
-import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction } from '../domain';
-import type { FacilityId, InterventionType, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
+import { FACILITY_DEFINITIONS, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
+import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
+import type { FacilityId, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 
 interface Props {
   save: V4SaveEnvelope;
@@ -41,6 +41,29 @@ function formatResources(resources: Partial<Record<string, number>>): string {
 function remainingSeconds(completesAt: number | undefined, now: number): number {
   if (!completesAt) return 0;
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
+}
+
+function getTownObjective(save: V4SaveEnvelope): string {
+  if (save.run.expedition) {
+    return '원정이 진행 중입니다. 원정 화면에서 현재 단계와 예상 승률을 확인하세요.';
+  }
+
+  const unlocked = save.meta.unlockedRealms;
+  const currentRealmId: RealmId = unlocked.includes('underworld')
+    ? 'underworld'
+    : unlocked.includes('deep_forest')
+      ? 'deep_forest'
+      : 'joseon_plains';
+  const nextRealmId = getNextRealmId(currentRealmId);
+  if (nextRealmId && !unlocked.includes(nextRealmId)) {
+    return `${REALM_DEFINITIONS[currentRealmId].nameKR}에서 승리하면 ${REALM_DEFINITIONS[nextRealmId].nameKR}이 열립니다. 대장간에서 장비를 만든 뒤 정책을 바꿔 다음 원정의 성격을 정하세요.`;
+  }
+
+  const lastResult = save.run.lastExpeditionResult;
+  if (lastResult?.outcome === 'defeat') {
+    return `${REALM_DEFINITIONS[lastResult.realmId].nameKR} 재도전을 준비하세요. ${lastResult.weaknessKR}을 보완하면 다음 승리에 가까워집니다.`;
+  }
+  return '저승의 사가를 완성하세요. 시설을 강화하고 정책과 장비를 조정해 영원한 영웅의 마지막 원정을 준비하세요.';
 }
 
 export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
@@ -153,7 +176,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
 
       <section className="v4-panel">
         <h2>가장 가까운 목표</h2>
-        <p>조선 평야에서 첫 승리를 기록하면 깊은 숲이 열립니다. 대장간에서 장비를 만든 뒤 정책을 바꿔 다음 원정의 성격을 정하세요.</p>
+        <p>{getTownObjective(save)}</p>
         <div className="v4-button-row">
           <button type="button" className="v4-btn v4-btn--primary" onClick={() => onNavigate('hero')}>영웅 상세</button>
           <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onNavigate('saga')}>사가 보기</button>

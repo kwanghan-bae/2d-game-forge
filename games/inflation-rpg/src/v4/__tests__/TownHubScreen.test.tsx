@@ -55,4 +55,29 @@ describe('V4 town hub support assignment', () => {
 
     expect(props.onStartTask).toHaveBeenCalledWith('blacksmith', 'blacksmith');
   });
+
+  it('updates the closest objective as realms are unlocked', () => {
+    const save = createInitialV4Save(97);
+    save.meta.unlockedRealms = ['joseon_plains', 'deep_forest'];
+    renderHub({ save });
+
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('깊은 숲에서 승리하면 저승이 열립니다.');
+  });
+
+  it('points to the active expedition instead of repeating an outdated unlock goal', () => {
+    const save = createInitialV4Save(98);
+    save.run.expedition = {
+      id: 'objective-expedition',
+      realmId: 'joseon_plains',
+      policy: 'aggression',
+      assignedAgentId: null,
+      startedAt: save.createdAt,
+      completesAt: save.createdAt + 30_000,
+      status: 'traveling',
+      encounterIndex: 0,
+    };
+    renderHub({ save });
+
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정이 진행 중입니다.');
+  });
 });
