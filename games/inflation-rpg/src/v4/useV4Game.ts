@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   cancelFacilityTask,
   completeFacilityTasks,
+  rejuvenateHero,
   setV4Policy,
   startExpedition,
   startFacilityTask,
@@ -69,6 +70,12 @@ export function useV4Game() {
     else setMessage(result.error);
   }, [commit, save]);
 
+  const rejuvenate = useCallback(() => {
+    const result = rejuvenateHero(save, 5, Date.now());
+    if (result.ok) commit(result.save, `영웅의 시간이 ${result.result.yearsReduced}년 되돌아갔습니다.`);
+    else setMessage(result.error);
+  }, [commit, save]);
+
   const startRun = useCallback((realmId: RealmId, agentId: SupportAgentId | null = null) => {
     const result = startExpedition(save, realmId, Date.now(), save.run.policy, agentId);
     if (result.ok) commit(result.save, '원정을 출발시켰습니다.');
@@ -105,6 +112,7 @@ export function useV4Game() {
     changePolicy,
     startTask,
     cancelTask,
+    rejuvenate,
     startRun,
     upgrade,
     importLegacyHero,

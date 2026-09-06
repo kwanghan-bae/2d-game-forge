@@ -6,12 +6,17 @@ import type {
   RealmId,
   SupportAgentId,
   V4CurrencyKey,
+  RejuvenationResult,
   V4Policy,
   V4SaveEnvelope,
 } from './types';
 
 export type DomainResult<T extends V4SaveEnvelope = V4SaveEnvelope> =
   | { ok: true; save: T; task: FacilityTask }
+  | { ok: false; save: V4SaveEnvelope; error: string };
+
+export type HeroDomainResult =
+  | { ok: true; save: V4SaveEnvelope; result: RejuvenationResult }
   | { ok: false; save: V4SaveEnvelope; error: string };
 
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
@@ -113,6 +118,37 @@ export function cancelFacilityTask(
   save.run.hero.currentAction = save.run.expedition ? 'expedition' : 'rest';
   save.updatedAt = now;
   return { ok: true, save, task };
+}
+
+export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: number): HeroDomainResult {
+  if (!Number.isFinite(years) || years <= 0) {
+    return { ok: false, save: source, error: '회춘할 기간을 확인해 주세요.' };
+  }
+  if (source.run.expedition) {
+    return { ok: false, save: source, error: '원정 중에는 회춘 의식을 진행할 수 없습니다.' };
+  }
+
+  const save = cloneSave(source);
+  const runtime = createV4HeroRuntime(save.run.hero);
+  const result = runtime.rejuvenate(years);
+  if (result.yearsReduced <= 0) {
+    return { ok: false, save: source, error: '영웅은 이미 가장 젊은 상태입니다.' };
+  }
+  if (save.meta.currencies.gold < result.cost) {
+    return { ok: false, save: source, error: `회춘 비용 ${result.cost} 금화가 부족합니다.` };
+  }
+
+  save.meta.currencies.gold -= result.cost;
+  save.run.hero = result.snapshot;
+  save.meta.sagaEntries.unshift({
+    id: `saga-rejuvenation-${now}`,
+    kind: 'rejuvenation',
+    createdAt: now,
+    title: '영원의 회춘 의식',
+    text: `${save.run.hero.name}의 시간이 ${result.yearsReduced}년 되돌아갔다.`,
+  });
+  save.updatedAt = now;
+  return { ok: true, save, result };
 }
 
 function calculateHeroPower(save: V4SaveEnvelope): number {

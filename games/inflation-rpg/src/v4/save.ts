@@ -1,4 +1,5 @@
 import type { HeroSnapshot } from '../hero/HeroEntity';
+import { HeroLifecycle } from '../hero/HeroLifecycle';
 import { FACILITY_IDS, AGENT_DEFINITIONS } from './data';
 import { completeFacilityTasks } from './domain';
 import type {
@@ -56,7 +57,7 @@ function initialHero(seed: number): V4HeroSnapshot {
     critRateBase: 0.05,
     realmId: 'joseon_plains',
     equipmentIds: [],
-    actionCount: 0,
+    actionCount: HeroLifecycle.actionsForAge(17),
     rejuvenationCount: 0,
     currentAction: 'rest',
   };

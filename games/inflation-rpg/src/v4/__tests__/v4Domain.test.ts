@@ -9,6 +9,7 @@ import {
 import {
   cancelFacilityTask,
   completeFacilityTasks,
+  rejuvenateHero,
   startExpedition,
   startFacilityTask,
 } from '../domain';
@@ -28,6 +29,7 @@ describe('v4 save and domain', () => {
     expect(save.meta.unlockedRealms).toEqual(['joseon_plains']);
     expect(save.run.expedition).toBeNull();
     expect(save.run.hero.realmId).toBe('joseon_plains');
+    expect(save.run.hero.actionCount).toBe(185);
   });
 
   it('maps a V3 hero snapshot without sharing the V3 store shape', () => {
@@ -124,6 +126,18 @@ describe('v4 save and domain', () => {
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     expect(completed.meta.sagaEntries[0]?.title).toBe('조선 평야 원정 중단');
     expect(completed.meta.currencies.gold).toBe(initial.meta.currencies.gold);
+  });
+
+  it('rejuvenates the eternal hero through V4 storage with a gold cost and saga entry', () => {
+    const initial = createInitialV4Save(12);
+    const result = rejuvenateHero(initial, 5, initial.createdAt + 1_000);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.save.run.hero.age).toBe(12);
+    expect(result.save.run.hero.rejuvenationCount).toBe(1);
+    expect(result.save.meta.currencies.gold).toBe(50);
+    expect(result.save.meta.sagaEntries[0]?.kind).toBe('rejuvenation');
   });
 
   it('keeps V4 hero decisions and battle independent from the V3 cycle controller', () => {

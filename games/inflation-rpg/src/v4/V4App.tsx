@@ -48,7 +48,7 @@ export function V4App({ config }: Props) {
       </div>
 
       {screen === 'town' && <TownHubScreen save={game.save} now={game.now} onPolicyChange={game.changePolicy} onStartTask={game.startTask} onCancelTask={game.cancelTask} onRefresh={game.refresh} onUpgrade={game.upgrade} onNavigate={setScreen} />}
-      {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} onBack={() => setScreen('town')} onImportLegacy={game.importLegacyHero} />}
+      {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} gold={game.save.meta.currencies.gold} expeditionActive={Boolean(game.save.run.expedition)} onBack={() => setScreen('town')} onImportLegacy={game.importLegacyHero} onRejuvenate={game.rejuvenate} />}
       {screen === 'expedition' && <ExpeditionScreen save={game.save} now={game.now} onStart={game.startRun} onRefresh={game.refresh} onBack={() => setScreen('town')} />}
       {screen === 'saga' && <SagaScreen entries={game.save.meta.sagaEntries} onBack={() => setScreen('town')} />}
 

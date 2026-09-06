@@ -2,11 +2,17 @@ import type { V4HeroSnapshot } from '../types';
 
 interface Props {
   hero: V4HeroSnapshot;
+  gold: number;
+  expeditionActive: boolean;
   onBack: () => void;
   onImportLegacy: () => void;
+  onRejuvenate: () => void;
 }
 
-export function HeroDetailScreen({ hero, onBack, onImportLegacy }: Props) {
+export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImportLegacy, onRejuvenate }: Props) {
+  const years = Math.min(5, Math.max(0, hero.age - 5));
+  const cost = years * 10;
+
   return (
     <main className="v4-container">
       <section className="v4-panel">
@@ -38,7 +44,10 @@ export function HeroDetailScreen({ hero, onBack, onImportLegacy }: Props) {
       <section className="v4-panel">
         <h2>영원성</h2>
         <p>행동 기록 {hero.actionCount}회 · 회춘 {hero.rejuvenationCount}회</p>
-        <p>회춘은 v4 영구 해금 선택으로 확장되며, 오프라인 정산에서는 자동 확정되지 않습니다.</p>
+        <p>5년을 되돌리며, 현재 나이에 따라 금화 {cost}가 필요합니다. 오프라인 정산에서는 자동 확정되지 않습니다.</p>
+        <button type="button" className="v4-btn v4-btn--primary" disabled={years <= 0 || gold < cost || expeditionActive} onClick={onRejuvenate}>
+          {years <= 0 ? '최연소 상태' : expeditionActive ? '원정 귀환 후 가능' : gold < cost ? `금화 부족 (${cost} 필요)` : `5년 회춘 · ${cost} 금화`}
+        </button>
       </section>
     </main>
   );
