@@ -71,6 +71,7 @@ describe('C1046: enchantSystem (Elemental Rune Enchanting)', () => {
       instanceId: 'w-plain',
       baseId: 'w-sword',
       enhanceLv: 0,
+      modifiers: [],
     };
     expect(getEnchantDamageBonus(neutralWeapon)).toBe(0);
 
@@ -80,10 +81,9 @@ describe('C1046: enchantSystem (Elemental Rune Enchanting)', () => {
     const equipped: EquipmentInstance[] = [
       fireWeapon,
       neutralWeapon,
-      applyRuneEnchant({ instanceId: 'a-1', baseId: 'a-plate', enhanceLv: 0 }, 'rune_water'),
+      applyRuneEnchant({ instanceId: 'a-1', baseId: 'a-plate', enhanceLv: 0, modifiers: [] }, 'rune_water'),
     ];
     // Two enchanted items: 0.15 + 0.15 = 0.30
     expect(getEquippedEnchantBonus(equipped)).toBeCloseTo(0.30);
   });
 });
-

@@ -915,11 +915,9 @@ describe('C639: soft combo decay', () => {
     const engine = new EncounterEngine(new SeededRng(99));
     (engine as unknown as { comboStreak: number }).comboStreak = 20;
     const weakHero = HeroEntity.create({ seed: 1, heroHpMax: 500, heroAtkBase: 1 });
-    for (let i = 0; i < 10; i++) {
-      engine.resolveEncounter(weakHero, 'plains', false, false);
-    }
+    engine.resolveEncounter(weakHero, 'enemy', 'weak_0');
     const comboAfter = (engine as unknown as { comboStreak: number }).comboStreak;
-    expect(comboAfter).toBeGreaterThan(0);
+    expect(comboAfter).toBe(10);
   });
 });
 
@@ -1000,14 +998,13 @@ describe('C651: characterization snapshot (golden master)', () => {
     const engine = new EncounterEngine(new SeededRng(42));
     const hero = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 50 });
     let totalExp = 0;
-    let totalGold = 0;
     let deaths = 0;
     let wins = 0;
 
     for (let i = 0; i < 50; i++) {
       const events = engine.resolveEncounter(hero, 'enemy', 'wolf_1');
       for (const e of events) {
-        if (e.type === 'battle_won') { totalExp += e.expGain; totalGold += e.goldGain; wins++; }
+        if (e.type === 'battle_won') { totalExp += e.expGain; wins++; }
         if (e.type === 'hero_died') { deaths++; }
       }
     }

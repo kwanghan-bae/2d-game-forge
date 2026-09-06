@@ -107,9 +107,9 @@ export interface ExpMultiplierContext {
   snowDriftActive: boolean; // C790: now has EXP×1.10 reward
   abyssalConvergenceActive: boolean; // C789
   voidRiftTier: number; // C775: 0 if inactive, else tier number for EXP bonus
-  titanArenaActive: boolean; // C797: Titan Arena EXP×2.0
-  astralParadoxActive: boolean; // C800: Astral Paradox EXP×2.5
-  crimsonTitheActive: boolean; // C803: Crimson Tithe EXP×1.8
+  titanArenaActive?: boolean; // C797: Titan Arena EXP×2.0
+  astralParadoxActive?: boolean; // C800: Astral Paradox EXP×2.5
+  crimsonTitheActive?: boolean; // C803: Crimson Tithe EXP×1.8
 }
 
 /**

@@ -154,7 +154,7 @@ describe('C1053 [balance]: Pet Aura Synergies & Trial Simulation', () => {
       const heroBuffed: HeroEntity = {
         ...heroBase,
         atk: Math.floor(heroBase.atk * 1.14),
-      };
+      } as unknown as HeroEntity;
 
       // Trial floor 9 ( 삼원소 융합체: 1,500,000 HP, Fire)
       const resBase = resolveTrialCombat(heroBase, 9, 'water', 0.10);

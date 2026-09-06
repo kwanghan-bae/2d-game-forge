@@ -129,7 +129,7 @@ export interface PostCombatContext {
   lateGameDensityBoost: number; // C845: late-game pity scheduler boost
   consecutiveEliteKills2: number;
   goldenHourRemaining: number;
-  fightsSinceEvent: number; // C714: pity timer
+  fightsSinceEvent?: number; // C714: pity timer; omitted by legacy callers = 0
   strategyRestShrine: boolean;
   strategyGambler: boolean;
   strategyBlacksmith: boolean;
@@ -266,7 +266,7 @@ export function resolvePostCombatEvent(ctx: PostCombatContext): PostCombatResult
   } else if (ctx.totalFights >= MID_GAME_PITY_FIGHT_MIN) {
     effectivePityThreshold = MID_GAME_PITY_THRESHOLD;
   }
-  const pityActive = eventsEnabled && ctx.fightsSinceEvent >= effectivePityThreshold;
+  const pityActive = eventsEnabled && (ctx.fightsSinceEvent ?? 0) >= effectivePityThreshold;
 
   // C809: Weighted event pool — replaces first-match-wins if-chain
   if (eventsEnabled) {

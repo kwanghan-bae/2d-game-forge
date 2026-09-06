@@ -40,8 +40,8 @@ export interface DefenseContext {
   fogAmbushActive: boolean;
   windGaleActive: boolean; // C782: no defense effect (dodge is in engine)
   snowDriftActive: boolean; // C782: reduces enemy ATK
-  titanArenaActive: boolean; // C797: enemy ATK×1.3
-  astralParadoxActive: boolean; // C800: enemy ATK×1.8
+  titanArenaActive?: boolean; // C797: enemy ATK×1.3
+  astralParadoxActive?: boolean; // C800: enemy ATK×1.8
   perkGoldBarrierRate?: number; // C1023: damage reduction per 10k gold (cap 25%)
   reforgeArmorDrBonus?: number; // C1037: damage reduction from enhanced armor (cap 15%)
 }

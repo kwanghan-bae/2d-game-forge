@@ -53,9 +53,9 @@ export interface ActiveAtkBuffs {
   clearSky: boolean;
   crossroads: boolean;
   earlyMomentum: boolean; // C860
-  reputation: boolean; // C883
-  veteransTrial: boolean; // C887
-  lastStand: boolean; // C890
+  reputation?: boolean; // C883
+  veteransTrial?: boolean; // C887
+  lastStand?: boolean; // C890
   finalReckoning: boolean; // C896
   stormNexusMul: number;   // e.g. 1.35
   clearSkyMul: number;     // e.g. 1.12

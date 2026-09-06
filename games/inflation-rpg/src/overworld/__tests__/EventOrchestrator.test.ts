@@ -3,7 +3,7 @@ import { EventOrchestrator } from '../encounter/EventOrchestrator';
 
 describe('EventOrchestrator', () => {
   function makeCtx(overrides: Partial<Parameters<EventOrchestrator['resolve']>[2]> = {}) {
-    return { heroHpMax: 100, heroGold: 500, comboStreak: 5, relicLevels: [1, 2], ...overrides };
+    return { heroHpMax: 100, heroHp: 100, heroGold: 500, comboStreak: 5, relicLevels: [1, 2], statShardAtk: 0, rngChance: () => false, ...overrides };
   }
 
   it('triggers and checks pending state', () => {

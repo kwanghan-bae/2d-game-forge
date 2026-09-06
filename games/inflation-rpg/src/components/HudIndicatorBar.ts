@@ -25,15 +25,15 @@ export interface ActiveEventState {
   fogAmbushRemaining: number;
   windGaleRemaining: number;
   snowDriftRemaining: number;
-  abyssalConvergenceRemaining: number;
-  temporalFissureRemaining: number;
-  titanArenaRemaining: number;
-  crimsonTitheRemaining: number;
-  goldCrucibleRemaining: number;
-  astralParadoxRemaining: number;
-  soulForgeRemaining: number;
-  eventMomentumAtkRemaining: number;
-  eventMomentumDensityRemaining: number;
+  abyssalConvergenceRemaining?: number;
+  temporalFissureRemaining?: number;
+  titanArenaRemaining?: number;
+  crimsonTitheRemaining?: number;
+  goldCrucibleRemaining?: number;
+  astralParadoxRemaining?: number;
+  soulForgeRemaining?: number;
+  eventMomentumAtkRemaining?: number;
+  eventMomentumDensityRemaining?: number;
 }
 
 export interface HudBadge {
@@ -94,7 +94,7 @@ export function buildHudIndicators(input: HudIndicatorInput): HudBadge[] {
   if (input.activeEvents) {
     for (const entry of EVENT_BADGE_REGISTRY) {
       const remaining = input.activeEvents[entry.key];
-      if (remaining > 0) {
+      if ((remaining ?? 0) > 0) {
         badges.push({ type: 'event', icon: entry.icon, label: `${entry.label} (${remaining})` });
       }
     }

@@ -10,7 +10,7 @@ describe('QuestLogScreen — C1019', () => {
         ...useGameStore.getState().meta,
         questsCompleted: [],
         questProgress: {},
-        jpPerksOwned: [],
+        jpPerksOwned: { '': [] },
       },
     });
   });
@@ -36,7 +36,7 @@ describe('QuestLogScreen — C1019', () => {
     useGameStore.setState({
       meta: {
         ...useGameStore.getState().meta,
-        jpPerksOwned: ['quest_insight'],
+        jpPerksOwned: { '': ['quest_insight'] },
       },
     });
 

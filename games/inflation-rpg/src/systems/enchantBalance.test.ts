@@ -83,6 +83,7 @@ describe('C1048 [balance]: Elemental Rune Enchanting Economy & Trial Simulation'
         instanceId: 'rare-sword-1',
         baseId: 'w-bluedragon',
         enhanceLv: 0,
+        modifiers: [],
       };
       const yieldData = getDismantleYield(rareItem)!;
       expect(yieldData).not.toBeNull();
@@ -96,6 +97,7 @@ describe('C1048 [balance]: Elemental Rune Enchanting Economy & Trial Simulation'
         instanceId: 'rare-sword-1',
         baseId: 'w-bluedragon',
         enhanceLv: 0,
+        modifiers: [],
       };
       const yieldData = getDismantleYield(rareItem)!;
       expect(yieldData.stones * 3).toBe(15); // 15 stones == dark rune cost

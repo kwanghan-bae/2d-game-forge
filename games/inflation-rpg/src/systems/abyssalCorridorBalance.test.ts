@@ -92,8 +92,12 @@ describe('C1125: Abyssal Corridor Balance & Economy Tests', () => {
     });
 
     const trinityResonance: AstralResonanceState = {
-      resonanceTier: 'trinity',
-      activeAffixes: ['astral_overload', 'dimensional_warp', 'singularity_core'],
+      totalAffixes: 3,
+      distinctAffixes: ['astral_fortitude', 'cosmic_celerity', 'singularity_might'],
+      harmonyTier: 2,
+      tierNameKR: '삼위일체 성간 조화',
+      hanja: '三位一體星間調和',
+      badge: '🌌✨👑',
       omniStatMultiplier: 1.25,
       defPierceBonus: 0.15,
       finalDmgMultiplier: 1.20,
@@ -102,7 +106,7 @@ describe('C1125: Abyssal Corridor Balance & Economy Tests', () => {
     };
 
     const result = resolveCorridorCombat(endgameHero, 5, {
-      weaponElement: 'light', // Counter dark element
+      weaponElement: 'fire', // Dark clash bonus
       playerDR: 0.70,
       playerElementalBonus: 0.25,
       finalDmgMultiplier: 1.30,

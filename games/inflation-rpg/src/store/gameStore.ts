@@ -44,6 +44,8 @@ import type { AchievementProgress } from '../data/achievementsTypes';
 import { createInitialPets } from '../systems/petSystem';
 import type { RunStatisticsData } from '../overworld/encounter/RunStatistics';
 
+export type { MetaState } from '../types';
+
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
 export const SLOT_COSTS: Record<number, number> = {

@@ -131,7 +131,9 @@ export class HeroEntity {
     return added;
   }
 
-  private constructor() {
+  // Public for specialized combat simulations that provide their own stat
+  // fixture. `create()` remains the canonical spawned-hero entry point.
+  constructor(opts?: HeroCreateOpts) {
     this.name = '';
     this.emoji = '🧒';
     this.age = 5;
@@ -143,10 +145,10 @@ export class HeroEntity {
     this.hpMax = 0;
     this.atk = 0;
     this.atkBase = 0;
-    this.hpBase = 0;
+    this.hpBase = opts?.heroHpMax ?? 0;
     this.def = 0;
-    this.defBase = 0;
-    this.critRateBase = 0.05;
+    this.defBase = opts?.heroDefBase ?? 0;
+    this.critRateBase = opts?.heroCritRateBase ?? 0.05;
     this.actionCount = 0;
     this.rejuvenationCount = 0;
     this.personality = new PersonalityState();

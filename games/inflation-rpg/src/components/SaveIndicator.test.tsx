@@ -12,7 +12,7 @@ describe('SaveIndicator', () => {
     expect(container.textContent).toBe('');
 
     act(() => {
-      useGameStore.setState({ screen: 'main_menu' });
+      useGameStore.setState({ screen: 'main-menu' });
     });
     act(() => {
       vi.advanceTimersByTime(600);
@@ -25,7 +25,7 @@ describe('SaveIndicator', () => {
     const { container } = render(<SaveIndicator />);
 
     act(() => {
-      useGameStore.setState({ screen: 'main_menu' });
+      useGameStore.setState({ screen: 'main-menu' });
     });
     act(() => {
       vi.advanceTimersByTime(600);

@@ -4,14 +4,14 @@ import { QUESTS } from './quests';
 describe('Quest reward balance', () => {
   it('all quests have gold reward > 0', () => {
     for (const q of QUESTS) {
-      expect(q.reward.gold, `${q.id} gold`).toBeGreaterThan(0);
+      expect(q.reward.gold ?? 0, `${q.id} gold`).toBeGreaterThan(0);
     }
   });
 
   it('gold rewards scale with quest difficulty tier', () => {
     // Group by rough tier: early(<=10k), mid(10k-30k), late(>30k)
-    const early = QUESTS.filter(q => q.reward.gold <= 10000);
-    const late = QUESTS.filter(q => q.reward.gold > 30000);
+    const early = QUESTS.filter(q => (q.reward.gold ?? 0) <= 10000);
+    const late = QUESTS.filter(q => (q.reward.gold ?? 0) > 30000);
     expect(early.length).toBeGreaterThan(0);
     expect(late.length).toBeGreaterThan(0);
   });
