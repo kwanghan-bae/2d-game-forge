@@ -38,6 +38,8 @@ export interface V4HeroSnapshot {
   critRateBase: number;
   realmId: RealmId;
   equipmentIds: string[];
+  /** V4 equipment is a compact equipped loadout; repeated crafts increase its level. */
+  equipmentLevels?: Record<string, number>;
   actionCount: number;
   rejuvenationCount: number;
   currentAction: 'rest' | 'train' | 'expedition';

@@ -2,6 +2,7 @@ import type { HeroSnapshot } from '../hero/HeroEntity';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import { FACILITY_IDS, AGENT_DEFINITIONS, REALM_IDS } from './data';
 import { completeFacilityTasks } from './domain';
+import { applyV4EquipmentBonuses, getV4EquipmentBonuses } from './equipment';
 import type {
   FacilityState,
   OfflineSummary,
@@ -196,7 +197,10 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(hero) || typeof hero.name !== 'string' || typeof hero.emoji !== 'string'
     || !REALM_IDS.includes(hero.realmId as typeof REALM_IDS[number])
     || !['rest', 'train', 'expedition'].includes(hero.currentAction as string)
-    || !Array.isArray(hero.equipmentIds) || !hero.equipmentIds.every((id) => typeof id === 'string')) return false;
+    || !Array.isArray(hero.equipmentIds) || !hero.equipmentIds.every((id) => typeof id === 'string')
+    || (hero.equipmentLevels !== undefined && (!isRecord(hero.equipmentLevels)
+      || !Object.entries(hero.equipmentLevels).every(([id, level]) => typeof id === 'string'
+        && isNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)))) return false;
   const heroAge = hero.age;
   const heroLevel = hero.level;
   const heroExp = hero.exp;
@@ -264,6 +268,7 @@ function initialHero(seed: number): V4HeroSnapshot {
     critRateBase: 0.05,
     realmId: 'joseon_plains',
     equipmentIds: [],
+    equipmentLevels: {},
     actionCount: HeroLifecycle.actionsForAge(17),
     rejuvenationCount: 0,
     currentAction: 'rest',
@@ -303,6 +308,9 @@ export function createInitialV4Save(seed: number): V4SaveEnvelope {
 }
 
 export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
+  const equipmentLevels = Object.fromEntries(
+    input.equipment.map((id) => [id, Math.max(1, (input.equipment.filter((candidate) => candidate === id)).length)]),
+  );
   return {
     name: input.name,
     emoji: input.emoji,
@@ -317,10 +325,25 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
     critRateBase: input.critRateBase ?? 0.05,
     realmId: 'joseon_plains',
     equipmentIds: [...input.equipment],
+    equipmentLevels,
     actionCount: input.actionCount,
     rejuvenationCount: input.rejuvenationCount,
     currentAction: 'rest',
   };
+}
+
+function hydrateEquipmentStats(save: V4SaveEnvelope): V4SaveEnvelope {
+  if (save.run.hero.equipmentLevels !== undefined) return save;
+  const equipmentIds = [...new Set(save.run.hero.equipmentIds)];
+  const equipmentLevels = Object.fromEntries(
+    save.run.hero.equipmentIds.map((id) => [id, save.run.hero.equipmentIds.filter((candidate) => candidate === id).length]),
+  );
+  const next = JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
+  next.run.hero.equipmentIds = equipmentIds;
+  next.run.hero.equipmentLevels = equipmentLevels;
+  applyV4EquipmentBonuses(next.run.hero, getV4EquipmentBonuses(equipmentIds, equipmentLevels));
+  next.run.hero.hp = Math.min(next.run.hero.hpMax, next.run.hero.hp);
+  return next;
 }
 
 /** Explicit user-triggered import. V4 never calls this during normal loading. */
@@ -430,7 +453,7 @@ export function loadV4Save(storage: Storage | undefined = defaultStorage()): V4S
     const raw = storage.getItem(V4_SAVE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    return isV4SaveEnvelope(parsed) ? parsed : null;
+    return isV4SaveEnvelope(parsed) ? hydrateEquipmentStats(parsed) : null;
   } catch {
     return null;
   }

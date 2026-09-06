@@ -182,4 +182,28 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-town-hub')).toContainText('Lv.2');
     await expect(training).toContainText('작업 시작');
   });
+
+  test('대장간 장비가 영웅 전투력에 반영된다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+
+    const blacksmith = page.locator('.v4-facility').filter({ hasText: '대장간' });
+    await blacksmith.getByRole('button', { name: '작업 시작' }).click();
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('v4 save was not created');
+      const save = JSON.parse(raw) as { meta: { tasks: Record<string, { facilityId: string; completesAt: number }> } };
+      const task = Object.values(save.meta.tasks).find((candidate) => candidate.facilityId === 'blacksmith');
+      if (!task) throw new Error('blacksmith task was not started');
+      task.completesAt = Date.now() - 1;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, V4_SAVE_KEY);
+    await page.reload();
+
+    await page.getByRole('button', { name: '영웅 상세' }).click();
+    await expect(page.getByText('마을의 철검 · Lv.1')).toBeVisible();
+    await expect(page.getByText('공격 +80')).toBeVisible();
+  });
 });

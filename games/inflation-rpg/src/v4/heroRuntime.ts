@@ -11,7 +11,11 @@ import type {
 } from './types';
 
 function cloneSnapshot(snapshot: V4HeroSnapshot): V4HeroSnapshot {
-  return { ...snapshot, equipmentIds: [...snapshot.equipmentIds] };
+  return {
+    ...snapshot,
+    equipmentIds: [...snapshot.equipmentIds],
+    equipmentLevels: snapshot.equipmentLevels ? { ...snapshot.equipmentLevels } : undefined,
+  };
 }
 
 /**

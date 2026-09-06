@@ -1,3 +1,4 @@
+import { getV4EquipmentDefinition, getV4EquipmentName } from '../equipment';
 import type { V4HeroSnapshot } from '../types';
 
 interface Props {
@@ -39,7 +40,19 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
       </section>
       <section className="v4-panel">
         <h2>장비</h2>
-        {hero.equipmentIds.length > 0 ? hero.equipmentIds.map((equipmentId) => <div className="v4-agent" key={equipmentId}><span>⚔️ {equipmentId === 'v4_iron_sword' ? '마을의 철검' : equipmentId}</span><span className="v4-agent-role">장착됨</span></div>) : <p>아직 장비가 없습니다. 대장간에서 첫 철검을 제작하세요.</p>}
+        {hero.equipmentIds.length > 0 ? hero.equipmentIds.map((equipmentId) => {
+          const definition = getV4EquipmentDefinition(equipmentId);
+          const level = hero.equipmentLevels?.[equipmentId] ?? 1;
+          const bonuses = definition
+            ? [`공격 +${definition.atk * level}`, `방어 +${definition.def * level}`, `HP +${definition.hpMax * level}`].filter((value) => !value.endsWith('+0'))
+            : [];
+          return (
+            <div className="v4-agent" key={equipmentId}>
+              <span>⚔️ {getV4EquipmentName(equipmentId)} · Lv.{level}<br /><span className="v4-muted">{bonuses.join(' · ') || '기록된 장비'}</span></span>
+              <span className="v4-agent-role">장착됨</span>
+            </div>
+          );
+        }) : <p>아직 장비가 없습니다. 대장간에서 첫 철검을 제작하세요.</p>}
       </section>
       <section className="v4-panel">
         <h2>영원성</h2>

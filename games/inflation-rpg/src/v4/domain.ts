@@ -1,4 +1,5 @@
 import { FACILITY_DEFINITIONS, AGENT_DEFINITIONS, REALM_DEFINITIONS } from './data';
+import { applyV4EquipmentBonuses, getV4EquipmentBonuses } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import type {
@@ -223,6 +224,16 @@ function applyHeroExperience(save: V4SaveEnvelope, amount: number): number {
     levelsGained += 1;
   }
   return levelsGained;
+}
+
+function grantEquipmentLevel(save: V4SaveEnvelope, equipmentId: string): void {
+  const hero = save.run.hero;
+  const equipmentLevels = hero.equipmentLevels ?? {};
+  const currentLevel = Math.max(0, Math.floor(equipmentLevels[equipmentId] ?? 0));
+  if (!hero.equipmentIds.includes(equipmentId)) hero.equipmentIds.push(equipmentId);
+  equipmentLevels[equipmentId] = Math.min(20, currentLevel + 1);
+  hero.equipmentLevels = equipmentLevels;
+  applyV4EquipmentBonuses(hero, getV4EquipmentBonuses([equipmentId], { [equipmentId]: 1 }));
 }
 
 export function startFacilityTask(
@@ -486,7 +497,7 @@ export function completeFacilityTasks(
     const facility = save.meta.facilities[task.facilityId];
     give(save, task.outputPreview, outputEfficiency);
     if (task.outputEquipmentIds) {
-      save.run.hero.equipmentIds.push(...task.outputEquipmentIds);
+      for (const equipmentId of task.outputEquipmentIds) grantEquipmentLevel(save, equipmentId);
     }
     if (task.heroExpGain) {
       const levelsGained = applyHeroExperience(save, task.heroExpGain * outputEfficiency);
