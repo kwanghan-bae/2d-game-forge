@@ -1180,6 +1180,17 @@ describe('v4 save and domain', () => {
     expect(initial.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
   });
 
+  it('rejects an unknown Realm before checking unlocks or charging', () => {
+    const initial = createInitialV4Save(112);
+    const result = startExpedition(initial, 'unknown_realm' as never, initial.updatedAt + 1_000, 'aggression', null);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(initial);
+    if (result.ok) return;
+    expect(result.error).toContain('알 수 없는 Realm');
+    expect(initial.run.expedition).toBeNull();
+  });
+
   it('rejects an unknown intervention before consuming a charge or retreating', () => {
     const initial = createInitialV4Save(108);
     const started = startExpedition(initial, 'joseon_plains', initial.updatedAt + 1_000, 'aggression', null);

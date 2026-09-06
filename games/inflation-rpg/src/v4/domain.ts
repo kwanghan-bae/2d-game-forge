@@ -827,6 +827,9 @@ export function startExpedition(
   }
   const save = cloneSave(source);
   const realm = REALM_DEFINITIONS[realmId];
+  if (!realm) {
+    return { ok: false, save: source, error: '알 수 없는 Realm입니다.' };
+  }
   if (!save.meta.unlockedRealms.includes(realmId)) {
     return { ok: false, save: source, error: '아직 기록되지 않은 Realm입니다.' };
   }
