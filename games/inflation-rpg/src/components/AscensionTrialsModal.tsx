@@ -13,6 +13,7 @@ import {
   resolveTrialCombat,
   type TrialCombatResult,
 } from '../systems/ascensionTrials';
+import { AscendantRushModal } from './AscendantRushModal';
 
 interface Props {
   onClose: () => void;
@@ -38,6 +39,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
     Math.min(MAX_TRIAL_FLOOR, clearedFloor + 1),
   );
   const [combatResult, setCombatResult] = useState<TrialCombatResult | null>(null);
+  const [showBossRush, setShowBossRush] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -138,19 +140,38 @@ export function AscensionTrialsModal({ onClose }: Props) {
               )}
             </div>
           </div>
-          <button
-            data-testid="close-btn"
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#94a3b8',
-              fontSize: 18,
-              cursor: 'pointer',
-            }}
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              data-testid="open-boss-rush-btn"
+              onClick={() => setShowBossRush(true)}
+              style={{
+                background: '#b91c1c',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              👑 보스 연전
+            </button>
+            <button
+              data-testid="close-btn"
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#94a3b8',
+                fontSize: 18,
+                cursor: 'pointer',
+                padding: '0 4px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Floor Selection Strip */}
@@ -312,6 +333,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
           )}
         </div>
       </div>
+      {showBossRush && <AscendantRushModal onClose={() => setShowBossRush(false)} />}
     </div>
   );
 }
