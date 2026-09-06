@@ -365,7 +365,7 @@ function hydrateEquipmentStats(save: V4SaveEnvelope): V4SaveEnvelope {
   if (save.run.hero.equipmentLevels !== undefined) return save;
   const equipmentIds = [...new Set(save.run.hero.equipmentIds)];
   const equipmentLevels = Object.fromEntries(
-    save.run.hero.equipmentIds.map((id) => [id, save.run.hero.equipmentIds.filter((candidate) => candidate === id).length]),
+    equipmentIds.map((id) => [id, Math.min(20, save.run.hero.equipmentIds.filter((candidate) => candidate === id).length)]),
   );
   const next = JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
   next.run.hero.equipmentIds = equipmentIds;

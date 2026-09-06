@@ -45,6 +45,26 @@ describe('v4 equipment progression', () => {
     expect(loadV4Save(fakeStorage)?.run.hero.atk).toBe(oldSave.run.hero.atk + 80);
   });
 
+  it('caps duplicate legacy equipment records while hydrating old saves', () => {
+    const oldSave = createInitialV4Save(104);
+    oldSave.run.hero.equipmentIds = Array.from({ length: 21 }, () => 'v4_iron_sword');
+    delete oldSave.run.hero.equipmentLevels;
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+
+    persistV4Save(oldSave, fakeStorage);
+    const hydrated = loadV4Save(fakeStorage);
+    expect(hydrated?.run.hero.equipmentIds).toEqual(['v4_iron_sword']);
+    expect(hydrated?.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 20 });
+
+    if (!hydrated) return;
+    persistV4Save(hydrated, fakeStorage);
+    expect(loadV4Save(fakeStorage)).not.toBeNull();
+  });
+
   it('keeps equipment bonuses explicit and bounded by the saved level', () => {
     expect(getV4EquipmentBonuses(['v4_iron_sword'], { v4_iron_sword: 3 })).toEqual({
       atk: 240,
