@@ -1253,6 +1253,7 @@ describe('v4 save and domain', () => {
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     expect(completed.meta.sagaEntries[0]?.title).toBe('조선 평야 원정 중단');
     expect(completed.meta.currencies.gold).toBe(initial.meta.currencies.gold);
+    expect(completed.meta.currencies.spirit).toBe(initial.meta.currencies.spirit);
     expect(completed.run.lastExpeditionResult).toMatchObject({
       outcome: 'defeat', recommendedFacilityId: 'recovery', recommendedEquipmentId: 'v4_iron_sword',
     });

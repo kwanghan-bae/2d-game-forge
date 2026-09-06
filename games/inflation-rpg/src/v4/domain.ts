@@ -634,6 +634,10 @@ function resolveExpedition(
         text: `${save.run.hero.name}이(가) ${realm.boss}을(를) 넘어 마을로 돌아왔다.`,
       });
     } else {
+      // A defeated expedition never destroys persistent resources. The
+      // preparation cost is refunded so failure teaches the player through
+      // the result card without creating an unrecoverable currency loss.
+      give(save, realm.cost);
       save.run.hero.currentAction = 'rest';
       save.meta.sagaEntries.unshift({
         id: nextSaveId(save, `saga-expedition-${expedition.id}`),
