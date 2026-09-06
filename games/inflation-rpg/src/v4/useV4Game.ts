@@ -145,7 +145,12 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     offlineRewardClaimInFlight.current = true;
     try {
       if (!(await watchRewarded('offline_double'))) return;
-      const next = grantOfflineResourceBonus(saveRef.current, offlineSummary.resourcesGained, Date.now());
+      const current = saveRef.current;
+      const next = grantOfflineResourceBonus(current, offlineSummary.resourcesGained, Date.now());
+      if (next === current) {
+        setMessage('저장 시각을 확인할 수 없어 오프라인 2배 보상을 적용하지 않았습니다.');
+        return;
+      }
       commit(next, '오프라인 재화 보상을 2배로 적용했습니다.');
       setOfflineRewardDoubled(true);
     } finally {
@@ -171,7 +176,13 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     interventionChargeInFlight.current = true;
     try {
       if (!(await watchRewarded('intervention_charge'))) return;
-      commit(grantInterventionCharge(saveRef.current, Date.now()), '개입 충전을 1회 얻었습니다.');
+      const current = saveRef.current;
+      const next = grantInterventionCharge(current, Date.now());
+      if (next === current) {
+        setMessage('저장 시각을 확인할 수 없어 개입 충전을 적용하지 않았습니다.');
+        return;
+      }
+      commit(next, '개입 충전을 1회 얻었습니다.');
     } finally {
       interventionChargeInFlight.current = false;
     }
@@ -205,7 +216,12 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const confirmRun = useCallback(() => {
     const current = saveRef.current;
     if (current.run.expedition?.status !== 'awaiting_confirmation') return;
-    commit(confirmPendingExpedition(current, Date.now()), '보류된 원정 결과를 확인했습니다.');
+    const next = confirmPendingExpedition(current, Date.now());
+    if (next === current) {
+      setMessage('원정 결과를 확인할 수 없습니다. 기기 시각을 확인한 뒤 다시 시도해 주세요.');
+      return;
+    }
+    commit(next, '보류된 원정 결과를 확인했습니다.');
   }, [commit]);
 
   const confirmUnlock = useCallback(() => {

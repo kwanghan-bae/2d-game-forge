@@ -2,9 +2,11 @@ import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save, persistV4Save, V4_RECOVERY_BACKUP_KEY, V4_SAVE_KEY } from '../save';
-import { startFacilityTask } from '../domain';
+import { startExpedition, startFacilityTask } from '../domain';
 import { V4MonetizationAdapter } from '../monetization';
 import { useV4Game } from '../useV4Game';
+
+const HOUR = 60 * 60 * 1000;
 
 function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
   const game = useV4Game(monetization);
@@ -26,6 +28,7 @@ function InstantTaskHarness({ monetization }: { monetization: V4MonetizationAdap
       <div data-testid="intervention-charges">{game.save.run.interventionCharges}</div>
       <div data-testid="policy">{game.save.run.policy}</div>
       <div data-testid="muted">{game.save.meta.settings.muted ? 'true' : 'false'}</div>
+      <div data-testid="message">{game.message ?? ''}</div>
       <button type="button" onClick={() => { void game.instantTask('temple'); }}>instant</button>
       <button type="button" onClick={() => { void game.addInterventionCharge(); }}>charge</button>
       <button type="button" onClick={() => game.changePolicy('training')}>policy</button>
@@ -50,6 +53,16 @@ function RefreshHarness() {
     <>
       <div data-testid="task-count">{Object.keys(game.save.meta.tasks).length}</div>
       <button type="button" onClick={game.refresh}>refresh</button>
+    </>
+  );
+}
+
+function ConfirmHarness() {
+  const game = useV4Game();
+  return (
+    <>
+      <div data-testid="confirm-message">{game.message ?? ''}</div>
+      <button type="button" onClick={game.confirmRun}>confirm</button>
     </>
   );
 }
@@ -195,6 +208,25 @@ describe('useV4Game monetization actions', () => {
     expect(monetization.getAdsToday()).toBe(1);
   });
 
+  it('does not report a rewarded charge when the save clock is stale', async () => {
+    const now = Date.now();
+    const base = createInitialV4Save(91);
+    base.createdAt = now - 60_000;
+    base.lastProcessedAt = base.createdAt;
+    base.updatedAt = now + HOUR;
+    persistV4Save(base);
+
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => true,
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'charge' }));
+
+    await waitFor(() => expect(screen.getByTestId('message')).toHaveTextContent('적용하지 않았습니다'));
+    expect(screen.getByTestId('intervention-charges')).toHaveTextContent('1');
+  });
+
   it('preserves a newer policy change while an instant-task ad is pending', async () => {
     const base = createInitialV4Save(110);
     const started = startFacilityTask(base, 'temple', base.updatedAt);
@@ -268,5 +300,21 @@ describe('useV4Game save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
     expect(screen.getByTestId('task-count')).toHaveTextContent('1');
+  });
+
+  it('does not report a risky expedition confirmation before its completion time', async () => {
+    const base = createInitialV4Save(104);
+    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.status = 'awaiting_confirmation';
+    started.save.run.expedition!.completesAt = started.save.updatedAt + HOUR;
+    persistV4Save(started.save);
+
+    render(<ConfirmHarness />);
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+
+    await waitFor(() => expect(screen.getByTestId('confirm-message')).toHaveTextContent('확인할 수 없습니다'));
+    expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').run.expedition).not.toBeNull();
   });
 });
