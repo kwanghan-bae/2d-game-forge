@@ -935,6 +935,16 @@ describe('v4 save and domain', () => {
     expect(result.save).toBe(initial);
   });
 
+  it('rejects an unsafe offline clock before it can create an invalid save', () => {
+    const initial = createInitialV4Save(27);
+
+    const result = simulateOfflineProgress(initial, Number.MAX_SAFE_INTEGER + 1);
+
+    expect(result.summary.processedSeconds).toBe(0);
+    expect(result.summary.clockAnomaly).toBe('invalid');
+    expect(result.save).toBe(initial);
+  });
+
   it('normalizes non-finite explicit action timestamps before persisting', () => {
     const initial = createInitialV4Save(26);
     initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'

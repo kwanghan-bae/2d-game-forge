@@ -488,7 +488,7 @@ export function simulateOfflineProgress(
   const beforeTaskIds = Object.keys(save.meta.tasks);
   const expeditionWasReady = Boolean(save.run.expedition && save.run.expedition.completesAt <= now);
 
-  if (!Number.isFinite(now)) {
+  if (!isPersistableNonNegativeNumber(now)) {
     return {
       save,
       summary: {
