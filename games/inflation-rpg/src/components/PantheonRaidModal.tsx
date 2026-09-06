@@ -21,6 +21,7 @@ import { getEquippedInstances } from '../systems/equipment';
 import { getEffectiveElement } from '../systems/elementalSystem';
 import { aggregateReforgeBonus } from '../systems/reforgeSystem';
 import { HeroEntity } from '../hero/HeroEntity';
+import { getPantheonTitanLore, PANTHEON_VICTORY_EPILOGUE } from '../data/pantheonRaidLore';
 
 interface Props {
   onClose: () => void;
@@ -241,6 +242,9 @@ export function PantheonRaidModal({ onClose }: Props) {
                 <div>
                   <div style={{ fontSize: 11, color: '#c084fc' }}>[{currentTitan.titleKR}]</div>
                   <strong style={{ fontSize: 16, color: '#fff' }}>{currentTitan.nameKR}</strong>
+                  <div style={{ fontSize: 11, color: '#f0abfc', fontStyle: 'italic', marginTop: 2 }}>
+                    "{getPantheonTitanLore(selectedPhase).entryDecree}"
+                  </div>
                 </div>
               </div>
               <span
@@ -365,6 +369,14 @@ export function PantheonRaidModal({ onClose }: Props) {
                   }}
                 >
                   🏆 칭호 획득: [{raidResult.rewards.titleKR}] | 만신전 문장 +{raidResult.rewards.pantheonCrests}개 | 상금 +{(raidResult.rewards.goldReward / 100_000_000).toLocaleString()}억 G
+                </div>
+              )}
+              {raidResult.won && (
+                <div
+                  data-testid="pantheon-victory-epilogue"
+                  style={{ fontSize: 11, color: '#6ee7b7', fontStyle: 'italic', marginTop: 4 }}
+                >
+                  "{PANTHEON_VICTORY_EPILOGUE}"
                 </div>
               )}
             </div>
