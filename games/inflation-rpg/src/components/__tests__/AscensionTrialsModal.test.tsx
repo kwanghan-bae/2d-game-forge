@@ -201,6 +201,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
 
     expect(screen.getByTestId('chrono-loom-modal')).toBeDefined();
   });
+
+  it('opens PantheonRaidModal when clicking open-pantheon-modal-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openPantheonBtn = screen.getByTestId('open-pantheon-modal-btn');
+    expect(openPantheonBtn).toBeDefined();
+    fireEvent.click(openPantheonBtn);
+
+    expect(screen.getByTestId('pantheon-raid-modal')).toBeDefined();
+  });
 });
 
 

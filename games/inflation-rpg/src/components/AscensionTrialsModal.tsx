@@ -21,6 +21,7 @@ import { PrimordialAscensionModal } from './PrimordialAscensionModal';
 import { AstralArchiveModal } from './AstralArchiveModal';
 import { ChronoRebirthModal } from './ChronoRebirthModal';
 import { ChronoLoomModal } from './ChronoLoomModal';
+import { PantheonRaidModal } from './PantheonRaidModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
 import { PrimordialConstellationBadge } from './PrimordialConstellationBadge';
@@ -57,6 +58,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   const [showArchive, setShowArchive] = useState(false);
   const [showRebirth, setShowRebirth] = useState(false);
   const [showLoom, setShowLoom] = useState(false);
+  const [showPantheon, setShowPantheon] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -296,6 +298,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               🕸️ 시공 베틀
             </button>
             <button
+              data-testid="open-pantheon-modal-btn"
+              onClick={() => setShowPantheon(true)}
+              style={{
+                background: '#7e22ce',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              🏛️ 만신전
+            </button>
+            <button
               data-testid="close-btn"
               onClick={onClose}
               style={{
@@ -479,6 +497,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
       {showArchive && <AstralArchiveModal onClose={() => setShowArchive(false)} />}
       {showRebirth && <ChronoRebirthModal onClose={() => setShowRebirth(false)} />}
       {showLoom && <ChronoLoomModal onClose={() => setShowLoom(false)} />}
+      {showPantheon && <PantheonRaidModal onClose={() => setShowPantheon(false)} />}
     </div>
   );
 }
