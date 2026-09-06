@@ -1523,6 +1523,26 @@ describe('v4 save and domain', () => {
     expect(completed.meta.currencies.gold).toBe(1e308);
   });
 
+  it('saturates a currency bonus at the persistable ceiling', () => {
+    const nearLimit = createInitialV4Save(122);
+    nearLimit.meta.currencies.gold = Number.MAX_SAFE_INTEGER - 1;
+
+    const updated = grantOfflineResourceBonus(nearLimit, { gold: 10 }, nearLimit.updatedAt + 1_000);
+
+    expect(updated.meta.currencies.gold).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it('saturates hero action history at the persistable ceiling', () => {
+    const nearLimit = createInitialV4Save(123);
+    nearLimit.run.hero.actionCount = Number.MAX_SAFE_INTEGER;
+    nearLimit.run.hero.age = HeroLifecycle.ageFromActions(Number.MAX_SAFE_INTEGER);
+
+    const advanced = advanceHeroActions(nearLimit, 1, nearLimit.updatedAt + 1_000);
+
+    expect(advanced.run.hero.actionCount).toBe(Number.MAX_SAFE_INTEGER);
+    expect(Number.isSafeInteger(advanced.run.hero.actionCount)).toBe(true);
+  });
+
   it('does not upgrade a facility beyond the persistable level ceiling', () => {
     const capped = createInitialV4Save(120);
     capped.meta.facilities.temple.level = Number.MAX_SAFE_INTEGER;

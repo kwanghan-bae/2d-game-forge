@@ -126,9 +126,10 @@ function give(save: V4SaveEnvelope, output: Partial<Record<V4CurrencyKey, number
       || !Number.isFinite(value) || !Number.isFinite(multiplier) || value <= 0 || multiplier <= 0) continue;
     const amount = Math.floor(value * multiplier);
     const current = save.meta.currencies[currency];
-    const next = current + amount;
-    if (!Number.isFinite(amount) || !Number.isFinite(current) || !Number.isFinite(next)) continue;
-    save.meta.currencies[currency] = next;
+    if (!Number.isFinite(amount) || !Number.isFinite(current) || current < 0
+      || current > MAX_ECONOMY_VALUE) continue;
+    const boundedAmount = Math.min(MAX_ECONOMY_VALUE, amount);
+    save.meta.currencies[currency] = Math.min(MAX_ECONOMY_VALUE, current + boundedAmount);
   }
 }
 
@@ -171,7 +172,13 @@ function advanceHeroActionsInPlace(save: V4SaveEnvelope, actions: number, now: n
   const eventAt = eventTimestamp(save, now);
   const hero = save.run.hero;
   const previousAge = hero.age;
-  hero.actionCount += amount;
+  const currentActions = Number.isFinite(hero.actionCount) && Number.isInteger(hero.actionCount) && hero.actionCount >= 0
+    ? Math.min(MAX_ECONOMY_VALUE, hero.actionCount)
+    : 0;
+  const nextActions = Math.min(MAX_ECONOMY_VALUE, currentActions + amount);
+  const effectiveActions = nextActions - currentActions;
+  if (effectiveActions <= 0) return;
+  hero.actionCount = nextActions;
   hero.age = Math.max(previousAge, HeroLifecycle.ageFromActions(hero.actionCount));
   if (hero.age > previousAge) {
     save.meta.sagaEntries.unshift({
