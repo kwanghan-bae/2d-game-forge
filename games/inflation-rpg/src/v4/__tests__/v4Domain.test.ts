@@ -703,6 +703,47 @@ describe('v4 save and domain', () => {
     expect(result.save).toBe(futureSave);
   });
 
+  it('rejects a non-finite offline clock without corrupting the save', () => {
+    const initial = createInitialV4Save(25);
+
+    const result = simulateOfflineProgress(initial, Number.NaN);
+
+    expect(result.summary.processedSeconds).toBe(0);
+    expect(result.summary.clockAnomaly).toBe('invalid');
+    expect(result.save).toBe(initial);
+  });
+
+  it('normalizes non-finite explicit action timestamps before persisting', () => {
+    const initial = createInitialV4Save(26);
+    initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, fatigue: 25 }
+      : agent);
+
+    const rested = restAgent(initial, 'blacksmith', Number.NaN);
+    const started = startFacilityTask(initial, 'temple', Number.POSITIVE_INFINITY);
+
+    expect(rested.ok).toBe(true);
+    expect(started.ok).toBe(true);
+    if (!rested.ok || !started.ok) return;
+    expect(rested.save.meta.sagaEntries[0]?.createdAt).toBe(initial.updatedAt);
+    expect(started.task.startedAt).toBe(initial.updatedAt);
+    expect(started.task.completesAt).toBeGreaterThan(started.task.startedAt);
+  });
+
+  it('does not settle due work before a future persisted write time', () => {
+    const initial = createInitialV4Save(27);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = initial.createdAt;
+    started.save.updatedAt = initial.createdAt + HOUR;
+
+    const result = completeFacilityTasks(started.save, initial.createdAt + 1_000);
+
+    expect(result).toBe(started.save);
+    expect(result.meta.tasks[started.task.id]).toBeDefined();
+  });
+
   it('keeps the save chronology valid when an explicit action sees a backwards clock', () => {
     const initial = createInitialV4Save(24);
     initial.lastProcessedAt = initial.createdAt + HOUR;

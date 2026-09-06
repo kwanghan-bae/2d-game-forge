@@ -163,7 +163,7 @@ export interface OfflineSummary {
   resourcesGained: Partial<Record<V4CurrencyKey, number>>;
   equipmentGained: string[];
   wasClamped: boolean;
-  clockAnomaly: 'backwards' | 'future' | null;
+  clockAnomaly: 'backwards' | 'future' | 'invalid' | null;
   notes: string[];
 }
 

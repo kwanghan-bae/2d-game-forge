@@ -426,6 +426,18 @@ export function simulateOfflineProgress(
   const beforeTaskIds = Object.keys(save.meta.tasks);
   const expeditionWasReady = Boolean(save.run.expedition && save.run.expedition.completesAt <= now);
 
+  if (!Number.isFinite(now)) {
+    return {
+      save,
+      summary: {
+        processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [],
+        wasClamped: false, clockAnomaly: 'invalid',
+        notes: ['기기 시각을 확인할 수 없습니다. 보상을 정산하지 않았습니다.'],
+      },
+    };
+  }
+
   if (now < save.lastProcessedAt) {
     return {
       save,

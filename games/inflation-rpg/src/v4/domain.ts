@@ -58,8 +58,12 @@ function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
 }
 
+function eventTimestamp(save: V4SaveEnvelope, now: number): number {
+  return Number.isFinite(now) ? now : save.updatedAt;
+}
+
 function touchSave(save: V4SaveEnvelope, now: number): void {
-  const requested = Number.isFinite(now) ? now : save.updatedAt;
+  const requested = eventTimestamp(save, now);
   save.updatedAt = Math.max(save.updatedAt, save.lastProcessedAt, requested);
 }
 
@@ -114,15 +118,16 @@ function advanceHeroActionsInPlace(save: V4SaveEnvelope, actions: number, now: n
   const amount = Math.floor(actions);
   if (!Number.isFinite(actions) || amount <= 0) return;
 
+  const eventAt = eventTimestamp(save, now);
   const hero = save.run.hero;
   const previousAge = hero.age;
   hero.actionCount += amount;
   hero.age = Math.max(previousAge, HeroLifecycle.ageFromActions(hero.actionCount));
   if (hero.age > previousAge) {
     save.meta.sagaEntries.unshift({
-      id: nextSaveId(save, `saga-aging-${Number.isFinite(now) ? now : save.updatedAt}-${hero.actionCount}`),
+      id: nextSaveId(save, `saga-aging-${eventAt}-${hero.actionCount}`),
       kind: 'milestone',
-      createdAt: now,
+      createdAt: eventAt,
       title: '영웅의 시간',
       text: `${hero.name}이(가) ${previousAge}세에서 ${hero.age}세로 한 걸음 나아갔다.`,
     });
@@ -277,6 +282,7 @@ export function startFacilityTask(
   }
 
   const save = cloneSave(source);
+  const eventAt = eventTimestamp(save, now);
   const facility = save.meta.facilities[facilityId];
   const definition = FACILITY_DEFINITIONS[facilityId];
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
@@ -287,8 +293,8 @@ export function startFacilityTask(
     id: nextTaskId(save, facilityId, now),
     facilityId,
     type: definition.taskLabelKR,
-    startedAt: now,
-    completesAt: now + preview.durationSeconds * 1000,
+    startedAt: eventAt,
+    completesAt: eventAt + preview.durationSeconds * 1000,
     input: preview.input,
     outputPreview: preview.output,
     outputEquipmentIds: preview.outputEquipmentIds.length > 0 ? preview.outputEquipmentIds : undefined,
@@ -339,13 +345,14 @@ export function restAgent(
   if (sourceAgent.fatigue <= 0) return { ok: false, save: source, error: '에이전트의 피로도가 이미 0입니다.' };
 
   const save = cloneSave(source);
+  const eventAt = eventTimestamp(save, now);
   const agent = save.meta.agents.find((candidate) => candidate.id === agentId);
   if (!agent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
   agent.fatigue = Math.max(0, agent.fatigue - AGENT_REST_RECOVERY);
   save.meta.sagaEntries.unshift({
-    id: nextSaveId(save, `saga-agent-rest-${agentId}-${Number.isFinite(now) ? now : save.updatedAt}`),
+    id: nextSaveId(save, `saga-agent-rest-${agentId}-${eventAt}`),
     kind: 'facility',
-    createdAt: now,
+    createdAt: eventAt,
     title: `${agent.nameKR} 휴식`,
     text: `${agent.nameKR}이(가) 잠시 숨을 고르고 피로를 ${AGENT_REST_RECOVERY} 낮췄다.`,
   });
@@ -362,6 +369,7 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
   }
 
   const save = cloneSave(source);
+  const eventAt = eventTimestamp(save, now);
   const runtime = createV4HeroRuntime(save.run.hero);
   const result = runtime.rejuvenate(years);
   if (result.yearsReduced <= 0) {
@@ -374,9 +382,9 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
   save.meta.currencies.gold -= result.cost;
   save.run.hero = result.snapshot;
   save.meta.sagaEntries.unshift({
-    id: nextSaveId(save, `saga-rejuvenation-${Number.isFinite(now) ? now : save.updatedAt}`),
+    id: nextSaveId(save, `saga-rejuvenation-${eventAt}`),
     kind: 'rejuvenation',
-    createdAt: now,
+    createdAt: eventAt,
     title: '영원의 회춘 의식',
     text: `${save.run.hero.name}의 시간이 ${result.yearsReduced}년 되돌아갔다.`,
   });
@@ -443,9 +451,10 @@ function expeditionDurationSeconds(save: V4SaveEnvelope, baseDurationSeconds: nu
 }
 
 function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlock: boolean, efficiency: number): void {
+  const eventAt = eventTimestamp(save, now);
   while (save.run.expedition) {
     const expedition = save.run.expedition;
-    if (expedition.completesAt > now || expedition.status === 'awaiting_confirmation') return;
+    if (expedition.completesAt > eventAt || expedition.status === 'awaiting_confirmation') return;
 
     const realm = REALM_DEFINITIONS[expedition.realmId];
     // Saves created before staged expeditions have no encounterIndex. Treat
@@ -474,7 +483,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     // One resolved encounter represents one meaningful hero action. Keeping
     // the clock at encounter granularity makes aging predictable and keeps it
     // independent from the number of turns inside the battle loop.
-    advanceHeroActionsInPlace(save, 1, now);
+    advanceHeroActionsInPlace(save, 1, eventAt);
     const heroPower = getV4HeroPower(save);
     const successChance = getExpeditionSuccessChance(
       save,
@@ -515,7 +524,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
       id: expedition.id,
       realmId: expedition.realmId,
       outcome: won ? 'victory' : 'defeat',
-      completedAt: now,
+      completedAt: eventAt,
       reward,
       heroPower,
       recommendedPower: encounter.recommendedPower,
@@ -548,7 +557,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
       save.meta.sagaEntries.unshift({
         id: nextSaveId(save, `saga-expedition-${expedition.id}`),
         kind: 'expedition',
-        createdAt: now,
+        createdAt: eventAt,
         title: `${realm.nameKR} 원정 성공`,
         text: `${save.run.hero.name}이(가) ${realm.boss}을(를) 넘어 마을로 돌아왔다.`,
       });
@@ -557,7 +566,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
       save.meta.sagaEntries.unshift({
         id: nextSaveId(save, `saga-expedition-${expedition.id}`),
         kind: 'expedition',
-        createdAt: now,
+        createdAt: eventAt,
         title: `${realm.nameKR} 원정 중단`,
         text: `${encounter.nameKR}에서 힘이 부족해 돌아왔다. 다음 시설과 장비를 준비하자.`,
       });
@@ -579,8 +588,10 @@ export function completeFacilityTasks(
   allowPermanentUnlock = true,
 ): V4SaveEnvelope {
   const save = cloneSave(source);
+  const eventAt = eventTimestamp(save, now);
+  if (eventAt < save.updatedAt) return source;
   for (const task of Object.values(save.meta.tasks)) {
-    if (task.completesAt > now) continue;
+    if (task.completesAt > eventAt) continue;
     const facility = save.meta.facilities[task.facilityId];
     give(save, task.outputPreview, outputEfficiency);
     if (task.outputEquipmentIds) {
@@ -592,7 +603,7 @@ export function completeFacilityTasks(
         save.meta.sagaEntries.unshift({
           id: nextSaveId(save, `saga-level-${task.id}`),
           kind: 'milestone',
-          createdAt: now,
+          createdAt: eventAt,
           title: '영웅의 성장',
           text: `${save.run.hero.name}이(가) ${levelsGained}단계 성장해 Lv.${save.run.hero.level}이 되었다.`,
         });
@@ -612,7 +623,7 @@ export function completeFacilityTasks(
           save.meta.sagaEntries.unshift({
             id: nextSaveId(save, `saga-agent-trust-${agent.id}-${task.id}`),
             kind: 'milestone',
-            createdAt: now,
+            createdAt: eventAt,
             title: `${agent.nameKR} 신뢰 최고점`,
             text: `${agent.nameKR}이(가) 마을의 후원자를 완전히 신뢰하게 되었다.`,
           });
@@ -625,16 +636,16 @@ export function completeFacilityTasks(
     save.meta.sagaEntries.unshift({
       id: nextSaveId(save, `saga-facility-${task.id}`),
       kind: 'facility',
-      createdAt: now,
+      createdAt: eventAt,
       title: `${FACILITY_DEFINITIONS[task.facilityId].nameKR} 작업 완료`,
       text: `${task.type} 작업이 완료되어 마을에 결과가 쌓였다.`,
     });
     delete save.meta.tasks[task.id];
   }
-  resolveExpedition(save, now, allowPermanentUnlock, outputEfficiency);
+  resolveExpedition(save, eventAt, allowPermanentUnlock, outputEfficiency);
   syncHeroAction(save);
-  save.lastProcessedAt = Math.max(save.lastProcessedAt, Number.isFinite(now) ? now : save.lastProcessedAt);
-  touchSave(save, now);
+  save.lastProcessedAt = Math.max(save.lastProcessedAt, eventAt);
+  touchSave(save, eventAt);
   return save;
 }
 
@@ -644,14 +655,15 @@ export function completeFacilityTaskNow(
   now: number,
 ): DomainResult {
   const prepared = cloneSave(source);
+  const eventAt = eventTimestamp(prepared, now);
   const facility = prepared.meta.facilities[facilityId];
   const taskId = facility?.activeTaskId;
   const task = taskId ? prepared.meta.tasks[taskId] : undefined;
   if (!facility || !task) {
     return { ok: false, save: source, error: '즉시 완료할 작업이 없습니다.' };
   }
-  task.completesAt = now;
-  return { ok: true, save: completeFacilityTasks(prepared, now), task };
+  task.completesAt = eventAt;
+  return { ok: true, save: completeFacilityTasks(prepared, eventAt), task };
 }
 
 /** Explicit player confirmation for a risky expedition held by offline settlement. */
@@ -671,11 +683,12 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
   if (!next || source.meta.unlockedRealms.includes(next)) return source;
 
   const save = cloneSave(source);
+  const eventAt = eventTimestamp(save, now);
   save.meta.unlockedRealms.push(next);
   save.meta.sagaEntries.unshift({
-    id: nextSaveId(save, `saga-realm-unlock-${next}-${Number.isFinite(now) ? now : save.updatedAt}`),
+    id: nextSaveId(save, `saga-realm-unlock-${next}-${eventAt}`),
     kind: 'milestone',
-    createdAt: now,
+    createdAt: eventAt,
     title: `${REALM_DEFINITIONS[next].nameKR} 기록 해금`,
     text: `${REALM_DEFINITIONS[next].nameKR}으로 향하는 다음 장이 사가에 기록되었다.`,
   });
@@ -719,6 +732,7 @@ export function useIntervention(
   }
 
   const save = cloneSave(source);
+  const eventAt = eventTimestamp(save, now);
   const hero = save.run.hero;
   if (intervention === 'heal') {
     if (hero.hp >= hero.hpMax) {
@@ -727,9 +741,9 @@ export function useIntervention(
     hero.hp = hero.hpMax;
     save.run.interventionCharges -= 1;
     save.meta.sagaEntries.unshift({
-      id: nextSaveId(save, `saga-intervention-heal-${Number.isFinite(now) ? now : save.updatedAt}`),
+      id: nextSaveId(save, `saga-intervention-heal-${eventAt}`),
       kind: 'milestone',
-      createdAt: now,
+      createdAt: eventAt,
       title: '신의 개입: 즉시 회복',
       text: `${hero.name}의 상처가 신력으로 즉시 아물었다.`,
     });
@@ -759,7 +773,7 @@ export function useIntervention(
   save.meta.sagaEntries.unshift({
     id: nextSaveId(save, `saga-intervention-retreat-${expedition.id}`),
     kind: 'expedition',
-    createdAt: now,
+    createdAt: eventAt,
     title: '신의 개입: 원정 후퇴',
     text: `${hero.name}이(가) 신의 명을 받아 ${realm.nameKR}에서 안전하게 돌아왔다.`,
   });
@@ -798,19 +812,20 @@ export function startExpedition(
     return { ok: false, save: source, error: '길잡이가 다른 작업 중입니다.' };
   }
   pay(save, realm.cost);
+  const eventAt = eventTimestamp(save, now);
   const firstEncounterDuration = expeditionDurationSeconds(
     save,
     realm.encounters[0]?.durationSeconds ?? realm.durationSeconds,
     assignedAgentId === 'guide',
   );
-  const id = nextSaveId(save, `expedition-${realmId}-${Number.isFinite(now) ? now : save.updatedAt}`);
+  const id = nextSaveId(save, `expedition-${realmId}-${eventAt}`);
   save.run.expedition = {
     id,
     realmId,
     policy,
     assignedAgentId,
-    startedAt: now,
-    completesAt: now + firstEncounterDuration * 1000,
+    startedAt: eventAt,
+    completesAt: eventAt + firstEncounterDuration * 1000,
     status: 'traveling',
     encounterIndex: 0,
     encountersCleared: 0,
@@ -832,7 +847,7 @@ export function startExpedition(
       id,
       facilityId: 'expedition',
       type: '원정',
-      startedAt: now,
+      startedAt: eventAt,
       completesAt: save.run.expedition.completesAt,
       input: realm.cost,
       outputPreview: realm.reward,
@@ -869,6 +884,7 @@ export function updateV4Settings(
 
 export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, now: number): DomainResult {
   const save = cloneSave(source);
+  const eventAt = eventTimestamp(save, now);
   const facility = save.meta.facilities[facilityId];
   if (!facility) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
   if (facility.activeTaskId) return { ok: false, save: source, error: '작업 중인 시설은 강화할 수 없습니다.' };
@@ -882,11 +898,11 @@ export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, 
     ok: true,
     save,
     task: {
-      id: nextSaveId(save, `upgrade-${facilityId}-${Number.isFinite(now) ? now : save.updatedAt}`),
+      id: nextSaveId(save, `upgrade-${facilityId}-${eventAt}`),
       facilityId,
       type: '시설 강화',
-      startedAt: now,
-      completesAt: now,
+      startedAt: eventAt,
+      completesAt: eventAt,
       input: cost,
       outputPreview: {},
       assignedAgentId: null,

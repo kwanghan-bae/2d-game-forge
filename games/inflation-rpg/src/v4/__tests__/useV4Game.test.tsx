@@ -26,6 +26,16 @@ function RecoveryHarness() {
   );
 }
 
+function RefreshHarness() {
+  const game = useV4Game();
+  return (
+    <>
+      <div data-testid="task-count">{Object.keys(game.save.meta.tasks).length}</div>
+      <button type="button" onClick={game.refresh}>refresh</button>
+    </>
+  );
+}
+
 describe('useV4Game monetization actions', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());
@@ -83,5 +93,24 @@ describe('useV4Game save recovery', () => {
     await waitFor(() => expect(screen.getByTestId('storage-status')).toHaveTextContent('valid'));
     expect(localStorage.getItem(V4_RECOVERY_BACKUP_KEY)).toBe(raw);
     expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
+  });
+
+  it('does not settle due work while the persisted save clock is in the future', async () => {
+    const now = Date.now();
+    const base = createInitialV4Save(103);
+    base.createdAt = now - 60_000;
+    base.lastProcessedAt = base.createdAt;
+    base.updatedAt = now + 60 * 60 * 1000;
+    const started = startFacilityTask(base, 'temple', now - 30_000);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = now - 1_000;
+    persistV4Save(started.save);
+
+    render(<RefreshHarness />);
+    await waitFor(() => expect(screen.getByTestId('task-count')).toHaveTextContent('1'));
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
+    expect(screen.getByTestId('task-count')).toHaveTextContent('1');
   });
 });
