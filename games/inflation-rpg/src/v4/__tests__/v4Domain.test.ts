@@ -327,6 +327,17 @@ describe('v4 save and domain', () => {
     });
   });
 
+  it('does not dispatch a defeated hero before recovery', () => {
+    const initial = createInitialV4Save(20);
+    initial.run.hero.hp = 0;
+
+    const result = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain('회복');
+  });
+
   it('rejuvenates the eternal hero through V4 storage with a gold cost and saga entry', () => {
     const initial = createInitialV4Save(12);
     const result = rejuvenateHero(initial, 5, initial.createdAt + 1_000);
