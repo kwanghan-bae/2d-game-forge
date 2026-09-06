@@ -368,6 +368,8 @@ export interface MetaState {
   elixirDoses?: Partial<Record<import('./systems/astralAlchemy').ElixirType, number>>;
   /** C1075 — 9성 천상 초월 각성 단계 (0: 미각성, 1~9: 1성경~9성경). */
   awakeningTier?: number;
+  /** C1081 — 무한 혼돈의 균열 최고 도달 심도. */
+  highestRiftDepth?: number;
 }
 
 // Phase G — Ascension Tree (성좌)

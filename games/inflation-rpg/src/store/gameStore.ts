@@ -184,6 +184,7 @@ export const INITIAL_META: MetaState = {
   zodiacUnlocked: [],
   starlightShards: 0,
   elixirDoses: {},
+  highestRiftDepth: 0,
 };
 
 interface GameStore {

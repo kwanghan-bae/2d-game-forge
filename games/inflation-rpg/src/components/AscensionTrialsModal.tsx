@@ -14,6 +14,7 @@ import {
   type TrialCombatResult,
 } from '../systems/ascensionTrials';
 import { AscendantRushModal } from './AscendantRushModal';
+import { ChaosRiftModal } from './ChaosRiftModal';
 
 interface Props {
   onClose: () => void;
@@ -40,6 +41,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   );
   const [combatResult, setCombatResult] = useState<TrialCombatResult | null>(null);
   const [showBossRush, setShowBossRush] = useState(false);
+  const [showChaosRift, setShowChaosRift] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -156,6 +158,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               }}
             >
               👑 보스 연전
+            </button>
+            <button
+              data-testid="open-chaos-rift-btn"
+              onClick={() => setShowChaosRift(true)}
+              style={{
+                background: '#7c3aed',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              🌀 혼돈의 균열
             </button>
             <button
               data-testid="close-btn"
@@ -334,6 +352,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
         </div>
       </div>
       {showBossRush && <AscendantRushModal onClose={() => setShowBossRush(false)} />}
+      {showChaosRift && <ChaosRiftModal onClose={() => setShowChaosRift(false)} />}
     </div>
   );
 }

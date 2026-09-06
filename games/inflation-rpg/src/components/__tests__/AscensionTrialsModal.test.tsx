@@ -86,5 +86,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
     expect(badge).toBeDefined();
     expect(badge.textContent).toContain('시련의 도전자');
   });
+
+  it('opens ChaosRiftModal when clicking open-chaos-rift-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openRiftBtn = screen.getByTestId('open-chaos-rift-btn');
+    expect(openRiftBtn).toBeDefined();
+    fireEvent.click(openRiftBtn);
+
+    expect(screen.getByTestId('chaos-rift-modal')).toBeDefined();
+  });
 });
+
 
