@@ -186,6 +186,17 @@ describe('useV4Game monetization actions', () => {
     expect(monetization.getAdsToday()).toBe(1);
   });
 
+  it('does not watch an ad when the requested facility has no active task', async () => {
+    const showRewarded = vi.fn(async () => true);
+    const monetization = new V4MonetizationAdapter({ showRewarded }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+
+    await waitFor(() => expect(screen.getByTestId('message')).toHaveTextContent('즉시 완료할 작업이 없습니다'));
+    expect(showRewarded).not.toHaveBeenCalled();
+  });
+
   it('only requests one intervention-charge ad when the same action is clicked concurrently', async () => {
     let providerCalls = 0;
     let release!: () => void;

@@ -160,6 +160,12 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   const instantTask = useCallback(async (facilityId: FacilityId) => {
     if (instantTaskInFlight.current.has(facilityId)) return;
+    const current = saveRef.current;
+    const activeTaskId = current.meta.facilities[facilityId]?.activeTaskId;
+    if (!activeTaskId || !current.meta.tasks[activeTaskId]) {
+      setMessage('즉시 완료할 작업이 없습니다.');
+      return;
+    }
     instantTaskInFlight.current.add(facilityId);
     try {
       if (!(await watchRewarded('instant_task'))) return;
