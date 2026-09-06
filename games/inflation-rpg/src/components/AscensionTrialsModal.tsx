@@ -15,6 +15,7 @@ import {
 } from '../systems/ascensionTrials';
 import { AscendantRushModal } from './AscendantRushModal';
 import { ChaosRiftModal } from './ChaosRiftModal';
+import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 
 interface Props {
   onClose: () => void;
@@ -140,6 +141,9 @@ export function AscensionTrialsModal({ onClose }: Props) {
                   {highestTitle.badge} {highestTitle.nameKR}
                 </span>
               )}
+              <span style={{ marginLeft: 6 }}>
+                <RiftLeaderboardBadge highestDepth={meta.highestRiftDepth ?? 0} hideZero size="sm" />
+              </span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

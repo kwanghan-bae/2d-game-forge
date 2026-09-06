@@ -96,6 +96,22 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
 
     expect(screen.getByTestId('chaos-rift-modal')).toBeDefined();
   });
+
+  it('renders RiftLeaderboardBadge when highestRiftDepth is greater than 0', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        highestRiftDepth: 15,
+      },
+    }));
+
+    render(<AscensionTrialsModal onClose={() => {}} />);
+    const riftBadge = screen.getByTestId('rift-leaderboard-badge');
+    expect(riftBadge).toBeDefined();
+    expect(riftBadge.textContent).toContain('[심도 15층]');
+    expect(riftBadge.textContent).toContain('균열의 탐색자');
+  });
 });
+
 
 
