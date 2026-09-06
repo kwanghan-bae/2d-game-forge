@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const V4_SAVE_KEY = 'shin-ui-eternal-sponsor-v4-save-v1';
 const V4_RECOVERY_BACKUP_KEY = `${V4_SAVE_KEY}-recovery-backup`;
+const V3_SAVE_KEY = 'korea_inflation_rpg_save';
 
 test.describe('V4 — 신의 마을 vertical slice', () => {
   test('신규 저장에서 시설 작업과 첫 원정을 시작한다', async ({ page }) => {
@@ -78,6 +79,19 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-town-hub')).toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), V4_RECOVERY_BACKUP_KEY)).toBe(raw);
     expect(JSON.parse(await page.evaluate((key) => localStorage.getItem(key), V4_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
+  });
+
+  test('V4 부팅은 V3 저장 키를 변경하지 않는다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    const legacyRaw = JSON.stringify({ version: 27, marker: 'legacy-preserved' });
+    await page.evaluate(([key, value]) => {
+      localStorage.setItem(key, value);
+      localStorage.removeItem('shin-ui-eternal-sponsor-v4-save-v1');
+    }, [V3_SAVE_KEY, legacyRaw]);
+    await page.reload();
+
+    await expect(page.getByTestId('v4-town-hub')).toBeVisible();
+    expect(await page.evaluate((key) => localStorage.getItem(key), V3_SAVE_KEY)).toBe(legacyRaw);
   });
 
   test('신의 개입으로 영웅을 즉시 회복하고 충전을 소비한다', async ({ page }) => {
