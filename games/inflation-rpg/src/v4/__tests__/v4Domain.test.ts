@@ -24,6 +24,7 @@ import {
   restAgent,
   setV4Policy,
   confirmPendingExpedition,
+  confirmNextRealmUnlock,
   startExpedition,
   startFacilityTask,
   updateV4Settings,
@@ -561,6 +562,25 @@ describe('v4 save and domain', () => {
     const confirmed = confirmPendingExpedition(refreshed, refreshed.lastProcessedAt + 1_000);
     expect(confirmed.run.expedition).toBeNull();
     expect(confirmed.run.lastExpeditionResult?.realmId).toBe('deep_forest');
+  });
+
+  it('requires explicit confirmation before an offline victory unlocks the next Realm', () => {
+    const initial = createInitialV4Save(93);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+
+    const offline = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
+    expect(offline.run.lastExpeditionResult?.outcome).toBe('victory');
+    expect(offline.meta.unlockedRealms).toEqual(['joseon_plains']);
+
+    const confirmed = confirmNextRealmUnlock(offline, offline.updatedAt + 1_000);
+    expect(confirmed.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
+    expect(confirmed.meta.sagaEntries[0]?.title).toContain('깊은 숲');
+    expect(confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 
   it('allows one expedition and resolves it into rewards', () => {

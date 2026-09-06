@@ -140,6 +140,42 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-expedition-result')).toContainText('추천 시설');
   });
 
+  test('안전 원정의 다음 Realm 해금은 오프라인 복귀 후 명시적으로 확정한다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+
+    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await page.getByRole('button', { name: '길잡이와 출발' }).click();
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('v4 save was not created');
+      const save = JSON.parse(raw) as {
+        lastProcessedAt: number;
+        meta: { agents: Array<{ id: string; activeTaskId: string | null }> };
+        run: { expedition: { id: string; startedAt: number; completesAt: number; encounterIndex: number } | null };
+      };
+      if (!save.run.expedition) throw new Error('expedition was not started');
+      save.run.expedition.id = 'e2e-victory-4';
+      const guide = save.meta.agents.find((agent) => agent.id === 'guide');
+      if (!guide) throw new Error('guide was not created');
+      guide.activeTaskId = save.run.expedition.id;
+      save.run.expedition.encounterIndex = 2;
+      save.run.expedition.completesAt = Date.now() - 1;
+      save.lastProcessedAt = Date.now() - 60_000;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, V4_SAVE_KEY);
+    await page.reload();
+
+    await expect(page.getByTestId('v4-offline-result')).toContainText('원정 귀환 완료');
+    await page.getByRole('button', { name: '마을 확인' }).click();
+    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await expect(page.getByRole('button', { name: '깊은 숲 기록하기' })).toBeVisible();
+    await page.getByRole('button', { name: '깊은 숲 기록하기' }).click();
+    await expect(page.locator('.v4-realm-card').filter({ hasText: '깊은 숲' }).getByRole('button', { name: '길잡이와 출발' })).toBeEnabled();
+  });
+
   test('피로한 지원 에이전트는 마을에서 휴식시킬 수 있다', async ({ page }) => {
     await page.goto(GAME_URL);
     await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);

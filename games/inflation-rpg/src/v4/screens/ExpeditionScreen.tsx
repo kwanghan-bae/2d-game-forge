@@ -1,5 +1,5 @@
 import { FACILITY_DEFINITIONS, REALM_DEFINITIONS } from '../data';
-import { getExpeditionSuccessChance, getV4HeroPower } from '../domain';
+import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
 import type { InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
   now: number;
   onStart: (realmId: RealmId, agentId: SupportAgentId | null) => void;
   onConfirm: () => void;
+  onConfirmUnlock: () => void;
   onRefresh: () => void;
   onIntervention: (type: InterventionType) => void;
   onBack: () => void;
@@ -18,7 +19,7 @@ const ENCOUNTER_LABELS = {
   boss: '보스',
 } as const;
 
-export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onIntervention, onBack }: Props) {
+export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnlock, onRefresh, onIntervention, onBack }: Props) {
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
@@ -26,6 +27,8 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
   const activeEncounter = activeRealm
     ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition?.encounterIndex ?? activeRealm.encounters.length - 1))]
     : null;
+  const nextRealmId = result?.outcome === 'victory' ? getNextRealmId(result.realmId) : null;
+  const nextRealmPending = Boolean(nextRealmId && !save.meta.unlockedRealms.includes(nextRealmId));
 
   return (
     <main className="v4-container">
@@ -49,7 +52,10 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
           {result.successChance !== undefined && <p className="v4-muted">판정 당시 예상 승률 {Math.round(result.successChance * 100)}%</p>}
           {result.encountersCleared !== undefined && <p className="v4-muted">원정 단계 {result.encountersCleared}/{result.totalEncounterCount ?? result.encountersCleared} 정산</p>}
           {result.outcome === 'victory' ? (
-            <div className="v4-alert">획득 보상 · {Object.entries(result.reward).map(([key, value]) => `${key} +${value}`).join(' · ') || '없음'}</div>
+            <>
+              <div className="v4-alert">획득 보상 · {Object.entries(result.reward).map(([key, value]) => `${key} +${value}`).join(' · ') || '없음'}</div>
+              {nextRealmPending && nextRealmId && <div className="v4-button-row"><p className="v4-muted">오프라인 승리는 다음 Realm 해금을 자동 확정하지 않습니다.</p><button type="button" className="v4-btn v4-btn--primary" onClick={onConfirmUnlock}>{REALM_DEFINITIONS[nextRealmId].nameKR} 기록하기</button></div>}
+            </>
           ) : (
             <>
               <div className="v4-alert">부족한 점 · {result.weaknessKR}</div>

@@ -4,6 +4,7 @@ import {
   confirmPendingExpedition,
   completeFacilityTasks,
   completeFacilityTaskNow,
+  confirmNextRealmUnlock,
   grantInterventionCharge,
   grantOfflineResourceBonus,
   rejuvenateHero,
@@ -170,6 +171,15 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     commit(confirmPendingExpedition(save, Date.now()), '보류된 원정 결과를 확인했습니다.');
   }, [commit, save]);
 
+  const confirmUnlock = useCallback(() => {
+    const next = confirmNextRealmUnlock(save, Date.now());
+    if (next === save) {
+      setMessage('확인할 다음 Realm 기록이 없습니다.');
+      return;
+    }
+    commit(next, '다음 Realm 기록을 해금했습니다.');
+  }, [commit, save]);
+
   const upgrade = useCallback((facilityId: FacilityId) => {
     const result = upgradeFacility(save, facilityId, Date.now());
     if (result.ok) commit(result.save, '시설 레벨이 올랐습니다.');
@@ -214,6 +224,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     buyAdFree,
     startRun,
     confirmRun,
+    confirmUnlock,
     upgrade,
     importLegacyHero,
     closeOffline,

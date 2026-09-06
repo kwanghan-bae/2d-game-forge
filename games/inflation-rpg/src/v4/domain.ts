@@ -392,6 +392,10 @@ export function getExpeditionSuccessChance(
   );
 }
 
+export function getNextRealmId(realmId: RealmId): RealmId | null {
+  return realmId === 'joseon_plains' ? 'deep_forest' : realmId === 'deep_forest' ? 'underworld' : null;
+}
+
 function deterministicRoll(key: string): number {
   let hash = 2_166_136_261;
   for (let index = 0; index < key.length; index += 1) {
@@ -501,8 +505,7 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
       save.run.hero.realmId = expedition.realmId;
       save.run.hero.currentAction = 'rest';
       if (allowPermanentUnlock) {
-        const next: RealmId | undefined = expedition.realmId === 'joseon_plains'
-          ? 'deep_forest' : expedition.realmId === 'deep_forest' ? 'underworld' : undefined;
+        const next = getNextRealmId(expedition.realmId);
         if (next && !save.meta.unlockedRealms.includes(next)) save.meta.unlockedRealms.push(next);
       }
       save.meta.sagaEntries.unshift({
@@ -611,6 +614,26 @@ export function confirmPendingExpedition(source: V4SaveEnvelope, now: number): V
   if (!save.run.expedition) return source;
   save.run.expedition.status = 'traveling';
   return completeFacilityTasks(save, now, 1, true);
+}
+
+/** Explicitly commits the next Realm record after an offline victory. */
+export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
+  const result = source.run.lastExpeditionResult;
+  if (!result || result.outcome !== 'victory') return source;
+  const next = getNextRealmId(result.realmId);
+  if (!next || source.meta.unlockedRealms.includes(next)) return source;
+
+  const save = cloneSave(source);
+  save.meta.unlockedRealms.push(next);
+  save.meta.sagaEntries.unshift({
+    id: `saga-realm-unlock-${next}-${now}`,
+    kind: 'milestone',
+    createdAt: now,
+    title: `${REALM_DEFINITIONS[next].nameKR} 기록 해금`,
+    text: `${REALM_DEFINITIONS[next].nameKR}으로 향하는 다음 장이 사가에 기록되었다.`,
+  });
+  save.updatedAt = now;
+  return save;
 }
 
 export function grantOfflineResourceBonus(
