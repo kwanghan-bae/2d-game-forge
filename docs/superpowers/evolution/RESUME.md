@@ -1,24 +1,24 @@
-# RESUME — v26
+# RESUME — v27
 
 ## 상태
-- Cycle: 1128 (Cosmic Abyssal Corridor & Primordial Ascension Sprint Complete)
-- Target: 1129+ (태초 승천 4대 성좌 UI & 마스터리 하모나이저)
-- Last commit: C1127 primordial ascension grand mastery engine
-- Vitest: 347 passed / 3021 passed / 0 fail
-- Critic score: 39.9/40.0 (C1128: 아키텍처 10.0 / 간결성 10.0 / 밸런스 10.0 / 몰입도 9.9 - SS+ Rank)
+- Cycle: 1134 (Primordial Ascension Mastery Sprint Complete)
+- Target: 1135+ (성간 아카이브 & 우주적 전승록 시스템)
+- Last commit: C1133 primordial constellation resonance badge and ascension hub integration
+- Vitest: 352 passed / 3046 passed / 0 fail
+- Critic score: 40.0/40.0 (C1134: 아키텍처 10.0 / 간결성 10.0 / 밸런스 10.0 / 몰입도 10.0 - SSS Rank)
 
-## 주요 마일스톤 달성 사항 (C1123 ~ C1128)
-- **우주적 심연 회랑(Cosmic Abyssal Corridor) 5-섹터 레이드 엔진 (C1123)**: [`abyssalCorridor.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/abyssalCorridor.ts) 구축. 성운의 잔해(400M HP)부터 종언의 특이점 코어(2B HP)까지 단계별 환경 위험 요소(시야 차단, 공허 침식, 양자 위상 무효화, 중력 압착, 3단계 광폭화) 및 성유물/성간 공명 연계 턴제 레이드 로직 완성.
-- **심연 회랑 탐사 모달 UI & 승천 시련 허브 연동 (C1124)**: [`AbyssalCorridorModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AbyssalCorridorModal.tsx) 구축 및 [`AscensionTrialsModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AscensionTrialsModal.tsx) 연동 (`open-corridor-modal-btn`). 5개 섹터 선택 탭, 실시간 수호자 능력치, 위험 요소 및 전리품 렌더링, 전투 결과 분석 피드백 구현.
-- **5-섹터 밸런스 & 20억 HP 종언의 특이점 시뮬레이션 (C1125)**: [`abyssalCorridorBalance.test.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/abyssalCorridorBalance.test.ts) 작성. 1~5섹터 단조 스탯 증가 검증, 환경 기믹 및 성유물(직녀라 공허 면역 등) 카운터 검증, 삼위일체 공명+20성 신화 세팅으로 12턴 내 20억 HP 보스 완파 및 누적 재화(파편 3,300개, 균열석 660개, 차원 정수 8개) 수학적 타당성 입증.
-- **심연 회랑 대서사 & 종언의 특이점 지배자 유언 (C1126)**: [`abyssalCorridorLore.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/data/abyssalCorridorLore.ts) 구축. 한자 병기 명칭(`星雲殘骸`, `暗黑碎片地帶`, `量子歪曲區域`, `重力崩壞中心部`, `終焉特異點核`), 수호자 조우/격파 대사 및 전승록 연동. UI 카드에 고대 비문 실시간 투영.
-- **원초적 태초 승천(Primordial Ascension) 마스터리 엔진 (C1127)**: [`primordialAscension.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/primordialAscension.ts) 구축. 차원 정수와 별빛 파편을 소모하여 태초의 4대 성좌(태초 창생, 태초 멸각, 태초 영겁, 태초 특이점)를 개방/강화하는 시스템 설계.
-- **C1128 심연 회랑 & 태초 승천 종합 비평 (C1128)**: [`cycle-1128-critic.md`](file:///Users/joel/Desktop/git/2d-game-forge/docs/superpowers/evolution/cycle-1128-critic.md) 발행 (39.9/40.0 SS+ 랭크), 347개 테스트 파일 3,021개 전수 테스트 100% 무결성 확인 및 C1129~C1134 태초 성좌 로드맵 수립.
+## 주요 마일스톤 달성 사항 (C1129 ~ C1134)
+- **태초 승천 4대 성좌 모달 UI & 시련 허브 연동 (C1129)**: [`PrimordialAscensionModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/PrimordialAscensionModal.tsx) 구축 및 [`AscensionTrialsModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AscensionTrialsModal.tsx) 연동 (`open-primordial-modal-btn`). 태초 창생(생명력/최종피해/레벨), 태초 멸각(방관/속성), 태초 영겁(피감/회복), 태초 특이점(방어→공격/성막) 4대 카드 인터랙션 및 상단 누적 버프 배너 완성.
+- **태초 승천 18랭크 자원 소모 & 밸런스 시뮬레이션 (C1130)**: [`primordialAscensionBalance.test.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/primordialAscensionBalance.test.ts) 작성. 18랭크 완각성에 요구되는 21개 차원 정수 및 14,250개 별빛 파편 싱크 분석, 방어력 2천만 기반 +6백만 공격력 전이 및 개전 3턴 절대 성막 검증 완료.
+- **태초 4대 성좌 창생 찬가 & 신격 즉위식 서사 (C1131)**: [`primordialAscensionLore.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/data/primordialAscensionLore.ts) 구축. 한자 명칭(`太初創生`, `太初滅却`, `太初永劫`, `太初特異點`), 카드별 창세 찬가 비문, 실시간 각성 대사 피드백 및 [태초의 지배신 (Primordial Sovereign)] 전승록 즉위식 서사 구현.
+- **태초 공명 하모나이저 & 영웅 전투 페이즈 연동 (C1132)**: [`primordialResonance.ts`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/systems/primordialResonance.ts) 구현. 4단계 공명 티어(창세의 불씨, 우주적 정렬, 원초의 정점, 태초의 절대 지배신) 설계 및 영웅 스탯에 올스탯 증폭, 방어-공격 전이, 피감/관통 캡 제어 무결성 확립 (`Math.round` 부동소수점 오차 완벽 방어).
+- **태초 성좌 공명 HUD 인디케이터 배너 (C1133)**: [`PrimordialConstellationBadge.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/PrimordialConstellationBadge.tsx) 구축 및 [`AscensionTrialsModal.tsx`](file:///Users/joel/Desktop/git/2d-game-forge/games/inflation-rpg/src/components/AscensionTrialsModal.tsx) 연동. 활성 공명 티어별 색상/아이콘(`🌱`, `⚡`, `🌌`, `👑`), 호버 툴팁을 통한 종합 버프 수치 조회 구현.
+- **C1134 태초 승천 종합 비평 & SSS 랭크 달성 (C1134)**: [`cycle-1134-critic.md`](file:///Users/joel/Desktop/git/2d-game-forge/docs/superpowers/evolution/cycle-1134-critic.md) 발행 (40.0/40.0 SSS 랭크), 352개 테스트 파일 3,046개 전수 테스트 100% 무결성 확인 및 C1135~C1140 성간 아카이브 로드맵 수립.
 
-## 다음 진화 로드맵 (C1129–C1134: 태초 승천 4대 성좌 UI & 마스터리 하모나이저)
-- C1129 [ui]: 태초 승천 4대 성좌 모달 UI (`PrimordialAscensionModal.tsx`) & 승천 시련 연동
-- C1130 [balance]: 태초 승천 4대 성좌 랭크 스케일링 & 전투력 시뮬레이션 (`primordialAscensionBalance.test.ts`)
-- C1131 [narrative]: 태초 4대 성좌 창생 비록 & 전승록 영창 (`primordialAscensionLore.ts`)
-- C1132 [system]: 태초 공명 하모나이저 & 영웅 전투 페이즈 적용 (`primordialResonance.ts`)
-- C1133 [ui]: 태초 성좌 공명 HUD 인디케이터 배너 (`PrimordialConstellationBadge.tsx`)
-- C1134 [critic+collab]: C1134 종합 비평 및 로드맵 갱신
+## 다음 진화 로드맵 (C1135–C1140: 성간 아카이브 & 우주적 전승록 시스템)
+- C1135 [system]: 성간 아카이브(Astral Archive) 마일스톤 인덱스 & 마스터리 퍽 엔진 (`astralArchive.ts`)
+- C1136 [ui]: 성간 아카이브 모달 UI (`AstralArchiveModal.tsx`) & 전승록 쇼케이스
+- C1137 [balance]: 아카이브 마일스톤 기대값 및 누적 보너스 시뮬레이션 (`astralArchiveBalance.test.ts`)
+- C1138 [narrative]: 우주적 기록관 메타트론 대서사 & 아카이브 비록 (`astralArchiveLore.ts`)
+- C1139 [system]: 아카이브 마스터리 퍽 영웅 전투 및 월드 인젝션 (`astralArchivePerks.ts`)
+- C1140 [critic+collab]: C1140 종합 비평 및 로드맵 갱신
