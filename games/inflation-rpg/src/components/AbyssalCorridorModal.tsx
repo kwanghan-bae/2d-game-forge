@@ -26,6 +26,7 @@ import {
   type CorridorSectorId,
   type CorridorCombatResult,
 } from '../systems/abyssalCorridor';
+import { getCorridorSectorLore } from '../data/abyssalCorridorLore';
 
 interface Props {
   onClose: () => void;
@@ -88,6 +89,7 @@ export function AbyssalCorridorModal({ onClose }: Props) {
   const [combatResult, setCombatResult] = useState<CorridorCombatResult | null>(null);
 
   const sectorDef = CORRIDOR_SECTORS[selectedSector];
+  const sectorLore = getCorridorSectorLore(selectedSector);
   const unlockStatus = checkCorridorUnlock(selectedSector, clearedApexTiers, clearedSectors);
   const isSectorCleared = clearedSectors.includes(selectedSector);
 
@@ -315,6 +317,23 @@ export function AbyssalCorridorModal({ onClose }: Props) {
               <strong style={{ color: '#f0abfc' }}>⚠️ 환경 위험 요소:</strong> {sectorDef.environmentalHazard}
             </div>
 
+            {/* Lore Inscription */}
+            <div
+              data-testid="sector-lore-inscript"
+              style={{
+                marginTop: 8,
+                fontSize: 11,
+                color: '#94a3b8',
+                fontStyle: 'italic',
+                background: '#090d16',
+                padding: '6px 10px',
+                borderRadius: 6,
+                borderLeft: '3px solid #818cf8',
+              }}
+            >
+              "{sectorLore.loreInscript}"
+            </div>
+
             {/* Rewards */}
             <div style={{ marginTop: 10, fontSize: 12, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span>🎁 섹터 보상:</span>
@@ -385,6 +404,13 @@ export function AbyssalCorridorModal({ onClose }: Props) {
                 {combatResult.won
                   ? `🎉 ${combatResult.guardianName} 토벌 성공! (${combatResult.turns}턴)`
                   : `💀 ${combatResult.guardianName}에게 패배... (${combatResult.turns}턴)`}
+              </div>
+
+              <div
+                data-testid="guardian-dialogue"
+                style={{ fontSize: 12, color: combatResult.won ? '#a7f3d0' : '#fecaca', fontStyle: 'italic' }}
+              >
+                "{combatResult.won ? sectorLore.guardianDefeatDialogue : sectorLore.guardianEncounterDialogue}"
               </div>
 
               <div>

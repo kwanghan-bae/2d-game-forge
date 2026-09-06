@@ -80,12 +80,14 @@ describe('C1124: AbyssalCorridorModal Component Tests', () => {
 
     const challengeBtn = screen.getByTestId('challenge-corridor-btn');
     expect(challengeBtn).not.toBeDisabled();
+    expect(screen.getByTestId('sector-lore-inscript')).toBeDefined();
 
     fireEvent.click(challengeBtn);
 
     const combatResult = screen.getByTestId('corridor-combat-result');
     expect(combatResult).toBeDefined();
     expect(combatResult.textContent).toContain('토벌 성공');
+    expect(screen.getByTestId('guardian-dialogue')).toBeDefined();
 
     const state = useGameStore.getState();
     expect(state.meta.corridorSectorsCleared).toContain(1);
