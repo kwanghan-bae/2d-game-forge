@@ -44,6 +44,8 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
   const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
   const offlineRewardClaimInFlight = useRef(false);
+  const instantTaskInFlight = useRef(new Set<FacilityId>());
+  const interventionChargeInFlight = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -145,15 +147,27 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, [commit, offlineRewardDoubled, offlineSummary, save, watchRewarded]);
 
   const instantTask = useCallback(async (facilityId: FacilityId) => {
-    if (!(await watchRewarded('instant_task'))) return;
-    const result = completeFacilityTaskNow(save, facilityId, Date.now());
-    if (result.ok) commit(result.save, '광고 혜택으로 작업을 즉시 완료했습니다.');
-    else setMessage(result.error);
+    if (instantTaskInFlight.current.has(facilityId)) return;
+    instantTaskInFlight.current.add(facilityId);
+    try {
+      if (!(await watchRewarded('instant_task'))) return;
+      const result = completeFacilityTaskNow(save, facilityId, Date.now());
+      if (result.ok) commit(result.save, '광고 혜택으로 작업을 즉시 완료했습니다.');
+      else setMessage(result.error);
+    } finally {
+      instantTaskInFlight.current.delete(facilityId);
+    }
   }, [commit, save, watchRewarded]);
 
   const addInterventionCharge = useCallback(async () => {
-    if (!(await watchRewarded('intervention_charge'))) return;
-    commit(grantInterventionCharge(save, Date.now()), '개입 충전을 1회 얻었습니다.');
+    if (interventionChargeInFlight.current) return;
+    interventionChargeInFlight.current = true;
+    try {
+      if (!(await watchRewarded('intervention_charge'))) return;
+      commit(grantInterventionCharge(save, Date.now()), '개입 충전을 1회 얻었습니다.');
+    } finally {
+      interventionChargeInFlight.current = false;
+    }
   }, [commit, save, watchRewarded]);
 
   const intervene = useCallback((type: InterventionType) => {

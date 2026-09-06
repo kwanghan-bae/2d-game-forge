@@ -16,6 +16,19 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
   );
 }
 
+function InstantTaskHarness({ monetization }: { monetization: V4MonetizationAdapter }) {
+  const game = useV4Game(monetization);
+  return (
+    <>
+      <div data-testid="instant-task-count">{Object.keys(game.save.meta.tasks).length}</div>
+      <div data-testid="instant-spirit">{game.save.meta.currencies.spirit}</div>
+      <div data-testid="intervention-charges">{game.save.run.interventionCharges}</div>
+      <button type="button" onClick={() => { void game.instantTask('temple'); }}>instant</button>
+      <button type="button" onClick={() => { void game.addInterventionCharge(); }}>charge</button>
+    </>
+  );
+}
+
 function RecoveryHarness() {
   const game = useV4Game();
   return (
@@ -100,6 +113,57 @@ describe('useV4Game monetization actions', () => {
 
     expect(providerCalls).toBe(0);
     expect(screen.getByTestId('spirit')).toHaveTextContent('100');
+  });
+
+  it('only requests one instant-task ad when the same action is clicked concurrently', async () => {
+    const base = createInitialV4Save(105);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    persistV4Save(started.save);
+
+    let providerCalls = 0;
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        providerCalls += 1;
+        await pending;
+        return true;
+      },
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+    fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+    await waitFor(() => expect(providerCalls).toBe(1));
+
+    await act(async () => { release(); });
+    await waitFor(() => expect(screen.getByTestId('instant-task-count')).toHaveTextContent('0'));
+    expect(screen.getByTestId('instant-spirit')).toHaveTextContent('118');
+    expect(monetization.getAdsToday()).toBe(1);
+  });
+
+  it('only requests one intervention-charge ad when the same action is clicked concurrently', async () => {
+    let providerCalls = 0;
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        providerCalls += 1;
+        await pending;
+        return true;
+      },
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'charge' }));
+    fireEvent.click(screen.getByRole('button', { name: 'charge' }));
+    await waitFor(() => expect(providerCalls).toBe(1));
+
+    await act(async () => { release(); });
+    await waitFor(() => expect(screen.getByTestId('intervention-charges')).toHaveTextContent('2'));
+    expect(monetization.getAdsToday()).toBe(1);
   });
 });
 
