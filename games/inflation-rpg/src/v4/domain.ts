@@ -1,4 +1,5 @@
 import { FACILITY_DEFINITIONS, AGENT_DEFINITIONS, REALM_DEFINITIONS } from './data';
+import { createV4HeroRuntime } from './heroRuntime';
 import type {
   FacilityId,
   FacilityTask,
@@ -100,7 +101,15 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
   const realm = REALM_DEFINITIONS[expedition.realmId];
   const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
   const guideBonus = guide ? Math.min(0.12, guide.trust / 500) : 0;
-  const won = calculateHeroPower(save) >= realm.recommendedPower * (1 - guideBonus);
+  const runtime = createV4HeroRuntime(save.run.hero);
+  const battle = runtime.resolveBattle({
+    heroAtk: save.run.hero.atk,
+    heroDef: save.run.hero.def,
+    heroHp: save.run.hero.hp,
+    enemyHp: realm.recommendedPower * 4,
+    enemyAtk: realm.recommendedPower * 0.8,
+  });
+  const won = battle.won && calculateHeroPower(save) >= realm.recommendedPower * (1 - guideBonus);
   if (won) {
     const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
     give(save, realm.reward, policyBonus * efficiency);

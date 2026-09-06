@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
 import { POLICY_LABELS } from './data';
 import { useV4Game } from './useV4Game';
@@ -30,7 +30,12 @@ export function V4App({ config }: Props) {
   }, [game.refresh]);
 
   return (
-    <div className="v4-shell" data-assets-base={config.assetsBasePath} data-testid="v4-app">
+    <div
+      className="v4-shell"
+      data-assets-base={config.assetsBasePath}
+      data-testid="v4-app"
+      style={{ '--v4-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)` } as CSSProperties}
+    >
       <div className="v4-container">
         <header className="v4-header">
           <div><div className="v4-kicker">LOCAL-FIRST · V4</div><h1 className="v4-title">신의 마을: 영원의 후원자</h1><p className="v4-subtitle">한 명의 영웅, 일곱 시설, 끝나지 않는 사가</p></div>

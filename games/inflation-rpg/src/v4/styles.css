@@ -6,6 +6,8 @@
   box-sizing: border-box;
   padding: 12px 12px 84px;
   background:
+    linear-gradient(180deg, rgba(15, 13, 22, .9) 0%, rgba(15, 13, 22, .97) 44%, #0f0d16 100%),
+    var(--v4-world-bg) center top / cover no-repeat,
     radial-gradient(circle at 85% 0%, rgba(177, 133, 54, 0.16), transparent 32%),
     linear-gradient(180deg, #171521 0%, #0f0d16 100%);
   color: #f6efd9;

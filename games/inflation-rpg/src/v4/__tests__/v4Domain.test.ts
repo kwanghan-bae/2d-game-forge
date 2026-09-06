@@ -63,6 +63,8 @@ describe('v4 save and domain', () => {
     expect(offline.summary.efficiency).toBe(0.7);
     expect(offline.save.meta.facilities.blacksmith.activeTaskId).toBeNull();
     expect(offline.summary.completedTaskIds).toEqual([started.task.id]);
+    expect(offline.summary.equipmentGained).toEqual(['v4_iron_sword']);
+    expect(offline.save.run.hero.equipmentIds).toContain('v4_iron_sword');
 
     const replay = simulateOfflineProgress(offline.save, initial.createdAt + HOUR);
     expect(replay.summary.processedSeconds).toBe(0);
@@ -93,6 +95,19 @@ describe('v4 save and domain', () => {
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     expect(completed.run.expedition).toBeNull();
     expect(completed.meta.sagaEntries[0]?.kind).toBe('expedition');
+  });
+
+  it('uses the V4 hero battle adapter instead of power alone', () => {
+    const initial = createInitialV4Save(11);
+    initial.run.hero.atk = 300;
+    initial.run.hero.hp = 1;
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+    expect(completed.meta.sagaEntries[0]?.title).toBe('조선 평야 원정 중단');
+    expect(completed.meta.currencies.gold).toBe(initial.meta.currencies.gold);
   });
 
   it('keeps V4 hero decisions and battle independent from the V3 cycle controller', () => {
