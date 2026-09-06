@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { completeFacilityTasks, startFacilityTask } from '../domain';
 import { createInitialV4Save, loadV4Save, persistV4Save } from '../save';
-import { getV4EquipmentBonuses, getV4EquipmentName } from '../equipment';
+import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentName } from '../equipment';
 
 describe('v4 equipment progression', () => {
   it('applies equipment bonuses to the eternal hero and upgrades repeated crafts', () => {
@@ -78,6 +78,20 @@ describe('v4 equipment progression', () => {
     expect(getV4EquipmentBonuses(['v4_iron_sword'], {
       v4_iron_sword: 'broken' as never,
     })).toEqual({ atk: 80, def: 0, hpMax: 0, critRate: 0 });
+  });
+
+  it('ignores non-finite equipment bonus fields', () => {
+    const save = createInitialV4Save(115);
+    const before = { ...save.run.hero };
+
+    applyV4EquipmentBonuses(save.run.hero, {
+      atk: Number.NaN,
+      def: Number.POSITIVE_INFINITY,
+      hpMax: 'broken' as never,
+      critRate: Number.NaN,
+    });
+
+    expect(save.run.hero).toEqual(before);
   });
 
   it('does not increase hero stats after an equipment level reaches the cap', () => {

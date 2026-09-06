@@ -46,6 +46,10 @@ export function getV4EquipmentName(id: string): string {
   return getV4EquipmentDefinition(id)?.nameKR ?? '기록된 장비';
 }
 
+function finiteBonus(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
 export function getV4EquipmentBonuses(
   equipmentIds: string[],
   equipmentLevels: Record<string, number> = {},
@@ -67,10 +71,14 @@ export function getV4EquipmentBonuses(
 }
 
 export function applyV4EquipmentBonuses(hero: V4HeroSnapshot, bonuses: V4EquipmentBonuses): void {
-  hero.atk += bonuses.atk;
-  hero.def += bonuses.def;
-  hero.defBase += bonuses.def;
-  hero.hpMax += bonuses.hpMax;
-  hero.hp = Math.min(hero.hpMax, hero.hp + bonuses.hpMax);
-  hero.critRateBase = Math.min(1, hero.critRateBase + bonuses.critRate);
+  const atk = finiteBonus(bonuses.atk);
+  const def = finiteBonus(bonuses.def);
+  const hpMax = finiteBonus(bonuses.hpMax);
+  const critRate = finiteBonus(bonuses.critRate);
+  hero.atk += atk;
+  hero.def += def;
+  hero.defBase += def;
+  hero.hpMax += hpMax;
+  hero.hp = Math.min(hero.hpMax, hero.hp + hpMax);
+  hero.critRateBase = Math.min(1, hero.critRateBase + critRate);
 }
