@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
+import { startExpedition } from '../domain';
 import { ExpeditionScreen } from '../screens/ExpeditionScreen';
 import type { ExpeditionResult, V4SaveEnvelope } from '../types';
 
@@ -88,5 +89,30 @@ describe('V4 expedition result screen', () => {
     expect(guideButton).toBeDisabled();
     fireEvent.click(within(plains).getByRole('button', { name: '혼자 출발' }));
     expect(onStart).toHaveBeenCalledWith('joseon_plains', null);
+  });
+
+  it('keeps active expedition progress finite when its clock data is malformed', () => {
+    const initial = createInitialV4Save(103);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+    const props = {
+      save: started.save,
+      now: Number.NaN,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    const { container } = render(<ExpeditionScreen {...props} />);
+    const progress = container.querySelector('.v4-progress span');
+    expect(progress).toHaveStyle({ width: '0%' });
+    const active = screen.getByTestId('v4-active-expedition');
+    expect(active.textContent).not.toContain('NaN');
+    expect(active.textContent).not.toContain('Infinity');
   });
 });
