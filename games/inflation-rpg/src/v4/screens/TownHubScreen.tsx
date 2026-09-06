@@ -90,7 +90,11 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
             const facility = save.meta.facilities[facilityId];
             const task = facility.activeTaskId ? save.meta.tasks[facility.activeTaskId] : undefined;
             const agentId = AGENT_BY_FACILITY[facilityId];
-            const preview = getFacilityTaskPreview(save, facilityId, agentId ?? null);
+            const assignedAgent = agentId ? save.meta.agents.find((agent) => agent.id === agentId) : undefined;
+            const assignedAgentId = agentId && assignedAgent && !assignedAgent.activeTaskId && assignedAgent.fatigue < 100
+              ? agentId
+              : null;
+            const preview = getFacilityTaskPreview(save, facilityId, assignedAgentId);
             const upgradeCost = getFacilityUpgradeCost(save, facilityId);
             return (
               <article key={facilityId} className={`v4-facility ${task ? 'v4-facility--active' : ''}`}>
@@ -105,6 +109,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 ) : (
                   <div className="v4-task">다음: {definition.taskLabelKR}</div>
                 )}
+                {!task && agentId && !assignedAgentId && <div className="v4-task">지원 담당자 없이 기본 방식으로 시작합니다.</div>}
                 <div className="v4-economy" aria-label={`${definition.nameKR} 작업 경제 정보`}>
                   <span>투입 · {formatResources(preview.input)}</span>
                   <span>산출 · {formatResources(preview.output)}{preview.outputEquipmentIds.length > 0 ? ` · 장비 ${preview.outputEquipmentIds.map((id) => id === 'v4_iron_sword' ? '마을의 철검' : id).join(', ')}` : ''}</span>
@@ -119,7 +124,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                       {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onInstantTask(facilityId)}>광고 즉시 완료</button>}
                     </>
                   ) : (
-                    <button type="button" className="v4-btn v4-btn--primary" disabled={!preview.canStart} onClick={() => onStartTask(facilityId, agentId)}>작업 시작</button>
+                    <button type="button" className="v4-btn v4-btn--primary" disabled={!preview.canStart} onClick={() => onStartTask(facilityId, assignedAgentId)}>작업 시작</button>
                   )}
                   <button
                     type="button"

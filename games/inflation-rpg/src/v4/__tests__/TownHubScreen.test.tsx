@@ -1,0 +1,58 @@
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { createInitialV4Save } from '../save';
+import { TownHubScreen } from '../screens/TownHubScreen';
+
+function renderHub(overrides: Partial<React.ComponentProps<typeof TownHubScreen>> = {}) {
+  const save = overrides.save ?? createInitialV4Save(95);
+  const props: React.ComponentProps<typeof TownHubScreen> = {
+    save,
+    now: save.createdAt,
+    onPolicyChange: vi.fn(),
+    onStartTask: vi.fn(),
+    onCancelTask: vi.fn(),
+    onRestAgent: vi.fn(),
+    onRefresh: vi.fn(),
+    onUpgrade: vi.fn(),
+    onNavigate: vi.fn(),
+    onIntervention: vi.fn(),
+    monetizationAvailable: false,
+    adFree: false,
+    adsToday: 0,
+    onInterventionCharge: vi.fn(),
+    onBuyAdFree: vi.fn(),
+    ...overrides,
+  };
+  return { ...render(<TownHubScreen {...props} />), props };
+}
+
+describe('V4 town hub support assignment', () => {
+  it('keeps a facility startable without its specialist when that agent is busy', () => {
+    const save = createInitialV4Save(96);
+    save.meta.agents = save.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, activeTaskId: 'other-task' }
+      : agent);
+    const { props } = renderHub({ save });
+    const blacksmith = screen.getByText('대장간').closest('article');
+    expect(blacksmith).not.toBeNull();
+    if (!blacksmith) return;
+
+    const start = within(blacksmith).getByRole('button', { name: '작업 시작' });
+    expect(start).toBeEnabled();
+    expect(blacksmith).toHaveTextContent('지원 담당자 없이 기본 방식으로 시작');
+    fireEvent.click(start);
+
+    expect(props.onStartTask).toHaveBeenCalledWith('blacksmith', null);
+  });
+
+  it('assigns an idle specialist automatically for the improved task economy', () => {
+    const { props } = renderHub();
+    const blacksmith = screen.getByText('대장간').closest('article');
+    expect(blacksmith).not.toBeNull();
+    if (!blacksmith) return;
+
+    fireEvent.click(within(blacksmith).getByRole('button', { name: '작업 시작' }));
+
+    expect(props.onStartTask).toHaveBeenCalledWith('blacksmith', 'blacksmith');
+  });
+});
