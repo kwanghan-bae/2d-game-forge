@@ -39,6 +39,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   });
   const [save, setSave] = useState<V4SaveEnvelope>(() => boot.save);
   const saveRef = useRef(save);
+  const initialOfflineSettlementDone = useRef(false);
   const [storageStatus, setStorageStatus] = useState(() => boot.loaded.status);
   const [storageIssue] = useState(() => boot.loaded.status === 'invalid' ? boot.loaded.reason : null);
   const [clock, setClock] = useState(() => Date.now());
@@ -50,8 +51,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialOfflineSettlementDone.current) return;
+    initialOfflineSettlementDone.current = true;
     if (boot.loaded.status === 'invalid') return;
-    const result = simulateOfflineProgress(save, Date.now());
+    const result = simulateOfflineProgress(saveRef.current, Date.now());
     saveRef.current = result.save;
     setSave(result.save);
     persistV4Save(result.save);

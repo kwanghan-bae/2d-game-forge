@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { StrictMode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save, persistV4Save, V4_RECOVERY_BACKUP_KEY, V4_SAVE_KEY } from '../save';
 import { startFacilityTask } from '../domain';
 import { V4MonetizationAdapter } from '../monetization';
@@ -91,6 +92,30 @@ describe('useV4Game monetization actions', () => {
     await act(async () => { release(); });
     await waitFor(() => expect(screen.getByTestId('spirit')).toHaveTextContent('124'));
     expect(monetization.getAdsToday()).toBe(1);
+  });
+
+  it('settles the initial offline state once under React StrictMode', async () => {
+    const base = createInitialV4Save(90);
+    const startedAt = Date.now() - 60_000;
+    base.createdAt = startedAt;
+    base.lastProcessedAt = startedAt;
+    base.updatedAt = startedAt;
+    const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    persistV4Save(started.save);
+
+    const setItemSpy = vi.spyOn(window.localStorage, 'setItem');
+    render(
+      <StrictMode>
+        <Harness monetization={new V4MonetizationAdapter(null, null)} />
+      </StrictMode>,
+    );
+    await waitFor(() => expect(screen.getByTestId('offline-state')).toHaveTextContent('ready'));
+
+    expect(setItemSpy).toHaveBeenCalledTimes(1);
+    setItemSpy.mockRestore();
   });
 
   it('does not request an ad when offline settlement has no positive currency reward', async () => {
