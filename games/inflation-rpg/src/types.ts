@@ -398,6 +398,12 @@ export interface MetaState {
   activeRebirthTier?: import('./systems/chronoRebirth').ChronoRebirthTierId | null;
   /** C1147 — 시공의 베틀 노드별 랭크 딕셔너리. */
   chronoLoomRanks?: Partial<Record<import('./systems/chronoLoom').ChronoLoomNodeId, number>>;
+  /** C1153 — 초월의 만신전 최고 돌파 페이즈 (0~4). */
+  pantheonHighestPhase?: number;
+  /** C1153 — 초월의 만신전 총 완파 횟수. */
+  pantheonClears?: number;
+  /** C1153 — 보유 중인 만신전 문장 (Pantheon Crests) 수량. */
+  pantheonCrests?: number;
 }
 
 // Phase G — Ascension Tree (성좌)
