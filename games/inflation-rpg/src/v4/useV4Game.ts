@@ -73,49 +73,50 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const now = clock;
   const refresh = useCallback(() => {
     const timestamp = Date.now();
+    const current = saveRef.current;
     setClock(timestamp);
-    if (!Number.isFinite(timestamp) || timestamp < save.updatedAt) return;
-    const hasDueWork = Object.values(save.meta.tasks).some((task) => task.completesAt <= timestamp)
-      || Boolean(save.run.expedition
-        && save.run.expedition.status === 'traveling'
-        && save.run.expedition.completesAt <= timestamp);
+    if (!Number.isFinite(timestamp) || timestamp < current.updatedAt) return;
+    const hasDueWork = Object.values(current.meta.tasks).some((task) => task.completesAt <= timestamp)
+      || Boolean(current.run.expedition
+        && current.run.expedition.status === 'traveling'
+        && current.run.expedition.completesAt <= timestamp);
     if (hasDueWork) {
-      const next = completeFacilityTasks(save, timestamp);
+      const next = completeFacilityTasks(current, timestamp);
       commit(next);
     }
-  }, [commit, save]);
+  }, [commit]);
 
   const changePolicy = useCallback((policy: V4Policy) => {
-    commit(setV4Policy(save, policy, Date.now()));
-  }, [commit, save]);
+    commit(setV4Policy(saveRef.current, policy, Date.now()));
+  }, [commit]);
 
   const updateSettings = useCallback((patch: Partial<V4Settings>) => {
-    commit(updateV4Settings(save, patch, Date.now()));
-  }, [commit, save]);
+    commit(updateV4Settings(saveRef.current, patch, Date.now()));
+  }, [commit]);
 
   const startTask = useCallback((facilityId: FacilityId, agentId: SupportAgentId | null = null) => {
-    const result = startFacilityTask(save, facilityId, Date.now(), agentId);
+    const result = startFacilityTask(saveRef.current, facilityId, Date.now(), agentId);
     if (result.ok) commit(result.save, `${result.task.type} 작업을 시작했습니다.`);
     else setMessage(result.error);
-  }, [commit, save]);
+  }, [commit]);
 
   const cancelTask = useCallback((facilityId: FacilityId) => {
-    const result = cancelFacilityTask(save, facilityId, Date.now());
+    const result = cancelFacilityTask(saveRef.current, facilityId, Date.now());
     if (result.ok) commit(result.save, '작업을 취소하고 투입 재화를 돌려받았습니다.');
     else setMessage(result.error);
-  }, [commit, save]);
+  }, [commit]);
 
   const restSupportAgent = useCallback((agentId: SupportAgentId) => {
-    const result = restAgent(save, agentId, Date.now());
+    const result = restAgent(saveRef.current, agentId, Date.now());
     if (result.ok) commit(result.save, '지원 에이전트가 휴식을 마쳤습니다.');
     else setMessage(result.error);
-  }, [commit, save]);
+  }, [commit]);
 
   const rejuvenate = useCallback(() => {
-    const result = rejuvenateHero(save, 5, Date.now());
+    const result = rejuvenateHero(saveRef.current, 5, Date.now());
     if (result.ok) commit(result.save, `영웅의 시간이 ${result.result.yearsReduced}년 되돌아갔습니다.`);
     else setMessage(result.error);
-  }, [commit, save]);
+  }, [commit]);
 
   const watchRewarded = useCallback(async (placement: V4RewardedPlacement): Promise<boolean> => {
     if (!monetization) {
@@ -147,7 +148,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     } finally {
       offlineRewardClaimInFlight.current = false;
     }
-  }, [commit, offlineRewardDoubled, offlineSummary, save, watchRewarded]);
+  }, [commit, offlineRewardDoubled, offlineSummary, watchRewarded]);
 
   const instantTask = useCallback(async (facilityId: FacilityId) => {
     if (instantTaskInFlight.current.has(facilityId)) return;
@@ -160,7 +161,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     } finally {
       instantTaskInFlight.current.delete(facilityId);
     }
-  }, [commit, save, watchRewarded]);
+  }, [commit, watchRewarded]);
 
   const addInterventionCharge = useCallback(async () => {
     if (interventionChargeInFlight.current) return;
@@ -171,16 +172,16 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     } finally {
       interventionChargeInFlight.current = false;
     }
-  }, [commit, save, watchRewarded]);
+  }, [commit, watchRewarded]);
 
   const intervene = useCallback((type: InterventionType) => {
-    const result = useIntervention(save, type, Date.now());
+    const result = useIntervention(saveRef.current, type, Date.now());
     if (result.ok) {
       commit(result.save, type === 'heal' ? '신의 개입으로 영웅을 즉시 회복했습니다.' : '신의 개입으로 원정에서 안전하게 후퇴했습니다.');
     } else {
       setMessage(result.error);
     }
-  }, [commit, save]);
+  }, [commit]);
 
   const buyAdFree = useCallback(async () => {
     if (!monetization) {
@@ -192,30 +193,33 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, [monetization]);
 
   const startRun = useCallback((realmId: RealmId, agentId: SupportAgentId | null = null) => {
-    const result = startExpedition(save, realmId, Date.now(), save.run.policy, agentId);
+    const current = saveRef.current;
+    const result = startExpedition(current, realmId, Date.now(), current.run.policy, agentId);
     if (result.ok) commit(result.save, '원정을 출발시켰습니다.');
     else setMessage(result.error);
-  }, [commit, save]);
+  }, [commit]);
 
   const confirmRun = useCallback(() => {
-    if (save.run.expedition?.status !== 'awaiting_confirmation') return;
-    commit(confirmPendingExpedition(save, Date.now()), '보류된 원정 결과를 확인했습니다.');
-  }, [commit, save]);
+    const current = saveRef.current;
+    if (current.run.expedition?.status !== 'awaiting_confirmation') return;
+    commit(confirmPendingExpedition(current, Date.now()), '보류된 원정 결과를 확인했습니다.');
+  }, [commit]);
 
   const confirmUnlock = useCallback(() => {
-    const next = confirmNextRealmUnlock(save, Date.now());
-    if (next === save) {
+    const current = saveRef.current;
+    const next = confirmNextRealmUnlock(current, Date.now());
+    if (next === current) {
       setMessage('확인할 다음 Realm 기록이 없습니다.');
       return;
     }
     commit(next, '다음 Realm 기록을 해금했습니다.');
-  }, [commit, save]);
+  }, [commit]);
 
   const upgrade = useCallback((facilityId: FacilityId) => {
-    const result = upgradeFacility(save, facilityId, Date.now());
+    const result = upgradeFacility(saveRef.current, facilityId, Date.now());
     if (result.ok) commit(result.save, '시설 레벨이 올랐습니다.');
     else setMessage(result.error);
-  }, [commit, save]);
+  }, [commit]);
 
   const importLegacyHero = useCallback(() => {
     const legacySnapshot = useGameStore.getState().run?.heroSnapshot;
@@ -223,9 +227,9 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setMessage('가져올 V3 영웅 기록이 없습니다. V3 Legacy에서 영웅을 먼저 후원하세요.');
       return;
     }
-    const next = importV3HeroSnapshot(save, legacySnapshot as HeroSnapshot, Date.now());
+    const next = importV3HeroSnapshot(saveRef.current, legacySnapshot as HeroSnapshot, Date.now());
     commit(next, 'V3 영웅 기록을 명시적으로 가져왔습니다.');
-  }, [commit, save]);
+  }, [commit]);
 
   const startFreshSave = useCallback(() => {
     if (storageStatus !== 'invalid') return;

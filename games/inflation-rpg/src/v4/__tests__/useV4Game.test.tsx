@@ -24,9 +24,11 @@ function InstantTaskHarness({ monetization }: { monetization: V4MonetizationAdap
       <div data-testid="instant-spirit">{game.save.meta.currencies.spirit}</div>
       <div data-testid="intervention-charges">{game.save.run.interventionCharges}</div>
       <div data-testid="policy">{game.save.run.policy}</div>
+      <div data-testid="muted">{game.save.meta.settings.muted ? 'true' : 'false'}</div>
       <button type="button" onClick={() => { void game.instantTask('temple'); }}>instant</button>
       <button type="button" onClick={() => { void game.addInterventionCharge(); }}>charge</button>
       <button type="button" onClick={() => game.changePolicy('training')}>policy</button>
+      <button type="button" onClick={() => { game.changePolicy('training'); game.updateSettings({ muted: true }); }}>multi</button>
     </>
   );
 }
@@ -193,6 +195,16 @@ describe('useV4Game monetization actions', () => {
     await act(async () => { release(); });
     await waitFor(() => expect(screen.getByTestId('instant-task-count')).toHaveTextContent('0'));
     expect(screen.getByTestId('policy')).toHaveTextContent('training');
+  });
+
+  it('preserves both same-event save mutations instead of applying the second to stale state', async () => {
+    const monetization = new V4MonetizationAdapter(null, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'multi' }));
+
+    await waitFor(() => expect(screen.getByTestId('policy')).toHaveTextContent('training'));
+    expect(screen.getByTestId('muted')).toHaveTextContent('true');
   });
 });
 
