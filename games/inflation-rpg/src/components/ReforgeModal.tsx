@@ -38,6 +38,7 @@ import {
   type RelicSlotType,
 } from '../systems/celestialRelics';
 import type { CelestialRelicType } from '../types';
+import { getRelicSocketChant, getRelicUnsocketQuote } from '../data/relicFlavor';
 import { ElementalBadge } from './ElementalBadge';
 
 interface Props {
@@ -271,11 +272,13 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
       },
     }));
 
-    setFeedback({ type: 'success', message: res.message });
+    const chant = getRelicSocketChant(selectedRelic);
+    setFeedback({ type: 'success', message: `${res.message} "${chant}"` });
   };
 
   const handleUnsocketRelic = () => {
     if (!selectedItem || !selectedBase) return;
+    const relicId = selectedItem.celestialRelic;
     const shards = meta.starlightShards ?? 0;
     const res = unsocketRelic(selectedItem, shards);
     if (!res.success) {
@@ -298,7 +301,8 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
       },
     }));
 
-    setFeedback({ type: 'info', message: res.message });
+    const unsocketQuote = relicId ? getRelicUnsocketQuote(relicId) : '';
+    setFeedback({ type: 'info', message: `${res.message} "${unsocketQuote}"` });
   };
 
   return (
