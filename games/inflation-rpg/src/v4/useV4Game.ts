@@ -56,7 +56,9 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const timestamp = Date.now();
     setClock(timestamp);
     const hasDueWork = Object.values(save.meta.tasks).some((task) => task.completesAt <= timestamp)
-      || Boolean(save.run.expedition && save.run.expedition.completesAt <= timestamp);
+      || Boolean(save.run.expedition
+        && save.run.expedition.status === 'traveling'
+        && save.run.expedition.completesAt <= timestamp);
     if (hasDueWork) {
       const next = completeFacilityTasks(save, timestamp);
       commit(next);
