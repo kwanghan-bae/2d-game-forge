@@ -380,29 +380,30 @@ export function createInitialV4Save(seed: number): V4SaveEnvelope {
 }
 
 export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
-  const legacyEquipment = Array.isArray(input.equipment)
-    ? input.equipment.filter((id): id is string => typeof id === 'string')
+  const snapshot = input && typeof input === 'object' ? input : {} as HeroSnapshot;
+  const legacyEquipment = Array.isArray(snapshot.equipment)
+    ? snapshot.equipment.filter((id): id is string => typeof id === 'string')
     : [];
   const equipmentIds = [...new Set(legacyEquipment)];
   const equipmentLevels = Object.fromEntries(
     equipmentIds.map((id) => [id, Math.min(20, Math.max(1, legacyEquipment.filter((candidate) => candidate === id).length))]),
   );
-  const name = finiteStringOr(input.name, '이름 없는 영웅');
-  const emoji = finiteStringOr(input.emoji, '⚔️');
-  const age = Math.max(5, positiveIntegerOr(input.age, 17));
-  const level = positiveIntegerOr(input.level, 1);
+  const name = finiteStringOr(snapshot.name, '이름 없는 영웅');
+  const emoji = finiteStringOr(snapshot.emoji, '⚔️');
+  const age = Math.max(5, positiveIntegerOr(snapshot.age, 17));
+  const level = positiveIntegerOr(snapshot.level, 1);
   const expLimit = level * 100;
-  const rawExp = finiteNonNegativeOr(input.exp, 0);
+  const rawExp = finiteNonNegativeOr(snapshot.exp, 0);
   const exp = Number.isFinite(expLimit) ? Math.min(rawExp, Math.max(0, expLimit - 1)) : rawExp;
-  const hpMax = finitePositiveOr(input.hpMax, 1_000);
-  const hp = Math.min(hpMax, finiteNonNegativeOr(input.hp, hpMax));
-  const atk = finiteNonNegativeOr(input.atk, finiteNonNegativeOr(input.atkBase, 160));
-  const fallbackDefBase = Math.round(finiteNonNegativeOr(input.hpBase, hpMax) * 0.1);
-  const defBase = finiteNonNegativeOr(input.defBase, fallbackDefBase);
+  const hpMax = finitePositiveOr(snapshot.hpMax, 1_000);
+  const hp = Math.min(hpMax, finiteNonNegativeOr(snapshot.hp, hpMax));
+  const atk = finiteNonNegativeOr(snapshot.atk, finiteNonNegativeOr(snapshot.atkBase, 160));
+  const fallbackDefBase = Math.round(finiteNonNegativeOr(snapshot.hpBase, hpMax) * 0.1);
+  const defBase = finiteNonNegativeOr(snapshot.defBase, fallbackDefBase);
   const fallbackDef = Math.round(hpMax * 0.1);
-  const def = finiteNonNegativeOr(input.def, finiteNonNegativeOr(input.defBase, fallbackDef));
-  const actionCount = nonNegativeIntegerOr(input.actionCount, HeroLifecycle.actionsForAge(age));
-  const rejuvenationCount = nonNegativeIntegerOr(input.rejuvenationCount, 0);
+  const def = finiteNonNegativeOr(snapshot.def, finiteNonNegativeOr(snapshot.defBase, fallbackDef));
+  const actionCount = nonNegativeIntegerOr(snapshot.actionCount, HeroLifecycle.actionsForAge(age));
+  const rejuvenationCount = nonNegativeIntegerOr(snapshot.rejuvenationCount, 0);
   return {
     name,
     emoji,
@@ -414,7 +415,7 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
     atk,
     def,
     defBase,
-    critRateBase: Math.min(1, finiteNonNegativeOr(input.critRateBase, 0.05)),
+    critRateBase: Math.min(1, finiteNonNegativeOr(snapshot.critRateBase, 0.05)),
     realmId: 'joseon_plains',
     equipmentIds,
     equipmentLevels,

@@ -509,6 +509,11 @@ describe('v4 save and domain', () => {
       hp: 1_000, hpMax: 1_000, atk: 160, actionCount: HeroLifecycle.actionsForAge(17),
       rejuvenationCount: 0, currentAction: 'rest',
     });
+
+    expect(() => migrateV3HeroSnapshot(null as never)).not.toThrow();
+    expect(migrateV3HeroSnapshot(null as never)).toMatchObject({
+      name: '이름 없는 영웅', emoji: '⚔️', age: 17, level: 1,
+    });
   });
 
   it('settles completed facility work once and applies the 70% offline efficiency', () => {
