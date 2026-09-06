@@ -181,6 +181,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
 
     expect(screen.getByTestId('astral-archive-modal')).toBeDefined();
   });
+
+  it('opens ChronoRebirthModal when clicking open-rebirth-modal-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openRebirthBtn = screen.getByTestId('open-rebirth-modal-btn');
+    expect(openRebirthBtn).toBeDefined();
+    fireEvent.click(openRebirthBtn);
+
+    expect(screen.getByTestId('chrono-rebirth-modal')).toBeDefined();
+  });
 });
 
 
