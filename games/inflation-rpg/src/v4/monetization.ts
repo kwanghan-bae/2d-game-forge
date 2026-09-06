@@ -167,14 +167,23 @@ export class V4MonetizationAdapter {
     private readonly purchases: V4PurchaseProvider | null,
     private readonly usageStore: V4RewardedUsageStore | null = null,
   ) {
-    this.adsToday = this.usageStore?.read(this.rewardedDay) ?? 0;
+    this.adsToday = this.readStoredUsage(this.rewardedDay);
+  }
+
+  private readStoredUsage(day: string): number {
+    try {
+      const count = this.usageStore?.read(day) ?? 0;
+      return Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+    } catch {
+      return 0;
+    }
   }
 
   private resetForCurrentDay(): void {
     const currentDay = localDayKey();
     if (currentDay === this.rewardedDay) return;
     this.rewardedDay = currentDay;
-    this.adsToday = this.usageStore?.read(currentDay) ?? 0;
+    this.adsToday = this.readStoredUsage(currentDay);
   }
 
   getAdsToday(): number {

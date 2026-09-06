@@ -121,6 +121,17 @@ describe('v4 monetization adapter', () => {
     expect(adapter.getAdsToday()).toBe(1);
   });
 
+  it('keeps the adapter playable when usage restoration fails', async () => {
+    const adapter = new V4MonetizationAdapter(
+      { showRewarded: async () => true },
+      null,
+      { read: () => { throw new Error('storage unavailable'); }, write: () => {} },
+    );
+
+    expect(adapter.getAdsToday()).toBe(0);
+    expect((await adapter.watchRewarded('offline_double')).granted).toBe(true);
+  });
+
   it('reserves the daily quota across concurrent rewarded requests', async () => {
     let calls = 0;
     let release!: () => void;
