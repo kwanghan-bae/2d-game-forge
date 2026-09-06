@@ -195,6 +195,7 @@ export const INITIAL_META: MetaState = {
   totalRebirths: 0,
   chronoEssence: 0,
   activeRebirthTier: null,
+  chronoLoomRanks: {},
 };
 
 interface GameStore {
