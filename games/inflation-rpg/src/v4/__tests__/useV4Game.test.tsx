@@ -51,7 +51,7 @@ describe('useV4Game monetization actions', () => {
     const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
-    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
     persistV4Save(started.save);
 
     let providerCalls = 0;
@@ -85,7 +85,7 @@ describe('useV4Game monetization actions', () => {
     const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
-    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
     started.save.meta.tasks[started.task.id].outputPreview = {};
     persistV4Save(started.save);
 

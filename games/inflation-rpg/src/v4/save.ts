@@ -57,7 +57,7 @@ function isFacilityTaskRecord(value: unknown): boolean {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.facilityId !== 'string'
     || !FACILITY_IDS.includes(value.facilityId as typeof FACILITY_IDS[number]) || typeof value.type !== 'string'
     || !isNonNegativeNumber(value.startedAt) || !isNonNegativeNumber(value.completesAt)
-    || value.completesAt < value.startedAt
+    || value.completesAt <= value.startedAt
     || !isCurrencyRecord(value.input) || !isCurrencyRecord(value.outputPreview)
     || (value.outputEquipmentIds !== undefined
       && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) => typeof id === 'string')))
@@ -74,7 +74,7 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
     && ['aggression', 'hoarding', 'training'].includes(value.policy as string)
     && (value.assignedAgentId === null || value.assignedAgentId === 'guide')
     && isNonNegativeNumber(value.startedAt) && isNonNegativeNumber(value.completesAt)
-    && value.completesAt >= value.startedAt
+    && value.completesAt > value.startedAt
     && (value.status === 'traveling' || value.status === 'awaiting_confirmation')
     && (value.encounterIndex === undefined
       || (isNonNegativeNumber(value.encounterIndex) && Number.isInteger(value.encounterIndex) && value.encounterIndex <= 2))

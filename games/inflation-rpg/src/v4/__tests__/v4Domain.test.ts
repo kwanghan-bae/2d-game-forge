@@ -226,6 +226,28 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('rejects zero-duration active tasks and expeditions before they reach the UI', () => {
+    const initial = createInitialV4Save(22);
+    const taskStart = startFacilityTask(initial, 'temple', initial.createdAt, null);
+    const expeditionStart = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(taskStart.ok).toBe(true);
+    expect(expeditionStart.ok).toBe(true);
+    if (!taskStart.ok || !expeditionStart.ok) return;
+
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    taskStart.save.meta.tasks[taskStart.task.id].completesAt = taskStart.task.startedAt;
+    persistV4Save(taskStart.save, fakeStorage);
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    expeditionStart.save.run.expedition!.completesAt = expeditionStart.save.run.expedition!.startedAt;
+    persistV4Save(expeditionStart.save, fakeStorage);
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
   it('rejects saves whose expedition and guide links are inconsistent', () => {
     const initial = createInitialV4Save(18);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
