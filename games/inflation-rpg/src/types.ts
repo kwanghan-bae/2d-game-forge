@@ -366,6 +366,8 @@ export interface MetaState {
   starlightShards?: number;
   /** C1063 — 천상 영약 복용 횟수 딕셔너리. */
   elixirDoses?: Partial<Record<import('./systems/astralAlchemy').ElixirType, number>>;
+  /** C1075 — 9성 천상 초월 각성 단계 (0: 미각성, 1~9: 1성경~9성경). */
+  awakeningTier?: number;
 }
 
 // Phase G — Ascension Tree (성좌)
