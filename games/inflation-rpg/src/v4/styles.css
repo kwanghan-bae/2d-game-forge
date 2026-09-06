@@ -82,12 +82,13 @@
 .v4-nav-btn--active { background: #352a24; color: #f3cd78; }
 .v4-overlay { position: fixed; inset: 0; z-index: 5; display: grid; place-items: end center; padding: 12px; background: rgba(6, 5, 10, .7); }
 .v4-modal { width: min(430px, 100%); max-height: 80dvh; overflow: auto; padding: 15px; border: 1px solid #a87c36; border-radius: 13px; background: #211c2c; box-shadow: 0 20px 55px rgba(0,0,0,.55); }
-.v4-alert { margin-bottom: 10px; padding: 9px; border: 1px solid #74552c; border-radius: 8px; background: #352a24; color: #f3d58b; font-size: 11px; }
+.v4-alert { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; padding: 7px 9px; border: 1px solid #74552c; border-radius: 8px; background: #352a24; color: #f3d58b; font-size: 11px; }
+.v4-alert-close { flex: 0 0 auto; }
 .v4-muted { color: #a9a0ae; font-size: 11px; }
 .v4-setting-row { display: grid; gap: 6px; margin: 12px 0; color: #e7dcc2; font-size: 12px; }
 .v4-setting-row > span { display: flex; justify-content: space-between; gap: 8px; }
 .v4-setting-row strong { color: #f3c86b; }
-.v4-setting-row input[type="range"] { width: 100%; accent-color: #d6a84f; }
+.v4-setting-row input[type="range"] { width: 100%; min-height: 44px; accent-color: #d6a84f; }
 .v4-setting-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; color: #e7dcc2; font-size: 12px; }
 .v4-setting-toggle input { width: 18px; height: 18px; accent-color: #d6a84f; }
 @media (min-width: 600px) { .v4-nav { position: static; margin-top: 10px; border: 1px solid #40364b; border-radius: 10px; } }

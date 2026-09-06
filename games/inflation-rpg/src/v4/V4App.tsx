@@ -95,7 +95,7 @@ export function V4App({ config }: Props) {
         <div className="v4-resource-row" aria-label="보유 재화">
           {RESOURCES.map(([key, label, icon]) => <div className="v4-resource" key={key}><span className="v4-resource-label">{icon} {label}</span><strong className="v4-resource-value">{game.save.meta.currencies[key].toLocaleString('ko-KR')}</strong></div>)}
         </div>
-        {game.message && <div className="v4-alert" role="status">{game.message}<button type="button" className="v4-btn v4-btn--quiet" style={{ float: 'right', minHeight: 24, padding: '2px 6px' }} onClick={game.closeMessage}>닫기</button></div>}
+        {game.message && <div className="v4-alert" role="status"><span>{game.message}</span><button type="button" className="v4-btn v4-btn--quiet v4-alert-close" onClick={game.closeMessage}>닫기</button></div>}
       </div>
 
       {screen === 'town' && <TownHubScreen save={game.save} now={game.now} onPolicyChange={game.changePolicy} onStartTask={game.startTask} onCancelTask={game.cancelTask} onRestAgent={game.restSupportAgent} onInstantTask={game.monetizationAvailable ? game.instantTask : undefined} onRefresh={game.refresh} onUpgrade={game.upgrade} onNavigate={setScreen} onIntervention={game.intervene} monetizationAvailable={game.monetizationAvailable} adFree={game.adFree} adsToday={game.adsToday} onInterventionCharge={game.addInterventionCharge} onBuyAdFree={game.buyAdFree} />}

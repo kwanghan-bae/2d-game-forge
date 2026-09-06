@@ -19,6 +19,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     expect((await firstTaskButton.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
     await firstTaskButton.click();
     await expect(page.getByText('진행 확인')).toBeVisible();
+    expect((await page.getByRole('button', { name: '닫기' }).boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
     await page.getByRole('button', { name: '원정 준비 →' }).click();
     await page.getByRole('button', { name: '길잡이와 출발' }).click();
@@ -33,6 +34,9 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
 
     await page.getByRole('button', { name: /설정/ }).click();
     await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+    for (const row of await page.locator('.v4-setting-row').all()) {
+      expect((await row.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
     await page.getByRole('checkbox', { name: '모든 소리 음소거' }).check();
     await page.reload();
 
