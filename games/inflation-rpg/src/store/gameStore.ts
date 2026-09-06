@@ -188,6 +188,7 @@ export const INITIAL_META: MetaState = {
   carvedGems: [],
   transmutedRelics: [],
   apexTrialsCleared: [],
+  dimensionalEssence: 0,
 };
 
 interface GameStore {

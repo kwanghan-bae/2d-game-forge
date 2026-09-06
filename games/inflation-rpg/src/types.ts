@@ -52,6 +52,8 @@ export interface EquipmentInstance {
   carvedGem?: import('./systems/celestialGemCarving').CarvedGem;
   /** C1093: Mythic equipment star awakening level (0 ~ 5) */
   mythicStars?: number;
+  /** C1115: Optional cosmic affix infused from dimensional essence */
+  cosmicAffix?: import('./systems/cosmicInfusion').CosmicAffixType;
 }
 
 export interface PassiveSkill {
@@ -380,6 +382,8 @@ export interface MetaState {
   transmutedRelics?: import('./systems/celestialRelicTransmutation').TransmutedRelicType[];
   /** C1103/C1105 — 격파 완료된 초월 시련 티어 목록 (1, 2, 3). */
   apexTrialsCleared?: number[];
+  /** C1115 — 보유 중인 차원 정수 (Dimensional Essence) 수량. */
+  dimensionalEssence?: number;
 }
 
 // Phase G — Ascension Tree (성좌)
