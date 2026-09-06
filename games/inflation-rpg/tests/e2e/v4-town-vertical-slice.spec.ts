@@ -15,7 +15,9 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-town-hub')).toContainText('17세');
     await expect(page.getByText('다음 판단 · 원정 준비')).toBeVisible();
 
-    await page.getByRole('button', { name: '작업 시작' }).first().click();
+    const firstTaskButton = page.getByRole('button', { name: '작업 시작' }).first();
+    expect((await firstTaskButton.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await firstTaskButton.click();
     await expect(page.getByText('진행 확인')).toBeVisible();
 
     await page.getByRole('button', { name: '원정 준비 →' }).click();

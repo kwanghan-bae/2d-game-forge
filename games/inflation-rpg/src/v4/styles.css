@@ -36,7 +36,7 @@
 .v4-chip { padding: 3px 6px; border-radius: 99px; background: #30293c; color: #dbc990; }
 .v4-action { color: #f3c86b; font-size: 11px; white-space: nowrap; }
 .v4-policy-row, .v4-button-row { display: flex; flex-wrap: wrap; gap: 7px; }
-.v4-btn { min-height: 38px; padding: 8px 11px; border: 1px solid #67543a; border-radius: 8px; background: #292333; color: #f7edcf; font-family: inherit; font-size: 12px; cursor: pointer; }
+.v4-btn { min-height: 44px; padding: 8px 11px; border: 1px solid #67543a; border-radius: 8px; background: #292333; color: #f7edcf; font-family: inherit; font-size: 12px; cursor: pointer; }
 .v4-btn:hover, .v4-btn:focus-visible { border-color: #d6a84f; outline: none; }
 .v4-btn--primary { border-color: #b78636; background: #8f6425; color: #fff6df; }
 .v4-btn--quiet { border-color: #43384d; color: #bbb1c0; }
@@ -78,7 +78,7 @@
 .v4-saga-text { margin-top: 3px; color: #c0b6c6; font-size: 11px; line-height: 1.45; }
 .v4-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 2; padding: 8px max(12px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-bottom)); border-top: 1px solid #40364b; background: rgba(18, 15, 25, .96); }
 .v4-nav-inner { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-width: 430px; margin: 0 auto; }
-.v4-nav-btn { min-height: 38px; border: 0; border-radius: 7px; background: transparent; color: #a9a0ae; font-family: inherit; font-size: 11px; cursor: pointer; }
+.v4-nav-btn { min-height: 44px; border: 0; border-radius: 7px; background: transparent; color: #a9a0ae; font-family: inherit; font-size: 11px; cursor: pointer; }
 .v4-nav-btn--active { background: #352a24; color: #f3cd78; }
 .v4-overlay { position: fixed; inset: 0; z-index: 5; display: grid; place-items: end center; padding: 12px; background: rgba(6, 5, 10, .7); }
 .v4-modal { width: min(430px, 100%); max-height: 80dvh; overflow: auto; padding: 15px; border: 1px solid #a87c36; border-radius: 13px; background: #211c2c; box-shadow: 0 20px 55px rgba(0,0,0,.55); }
