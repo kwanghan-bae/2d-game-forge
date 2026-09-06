@@ -349,96 +349,127 @@ function calculateHeroPower(save: V4SaveEnvelope): number {
 }
 
 function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlock: boolean, efficiency: number): void {
-  const expedition = save.run.expedition;
-  if (!expedition || expedition.completesAt > now) return;
-  if (expedition.status === 'awaiting_confirmation') return;
-  const realm = REALM_DEFINITIONS[expedition.realmId];
-  const bossEncounter = realm.encounters.find((encounter) => encounter.tier === 'boss');
-  const recommendedPower = bossEncounter?.recommendedPower ?? realm.recommendedPower;
-  if (!allowPermanentUnlock && !realm.offlineSafe) {
-    expedition.status = 'awaiting_confirmation';
-    return;
-  }
-  const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
-  const guideBonus = guide ? Math.min(0.12, guide.trust / 500) : 0;
-  const runtime = createV4HeroRuntime(save.run.hero);
-  const battle = runtime.resolveBattle({
-    heroAtk: save.run.hero.atk,
-    heroDef: save.run.hero.def,
-    heroHp: save.run.hero.hp,
-    enemyHp: recommendedPower * (bossEncounter?.enemyHpMultiplier ?? 4),
-    enemyAtk: recommendedPower * (bossEncounter?.enemyAtkMultiplier ?? 0.8),
-  });
-  // One resolved expedition represents one meaningful hero action. Keeping
-  // the clock at encounter granularity makes aging legible and predictable
-  // instead of coupling a player's lifespan to combat loop implementation.
-  advanceHeroActionsInPlace(save, 1, now);
-  const heroPower = calculateHeroPower(save);
-  const won = battle.won && heroPower >= recommendedPower * (1 - guideBonus);
-  const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
-  const reward = won ? scaleResources(realm.reward, policyBonus * efficiency) : {};
-  save.run.hero.hp = battle.heroRemainingHp;
-  const lowHp = save.run.hero.hpMax > 0 && save.run.hero.hp / save.run.hero.hpMax < 0.35;
-  const recommendedFacilityId = lowHp
-    ? 'recovery'
-    : heroPower < recommendedPower
-      ? 'training'
-      : 'blacksmith';
-  const expeditionResult: ExpeditionResult = {
-    id: expedition.id,
-    realmId: expedition.realmId,
-    outcome: won ? 'victory' : 'defeat',
-    completedAt: now,
-    reward,
-    heroPower,
-    recommendedPower,
-    turns: battle.turns,
-    totalDamageDealt: battle.totalDamageDealt,
-    totalDamageTaken: battle.totalDamageTaken,
-    heroRemainingHp: battle.heroRemainingHp,
-    weaknessKR: won
-      ? '다음 Realm에 도전하려면 장비와 지원 에이전트를 함께 점검하세요.'
-      : lowHp
-        ? '영웅의 HP가 부족했습니다. 회복당에서 먼저 회복하세요.'
-        : heroPower < realm.recommendedPower
-          ? '전투력이 부족했습니다. 훈련소와 대장간을 먼저 강화하세요.'
-          : '정책과 길잡이의 보정을 확인한 뒤 다시 도전하세요.',
-    recommendedFacilityId,
-    recommendedEquipmentId: save.run.hero.equipmentIds.includes('v4_iron_sword') ? null : 'v4_iron_sword',
-    retryAfterSeconds: won ? 0 : realm.durationSeconds,
-  };
-  if (won) {
-    give(save, realm.reward, policyBonus * efficiency);
-    save.run.hero.realmId = expedition.realmId;
-    save.run.hero.currentAction = 'rest';
-    if (allowPermanentUnlock) {
-      const next: RealmId | undefined = expedition.realmId === 'joseon_plains'
-        ? 'deep_forest' : expedition.realmId === 'deep_forest' ? 'underworld' : undefined;
-      if (next && !save.meta.unlockedRealms.includes(next)) save.meta.unlockedRealms.push(next);
+  while (save.run.expedition) {
+    const expedition = save.run.expedition;
+    if (expedition.completesAt > now || expedition.status === 'awaiting_confirmation') return;
+
+    const realm = REALM_DEFINITIONS[expedition.realmId];
+    // Saves created before staged expeditions have no encounterIndex. Treat
+    // them as already at the boss so schema 1 resumes without replaying work.
+    const isLegacySingleEncounter = expedition.encounterIndex === undefined;
+    const encounterIndex = isLegacySingleEncounter
+      ? realm.encounters.length - 1
+      : Math.min(realm.encounters.length - 1, Math.max(0, Math.floor(expedition.encounterIndex ?? 0)));
+    const encounter = realm.encounters[encounterIndex] ?? realm.encounters[realm.encounters.length - 1];
+    if (!encounter) return;
+    const isBoss = isLegacySingleEncounter || encounter.tier === 'boss';
+    if (!allowPermanentUnlock && !realm.offlineSafe && isBoss) {
+      expedition.status = 'awaiting_confirmation';
+      return;
     }
-    save.meta.sagaEntries.unshift({
-      id: `saga-expedition-${expedition.id}`,
-      kind: 'expedition',
-      createdAt: now,
-      title: `${realm.nameKR} 원정 성공`,
-      text: `${save.run.hero.name}이(가) ${realm.boss}을(를) 넘어 마을로 돌아왔다.`,
+
+    const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
+    const guideBonus = guide ? Math.min(0.12, guide.trust / 500) : 0;
+    const runtime = createV4HeroRuntime(save.run.hero);
+    const battle = runtime.resolveBattle({
+      heroAtk: save.run.hero.atk,
+      heroDef: save.run.hero.def,
+      heroHp: save.run.hero.hp,
+      enemyHp: encounter.recommendedPower * encounter.enemyHpMultiplier,
+      enemyAtk: encounter.recommendedPower * encounter.enemyAtkMultiplier,
     });
-  } else {
-    save.run.hero.currentAction = 'rest';
-    save.meta.sagaEntries.unshift({
-      id: `saga-expedition-${expedition.id}`,
-      kind: 'expedition',
-      createdAt: now,
-      title: `${realm.nameKR} 원정 중단`,
-      text: `힘이 부족해 ${realm.nameKR}의 안개 속에서 돌아왔다. 다음 시설과 장비를 준비하자.`,
-    });
-  }
-  save.run.lastExpeditionResult = expeditionResult;
-  save.run.expedition = null;
-  if (guide) {
-    guide.activeTaskId = null;
-    guide.fatigue = Math.min(100, guide.fatigue + 8);
-    guide.trust = Math.min(100, guide.trust + (won ? 2 : 1));
+    // One resolved encounter represents one meaningful hero action. Keeping
+    // the clock at encounter granularity makes aging predictable and keeps it
+    // independent from the number of turns inside the battle loop.
+    advanceHeroActionsInPlace(save, 1, now);
+    const heroPower = calculateHeroPower(save);
+    const won = battle.won && heroPower >= encounter.recommendedPower * (1 - guideBonus);
+    save.run.hero.hp = battle.heroRemainingHp;
+    expedition.encountersCleared = (expedition.encountersCleared ?? 0) + 1;
+    expedition.totalTurns = (expedition.totalTurns ?? 0) + battle.turns;
+    expedition.totalDamageDealt = (expedition.totalDamageDealt ?? 0) + battle.totalDamageDealt;
+    expedition.totalDamageTaken = (expedition.totalDamageTaken ?? 0) + battle.totalDamageTaken;
+
+    if (won && !isBoss) {
+      const nextEncounter = realm.encounters[encounterIndex + 1];
+      if (!nextEncounter) return;
+      expedition.encounterIndex = encounterIndex + 1;
+      expedition.startedAt = expedition.completesAt;
+      expedition.completesAt = expedition.startedAt + Math.max(1, Math.round(nextEncounter.durationSeconds * (guide ? 0.9 : 1))) * 1000;
+      continue;
+    }
+
+    const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
+    const reward = won ? scaleResources(realm.reward, policyBonus * efficiency) : {};
+    const totalTurns = expedition.totalTurns ?? battle.turns;
+    const totalDamageDealt = expedition.totalDamageDealt ?? battle.totalDamageDealt;
+    const totalDamageTaken = expedition.totalDamageTaken ?? battle.totalDamageTaken;
+    const encountersCleared = expedition.encountersCleared ?? 1;
+    const totalEncounterCount = realm.encounters.length;
+    const lowHp = save.run.hero.hpMax > 0 && save.run.hero.hp / save.run.hero.hpMax < 0.35;
+    const recommendedFacilityId = lowHp
+      ? 'recovery'
+      : heroPower < encounter.recommendedPower
+        ? 'training'
+        : 'blacksmith';
+    const expeditionResult: ExpeditionResult = {
+      id: expedition.id,
+      realmId: expedition.realmId,
+      outcome: won ? 'victory' : 'defeat',
+      completedAt: now,
+      reward,
+      heroPower,
+      recommendedPower: encounter.recommendedPower,
+      turns: totalTurns,
+      totalDamageDealt,
+      totalDamageTaken,
+      heroRemainingHp: battle.heroRemainingHp,
+      weaknessKR: won
+        ? '다음 Realm에 도전하려면 장비와 지원 에이전트를 함께 점검하세요.'
+        : lowHp
+          ? '영웅의 HP가 부족했습니다. 회복당에서 먼저 회복하세요.'
+          : heroPower < encounter.recommendedPower
+            ? '전투력이 부족했습니다. 훈련소와 대장간을 먼저 강화하세요.'
+            : '정책과 길잡이의 보정을 확인한 뒤 다시 도전하세요.',
+      recommendedFacilityId,
+      recommendedEquipmentId: save.run.hero.equipmentIds.includes('v4_iron_sword') ? null : 'v4_iron_sword',
+      retryAfterSeconds: won ? 0 : encounter.durationSeconds,
+      encountersCleared,
+      totalEncounterCount,
+    };
+    if (won) {
+      give(save, realm.reward, policyBonus * efficiency);
+      save.run.hero.realmId = expedition.realmId;
+      save.run.hero.currentAction = 'rest';
+      if (allowPermanentUnlock) {
+        const next: RealmId | undefined = expedition.realmId === 'joseon_plains'
+          ? 'deep_forest' : expedition.realmId === 'deep_forest' ? 'underworld' : undefined;
+        if (next && !save.meta.unlockedRealms.includes(next)) save.meta.unlockedRealms.push(next);
+      }
+      save.meta.sagaEntries.unshift({
+        id: `saga-expedition-${expedition.id}`,
+        kind: 'expedition',
+        createdAt: now,
+        title: `${realm.nameKR} 원정 성공`,
+        text: `${save.run.hero.name}이(가) ${realm.boss}을(를) 넘어 마을로 돌아왔다.`,
+      });
+    } else {
+      save.run.hero.currentAction = 'rest';
+      save.meta.sagaEntries.unshift({
+        id: `saga-expedition-${expedition.id}`,
+        kind: 'expedition',
+        createdAt: now,
+        title: `${realm.nameKR} 원정 중단`,
+        text: `${encounter.nameKR}에서 힘이 부족해 돌아왔다. 다음 시설과 장비를 준비하자.`,
+      });
+    }
+    save.run.lastExpeditionResult = expeditionResult;
+    save.run.expedition = null;
+    if (guide) {
+      guide.activeTaskId = null;
+      guide.fatigue = Math.min(100, guide.fatigue + 8);
+      guide.trust = Math.min(100, guide.trust + (won ? 2 : 1));
+    }
   }
 }
 
@@ -637,6 +668,7 @@ export function startExpedition(
   }
   pay(save, realm.cost);
   const guideBonus = assignedAgentId === 'guide' ? 0.9 : 1;
+  const firstEncounterDuration = realm.encounters[0]?.durationSeconds ?? realm.durationSeconds;
   const id = `expedition-${realmId}-${now}`;
   save.run.expedition = {
     id,
@@ -644,8 +676,13 @@ export function startExpedition(
     policy,
     assignedAgentId,
     startedAt: now,
-    completesAt: now + Math.round(realm.durationSeconds * guideBonus) * 1000,
+    completesAt: now + Math.max(1, Math.round(firstEncounterDuration * guideBonus)) * 1000,
     status: 'traveling',
+    encounterIndex: 0,
+    encountersCleared: 0,
+    totalTurns: 0,
+    totalDamageDealt: 0,
+    totalDamageTaken: 0,
   };
   save.run.lastExpeditionResult = null;
   save.run.hero.currentAction = 'expedition';

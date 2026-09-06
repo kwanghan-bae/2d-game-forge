@@ -65,7 +65,14 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
     && (value.assignedAgentId === null || value.assignedAgentId === 'guide')
     && isNonNegativeNumber(value.startedAt) && isNonNegativeNumber(value.completesAt)
     && value.completesAt >= value.startedAt
-    && (value.status === 'traveling' || value.status === 'awaiting_confirmation');
+    && (value.status === 'traveling' || value.status === 'awaiting_confirmation')
+    && (value.encounterIndex === undefined
+      || (isNonNegativeNumber(value.encounterIndex) && Number.isInteger(value.encounterIndex) && value.encounterIndex <= 2))
+    && (value.encountersCleared === undefined
+      || (isNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
+    && (value.totalTurns === undefined || isNonNegativeNumber(value.totalTurns))
+    && (value.totalDamageDealt === undefined || isNonNegativeNumber(value.totalDamageDealt))
+    && (value.totalDamageTaken === undefined || isNonNegativeNumber(value.totalDamageTaken));
 }
 
 function isExpeditionResultRecord(value: unknown): value is Record<string, unknown> {
@@ -86,7 +93,11 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
     && typeof value.recommendedFacilityId === 'string'
     && FACILITY_IDS.includes(value.recommendedFacilityId as typeof FACILITY_IDS[number])
     && (value.recommendedEquipmentId === null || typeof value.recommendedEquipmentId === 'string')
-    && isNonNegativeNumber(value.retryAfterSeconds);
+    && isNonNegativeNumber(value.retryAfterSeconds)
+    && (value.encountersCleared === undefined
+      || (isNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
+    && (value.totalEncounterCount === undefined
+      || (isNonNegativeNumber(value.totalEncounterCount) && Number.isInteger(value.totalEncounterCount) && value.totalEncounterCount >= 1 && value.totalEncounterCount <= 3));
 }
 
 function isSagaEntryRecord(value: unknown): boolean {

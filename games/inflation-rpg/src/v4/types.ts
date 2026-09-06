@@ -81,6 +81,12 @@ export interface ExpeditionState {
   startedAt: number;
   completesAt: number;
   status: 'traveling' | 'awaiting_confirmation';
+  /** New V4 expeditions traverse normal → elite → boss. Omitted means a legacy single-boss save. */
+  encounterIndex?: number;
+  encountersCleared?: number;
+  totalTurns?: number;
+  totalDamageDealt?: number;
+  totalDamageTaken?: number;
 }
 
 export interface ExpeditionResult {
@@ -99,6 +105,8 @@ export interface ExpeditionResult {
   recommendedFacilityId: FacilityId;
   recommendedEquipmentId: string | null;
   retryAfterSeconds: number;
+  encountersCleared?: number;
+  totalEncounterCount?: number;
 }
 
 export interface SagaEntry {

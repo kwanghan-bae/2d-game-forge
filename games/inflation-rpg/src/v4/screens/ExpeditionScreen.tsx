@@ -21,6 +21,10 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
+  const activeRealm = expedition ? REALM_DEFINITIONS[expedition.realmId] : null;
+  const activeEncounter = activeRealm
+    ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition?.encounterIndex ?? activeRealm.encounters.length - 1))]
+    : null;
 
   return (
     <main className="v4-container">
@@ -41,6 +45,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
             <div className="v4-detail-stat"><small>전투력</small><strong>{result.heroPower.toLocaleString('ko-KR')}</strong><span className="v4-muted">/ 권장 {result.recommendedPower.toLocaleString('ko-KR')}</span></div>
             <div className="v4-detail-stat"><small>전투</small><strong>{result.turns}턴</strong><span className="v4-muted">받은 피해 {result.totalDamageTaken.toLocaleString('ko-KR')}</span></div>
           </div>
+          {result.encountersCleared !== undefined && <p className="v4-muted">원정 단계 {result.encountersCleared}/{result.totalEncounterCount ?? result.encountersCleared} 정산</p>}
           {result.outcome === 'victory' ? (
             <div className="v4-alert">획득 보상 · {Object.entries(result.reward).map(([key, value]) => `${key} +${value}`).join(' · ') || '없음'}</div>
           ) : (
@@ -56,7 +61,8 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onRefresh, onI
       {expedition ? (
         <section className="v4-panel" data-testid="v4-active-expedition">
           <h2>{expedition.status === 'awaiting_confirmation' ? '원정 결과 확인 필요' : '원정 진행 중'}</h2>
-          <p>{REALM_DEFINITIONS[expedition.realmId].icon} {REALM_DEFINITIONS[expedition.realmId].nameKR} · {REALM_DEFINITIONS[expedition.realmId].boss}</p>
+          <p>{activeRealm?.icon} {activeRealm?.nameKR} · {activeEncounter?.nameKR ?? activeRealm?.boss}</p>
+          {activeEncounter && <div className="v4-stat-line"><span className="v4-chip">현재 단계 {activeEncounter.tier === 'normal' ? '일반' : activeEncounter.tier === 'elite' ? '정예' : '보스'}</span><span className="v4-chip">{(expedition.encounterIndex ?? activeRealm!.encounters.length - 1) + 1}/{activeRealm!.encounters.length}</span><span className="v4-chip">권장 {activeEncounter.recommendedPower}</span></div>}
           {expedition.status === 'awaiting_confirmation' && <div className="v4-alert">오프라인 동안 위험 구간에 도착했습니다. 보스 결과와 보상을 확인한 뒤 귀환을 확정하세요.</div>}
           <div className="v4-progress"><span style={{ width: `${Math.min(100, Math.max(0, ((now - expedition.startedAt) / (expedition.completesAt - expedition.startedAt)) * 100))}%` }} /></div>
           <p>{expedition.status === 'awaiting_confirmation' ? '귀환 판정 대기 중' : `귀환까지 ${Math.max(0, Math.ceil((expedition.completesAt - now) / 1000))}초`}</p>

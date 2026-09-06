@@ -543,10 +543,13 @@ describe('v4 save and domain', () => {
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
-    const offline = simulateOfflineProgress(started.save, started.save.run.expedition!.completesAt);
+    const afterNormal = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+    const afterElite = completeFacilityTasks(afterNormal, afterNormal.run.expedition!.completesAt);
+    const offline = simulateOfflineProgress(afterElite, afterElite.run.expedition!.completesAt);
 
     expect(offline.summary.completedExpedition).toBe(false);
     expect(offline.save.run.expedition?.realmId).toBe('deep_forest');
+    expect(offline.save.run.expedition?.encounterIndex).toBe(2);
     expect(offline.save.run.expedition?.status).toBe('awaiting_confirmation');
 
     const refreshed = completeFacilityTasks(offline.save, offline.save.lastProcessedAt + 1_000);
@@ -570,11 +573,36 @@ describe('v4 save and domain', () => {
     const invalidAgent = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'blacksmith');
     expect(invalidAgent.ok).toBe(false);
 
-    const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+    let completed = started.save;
+    while (completed.run.expedition) {
+      completed = completeFacilityTasks(completed, completed.run.expedition.completesAt);
+    }
     expect(completed.run.expedition).toBeNull();
     expect(completed.meta.sagaEntries[0]?.kind).toBe('expedition');
     expect(completed.run.lastExpeditionResult).toMatchObject({
       realmId: 'joseon_plains', outcome: 'victory', retryAfterSeconds: 0,
+    });
+  });
+
+  it('advances a new expedition through normal, elite, and boss encounters', () => {
+    const initial = createInitialV4Save(90);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    expect(started.save.run.expedition).toMatchObject({ encounterIndex: 0 });
+
+    const normal = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+    expect(normal.run.expedition).toMatchObject({ encounterIndex: 1 });
+    expect(normal.run.lastExpeditionResult).toBeNull();
+
+    const elite = completeFacilityTasks(normal, normal.run.expedition!.completesAt);
+    expect(elite.run.expedition).toMatchObject({ encounterIndex: 2 });
+    expect(elite.run.lastExpeditionResult).toBeNull();
+
+    const boss = completeFacilityTasks(elite, elite.run.expedition!.completesAt);
+    expect(boss.run.expedition).toBeNull();
+    expect(boss.run.lastExpeditionResult).toMatchObject({
+      outcome: 'victory', encountersCleared: 3, totalEncounterCount: 3,
     });
   });
 
@@ -585,6 +613,8 @@ describe('v4 save and domain', () => {
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
 
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     expect(completed.meta.sagaEntries[0]?.title).toBe('조선 평야 원정 중단');

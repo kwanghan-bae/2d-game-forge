@@ -72,8 +72,9 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
       if (!raw) throw new Error('v4 save was not created');
-      const save = JSON.parse(raw) as { run: { expedition: { completesAt: number } | null } };
+      const save = JSON.parse(raw) as { run: { expedition: { completesAt: number; encounterIndex: number } | null } };
       if (!save.run.expedition) throw new Error('expedition was not started');
+      save.run.expedition.encounterIndex = 2;
       save.run.expedition.completesAt = Date.now() - 1;
       localStorage.setItem(key, JSON.stringify(save));
     }, V4_SAVE_KEY);
@@ -97,11 +98,12 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       if (!raw) throw new Error('v4 save was not created');
       const save = JSON.parse(raw) as {
         meta: { unlockedRealms: string[] };
-        run: { expedition: { realmId: string; completesAt: number } | null };
+        run: { expedition: { realmId: string; completesAt: number; encounterIndex: number } | null };
       };
       if (!save.run.expedition) throw new Error('expedition was not started');
       save.meta.unlockedRealms.push('deep_forest');
       save.run.expedition.realmId = 'deep_forest';
+      save.run.expedition.encounterIndex = 2;
       save.run.expedition.completesAt = Date.now() - 1;
       localStorage.setItem(key, JSON.stringify(save));
     }, V4_SAVE_KEY);
