@@ -86,9 +86,13 @@ export function startFacilityTask(
 
   pay(save, definition.input);
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
-  const specialty = assignedAgentId && AGENT_DEFINITIONS[assignedAgentId].specialty === facilityId;
+  const specialty = Boolean(
+    agent && agent.trust >= 50 && AGENT_DEFINITIONS[agent.id].specialty === facilityId,
+  );
+  const fatigueMultiplier = agent ? 1 + Math.min(0.4, agent.fatigue / 250) : 1;
   const durationSeconds = Math.max(10, Math.round(
-    definition.baseDurationSeconds * Math.pow(0.94, facility.level - 1) * (specialty ? 0.85 : 1),
+    definition.baseDurationSeconds * Math.pow(0.94, facility.level - 1)
+      * (specialty ? 0.85 : 1) * fatigueMultiplier,
   ));
   const outputMultiplier = specialty ? 1.2 : 1;
   const task: FacilityTask = {
@@ -282,6 +286,7 @@ export function completeFacilityTasks(
         agent.activeTaskId = null;
         agent.fatigue = Math.min(100, agent.fatigue + 5);
         agent.trust = Math.min(100, agent.trust + 1);
+        agent.level = Math.max(agent.level, Math.min(3, 1 + Math.floor(agent.trust / 50)));
       }
     }
     if (task.facilityId === 'recovery') {

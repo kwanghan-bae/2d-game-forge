@@ -209,6 +209,48 @@ describe('v4 save and domain', () => {
     expect(canceled.save.meta.agents.find((agent) => agent.id === 'blacksmith')?.activeTaskId).toBeNull();
   });
 
+  it('gates agent specialty by trust and slows tired agents', () => {
+    const initial = createInitialV4Save(75);
+    const baseline = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(baseline.ok).toBe(true);
+    if (!baseline.ok) return;
+
+    const trusted = createInitialV4Save(76);
+    trusted.meta.agents = trusted.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, trust: 50 }
+      : agent);
+    const specialized = startFacilityTask(trusted, 'blacksmith', trusted.createdAt, 'blacksmith');
+    expect(specialized.ok).toBe(true);
+    if (!specialized.ok) return;
+
+    const tired = createInitialV4Save(77);
+    tired.meta.agents = tired.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, trust: 50, fatigue: 100 }
+      : agent);
+    const slowed = startFacilityTask(tired, 'blacksmith', tired.createdAt, 'blacksmith');
+    expect(slowed.ok).toBe(true);
+    if (!slowed.ok) return;
+
+    expect(specialized.task.completesAt - specialized.task.startedAt)
+      .toBeLessThan(baseline.task.completesAt - baseline.task.startedAt);
+    expect(slowed.task.completesAt - slowed.task.startedAt)
+      .toBeGreaterThan(specialized.task.completesAt - specialized.task.startedAt);
+  });
+
+  it('promotes an agent after trust grows through completed work', () => {
+    const initial = createInitialV4Save(78);
+    initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, trust: 49 }
+      : agent);
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const completed = completeFacilityTasks(started.save, started.task.completesAt);
+    const agent = completed.meta.agents.find((candidate) => candidate.id === 'blacksmith');
+    expect(agent).toMatchObject({ trust: 50, level: 2, activeTaskId: null });
+  });
+
   it('applies monetization effects through pure V4 domain helpers', () => {
     const initial = createInitialV4Save(72);
     const started = startFacilityTask(initial, 'temple', initial.createdAt, null);
