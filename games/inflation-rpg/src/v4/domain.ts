@@ -592,6 +592,7 @@ export function completeFacilityTasks(
   outputEfficiency = 1,
   allowPermanentUnlock = true,
 ): V4SaveEnvelope {
+  if (!Number.isFinite(now)) return source;
   const save = cloneSave(source);
   const eventAt = eventTimestamp(save, now);
   if (eventAt < save.updatedAt) return source;
@@ -660,8 +661,10 @@ export function completeFacilityTaskNow(
   facilityId: FacilityId,
   now: number,
 ): DomainResult {
+  if (!Number.isFinite(now)) return { ok: false, save: source, error: '기기 시각을 확인할 수 없어 작업을 완료하지 않았습니다.' };
   const prepared = cloneSave(source);
   const eventAt = eventTimestamp(prepared, now);
+  if (eventAt < prepared.updatedAt) return { ok: false, save: source, error: '저장 시각이 미래라 작업을 즉시 완료하지 않았습니다.' };
   const facility = prepared.meta.facilities[facilityId];
   const taskId = facility?.activeTaskId;
   const task = taskId ? prepared.meta.tasks[taskId] : undefined;

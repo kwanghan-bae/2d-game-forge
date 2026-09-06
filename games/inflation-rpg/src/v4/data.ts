@@ -1,5 +1,18 @@
 import type { FacilityId, RealmEncounterDefinition, RealmId, SupportAgentId, V4CurrencyKey, V4Policy } from './types';
 
+export const CURRENCY_LABELS: Record<V4CurrencyKey, string> = {
+  spirit: '신력',
+  gold: '금화',
+  materials: '재료',
+  rift: '균열석',
+};
+
+export function getV4CurrencyName(key: string): string {
+  return Object.prototype.hasOwnProperty.call(CURRENCY_LABELS, key)
+    ? CURRENCY_LABELS[key as V4CurrencyKey]
+    : '기타 재화';
+}
+
 export interface FacilityDefinition {
   id: FacilityId;
   nameKR: string;

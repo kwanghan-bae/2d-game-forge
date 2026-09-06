@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4CurrencyName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
 import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { FacilityId, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
@@ -27,15 +27,12 @@ const AGENT_BY_FACILITY: Partial<Record<FacilityId, SupportAgentId>> = {
 };
 
 const formatNumber = (value: number) => value.toLocaleString('ko-KR');
-const RESOURCE_LABELS: Record<string, string> = {
-  spirit: '신력', gold: '금화', materials: '재료', rift: '균열석',
-};
 const HERO_ACTION_LABELS = { rest: '마을에서 회복', train: '훈련소에서 성장', expedition: '원정 준비' } as const;
 
 function formatResources(resources: Partial<Record<string, number>>): string {
   const entries = Object.entries(resources).filter(([, value]) => (value ?? 0) > 0);
   return entries.length > 0
-    ? entries.map(([key, value]) => `${RESOURCE_LABELS[key] ?? key} ${formatNumber(value ?? 0)}`).join(' · ')
+    ? entries.map(([key, value]) => `${getV4CurrencyName(key)} ${formatNumber(value ?? 0)}`).join(' · ')
     : '없음';
 }
 

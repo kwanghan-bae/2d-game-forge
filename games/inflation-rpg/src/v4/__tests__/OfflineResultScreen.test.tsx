@@ -40,4 +40,11 @@ describe('V4 offline result screen', () => {
 
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('획득 재화 없음');
   });
+
+  it('does not expose an unknown resource storage key to players', () => {
+    render(<OfflineResultScreen summary={summary({ resourcesGained: { unknown: 2 } as never })} onClose={() => {}} />);
+
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('기타 재화');
+    expect(screen.getByTestId('v4-offline-result').textContent).not.toContain('unknown');
+  });
 });

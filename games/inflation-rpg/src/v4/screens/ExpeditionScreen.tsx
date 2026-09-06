@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4CurrencyName, REALM_DEFINITIONS } from '../data';
 import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { InterventionType, RealmId, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from '../types';
@@ -20,17 +20,10 @@ const ENCOUNTER_LABELS = {
   boss: '보스',
 } as const;
 
-const RESOURCE_LABELS: Record<V4CurrencyKey, string> = {
-  spirit: '신력',
-  gold: '금화',
-  materials: '재료',
-  rift: '균열석',
-};
-
 function formatResources(resources: Partial<Record<V4CurrencyKey, number>>): string {
   return Object.entries(resources)
     .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value !== 0)
-    .map(([key, value]) => `${RESOURCE_LABELS[key as V4CurrencyKey] ?? key} +${value!.toLocaleString('ko-KR')}`)
+    .map(([key, value]) => `${getV4CurrencyName(key)} +${value!.toLocaleString('ko-KR')}`)
     .join(' · ') || '없음';
 }
 

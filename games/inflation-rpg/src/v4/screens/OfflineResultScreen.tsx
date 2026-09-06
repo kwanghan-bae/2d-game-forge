@@ -1,4 +1,5 @@
 import type { OfflineSummary } from '../types';
+import { getV4CurrencyName } from '../data';
 import { getV4EquipmentName } from '../equipment';
 
 interface Props {
@@ -9,13 +10,6 @@ interface Props {
   adsToday?: number;
   adFree?: boolean;
 }
-
-const RESOURCE_LABELS: Record<string, string> = {
-  spirit: '신력',
-  gold: '금화',
-  materials: '재료',
-  rift: '균열석',
-};
 
 export function OfflineResultScreen({ summary, onClose, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
   const resourceEntries = Object.entries(summary.resourcesGained);
@@ -32,7 +26,7 @@ export function OfflineResultScreen({ summary, onClose, onDoubleReward, canDoubl
         {summary.clockAnomaly === 'invalid' && <div className="v4-alert">기기 시각을 확인할 수 없어 보상을 정산하지 않았습니다.</div>}
         <div className="v4-detail-grid">
           {resourceEntries.length > 0
-            ? resourceEntries.map(([key, value]) => <div className="v4-detail-stat" key={key}><small>{RESOURCE_LABELS[key] ?? key}</small><strong>{value && value > 0 ? `+${value.toLocaleString('ko-KR')}` : value?.toLocaleString('ko-KR')}</strong></div>)
+            ? resourceEntries.map(([key, value]) => <div className="v4-detail-stat" key={key}><small>{getV4CurrencyName(key)}</small><strong>{value && value > 0 ? `+${value.toLocaleString('ko-KR')}` : value?.toLocaleString('ko-KR')}</strong></div>)
             : <div className="v4-detail-stat"><small>정산</small><strong>획득 재화 없음</strong></div>}
         </div>
         {summary.equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {summary.equipmentGained.map(getV4EquipmentName).join(', ')}</div>}

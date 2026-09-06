@@ -513,7 +513,7 @@ interface OfflineSummary {
   resourcesGained: Partial<Record<'spirit' | 'gold' | 'materials' | 'rift', number>>;
   equipmentGained: string[];
   wasClamped: boolean; // 8시간 상한 적용 여부
-  clockAnomaly: 'backwards' | 'future' | null;
+  clockAnomaly: 'backwards' | 'future' | 'invalid' | null;
   notes: string[];
 }
 ```
@@ -523,6 +523,7 @@ interface OfflineSummary {
 - 마을 확인: 정산된 작업·재화·장비를 확인하고 마을로 복귀한다.
 - 재화 2배: 선택적으로 보상형 광고를 시청해 오프라인 재화만 2배 적용한다.
 - 위험 Realm의 보스 결과와 다음 Realm 영구 해금은 결과 화면에서 별도 확인하기 전까지 보류한다.
+- 미래 저장 시각·비유한 기기 시각·비유한 정산 효율은 보상을 확정하지 않고 사용자에게 상태를 알린다.
 
 ---
 

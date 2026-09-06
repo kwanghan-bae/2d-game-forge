@@ -757,6 +757,33 @@ describe('v4 save and domain', () => {
     expect(result.meta.tasks[started.task.id]).toBeDefined();
   });
 
+  it('does not settle work when the completion clock is non-finite', () => {
+    const initial = createInitialV4Save(29);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = initial.createdAt;
+
+    const result = completeFacilityTasks(started.save, Number.POSITIVE_INFINITY);
+
+    expect(result).toBe(started.save);
+    expect(result.meta.tasks[started.task.id]).toBeDefined();
+  });
+
+  it('rejects instant completion before a future persisted write time', () => {
+    const initial = createInitialV4Save(30);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.updatedAt = initial.createdAt + HOUR;
+
+    const result = completeFacilityTaskNow(started.save, 'temple', initial.createdAt + 1_000);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toContain('미래');
+  });
+
   it('keeps the save chronology valid when an explicit action sees a backwards clock', () => {
     const initial = createInitialV4Save(24);
     initial.lastProcessedAt = initial.createdAt + HOUR;
