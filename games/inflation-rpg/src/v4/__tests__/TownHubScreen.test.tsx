@@ -56,6 +56,14 @@ describe('V4 town hub support assignment', () => {
     expect(props.onStartTask).toHaveBeenCalledWith('blacksmith', 'blacksmith');
   });
 
+  it('renders equipment output names instead of internal ids', () => {
+    renderHub();
+
+    const town = screen.getByTestId('v4-town-hub');
+    expect(town).toHaveTextContent('장비 마을의 철검');
+    expect(town.textContent).not.toContain('v4_iron_sword');
+  });
+
   it('updates the closest objective as realms are unlocked', () => {
     const save = createInitialV4Save(97);
     save.meta.unlockedRealms = ['joseon_plains', 'deep_forest'];

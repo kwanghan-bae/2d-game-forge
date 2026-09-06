@@ -1,5 +1,6 @@
 import { FACILITY_DEFINITIONS, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
 import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
+import { getV4EquipmentName } from '../equipment';
 import type { FacilityId, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 
 interface Props {
@@ -135,7 +136,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 {!task && agentId && !assignedAgentId && <div className="v4-task">지원 담당자 없이 기본 방식으로 시작합니다.</div>}
                 <div className="v4-economy" aria-label={`${definition.nameKR} 작업 경제 정보`}>
                   <span>투입 · {formatResources(preview.input)}</span>
-                  <span>산출 · {formatResources(preview.output)}{preview.outputEquipmentIds.length > 0 ? ` · 장비 ${preview.outputEquipmentIds.map((id) => id === 'v4_iron_sword' ? '마을의 철검' : id).join(', ')}` : ''}</span>
+                  <span>산출 · {formatResources(preview.output)}{preview.outputEquipmentIds.length > 0 ? ` · 장비 ${preview.outputEquipmentIds.map(getV4EquipmentName).join(', ')}` : ''}</span>
                   <span>소요 · {preview.durationSeconds}초</span>
                 </div>
                 {!task && !preview.canStart && <div className="v4-task v4-task--blocked">시작 불가 · {preview.error}</div>}
