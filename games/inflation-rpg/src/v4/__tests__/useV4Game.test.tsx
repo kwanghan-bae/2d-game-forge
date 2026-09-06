@@ -227,6 +227,21 @@ describe('useV4Game monetization actions', () => {
     expect(screen.getByTestId('intervention-charges')).toHaveTextContent('1');
   });
 
+  it('does not watch an ad when the intervention reserve is already full', async () => {
+    const base = createInitialV4Save(125);
+    base.run.interventionCharges = 3;
+    persistV4Save(base);
+    const showRewarded = vi.fn(async () => true);
+    const monetization = new V4MonetizationAdapter({ showRewarded }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'charge' }));
+
+    await waitFor(() => expect(screen.getByTestId('message')).toHaveTextContent('이미 가득 찼습니다'));
+    expect(showRewarded).not.toHaveBeenCalled();
+    expect(screen.getByTestId('intervention-charges')).toHaveTextContent('3');
+  });
+
   it('preserves a newer policy change while an instant-task ad is pending', async () => {
     const base = createInitialV4Save(110);
     const started = startFacilityTask(base, 'temple', base.updatedAt);

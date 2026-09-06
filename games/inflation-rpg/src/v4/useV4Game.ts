@@ -173,6 +173,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   const addInterventionCharge = useCallback(async () => {
     if (interventionChargeInFlight.current) return;
+    if (saveRef.current.run.interventionCharges >= 3) {
+      setMessage('개입 충전이 이미 가득 찼습니다.');
+      return;
+    }
     interventionChargeInFlight.current = true;
     try {
       if (!(await watchRewarded('intervention_charge'))) return;
