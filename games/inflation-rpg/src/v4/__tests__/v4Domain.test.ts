@@ -351,6 +351,19 @@ describe('v4 save and domain', () => {
     expect(replay.save.meta.currencies).toEqual(offline.save.meta.currencies);
   });
 
+  it('falls back to full efficiency when settlement receives a non-finite multiplier', () => {
+    const initial = createInitialV4Save(28);
+    const started = startFacilityTask(initial, 'training', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const completed = completeFacilityTasks(started.save, started.task.completesAt, Number.NaN);
+
+    expect(completed.meta.currencies.spirit).toBe(initial.meta.currencies.spirit + 8);
+    expect(completed.run.hero.exp).toBe(40);
+    expect(Number.isFinite(completed.run.hero.exp)).toBe(true);
+  });
+
   it('advances the processing watermark when work is completed online', () => {
     const initial = createInitialV4Save(17);
     const started = startFacilityTask(initial, 'temple', initial.createdAt, null);

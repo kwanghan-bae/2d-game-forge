@@ -87,6 +87,11 @@ function give(save: V4SaveEnvelope, output: Partial<Record<V4CurrencyKey, number
   }
 }
 
+function normalizeSettlementEfficiency(value: number): number {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(1, Math.max(0, value));
+}
+
 function scaleResources(
   output: Partial<Record<V4CurrencyKey, number>>,
   multiplier: number,
@@ -590,15 +595,16 @@ export function completeFacilityTasks(
   const save = cloneSave(source);
   const eventAt = eventTimestamp(save, now);
   if (eventAt < save.updatedAt) return source;
+  const efficiency = normalizeSettlementEfficiency(outputEfficiency);
   for (const task of Object.values(save.meta.tasks)) {
     if (task.completesAt > eventAt) continue;
     const facility = save.meta.facilities[task.facilityId];
-    give(save, task.outputPreview, outputEfficiency);
+    give(save, task.outputPreview, efficiency);
     if (task.outputEquipmentIds) {
       for (const equipmentId of task.outputEquipmentIds) grantEquipmentLevel(save, equipmentId);
     }
     if (task.heroExpGain) {
-      const levelsGained = applyHeroExperience(save, task.heroExpGain * outputEfficiency);
+      const levelsGained = applyHeroExperience(save, task.heroExpGain * efficiency);
       if (levelsGained > 0) {
         save.meta.sagaEntries.unshift({
           id: nextSaveId(save, `saga-level-${task.id}`),
@@ -642,7 +648,7 @@ export function completeFacilityTasks(
     });
     delete save.meta.tasks[task.id];
   }
-  resolveExpedition(save, eventAt, allowPermanentUnlock, outputEfficiency);
+  resolveExpedition(save, eventAt, allowPermanentUnlock, efficiency);
   syncHeroAction(save);
   save.lastProcessedAt = Math.max(save.lastProcessedAt, eventAt);
   touchSave(save, eventAt);
