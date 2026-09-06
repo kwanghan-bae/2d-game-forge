@@ -423,6 +423,11 @@ function nextSagaId(source: V4SaveEnvelope, base: string): string {
   return `${base}-${suffix}`;
 }
 
+function destinationHeroAction(source: V4SaveEnvelope): V4HeroSnapshot['currentAction'] {
+  if (source.run.expedition) return 'expedition';
+  return Object.values(source.meta.tasks).some((task) => task.facilityId === 'training') ? 'train' : 'rest';
+}
+
 /** Explicit user-triggered import. V4 never calls this during normal loading. */
 export function importV3HeroSnapshot(
   source: V4SaveEnvelope,
@@ -431,7 +436,10 @@ export function importV3HeroSnapshot(
 ): V4SaveEnvelope {
   const eventAt = Number.isFinite(now) ? Math.max(source.updatedAt, now) : source.updatedAt;
   const updatedAt = Math.max(source.updatedAt, source.lastProcessedAt, eventAt);
-  const hero = migrateV3HeroSnapshot(input);
+  const hero = {
+    ...migrateV3HeroSnapshot(input),
+    currentAction: destinationHeroAction(source),
+  };
   return {
     ...source,
     updatedAt,

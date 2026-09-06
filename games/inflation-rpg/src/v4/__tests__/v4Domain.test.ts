@@ -378,6 +378,23 @@ describe('v4 save and domain', () => {
     expect(importedAfterClockRollback.meta.sagaEntries[0]?.createdAt).toBe(staleDestination.lastProcessedAt);
   });
 
+  it('preserves the destination hero action while explicitly importing a V3 hero', () => {
+    const destination = createInitialV4Save(118);
+    const started = startFacilityTask(destination, 'training', destination.createdAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const imported = importV3HeroSnapshot(started.save, {
+      name: '훈련 중인 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
+      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
+      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
+      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
+    } as unknown as HeroSnapshot, destination.createdAt + 1_000);
+
+    expect(imported.run.hero.currentAction).toBe('train');
+  });
+
   it('normalizes duplicate V3 equipment records during explicit import', () => {
     const source = {
       name: '중복 장비 영웅', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,
