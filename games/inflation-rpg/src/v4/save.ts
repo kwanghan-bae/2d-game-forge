@@ -55,7 +55,9 @@ function isFacilityTaskRecord(value: unknown): boolean {
     || (value.outputEquipmentIds !== undefined
       && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) => typeof id === 'string')))
     || (value.heroExpGain !== undefined && !isNonNegativeNumber(value.heroExpGain))
-    || (value.assignedAgentId !== null && typeof value.assignedAgentId !== 'string')) return false;
+    || (value.assignedAgentId !== null
+      && (typeof value.assignedAgentId !== 'string'
+        || !Object.prototype.hasOwnProperty.call(AGENT_DEFINITIONS, value.assignedAgentId)))) return false;
   return true;
 }
 
@@ -110,7 +112,10 @@ function isSagaEntryRecord(value: unknown): boolean {
 
 function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(value) || value.schemaVersion !== V4_SCHEMA_VERSION) return false;
-  if (!isNonNegativeNumber(value.createdAt) || !isNonNegativeNumber(value.updatedAt) || !isNonNegativeNumber(value.lastProcessedAt)) return false;
+  if (!isNonNegativeNumber(value.createdAt) || !isNonNegativeNumber(value.updatedAt) || !isNonNegativeNumber(value.lastProcessedAt)
+    || value.updatedAt < value.createdAt
+    || value.lastProcessedAt < value.createdAt
+    || value.lastProcessedAt > value.updatedAt) return false;
 
   const meta = value.meta;
   const run = value.run;
@@ -120,7 +125,7 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(currencies) || !CURRENCY_KEYS.every((key) => isNonNegativeNumber(currencies[key]))) return false;
 
   const facilities = meta.facilities;
-  if (!isRecord(facilities) || !FACILITY_IDS.every((id) => {
+  if (!isRecord(facilities) || Object.keys(facilities).length !== FACILITY_IDS.length || !FACILITY_IDS.every((id) => {
     const facility = facilities[id];
       return isRecord(facility)
       && facility.id === id
@@ -132,7 +137,10 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     isRecord(task) && isFacilityTaskRecord(task) && task.id === id)
     || !Array.isArray(meta.agents) || !Array.isArray(meta.unlockedRealms) || !Array.isArray(meta.sagaEntries)
     || !meta.sagaEntries.every(isSagaEntryRecord)) return false;
-  if (!meta.unlockedRealms.every((id) => typeof id === 'string' && REALM_IDS.includes(id as typeof REALM_IDS[number]))) return false;
+  if (meta.unlockedRealms.length === 0
+    || new Set(meta.unlockedRealms).size !== meta.unlockedRealms.length
+    || !meta.unlockedRealms.includes('joseon_plains')
+    || !meta.unlockedRealms.every((id) => typeof id === 'string' && REALM_IDS.includes(id as typeof REALM_IDS[number]))) return false;
 
   const settings = meta.settings;
   if (!isRecord(settings) || !isNonNegativeNumber(settings.music) || settings.music > 1
@@ -172,7 +180,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     if (!isRecord(facility) || facility.activeTaskId !== taskId) return false;
     if (candidate.assignedAgentId !== null) {
       const agent = meta.agents.find((item) => isRecord(item) && item.id === candidate.assignedAgentId);
-      if (!agent || agent.activeTaskId !== taskId) return false;
+      const definition = AGENT_DEFINITIONS[candidate.assignedAgentId as keyof typeof AGENT_DEFINITIONS];
+      if (!agent || agent.activeTaskId !== taskId || definition?.specialty !== candidate.facilityId) return false;
     }
   }
   for (const candidate of meta.agents) {
@@ -202,6 +211,7 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || (hero.equipmentLevels !== undefined && (!isRecord(hero.equipmentLevels)
       || !Object.entries(hero.equipmentLevels).every(([id, level]) => typeof id === 'string'
         && isNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)))) return false;
+  if (!meta.unlockedRealms.includes(hero.realmId as typeof REALM_IDS[number])) return false;
   const heroAge = hero.age;
   const heroLevel = hero.level;
   const heroExp = hero.exp;

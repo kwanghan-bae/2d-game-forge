@@ -206,6 +206,55 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('rejects impossible save chronology, duplicate realm unlocks, and off-specialty task links', () => {
+    const initial = createInitialV4Save(23);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    const put = (save: typeof initial) => {
+      storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(save));
+      expect(loadV4Save(fakeStorage)).toBeNull();
+    };
+
+    put({ ...initial, updatedAt: initial.createdAt - 1 });
+    put({ ...initial, lastProcessedAt: initial.createdAt - 1 });
+    put({ ...initial, updatedAt: initial.createdAt, lastProcessedAt: initial.createdAt + 1 });
+    put({
+      ...initial,
+      meta: { ...initial.meta, unlockedRealms: ['joseon_plains', 'joseon_plains'] },
+    });
+    put({
+      ...initial,
+      run: { ...initial.run, hero: { ...initial.run.hero, realmId: 'deep_forest' } },
+    });
+
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const task = started.save.meta.tasks[started.task.id];
+    put({
+      ...started.save,
+      meta: {
+        ...started.save.meta,
+        facilities: {
+          ...started.save.meta.facilities,
+          blacksmith: { ...started.save.meta.facilities.blacksmith, activeTaskId: task.id },
+        },
+        tasks: {
+          ...started.save.meta.tasks,
+          [task.id]: { ...task, assignedAgentId: 'guide' },
+        },
+        agents: started.save.meta.agents.map((agent) => {
+          if (agent.id === 'blacksmith') return { ...agent, activeTaskId: null };
+          if (agent.id === 'guide') return { ...agent, activeTaskId: task.id };
+          return agent;
+        }),
+      },
+    });
+  });
+
   it('maps a V3 hero snapshot without sharing the V3 store shape', () => {
     const source = {
       name: '홍길동', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,

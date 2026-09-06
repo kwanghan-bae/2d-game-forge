@@ -22,8 +22,12 @@ describe('useV4Game monetization actions', () => {
 
   it('applies an offline double reward only once when the button is clicked concurrently', async () => {
     const base = createInitialV4Save(88);
-    base.lastProcessedAt = Date.now() - 60_000;
-    base.updatedAt = base.lastProcessedAt;
+    const startedAt = Date.now() - 60_000;
+    // Keep the fixture chronologically valid: a save cannot have been
+    // processed before it was created.
+    base.createdAt = startedAt;
+    base.lastProcessedAt = startedAt;
+    base.updatedAt = startedAt;
     const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
