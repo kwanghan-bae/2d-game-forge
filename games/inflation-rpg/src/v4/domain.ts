@@ -1,5 +1,6 @@
 import { FACILITY_DEFINITIONS, AGENT_DEFINITIONS, REALM_DEFINITIONS } from './data';
 import { createV4HeroRuntime } from './heroRuntime';
+import { HeroLifecycle } from '../hero/HeroLifecycle';
 import type {
   FacilityId,
   FacilityTask,
@@ -80,6 +81,35 @@ function scaleResources(
 
 function nextTaskId(save: V4SaveEnvelope, prefix: string, now: number): string {
   return `${prefix}-${now}-${Object.keys(save.meta.tasks).length + 1}`;
+}
+
+function advanceHeroActionsInPlace(save: V4SaveEnvelope, actions: number, now: number): void {
+  const amount = Math.floor(actions);
+  if (!Number.isFinite(actions) || amount <= 0) return;
+
+  const hero = save.run.hero;
+  const previousAge = hero.age;
+  hero.actionCount += amount;
+  hero.age = Math.max(previousAge, HeroLifecycle.ageFromActions(hero.actionCount));
+  if (hero.age > previousAge) {
+    save.meta.sagaEntries.unshift({
+      id: `saga-aging-${now}-${hero.actionCount}`,
+      kind: 'milestone',
+      createdAt: now,
+      title: '영웅의 시간',
+      text: `${hero.name}이(가) ${previousAge}세에서 ${hero.age}세로 한 걸음 나아갔다.`,
+    });
+  }
+}
+
+/** Advances the V4 hero's action clock without mutating the source save. */
+export function advanceHeroActions(source: V4SaveEnvelope, actions: number, now: number): V4SaveEnvelope {
+  const amount = Math.floor(actions);
+  if (!Number.isFinite(actions) || amount <= 0) return source;
+  const save = cloneSave(source);
+  advanceHeroActionsInPlace(save, amount, now);
+  save.updatedAt = now;
+  return save;
 }
 
 function facilityTaskEconomy(
@@ -319,6 +349,10 @@ function resolveExpedition(save: V4SaveEnvelope, now: number, allowPermanentUnlo
     enemyHp: realm.recommendedPower * 4,
     enemyAtk: realm.recommendedPower * 0.8,
   });
+  // One resolved expedition represents one meaningful hero action. Keeping
+  // the clock at encounter granularity makes aging legible and predictable
+  // instead of coupling a player's lifespan to combat loop implementation.
+  advanceHeroActionsInPlace(save, 1, now);
   const heroPower = calculateHeroPower(save);
   const won = battle.won && heroPower >= realm.recommendedPower * (1 - guideBonus);
   const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
@@ -414,6 +448,7 @@ export function completeFacilityTasks(
         });
       }
     }
+    if (task.facilityId === 'training') advanceHeroActionsInPlace(save, 1, now);
     if (facility) facility.activeTaskId = null;
     if (task.assignedAgentId) {
       const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);

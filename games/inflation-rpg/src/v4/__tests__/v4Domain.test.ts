@@ -12,6 +12,7 @@ import {
   cancelFacilityTask,
   completeFacilityTasks,
   completeFacilityTaskNow,
+  advanceHeroActions,
   getFacilityTaskPreview,
   getFacilityUpgradeCost,
   grantInterventionCharge,
@@ -366,7 +367,26 @@ describe('v4 save and domain', () => {
     expect(completed.run.hero.exp).toBe(20);
     expect(completed.run.hero.atk).toBeGreaterThan(initial.run.hero.atk);
     expect(completed.run.hero.hpMax).toBeGreaterThan(initial.run.hero.hpMax);
+    expect(completed.run.hero.actionCount).toBe(initial.run.hero.actionCount + 1);
     expect(completed.run.hero.currentAction).toBe('rest');
+  });
+
+  it('ages the eternal hero from completed actions and records an age boundary', () => {
+    const initial = createInitialV4Save(87);
+    initial.run.hero.age = 17;
+    initial.run.hero.actionCount = 185;
+
+    const advanced = advanceHeroActions(initial, 15, initial.createdAt + 1_000);
+
+    expect(advanced.run.hero.actionCount).toBe(200);
+    expect(advanced.run.hero.age).toBe(18);
+    expect(advanced.meta.sagaEntries[0]).toMatchObject({
+      kind: 'milestone',
+      title: '영웅의 시간',
+    });
+    expect(advanced.meta.sagaEntries[0]?.text).toContain('17세에서 18세');
+    expect(initial.run.hero.actionCount).toBe(185);
+    expect(advanceHeroActions(advanced, 0, initial.createdAt + 2_000)).toBe(advanced);
   });
 
   it('keeps hero training and expedition actions mutually exclusive', () => {
