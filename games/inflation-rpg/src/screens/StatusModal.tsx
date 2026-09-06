@@ -13,6 +13,7 @@ import { ReforgeModal } from '../components/ReforgeModal';
 import { AscensionTrialsModal } from '../components/AscensionTrialsModal';
 import { PetSanctuaryModal } from '../components/PetSanctuaryModal';
 import { ZodiacConstellationModal } from '../components/ZodiacConstellationModal';
+import { AstralAlchemyModal } from '../components/AstralAlchemyModal';
 
 interface Props {
   onClose: () => void;
@@ -27,6 +28,7 @@ export function StatusModal({ onClose }: Props) {
   const [showTrials, setShowTrials] = useState(false);
   const [showPets, setShowPets] = useState(false);
   const [showZodiac, setShowZodiac] = useState(false);
+  const [showAlchemy, setShowAlchemy] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -236,6 +238,22 @@ export function StatusModal({ onClose }: Props) {
                 >
                   🌌 성좌도
                 </button>
+                <button
+                  data-testid="open-alchemy-modal-btn"
+                  onClick={() => setShowAlchemy(true)}
+                  style={{
+                    background: '#d97706',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  ⚗️ 연금술
+                </button>
               </div>
             </div>
             {equippedItems.length === 0 ? (
@@ -312,6 +330,7 @@ export function StatusModal({ onClose }: Props) {
       {showTrials && <AscensionTrialsModal onClose={() => setShowTrials(false)} />}
       {showPets && <PetSanctuaryModal onClose={() => setShowPets(false)} />}
       {showZodiac && <ZodiacConstellationModal onClose={() => setShowZodiac(false)} />}
+      {showAlchemy && <AstralAlchemyModal onClose={() => setShowAlchemy(false)} />}
     </div>
   );
 }
