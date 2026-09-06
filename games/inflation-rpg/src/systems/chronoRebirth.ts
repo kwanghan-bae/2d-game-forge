@@ -145,6 +145,7 @@ export function executeChronoRebirth(
     ...meta,
     totalRebirths: nextRebirths,
     chronoEssence: nextChronoEssence,
+    activeRebirthTier: tier.id,
   } as any;
 
   const newRun: RunState = {

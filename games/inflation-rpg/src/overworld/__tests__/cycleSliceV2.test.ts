@@ -297,5 +297,26 @@ describe('cycleSliceV2', () => {
       expect(ctrl.getCurrentRealmId()).toBe('volcano');
       expect(ctrl.getHero().gridX).toBe(41);  // volcano.columnRange[0]=40 + 1
     });
+
+    it('applies Chrono Rebirth starting bonuses to hero when activeRebirthTier is present', () => {
+      useGameStore.setState(s => ({
+        ...s,
+        meta: {
+          ...s.meta,
+          activeRebirthTier: 'astral_warp',
+        },
+      }));
+      useCycleStoreV2.getState().start({
+        seed: 42,
+        traits: [],
+        heroHpMax: 100,
+        heroAtkBase: 100,
+      });
+      const ctrl = useCycleStoreV2.getState().controller!;
+      const hero = ctrl.getHero();
+      expect(hero.level).toBe(100);
+      expect(hero.gold).toBe(15_000_000);
+      expect(hero.hp).toBe(hero.hpMax);
+    });
   });
 });

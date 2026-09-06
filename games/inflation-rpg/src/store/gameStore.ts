@@ -194,6 +194,7 @@ export const INITIAL_META: MetaState = {
   claimedArchiveMilestones: [],
   totalRebirths: 0,
   chronoEssence: 0,
+  activeRebirthTier: null,
 };
 
 interface GameStore {

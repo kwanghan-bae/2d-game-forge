@@ -394,6 +394,8 @@ export interface MetaState {
   totalRebirths?: number;
   /** C1141 — 보유 중인 시공 정수 (Chrono Essence) 수량. */
   chronoEssence?: number;
+  /** C1145 — 활성화된 시공 도약 티어 (Chrono Rebirth Tier ID). */
+  activeRebirthTier?: import('./systems/chronoRebirth').ChronoRebirthTierId | null;
 }
 
 // Phase G — Ascension Tree (성좌)

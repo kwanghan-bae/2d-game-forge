@@ -20,6 +20,7 @@ import { getDirectiveEffects } from '../systems/sponsorDirective';
 import { getActivePerkEffects, type JpPerkId } from '../systems/jpPerks';
 import { aggregateSetEffects } from '../systems/equipmentSets';
 import { aggregateReforgeBonus } from '../systems/reforgeSystem';
+import { applyChronoDropMultiplier, applyRebirthToHero } from '../systems/chronoRebirthIntegration';
 
 type Status = 'idle' | 'running' | 'ended';
 
@@ -135,11 +136,12 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
         const eqInst = getEquippedInstances(meta.inventory, meta.equippedItemIds);
         const setEffects = aggregateSetEffects(eqInst.map(e => e.baseId));
         const reforgeBonus = aggregateReforgeBonus(eqInst);
+        const rawDropChanceBonus = getDropChanceBonus(meta) * sBonus.dropMul
+          + getDirectiveEffects(state.run.directive ?? null).dropRateBonus
+          + perkDropBonus
+          + setEffects.dropRateBonus;
         return {
-          dropChanceBonus: getDropChanceBonus(meta) * sBonus.dropMul
-            + getDirectiveEffects(state.run.directive ?? null).dropRateBonus
-            + perkDropBonus
-            + setEffects.dropRateBonus,
+          dropChanceBonus: applyChronoDropMultiplier(rawDropChanceBonus, meta),
           agingSpeedMul: getAgingSpeedMul(meta),
           damping: computeFieldDamping(heroLv, fieldLv, buff6 + sBonus.dampingThresholdBonus) * sBonus.atkMul * (1 + setEffects.atkMulBonus + reforgeBonus.atkMulBonus),
         };
@@ -171,6 +173,7 @@ export const useCycleStoreV2 = create<CycleStoreV2State>((set, get) => ({
       const hero = ctrl.getHero();
       hero.gridX = spawnCol;
       hero.gridY = Math.floor(GRID_H / 2);
+      applyRebirthToHero(hero, storeMeta);
       if (rotated !== activeRealmId) {
         useGameStore.setState(s => ({ ...s, run: { ...s.run, currentRealmId: rotated } }));
         activeRealmId = rotated;
