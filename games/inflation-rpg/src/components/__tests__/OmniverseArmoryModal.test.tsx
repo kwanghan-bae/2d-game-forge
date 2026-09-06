@@ -115,4 +115,25 @@ describe('C1160: OmniverseArmoryModal Component Tests', () => {
 
     expect(screen.getByTestId('omniverse-armory-modal')).toBeDefined();
   });
+
+  it('renders Hephaestus dialogue banner and regalia scriptures', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        forgedRegalia: ['ouroboros_chrono_blade'],
+      },
+    }));
+
+    render(<OmniverseArmoryModal onClose={() => {}} />);
+
+    const banner = screen.getByTestId('blacksmith-dialogue-banner');
+    expect(banner.textContent).toContain('초월의 불씨 수호자');
+    expect(banner.textContent).toContain('첫 번째 보구의 장엄한 고동');
+
+    const bladeScripture = screen.getByTestId('regalia-scripture-ouroboros_chrono_blade');
+    expect(bladeScripture.textContent).toContain('적의 어떤 견고한 방패와 절대 가호도');
+
+    const ymirScripture = screen.getByTestId('regalia-scripture-ymir_primordial_heart');
+    expect(ymirScripture.textContent).toContain('빙하와 겁화의 대지에서 최초로 고동쳤던');
+  });
 });

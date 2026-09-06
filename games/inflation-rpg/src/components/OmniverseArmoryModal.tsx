@@ -16,6 +16,10 @@ import {
   evaluateForgedRegaliaPerks,
   type OmniverseRegaliaId,
 } from '../systems/omniverseRegalia';
+import {
+  getBlacksmithDialogue,
+  getRegaliaLore,
+} from '../data/omniverseRegaliaLore';
 
 interface Props {
   onClose: () => void;
@@ -27,6 +31,7 @@ export function OmniverseArmoryModal({ onClose }: Props) {
   const crests = (meta as unknown as { pantheonCrests?: number }).pantheonCrests ?? 0;
   const forged = meta.forgedRegalia ?? [];
   const perks = evaluateForgedRegaliaPerks(meta);
+  const blacksmith = getBlacksmithDialogue(forged.length);
 
   const handleForge = (id: OmniverseRegaliaId) => {
     const check = canForgeOmniverseRegalia(meta, id);
@@ -135,6 +140,27 @@ export function OmniverseArmoryModal({ onClose }: Props) {
           </div>
         </div>
 
+        {/* Hephaestus Blacksmith Dialogue Banner */}
+        <div
+          data-testid="blacksmith-dialogue-banner"
+          style={{
+            padding: '10px 20px',
+            background: '#271004',
+            borderBottom: '1px solid #78350f',
+            fontSize: 12,
+            color: '#fed7aa',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>🔨</span>
+          <div>
+            <strong style={{ color: '#fb923c' }}>{blacksmith.title}: </strong>
+            <span style={{ fontStyle: 'italic' }}>"{blacksmith.quote}"</span>
+          </div>
+        </div>
+
         {/* Active Perks Dashboard */}
         <div
           data-testid="regalia-perks-banner"
@@ -188,6 +214,7 @@ export function OmniverseArmoryModal({ onClose }: Props) {
         >
           {ALL_OMNIVERSE_REGALIA_IDS.map(id => {
             const regalia = getOmniverseRegalia(id);
+            const lore = getRegaliaLore(id);
             const isForged = forged.includes(id);
             const check = canForgeOmniverseRegalia(meta, id);
             const badge = getSlotBadge(regalia.slot);
@@ -216,6 +243,9 @@ export function OmniverseArmoryModal({ onClose }: Props) {
                       <strong style={{ fontSize: 14, color: '#fff' }}>
                         {regalia.nameKR}
                       </strong>
+                      <span style={{ fontSize: 10, color: '#fbbf24', marginLeft: 4 }}>
+                        ({lore.hanja})
+                      </span>
                       <span
                         style={{
                           marginLeft: 6,
@@ -248,6 +278,19 @@ export function OmniverseArmoryModal({ onClose }: Props) {
                 {/* Description */}
                 <div style={{ fontSize: 11, color: '#a1a1aa' }}>
                   {regalia.description}
+                </div>
+
+                {/* Lore Scripture */}
+                <div
+                  data-testid={`regalia-scripture-${regalia.id}`}
+                  style={{
+                    fontSize: 10,
+                    color: isForged ? '#d8b4fe' : '#71717a',
+                    fontStyle: 'italic',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  "{isForged ? lore.awakenedInscription : lore.forgingHymn}"
                 </div>
 
                 {/* Perk Highlight */}
