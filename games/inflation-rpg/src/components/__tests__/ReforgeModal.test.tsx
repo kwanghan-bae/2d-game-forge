@@ -129,4 +129,61 @@ describe('C1034: ReforgeModal Component Tests', () => {
     expect(enchantedItem.enchantElement).toBe('lightning');
     expect(screen.getByTestId('reforge-feedback').textContent).toContain('각인 완료');
   });
+
+  it('relic tab displays celestial star relics and sockets relic into equipment', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        starlightShards: 50,
+      },
+    }));
+
+    render(<ReforgeModal onClose={() => {}} initialTab="relic" />);
+
+    expect(screen.getByTestId('tab-relic')).toBeDefined();
+    expect(screen.getByText('장착할 천상 성유물 선택:')).toBeDefined();
+
+    // Select sirius_fang
+    fireEvent.click(screen.getByTestId('relic-btn-sirius_fang'));
+
+    const socketBtn = screen.getByTestId('socket-relic-btn');
+    expect(socketBtn).not.toBeDisabled();
+    expect(socketBtn.textContent).toBe('소켓 각인 장착');
+
+    fireEvent.click(socketBtn);
+
+    const state = useGameStore.getState();
+    const socketedWeapon = state.meta.inventory.weapons[0];
+    expect(socketedWeapon.celestialRelic).toBe('sirius_fang');
+    expect(state.meta.starlightShards).toBe(20); // 50 - 30
+    expect(state.run.goldThisRun).toBe(25000); // 50000 - 25000
+    expect(screen.getByTestId('reforge-feedback').textContent).toContain('시리우스의 송곳니');
+  });
+
+  it('unsockets relic cleanly from equipment when player clicks unsocket button', () => {
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        starlightShards: 20,
+        inventory: {
+          ...s.meta.inventory,
+          weapons: [{ ...knife, celestialRelic: 'polaris_eye' }],
+        },
+      },
+    }));
+
+    render(<ReforgeModal onClose={() => {}} initialTab="relic" />);
+
+    const unsocketBtn = screen.getByTestId('unsocket-relic-btn');
+    expect(unsocketBtn).not.toBeDisabled();
+    expect(unsocketBtn.textContent).toContain('추출 해제 (✨ 10개)');
+
+    fireEvent.click(unsocketBtn);
+
+    const state = useGameStore.getState();
+    const unsocketedWeapon = state.meta.inventory.weapons[0];
+    expect(unsocketedWeapon.celestialRelic).toBeUndefined();
+    expect(state.meta.starlightShards).toBe(10); // 20 - 10
+    expect(screen.getByTestId('reforge-feedback').textContent).toContain('추출');
+  });
 });

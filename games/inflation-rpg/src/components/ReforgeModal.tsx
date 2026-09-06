@@ -24,11 +24,25 @@ import {
   canEnchantWithRune,
   type RuneType,
 } from '../systems/enchantSystem';
+import {
+  ALL_CELESTIAL_RELICS,
+  CELESTIAL_RELICS,
+  SOCKET_COST_SHARDS,
+  SOCKET_COST_GOLD,
+  UNSOCKET_COST_SHARDS,
+  canSocketRelic,
+  socketRelic,
+  canUnsocketRelic,
+  unsocketRelic,
+  getRelicBonusesForSlot,
+  type RelicSlotType,
+} from '../systems/celestialRelics';
+import type { CelestialRelicType } from '../types';
 import { ElementalBadge } from './ElementalBadge';
 
 interface Props {
   onClose: () => void;
-  initialTab?: 'reforge' | 'dismantle' | 'enchant';
+  initialTab?: 'reforge' | 'dismantle' | 'enchant' | 'relic';
 }
 
 const RARITY_COLORS: Record<EquipmentRarity, string> = {
@@ -53,9 +67,10 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
   const meta = useGameStore(s => s.meta);
   const run = useGameStore(s => s.run);
 
-  const [activeTab, setActiveTab] = useState<'reforge' | 'dismantle' | 'enchant'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'reforge' | 'dismantle' | 'enchant' | 'relic'>(initialTab);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [selectedRune, setSelectedRune] = useState<RuneType>('rune_fire');
+  const [selectedRelic, setSelectedRelic] = useState<CelestialRelicType>('polaris_eye');
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'failure' | 'info';
     message: string;
@@ -227,6 +242,65 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
     });
   };
 
+  const handleSocketRelic = () => {
+    if (!selectedItem || !selectedBase) return;
+    const shards = meta.starlightShards ?? 0;
+    const gold = run.goldThisRun;
+    const res = socketRelic(selectedItem, selectedRelic, shards, gold);
+    if (!res.success) {
+      setFeedback({ type: 'failure', message: res.message });
+      return;
+    }
+
+    const updateList = (list: EquipmentInstance[]) =>
+      list.map(it => (it.instanceId === selectedItem.instanceId ? res.updatedInstance : it));
+
+    useGameStore.setState(s => ({
+      run: {
+        ...s.run,
+        goldThisRun: s.run.goldThisRun - res.goldSpent,
+      },
+      meta: {
+        ...s.meta,
+        starlightShards: (s.meta.starlightShards ?? 0) - res.shardsSpent,
+        inventory: {
+          weapons: updateList(s.meta.inventory.weapons),
+          armors: updateList(s.meta.inventory.armors),
+          accessories: updateList(s.meta.inventory.accessories),
+        },
+      },
+    }));
+
+    setFeedback({ type: 'success', message: res.message });
+  };
+
+  const handleUnsocketRelic = () => {
+    if (!selectedItem || !selectedBase) return;
+    const shards = meta.starlightShards ?? 0;
+    const res = unsocketRelic(selectedItem, shards);
+    if (!res.success) {
+      setFeedback({ type: 'failure', message: res.message });
+      return;
+    }
+
+    const updateList = (list: EquipmentInstance[]) =>
+      list.map(it => (it.instanceId === selectedItem.instanceId ? res.updatedInstance : it));
+
+    useGameStore.setState(s => ({
+      meta: {
+        ...s.meta,
+        starlightShards: (s.meta.starlightShards ?? 0) - res.shardsSpent,
+        inventory: {
+          weapons: updateList(s.meta.inventory.weapons),
+          armors: updateList(s.meta.inventory.armors),
+          accessories: updateList(s.meta.inventory.accessories),
+        },
+      },
+    }));
+
+    setFeedback({ type: 'info', message: res.message });
+  };
+
   return (
     <div
       data-testid="reforge-modal-backdrop"
@@ -275,6 +349,7 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
           <div style={{ display: 'flex', gap: 12, fontSize: 13 }}>
             <span style={{ color: '#fbbf24' }}>💰 {run.goldThisRun.toLocaleString()} G</span>
             <span style={{ color: '#60a5fa' }}>💎 강화석 {meta.enhanceStones.toLocaleString()}개</span>
+            <span style={{ color: '#38bdf8' }}>✨ 파편 {(meta.starlightShards ?? 0).toLocaleString()}개</span>
           </div>
           <button
             data-testid="close-btn"
@@ -344,6 +419,23 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
             }}
           >
             속성 각인 (인챈트)
+          </button>
+          <button
+            data-testid="tab-relic"
+            onClick={() => { setActiveTab('relic'); setFeedback(null); }}
+            style={{
+              flex: 1,
+              padding: '10px 0',
+              background: activeTab === 'relic' ? '#252a3a' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'relic' ? '2px solid #38bdf8' : 'none',
+              color: activeTab === 'relic' ? '#38bdf8' : '#888',
+              fontWeight: activeTab === 'relic' ? 'bold' : 'normal',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
+          >
+            성유물 소켓
           </button>
         </div>
 
@@ -672,7 +764,7 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
                 )}
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'enchant' ? (
             /* Enchant Tab */
             <div>
               <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>각인할 장비 선택:</div>
@@ -790,6 +882,197 @@ export function ReforgeModal({ onClose, initialTab = 'reforge' }: Props) {
                         >
                           {!canAfford ? '비용 부족 (골드 또는 강화석)' : '룬 각인 실행'}
                         </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Relic Tab */
+            <div>
+              <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>성유물을 장착할 장비 선택:</div>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 16 }}>
+                {allItems.length === 0 ? (
+                  <div style={{ fontSize: 13, color: '#666' }}>보유 중인 장비가 없습니다.</div>
+                ) : (
+                  allItems.map(it => {
+                    const base = getEquipmentBase(it.baseId);
+                    if (!base) return null;
+                    const isSelected = (selectedItem?.instanceId ?? '') === it.instanceId;
+                    const relicDef = it.celestialRelic ? CELESTIAL_RELICS[it.celestialRelic] : null;
+                    return (
+                      <button
+                        key={it.instanceId}
+                        data-testid={`relic-select-item-${it.instanceId}`}
+                        onClick={() => { setSelectedInstanceId(it.instanceId); setFeedback(null); }}
+                        style={{
+                          flexShrink: 0,
+                          padding: '6px 10px',
+                          borderRadius: 8,
+                          border: `1px solid ${isSelected ? '#38bdf8' : '#333'}`,
+                          background: isSelected ? '#082f49' : '#181b26',
+                          color: RARITY_COLORS[base.rarity],
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontSize: 12,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span>{formatEnhancedName(base.name, it.enhanceLv)}</span>
+                          {relicDef && (
+                            <span data-testid={`item-relic-badge-${it.instanceId}`} style={{ fontSize: 13 }}>
+                              {relicDef.emoji}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#666' }}>
+                          {base.slot} · {relicDef ? relicDef.nameKR : '소켓 비어있음'}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {selectedItem && selectedBase && (
+                <div style={{ background: '#1e2230', borderRadius: 8, padding: 16, border: '1px solid #2e3440' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div>
+                      <strong style={{ fontSize: 16, color: RARITY_COLORS[selectedBase.rarity] }}>
+                        {formatEnhancedName(selectedBase.name, selectedItem.enhanceLv)}
+                      </strong>
+                      <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>({selectedBase.slot})</span>
+                    </div>
+                    <div>
+                      {selectedItem.celestialRelic ? (
+                        <span style={{ fontSize: 12, color: '#38bdf8', fontWeight: 'bold' }}>
+                          장착: {CELESTIAL_RELICS[selectedItem.celestialRelic]?.emoji}{' '}
+                          {CELESTIAL_RELICS[selectedItem.celestialRelic]?.nameKR}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: '#64748b' }}>[소켓 비어있음]</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>장착할 천상 성유물 선택:</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+                    {ALL_CELESTIAL_RELICS.map(r => {
+                      const rDef = CELESTIAL_RELICS[r];
+                      const isSelected = selectedRelic === r;
+                      return (
+                        <button
+                          key={r}
+                          data-testid={`relic-btn-${r}`}
+                          onClick={() => setSelectedRelic(r)}
+                          style={{
+                            padding: 10,
+                            borderRadius: 6,
+                            border: `1px solid ${isSelected ? rDef.color : '#334155'}`,
+                            background: isSelected ? '#1e293b' : '#151822',
+                            color: rDef.color,
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>
+                            {rDef.emoji} {rDef.nameKR}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>
+                            {rDef.constellation}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#fbbf24' }}>
+                            ✨ {rDef.costShards}개 + 💰 {rDef.costGold.toLocaleString()}G
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {(() => {
+                    const rDef = CELESTIAL_RELICS[selectedRelic];
+                    const slotType = selectedBase.slot as RelicSlotType;
+                    const bonus = getRelicBonusesForSlot(selectedRelic, slotType);
+                    const canAfford = canSocketRelic(
+                      selectedItem,
+                      selectedRelic,
+                      meta.starlightShards ?? 0,
+                      run.goldThisRun,
+                    );
+                    const isAlreadySocketed = selectedItem.celestialRelic === selectedRelic;
+                    const canUnsocket = canUnsocketRelic(selectedItem, meta.starlightShards ?? 0);
+
+                    return (
+                      <div>
+                        <div style={{ background: '#151822', padding: 10, borderRadius: 6, marginBottom: 14, fontSize: 12 }}>
+                          <div style={{ color: rDef.color, fontWeight: 'bold', marginBottom: 4 }}>
+                            {rDef.emoji} {rDef.nameKR} ({rDef.hanja}) — {selectedBase.slot} 장착 효과:
+                          </div>
+                          <div style={{ color: '#ccc', marginBottom: 6 }}>{rDef.description}</div>
+                          <div style={{ color: '#38bdf8', fontWeight: 'bold', marginBottom: 4 }}>
+                            스탯 부여:
+                            {bonus.atkPercent && ` 공격력 +${bonus.atkPercent}%`}
+                            {bonus.hpPercent && ` 체력 +${bonus.hpPercent}%`}
+                            {bonus.defPercent && ` 방어력 +${bonus.defPercent}%`}
+                            {bonus.spdFlat && ` 행동속도 +${bonus.spdFlat}`}
+                            {bonus.critRate && ` 치명타율 +${(bonus.critRate * 100).toFixed(0)}%`}
+                            {bonus.critDmg && ` 치명타 피해 +${(bonus.critDmg * 100).toFixed(0)}%`}
+                            {bonus.damageReduction && ` 피해 감소 +${(bonus.damageReduction * 100).toFixed(1)}%`}
+                            {bonus.elementalDmgPercent && ` 속성 공명 피해 +${bonus.elementalDmgPercent}%`}
+                            {bonus.goldBoost && ` 골드 획득 +${(bonus.goldBoost * 100).toFixed(0)}%`}
+                            {bonus.expBoost && ` 경험치 획득 +${(bonus.expBoost * 100).toFixed(0)}%`}
+                          </div>
+                          <div style={{ color: '#fbbf24' }}>
+                            소모: ✨ 별빛 파편 {rDef.costShards}개 + 💰 {rDef.costGold.toLocaleString()}G
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            data-testid="socket-relic-btn"
+                            disabled={isAlreadySocketed || !canAfford}
+                            onClick={handleSocketRelic}
+                            style={{
+                              flex: 2,
+                              padding: '12px 0',
+                              borderRadius: 8,
+                              border: 'none',
+                              background: isAlreadySocketed ? '#334155' : canAfford ? '#0284c7' : '#1e293b',
+                              color: isAlreadySocketed ? '#94a3b8' : canAfford ? '#fff' : '#64748b',
+                              fontWeight: 'bold',
+                              fontSize: 14,
+                              cursor: isAlreadySocketed ? 'default' : canAfford ? 'pointer' : 'not-allowed',
+                            }}
+                          >
+                            {isAlreadySocketed
+                              ? '✓ 이미 장착됨'
+                              : !canAfford
+                              ? '비용 부족 (파편 또는 골드)'
+                              : '소켓 각인 장착'}
+                          </button>
+
+                          {selectedItem.celestialRelic && (
+                            <button
+                              data-testid="unsocket-relic-btn"
+                              disabled={!canUnsocket}
+                              onClick={handleUnsocketRelic}
+                              style={{
+                                flex: 1,
+                                padding: '12px 0',
+                                borderRadius: 8,
+                                border: '1px solid #e11d48',
+                                background: canUnsocket ? '#9f1239' : '#4c0519',
+                                color: canUnsocket ? '#ffe4e6' : '#fda4af',
+                                fontWeight: 'bold',
+                                fontSize: 13,
+                                cursor: canUnsocket ? 'pointer' : 'not-allowed',
+                              }}
+                            >
+                              추출 해제 (✨ 10개)
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })()}
