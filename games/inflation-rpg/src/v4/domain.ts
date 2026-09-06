@@ -95,7 +95,11 @@ function give(save: V4SaveEnvelope, output: Partial<Record<V4CurrencyKey, number
     const currency = key as V4CurrencyKey;
     if (!Object.prototype.hasOwnProperty.call(save.meta.currencies, currency)
       || !Number.isFinite(value) || !Number.isFinite(multiplier) || value <= 0 || multiplier <= 0) continue;
-    save.meta.currencies[currency] += Math.floor(value * multiplier);
+    const amount = Math.floor(value * multiplier);
+    const current = save.meta.currencies[currency];
+    const next = current + amount;
+    if (!Number.isFinite(amount) || !Number.isFinite(current) || !Number.isFinite(next)) continue;
+    save.meta.currencies[currency] = next;
   }
 }
 

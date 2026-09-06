@@ -1195,6 +1195,19 @@ describe('v4 save and domain', () => {
     expect(updated.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 15, rift: 0 });
   });
 
+  it('does not let an oversized task reward overflow a currency', () => {
+    const initial = createInitialV4Save(109);
+    const started = startFacilityTask(initial, 'temple', initial.updatedAt);
+    if (!started.ok) throw new Error(started.error);
+
+    started.save.meta.currencies.gold = 1e308;
+    started.save.meta.tasks[started.task.id].outputPreview = { gold: 1e308 };
+    const completed = completeFacilityTasks(started.save, started.task.completesAt + 1_000);
+
+    expect(Number.isFinite(completed.meta.currencies.gold)).toBe(true);
+    expect(completed.meta.currencies.gold).toBe(1e308);
+  });
+
   it('does not grant rewarded currency or intervention charges on an invalid action clock', () => {
     const initial = createInitialV4Save(96);
     const invalidBonus = grantOfflineResourceBonus(initial, { gold: 10 }, Number.NaN);
