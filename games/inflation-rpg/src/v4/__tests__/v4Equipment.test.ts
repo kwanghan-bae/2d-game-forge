@@ -94,6 +94,26 @@ describe('v4 equipment progression', () => {
     expect(save.run.hero).toEqual(before);
   });
 
+  it('normalizes malformed hero stats before applying equipment bonuses', () => {
+    const save = createInitialV4Save(116);
+    const hero = save.run.hero;
+    hero.atk = Number.NaN;
+    hero.def = Number.POSITIVE_INFINITY;
+    hero.defBase = Number.NaN;
+    hero.hp = Number.POSITIVE_INFINITY;
+    hero.hpMax = 0;
+    hero.critRateBase = Number.NaN;
+
+    applyV4EquipmentBonuses(hero, { atk: 80, def: 60, hpMax: 150, critRate: 0.03 });
+
+    expect(hero.atk).toBe(80);
+    expect(hero.def).toBe(60);
+    expect(hero.defBase).toBe(60);
+    expect(hero.hpMax).toBe(150);
+    expect(hero.hp).toBe(150);
+    expect(hero.critRateBase).toBe(0.08);
+  });
+
   it('does not increase hero stats after an equipment level reaches the cap', () => {
     const capped = createInitialV4Save(103);
     capped.run.hero.equipmentIds = ['v4_iron_sword'];

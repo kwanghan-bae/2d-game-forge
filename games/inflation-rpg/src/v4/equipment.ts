@@ -47,7 +47,19 @@ export function getV4EquipmentName(id: string): string {
 }
 
 function finiteBonus(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+const MAX_HERO_STAT = Number.MAX_SAFE_INTEGER;
+
+function finiteHeroStat(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(MAX_HERO_STAT, Math.max(0, value))
+    : fallback;
+}
+
+function addHeroStat(base: number, bonus: number): number {
+  return Math.min(MAX_HERO_STAT, base + bonus);
 }
 
 export function getV4EquipmentBonuses(
@@ -75,10 +87,13 @@ export function applyV4EquipmentBonuses(hero: V4HeroSnapshot, bonuses: V4Equipme
   const def = finiteBonus(bonuses.def);
   const hpMax = finiteBonus(bonuses.hpMax);
   const critRate = finiteBonus(bonuses.critRate);
-  hero.atk += atk;
-  hero.def += def;
-  hero.defBase += def;
-  hero.hpMax += hpMax;
-  hero.hp = Math.min(hero.hpMax, hero.hp + hpMax);
-  hero.critRateBase = Math.min(1, hero.critRateBase + critRate);
+  hero.atk = addHeroStat(finiteHeroStat(hero.atk), atk);
+  hero.def = addHeroStat(finiteHeroStat(hero.def), def);
+  hero.defBase = addHeroStat(finiteHeroStat(hero.defBase), def);
+  hero.hpMax = Math.max(1, addHeroStat(finiteHeroStat(hero.hpMax), hpMax));
+  hero.hp = Math.min(hero.hpMax, addHeroStat(finiteHeroStat(hero.hp), hpMax));
+  const baseCritRate = typeof hero.critRateBase === 'number' && Number.isFinite(hero.critRateBase)
+    ? Math.min(1, Math.max(0, hero.critRateBase))
+    : 0.05;
+  hero.critRateBase = Math.min(1, baseCritRate + critRate);
 }
