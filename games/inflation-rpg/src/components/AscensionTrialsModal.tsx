@@ -20,6 +20,7 @@ import { AbyssalCorridorModal } from './AbyssalCorridorModal';
 import { PrimordialAscensionModal } from './PrimordialAscensionModal';
 import { AstralArchiveModal } from './AstralArchiveModal';
 import { ChronoRebirthModal } from './ChronoRebirthModal';
+import { ChronoLoomModal } from './ChronoLoomModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
 import { PrimordialConstellationBadge } from './PrimordialConstellationBadge';
@@ -55,6 +56,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   const [showPrimordial, setShowPrimordial] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
   const [showRebirth, setShowRebirth] = useState(false);
+  const [showLoom, setShowLoom] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -278,6 +280,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               ⌛ 시공 환생
             </button>
             <button
+              data-testid="open-loom-modal-btn"
+              onClick={() => setShowLoom(true)}
+              style={{
+                background: '#0d9488',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              🕸️ 시공 베틀
+            </button>
+            <button
               data-testid="close-btn"
               onClick={onClose}
               style={{
@@ -460,6 +478,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
       {showPrimordial && <PrimordialAscensionModal onClose={() => setShowPrimordial(false)} />}
       {showArchive && <AstralArchiveModal onClose={() => setShowArchive(false)} />}
       {showRebirth && <ChronoRebirthModal onClose={() => setShowRebirth(false)} />}
+      {showLoom && <ChronoLoomModal onClose={() => setShowLoom(false)} />}
     </div>
   );
 }

@@ -191,6 +191,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
 
     expect(screen.getByTestId('chrono-rebirth-modal')).toBeDefined();
   });
+
+  it('opens ChronoLoomModal when clicking open-loom-modal-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openLoomBtn = screen.getByTestId('open-loom-modal-btn');
+    expect(openLoomBtn).toBeDefined();
+    fireEvent.click(openLoomBtn);
+
+    expect(screen.getByTestId('chrono-loom-modal')).toBeDefined();
+  });
 });
 
 
