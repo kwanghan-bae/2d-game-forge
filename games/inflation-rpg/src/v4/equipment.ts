@@ -39,7 +39,9 @@ export const V4_EQUIPMENT_DEFINITIONS: Record<string, V4EquipmentDefinition> = {
 };
 
 export function getV4EquipmentDefinition(id: string): V4EquipmentDefinition | undefined {
-  return V4_EQUIPMENT_DEFINITIONS[id];
+  return Object.prototype.hasOwnProperty.call(V4_EQUIPMENT_DEFINITIONS, id)
+    ? V4_EQUIPMENT_DEFINITIONS[id]
+    : undefined;
 }
 
 export function getV4EquipmentName(id: string): string {

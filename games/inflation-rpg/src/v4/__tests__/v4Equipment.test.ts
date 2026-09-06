@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { completeFacilityTasks, startFacilityTask } from '../domain';
 import { createInitialV4Save, loadV4Save, persistV4Save } from '../save';
-import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentName } from '../equipment';
+import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentDefinition, getV4EquipmentName } from '../equipment';
 
 describe('v4 equipment progression', () => {
   it('applies equipment bonuses to the eternal hero and upgrades repeated crafts', () => {
@@ -131,5 +131,16 @@ describe('v4 equipment progression', () => {
 
   it('does not leak an unknown legacy equipment id into player-facing text', () => {
     expect(getV4EquipmentName('legacy-knife-id')).toBe('기록된 장비');
+  });
+
+  it('does not treat inherited object keys as equipment definitions', () => {
+    expect(getV4EquipmentDefinition('__proto__')).toBeUndefined();
+    expect(getV4EquipmentDefinition('constructor')).toBeUndefined();
+    expect(getV4EquipmentBonuses(['__proto__', 'constructor'])).toEqual({
+      atk: 0,
+      def: 0,
+      hpMax: 0,
+      critRate: 0,
+    });
   });
 });

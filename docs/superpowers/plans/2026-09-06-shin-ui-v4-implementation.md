@@ -156,6 +156,7 @@ pnpm circular
 - 영웅 runtime의 회춘도 malformed 나이·회춘 횟수·HP 최대값을 유한 범위로 정규화해 adapter 직접 호출의 `NaN` 전파를 차단한다.
 - 영웅 runtime snapshot 복제 시 malformed 장비 배열·레벨 map을 정제해 adapter 생성 단계의 iterable/type 오류를 차단한다.
 - 장비 보너스 적용 시 malformed 영웅 공격력·방어력·HP·치명타 수치를 정규화하고 음수/overflow 보너스를 차단해 equipment adapter 단독 호출도 유효 상태를 유지한다.
+- 장비 정의 lookup은 own-property만 허용해 `__proto__`·`constructor` 같은 상속 키가 장비로 오인되어 `NaN` 보너스를 만드는 경로를 차단한다.
 - V3 영웅 명시 import에서 중복 장비 ID를 dedupe하고 장비 레벨을 20 이하로 제한해 v4 저장 schema와 UI를 보존한다.
 - V3 명시 import의 선택적 방어력·치명타·HP 최대값도 유한 범위로 보정해 손상된 legacy snapshot이 v4에 `NaN`을 유입하지 않게 한다.
 - V3 명시 import의 장비 배열은 문자열 항목만 남겨 비정상 payload가 v4 장비 UI와 레벨 map을 오염시키지 않게 한다.
@@ -164,7 +165,7 @@ pnpm circular
 
 ### 누적 검증 기록
 
-- V4 단위/컴포넌트 테스트: 394개 파일, 3,324개 테스트 통과.
+- V4 단위/컴포넌트 테스트: 394개 파일, 3,325개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 22/22 통과(각 프로젝트 11/11).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
