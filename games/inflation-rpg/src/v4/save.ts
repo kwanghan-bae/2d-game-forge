@@ -423,6 +423,10 @@ function nextSagaId(source: V4SaveEnvelope, base: string): string {
   return `${base}-${suffix}`;
 }
 
+function cloneV4Save(source: V4SaveEnvelope): V4SaveEnvelope {
+  return JSON.parse(JSON.stringify(source)) as V4SaveEnvelope;
+}
+
 function destinationHeroAction(source: V4SaveEnvelope): V4HeroSnapshot['currentAction'] {
   if (source.run.expedition) return 'expedition';
   return Object.values(source.meta.tasks).some((task) => task.facilityId === 'training') ? 'train' : 'rest';
@@ -436,25 +440,21 @@ export function importV3HeroSnapshot(
 ): V4SaveEnvelope {
   const eventAt = Number.isFinite(now) ? Math.max(source.updatedAt, now) : source.updatedAt;
   const updatedAt = Math.max(source.updatedAt, source.lastProcessedAt, eventAt);
+  const next = cloneV4Save(source);
   const hero = {
     ...migrateV3HeroSnapshot(input),
     currentAction: destinationHeroAction(source),
   };
-  return {
-    ...source,
-    updatedAt,
-    run: { ...source.run, hero },
-    meta: {
-      ...source.meta,
-      sagaEntries: [{
-        id: nextSagaId(source, `saga-import-${eventAt}`),
-        kind: 'milestone',
-        createdAt: eventAt,
-        title: 'V3 영웅 가져오기',
-        text: `${hero.name}의 기록을 v4 영웅으로 가져왔습니다.`,
-      }, ...source.meta.sagaEntries],
-    },
-  };
+  next.updatedAt = updatedAt;
+  next.run.hero = hero;
+  next.meta.sagaEntries = [{
+    id: nextSagaId(next, `saga-import-${eventAt}`),
+    kind: 'milestone',
+    createdAt: eventAt,
+    title: 'V3 영웅 가져오기',
+    text: `${hero.name}의 기록을 v4 영웅으로 가져왔습니다.`,
+  }, ...next.meta.sagaEntries];
+  return next;
 }
 
 function resourceDelta(

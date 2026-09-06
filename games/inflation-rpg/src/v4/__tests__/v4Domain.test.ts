@@ -364,11 +364,17 @@ describe('v4 save and domain', () => {
     });
     expect(hero).not.toHaveProperty('personality');
 
-    const imported = importV3HeroSnapshot(createInitialV4Save(1), source, 1234);
+    const destination = createInitialV4Save(1);
+    const imported = importV3HeroSnapshot(destination, source, 1234);
     expect(imported.run.hero.name).toBe('홍길동');
     expect(imported.meta.sagaEntries[0]?.title).toBe('V3 영웅 가져오기');
     const importedAgain = importV3HeroSnapshot(imported, source, 1234);
     expect(importedAgain.meta.sagaEntries[0]?.id).not.toBe(imported.meta.sagaEntries[0]?.id);
+    imported.meta.currencies.gold = 0;
+    expect(importedAgain.meta.currencies.gold).toBe(100);
+    expect(imported.meta.currencies.gold).not.toBe(destination.meta.currencies.gold);
+    expect(destination.meta.currencies.gold).toBe(100);
+    expect(imported.meta.currencies.gold).not.toBe(importedAgain.meta.currencies.gold);
 
     const staleDestination = createInitialV4Save(2);
     staleDestination.lastProcessedAt = staleDestination.createdAt + HOUR;
