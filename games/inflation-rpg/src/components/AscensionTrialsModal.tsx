@@ -22,6 +22,7 @@ import { AstralArchiveModal } from './AstralArchiveModal';
 import { ChronoRebirthModal } from './ChronoRebirthModal';
 import { ChronoLoomModal } from './ChronoLoomModal';
 import { PantheonRaidModal } from './PantheonRaidModal';
+import { OmniverseArmoryModal } from './OmniverseArmoryModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
 import { PrimordialConstellationBadge } from './PrimordialConstellationBadge';
@@ -59,6 +60,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   const [showRebirth, setShowRebirth] = useState(false);
   const [showLoom, setShowLoom] = useState(false);
   const [showPantheon, setShowPantheon] = useState(false);
+  const [showArmory, setShowArmory] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -314,6 +316,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               🏛️ 만신전
             </button>
             <button
+              data-testid="open-armory-modal-btn"
+              onClick={() => setShowArmory(true)}
+              style={{
+                background: '#78350f',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fef08a',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              ✨ 신격 무기고
+            </button>
+            <button
               data-testid="close-btn"
               onClick={onClose}
               style={{
@@ -498,6 +516,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
       {showRebirth && <ChronoRebirthModal onClose={() => setShowRebirth(false)} />}
       {showLoom && <ChronoLoomModal onClose={() => setShowLoom(false)} />}
       {showPantheon && <PantheonRaidModal onClose={() => setShowPantheon(false)} />}
+      {showArmory && <OmniverseArmoryModal onClose={() => setShowArmory(false)} />}
     </div>
   );
 }

@@ -22,6 +22,7 @@ import { getEffectiveElement } from '../systems/elementalSystem';
 import { aggregateReforgeBonus } from '../systems/reforgeSystem';
 import { HeroEntity } from '../hero/HeroEntity';
 import { getPantheonTitanLore, PANTHEON_VICTORY_EPILOGUE } from '../data/pantheonRaidLore';
+import { OmniverseArmoryModal } from './OmniverseArmoryModal';
 
 interface Props {
   onClose: () => void;
@@ -43,6 +44,7 @@ export function PantheonRaidModal({ onClose }: Props) {
 
   const [selectedPhase, setSelectedPhase] = useState<PantheonPhase>(1);
   const [raidResult, setRaidResult] = useState<PantheonFullRaidResult | null>(null);
+  const [showArmory, setShowArmory] = useState(false);
 
   const handleChallengeRaid = () => {
     if (!hero || !eligibility.eligible) return;
@@ -145,6 +147,22 @@ export function PantheonRaidModal({ onClose }: Props) {
             >
               만신전 문장: {crests}개 (완파: {clears}회)
             </div>
+            <button
+              data-testid="open-armory-modal-btn"
+              onClick={() => setShowArmory(true)}
+              style={{
+                background: '#78350f',
+                border: '1px solid #f59e0b',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fef08a',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              ✨ 신격 무기고
+            </button>
             <button
               data-testid="close-btn"
               onClick={onClose}
@@ -383,6 +401,7 @@ export function PantheonRaidModal({ onClose }: Props) {
           )}
         </div>
       </div>
+      {showArmory && <OmniverseArmoryModal onClose={() => setShowArmory(false)} />}
     </div>
   );
 }
