@@ -406,6 +406,8 @@ export interface MetaState {
   pantheonCrests?: number;
   /** C1159 — 주조 완료된 신격 보구 ID 목록. */
   forgedRegalia?: import('./systems/omniverseRegalia').OmniverseRegaliaId[];
+  /** C1165 — 시공 역설 나선 최고 돌파 층수. */
+  paradoxHighestFloor?: number;
 }
 
 // Phase G — Ascension Tree (성좌)
