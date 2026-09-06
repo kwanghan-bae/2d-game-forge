@@ -144,11 +144,12 @@ pnpm circular
 - 미지원 Realm ID는 unlock 확인과 원정 비용 차감 전에 명시적으로 거부한다.
 - 전투 adapter의 비숫자 전투 수치와 턴 수는 안전한 기본값으로 정규화해 결과에 `NaN`이 전파되지 않게 한다.
 - V4 hook의 동기·비동기 action 모두 최신 `saveRef`를 읽어 연속 입력과 광고 대기 중 상태 덮어쓰기를 방지한다.
+- 장비 bonus 계산도 비숫자 레벨을 Lv.1로 fallback해 영웅 공격력·방어력·HP에 `NaN`이 전파되지 않게 한다.
 - 광고 제거·보상형 광고 adapter, 광고 실패/결제 취소 비차단 처리를 연결했다.
 
 ### 누적 검증 기록
 
-- V4 단위/컴포넌트 테스트: 394개 파일, 3,309개 테스트 통과.
+- V4 단위/컴포넌트 테스트: 394개 파일, 3,310개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 22/22 통과(각 프로젝트 11/11).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.

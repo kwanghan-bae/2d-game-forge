@@ -54,7 +54,10 @@ export function getV4EquipmentBonuses(
   for (const id of new Set(equipmentIds)) {
     const definition = getV4EquipmentDefinition(id);
     if (!definition) continue;
-    const level = Math.max(1, Math.min(20, Math.floor(equipmentLevels[id] ?? 1)));
+    const requestedLevel = equipmentLevels[id];
+    const level = typeof requestedLevel === 'number' && Number.isFinite(requestedLevel)
+      ? Math.max(1, Math.min(20, Math.floor(requestedLevel)))
+      : 1;
     result.atk += definition.atk * level;
     result.def += definition.def * level;
     result.hpMax += definition.hpMax * level;

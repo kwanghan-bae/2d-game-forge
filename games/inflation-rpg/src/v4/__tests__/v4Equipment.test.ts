@@ -74,6 +74,12 @@ describe('v4 equipment progression', () => {
     });
   });
 
+  it('falls back to equipment level one for malformed runtime levels', () => {
+    expect(getV4EquipmentBonuses(['v4_iron_sword'], {
+      v4_iron_sword: 'broken' as never,
+    })).toEqual({ atk: 80, def: 0, hpMax: 0, critRate: 0 });
+  });
+
   it('does not increase hero stats after an equipment level reaches the cap', () => {
     const capped = createInitialV4Save(103);
     capped.run.hero.equipmentIds = ['v4_iron_sword'];
