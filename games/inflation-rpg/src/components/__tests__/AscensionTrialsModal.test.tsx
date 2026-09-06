@@ -146,6 +146,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
 
     expect(screen.getByTestId('abyssal-corridor-modal')).toBeDefined();
   });
+
+  it('opens PrimordialAscensionModal when clicking open-primordial-modal-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openPrimordialBtn = screen.getByTestId('open-primordial-modal-btn');
+    expect(openPrimordialBtn).toBeDefined();
+    fireEvent.click(openPrimordialBtn);
+
+    expect(screen.getByTestId('primordial-ascension-modal')).toBeDefined();
+  });
 });
 
 

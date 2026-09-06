@@ -17,6 +17,7 @@ import { AscendantRushModal } from './AscendantRushModal';
 import { ChaosRiftModal } from './ChaosRiftModal';
 import { ApexTrialModal } from './ApexTrialModal';
 import { AbyssalCorridorModal } from './AbyssalCorridorModal';
+import { PrimordialAscensionModal } from './PrimordialAscensionModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
 
@@ -48,6 +49,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   const [showChaosRift, setShowChaosRift] = useState(false);
   const [showApexTrial, setShowApexTrial] = useState(false);
   const [showCorridor, setShowCorridor] = useState(false);
+  const [showPrimordial, setShowPrimordial] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -218,6 +220,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               }}
             >
               🪐 심연 회랑
+            </button>
+            <button
+              data-testid="open-primordial-modal-btn"
+              onClick={() => setShowPrimordial(true)}
+              style={{
+                background: '#9333ea',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              🌱 태초 승천
             </button>
             <button
               data-testid="close-btn"
@@ -399,6 +417,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
       {showChaosRift && <ChaosRiftModal onClose={() => setShowChaosRift(false)} />}
       {showApexTrial && <ApexTrialModal onClose={() => setShowApexTrial(false)} />}
       {showCorridor && <AbyssalCorridorModal onClose={() => setShowCorridor(false)} />}
+      {showPrimordial && <PrimordialAscensionModal onClose={() => setShowPrimordial(false)} />}
     </div>
   );
 }
