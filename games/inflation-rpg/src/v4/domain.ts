@@ -67,6 +67,10 @@ function touchSave(save: V4SaveEnvelope, now: number): void {
   save.updatedAt = Math.max(save.updatedAt, save.lastProcessedAt, requested);
 }
 
+function isActionClockValid(save: V4SaveEnvelope, now: number): boolean {
+  return Number.isFinite(now) && now >= save.updatedAt;
+}
+
 function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
   return Object.entries(input).every(([key, value]) => save.meta.currencies[key as V4CurrencyKey] >= (value ?? 0));
 }
@@ -692,6 +696,7 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
   if (!result || result.outcome !== 'victory') return source;
   const next = getNextRealmId(result.realmId);
   if (!next || source.meta.unlockedRealms.includes(next)) return source;
+  if (!isActionClockValid(source, now)) return source;
 
   const save = cloneSave(source);
   const eventAt = eventTimestamp(save, now);
@@ -712,6 +717,7 @@ export function grantOfflineResourceBonus(
   gains: Partial<Record<V4CurrencyKey, number>>,
   now: number,
 ): V4SaveEnvelope {
+  if (!isActionClockValid(source, now)) return source;
   const save = cloneSave(source);
   const positiveGains = Object.fromEntries(
     Object.entries(gains).filter(([key, value]) =>
@@ -724,6 +730,7 @@ export function grantOfflineResourceBonus(
 }
 
 export function grantInterventionCharge(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
+  if (!isActionClockValid(source, now)) return source;
   const save = cloneSave(source);
   save.run.interventionCharges = Math.min(
     MAX_INTERVENTION_CHARGES,

@@ -909,6 +909,23 @@ describe('v4 save and domain', () => {
     expect(confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 
+  it('does not unlock a Realm when the confirmation clock is invalid or stale', () => {
+    const initial = createInitialV4Save(95);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-clock-guard';
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+
+    const victory = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
+    expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
+
+    expect(confirmNextRealmUnlock(victory, Number.NaN)).toBe(victory);
+    expect(confirmNextRealmUnlock(victory, victory.updatedAt - 1)).toBe(victory);
+    expect(victory.meta.unlockedRealms).toEqual(['joseon_plains']);
+  });
+
   it('allows one expedition and resolves it into rewards', () => {
     const initial = createInitialV4Save(9);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
@@ -1120,5 +1137,18 @@ describe('v4 save and domain', () => {
     } as never, initial.createdAt + 1_000);
 
     expect(updated.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 15, rift: 0 });
+  });
+
+  it('does not grant rewarded currency or intervention charges on an invalid action clock', () => {
+    const initial = createInitialV4Save(96);
+    const invalidBonus = grantOfflineResourceBonus(initial, { gold: 10 }, Number.NaN);
+    const staleBonus = grantOfflineResourceBonus(initial, { gold: 10 }, initial.updatedAt - 1);
+    const invalidCharge = grantInterventionCharge(initial, Number.POSITIVE_INFINITY);
+    const staleCharge = grantInterventionCharge(initial, initial.updatedAt - 1);
+
+    expect(invalidBonus).toBe(initial);
+    expect(staleBonus).toBe(initial);
+    expect(invalidCharge).toBe(initial);
+    expect(staleCharge).toBe(initial);
   });
 });
