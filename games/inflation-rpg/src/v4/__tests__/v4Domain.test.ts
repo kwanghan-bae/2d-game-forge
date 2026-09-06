@@ -401,6 +401,10 @@ describe('v4 save and domain', () => {
     });
     expect(hero).not.toHaveProperty('personality');
 
+    const sanitized = migrateV3HeroSnapshot({ ...source, name: '   ', emoji: '  ' });
+    expect(sanitized.name).toBe('이름 없는 영웅');
+    expect(sanitized.emoji).toBe('⚔️');
+
     const destination = createInitialV4Save(1);
     const imported = importV3HeroSnapshot(destination, source, 1234);
     expect(imported.run.hero.name).toBe('홍길동');

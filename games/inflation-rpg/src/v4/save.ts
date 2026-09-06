@@ -66,7 +66,9 @@ function finitePositiveOr(value: unknown, fallback: number): number {
 }
 
 function finiteStringOr(value: unknown, fallback: string): string {
-  return typeof value === 'string' && value.length > 0 ? value : fallback;
+  if (typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : fallback;
 }
 
 function positiveIntegerOr(value: unknown, fallback: number): number {
