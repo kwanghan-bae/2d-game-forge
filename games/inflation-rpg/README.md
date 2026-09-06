@@ -1,7 +1,8 @@
 # @forge/game-inflation-rpg
 
-forge 의 첫 번째 게임. 조선 시대 배경의 인플레이션 RPG. Phase 3까지 메타 진행
-시스템 완성, Phase 4a MobileUX Layer 적용 완료.
+forge 의 첫 번째 게임. 조선 시대 배경의 영웅 후원·마을 경영 RPG
+`신의 마을: 영원의 후원자` v4를 기본 제품으로 제공한다. 기존 V3는
+`inflation-rpg-legacy` 경로와 `StartLegacyGame()`으로 보존한다.
 
 ## 플랫폼
 
@@ -13,14 +14,15 @@ forge 의 첫 번째 게임. 조선 시대 배경의 인플레이션 RPG. Phase 
 - `pnpm --filter @forge/game-inflation-rpg dev` — standalone Next dev 서버
   (`:3100`). 포털 통합 개발은 레포 루트에서 `pnpm dev` 후
   `http://localhost:3000/games/inflation-rpg` 사용.
-- `pnpm --filter @forge/game-inflation-rpg build:web` — 정적 export → `out/`.
+- `pnpm --filter @forge/game-inflation-rpg build` — Next 정적 export → `out/`.
 - `pnpm --filter @forge/game-inflation-rpg build:ios` — Next build + Capacitor
   sync + Xcode 열기.
 - `pnpm --filter @forge/game-inflation-rpg build:android` — 동등하게 Android
   Studio 열기.
-- `pnpm --filter @forge/game-inflation-rpg test` — Vitest (103 테스트).
-- `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright (full-game-flow +
-  full-run + mobile-layout, iPhone 14 / Desktop Chrome 두 프로파일).
+- `pnpm --filter @forge/game-inflation-rpg test` — Vitest (394개 파일,
+  3,308개 테스트).
+- `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright. V4 vertical slice는
+  iPhone 14 / Desktop Chrome 두 프로파일에서 22개 시나리오를 검증한다.
 
 ## 모바일 UI 확인
 
@@ -64,9 +66,9 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
 
 ## 공개 export
 
-- `StartGame(config: StartGameConfig): void` — 단일 부팅 엔트리.
-  dev-shell 의 `/games/inflation-rpg` 라우트와 release-mode React wrapper
-  양쪽이 동일하게 호출한다.
+- `StartGame(config: StartGameConfig): ForgeGameInstance` — v4 기본 부팅 엔트리.
+- `StartLegacyGame(config: StartGameConfig): ForgeGameInstance` — 기존 V3
+  부팅 엔트리. dev-shell의 `/games/inflation-rpg-legacy`가 사용한다.
 - `gameManifest: GameManifestValue` — dev-shell 의 registry 가 소비할
   매니페스트.
 
@@ -86,9 +88,15 @@ interface StartGameConfig {
 games/inflation-rpg/
 ├── src/
 │   ├── index.ts                 # gameManifest + StartGame export
-│   ├── startGame.ts             # StartGame(config) 구현
+│   ├── startGame.ts             # v4 / legacy 부팅 엔트리
 │   ├── types.ts                 # 공용 타입 (MetaState, RunState 등)
 │   ├── App.tsx                  # React 최상위 컴포넌트
+│   ├── v4/                      # 신의 마을 v4 제품 모듈
+│   │   ├── V4App.tsx
+│   │   ├── domain.ts            # 시설·원정·정산 순수 도메인
+│   │   ├── save.ts              # v4 전용 schema·offline·V3 명시 import
+│   │   ├── monetization.ts      # 광고/IAP adapter
+│   │   └── screens/             # 마을·영웅·원정·사가·설정 화면
 │   ├── app/                     # release 모드 Next 셸
 │   ├── components/              # PhaserGame.tsx 등 공용 컴포넌트
 │   ├── screens/                 # React UI 화면
@@ -134,10 +142,11 @@ games/inflation-rpg/
 이식 단계에서 의도적으로 남겨둔 정리 대상. 두 번째 게임 도착 시 처리 권장.
 
 - **upstream 호환 키 유지**:
-  - `localStorage` 키: `'korea_inflation_rpg_save'`.
+  - V3 legacy `localStorage` 키: `'korea_inflation_rpg_save'`.
   - Capacitor `appId`: `com.korea.inflationrpg`.
-  - 두 번째 게임이 같은 `SaveManager` 를 쓰게 되면 충돌. `SaveManager` 를
-    `@forge/core` 로 승격할 때 namespace 도입 예정.
+  - V4는 별도 키 `'shin-ui-eternal-sponsor-v4-save-v1'`를 사용해 V3와
+    저장을 공유하지 않는다. 두 번째 게임이 같은 V3 `SaveManager`를 쓰게
+    되면 충돌하므로 `@forge/core` 승격 시 namespace 도입 예정이다.
 - **strict TypeScript opt-out**: `tsconfig.json` 에서
   `noUncheckedIndexedAccess`, `noImplicitOverride` 를 끄고 있다. upstream
   레거시 코드와의 호환 때문. 점진적으로 코드 수정 후 base 로 되돌릴 수 있음.
