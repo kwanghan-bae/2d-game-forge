@@ -9,11 +9,9 @@
  * - primordial_singularity: DEF-to-ATK conversion%, Battle-start Absolute Barrier turns
  */
 
-export type PrimordialNodeId =
-  | 'primordial_genesis'
-  | 'primordial_annihilation'
-  | 'primordial_eternity'
-  | 'primordial_singularity';
+import type { PrimordialNodeId } from '../types';
+
+export type { PrimordialNodeId } from '../types';
 
 export interface PrimordialNodeDef {
   id: PrimordialNodeId;

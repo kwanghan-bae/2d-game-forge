@@ -3,7 +3,7 @@ import type { HeroEntity } from '../hero/HeroEntity';
 import { LANDMARK_TYPES, type LandmarkKind } from '../data/landmarks';
 import type { OverworldEvent } from './OverworldEvents';
 import { ENEMY_DROPS, BOSS_DROPS } from './dropTable';
-import { getStrategyEnabled } from '../components/StrategyPanel';
+import { getStrategyEnabled } from '../components/strategyState';
 import {
   enemyHpAtLevel,
   enemyAtkAtLevel,

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
+import { getStrategySnapshot, setStrategyEnabled } from './strategyState';
+
+export { getStrategyEnabled, resetStrategy } from './strategyState';
 
 interface EventToggle {
   id: string;
@@ -16,35 +19,18 @@ const EVENT_TOGGLES: EventToggle[] = [
   { id: 'blacksmith', label: '대장장이', emoji: '🔨', description: '영구 ATK +5' },
 ];
 
-// Global strategy state — persists during the run
-let strategyState: Record<string, boolean> = {
-  gambler: true,
-  cursedAltar: true,
-  merchant: true,
-  restShrine: true,
-  blacksmith: true,
-};
-
-export function getStrategyEnabled(id: string): boolean {
-  return strategyState[id] ?? true;
-}
-
-export function resetStrategy(): void {
-  strategyState = { gambler: true, cursedAltar: true, merchant: true, restShrine: true, blacksmith: true };
-}
-
 interface Props {
   onClose: () => void;
 }
 
 export function StrategyPanel({ onClose }: Props) {
-  const [toggles, setToggles] = useState({ ...strategyState });
+  const [toggles, setToggles] = useState(getStrategySnapshot);
   const controller = useCycleStoreV2(s => s.controller);
 
   const handleToggle = (id: string) => {
     const newVal = !toggles[id];
     setToggles(prev => ({ ...prev, [id]: newVal }));
-    strategyState[id] = newVal;
+    setStrategyEnabled(id, newVal);
   };
 
   return (

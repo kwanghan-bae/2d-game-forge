@@ -2,6 +2,47 @@ import type { CycleHistoryEntry } from './cycle/cycleEvents';
 import type { TraitId } from './cycle/traits';
 import type { CycleSaga } from './saga/SagaTypes';
 import type { V4MonetizationAdapter } from './v4/monetization';
+import type { IapProductId } from './services/IapTypes';
+
+// Endgame identifiers are data-only contracts. Runtime systems re-export
+// these aliases, keeping the shared state model independent from consumers.
+export type GemType = 'fire_ruby' | 'water_sapphire' | 'lightning_topaz' | 'dark_amethyst';
+export type GemTier = 'normal' | 'rare' | 'legendary' | 'mythic';
+export interface CarvedGem { type: GemType; tier: GemTier; }
+export type CosmicAffixType =
+  | 'celestial_sharpness'
+  | 'astral_fortitude'
+  | 'singularity_might'
+  | 'cosmic_celerity';
+export type TransmutedRelicType =
+  | 'polaris_celestial_eye'
+  | 'sirius_celestial_fang'
+  | 'vega_celestial_veil'
+  | 'antares_celestial_heart';
+export type ElixirType = 'solar_pill' | 'lunar_elixir' | 'lightning_crystal' | 'abyssal_essence';
+export type ZodiacSign =
+  | 'rat' | 'ox' | 'tiger' | 'rabbit' | 'dragon' | 'snake'
+  | 'horse' | 'goat' | 'monkey' | 'rooster' | 'dog' | 'boar';
+export type PrimordialNodeId =
+  | 'primordial_genesis'
+  | 'primordial_annihilation'
+  | 'primordial_eternity'
+  | 'primordial_singularity';
+export type ChronoRebirthTierId =
+  | 'apprentice_warp'
+  | 'astral_warp'
+  | 'primordial_warp'
+  | 'singularity_rebirth';
+export type ChronoLoomNodeId =
+  | 'warp_accelerant'
+  | 'singularity_aegis'
+  | 'chrono_duplication'
+  | 'temporal_sovereign';
+export type OmniverseRegaliaId =
+  | 'ouroboros_chrono_blade'
+  | 'ymir_primordial_heart'
+  | 'nyx_void_eye'
+  | 'aion_singularity_aegis';
 
 export type StatKey = 'hp' | 'atk' | 'def' | 'agi' | 'luc';
 
@@ -50,11 +91,11 @@ export interface EquipmentInstance {
   /** C1067: Celestial Star Relic socketed into equipment */
   celestialRelic?: CelestialRelicType;
   /** C1087: Celestial Gem carved into equipment */
-  carvedGem?: import('./systems/celestialGemCarving').CarvedGem;
+  carvedGem?: CarvedGem;
   /** C1093: Mythic equipment star awakening level (0 ~ 5) */
   mythicStars?: number;
   /** C1115: Optional cosmic affix infused from dimensional essence */
-  cosmicAffix?: import('./systems/cosmicInfusion').CosmicAffixType;
+  cosmicAffix?: CosmicAffixType;
 }
 
 export interface PassiveSkill {
@@ -368,19 +409,19 @@ export interface MetaState {
   /** C1051 — 현재 동행 중인 영수 ID. */
   activePetId?: import('./systems/petSystem').PetType | null;
   /** C1057 — 해금된 십이지신 성좌 목록. */
-  zodiacUnlocked?: import('./systems/zodiacSystem').ZodiacSign[];
+  zodiacUnlocked?: ZodiacSign[];
   /** C1063 — 성광 연금술 별빛 파편 잔여량. */
   starlightShards?: number;
   /** C1063 — 천상 영약 복용 횟수 딕셔너리. */
-  elixirDoses?: Partial<Record<import('./systems/astralAlchemy').ElixirType, number>>;
+  elixirDoses?: Partial<Record<ElixirType, number>>;
   /** C1075 — 9성 천상 초월 각성 단계 (0: 미각성, 1~9: 1성경~9성경). */
   awakeningTier?: number;
   /** C1081 — 무한 혼돈의 균열 최고 도달 심도. */
   highestRiftDepth?: number;
   /** C1087 — 보유 중인 천상 보옥 목록. */
-  carvedGems?: import('./systems/celestialGemCarving').CarvedGem[];
+  carvedGems?: CarvedGem[];
   /** C1099 — 초월 진화 완료된 천상 성유물 목록. */
-  transmutedRelics?: import('./systems/celestialRelicTransmutation').TransmutedRelicType[];
+  transmutedRelics?: TransmutedRelicType[];
   /** C1103/C1105 — 격파 완료된 초월 시련 티어 목록 (1, 2, 3). */
   apexTrialsCleared?: number[];
   /** C1115 — 보유 중인 차원 정수 (Dimensional Essence) 수량. */
@@ -388,7 +429,7 @@ export interface MetaState {
   /** C1123/C1124 — 완파 완료된 우주적 심연 회랑 섹터 목록 (1 ~ 5). */
   corridorSectorsCleared?: number[];
   /** C1127 — 태초 승천 노드별 랭크 딕셔너리. */
-  primordialRanks?: Partial<Record<import('./systems/primordialAscension').PrimordialNodeId, number>>;
+  primordialRanks?: Partial<Record<PrimordialNodeId, number>>;
   /** C1135 — 수령 완료된 성간 아카이브 마일스톤 ID 목록. */
   claimedArchiveMilestones?: string[];
   /** C1141 — 시공 도약 총 환생 횟수. */
@@ -396,9 +437,9 @@ export interface MetaState {
   /** C1141 — 보유 중인 시공 정수 (Chrono Essence) 수량. */
   chronoEssence?: number;
   /** C1145 — 활성화된 시공 도약 티어 (Chrono Rebirth Tier ID). */
-  activeRebirthTier?: import('./systems/chronoRebirth').ChronoRebirthTierId | null;
+  activeRebirthTier?: ChronoRebirthTierId | null;
   /** C1147 — 시공의 베틀 노드별 랭크 딕셔너리. */
-  chronoLoomRanks?: Partial<Record<import('./systems/chronoLoom').ChronoLoomNodeId, number>>;
+  chronoLoomRanks?: Partial<Record<ChronoLoomNodeId, number>>;
   /** C1153 — 초월의 만신전 최고 돌파 페이즈 (0~4). */
   pantheonHighestPhase?: number;
   /** C1153 — 초월의 만신전 총 완파 횟수. */
@@ -406,7 +447,7 @@ export interface MetaState {
   /** C1153 — 보유 중인 만신전 문장 (Pantheon Crests) 수량. */
   pantheonCrests?: number;
   /** C1159 — 주조 완료된 신격 보구 ID 목록. */
-  forgedRegalia?: import('./systems/omniverseRegalia').OmniverseRegaliaId[];
+  forgedRegalia?: OmniverseRegaliaId[];
   /** C1165 — 시공 역설 나선 최고 돌파 층수. */
   paradoxHighestFloor?: number;
 }
@@ -467,11 +508,7 @@ export interface CompassEntry {
 }
 
 // Phase 5 — Monetization
-export type IapProductId =
-  | 'ad_free'
-  | 'crack_stone_pack_small'
-  | 'crack_stone_pack_mid'
-  | 'crack_stone_pack_large';
+export type { IapProductId } from './services/IapTypes';
 
 export interface IapTransaction {
   productId: IapProductId;

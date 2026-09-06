@@ -1,7 +1,7 @@
 import { OnestoreIap } from '@forge/inflation-rpg-native-onestore-iap';
 import type { PurchaseInfo } from '@forge/inflation-rpg-native-onestore-iap';
 
-import type { IapProductId } from '../types';
+import type { IapProductId } from './IapTypes';
 import { AdManager } from './AdManager';
 import { IAP_CATALOG } from './IapCatalog';
 import { IapManager } from './IapManager';

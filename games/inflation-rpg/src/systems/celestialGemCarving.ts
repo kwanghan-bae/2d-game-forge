@@ -12,9 +12,10 @@
  */
 
 import type { ElementType } from './elementalSystem';
+import type { CarvedGem, GemTier, GemType } from '../types';
 
-export type GemType = 'fire_ruby' | 'water_sapphire' | 'lightning_topaz' | 'dark_amethyst';
-export type GemTier = 'normal' | 'rare' | 'legendary' | 'mythic';
+export type { CarvedGem, GemTier, GemType } from '../types';
+
 
 export interface GemDefinition {
   type: GemType;
@@ -36,11 +37,6 @@ export interface GemTierDefinition {
   costShards: number;
   costCrackStones: number;
   costGold: number;
-}
-
-export interface CarvedGem {
-  type: GemType;
-  tier: GemTier;
 }
 
 export const GEM_DEFINITIONS: Record<GemType, GemDefinition> = {

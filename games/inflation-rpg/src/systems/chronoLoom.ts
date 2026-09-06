@@ -8,13 +8,9 @@
  * - temporal_sovereign: Universal omni-stat base multiplier (+10% per rank, up to +50%).
  */
 
-import type { MetaState } from '../types';
+import type { ChronoLoomNodeId, MetaState } from '../types';
 
-export type ChronoLoomNodeId =
-  | 'warp_accelerant'
-  | 'singularity_aegis'
-  | 'chrono_duplication'
-  | 'temporal_sovereign';
+export type { ChronoLoomNodeId } from '../types';
 
 export const MAX_CHRONO_LOOM_RANK = 5;
 

@@ -1,5 +1,9 @@
-import type { HeroEntity } from './HeroEntity';
 import { JOBS, type Job, type JobMilestone } from '../data/jobs';
+import type { PersonalityDim } from './PersonalityState';
+
+interface HeroPersonalitySource {
+  personality: { get(dim: PersonalityDim): number };
+}
 
 /**
  * Picks the best-matching job at a given age milestone based on hero personality.
@@ -7,7 +11,7 @@ import { JOBS, type Job, type JobMilestone } from '../data/jobs';
  * Falls back to an unconditional job if available; otherwise null.
  */
 export const JobSystem = {
-  evaluate(hero: HeroEntity, milestone: JobMilestone): Job | null {
+  evaluate(hero: HeroPersonalitySource, milestone: JobMilestone): Job | null {
     const candidates = JOBS.filter(j => j.milestone === milestone);
     let best: { job: Job; score: number } | null = null;
     let fallback: Job | null = null;

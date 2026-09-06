@@ -5,19 +5,9 @@
  * that grant cumulative global resonance stat amplifications when unlocked via Dimensional Crack Stones.
  */
 
-export type ZodiacSign =
-  | 'rat'
-  | 'ox'
-  | 'tiger'
-  | 'rabbit'
-  | 'dragon'
-  | 'snake'
-  | 'horse'
-  | 'goat'
-  | 'monkey'
-  | 'rooster'
-  | 'dog'
-  | 'boar';
+import type { ZodiacSign } from '../types';
+
+export type { ZodiacSign } from '../types';
 
 export interface ZodiacNodeDef {
   sign: ZodiacSign;

@@ -12,13 +12,9 @@
  *    - Once per expedition, upon fatal blow, instantly revives hero with 50% Max HP!
  */
 
-import type { CelestialRelicType } from '../types';
+import type { CelestialRelicType, TransmutedRelicType } from '../types';
 
-export type TransmutedRelicType =
-  | 'polaris_celestial_eye'
-  | 'sirius_celestial_fang'
-  | 'vega_celestial_veil'
-  | 'antares_celestial_heart';
+export type { TransmutedRelicType } from '../types';
 
 export interface TransmutedRelicDef {
   type: TransmutedRelicType;

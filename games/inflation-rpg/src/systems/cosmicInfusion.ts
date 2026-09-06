@@ -9,13 +9,9 @@
  * - cosmic_celerity: +15% SPD, +5% Dodge Rate
  */
 
-import type { EquipmentInstance } from '../types';
+import type { CosmicAffixType, EquipmentInstance } from '../types';
 
-export type CosmicAffixType =
-  | 'celestial_sharpness'
-  | 'astral_fortitude'
-  | 'singularity_might'
-  | 'cosmic_celerity';
+export type { CosmicAffixType } from '../types';
 
 export interface CosmicAffixDef {
   type: CosmicAffixType;

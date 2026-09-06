@@ -8,13 +8,9 @@
  * 4. aion_singularity_aegis: Accessory — Debuff immunity & +20% all elemental resistance.
  */
 
-import type { MetaState } from '../types';
+import type { MetaState, OmniverseRegaliaId } from '../types';
 
-export type OmniverseRegaliaId =
-  | 'ouroboros_chrono_blade'
-  | 'ymir_primordial_heart'
-  | 'nyx_void_eye'
-  | 'aion_singularity_aegis';
+export type { OmniverseRegaliaId } from '../types';
 
 export interface OmniverseRegaliaDef {
   id: OmniverseRegaliaId;

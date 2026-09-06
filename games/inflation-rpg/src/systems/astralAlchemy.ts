@@ -5,7 +5,9 @@
  * and craft 4 legendary celestial elixirs to permanently expand their core stat boundaries.
  */
 
-export type ElixirType = 'solar_pill' | 'lunar_elixir' | 'lightning_crystal' | 'abyssal_essence';
+import type { ElixirType } from '../types';
+
+export type { ElixirType } from '../types';
 
 export const MAX_ELIXIR_DOSES = 10;
 

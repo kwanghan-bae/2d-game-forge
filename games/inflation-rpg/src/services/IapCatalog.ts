@@ -1,4 +1,4 @@
-import type { IapProductId } from '../types';
+import type { IapProductId } from './IapTypes';
 
 interface AdFreeEntry {
   id: 'ad_free';

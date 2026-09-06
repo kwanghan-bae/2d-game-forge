@@ -8,14 +8,10 @@
  * - Awards persistent Chrono Essence for trans-dimensional ascension.
  */
 
-import type { MetaState, RunState } from '../types';
+import type { ChronoRebirthTierId, MetaState, RunState } from '../types';
 import { evaluateArchiveMastery } from './astralArchive';
 
-export type ChronoRebirthTierId =
-  | 'apprentice_warp'
-  | 'astral_warp'
-  | 'primordial_warp'
-  | 'singularity_rebirth';
+export type { ChronoRebirthTierId } from '../types';
 
 export interface ChronoRebirthTierDef {
   id: ChronoRebirthTierId;

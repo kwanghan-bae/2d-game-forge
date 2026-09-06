@@ -5,7 +5,7 @@ import type {
   PurchaseResult,
 } from '@forge/inflation-rpg-native-onestore-iap';
 
-import type { IapProductId } from '../types';
+import type { IapProductId } from './IapTypes';
 import { IAP_PRODUCT_IDS } from './IapCatalog';
 
 type PluginFacet = Pick<
