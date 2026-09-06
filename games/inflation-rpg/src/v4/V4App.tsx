@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
 import { POLICY_LABELS } from './data';
+import { createNativeV4Monetization, type V4MonetizationAdapter } from './monetization';
 import { useV4Game } from './useV4Game';
 import { ExpeditionScreen } from './screens/ExpeditionScreen';
 import { HeroDetailScreen } from './screens/HeroDetailScreen';
@@ -21,7 +22,25 @@ const RESOURCES = [
 ] as const;
 
 export function V4App({ config }: Props) {
-  const game = useV4Game(config.v4Monetization);
+  const [nativeMonetization, setNativeMonetization] = useState<V4MonetizationAdapter | undefined>(undefined);
+  useEffect(() => {
+    if (config.v4Monetization || nativeMonetization) return;
+    const capacitor = (window as Window & {
+      Capacitor?: { isNativePlatform?: () => boolean };
+    }).Capacitor;
+    if (!capacitor?.isNativePlatform?.()) return;
+
+    let cancelled = false;
+    void createNativeV4Monetization().then(async (handle) => {
+      const initialized = await handle.initialize();
+      if (!cancelled && initialized) setNativeMonetization(handle.adapter);
+    }).catch(() => {
+      // Native monetization is optional; failure leaves the core loop playable.
+    });
+    return () => { cancelled = true; };
+  }, [config.v4Monetization, nativeMonetization]);
+
+  const game = useV4Game(config.v4Monetization ?? nativeMonetization);
   const [screen, setScreen] = useState<V4Screen>('town');
 
   useEffect(() => {
