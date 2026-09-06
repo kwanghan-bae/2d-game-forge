@@ -14,6 +14,7 @@ import { AscensionTrialsModal } from '../components/AscensionTrialsModal';
 import { PetSanctuaryModal } from '../components/PetSanctuaryModal';
 import { ZodiacConstellationModal } from '../components/ZodiacConstellationModal';
 import { AstralAlchemyModal } from '../components/AstralAlchemyModal';
+import { CelestialAwakeningModal } from '../components/CelestialAwakeningModal';
 
 interface Props {
   onClose: () => void;
@@ -29,6 +30,7 @@ export function StatusModal({ onClose }: Props) {
   const [showPets, setShowPets] = useState(false);
   const [showZodiac, setShowZodiac] = useState(false);
   const [showAlchemy, setShowAlchemy] = useState(false);
+  const [showAwakening, setShowAwakening] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -254,6 +256,22 @@ export function StatusModal({ onClose }: Props) {
                 >
                   ⚗️ 연금술
                 </button>
+                <button
+                  data-testid="open-awakening-modal-btn"
+                  onClick={() => setShowAwakening(true)}
+                  style={{
+                    background: '#e11d48',
+                    border: 'none',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    color: '#fff',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  👑 초월각성
+                </button>
               </div>
             </div>
             {equippedItems.length === 0 ? (
@@ -331,6 +349,7 @@ export function StatusModal({ onClose }: Props) {
       {showPets && <PetSanctuaryModal onClose={() => setShowPets(false)} />}
       {showZodiac && <ZodiacConstellationModal onClose={() => setShowZodiac(false)} />}
       {showAlchemy && <AstralAlchemyModal onClose={() => setShowAlchemy(false)} />}
+      {showAwakening && <CelestialAwakeningModal onClose={() => setShowAwakening(false)} />}
     </div>
   );
 }
