@@ -1,4 +1,5 @@
 import { FACILITY_DEFINITIONS, POLICY_LABELS } from '../data';
+import { getFacilityTaskPreview, getFacilityUpgradeCost } from '../domain';
 import type { FacilityId, InterventionType, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 
 interface Props {
@@ -24,6 +25,16 @@ const AGENT_BY_FACILITY: Partial<Record<FacilityId, SupportAgentId>> = {
 };
 
 const formatNumber = (value: number) => value.toLocaleString('ko-KR');
+const RESOURCE_LABELS: Record<string, string> = {
+  spirit: '신력', gold: '금화', materials: '재료', rift: '균열석',
+};
+
+function formatResources(resources: Partial<Record<string, number>>): string {
+  const entries = Object.entries(resources).filter(([, value]) => (value ?? 0) > 0);
+  return entries.length > 0
+    ? entries.map(([key, value]) => `${RESOURCE_LABELS[key] ?? key} ${formatNumber(value ?? 0)}`).join(' · ')
+    : '없음';
+}
 
 function remainingSeconds(completesAt: number | undefined, now: number): number {
   if (!completesAt) return 0;
@@ -76,6 +87,8 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
             const facility = save.meta.facilities[facilityId];
             const task = facility.activeTaskId ? save.meta.tasks[facility.activeTaskId] : undefined;
             const agentId = AGENT_BY_FACILITY[facilityId];
+            const preview = getFacilityTaskPreview(save, facilityId, agentId ?? null);
+            const upgradeCost = getFacilityUpgradeCost(save, facilityId);
             return (
               <article key={facilityId} className={`v4-facility ${task ? 'v4-facility--active' : ''}`}>
                 <div className="v4-facility-head">
@@ -89,6 +102,12 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 ) : (
                   <div className="v4-task">다음: {definition.taskLabelKR}</div>
                 )}
+                <div className="v4-economy" aria-label={`${definition.nameKR} 작업 경제 정보`}>
+                  <span>투입 · {formatResources(preview.input)}</span>
+                  <span>산출 · {formatResources(preview.output)}{preview.outputEquipmentIds.length > 0 ? ` · 장비 ${preview.outputEquipmentIds.map((id) => id === 'v4_iron_sword' ? '마을의 철검' : id).join(', ')}` : ''}</span>
+                  <span>소요 · {preview.durationSeconds}초</span>
+                </div>
+                {!task && !preview.canStart && <div className="v4-task v4-task--blocked">시작 불가 · {preview.error}</div>}
                 <div className="v4-button-row">
                   {task ? (
                     <>
@@ -97,9 +116,14 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                       {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onInstantTask(facilityId)}>광고 즉시 완료</button>}
                     </>
                   ) : (
-                    <button type="button" className="v4-btn v4-btn--primary" onClick={() => onStartTask(facilityId, agentId)}>작업 시작</button>
+                    <button type="button" className="v4-btn v4-btn--primary" disabled={!preview.canStart} onClick={() => onStartTask(facilityId, agentId)}>작업 시작</button>
                   )}
-                  <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onUpgrade(facilityId)} aria-label={`${definition.nameKR} 강화`}>+</button>
+                  <button
+                    type="button"
+                    className="v4-btn v4-btn--quiet"
+                    onClick={() => onUpgrade(facilityId)}
+                    aria-label={`${definition.nameKR} 강화 · 금화 ${upgradeCost?.gold ?? 0}, 재료 ${upgradeCost?.materials ?? 0}`}
+                  >+</button>
                 </div>
               </article>
             );

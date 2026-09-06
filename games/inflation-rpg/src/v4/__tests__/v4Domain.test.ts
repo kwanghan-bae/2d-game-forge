@@ -12,6 +12,8 @@ import {
   cancelFacilityTask,
   completeFacilityTasks,
   completeFacilityTaskNow,
+  getFacilityTaskPreview,
+  getFacilityUpgradeCost,
   grantInterventionCharge,
   grantOfflineResourceBonus,
   rejuvenateHero,
@@ -402,6 +404,43 @@ describe('v4 save and domain', () => {
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     expect(started.task.outputPreview.spirit).toBe(24);
+  });
+
+  it('previews the same facility economy and blockers before a task starts', () => {
+    const initial = createInitialV4Save(85);
+    const preview = getFacilityTaskPreview(initial, 'blacksmith', 'blacksmith');
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+
+    expect(preview).toMatchObject({
+      facilityId: 'blacksmith',
+      durationSeconds: 45,
+      input: { gold: 20, materials: 3 },
+      output: { materials: 2 },
+      outputEquipmentIds: ['v4_iron_sword'],
+      assignedAgentId: 'blacksmith',
+      canStart: true,
+      error: null,
+    });
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    expect(started.task.completesAt - started.task.startedAt).toBe(preview.durationSeconds * 1000);
+    expect(started.task.input).toEqual(preview.input);
+    expect(started.task.outputPreview).toEqual(preview.output);
+
+    const blocked = getFacilityTaskPreview({
+      ...initial,
+      meta: { ...initial.meta, currencies: { ...initial.meta.currencies, gold: 0 } },
+    }, 'blacksmith', 'blacksmith');
+    expect(blocked.canStart).toBe(false);
+    expect(blocked.error).toContain('재화');
+  });
+
+  it('exposes the scaled facility upgrade cost without mutating the save', () => {
+    const initial = createInitialV4Save(86);
+    initial.meta.facilities.temple.level = 3;
+
+    expect(getFacilityUpgradeCost(initial, 'temple')).toEqual({ gold: 145, materials: 7 });
+    expect(initial.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
   });
 
   it('applies monetization effects through pure V4 domain helpers', () => {

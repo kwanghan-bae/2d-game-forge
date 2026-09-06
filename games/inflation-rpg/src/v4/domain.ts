@@ -29,6 +29,19 @@ export type InterventionDomainResult =
   | { ok: true; save: V4SaveEnvelope; intervention: InterventionType }
   | { ok: false; save: V4SaveEnvelope; error: string };
 
+export interface FacilityTaskPreview {
+  facilityId: FacilityId;
+  durationSeconds: number;
+  input: Partial<Record<V4CurrencyKey, number>>;
+  output: Partial<Record<V4CurrencyKey, number>>;
+  outputEquipmentIds: string[];
+  assignedAgentId: SupportAgentId | null;
+  canStart: boolean;
+  error: string | null;
+}
+
+export type FacilityUpgradeCost = { gold: number; materials: number };
+
 export const MAX_INTERVENTION_CHARGES = 3;
 export const AGENT_REST_RECOVERY = 25;
 const FACILITY_OUTPUT_PER_LEVEL = 0.18;
@@ -69,6 +82,73 @@ function nextTaskId(save: V4SaveEnvelope, prefix: string, now: number): string {
   return `${prefix}-${now}-${Object.keys(save.meta.tasks).length + 1}`;
 }
 
+function facilityTaskEconomy(
+  save: V4SaveEnvelope,
+  facilityId: FacilityId,
+  assignedAgentId: SupportAgentId | null,
+): Pick<FacilityTaskPreview, 'durationSeconds' | 'input' | 'output' | 'outputEquipmentIds'> {
+  const facility = save.meta.facilities[facilityId];
+  const definition = FACILITY_DEFINITIONS[facilityId];
+  const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
+  const specialty = Boolean(
+    agent && agent.trust >= 50 && AGENT_DEFINITIONS[agent.id].specialty === facilityId,
+  );
+  const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
+  const durationSeconds = Math.max(10, Math.round(
+    (definition?.baseDurationSeconds ?? 0) * Math.pow(0.94, (facility?.level ?? 1) - 1)
+      * (specialty ? 0.85 : 1) * fatigueMultiplier,
+  ));
+  const outputMultiplier = (specialty ? 1.2 : 1)
+    * (1 + FACILITY_OUTPUT_PER_LEVEL * ((facility?.level ?? 1) - 1));
+  return {
+    durationSeconds,
+    input: { ...(definition?.input ?? {}) },
+    output: Object.fromEntries(
+      Object.entries(definition?.output ?? {}).map(([key, value]) => [key, Math.floor((value ?? 0) * outputMultiplier)]),
+    ) as Partial<Record<V4CurrencyKey, number>>,
+    outputEquipmentIds: definition?.outputEquipmentIds ? [...definition.outputEquipmentIds] : [],
+  };
+}
+
+/**
+ * Returns the exact economy shown by the hub before a task is committed.
+ * Keeping this beside startFacilityTask prevents UI previews from drifting
+ * away from the actual duration, cost, and output rules.
+ */
+export function getFacilityTaskPreview(
+  source: V4SaveEnvelope,
+  facilityId: FacilityId,
+  assignedAgentId: SupportAgentId | null = null,
+): FacilityTaskPreview {
+  const facility = source.meta.facilities[facilityId];
+  const definition = FACILITY_DEFINITIONS[facilityId];
+  const agent = assignedAgentId ? source.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
+  const economy = facilityTaskEconomy(source, facilityId, assignedAgentId);
+  let error: string | null = null;
+
+  if (!facility || !definition || facility.level < 1) {
+    error = '아직 사용할 수 없는 시설입니다.';
+  } else if (facility.activeTaskId) {
+    error = '이 시설에는 이미 진행 중인 작업이 있습니다.';
+  } else if (facilityId === 'training' && source.run.expedition) {
+    error = '원정 중인 영웅은 훈련소 작업을 시작할 수 없습니다.';
+  } else if (assignedAgentId && (!agent || agent.activeTaskId)) {
+    error = '해당 지원 에이전트가 다른 작업 중입니다.';
+  } else if (agent && agent.fatigue >= 100) {
+    error = '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.';
+  } else if (!canPay(source, economy.input)) {
+    error = '작업에 필요한 재화가 부족합니다.';
+  }
+
+  return {
+    facilityId,
+    ...economy,
+    assignedAgentId,
+    canStart: error === null,
+    error,
+  };
+}
+
 function syncHeroAction(save: V4SaveEnvelope): void {
   if (save.run.expedition) {
     save.run.hero.currentAction = 'expedition';
@@ -102,51 +182,27 @@ export function startFacilityTask(
   now: number,
   assignedAgentId: SupportAgentId | null = null,
 ): DomainResult {
+  const preview = getFacilityTaskPreview(source, facilityId, assignedAgentId);
+  if (!preview.canStart) {
+    return { ok: false, save: source, error: preview.error ?? '작업을 시작할 수 없습니다.' };
+  }
+
   const save = cloneSave(source);
   const facility = save.meta.facilities[facilityId];
   const definition = FACILITY_DEFINITIONS[facilityId];
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
-  if (!facility || !definition || facility.level < 1) {
-    return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
-  }
-  if (facility.activeTaskId) {
-    return { ok: false, save: source, error: '이 시설에는 이미 진행 중인 작업이 있습니다.' };
-  }
-  if (facilityId === 'training' && save.run.expedition) {
-    return { ok: false, save: source, error: '원정 중인 영웅은 훈련소 작업을 시작할 수 없습니다.' };
-  }
-  if (assignedAgentId && (!agent || agent.activeTaskId)) {
-    return { ok: false, save: source, error: '해당 지원 에이전트가 다른 작업 중입니다.' };
-  }
-  if (agent && agent.fatigue >= 100) {
-    return { ok: false, save: source, error: '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.' };
-  }
-  if (!canPay(save, definition.input)) {
-    return { ok: false, save: source, error: '작업에 필요한 재화가 부족합니다.' };
-  }
+  if (!facility || !definition) return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
 
-  pay(save, definition.input);
-  const specialty = Boolean(
-    agent && agent.trust >= 50 && AGENT_DEFINITIONS[agent.id].specialty === facilityId,
-  );
-  const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
-  const durationSeconds = Math.max(10, Math.round(
-    definition.baseDurationSeconds * Math.pow(0.94, facility.level - 1)
-      * (specialty ? 0.85 : 1) * fatigueMultiplier,
-  ));
-  const outputMultiplier = (specialty ? 1.2 : 1)
-    * (1 + FACILITY_OUTPUT_PER_LEVEL * (facility.level - 1));
+  pay(save, preview.input);
   const task: FacilityTask = {
     id: nextTaskId(save, facilityId, now),
     facilityId,
     type: definition.taskLabelKR,
     startedAt: now,
-    completesAt: now + durationSeconds * 1000,
-    input: { ...definition.input },
-    outputPreview: Object.fromEntries(
-      Object.entries(definition.output).map(([key, value]) => [key, Math.floor((value ?? 0) * outputMultiplier)]),
-    ),
-    outputEquipmentIds: definition.outputEquipmentIds ? [...definition.outputEquipmentIds] : undefined,
+    completesAt: now + preview.durationSeconds * 1000,
+    input: preview.input,
+    outputPreview: preview.output,
+    outputEquipmentIds: preview.outputEquipmentIds.length > 0 ? preview.outputEquipmentIds : undefined,
     heroExpGain: definition.heroExpGain,
     assignedAgentId,
   };
@@ -571,11 +627,8 @@ export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, 
   const facility = save.meta.facilities[facilityId];
   if (!facility) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
   if (facility.activeTaskId) return { ok: false, save: source, error: '작업 중인 시설은 강화할 수 없습니다.' };
-  const growth = Math.pow(FACILITY_UPGRADE_GROWTH, facility.level - 1);
-  const cost = {
-    gold: Math.floor(80 * growth),
-    materials: Math.floor(4 * growth),
-  };
+  const cost = getFacilityUpgradeCost(source, facilityId);
+  if (!cost) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
   if (!canPay(save, cost)) return { ok: false, save: source, error: '시설 강화 재료가 부족합니다.' };
   pay(save, cost);
   facility.level += 1;
@@ -593,5 +646,18 @@ export function upgradeFacility(source: V4SaveEnvelope, facilityId: FacilityId, 
       outputPreview: {},
       assignedAgentId: null,
     },
+  };
+}
+
+export function getFacilityUpgradeCost(
+  source: V4SaveEnvelope,
+  facilityId: FacilityId,
+): FacilityUpgradeCost | null {
+  const facility = source.meta.facilities[facilityId];
+  if (!facility) return null;
+  const growth = Math.pow(FACILITY_UPGRADE_GROWTH, facility.level - 1);
+  return {
+    gold: Math.floor(80 * growth),
+    materials: Math.floor(4 * growth),
   };
 }
