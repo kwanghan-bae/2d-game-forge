@@ -196,5 +196,15 @@ describe('C1034: ReforgeModal Component Tests', () => {
     fireEvent.click(openTransmuteBtn);
     expect(screen.getByTestId('relic-transmutation-modal')).toBeDefined();
   });
+
+  it('opens CelestialInfusionModal when clicking open-infusion-modal-btn', () => {
+    render(<ReforgeModal onClose={() => {}} initialTab="relic" />);
+
+    const openInfusionBtn = screen.getByTestId('open-infusion-modal-btn');
+    expect(openInfusionBtn).toBeDefined();
+
+    fireEvent.click(openInfusionBtn);
+    expect(screen.getByTestId('celestial-infusion-modal')).toBeDefined();
+  });
 });
 
