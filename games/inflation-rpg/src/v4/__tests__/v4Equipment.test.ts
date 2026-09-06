@@ -54,6 +54,21 @@ describe('v4 equipment progression', () => {
     });
   });
 
+  it('does not increase hero stats after an equipment level reaches the cap', () => {
+    const capped = createInitialV4Save(103);
+    capped.run.hero.equipmentIds = ['v4_iron_sword'];
+    capped.run.hero.equipmentLevels = { v4_iron_sword: 20 };
+    capped.run.hero.atk += 80 * 20;
+    const started = startFacilityTask(capped, 'blacksmith', capped.updatedAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const crafted = completeFacilityTasks(started.save, started.task.completesAt);
+
+    expect(crafted.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 20 });
+    expect(crafted.run.hero.atk).toBe(capped.run.hero.atk);
+  });
+
   it('does not leak an unknown legacy equipment id into player-facing text', () => {
     expect(getV4EquipmentName('legacy-knife-id')).toBe('기록된 장비');
   });

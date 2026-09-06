@@ -272,7 +272,9 @@ function applyHeroExperience(save: V4SaveEnvelope, amount: number): number {
 function grantEquipmentLevel(save: V4SaveEnvelope, equipmentId: string): void {
   const hero = save.run.hero;
   const equipmentLevels = hero.equipmentLevels ?? {};
-  const currentLevel = Math.max(0, Math.floor(equipmentLevels[equipmentId] ?? 0));
+  const savedLevel = equipmentLevels[equipmentId] ?? 0;
+  const currentLevel = Number.isFinite(savedLevel) ? Math.max(0, Math.floor(savedLevel)) : 0;
+  if (currentLevel >= 20) return;
   if (!hero.equipmentIds.includes(equipmentId)) hero.equipmentIds.push(equipmentId);
   equipmentLevels[equipmentId] = Math.min(20, currentLevel + 1);
   hero.equipmentLevels = equipmentLevels;
