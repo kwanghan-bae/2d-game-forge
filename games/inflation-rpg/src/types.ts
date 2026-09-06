@@ -384,6 +384,8 @@ export interface MetaState {
   apexTrialsCleared?: number[];
   /** C1115 — 보유 중인 차원 정수 (Dimensional Essence) 수량. */
   dimensionalEssence?: number;
+  /** C1123/C1124 — 완파 완료된 우주적 심연 회랑 섹터 목록 (1 ~ 5). */
+  corridorSectorsCleared?: number[];
 }
 
 // Phase G — Ascension Tree (성좌)

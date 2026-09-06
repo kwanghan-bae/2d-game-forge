@@ -189,6 +189,7 @@ export const INITIAL_META: MetaState = {
   transmutedRelics: [],
   apexTrialsCleared: [],
   dimensionalEssence: 0,
+  corridorSectorsCleared: [],
 };
 
 interface GameStore {

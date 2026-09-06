@@ -136,6 +136,16 @@ describe('C1045: AscensionTrialsModal Component Tests', () => {
     expect(badge.textContent).toContain('황혼의 정복자');
     expect(badge.textContent).toContain('[2/3]');
   });
+
+  it('opens AbyssalCorridorModal when clicking open-corridor-modal-btn', () => {
+    render(<AscensionTrialsModal onClose={() => {}} />);
+
+    const openCorridorBtn = screen.getByTestId('open-corridor-modal-btn');
+    expect(openCorridorBtn).toBeDefined();
+    fireEvent.click(openCorridorBtn);
+
+    expect(screen.getByTestId('abyssal-corridor-modal')).toBeDefined();
+  });
 });
 
 

@@ -16,6 +16,7 @@ import {
 import { AscendantRushModal } from './AscendantRushModal';
 import { ChaosRiftModal } from './ChaosRiftModal';
 import { ApexTrialModal } from './ApexTrialModal';
+import { AbyssalCorridorModal } from './AbyssalCorridorModal';
 import { RiftLeaderboardBadge } from './RiftLeaderboardBadge';
 import { ZenithSanctuaryBadge } from './ZenithSanctuaryBadge';
 
@@ -46,6 +47,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
   const [showBossRush, setShowBossRush] = useState(false);
   const [showChaosRift, setShowChaosRift] = useState(false);
   const [showApexTrial, setShowApexTrial] = useState(false);
+  const [showCorridor, setShowCorridor] = useState(false);
 
   const floorDef = getTrialFloor(selectedFloor) ?? TRIAL_FLOORS[0];
   const isUnlocked = selectedFloor <= clearedFloor + 1;
@@ -200,6 +202,22 @@ export function AscensionTrialsModal({ onClose }: Props) {
               }}
             >
               🌌 초월 시련
+            </button>
+            <button
+              data-testid="open-corridor-modal-btn"
+              onClick={() => setShowCorridor(true)}
+              style={{
+                background: '#6366f1',
+                border: 'none',
+                borderRadius: 6,
+                padding: '4px 10px',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+            >
+              🪐 심연 회랑
             </button>
             <button
               data-testid="close-btn"
@@ -380,6 +398,7 @@ export function AscensionTrialsModal({ onClose }: Props) {
       {showBossRush && <AscendantRushModal onClose={() => setShowBossRush(false)} />}
       {showChaosRift && <ChaosRiftModal onClose={() => setShowChaosRift(false)} />}
       {showApexTrial && <ApexTrialModal onClose={() => setShowApexTrial(false)} />}
+      {showCorridor && <AbyssalCorridorModal onClose={() => setShowCorridor(false)} />}
     </div>
   );
 }
