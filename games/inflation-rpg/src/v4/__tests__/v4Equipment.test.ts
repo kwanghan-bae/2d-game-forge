@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { completeFacilityTasks, startFacilityTask } from '../domain';
 import { createInitialV4Save, loadV4Save, persistV4Save } from '../save';
-import { getV4EquipmentBonuses } from '../equipment';
+import { getV4EquipmentBonuses, getV4EquipmentName } from '../equipment';
 
 describe('v4 equipment progression', () => {
   it('applies equipment bonuses to the eternal hero and upgrades repeated crafts', () => {
@@ -52,5 +52,9 @@ describe('v4 equipment progression', () => {
       hpMax: 0,
       critRate: 0,
     });
+  });
+
+  it('does not leak an unknown legacy equipment id into player-facing text', () => {
+    expect(getV4EquipmentName('legacy-knife-id')).toBe('기록된 장비');
   });
 });

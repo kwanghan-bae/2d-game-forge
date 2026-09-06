@@ -43,7 +43,7 @@ export function getV4EquipmentDefinition(id: string): V4EquipmentDefinition | un
 }
 
 export function getV4EquipmentName(id: string): string {
-  return getV4EquipmentDefinition(id)?.nameKR ?? id;
+  return getV4EquipmentDefinition(id)?.nameKR ?? '기록된 장비';
 }
 
 export function getV4EquipmentBonuses(
