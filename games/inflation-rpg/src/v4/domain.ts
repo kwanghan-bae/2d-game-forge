@@ -83,6 +83,11 @@ function safeDurationSeconds(value: number): number {
   return Math.min(MAX_ECONOMY_VALUE, Math.max(10, Math.round(value)));
 }
 
+function saturatingAdd(value: number, amount: number): number {
+  const base = Number.isFinite(value) && value >= 0 ? Math.min(MAX_ECONOMY_VALUE, value) : 0;
+  return Math.min(MAX_ECONOMY_VALUE, base + amount);
+}
+
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
 }
@@ -316,11 +321,11 @@ function applyHeroExperience(save: V4SaveEnvelope, amount: number): number {
   while (hero.exp >= hero.level * 100 && levelsGained < MAX_LEVELS_PER_SETTLEMENT) {
     hero.exp -= hero.level * 100;
     hero.level += 1;
-    hero.atk += 20;
-    hero.def += 10;
-    hero.defBase += 10;
-    hero.hpMax += 100;
-    hero.hp = Math.min(hero.hpMax, hero.hp + 100);
+    hero.atk = saturatingAdd(hero.atk, 20);
+    hero.def = saturatingAdd(hero.def, 10);
+    hero.defBase = saturatingAdd(hero.defBase, 10);
+    hero.hpMax = Math.max(1, saturatingAdd(hero.hpMax, 100));
+    hero.hp = Math.min(hero.hpMax, saturatingAdd(hero.hp, 100));
     levelsGained += 1;
   }
   if (levelsGained >= MAX_LEVELS_PER_SETTLEMENT) {

@@ -1037,6 +1037,29 @@ describe('v4 save and domain', () => {
     expect(Number.isFinite(result.run.hero.exp)).toBe(true);
   });
 
+  it('saturates hero stats when a level-up reaches the persistable ceiling', () => {
+    const initial = createInitialV4Save(117);
+    const started = startFacilityTask(initial, 'training', initial.createdAt, null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const hero = started.save.run.hero;
+    hero.exp = 99;
+    hero.atk = Number.MAX_SAFE_INTEGER;
+    hero.def = Number.MAX_SAFE_INTEGER;
+    hero.defBase = Number.MAX_SAFE_INTEGER;
+    hero.hp = Number.MAX_SAFE_INTEGER;
+    hero.hpMax = Number.MAX_SAFE_INTEGER;
+    started.save.meta.tasks[started.task.id].heroExpGain = 100;
+
+    const result = completeFacilityTasks(started.save, started.task.completesAt);
+
+    expect(result.run.hero.atk).toBe(Number.MAX_SAFE_INTEGER);
+    expect(result.run.hero.def).toBe(Number.MAX_SAFE_INTEGER);
+    expect(result.run.hero.defBase).toBe(Number.MAX_SAFE_INTEGER);
+    expect(result.run.hero.hp).toBe(Number.MAX_SAFE_INTEGER);
+    expect(result.run.hero.hpMax).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
   it('rejects instant completion before a future persisted write time', () => {
     const initial = createInitialV4Save(30);
     const started = startFacilityTask(initial, 'temple', initial.createdAt);
