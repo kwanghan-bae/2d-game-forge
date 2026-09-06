@@ -360,6 +360,36 @@ describe('v4 save and domain', () => {
     expect(agent).toMatchObject({ trust: 50, level: 2, activeTaskId: null });
   });
 
+  it('makes higher-level specialists work faster and records maximum trust once', () => {
+    const levelTwo = createInitialV4Save(98);
+    levelTwo.meta.agents = levelTwo.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, trust: 50, level: 2 }
+      : agent);
+    const levelThree = createInitialV4Save(99);
+    levelThree.meta.agents = levelThree.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, trust: 100, level: 3 }
+      : agent);
+
+    const first = startFacilityTask(levelTwo, 'blacksmith', levelTwo.createdAt, 'blacksmith');
+    const second = startFacilityTask(levelThree, 'blacksmith', levelThree.createdAt, 'blacksmith');
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(second.task.completesAt - second.task.startedAt)
+      .toBeLessThan(first.task.completesAt - first.task.startedAt);
+
+    const maxTrust = createInitialV4Save(100);
+    maxTrust.meta.agents = maxTrust.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, trust: 99 }
+      : agent);
+    const started = startFacilityTask(maxTrust, 'blacksmith', maxTrust.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const completed = completeFacilityTasks(started.save, started.task.completesAt);
+    expect(completed.meta.agents.find((agent) => agent.id === 'blacksmith')?.trust).toBe(100);
+    expect(completed.meta.sagaEntries.some((entry) => entry.title.includes('신뢰'))).toBe(true);
+  });
+
   it('turns training work into hero experience, level, and combat stats', () => {
     const initial = createInitialV4Save(82);
     initial.run.hero.exp = 80;

@@ -6,7 +6,9 @@ test.describe('Phase V1a vertical slice', () => {
     // delay = ~3-5s per arrival × ~98 arrivals → up to ~9 min wall clock.
     test.setTimeout(720_000);
 
-    await page.goto('/games/inflation-rpg');
+    // V3 regression coverage must use the preserved legacy entrypoint now
+    // that the product's default route mounts the V4 town hub.
+    await page.goto('/games/inflation-rpg-legacy');
     await page.evaluate(() => localStorage.removeItem('korea_inflation_rpg_save'));
     await page.reload();
 

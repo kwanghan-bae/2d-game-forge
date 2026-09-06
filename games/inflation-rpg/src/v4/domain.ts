@@ -51,6 +51,8 @@ export const MAX_INTERVENTION_CHARGES = 3;
 export const AGENT_REST_RECOVERY = 25;
 const FACILITY_OUTPUT_PER_LEVEL = 0.18;
 const FACILITY_UPGRADE_GROWTH = 1.35;
+const AGENT_OUTPUT_PER_LEVEL = 0.08;
+const AGENT_SPEED_PER_LEVEL = 0.03;
 
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
@@ -145,12 +147,14 @@ function facilityTaskEconomy(
     agent && agent.trust >= 50 && AGENT_DEFINITIONS[agent.id].specialty === facilityId,
   );
   const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
+  const agentSpeedMultiplier = agent ? Math.pow(1 - AGENT_SPEED_PER_LEVEL, Math.max(0, agent.level - 1)) : 1;
   const durationSeconds = Math.max(10, Math.round(
     (definition?.baseDurationSeconds ?? 0) * Math.pow(0.94, (facility?.level ?? 1) - 1)
-      * (specialty ? 0.85 : 1) * fatigueMultiplier,
+      * (specialty ? 0.85 : 1) * agentSpeedMultiplier * fatigueMultiplier,
   ));
   const outputMultiplier = (specialty ? 1.2 : 1)
-    * (1 + FACILITY_OUTPUT_PER_LEVEL * ((facility?.level ?? 1) - 1));
+    * (1 + FACILITY_OUTPUT_PER_LEVEL * ((facility?.level ?? 1) - 1))
+    * (agent ? 1 + AGENT_OUTPUT_PER_LEVEL * Math.max(0, agent.level - 1) : 1);
   return {
     durationSeconds,
     input: { ...(definition?.input ?? {}) },
@@ -578,10 +582,20 @@ export function completeFacilityTasks(
     if (task.assignedAgentId) {
       const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);
       if (agent) {
+        const previousTrust = agent.trust;
         agent.activeTaskId = null;
         agent.fatigue = Math.min(100, agent.fatigue + 5);
         agent.trust = Math.min(100, agent.trust + 1);
         agent.level = Math.max(agent.level, Math.min(3, 1 + Math.floor(agent.trust / 50)));
+        if (previousTrust < 100 && agent.trust === 100) {
+          save.meta.sagaEntries.unshift({
+            id: `saga-agent-trust-${agent.id}-${task.id}`,
+            kind: 'milestone',
+            createdAt: now,
+            title: `${agent.nameKR} 신뢰 최고점`,
+            text: `${agent.nameKR}이(가) 마을의 후원자를 완전히 신뢰하게 되었다.`,
+          });
+        }
       }
     }
     if (task.facilityId === 'recovery') {

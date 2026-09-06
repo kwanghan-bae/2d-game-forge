@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
+import { setVolumes } from '../systems/sound';
 import { POLICY_LABELS } from './data';
 import { createNativeV4Monetization, type V4MonetizationAdapter } from './monetization';
 import { useV4Game } from './useV4Game';
@@ -43,6 +44,10 @@ export function V4App({ config }: Props) {
 
   const game = useV4Game(config.v4Monetization ?? nativeMonetization);
   const [screen, setScreen] = useState<V4Screen>('town');
+
+  useEffect(() => {
+    setVolumes(game.save.meta.settings.music, game.save.meta.settings.sfx, game.save.meta.settings.muted);
+  }, [game.save.meta.settings.music, game.save.meta.settings.sfx, game.save.meta.settings.muted]);
 
   useEffect(() => {
     const timer = window.setInterval(game.refresh, 1000);
