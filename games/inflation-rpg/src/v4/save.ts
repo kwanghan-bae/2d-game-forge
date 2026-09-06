@@ -27,6 +27,7 @@ export type V4SaveLoadResult =
 
 const CURRENCY_KEYS: V4CurrencyKey[] = ['spirit', 'gold', 'materials', 'rift'];
 const HERO_NAMES = ['연화', '도윤', '서린', '한결', '무진', '가람'];
+const MAX_PERSISTED_NUMBER = Number.MAX_SAFE_INTEGER;
 
 function defaultStorage(): Storage | undefined {
   try {
@@ -46,6 +47,14 @@ function isFiniteNumber(value: unknown): value is number {
 
 function isNonNegativeNumber(value: unknown): value is number {
   return isFiniteNumber(value) && value >= 0;
+}
+
+function isPersistableNumber(value: unknown): value is number {
+  return isFiniteNumber(value) && Math.abs(value) <= MAX_PERSISTED_NUMBER;
+}
+
+function isPersistableNonNegativeNumber(value: unknown): value is number {
+  return isPersistableNumber(value) && value >= 0;
 }
 
 function finiteNonNegativeOr(value: unknown, fallback: number): number {
@@ -70,18 +79,18 @@ function nonNegativeIntegerOr(value: unknown, fallback: number): number {
 
 function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey, number>> {
   return isRecord(value) && Object.entries(value).every(([key, amount]) =>
-    CURRENCY_KEYS.includes(key as V4CurrencyKey) && isNonNegativeNumber(amount));
+    CURRENCY_KEYS.includes(key as V4CurrencyKey) && isPersistableNonNegativeNumber(amount));
 }
 
 function isFacilityTaskRecord(value: unknown): boolean {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.facilityId !== 'string'
     || !FACILITY_IDS.includes(value.facilityId as typeof FACILITY_IDS[number]) || typeof value.type !== 'string'
-    || !isNonNegativeNumber(value.startedAt) || !isNonNegativeNumber(value.completesAt)
+    || !isPersistableNonNegativeNumber(value.startedAt) || !isPersistableNonNegativeNumber(value.completesAt)
     || value.completesAt <= value.startedAt
     || !isCurrencyRecord(value.input) || !isCurrencyRecord(value.outputPreview)
     || (value.outputEquipmentIds !== undefined
       && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) => typeof id === 'string')))
-    || (value.heroExpGain !== undefined && !isNonNegativeNumber(value.heroExpGain))
+    || (value.heroExpGain !== undefined && !isPersistableNonNegativeNumber(value.heroExpGain))
     || (value.assignedAgentId !== null
       && (typeof value.assignedAgentId !== 'string'
         || !Object.prototype.hasOwnProperty.call(AGENT_DEFINITIONS, value.assignedAgentId)))) return false;
@@ -93,16 +102,16 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
     && typeof value.realmId === 'string' && REALM_IDS.includes(value.realmId as typeof REALM_IDS[number])
     && ['aggression', 'hoarding', 'training'].includes(value.policy as string)
     && (value.assignedAgentId === null || value.assignedAgentId === 'guide')
-    && isNonNegativeNumber(value.startedAt) && isNonNegativeNumber(value.completesAt)
+    && isPersistableNonNegativeNumber(value.startedAt) && isPersistableNonNegativeNumber(value.completesAt)
     && value.completesAt > value.startedAt
     && (value.status === 'traveling' || value.status === 'awaiting_confirmation')
     && (value.encounterIndex === undefined
-      || (isNonNegativeNumber(value.encounterIndex) && Number.isInteger(value.encounterIndex) && value.encounterIndex <= 2))
+      || (isPersistableNonNegativeNumber(value.encounterIndex) && Number.isInteger(value.encounterIndex) && value.encounterIndex <= 2))
     && (value.encountersCleared === undefined
-      || (isNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
-    && (value.totalTurns === undefined || isNonNegativeNumber(value.totalTurns))
-    && (value.totalDamageDealt === undefined || isNonNegativeNumber(value.totalDamageDealt))
-    && (value.totalDamageTaken === undefined || isNonNegativeNumber(value.totalDamageTaken));
+      || (isPersistableNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
+    && (value.totalTurns === undefined || isPersistableNonNegativeNumber(value.totalTurns))
+    && (value.totalDamageDealt === undefined || isPersistableNonNegativeNumber(value.totalDamageDealt))
+    && (value.totalDamageTaken === undefined || isPersistableNonNegativeNumber(value.totalDamageTaken));
 }
 
 function isExpeditionResultRecord(value: unknown): value is Record<string, unknown> {
@@ -111,35 +120,35 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
     && typeof value.realmId === 'string'
     && REALM_IDS.includes(value.realmId as typeof REALM_IDS[number])
     && (value.outcome === 'victory' || value.outcome === 'defeat')
-    && isNonNegativeNumber(value.completedAt)
+    && isPersistableNonNegativeNumber(value.completedAt)
     && isCurrencyRecord(value.reward)
-    && isNonNegativeNumber(value.heroPower)
-    && isNonNegativeNumber(value.recommendedPower)
-    && isNonNegativeNumber(value.turns)
-    && isNonNegativeNumber(value.totalDamageDealt)
-    && isNonNegativeNumber(value.totalDamageTaken)
-    && isNonNegativeNumber(value.heroRemainingHp)
+    && isPersistableNonNegativeNumber(value.heroPower)
+    && isPersistableNonNegativeNumber(value.recommendedPower)
+    && isPersistableNonNegativeNumber(value.turns)
+    && isPersistableNonNegativeNumber(value.totalDamageDealt)
+    && isPersistableNonNegativeNumber(value.totalDamageTaken)
+    && isPersistableNonNegativeNumber(value.heroRemainingHp)
     && typeof value.weaknessKR === 'string'
     && typeof value.recommendedFacilityId === 'string'
     && FACILITY_IDS.includes(value.recommendedFacilityId as typeof FACILITY_IDS[number])
     && (value.recommendedEquipmentId === null || typeof value.recommendedEquipmentId === 'string')
-    && isNonNegativeNumber(value.retryAfterSeconds)
-    && (value.successChance === undefined || (isNonNegativeNumber(value.successChance) && value.successChance <= 1))
+    && isPersistableNonNegativeNumber(value.retryAfterSeconds)
+    && (value.successChance === undefined || (isPersistableNonNegativeNumber(value.successChance) && value.successChance <= 1))
     && (value.encountersCleared === undefined
-      || (isNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
+      || (isPersistableNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
     && (value.totalEncounterCount === undefined
-      || (isNonNegativeNumber(value.totalEncounterCount) && Number.isInteger(value.totalEncounterCount) && value.totalEncounterCount >= 1 && value.totalEncounterCount <= 3));
+      || (isPersistableNonNegativeNumber(value.totalEncounterCount) && Number.isInteger(value.totalEncounterCount) && value.totalEncounterCount >= 1 && value.totalEncounterCount <= 3));
 }
 
 function isSagaEntryRecord(value: unknown): boolean {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.createdAt === 'number'
-    && Number.isFinite(value.createdAt) && typeof value.title === 'string' && typeof value.text === 'string'
+  return isRecord(value) && typeof value.id === 'string' && isPersistableNonNegativeNumber(value.createdAt)
+    && typeof value.title === 'string' && typeof value.text === 'string'
     && ['birth', 'facility', 'expedition', 'rejuvenation', 'milestone'].includes(value.kind as string);
 }
 
 function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(value) || value.schemaVersion !== V4_SCHEMA_VERSION) return false;
-  if (!isNonNegativeNumber(value.createdAt) || !isNonNegativeNumber(value.updatedAt) || !isNonNegativeNumber(value.lastProcessedAt)
+  if (!isPersistableNonNegativeNumber(value.createdAt) || !isPersistableNonNegativeNumber(value.updatedAt) || !isPersistableNonNegativeNumber(value.lastProcessedAt)
     || value.updatedAt < value.createdAt
     || value.lastProcessedAt < value.createdAt
     || value.lastProcessedAt > value.updatedAt) return false;
@@ -149,14 +158,14 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(meta) || !isRecord(run)) return false;
 
   const currencies = meta.currencies;
-  if (!isRecord(currencies) || !CURRENCY_KEYS.every((key) => isNonNegativeNumber(currencies[key]))) return false;
+  if (!isRecord(currencies) || !CURRENCY_KEYS.every((key) => isPersistableNonNegativeNumber(currencies[key]))) return false;
 
   const facilities = meta.facilities;
   if (!isRecord(facilities) || Object.keys(facilities).length !== FACILITY_IDS.length || !FACILITY_IDS.every((id) => {
     const facility = facilities[id];
       return isRecord(facility)
       && facility.id === id
-      && isFiniteNumber(facility.level) && Number.isInteger(facility.level) && facility.level >= 1
+      && isPersistableNumber(facility.level) && Number.isInteger(facility.level) && facility.level >= 1
       && (facility.activeTaskId === null || typeof facility.activeTaskId === 'string');
   })) return false;
   const tasks = meta.tasks;
@@ -171,8 +180,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || !meta.unlockedRealms.every((id) => typeof id === 'string' && REALM_IDS.includes(id as typeof REALM_IDS[number]))) return false;
 
   const settings = meta.settings;
-  if (!isRecord(settings) || !isNonNegativeNumber(settings.music) || settings.music > 1
-    || !isNonNegativeNumber(settings.sfx) || settings.sfx > 1 || typeof settings.muted !== 'boolean') return false;
+  if (!isRecord(settings) || !isPersistableNonNegativeNumber(settings.music) || settings.music > 1
+    || !isPersistableNonNegativeNumber(settings.sfx) || settings.sfx > 1 || typeof settings.muted !== 'boolean') return false;
   const agentIds = meta.agents.map((agent) => isRecord(agent) ? agent.id : undefined);
   if (meta.agents.length !== Object.keys(AGENT_DEFINITIONS).length
     || new Set(agentIds).size !== meta.agents.length
@@ -180,9 +189,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!meta.agents.every((agent) => isRecord(agent)
     && typeof agent.id === 'string' && Object.prototype.hasOwnProperty.call(AGENT_DEFINITIONS, agent.id)
     && typeof agent.nameKR === 'string' && typeof agent.roleKR === 'string' && typeof agent.trait === 'string'
-    && isNonNegativeNumber(agent.level) && Number.isInteger(agent.level) && agent.level >= 1 && agent.level <= 3
-    && isNonNegativeNumber(agent.trust) && agent.trust <= 100
-    && isNonNegativeNumber(agent.fatigue) && agent.fatigue <= 100
+    && isPersistableNonNegativeNumber(agent.level) && Number.isInteger(agent.level) && agent.level >= 1 && agent.level <= 3
+    && isPersistableNonNegativeNumber(agent.trust) && agent.trust <= 100
+    && isPersistableNonNegativeNumber(agent.fatigue) && agent.fatigue <= 100
     && (agent.activeTaskId === null || typeof agent.activeTaskId === 'string'))) return false;
   for (const agent of meta.agents) {
     if (!isRecord(agent) || typeof agent.id !== 'string') return false;
@@ -246,7 +255,7 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || !Array.isArray(hero.equipmentIds) || !hero.equipmentIds.every((id) => typeof id === 'string')
     || (hero.equipmentLevels !== undefined && (!isRecord(hero.equipmentLevels)
       || !Object.entries(hero.equipmentLevels).every(([id, level]) => typeof id === 'string'
-        && isNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)))) return false;
+        && isPersistableNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)))) return false;
   if (!meta.unlockedRealms.includes(hero.realmId as typeof REALM_IDS[number])) return false;
   const heroAge = hero.age;
   const heroLevel = hero.level;
@@ -259,10 +268,10 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   const heroCritRate = hero.critRateBase;
   const heroActionCount = hero.actionCount;
   const heroRejuvenationCount = hero.rejuvenationCount;
-  if (!isFiniteNumber(heroAge) || !isFiniteNumber(heroLevel) || !isFiniteNumber(heroExp)
-    || !isFiniteNumber(heroHp) || !isFiniteNumber(heroHpMax) || !isFiniteNumber(heroAtk)
-    || !isFiniteNumber(heroDef) || !isFiniteNumber(heroDefBase) || !isFiniteNumber(heroCritRate)
-    || !isFiniteNumber(heroActionCount) || !isFiniteNumber(heroRejuvenationCount)) return false;
+  if (!isPersistableNumber(heroAge) || !isPersistableNumber(heroLevel) || !isPersistableNumber(heroExp)
+    || !isPersistableNumber(heroHp) || !isPersistableNumber(heroHpMax) || !isPersistableNumber(heroAtk)
+    || !isPersistableNumber(heroDef) || !isPersistableNumber(heroDefBase) || !isPersistableNumber(heroCritRate)
+    || !isPersistableNumber(heroActionCount) || !isPersistableNumber(heroRejuvenationCount)) return false;
   if (!Number.isInteger(heroAge) || heroAge < 5
     || !Number.isInteger(heroLevel) || heroLevel < 1
     || heroExp < 0
@@ -274,7 +283,7 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   const expectedHeroAction = expedition !== null ? 'expedition' : hasTrainingTask ? 'train' : 'rest';
   if (hero.currentAction !== expectedHeroAction) return false;
   return ['aggression', 'hoarding', 'training'].includes(run.policy as string)
-    && isNonNegativeNumber(run.interventionCharges)
+    && isPersistableNonNegativeNumber(run.interventionCharges)
     && Number.isInteger(run.interventionCharges)
     && run.interventionCharges <= V4_MAX_INTERVENTION_CHARGES;
 }
