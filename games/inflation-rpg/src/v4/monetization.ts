@@ -159,6 +159,7 @@ export class V4MonetizationAdapter {
   private adsToday = 0;
   private adFree = false;
   private rewardedDay = localDayKey();
+  private rewardedInFlight = 0;
 
   constructor(
     private readonly ads: V4AdProvider | null,
@@ -184,8 +185,11 @@ export class V4MonetizationAdapter {
 
   async watchRewarded(placement: V4RewardedPlacement): Promise<V4MonetizationResult> {
     this.resetForCurrentDay();
-    if (this.adsToday >= V4_DAILY_REWARDED_LIMIT) return { granted: false, reason: 'daily_limit' };
+    if (this.adsToday + this.rewardedInFlight >= V4_DAILY_REWARDED_LIMIT) {
+      return { granted: false, reason: 'daily_limit' };
+    }
     if (!this.ads) return { granted: false, reason: 'provider_failed' };
+    this.rewardedInFlight += 1;
     try {
       const watched = await this.ads.showRewarded(placement);
       if (!watched) return { granted: false, reason: 'provider_failed' };
@@ -194,6 +198,8 @@ export class V4MonetizationAdapter {
       return { granted: true, reason: 'granted' };
     } catch {
       return { granted: false, reason: 'provider_failed' };
+    } finally {
+      this.rewardedInFlight -= 1;
     }
   }
 

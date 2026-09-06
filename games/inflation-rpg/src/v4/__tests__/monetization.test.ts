@@ -70,4 +70,28 @@ describe('v4 monetization adapter', () => {
 
     expect(second.getAdsToday()).toBe(1);
   });
+
+  it('reserves the daily quota across concurrent rewarded requests', async () => {
+    let calls = 0;
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const adapter = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        calls += 1;
+        await pending;
+        return true;
+      },
+    }, null);
+
+    const requests = Array.from({ length: 6 }, () => adapter.watchRewarded('instant_task'));
+    await Promise.resolve();
+    expect(calls).toBe(5);
+    expect(adapter.getAdsToday()).toBe(0);
+    release();
+
+    const results = await Promise.all(requests);
+    expect(results.filter((result) => result.granted)).toHaveLength(5);
+    expect(results.filter((result) => result.reason === 'daily_limit')).toHaveLength(1);
+    expect(adapter.getAdsToday()).toBe(5);
+  });
 });
