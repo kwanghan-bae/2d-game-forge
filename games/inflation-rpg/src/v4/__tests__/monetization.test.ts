@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createV4MonetizationAdapter, V4MonetizationAdapter } from '../monetization';
+import { createV4MonetizationAdapter, V4_DAILY_REWARDED_LIMIT, V4MonetizationAdapter } from '../monetization';
 
 describe('v4 monetization adapter', () => {
   it('limits rewarded ads to five successful views and never blocks play', async () => {
@@ -23,6 +23,22 @@ describe('v4 monetization adapter', () => {
     const adapter = new V4MonetizationAdapter(null, { purchase: async () => 'purchased' });
     expect((await adapter.buyAdFree()).granted).toBe(true);
     expect(adapter.isAdFree()).toBe(true);
+  });
+
+  it('removes the rewarded provider and daily cap after ad-free purchase', async () => {
+    let providerCalls = 0;
+    const adapter = new V4MonetizationAdapter({
+      showRewarded: async () => { providerCalls += 1; return false; },
+    }, { purchase: async () => 'purchased' });
+
+    expect((await adapter.buyAdFree()).granted).toBe(true);
+    const results = await Promise.all(
+      Array.from({ length: V4_DAILY_REWARDED_LIMIT + 2 }, () => adapter.watchRewarded('offline_double')),
+    );
+
+    expect(results.every((result) => result.granted)).toBe(true);
+    expect(providerCalls).toBe(0);
+    expect(adapter.getAdsToday()).toBe(0);
   });
 
   it('bridges the existing MonetizationService contract without leaking provider details into V4', async () => {

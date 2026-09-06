@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   cancelFacilityTask,
   confirmPendingExpedition,
@@ -31,6 +31,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [clock, setClock] = useState(() => Date.now());
   const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
   const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
+  const offlineRewardClaimInFlight = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -111,10 +112,16 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, [monetization]);
 
   const doubleOfflineReward = useCallback(async () => {
-    if (!offlineSummary || offlineRewardDoubled || !(await watchRewarded('offline_double'))) return;
-    const next = grantOfflineResourceBonus(save, offlineSummary.resourcesGained, Date.now());
-    commit(next, '오프라인 재화 보상을 2배로 적용했습니다.');
-    setOfflineRewardDoubled(true);
+    if (!offlineSummary || offlineRewardDoubled || offlineRewardClaimInFlight.current) return;
+    offlineRewardClaimInFlight.current = true;
+    try {
+      if (!(await watchRewarded('offline_double'))) return;
+      const next = grantOfflineResourceBonus(save, offlineSummary.resourcesGained, Date.now());
+      commit(next, '오프라인 재화 보상을 2배로 적용했습니다.');
+      setOfflineRewardDoubled(true);
+    } finally {
+      offlineRewardClaimInFlight.current = false;
+    }
   }, [commit, offlineRewardDoubled, offlineSummary, save, watchRewarded]);
 
   const instantTask = useCallback(async (facilityId: FacilityId) => {
@@ -191,6 +198,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     restSupportAgent,
     rejuvenate,
     monetizationAvailable: Boolean(monetization),
+    adFree: monetization?.isAdFree() ?? false,
     adsToday: monetization?.getAdsToday() ?? 0,
     offlineRewardDoubled,
     doubleOfflineReward,

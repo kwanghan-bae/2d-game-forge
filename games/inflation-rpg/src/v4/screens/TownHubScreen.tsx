@@ -15,6 +15,7 @@ interface Props {
   onNavigate: (screen: 'hero' | 'expedition' | 'saga') => void;
   onIntervention: (type: InterventionType) => void;
   monetizationAvailable: boolean;
+  adFree: boolean;
   adsToday: number;
   onInterventionCharge: () => void;
   onBuyAdFree: () => void;
@@ -41,7 +42,7 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
   const hero = save.run.hero;
   return (
     <main className="v4-container" data-testid="v4-town-hub">
@@ -165,11 +166,11 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
       </section>
 
       {monetizationAvailable && <section className="v4-panel">
-        <h2>후원 혜택</h2>
-        <p>오늘 보상형 광고 {adsToday}/5회 · 게임 진행을 막지 않는 선택형 혜택입니다.</p>
+        <h2>후원 혜택 {adFree && <span className="v4-action">광고 제거 적용</span>}</h2>
+        <p>{adFree ? '광고 제거 구매가 적용되었습니다. 보상 혜택을 계속 사용할 수 있습니다.' : `오늘 보상형 광고 ${adsToday}/5회 · 게임 진행을 막지 않는 선택형 혜택입니다.`}</p>
         <div className="v4-button-row">
-          <button type="button" className="v4-btn v4-btn--quiet" disabled={adsToday >= 5} onClick={onInterventionCharge}>개입 충전 광고</button>
-          <button type="button" className="v4-btn v4-btn--quiet" onClick={onBuyAdFree}>광고 제거 구매</button>
+          <button type="button" className="v4-btn v4-btn--quiet" disabled={!adFree && adsToday >= 5} onClick={onInterventionCharge}>{adFree ? '개입 충전' : '개입 충전 광고'}</button>
+          {!adFree && <button type="button" className="v4-btn v4-btn--quiet" onClick={onBuyAdFree}>광고 제거 구매</button>}
         </div>
       </section>}
     </main>

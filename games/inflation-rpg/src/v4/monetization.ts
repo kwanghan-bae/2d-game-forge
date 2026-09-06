@@ -185,6 +185,7 @@ export class V4MonetizationAdapter {
 
   async watchRewarded(placement: V4RewardedPlacement): Promise<V4MonetizationResult> {
     this.resetForCurrentDay();
+    if (this.adFree) return { granted: true, reason: 'granted' };
     if (this.adsToday + this.rewardedInFlight >= V4_DAILY_REWARDED_LIMIT) {
       return { granted: false, reason: 'daily_limit' };
     }
