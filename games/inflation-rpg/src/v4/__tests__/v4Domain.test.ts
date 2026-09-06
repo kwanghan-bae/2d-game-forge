@@ -1121,6 +1121,26 @@ describe('v4 save and domain', () => {
     expect(result.snapshot).toEqual(save.run.hero);
   });
 
+  it('keeps battle results finite for malformed runtime input', () => {
+    const save = createInitialV4Save(113);
+    const result = createV4HeroRuntime(save.run.hero).resolveBattle({
+      heroAtk: Number.NaN,
+      heroDef: Number.POSITIVE_INFINITY,
+      heroHp: Number.NaN,
+      enemyHp: Number.NaN,
+      enemyAtk: Number.NEGATIVE_INFINITY,
+      maxTurns: 'many' as never,
+    });
+
+    expect(result.won).toBe(false);
+    expect([
+      result.turns,
+      result.totalDamageDealt,
+      result.totalDamageTaken,
+      result.heroRemainingHp,
+    ].every((value) => Number.isFinite(value))).toBe(true);
+  });
+
   it('carries V3 hit variance, crits, and defense mitigation into V4 battles', () => {
     const critical = createInitialV4Save(11);
     critical.run.hero.critRateBase = 1;

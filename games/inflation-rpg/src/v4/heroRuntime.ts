@@ -33,6 +33,10 @@ function defenseReduction(defense: number): number {
   return Math.min(0.9, safeDefense / (safeDefense + 100));
 }
 
+function nonNegativeFinite(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
+}
+
 /**
  * V4 boundary around the V3 pure hero decisions/lifecycle rules.
  * It deliberately does not import CycleControllerV2 or mutate the V3 store.
@@ -56,19 +60,24 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
     },
 
     resolveBattle(input: BattleInput): BattleResult {
-      let heroHp = Math.max(0, input.heroHp);
-      let enemyHp = Math.max(0, input.enemyHp);
+      let heroHp = nonNegativeFinite(input.heroHp, 0);
+      let enemyHp = nonNegativeFinite(input.enemyHp, 1);
       let turns = 0;
       let totalDamageDealt = 0;
       let totalDamageTaken = 0;
-      const maxTurns = input.maxTurns ?? 100;
+      const heroAtk = nonNegativeFinite(input.heroAtk, 0);
+      const heroDef = nonNegativeFinite(input.heroDef, 0);
+      const enemyAtk = nonNegativeFinite(input.enemyAtk, 0);
+      const maxTurns = typeof input.maxTurns === 'number' && Number.isFinite(input.maxTurns)
+        ? Math.max(0, Math.floor(input.maxTurns))
+        : 100;
 
       while (heroHp > 0 && enemyHp > 0 && turns < maxTurns) {
         turns += 1;
         const turnKey = `${snapshot.name}:${snapshot.age}:${turns}:${input.heroAtk}:${input.enemyHp}`;
         const critChance = Math.max(0, Math.min(1, snapshot.critRateBase));
         const dealt = Math.max(1, resolvePlayerHit({
-          playerATK: Math.max(0, input.heroAtk),
+          playerATK: heroAtk,
           crit: deterministicRoll(`${turnKey}:crit`) < critChance,
           rngRoll: deterministicRoll(`${turnKey}:damage`),
         }));
@@ -76,8 +85,8 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
         totalDamageDealt += dealt;
         if (enemyHp <= 0) break;
         const taken = Math.max(1, resolveDamageTaken({
-          enemyATK: Math.max(0, input.enemyAtk),
-          reduction: defenseReduction(input.heroDef),
+          enemyATK: enemyAtk,
+          reduction: defenseReduction(heroDef),
         }));
         heroHp = Math.max(0, heroHp - taken);
         totalDamageTaken += taken;
