@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '../gameStore';
+import { createEmptyRunStatistics } from '../../overworld/encounter/RunStatistics';
 
 describe('trackRunStats — run_stat quest progression', () => {
   beforeEach(() => {
@@ -54,5 +55,14 @@ describe('trackRunStats — run_stat quest progression', () => {
     const goldAfter = useGameStore.getState().meta.gold;
     // q-stat-burst-1 reward: 15000 gold
     expect(goldAfter - goldBefore).toBe(15000);
+  });
+
+  it('accepts the concrete end-of-cycle statistics snapshot', () => {
+    const stats = createEmptyRunStatistics();
+    stats.burstCount = 3;
+
+    useGameStore.getState().trackRunStats(stats);
+
+    expect(useGameStore.getState().meta.questsCompleted).toContain('q-stat-burst-1');
   });
 });

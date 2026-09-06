@@ -4,8 +4,30 @@
  */
 import { LATE_GAME_DENSITY_THRESHOLD } from './constants';
 
+export type EventGateId =
+  | 'event_trial_grounds'
+  | 'event_rain_sanctuary'
+  | 'event_fog_ambush'
+  | 'event_storm_nexus'
+  | 'event_wind_gale'
+  | 'event_snow_drift'
+  | 'event_clear_sky_path'
+  | 'event_ancient_colosseum'
+  | 'event_void_rift'
+  | 'event_temporal_fissure'
+  | 'event_abyssal_convergence'
+  | 'event_titan_arena'
+  | 'event_crimson_tithe'
+  | 'event_gold_crucible'
+  | 'event_astral_paradox'
+  | 'event_soul_forge'
+  | 'event_ascension_trial'
+  | 'event_echo_memory'
+  | 'event_shard_fusion'
+  | 'event_endgame_surge';
+
 export interface EventGateDef {
-  id: string;
+  id: EventGateId;
   minTotalFights: number;
   chance: number;
   weatherCondition?: string; // C770: only trigger when current weather matches

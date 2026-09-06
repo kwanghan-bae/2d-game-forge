@@ -4,7 +4,7 @@
  * Pure data structure, no side effects.
  */
 
-export type ChoiceCategory = 'aggressive' | 'defensive' | 'greedy';
+export type ChoiceCategory = 'aggressive' | 'defensive' | 'greedy' | 'balanced';
 
 export interface ChoiceRecord {
   fight: number;

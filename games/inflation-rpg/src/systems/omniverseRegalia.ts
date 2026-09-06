@@ -88,6 +88,10 @@ export interface OmniverseRegaliaPerks {
   totalRegaliaCount: number;
 }
 
+// Compatibility name used by the combat integration layer. Keep the
+// catalog-facing name canonical while exposing the older public contract.
+export type ForgedRegaliaPerks = OmniverseRegaliaPerks;
+
 /**
  * Returns the definition of a specific Omniverse Regalia.
  */

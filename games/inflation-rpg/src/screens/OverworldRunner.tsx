@@ -166,7 +166,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [isNight, setIsNight] = useState(false);
   const [inspirationRemaining, setInspirationRemaining] = useState(0);
   const [influencingTraits, setInfluencingTraits] = useState<TraitId[]>([]);
-  const [activeEvents, setActiveEvents] = useState<ActiveEventState>({ trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0, stormNexusRemaining: 0, rainSanctuaryRemaining: 0, fogAmbushRemaining: 0, windGaleRemaining: 0, snowDriftRemaining: 0, abyssalConvergenceRemaining: 0, temporalFissureRemaining: 0, titanArenaRemaining: 0, goldCrucibleRemaining: 0, astralParadoxRemaining: 0, eventMomentumAtkRemaining: 0, eventMomentumDensityRemaining: 0 });
+  const [activeEvents, setActiveEvents] = useState<ActiveEventState>({ trialGroundsRemaining: 0, colosseumRemaining: 0, voidRiftRemaining: 0, stormNexusRemaining: 0, rainSanctuaryRemaining: 0, fogAmbushRemaining: 0, windGaleRemaining: 0, snowDriftRemaining: 0, abyssalConvergenceRemaining: 0, temporalFissureRemaining: 0, titanArenaRemaining: 0, crimsonTitheRemaining: 0, goldCrucibleRemaining: 0, astralParadoxRemaining: 0, soulForgeRemaining: 0, eventMomentumAtkRemaining: 0, eventMomentumDensityRemaining: 0 });
   const [currentDestination, setCurrentDestination] = useState<import('../data/landmarks').LandmarkKind | null>(null);
   const [showAtkBreakdown, setShowAtkBreakdown] = useState(false);
   const [spendModalOpen, setSpendModalOpen] = useState(false);
@@ -312,7 +312,9 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           }
           const critEv = evs.find(e => e.type === 'critical_hit');
           if (critEv && critEv.type === 'critical_hit') {
-            damageFloaterRef.current.addEntry({ value: critEv.damage, type: 'critical' });
+            // `damage` was added after the original notification contract;
+            // keep old/replayed events visible with their combo streak value.
+            damageFloaterRef.current.addEntry({ value: critEv.damage ?? critEv.streak, type: 'critical' });
           }
           const closeCallEv = evs.find(e => e.type === 'close_call');
           if (closeCallEv && closeCallEv.type === 'close_call') {
@@ -333,23 +335,23 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
             setTimeout(() => setStatDeltaEntries([]), 1500);
           }
           // C707: ExpBreakdownBadge + EventChoiceToast wiring
-          const cachedBreakdown = engineRef.current?.getExpBreakdown?.() ?? null;
+          const cachedBreakdown = controller.getExpBreakdown() ?? null;
           if (cachedBreakdown) setExpBreakdown(cachedBreakdown);
           // C712: HealBreakdownBadge wiring
-          const cachedHeal = engineRef.current?.getHealResult?.() ?? null;
+          const cachedHeal = controller.getHealResult() ?? null;
           if (cachedHeal && cachedHeal.totalHeal > 0) setHealResult(cachedHeal);
           // C725: WeatherHudIndicator wiring
-          setCurrentWeather(engineRef.current?.getWeather?.() ?? 'normal');
+          setCurrentWeather(controller.getWeather() ?? 'normal');
           // C735: Night indicator wiring
-          setIsNight(engineRef.current?.getIsNight?.() ?? false);
+          setIsNight(controller.getIsNight() ?? false);
           // C753: Inspiration badge wiring
-          setInspirationRemaining(engineRef.current?.getInspirationRemaining?.() ?? 0);
+          setInspirationRemaining(controller.getInspirationRemaining() ?? 0);
           // C761: Trait influence badge wiring
           setInfluencingTraits([...(getSceneRef.current?.()?.getLastInfluencingTraits?.() ?? [])] as TraitId[]);
           // C798: Active event badges (aggregate accessor)
           setActiveEvents(controller.getActiveEventState());
           // C824: Chain flavor toast wiring
-          const chainFlavorText = engineRef.current?.getLastChainFlavor?.() ?? null;
+          const chainFlavorText = controller.getLastChainFlavor() ?? null;
           if (chainFlavorText) setChainFlavor(chainFlavorText);
           // C827: Risk Gambit toast wiring
           const gambitEv = evs.find(e => e.type === 'event_risk_gambit') as { type: string; accepted: boolean; hpCost: number; goldReward: number } | undefined;

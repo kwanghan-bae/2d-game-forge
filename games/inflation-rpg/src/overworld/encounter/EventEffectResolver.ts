@@ -22,6 +22,18 @@ export interface EventEffectContext {
   rngInt: (n: number) => number;
 }
 
+export type EventSubType =
+  | 'event_merchant_buy'
+  | 'event_merchant_sell'
+  | 'event_merchant_ignore'
+  | 'event_gambler_win'
+  | 'event_gambler_lose_high'
+  | 'event_gambler_lose_low'
+  | 'event_gambler_walk'
+  | 'event_altar_sacrifice'
+  | 'event_altar_pray'
+  | 'event_altar_leave';
+
 export interface EventEffectResult {
   goldDelta: number;
   hpDelta: number;
@@ -29,7 +41,7 @@ export interface EventEffectResult {
   newRelics: number[];
   newRelicLevels: number[];
   cursedAltarActivated: boolean;
-  eventSubType: string | null;
+  eventSubType: EventSubType | null;
 }
 
 const EMPTY_RESULT: EventEffectResult = {

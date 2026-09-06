@@ -15,6 +15,15 @@ export class SeededRng {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
 
+  /** Readable aliases used by systems that consume a unit interval roll. */
+  float(): number {
+    return this.next();
+  }
+
+  random(): number {
+    return this.next();
+  }
+
   int(maxExclusive: number): number {
     return Math.floor(this.next() * maxExclusive);
   }

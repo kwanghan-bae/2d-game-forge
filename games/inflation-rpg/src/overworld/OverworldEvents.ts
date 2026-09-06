@@ -6,8 +6,10 @@ export type OverworldEvent =
   | { type: 'tick';            t: number }
   | { type: 'arrived_at';      landmarkId: string; landmarkKind: LandmarkKind }
   | { type: 'danger_zone_entered'; enemyId: string }
+  | { type: 'danger_zone_choice' }
+  | { type: 'danger_retreat'; cost: number }
   | { type: 'combo_streak'; streak: number; bonusMul: number }
-  | { type: 'critical_hit'; streak: number }
+  | { type: 'critical_hit'; streak: number; damage?: number }
   | { type: 'overkill'; enemyId: string }
   | { type: 'close_call'; hpRemaining: number; healed: number }
   | { type: 'drop_upgraded'; dropId: string }
@@ -26,6 +28,7 @@ export type OverworldEvent =
   | { type: 'treasure_goblin'; enemyId: string }
   | { type: 'village_shop_purchase'; cost: number; effect: string }
   | { type: 'boss_vault'; gold: number }
+  | { type: 'gold_rain' }
   | { type: 'gold_saved' }
   | { type: 'lucky_treasure'; gold: number }
   | { type: 'prestige'; count: number }
@@ -125,6 +128,55 @@ export type OverworldEvent =
   | { type: 'event_risk_gambit'; accepted: boolean; hpCost: number; goldReward: number }
   // C832: Wandering Merchant — heal or ATK buff
   | { type: 'event_wandering_merchant'; choice: 'heal' | 'atk' | 'gamble_win' | 'gamble_lose'; value: number }
+  // C834: Post-combat shrine chain result
+  | { type: 'event_treasure_shrine'; choice: import('./encounter/EventChoiceEngine').ShrineChoice }
+  | { type: 'event_treasure_shrine_pending' }
+  | { type: 'event_chain_reward' }
+  // Legacy post-combat event notifications emitted without extra payload.
+  | { type: 'event_merchant' }
+  | { type: 'event_merchant_buy' }
+  | { type: 'event_merchant_sell' }
+  | { type: 'event_merchant_ignore' }
+  | { type: 'event_gambler' }
+  | { type: 'event_gambler_win' }
+  | { type: 'event_gambler_lose_high' }
+  | { type: 'event_gambler_lose_low' }
+  | { type: 'event_gambler_walk' }
+  | { type: 'event_blacksmith' }
+  | { type: 'event_cursed_altar' }
+  | { type: 'event_altar_sacrifice' }
+  | { type: 'event_altar_pray' }
+  | { type: 'event_altar_leave' }
+  | { type: 'event_fairy' }
+  | { type: 'event_rest_shrine' }
+  | { type: 'event_trap' }
+  | { type: 'event_trap_avoided' }
+  | { type: 'event_healer' }
+  | { type: 'event_echo' }
+  | { type: 'event_inspiration' }
+  | { type: 'event_mentor' }
+  | { type: 'event_time_rift' }
+  // Phase-gated weather and late-game event notifications.
+  | { type: 'event_trial_grounds' }
+  | { type: 'event_rain_sanctuary' }
+  | { type: 'event_fog_ambush' }
+  | { type: 'event_storm_nexus' }
+  | { type: 'event_wind_gale' }
+  | { type: 'event_snow_drift' }
+  | { type: 'event_clear_sky_path' }
+  | { type: 'event_ancient_colosseum' }
+  | { type: 'event_void_rift' }
+  | { type: 'event_temporal_fissure' }
+  | { type: 'event_abyssal_convergence' }
+  | { type: 'event_titan_arena' }
+  | { type: 'event_crimson_tithe' }
+  | { type: 'event_gold_crucible' }
+  | { type: 'event_astral_paradox' }
+  | { type: 'event_soul_forge' }
+  | { type: 'event_ascension_trial' }
+  | { type: 'event_echo_memory' }
+  | { type: 'event_shard_fusion' }
+  | { type: 'event_endgame_surge' }
   // C841: Sparring Grounds — skill-check micro-event
   | { type: 'event_sparring_grounds'; won: boolean; expGained: number; hpLost: number; morphGranted?: boolean }
   // C863: Storm drain visual feedback
@@ -155,10 +207,22 @@ export type OverworldEvent =
   | { type: 'crossroads_choice' }
   // C881: Wandering Merchant player choice pending
   | { type: 'wandering_merchant_choice' }
+  // C905/C921/C926: late mid-game choice prompts
+  | { type: 'first_trial_choice' }
+  | { type: 'wandering_sage_choice' }
+  | { type: 'elders_judgment_choice' }
   // C883: Reputation payoff event
   | { type: 'event_reputation'; style: string; value: number }
   // C887: Veteran's Trial consequence event
   | { type: 'event_veterans_trial'; style: string; value: number }
+  // C896: Final Reckoning consequence event
+  | { type: 'event_final_reckoning'; style: string; value: number }
+  // C878: Resolved mid-game choices
+  | { type: 'event_mercenary_offer'; choice: 'accept' | 'decline'; goldPaid: number; duration: number }
+  | { type: 'event_crossroads'; path: 'atk' | 'exp' | 'gold'; duration?: number; goldBurst?: number }
+  | { type: 'event_first_trial'; style: 'heal' | 'atk' | 'exp'; value: number }
+  | { type: 'event_wandering_sage'; style: 'exp' | 'atk'; value: number }
+  | { type: 'event_elders_judgment'; choice: 'double_down' | 'diversify'; style: string; value: number }
   // C890: Last Stand Challenge player choice
   | { type: 'event_last_stand'; choice: string; value: number }
   // C893a: Last Stand choice trigger

@@ -917,6 +917,15 @@ export class CycleControllerV2 {
   getImprintedRelic() { return this.encounter.getImprintedRelic(); }
   getPrestigeCount() { return this.encounter.getPrestigeCount(); }
   getAtkBreakdownInput() { return this.encounter.getAtkBreakdownInput(); }
+  // C707/C712/C725/C735/C753/C821: relay encounter presentation state to
+  // OverworldRunner. The runner owns the controller, so it must not depend on
+  // a scene-local EncounterEngine reference that is never mounted.
+  getExpBreakdown() { return this.encounter.getExpBreakdown(); }
+  getHealResult() { return this.encounter.getHealResult(); }
+  getWeather() { return this.encounter.getWeather(); }
+  getIsNight() { return this.encounter.getIsNight(); }
+  getInspirationRemaining() { return this.encounter.getInspirationRemaining(); }
+  getLastChainFlavor() { return this.encounter.getLastChainFlavor(); }
   getCombatSummary() { return this.encounter.getCombatSummary(); }
   hasPendingShrineChoice() { return this.encounter.hasPendingShrineChoice(); }
   setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }

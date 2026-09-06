@@ -25,6 +25,14 @@ describe('SeededRng', () => {
     }
   });
 
+  it('float() and random() are deterministic aliases for next()', () => {
+    const floatRng = new SeededRng(321);
+    const randomRng = new SeededRng(321);
+    for (let i = 0; i < 100; i++) {
+      expect(floatRng.float()).toBe(randomRng.random());
+    }
+  });
+
   it('int(maxExclusive) returns integer in [0, max)', () => {
     const rng = new SeededRng(7);
     for (let i = 0; i < 100; i++) {

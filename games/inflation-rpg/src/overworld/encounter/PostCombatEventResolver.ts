@@ -64,11 +64,35 @@ import {
   MID_GAME_PITY_FIGHT_MIN,
 } from './constants-events';
 import { getInspirationConfig } from './ConstantPhaseProfile';
-import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul } from './EventGateConfig';
+import { getAvailableLateEvents, getAvailableMidEvents, getLateGameDensityMul, type EventGateId } from './EventGateConfig';
+import type { OverworldEvent } from '../OverworldEvents';
 
-// C792: Declarative late-event registry — add new events here (1 line each)
-type LateEventResult = { [K: string]: unknown };
-const LATE_EVENT_REGISTRY: Record<string, (r: LateEventResult) => void> = {
+export type PostCombatEventType = EventGateId
+  | 'event_trap'
+  | 'event_trap_avoided'
+  | 'event_treasure_shrine'
+  | 'event_treasure_shrine_pending'
+  | 'event_rest_shrine'
+  | 'event_merchant'
+  | 'event_gambler'
+  | 'event_blacksmith'
+  | 'event_cursed_altar'
+  | 'event_fairy'
+  | 'event_mentor'
+  | 'event_healer'
+  | 'event_echo'
+  | 'event_inspiration'
+  | 'event_time_rift'
+  | 'event_risk_gambit'
+  | 'event_sparring_grounds'
+  | 'event_mercenary_offer'
+  | 'event_wandering_merchant'
+  | 'event_crossroads';
+
+// C792: Declarative late-event registry — add new events here (1 line each).
+// Keep the registry tied to the concrete result shape so adding a handler
+// cannot silently write a field that PostCombatResult does not expose.
+const LATE_EVENT_REGISTRY: Record<string, (r: PostCombatResult) => void> = {
   event_ancient_colosseum: (r) => { r.colosseumPending = true; },
   event_void_rift: (r) => { r.voidRiftTriggered = true; },
   event_abyssal_convergence: (r) => { r.abyssalConvergencePending = true; },
@@ -118,7 +142,7 @@ export interface PostCombatContext {
 }
 
 export interface PostCombatResult {
-  eventType: string | null;
+  eventType: PostCombatEventType | null;
   heroHpDelta: number;
   heroGoldDelta: number;
   heroAtkDelta: number;

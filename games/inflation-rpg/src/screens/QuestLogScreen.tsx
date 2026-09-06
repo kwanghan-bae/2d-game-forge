@@ -11,8 +11,14 @@ interface Props {
 export function QuestLogScreen({ onBack }: Props) {
   const questsCompleted = useGameStore(s => s.meta.questsCompleted ?? []);
   const questProgress = useGameStore(s => s.meta.questProgress ?? {});
-  const jpPerksOwned = useGameStore(s => s.meta.jpPerksOwned ?? []);
-  const hasInsight = jpPerksOwned.includes('quest_insight');
+  const characterId = useGameStore(s => s.run.characterId);
+  const jpPerksOwned = useGameStore(s => s.meta.jpPerksOwned ?? {});
+  // The persisted V3 shape is character-keyed. Accept the old flat-array
+  // fixture/legacy payload as a read-only fallback so a stale local save does
+  // not crash the quest log while the normal path remains schema-correct.
+  const hasInsight = Array.isArray(jpPerksOwned)
+    ? jpPerksOwned.includes('quest_insight')
+    : (jpPerksOwned[characterId] ?? []).includes('quest_insight');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
 
   const regions = ['all', ...Array.from(new Set(QUESTS.map(q => q.regionId)))];

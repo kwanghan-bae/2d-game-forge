@@ -261,16 +261,23 @@ describe('EncounterEngine — C122 critical hit', () => {
   it('critical_hit can fire when combo >= 5 (probabilistic)', () => {
     // Try multiple seeds — at least one should produce a crit within 100 fights
     let critSeen = false;
+    let critDamage = 0;
     for (const seed of [42, 7, 99, 123, 256]) {
       const hero = HeroEntity.create({ seed, heroHpMax: 100, heroAtkBase: 100000 });
       const engine = new EncounterEngine(new SeededRng(seed));
       for (let i = 0; i < 100; i++) {
         const evs = engine.resolveEncounter(hero, 'enemy', `e_${i}`);
-        if (evs.some(e => e.type === 'critical_hit')) { critSeen = true; break; }
+        const crit = evs.find(e => e.type === 'critical_hit');
+        if (crit?.type === 'critical_hit') {
+          critSeen = true;
+          critDamage = crit.damage ?? 0;
+          break;
+        }
       }
       if (critSeen) break;
     }
     expect(critSeen).toBe(true);
+    expect(critDamage).toBeGreaterThan(0);
   });
 });
 

@@ -65,4 +65,9 @@ describe('classifyChoice', () => {
   it('merchant heal = defensive', () => expect(classifyChoice('merchant', 'heal')).toBe('defensive'));
   it('merchant atk = aggressive', () => expect(classifyChoice('merchant', 'atk')).toBe('aggressive'));
   it('merchant gamble = greedy', () => expect(classifyChoice('merchant', 'gamble')).toBe('greedy'));
+  it('classifies balance-oriented narrative choices as balanced', () => {
+    expect(classifyChoice('first_trial', 'exp')).toBe('balanced');
+    expect(classifyChoice('wandering_sage', 'exp')).toBe('balanced');
+    expect(classifyChoice('elders_judgment', 'diversify')).toBe('balanced');
+  });
 });

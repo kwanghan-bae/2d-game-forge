@@ -42,6 +42,7 @@ import { ACHIEVEMENT_CATALOG, ALL_ACHIEVEMENT_IDS } from '../data/achievementsCa
 import { getTierUnlockBonus } from '../data/claimerTier';
 import type { AchievementProgress } from '../data/achievementsTypes';
 import { createInitialPets } from '../systems/petSystem';
+import type { RunStatisticsData } from '../overworld/encounter/RunStatistics';
 
 const INITIAL_ALLOCATED: AllocatedStats = { hp: 0, atk: 0, def: 0, agi: 0, luc: 0 };
 
@@ -232,7 +233,7 @@ interface GameStore {
   trackKill: (monsterId: string) => void;
   trackBossDefeat: (bossId: string) => void;
   trackItemCollect: (equipmentId: string) => void;
-  trackRunStats: (stats: Record<string, number>) => void;
+  trackRunStats: (stats: Record<string, number> | RunStatisticsData) => void;
   markRegionVisited: (regionId: string) => void;
   setTutorialStep: (index: number) => void;
   advanceTutorial: () => void;
@@ -1070,7 +1071,8 @@ export const useGameStore = create<GameStore>()(
           if (state.meta.questsCompleted.includes(q.id)) continue;
           const field = q.target.statField;
           if (!field) continue;
-          const value = stats[field] ?? 0;
+          const rawValue = (stats as Record<string, unknown>)[field];
+          const value = typeof rawValue === 'number' ? rawValue : 0;
           if (value >= q.target.count) {
             set((s) => ({
               meta: { ...s.meta, questProgress: { ...s.meta.questProgress, [q.id]: value } },
