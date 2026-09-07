@@ -24,8 +24,14 @@ describe('v4 monetization adapter', () => {
   it('recognizes only the ad-free product during purchase restoration', () => {
     expect(hasV4AdFreeEntitlement([])).toBe(false);
     expect(hasV4AdFreeEntitlement([{ productId: 'crack_stones' }])).toBe(false);
-    expect(hasV4AdFreeEntitlement([{ productId: 'ad_free' }])).toBe(true);
-    expect(hasV4AdFreeEntitlement([{ productId: 'ad_free' }, { productId: 'other' }])).toBe(true);
+    expect(hasV4AdFreeEntitlement([{
+      productId: 'ad_free', purchaseToken: 'tok_valid', purchaseTime: 0, acknowledged: true,
+    }])).toBe(true);
+    expect(hasV4AdFreeEntitlement([{ productId: 'ad_free', purchaseToken: '' }])).toBe(false);
+    expect(hasV4AdFreeEntitlement([{ productId: 'ad_free', purchaseToken: 'tok_valid' }])).toBe(false);
+    expect(hasV4AdFreeEntitlement([{
+      productId: 'ad_free', purchaseToken: 'tok_valid', purchaseTime: 0, acknowledged: true,
+    }, { productId: 'other', purchaseToken: 'tok_other', purchaseTime: 0, acknowledged: true }])).toBe(true);
   });
 
   it('limits rewarded ads to five successful views and never blocks play', async () => {

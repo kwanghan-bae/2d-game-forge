@@ -8,6 +8,22 @@ import type {
 import type { IapProductId } from './IapTypes';
 import { IAP_PRODUCT_IDS } from './IapCatalog';
 
+function isKnownProductId(value: unknown): value is IapProductId {
+  return typeof value === 'string' && IAP_PRODUCT_IDS.includes(value as IapProductId);
+}
+
+export function isValidIapPurchaseInfo(value: unknown): value is PurchaseInfo {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const purchase = value as Partial<PurchaseInfo>;
+  return isKnownProductId(purchase.productId)
+    && typeof purchase.purchaseToken === 'string'
+    && purchase.purchaseToken.trim().length > 0
+    && typeof purchase.purchaseTime === 'number'
+    && Number.isFinite(purchase.purchaseTime)
+    && purchase.purchaseTime >= 0
+    && typeof purchase.acknowledged === 'boolean';
+}
+
 type PluginFacet = Pick<
   OnestoreIapPlugin,
   'initialize' | 'queryProducts' | 'purchase' | 'acknowledge' | 'restorePurchases' | 'addListener'
@@ -62,6 +78,13 @@ export class IapManager {
         errorMessage: '구매 토큰이 없어 결제를 확인하지 못했습니다.',
       };
     }
+    if (!isValidIapPurchaseInfo(purchase)) {
+      return {
+        ...result,
+        status: 'failed',
+        errorMessage: '구매 기록 형식이 올바르지 않아 결제를 확인하지 못했습니다.',
+      };
+    }
 
     try {
       await this.plugin.acknowledge({ purchaseToken: purchase.purchaseToken });
@@ -77,7 +100,8 @@ export class IapManager {
   }
 
   async restorePurchases(): Promise<PurchaseInfo[]> {
-    const { purchases } = await this.plugin.restorePurchases();
-    return purchases;
+    const result = await this.plugin.restorePurchases();
+    const purchases = Array.isArray(result?.purchases) ? result.purchases : [];
+    return purchases.filter(isValidIapPurchaseInfo);
   }
 }

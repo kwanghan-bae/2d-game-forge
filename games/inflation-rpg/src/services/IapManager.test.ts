@@ -139,4 +139,26 @@ describe('IapManager', () => {
     expect(result).toHaveLength(1);
     expect(result[0]!.productId).toBe('ad_free');
   });
+
+  it('filters malformed restore records before they can grant entitlement', async () => {
+    plugin.restorePurchases.mockResolvedValue({
+      purchases: [
+        { productId: 'ad_free', purchaseToken: '', purchaseTime: 0, acknowledged: true },
+        { productId: 'unknown_product', purchaseToken: 'tok_unknown', purchaseTime: 0, acknowledged: true },
+        { productId: 'ad_free', purchaseToken: 'tok_valid', purchaseTime: 0, acknowledged: true },
+      ],
+    });
+
+    const result = await mgr.restorePurchases();
+
+    expect(result).toEqual([
+      { productId: 'ad_free', purchaseToken: 'tok_valid', purchaseTime: 0, acknowledged: true },
+    ]);
+  });
+
+  it('treats a malformed restore container as an empty safe result', async () => {
+    plugin.restorePurchases.mockResolvedValue({ purchases: undefined });
+
+    await expect(mgr.restorePurchases()).resolves.toEqual([]);
+  });
 });

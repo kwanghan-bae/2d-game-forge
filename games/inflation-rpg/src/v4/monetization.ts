@@ -35,9 +35,20 @@ function isRewardedPlacement(value: unknown): value is V4RewardedPlacement {
 }
 
 export function hasV4AdFreeEntitlement(
-  purchases: readonly { productId?: unknown }[],
+  purchases: readonly {
+    productId?: unknown;
+    purchaseToken?: unknown;
+    purchaseTime?: unknown;
+    acknowledged?: unknown;
+  }[],
 ): boolean {
-  return purchases.some((purchase) => purchase?.productId === 'ad_free');
+  return purchases.some((purchase) => purchase?.productId === 'ad_free'
+    && typeof purchase.purchaseToken === 'string'
+    && purchase.purchaseToken.trim().length > 0
+    && typeof purchase.purchaseTime === 'number'
+    && Number.isFinite(purchase.purchaseTime)
+    && purchase.purchaseTime >= 0
+    && typeof purchase.acknowledged === 'boolean');
 }
 
 function normalizeDailyUsage(count: number): number {
