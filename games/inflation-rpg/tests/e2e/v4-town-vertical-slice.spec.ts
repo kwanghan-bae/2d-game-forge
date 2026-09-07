@@ -15,6 +15,11 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-app').getByRole('heading', { name: '신의 마을: 영원의 후원자' })).toBeVisible();
     await expect(page.getByTestId('v4-town-hub')).toContainText('17세');
     await expect(page.getByText('다음 판단 · 원정 준비')).toBeVisible();
+    const layoutWidth = await page.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: document.documentElement.clientWidth,
+    }));
+    expect(layoutWidth.documentWidth).toBeLessThanOrEqual(layoutWidth.viewportWidth + 1);
 
     const firstTaskButton = page.getByRole('button', { name: '작업 시작' }).first();
     expect((await firstTaskButton.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);

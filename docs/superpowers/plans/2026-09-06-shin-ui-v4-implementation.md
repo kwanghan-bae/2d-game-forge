@@ -200,6 +200,7 @@ pnpm circular
 - dev-shell portal E2E에서 V4/legacy route가 각각 실제 V4App/V3 MainMenu를 마운트하는지 검증했다(4/4).
 - dev-shell 동적 게임 loader의 import/부팅 예외를 accessible 오류 상태로 격리하고, route cleanup 이후 늦게 도착한 promise의 마운트를 무시하도록 보강했다.
 - loader route가 바뀔 때 이전 게임의 오류 상태가 남지 않도록 effect lifecycle에서 오류 표시를 초기화했다.
+- V4 신규 저장 vertical-slice의 Chromium·iPhone14 smoke에서 document 가로 overflow가 발생하지 않는지 함께 검증했다.
 - 루트 README의 빠른 시작 안내도 V4 기본 제품과 V3 legacy 경로를 분리해 실제 포털 manifest와 일치시켰다.
 - 작업·원정 시작 시 완료 시각이 저장 가능한 정수 상한을 넘으면 재화 차감 없이 원본 저장을 보존한다.
 - staged 원정이 다음 단계의 완료 시각을 저장 상한 밖으로 밀어내는 경우 전투를 중복 정산하지 않고 현재 단계를 보존한다.
