@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
+
+const IDLE_TIMEOUT_MS = 4000;
 
 /**
  * C579: Treasure Shrine choice modal — player picks gold, exp, or heal.
@@ -6,8 +9,31 @@ import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
  */
 export function ShrineChoiceModal({ onClose }: { onClose: () => void }) {
   const controller = useCycleStoreV2(s => s.controller);
+  const [timeLeft, setTimeLeft] = useState(IDLE_TIMEOUT_MS);
+  const resolvedRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(current => {
+        if (resolvedRef.current) return 0;
+        if (current <= 100) {
+          resolvedRef.current = true;
+          // Gold is the predictable, non-destructive idle default.
+          controller?.setShrineChoice(0);
+          onCloseRef.current();
+          return 0;
+        }
+        return current - 100;
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, [controller]);
 
   const choose = (choice: 0 | 1 | 2) => {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
     if (controller) controller.setShrineChoice(choice);
     onClose();
   };
@@ -26,6 +52,12 @@ export function ShrineChoiceModal({ onClose }: { onClose: () => void }) {
         </div>
         <div style={{ fontSize: 14, color: '#ccc', marginBottom: 20 }}>
           축복을 선택하세요
+        </div>
+        <div style={{ height: 4, background: '#333', borderRadius: 2, marginBottom: 6, overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: '#ffd700', width: `${(timeLeft / IDLE_TIMEOUT_MS) * 100}%`, transition: 'width 0.1s linear' }} />
+        </div>
+        <div style={{ marginBottom: 16, fontSize: 11, color: '#888' }}>
+          {Math.ceil(timeLeft / 1000)}초 후 자동 황금 축복
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button

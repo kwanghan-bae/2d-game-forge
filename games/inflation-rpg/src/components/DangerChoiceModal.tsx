@@ -1,8 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import { useCycleStoreV2 } from '../overworld/cycleSliceV2';
 
 interface Props {
   onClose: () => void;
 }
+
+const IDLE_TIMEOUT_MS = 4000;
 
 /**
  * C604: Real-time danger zone fight/retreat choice modal.
@@ -10,19 +13,47 @@ interface Props {
  */
 export function DangerChoiceModal({ onClose }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
+  const [timeLeft, setTimeLeft] = useState(IDLE_TIMEOUT_MS);
+  const resolvedRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeLeft(current => {
+        if (resolvedRef.current) return 0;
+        if (current <= 100) {
+          resolvedRef.current = true;
+          // Full HP is the safest default for an idle run: keep the route
+          // moving instead of silently spending gold on a retreat.
+          controller?.setDangerChoice(false);
+          onCloseRef.current();
+          return 0;
+        }
+        return current - 100;
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, [controller]);
+
   if (!controller) return null;
 
   const hero = controller.getHero();
   const retreatCost = Math.max(50, hero.level * 3);
 
-  const handleFight = () => {
-    controller.setDangerChoice(false);
+  const handleChoice = (retreat: boolean) => {
+    if (resolvedRef.current) return;
+    resolvedRef.current = true;
+    controller.setDangerChoice(retreat);
     onClose();
   };
 
+  const handleFight = () => {
+    handleChoice(false);
+  };
+
   const handleRetreat = () => {
-    controller.setDangerChoice(true);
-    onClose();
+    handleChoice(true);
   };
 
   return (
@@ -41,6 +72,12 @@ export function DangerChoiceModal({ onClose }: Props) {
         </p>
         <div style={{ marginBottom: 12, fontSize: 12, color: '#aaa' }}>
           HP: {Math.round(hero.hp / hero.hpMax * 100)}%
+        </div>
+        <div style={{ height: 4, background: '#333', borderRadius: 2, marginBottom: 6, overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: '#f0c040', width: `${(timeLeft / IDLE_TIMEOUT_MS) * 100}%`, transition: 'width 0.1s linear' }} />
+        </div>
+        <div style={{ marginBottom: 12, fontSize: 11, color: '#888' }}>
+          {Math.ceil(timeLeft / 1000)}초 후 자동 전투
         </div>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button data-testid="danger-choice-fight" onClick={handleFight} style={{
