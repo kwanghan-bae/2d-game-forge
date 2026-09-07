@@ -212,6 +212,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const realmOverlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoRejuvTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const moveMul = getMoveSpeedMul(meta);
+  const speedRef = useRef<SpeedPreset>(1);
+  const moveMulRef = useRef(moveMul);
 
   const emitLightFloat = useCallback((amount: number) => {
     setLightFloats(prev => {
@@ -628,6 +630,10 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       setSceneSeasonRef.current = g.setSeason;
       setSceneCosmeticTintRef.current = g.setCosmeticTintOverride;
       getSceneRef.current = g.getScene;
+      // The HUD can be clicked before Phaser's async boot promise resolves.
+      // Apply the latest requested speed once the scene ref becomes available
+      // so the button never updates React state without updating Phaser.
+      g.setSpeed(speedRef.current * moveMulRef.current);
     });
 
     return () => {
@@ -656,6 +662,8 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   }, [status, controller, onCycleEnd, endCycle]);
 
   useEffect(() => {
+    speedRef.current = speed;
+    moveMulRef.current = moveMul;
     setSceneSpeedRef.current?.(speed * moveMul);
   }, [speed, moveMul]);
 
@@ -744,7 +752,11 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
               <button
                 key={s}
                 type="button"
-                onClick={() => setSpeed(s)}
+                onClick={() => {
+                  speedRef.current = s;
+                  setSpeed(s);
+                  setSceneSpeedRef.current?.(s * moveMulRef.current);
+                }}
                 data-testid={`speed-${s}x`}
                 data-active={speed === s ? 'true' : undefined}
                 style={speedBtnStyle(speed === s)}

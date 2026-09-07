@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+
+const phaserMock = vi.hoisted(() => ({
+  setSpeed: vi.fn(),
+}));
 
 // Phaser cannot run in test environments (no canvas/WebGL).
 // Mock it so the dynamic import inside bootPhaser never touches real Phaser.
@@ -7,7 +11,10 @@ import { render, screen } from '@testing-library/react';
 vi.mock('phaser', () => ({
   AUTO: 0,
   Game: class {
-    scene = { start: vi.fn() };
+    scene = {
+      start: vi.fn(),
+      getScene: vi.fn(() => ({ setSpeed: phaserMock.setSpeed })),
+    };
     destroy = vi.fn();
   },
   Scene: class { constructor(_key: string) {} },
@@ -24,7 +31,10 @@ import { OverworldRunner } from '../OverworldRunner';
 import { useCycleStoreV2 } from '../../overworld/cycleSliceV2';
 
 describe('OverworldRunner', () => {
-  beforeEach(() => useCycleStoreV2.getState().reset());
+  beforeEach(() => {
+    useCycleStoreV2.getState().reset();
+    phaserMock.setSpeed.mockClear();
+  });
 
   // V3-H B2: OverworldRunner now auto-starts a cycle on mount (idle state is
   // no longer a user-visible state). When mounted with no pre-existing cycle
@@ -68,5 +78,14 @@ describe('OverworldRunner', () => {
     const action = screen.getByTestId('hud-row-action');
     expect(action.contains(screen.getByTestId('open-spend-modal'))).toBe(true);
     expect(action.contains(screen.getByTestId('speed-buttons'))).toBe(true);
+  });
+
+  it('Phaser 부팅 완료 뒤에도 최신 속도를 씬에 적용한다', async () => {
+    render(<OverworldRunner onCycleEnd={() => {}} />);
+
+    await waitFor(() => expect(phaserMock.setSpeed).toHaveBeenCalledWith(1));
+    fireEvent.click(screen.getByTestId('speed-10x'));
+
+    await waitFor(() => expect(phaserMock.setSpeed).toHaveBeenLastCalledWith(10));
   });
 });
