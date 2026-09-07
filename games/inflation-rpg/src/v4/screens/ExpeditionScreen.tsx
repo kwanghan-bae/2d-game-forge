@@ -36,9 +36,8 @@ function formatCosts(cost: Partial<Record<V4CurrencyKey, number>>): string {
 }
 
 function formatFiniteNumber(value: unknown): string {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? value.toLocaleString('ko-KR')
-    : '0';
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '0';
+  return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))).toLocaleString('ko-KR');
 }
 
 function formatFiniteDuration(value: unknown): string {

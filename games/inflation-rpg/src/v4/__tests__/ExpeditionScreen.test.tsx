@@ -190,6 +190,26 @@ describe('V4 expedition result screen', () => {
     expect(result).toHaveTextContent('원정 결과의 준비 정보를 확인하세요.');
   });
 
+  it('does not present negative result stats as player-facing values', () => {
+    renderResult(baseResult({
+      outcome: 'defeat',
+      heroPower: -5,
+      recommendedPower: -1,
+      turns: -2,
+      totalDamageTaken: -3,
+    }));
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result).toHaveTextContent(/전투력\s*0/);
+    expect(result).toHaveTextContent(/\/ 권장\s*0/);
+    expect(result).toHaveTextContent(/전투\s*0턴/);
+    expect(result).toHaveTextContent('받은 피해 0');
+    expect(result.textContent).not.toContain('-5');
+    expect(result.textContent).not.toContain('-1');
+    expect(result.textContent).not.toContain('-2');
+    expect(result.textContent).not.toContain('-3');
+  });
+
   it('does not crash when an active expedition contains an inherited Realm key', () => {
     const save = createInitialV4Save(105);
     save.run.expedition = {
