@@ -57,9 +57,9 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
       <section className="v4-panel">
         <h2>영원성</h2>
         <p>행동 기록 {hero.actionCount}회 · 회춘 {hero.rejuvenationCount}회</p>
-        <p>5년을 되돌리며, 현재 나이에 따라 금화 {cost}가 필요합니다. 오프라인 정산에서는 자동 확정되지 않습니다.</p>
+        <p>{years}년을 되돌리며, 현재 나이에 따라 금화 {cost}가 필요합니다. 오프라인 정산에서는 자동 확정되지 않습니다.</p>
         <button type="button" className="v4-btn v4-btn--primary" disabled={years <= 0 || gold < cost || expeditionActive} onClick={onRejuvenate}>
-          {years <= 0 ? '최연소 상태' : expeditionActive ? '원정 귀환 후 가능' : gold < cost ? `금화 부족 (${cost} 필요)` : `5년 회춘 · ${cost} 금화`}
+          {years <= 0 ? '최연소 상태' : expeditionActive ? '원정 귀환 후 가능' : gold < cost ? `금화 부족 (${cost} 필요)` : `${years}년 회춘 · ${cost} 금화`}
         </button>
       </section>
     </main>
