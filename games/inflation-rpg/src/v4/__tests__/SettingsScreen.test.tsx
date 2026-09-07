@@ -45,6 +45,35 @@ describe('V4 settings screen', () => {
     expect(screen.queryByRole('button', { name: '구매 복원' })).not.toBeInTheDocument();
   });
 
+  it('disables duplicate restore taps until the provider resolves', async () => {
+    let resolveRestore!: () => void;
+    const restore = vi.fn(() => new Promise<void>((resolve) => { resolveRestore = resolve; }));
+    const { rerender } = render(
+      <SettingsScreen
+        settings={{ music: 0.7, sfx: 0.8, muted: false }}
+        onChange={() => {}}
+        onBack={() => {}}
+        onRestorePurchases={restore}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '구매 복원' }));
+    expect(restore).toHaveBeenCalledOnce();
+    expect(screen.getByRole('button', { name: '구매 복원 중' })).toBeDisabled();
+
+    resolveRestore();
+    await Promise.resolve();
+    rerender(
+      <SettingsScreen
+        settings={{ music: 0.7, sfx: 0.8, muted: false }}
+        onChange={() => {}}
+        onBack={() => {}}
+        onRestorePurchases={restore}
+      />,
+    );
+    expect(screen.getByRole('button', { name: '구매 복원' })).toBeEnabled();
+  });
+
   it('moves focus to the settings heading when the screen opens', () => {
     render(
       <SettingsScreen

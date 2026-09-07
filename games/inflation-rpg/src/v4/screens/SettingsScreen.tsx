@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { V4Settings } from '../types';
 import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
 
@@ -5,7 +6,7 @@ interface Props {
   settings: V4Settings;
   onChange: (patch: Partial<V4Settings>) => void;
   onBack: () => void;
-  onRestorePurchases?: () => void;
+  onRestorePurchases?: () => void | Promise<void>;
 }
 
 function normalizeVolume(value: unknown): number {
@@ -16,9 +17,23 @@ function normalizeVolume(value: unknown): number {
 
 export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
+  const [restorePending, setRestorePending] = useState(false);
   const music = normalizeVolume(settings.music);
   const sfx = normalizeVolume(settings.sfx);
   const muted = settings.muted === true;
+
+  const restore = async () => {
+    if (!onRestorePurchases || restorePending) return;
+    setRestorePending(true);
+    try {
+      await onRestorePurchases();
+    } catch {
+      // The game hook reports provider failures to the shared status message.
+      // Settings must remain usable when an external callback rejects.
+    } finally {
+      setRestorePending(false);
+    }
+  };
 
   return (
     <main className="v4-container">
@@ -73,7 +88,9 @@ export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases 
       {onRestorePurchases && <section className="v4-panel">
         <h2>구매 복원</h2>
         <p>기기를 바꾸거나 앱을 다시 설치했다면 이전에 구매한 광고 제거 혜택을 복원할 수 있습니다.</p>
-        <button type="button" className="v4-btn v4-btn--quiet" onClick={onRestorePurchases}>구매 복원</button>
+        <button type="button" className="v4-btn v4-btn--quiet" disabled={restorePending} onClick={() => { void restore(); }}>
+          {restorePending ? '구매 복원 중' : '구매 복원'}
+        </button>
       </section>}
     </main>
   );
