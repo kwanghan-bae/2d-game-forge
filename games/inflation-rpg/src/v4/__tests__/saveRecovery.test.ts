@@ -119,6 +119,17 @@ describe('V4 save recovery boundary', () => {
     expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
   });
 
+  it.each([
+    ['title', (save: ReturnType<typeof createInitialV4Save>) => { save.meta.sagaEntries[0]!.title = '  '; }],
+    ['text', (save: ReturnType<typeof createInitialV4Save>) => { save.meta.sagaEntries[0]!.text = ''; }],
+  ])('rejects a saga entry with an empty %s', (_field, mutate) => {
+    const invalid = createInitialV4Save(6544);
+    mutate(invalid);
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(invalid) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+  });
+
   it('backs up the invalid payload only when the player starts a fresh V4 save', () => {
     const raw = JSON.stringify({ schemaVersion: 999, keep: 'for-recovery' });
     const storage = memoryStorage({ [V4_SAVE_KEY]: raw });

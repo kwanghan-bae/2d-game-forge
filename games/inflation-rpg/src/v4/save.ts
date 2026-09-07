@@ -167,7 +167,7 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
 
 function isSagaEntryRecord(value: unknown): boolean {
   return isRecord(value) && isNonEmptyString(value.id) && isPersistableNonNegativeNumber(value.createdAt)
-    && typeof value.title === 'string' && typeof value.text === 'string'
+    && isNonEmptyString(value.title) && isNonEmptyString(value.text)
     && ['birth', 'facility', 'expedition', 'rejuvenation', 'milestone'].includes(value.kind as string);
 }
 
