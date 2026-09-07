@@ -65,6 +65,23 @@ describe('V4 offline result screen', () => {
     expect(result).not.toHaveTextContent('다음 Realm 해금은');
   });
 
+  it('offers a direct route to the expedition result when offline work returned', () => {
+    const onClose = vi.fn();
+    const onOpenExpedition = vi.fn();
+    render(
+      <OfflineResultScreen
+        summary={summary({ completedExpedition: true })}
+        onClose={onClose}
+        onOpenExpedition={onOpenExpedition}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '원정 결과 보기' }));
+
+    expect(onOpenExpedition).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('does not expose an unknown resource storage key to players', () => {
     render(<OfflineResultScreen summary={summary({ resourcesGained: { unknown: 2 } as never })} onClose={() => {}} />);
 
