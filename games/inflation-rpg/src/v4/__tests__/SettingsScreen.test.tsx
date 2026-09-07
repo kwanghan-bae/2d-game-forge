@@ -79,6 +79,33 @@ describe('V4 settings screen', () => {
     expect(screen.getByRole('button', { name: '구매 복원' })).toBeEnabled();
   });
 
+  it('does not update restore state after the screen unmounts while the provider is pending', async () => {
+    let resolveRestore!: () => void;
+    const restore = vi.fn(() => new Promise<void>((resolve) => { resolveRestore = resolve; }));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { unmount } = render(
+      <SettingsScreen
+        settings={{ music: 0.7, sfx: 0.8, muted: false }}
+        onChange={() => {}}
+        onBack={() => {}}
+        onRestorePurchases={restore}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '구매 복원' }));
+    unmount();
+
+    await act(async () => {
+      resolveRestore();
+      await Promise.resolve();
+    });
+
+    expect(consoleError).not.toHaveBeenCalledWith(
+      expect.stringContaining("Can't perform a React state update on an unmounted component"),
+    );
+    consoleError.mockRestore();
+  });
+
   it('moves focus to the settings heading when the screen opens', () => {
     render(
       <SettingsScreen

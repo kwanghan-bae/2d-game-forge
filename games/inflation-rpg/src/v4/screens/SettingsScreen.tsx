@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { V4Settings } from '../types';
 import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
 
@@ -17,7 +17,12 @@ function normalizeVolume(value: unknown): number {
 
 export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
+  const mountedRef = useRef(true);
   const [restorePending, setRestorePending] = useState(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
   const music = normalizeVolume(settings.music);
   const sfx = normalizeVolume(settings.sfx);
   const muted = settings.muted === true;
@@ -31,7 +36,7 @@ export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases 
       // The game hook reports provider failures to the shared status message.
       // Settings must remain usable when an external callback rejects.
     } finally {
-      setRestorePending(false);
+      if (mountedRef.current) setRestorePending(false);
     }
   };
 
