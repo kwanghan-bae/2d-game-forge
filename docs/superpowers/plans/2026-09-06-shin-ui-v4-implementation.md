@@ -204,7 +204,7 @@ pnpm circular
 - V3-H 깊이 회귀가 RNG와 연속 smoke 실행 부하에 따라 50초 안에 Realm을 벗어나지 못하던 간헐 실패를 고정 sleep 대신 실제 `hud-realm` 전환 assertion으로 교정하고, 개발 전용 고정 시드와 선택 모달 polling으로 Chromium/iPhone14에서 결정론적으로 검증했다.
 - V2 vertical slice가 보스 선택창에 걸리던 모바일/데스크톱 타이밍 변동을 dev-only fast-forward 후 blocking choice polling으로 보강해 실제 Phaser→컨트롤러→결과 화면 경로를 유지하면서 안정화했다.
 - Chromium·iPhone14 각각 short 회귀 17/17(장시간 V2 baseline 제외)을 통과했고, v9 저장 마이그레이션 smoke도 두 프로파일에서 통과했다.
-- 장시간 V2 baseline도 dev-only fast-forward 경로로 Chromium 3.4초·iPhone14 2.3초에 통과했으며, 최신 전체 E2E 38/38(Chromium 19/19, iPhone14 19/19, 4.3분)을 통과했다. root `pnpm test`(5개 package), `pnpm build`(game/dev-shell 포함)도 최신 HEAD에서 성공했다.
+- 장시간 V2 baseline은 dev-only fast-forward 후 자동 회춘 상한을 소진하도록 고정해 자연사 결과 경로를 결정론적으로 검증하며, Chromium 2.0초·iPhone14 3.3초에 통과했다. 최신 전체 E2E 38/38(Chromium 19/19, iPhone14 19/19, 4.7분)을 통과했고, root `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 최신 HEAD에서 성공했다.
 
 ### 다음 자동 사이클 우선순위
 
