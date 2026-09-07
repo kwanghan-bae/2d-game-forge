@@ -354,7 +354,11 @@ export function getFacilityTaskPreview(
   const economy = facilityTaskEconomy(source, facilityId, assignedAgentId);
   let error: string | null = null;
 
-  if (!facility || !definition || facility.level < 1) {
+  if (!facility || !definition
+    || typeof facility.level !== 'number'
+    || !Number.isFinite(facility.level)
+    || !Number.isInteger(facility.level)
+    || facility.level < 1) {
     error = '아직 사용할 수 없는 시설입니다.';
   } else if (facility.activeTaskId) {
     error = '이 시설에는 이미 진행 중인 작업이 있습니다.';

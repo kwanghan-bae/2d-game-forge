@@ -1203,6 +1203,7 @@ describe('v4 save and domain', () => {
 
     const preview = getFacilityTaskPreview(malformed, 'blacksmith', null);
     const cost = getFacilityUpgradeCost(malformed, 'temple');
+    const started = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt, null);
 
     expect(cost).not.toBeNull();
     expect([
@@ -1211,6 +1212,25 @@ describe('v4 save and domain', () => {
       ...Object.values(preview.output),
       ...(cost ? [cost.gold, cost.materials] : []),
     ].every((value) => Number.isFinite(value))).toBe(true);
+    expect(started.ok).toBe(true);
+  });
+
+  it('blocks task previews and starts for malformed non-integer facility levels', () => {
+    for (const level of [Number.NaN, 1.5, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, '2']) {
+      const malformed = createInitialV4Save(118);
+      if (level === '2') {
+        delete (malformed.meta.facilities.blacksmith as { level?: number }).level;
+      } else {
+        malformed.meta.facilities.blacksmith.level = level;
+      }
+
+      const preview = getFacilityTaskPreview(malformed, 'blacksmith', null);
+      const started = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt, null);
+
+      expect(preview.canStart).toBe(false);
+      expect(preview.error).toBe('아직 사용할 수 없는 시설입니다.');
+      expect(started.ok).toBe(false);
+    }
   });
 
   it('exposes the scaled facility upgrade cost without mutating the save', () => {
