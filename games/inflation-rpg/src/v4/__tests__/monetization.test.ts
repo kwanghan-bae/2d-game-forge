@@ -41,6 +41,26 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('shares one in-flight purchase restoration across concurrent callers', async () => {
+    let restoreCalls = 0;
+    let release!: (owned: boolean) => void;
+    const pending = new Promise<boolean>((resolve) => { release = resolve; });
+    const adapter = new V4MonetizationAdapter(null, null, null, async () => {
+      restoreCalls += 1;
+      return pending;
+    });
+
+    const first = adapter.restorePurchases();
+    const second = adapter.restorePurchases();
+    await Promise.resolve();
+    expect(restoreCalls).toBe(1);
+    release(true);
+
+    const results = await Promise.all([first, second]);
+    expect(results.every((result) => result.granted)).toBe(true);
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('shares one in-flight ad-free purchase across concurrent callers', async () => {
     let purchaseCalls = 0;
     let release!: () => void;

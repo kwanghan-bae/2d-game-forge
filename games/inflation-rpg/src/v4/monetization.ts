@@ -182,6 +182,7 @@ export class V4MonetizationAdapter {
   private rewardedDay = localDayKey();
   private rewardedInFlightByDay = new Map<string, number>();
   private adFreePurchaseInFlight: Promise<V4MonetizationResult> | null = null;
+  private restorePurchasesInFlight: Promise<V4MonetizationResult> | null = null;
   private readonly restorePurchasesProvider: V4RestorePurchasesProvider | null;
 
   constructor(
@@ -219,16 +220,25 @@ export class V4MonetizationAdapter {
   setAdFreeOwned(owned: boolean): void { this.adFree = owned; }
 
   async restorePurchases(): Promise<V4MonetizationResult> {
+    if (this.restorePurchasesInFlight) return this.restorePurchasesInFlight;
     const restore = this.restorePurchasesProvider;
     if (!restore) return { granted: false, reason: 'provider_failed' };
+    const pending = (async (): Promise<V4MonetizationResult> => {
+      try {
+        const owned = await restore();
+        this.adFree = Boolean(owned);
+        return owned
+          ? { granted: true, reason: 'granted' }
+          : { granted: false, reason: 'not_purchased' };
+      } catch {
+        return { granted: false, reason: 'provider_failed' };
+      }
+    })();
+    this.restorePurchasesInFlight = pending;
     try {
-      const owned = await restore();
-      this.adFree = Boolean(owned);
-      return owned
-        ? { granted: true, reason: 'granted' }
-        : { granted: false, reason: 'not_purchased' };
-    } catch {
-      return { granted: false, reason: 'provider_failed' };
+      return await pending;
+    } finally {
+      if (this.restorePurchasesInFlight === pending) this.restorePurchasesInFlight = null;
     }
   }
 
