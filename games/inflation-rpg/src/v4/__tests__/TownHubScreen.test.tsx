@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { startFacilityTask } from '../domain';
+import { startExpedition, startFacilityTask } from '../domain';
 import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
 import { createInitialV4Save } from '../save';
 import { TownHubScreen } from '../screens/TownHubScreen';
@@ -63,6 +63,19 @@ describe('V4 town hub support assignment', () => {
 
     expect(screen.getByRole('button', { name: '공격 우선' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: '안전 비축' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('explains that a policy change during an expedition applies to the next departure', () => {
+    const initial = createInitialV4Save(103);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    renderHub({ save: started.save });
+
+    const policyPanel = screen.getByRole('heading', { name: '후원 정책' }).parentElement;
+    expect(policyPanel).not.toBeNull();
+    expect(policyPanel).toHaveTextContent('다음 원정부터 적용됩니다');
   });
 
   it('renders equipment output names instead of internal ids', () => {
