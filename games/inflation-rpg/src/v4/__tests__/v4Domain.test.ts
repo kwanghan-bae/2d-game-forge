@@ -130,6 +130,13 @@ describe('v4 save and domain', () => {
     }));
     expect(loadV4Save(fakeStorage)).toBeNull();
 
+    const taskSave = startFacilityTask(save, 'blacksmith', save.updatedAt);
+    expect(taskSave.ok).toBe(true);
+    if (!taskSave.ok) return;
+    taskSave.save.meta.tasks[taskSave.task.id].outputEquipmentIds = ['unknown-v4-equipment'];
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(taskSave.save));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
   });
 
   it('rejects an expedition result newer than the save watermark', () => {

@@ -2,7 +2,7 @@ import type { HeroSnapshot } from '../hero/HeroEntity';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import { FACILITY_IDS, AGENT_DEFINITIONS, REALM_IDS } from './data';
 import { completeFacilityTasks } from './domain';
-import { applyV4EquipmentBonuses, getV4EquipmentBonuses } from './equipment';
+import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentDefinition } from './equipment';
 import type {
   FacilityState,
   OfflineSummary,
@@ -104,7 +104,8 @@ function isFacilityTaskRecord(value: unknown): boolean {
     || value.completesAt <= value.startedAt
     || !isCurrencyRecord(value.input) || !isCurrencyRecord(value.outputPreview)
     || (value.outputEquipmentIds !== undefined
-      && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) => typeof id === 'string')))
+      && (!Array.isArray(value.outputEquipmentIds) || !value.outputEquipmentIds.every((id) =>
+        typeof id === 'string' && getV4EquipmentDefinition(id) !== undefined)))
     || (value.heroExpGain !== undefined && !isPersistableNonNegativeNumber(value.heroExpGain))
     || (value.assignedAgentId !== null
       && (typeof value.assignedAgentId !== 'string'
