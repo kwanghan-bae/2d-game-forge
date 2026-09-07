@@ -71,6 +71,37 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-offline-result')).toContainText('최대 8시간');
   });
 
+  test('오프라인 원정 귀환 결과에서 원정 화면으로 바로 이동한다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+
+    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await page.getByRole('button', { name: '길잡이와 출발' }).click();
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('v4 save was not created');
+      const save = JSON.parse(raw) as {
+        meta: { agents: Array<{ id: string; activeTaskId: string | null }> };
+        run: { expedition: { id: string; completesAt: number; encounterIndex: number } | null };
+      };
+      if (!save.run.expedition) throw new Error('expedition was not started');
+      save.run.expedition.id = 'e2e-offline-route';
+      const guide = save.meta.agents.find((agent) => agent.id === 'guide');
+      if (!guide) throw new Error('guide was not created');
+      guide.activeTaskId = save.run.expedition.id;
+      save.run.expedition.encounterIndex = 2;
+      save.run.expedition.completesAt = Date.now() - 1;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, V4_SAVE_KEY);
+    await page.reload();
+
+    await expect(page.getByTestId('v4-offline-result')).toBeVisible();
+    await page.getByRole('button', { name: '원정 결과 보기' }).click();
+    await expect(page.getByTestId('v4-expedition-result')).toBeVisible();
+  });
+
   test('손상된 저장은 원본을 보존한 복구 화면을 거친다', async ({ page }) => {
     await page.goto(GAME_URL);
     const raw = JSON.stringify({ schemaVersion: 999, preserved: true });

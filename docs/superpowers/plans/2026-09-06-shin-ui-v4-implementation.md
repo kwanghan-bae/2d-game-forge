@@ -283,8 +283,9 @@ pnpm circular
 - 광고 즉시 완료 handler의 stale 자연 완료 선검증·광고 대기 중 재검증을 회귀 테스트로 고정했다.
 - 영웅 카드 바로 아래에 `다음 목표` 요약을 배치하고 접근성 라벨을 유지해 모바일 첫 viewport에서도 영웅 상태와 다음 병목을 함께 확인할 수 있게 했다.
 - 오프라인 결과 모달에서 귀환·보류 원정이 있으면 `원정 결과 보기`로 즉시 원정 화면으로 이동하도록 연결해 결과 확인 안내와 실제 이동 경로를 일치시켰다.
+- 오프라인 귀환 결과의 직접 이동 경로를 Chromium·iPhone14 통합 시나리오로 고정해 V4 E2E 28/28과 legacy 포함 전체 E2E 42/42(4.9분)를 통과시켰다.
 - 전체 게임 단위/컴포넌트 테스트(V4 포함): 397개 파일, 3,439개 테스트 통과.
-- V4 Chromium·iPhone 14 E2E: 26/26 통과(각 프로젝트 13/13).
+- V4 Chromium·iPhone 14 E2E: 28/28 통과(각 프로젝트 14/14).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
 - 시설·에이전트·Realm 정의 lookup을 own-property accessor로 통일해 외부 문자열이 `constructor` 같은 상속 키로 해석되지 않게 했다.
@@ -297,7 +298,7 @@ pnpm circular
 - V2 vertical slice가 보스 선택창에 걸리던 모바일/데스크톱 타이밍 변동을 dev-only fast-forward 후 blocking choice polling으로 보강해 실제 Phaser→컨트롤러→결과 화면 경로를 유지하면서 안정화했다.
 - Chromium·iPhone14 각각 short 회귀 17/17(장시간 V2 baseline 제외)을 통과했고, v9 저장 마이그레이션 smoke도 두 프로파일에서 통과했다.
 - 오프라인 보상형 광고가 대기 중 새 정산으로 교체되는 경합을 정산 요약 세대 가드로 차단하고, 이전 정산 보상이 새 정산에 중복 적용되지 않음을 훅 테스트로 고정했다.
-- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, 현재 HEAD에서도 전체 E2E 40/40(Chromium 20/20, iPhone14 20/20, 4.7분)을 통과했다. root `pnpm test`(game 397개 파일·3,439개 테스트 포함), `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 성공했다.
+- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, 현재 HEAD에서도 전체 E2E 42/42(Chromium 21/21, iPhone14 21/21, 4.9분)을 통과했다. root `pnpm test`(game 397개 파일·3,439개 테스트 포함), `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 성공했다.
 
 ### 다음 자동 사이클 우선순위
 
