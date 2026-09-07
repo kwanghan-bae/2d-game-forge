@@ -348,6 +348,7 @@ pnpm circular
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 4.6분).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
+- native onestore Web 테스트 7/7과 Android `compileDebugKotlin`·`assembleDebug`가 통과했다. 실기기 sandbox 결제·복원·환불 QA는 `adb`·sandbox 계정 부재로 남아 있다.
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - workspace `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `pnpm build` 통과.
 - Turbo test task는 실제로 생성하지 않는 `coverage/**` output 선언을 제거해 반복 검증 시 허위 output 경고가 발생하지 않게 했다.
