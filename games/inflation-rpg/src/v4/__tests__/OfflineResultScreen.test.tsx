@@ -83,6 +83,15 @@ describe('V4 offline result screen', () => {
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('안전한 작업만 오프라인으로 정산했습니다.');
   });
 
+  it('does not duplicate a clock anomaly note beside its dedicated warning', () => {
+    const note = '기기의 시간이 이전 처리 시각보다 빠릅니다. 보상을 중복 정산하지 않았습니다.';
+    render(<OfflineResultScreen summary={summary({ clockAnomaly: 'backwards', notes: [note] })} onClose={() => {}} />);
+
+    const result = screen.getByTestId('v4-offline-result');
+    expect(result).toHaveTextContent('기기 시간이 이전 처리 시각보다 빠릅니다.');
+    expect(result.textContent).not.toContain(note);
+  });
+
   it('closes from Escape and exposes the dialog title to assistive technology', () => {
     const onClose = vi.fn();
     render(<OfflineResultScreen summary={summary()} onClose={onClose} />);
