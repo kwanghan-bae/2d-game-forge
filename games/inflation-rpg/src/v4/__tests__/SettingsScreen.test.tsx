@@ -56,4 +56,20 @@ describe('V4 settings screen', () => {
 
     expect(screen.getByRole('heading', { name: '설정' })).toHaveFocus();
   });
+
+  it('normalizes malformed volume and mute values before rendering controls', () => {
+    render(
+      <SettingsScreen
+        settings={{ music: Number.NaN, sfx: Number.POSITIVE_INFINITY, muted: 'yes' as never }}
+        onChange={() => {}}
+        onBack={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('slider', { name: '음악 볼륨' })).toHaveValue('0');
+    expect(screen.getByRole('slider', { name: '효과음 볼륨' })).toHaveValue('0');
+    expect(screen.getByRole('checkbox', { name: '모든 소리 음소거' })).not.toBeChecked();
+    expect(document.body.textContent).not.toContain('NaN');
+    expect(document.body.textContent).not.toContain('Infinity');
+  });
 });

@@ -8,8 +8,17 @@ interface Props {
   onRestorePurchases?: () => void;
 }
 
+function normalizeVolume(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : 0;
+}
+
 export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
+  const music = normalizeVolume(settings.music);
+  const sfx = normalizeVolume(settings.sfx);
+  const muted = settings.muted === true;
 
   return (
     <main className="v4-container">
@@ -24,33 +33,33 @@ export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases 
       <section className="v4-panel">
         <h2>소리</h2>
         <label className="v4-setting-row" htmlFor="v4-music-volume">
-          <span>음악 볼륨 <strong>{Math.round(settings.music * 100)}%</strong></span>
+          <span>음악 볼륨 <strong>{Math.round(music * 100)}%</strong></span>
           <input
             id="v4-music-volume"
             type="range"
             min="0"
             max="1"
             step="0.05"
-            value={settings.music}
+            value={music}
             aria-label="음악 볼륨"
             onChange={(event) => onChange({ music: Number(event.target.value) })}
           />
         </label>
         <label className="v4-setting-row" htmlFor="v4-sfx-volume">
-          <span>효과음 볼륨 <strong>{Math.round(settings.sfx * 100)}%</strong></span>
+          <span>효과음 볼륨 <strong>{Math.round(sfx * 100)}%</strong></span>
           <input
             id="v4-sfx-volume"
             type="range"
             min="0"
             max="1"
             step="0.05"
-            value={settings.sfx}
+            value={sfx}
             aria-label="효과음 볼륨"
             onChange={(event) => onChange({ sfx: Number(event.target.value) })}
           />
         </label>
         <label className="v4-setting-toggle" htmlFor="v4-muted">
-          <input id="v4-muted" type="checkbox" checked={settings.muted} aria-label="모든 소리 음소거" onChange={(event) => onChange({ muted: event.target.checked })} />
+          <input id="v4-muted" type="checkbox" checked={muted} aria-label="모든 소리 음소거" onChange={(event) => onChange({ muted: event.target.checked })} />
           <span>모든 소리 음소거</span>
         </label>
       </section>
