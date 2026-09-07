@@ -198,6 +198,7 @@ pnpm circular
 - legacy `v2-vertical-slice`는 기존 장시간 자동 진행 경로가 10분 제한에 걸리는 별도 baseline 이슈로 남아 있다. 모달 자동 선택 재시작 결함은 수정했고, 관련 V3 smoke는 통과했다. 이 케이스는 제품 코드 회귀와 분리해 다음 QA 사이클에서 결정론적 테스트 시간 단축을 검토한다.
 - 레거시 브라우저 실행에는 `pauseOnInteractiveChoice` 경계를 적용해 선택창이 열린 동안 다음 도착을 보류하고, shrine/danger 선택창에 안정적인 test id를 추가했다. V3-C spend smoke는 새 서버에서 통과했으며 직접 시뮬레이션의 연속 진행 기본값은 유지한다.
 - 브라우저 선택 게이트가 멈출 수 있던 미연결 선택 이벤트 4종(first trial, wandering sage, elder's judgment, veteran's challenge)을 `TimedChoiceModal`과 컨트롤러 proxy로 연결하고 idle fallback을 추가했다.
+- 브라우저 선택 게이트에서 idle 진행이 멈추지 않도록 danger는 4초 후 자동 전투, shrine은 4초 후 자동 황금 축복으로 안전하게 해소하고 중복 클릭을 차단했다. V3-H·V3-DEF·사가 필터 smoke와 전체 단위 테스트로 회귀를 확인했다.
 
 ### 다음 자동 사이클 우선순위
 
