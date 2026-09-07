@@ -158,6 +158,14 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
               : null;
             const preview = getFacilityTaskPreview(save, facilityId, assignedAgentId);
             const upgradeCost = getFacilityUpgradeCost(save, facilityId);
+            const upgradeDisabled = Boolean(
+              task
+              || !upgradeCost
+              || !Number.isFinite(facility.level)
+              || !Number.isInteger(facility.level)
+              || facility.level < 1
+              || facility.level >= Number.MAX_SAFE_INTEGER,
+            );
             return (
               <article key={facilityId} className={`v4-facility ${task ? 'v4-facility--active' : ''}`}>
                 <div className="v4-facility-head">
@@ -198,6 +206,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                   <button
                     type="button"
                     className="v4-btn v4-btn--quiet"
+                    disabled={upgradeDisabled}
                     onClick={() => onUpgrade(facilityId)}
                     aria-label={`${definition.nameKR} 강화 · 금화 ${formatNumber(upgradeCost?.gold)}, 재료 ${formatNumber(upgradeCost?.materials)}`}
                   >+</button>
