@@ -346,12 +346,14 @@ function facilityTaskEconomy(
 export function getFacilityTaskPreview(
   source: V4SaveEnvelope,
   facilityId: FacilityId,
-  assignedAgentId: SupportAgentId | null = null,
+  assignedAgentId?: SupportAgentId | null,
 ): FacilityTaskPreview {
+  const hasAssignedAgentArgument = arguments.length >= 3;
+  const requestedAgentId = hasAssignedAgentArgument ? assignedAgentId : null;
   const facility = source.meta.facilities[facilityId];
   const definition = getV4FacilityDefinition(facilityId);
-  const agent = assignedAgentId ? source.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
-  const economy = facilityTaskEconomy(source, facilityId, assignedAgentId);
+  const agent = requestedAgentId ? source.meta.agents.find((item) => item.id === requestedAgentId) : undefined;
+  const economy = facilityTaskEconomy(source, facilityId, requestedAgentId ?? null);
   let error: string | null = null;
 
   if (!facility || !definition
@@ -360,13 +362,17 @@ export function getFacilityTaskPreview(
     || !Number.isInteger(facility.level)
     || facility.level < 1) {
     error = '아직 사용할 수 없는 시설입니다.';
+  } else if (hasAssignedAgentArgument && requestedAgentId === undefined) {
+    error = '지원 에이전트를 찾을 수 없습니다.';
   } else if (facility.activeTaskId) {
     error = '이 시설에는 이미 진행 중인 작업이 있습니다.';
   } else if (facilityId === 'training' && source.run.expedition) {
     error = '원정 중인 영웅은 훈련소 작업을 시작할 수 없습니다.';
-  } else if (assignedAgentId && (!agent || agent.activeTaskId)) {
+  } else if (requestedAgentId !== null && !agent) {
+    error = '지원 에이전트를 찾을 수 없습니다.';
+  } else if (requestedAgentId !== null && agent?.activeTaskId) {
     error = '해당 지원 에이전트가 다른 작업 중입니다.';
-  } else if (assignedAgentId && agent && getV4AgentDefinition(agent.id)?.specialty !== facilityId) {
+  } else if (requestedAgentId && agent && getV4AgentDefinition(agent.id)?.specialty !== facilityId) {
     error = '해당 지원 에이전트는 이 시설의 전문 담당자가 아닙니다.';
   } else if (agent && agent.fatigue >= 100) {
     error = '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.';
@@ -377,7 +383,7 @@ export function getFacilityTaskPreview(
   return {
     facilityId,
     ...economy,
-    assignedAgentId,
+    assignedAgentId: requestedAgentId ?? null,
     canStart: error === null,
     error,
   };
@@ -437,9 +443,15 @@ export function startFacilityTask(
   source: V4SaveEnvelope,
   facilityId: FacilityId,
   now: number,
-  assignedAgentId: SupportAgentId | null = null,
+  assignedAgentId?: SupportAgentId | null,
 ): DomainResult {
-  const preview = getFacilityTaskPreview(source, facilityId, assignedAgentId);
+  const hasAssignedAgentArgument = arguments.length >= 4;
+  const requestedAgentId = hasAssignedAgentArgument ? assignedAgentId : null;
+  const preview = getFacilityTaskPreview(
+    source,
+    facilityId,
+    hasAssignedAgentArgument ? assignedAgentId : null,
+  );
   if (!preview.canStart) {
     return { ok: false, save: source, error: preview.error ?? '작업을 시작할 수 없습니다.' };
   }
@@ -448,7 +460,7 @@ export function startFacilityTask(
   const eventAt = eventTimestamp(save, now);
   const facility = save.meta.facilities[facilityId];
   const definition = getV4FacilityDefinition(facilityId);
-  const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
+  const agent = requestedAgentId ? save.meta.agents.find((item) => item.id === requestedAgentId) : undefined;
   if (!facility || !definition) return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
   const completesAt = safeCompletionTimestamp(eventAt, preview.durationSeconds);
   if (completesAt === null) return { ok: false, save: source, error: '작업 시각 범위를 확인할 수 없어 시작하지 않았습니다.' };
@@ -467,7 +479,7 @@ export function startFacilityTask(
     outputPreview: preview.output,
     outputEquipmentIds: preview.outputEquipmentIds.length > 0 ? preview.outputEquipmentIds : undefined,
     heroExpGain: preview.heroExpGain > 0 ? preview.heroExpGain : undefined,
-    assignedAgentId,
+    assignedAgentId: requestedAgentId ?? null,
   };
   save.meta.tasks[task.id] = task;
   facility.activeTaskId = task.id;
@@ -1119,7 +1131,7 @@ export function startExpedition(
   if (Object.values(save.meta.tasks).some((task) => task.facilityId === 'training')) {
     return { ok: false, save: source, error: '영웅이 훈련 중입니다. 훈련을 마친 뒤 원정을 시작하세요.' };
   }
-  if (assignedAgentId && assignedAgentId !== 'guide') {
+  if (assignedAgentId !== null && assignedAgentId !== 'guide') {
     return { ok: false, save: source, error: '원정에는 길잡이만 배정할 수 있습니다.' };
   }
   if (!canPay(save, realm.cost)) {

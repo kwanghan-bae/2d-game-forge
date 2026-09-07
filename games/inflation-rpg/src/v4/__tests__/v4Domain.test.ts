@@ -1177,6 +1177,34 @@ describe('v4 save and domain', () => {
     expect(result.ok).toBe(false);
   });
 
+  it('rejects empty support-agent assignments before writing tasks or expeditions', () => {
+    const initial = createInitialV4Save(120);
+    const preview = getFacilityTaskPreview(initial, 'blacksmith', '' as never);
+    const task = startFacilityTask(initial, 'blacksmith', initial.updatedAt, '' as never);
+    const expedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', '' as never);
+    const undefinedPreview = getFacilityTaskPreview(initial, 'blacksmith', undefined);
+    const undefinedTask = startFacilityTask(initial, 'blacksmith', initial.updatedAt, undefined);
+    const undefinedExpedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', undefined as never);
+    const omittedPreview = getFacilityTaskPreview(initial, 'temple');
+    const nullTask = startFacilityTask(initial, 'temple', initial.updatedAt, null);
+    const specialistPreview = getFacilityTaskPreview(initial, 'mudang', 'mudang');
+
+    expect(preview.canStart).toBe(false);
+    expect(preview.error).toBe('지원 에이전트를 찾을 수 없습니다.');
+    expect(task.ok).toBe(false);
+    expect(expedition.ok).toBe(false);
+    expect(undefinedPreview.canStart).toBe(false);
+    expect(undefinedPreview.error).toBe('지원 에이전트를 찾을 수 없습니다.');
+    expect(undefinedTask.ok).toBe(false);
+    expect(undefinedExpedition.ok).toBe(false);
+    expect(omittedPreview.canStart).toBe(true);
+    expect(nullTask.ok).toBe(true);
+    expect(specialistPreview.canStart).toBe(true);
+    expect(initial.meta.tasks).toEqual({});
+    expect(initial.run.expedition).toBeNull();
+    expect(initial.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
+  });
+
   it('makes training and expedition facility levels affect the live economy', () => {
     const base = createInitialV4Save(95);
     const upgraded = createInitialV4Save(96);
