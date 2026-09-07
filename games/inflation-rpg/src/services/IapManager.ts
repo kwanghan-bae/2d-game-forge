@@ -38,17 +38,40 @@ export class IapManager {
 
   async purchase(productId: IapProductId): Promise<PurchaseResult> {
     const result = await this.plugin.purchase({ productId });
-    if (result.status === 'success' && result.purchase) {
-      try {
-        await this.plugin.acknowledge({ purchaseToken: result.purchase.purchaseToken });
-      } catch (error) {
-        // A non-consumable purchase is already owned once the store reports
-        // success. Do not make a transient acknowledgement outage hide the
-        // ad-free entitlement; a later restore can reconcile the store state.
-        // Consumables remain strict because granting before acknowledgement
-        // would make a retry capable of duplicating the currency award.
-        if (productId !== 'ad_free') throw error;
-      }
+    if (result.status !== 'success') return result;
+
+    const purchase = result.purchase;
+    if (!purchase) {
+      return {
+        ...result,
+        status: 'failed',
+        errorMessage: '구매 기록이 없어 결제를 확인하지 못했습니다.',
+      };
+    }
+    if (purchase.productId !== productId) {
+      return {
+        ...result,
+        status: 'failed',
+        errorMessage: '구매 상품이 요청한 상품과 일치하지 않습니다.',
+      };
+    }
+    if (typeof purchase.purchaseToken !== 'string' || purchase.purchaseToken.trim().length === 0) {
+      return {
+        ...result,
+        status: 'failed',
+        errorMessage: '구매 토큰이 없어 결제를 확인하지 못했습니다.',
+      };
+    }
+
+    try {
+      await this.plugin.acknowledge({ purchaseToken: purchase.purchaseToken });
+    } catch (error) {
+      // A non-consumable purchase is already owned once the store reports
+      // success. Do not make a transient acknowledgement outage hide the
+      // ad-free entitlement; a later restore can reconcile the store state.
+      // Consumables remain strict because granting before acknowledgement
+      // would make a retry capable of duplicating the currency award.
+      if (productId !== 'ad_free') throw error;
     }
     return result;
   }

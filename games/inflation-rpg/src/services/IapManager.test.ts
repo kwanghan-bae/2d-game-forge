@@ -62,6 +62,34 @@ describe('IapManager', () => {
     expect(plugin.acknowledge).not.toHaveBeenCalled();
   });
 
+  it('downgrades a successful store response that has no purchase record', async () => {
+    plugin.purchase.mockResolvedValue({ status: 'success' });
+
+    const result = await mgr.purchase('ad_free');
+
+    expect(result.status).toBe('failed');
+    expect(result.errorMessage).toContain('구매 기록');
+    expect(plugin.acknowledge).not.toHaveBeenCalled();
+  });
+
+  it('rejects a successful store response for a different product', async () => {
+    plugin.purchase.mockResolvedValue({
+      status: 'success',
+      purchase: {
+        productId: 'crack_stone_pack_small',
+        purchaseToken: 'tok_wrong_product',
+        purchaseTime: 100,
+        acknowledged: false,
+      },
+    });
+
+    const result = await mgr.purchase('ad_free');
+
+    expect(result.status).toBe('failed');
+    expect(result.errorMessage).toContain('상품');
+    expect(plugin.acknowledge).not.toHaveBeenCalled();
+  });
+
   it('keeps a completed ad-free purchase successful when acknowledgement is temporarily unavailable', async () => {
     plugin.purchase.mockResolvedValue({
       status: 'success',
