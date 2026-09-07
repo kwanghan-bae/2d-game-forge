@@ -28,6 +28,10 @@ export interface V4MonetizationResult {
 export const V4_DAILY_REWARDED_LIMIT = 5;
 export const V4_REWARDED_USAGE_KEY = 'shin-ui-eternal-sponsor-v4-rewarded-usage-v1';
 
+function isRewardedPlacement(value: unknown): value is V4RewardedPlacement {
+  return value === 'offline_double' || value === 'instant_task' || value === 'intervention_charge';
+}
+
 function normalizeDailyUsage(count: number): number {
   return Number.isFinite(count)
     ? Math.min(V4_DAILY_REWARDED_LIMIT, Math.max(0, Math.floor(count)))
@@ -200,6 +204,7 @@ export class V4MonetizationAdapter {
   setAdFreeOwned(owned: boolean): void { this.adFree = owned; }
 
   async watchRewarded(placement: V4RewardedPlacement): Promise<V4MonetizationResult> {
+    if (!isRewardedPlacement(placement)) return { granted: false, reason: 'provider_failed' };
     this.resetForCurrentDay();
     if (this.adFree) return { granted: true, reason: 'granted' };
     const requestDay = this.rewardedDay;

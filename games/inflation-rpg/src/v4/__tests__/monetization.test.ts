@@ -19,6 +19,14 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(false);
   });
 
+  it('rejects an unknown rewarded placement before calling the provider', async () => {
+    const showRewarded = vi.fn(async () => true);
+    const adapter = new V4MonetizationAdapter({ showRewarded }, null);
+
+    expect((await adapter.watchRewarded('unknown' as never)).reason).toBe('provider_failed');
+    expect(showRewarded).not.toHaveBeenCalled();
+  });
+
   it('persists ad-free state in the adapter after a successful purchase', async () => {
     const adapter = new V4MonetizationAdapter(null, { purchase: async () => 'purchased' });
     expect((await adapter.buyAdFree()).granted).toBe(true);
