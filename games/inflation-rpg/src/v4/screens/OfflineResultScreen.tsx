@@ -20,7 +20,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
     ? Math.min(1, Math.max(0, summary.efficiency))
     : 0;
   const resourceEntries = Object.entries(summary.resourcesGained)
-    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value));
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0);
   const hasPositiveResourceReward = resourceEntries.some(([, value]) => Number.isFinite(value) && value > 0);
 
   return (
@@ -35,7 +35,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
         {summary.clockAnomaly === 'invalid' && <div className="v4-alert">기기 시각을 확인할 수 없어 보상을 정산하지 않았습니다.</div>}
         <div className="v4-detail-grid">
           {resourceEntries.length > 0
-            ? resourceEntries.map(([key, value]) => <div className="v4-detail-stat" key={key}><small>{getV4CurrencyName(key)}</small><strong>{value && value > 0 ? `+${value.toLocaleString('ko-KR')}` : value?.toLocaleString('ko-KR')}</strong></div>)
+            ? resourceEntries.map(([key, value]) => <div className="v4-detail-stat" key={key}><small>{getV4CurrencyName(key)}</small><strong>+{value.toLocaleString('ko-KR')}</strong></div>)
             : <div className="v4-detail-stat"><small>정산</small><strong>획득 재화 없음</strong></div>}
         </div>
         {summary.equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {summary.equipmentGained.map(getV4EquipmentName).join(', ')}</div>}

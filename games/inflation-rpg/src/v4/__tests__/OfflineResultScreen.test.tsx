@@ -68,4 +68,12 @@ describe('V4 offline result screen', () => {
     expect(result.textContent).not.toContain('NaN');
     expect(result).toHaveTextContent('획득 재화 없음');
   });
+
+  it('does not present negative currency deltas as offline rewards', () => {
+    render(<OfflineResultScreen summary={summary({ resourcesGained: { gold: -5, spirit: 0 } })} onClose={() => {}} />);
+
+    const result = screen.getByTestId('v4-offline-result');
+    expect(result).toHaveTextContent('획득 재화 없음');
+    expect(result.textContent).not.toContain('-5');
+  });
 });
