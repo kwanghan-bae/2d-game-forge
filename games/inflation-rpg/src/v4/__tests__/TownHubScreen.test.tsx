@@ -142,6 +142,7 @@ describe('V4 town hub support assignment', () => {
 
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('재도전을 준비하세요.');
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('대장간에서 장비를 준비하세요.');
+    expect(screen.getByText('가장 가까운 목표').parentElement).not.toHaveTextContent('세요.을');
   });
 
   it('explains that a pending next Realm record must be confirmed before another expedition', () => {
@@ -208,7 +209,9 @@ describe('V4 town hub support assignment', () => {
     };
 
     expect(() => renderHub({ save })).not.toThrow();
-    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('기록되지 않은 Realm 재도전을 준비하세요.');
+    const objective = screen.getByText('가장 가까운 목표').parentElement;
+    expect(objective).toHaveTextContent('기록되지 않은 Realm 재도전을 준비하세요.');
+    expect(objective).not.toHaveTextContent('세요.을');
   });
 
   it('does not expose an infinite remaining time for malformed facility clocks', () => {

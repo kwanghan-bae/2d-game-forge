@@ -56,7 +56,7 @@ function getTownObjective(save: V4SaveEnvelope): string {
 
   const lastResult = save.run.lastExpeditionResult;
   if (lastResult?.outcome === 'defeat') {
-    return `${getV4RealmName(lastResult.realmId)} 재도전을 준비하세요. ${lastResult.weaknessKR}을 보완하면 다음 승리에 가까워집니다.`;
+    return `${getV4RealmName(lastResult.realmId)} 재도전을 준비하세요. ${lastResult.weaknessKR.trim()}`;
   }
 
   if (lastResult?.outcome === 'victory') {
