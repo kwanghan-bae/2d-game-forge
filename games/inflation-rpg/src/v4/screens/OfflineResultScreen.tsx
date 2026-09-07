@@ -1,6 +1,7 @@
 import type { OfflineSummary } from '../types';
 import { getV4CurrencyName } from '../data';
 import { getV4EquipmentName } from '../equipment';
+import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
 
 interface Props {
   summary: OfflineSummary;
@@ -44,8 +45,8 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
           : pendingExpeditionConfirmation
             ? '위험 원정 결과 확인 필요 · 원정 화면에서 보스 결과를 확인하세요.'
             : '선택형 사건은 보류됨'}</p>
-        {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasPositiveResourceReward || !canDoubleReward || (!adFree && adsToday >= 5)} onClick={onDoubleReward}>
-          {!hasPositiveResourceReward ? '이번 정산은 2배 대상 없음' : !canDoubleReward ? '보상 2배 적용 완료' : !adFree && adsToday >= 5 ? '오늘 광고 한도 도달' : adFree ? '광고 제거 적용 · 오프라인 재화 2배' : '광고 보고 오프라인 재화 2배'}
+        {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasPositiveResourceReward || !canDoubleReward || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onDoubleReward}>
+          {!hasPositiveResourceReward ? '이번 정산은 2배 대상 없음' : !canDoubleReward ? '보상 2배 적용 완료' : !adFree && adsToday >= V4_DAILY_REWARDED_LIMIT ? '오늘 광고 한도 도달' : adFree ? '광고 제거 적용 · 오프라인 재화 2배' : '광고 보고 오프라인 재화 2배'}
         </button>}
         <button type="button" className="v4-btn v4-btn--primary" onClick={onClose}>마을 확인</button>
       </section>

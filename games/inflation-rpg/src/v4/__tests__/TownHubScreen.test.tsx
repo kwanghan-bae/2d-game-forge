@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { startFacilityTask } from '../domain';
+import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
 import { createInitialV4Save } from '../save';
 import { TownHubScreen } from '../screens/TownHubScreen';
 
@@ -206,7 +207,7 @@ describe('V4 town hub support assignment', () => {
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
-    renderHub({ save: started.save, monetizationAvailable: true, adsToday: 5, onInstantTask: vi.fn() });
+    renderHub({ save: started.save, monetizationAvailable: true, adsToday: V4_DAILY_REWARDED_LIMIT, onInstantTask: vi.fn() });
 
     const temple = screen.getByText('신전').closest('article');
     expect(temple).not.toBeNull();
