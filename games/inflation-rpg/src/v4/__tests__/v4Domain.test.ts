@@ -1524,6 +1524,25 @@ describe('v4 save and domain', () => {
     });
   });
 
+  it('recommends the next unlocked blacksmith equipment after a defeat', () => {
+    const initial = createInitialV4Save(124);
+    initial.meta.facilities.blacksmith.level = 3;
+    initial.run.hero.equipmentIds = ['v4_iron_sword'];
+    initial.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    initial.run.hero.hp = 1;
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+
+    const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+
+    expect(completed.run.lastExpeditionResult).toMatchObject({
+      outcome: 'defeat', recommendedFacilityId: 'recovery', recommendedEquipmentId: 'v4_guardian_armor',
+    });
+  });
+
   it('does not dispatch a defeated hero before recovery', () => {
     const initial = createInitialV4Save(20);
     initial.run.hero.hp = 0;

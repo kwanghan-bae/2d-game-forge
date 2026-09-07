@@ -288,6 +288,14 @@ export function getBlacksmithEquipmentOutput(source: V4SaveEnvelope): string {
   return nextUpgrade?.id ?? BLACKSMITH_EQUIPMENT_UNLOCKS[0].id;
 }
 
+/** Returns only a missing item so defeat guidance does not suggest re-crafting equipped gear. */
+export function getBlacksmithEquipmentRecommendation(source: V4SaveEnvelope): string | null {
+  const facilityLevel = positiveFiniteLevel(source.meta.facilities.blacksmith?.level);
+  return BLACKSMITH_EQUIPMENT_UNLOCKS.find(
+    (equipment) => equipment.facilityLevel <= facilityLevel && savedEquipmentLevel(source, equipment.id) < 1,
+  )?.id ?? null;
+}
+
 function facilityTaskEconomy(
   save: V4SaveEnvelope,
   facilityId: FacilityId,
@@ -705,7 +713,7 @@ function resolveExpedition(
             ? '전투력이 부족했습니다. 훈련소와 대장간을 먼저 강화하세요.'
             : '정책과 길잡이의 보정을 확인한 뒤 다시 도전하세요.',
       recommendedFacilityId,
-      recommendedEquipmentId: save.run.hero.equipmentIds.includes('v4_iron_sword') ? null : 'v4_iron_sword',
+      recommendedEquipmentId: getBlacksmithEquipmentRecommendation(save),
       retryAfterSeconds: won ? 0 : encounter.durationSeconds,
       successChance,
       encountersCleared,
