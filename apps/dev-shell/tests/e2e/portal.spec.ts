@@ -4,6 +4,9 @@ test('portal lists registered games', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '2d-game-forge' })).toBeVisible();
   await expect(
+    page.getByRole('link', { name: /신의 마을: 영원의 후원자/ }),
+  ).toBeVisible();
+  await expect(
     page.getByRole('link', { name: /조선 인플레이션 RPG/ }),
   ).toBeVisible();
 });
