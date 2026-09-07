@@ -53,7 +53,8 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const commit = useCallback((next: V4SaveEnvelope, nextMessage?: string) => {
     saveRef.current = next;
     setSave(next);
-    persistV4Save(next);
+    const persisted = persistV4Save(next);
+    setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
     if (nextMessage) setMessage(nextMessage);
   }, []);
 
@@ -62,7 +63,8 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const result = simulateOfflineProgress(saveRef.current, Date.now());
     saveRef.current = result.save;
     setSave(result.save);
-    persistV4Save(result.save);
+    const persisted = persistV4Save(result.save);
+    setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
     if (result.summary.processedSeconds > 0 || result.summary.clockAnomaly) {
       setOfflineSummary(result.summary);
       setOfflineRewardDoubled(false);
@@ -269,7 +271,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const next = startFreshV4Save(undefined, Date.now());
     saveRef.current = next;
     setSave(next);
-    setStorageStatus('valid');
+    setStorageStatus(persistV4Save(next) ? 'valid' : 'unavailable');
     setOfflineSummary(null);
     setOfflineRewardDoubled(false);
     setMessage('새 V4 저장을 시작했습니다. 기존 손상 저장은 복구 백업으로 보존되었습니다.');

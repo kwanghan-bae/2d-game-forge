@@ -354,6 +354,18 @@ describe('useV4Game save recovery', () => {
     expect(screen.getByTestId('recovery-spirit')).toHaveTextContent('112');
   });
 
+  it('marks the session as unavailable when local persistence starts failing', async () => {
+    const setItem = vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+
+    render(<RecoveryHarness />);
+
+    await waitFor(() => expect(screen.getByTestId('storage-status')).toHaveTextContent('unavailable'));
+    expect(screen.getByTestId('recovery-spirit')).toHaveTextContent('100');
+    setItem.mockRestore();
+  });
+
   it('does not settle due work while the persisted save clock is in the future', async () => {
     const now = Date.now();
     const base = createInitialV4Save(103);

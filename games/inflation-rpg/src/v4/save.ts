@@ -632,12 +632,14 @@ export function startFreshV4Save(
   return fresh;
 }
 
-export function persistV4Save(save: V4SaveEnvelope, storage: Storage | undefined = defaultStorage()): void {
-  if (!storage || !isV4SaveEnvelope(save)) return;
+export function persistV4Save(save: V4SaveEnvelope, storage: Storage | undefined = defaultStorage()): boolean {
+  if (!storage || !isV4SaveEnvelope(save)) return false;
   try {
     storage.setItem(V4_SAVE_KEY, JSON.stringify(save));
+    return true;
   } catch {
     // Persistence is best-effort on local-only builds. Quota, private-mode,
     // or platform storage errors must never interrupt active gameplay.
+    return false;
   }
 }

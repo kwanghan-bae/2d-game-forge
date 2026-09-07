@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createInitialV4Save,
   loadV4Save,
+  persistV4Save,
   readV4Save,
   startFreshV4Save,
   V4_RECOVERY_BACKUP_KEY,
@@ -56,6 +57,16 @@ describe('V4 save recovery boundary', () => {
     expect(startFreshV4Save(storage, 789)).toMatchObject({ schemaVersion: 1 });
     expect(storage.dump(V4_RECOVERY_BACKUP_KEY)).toBeUndefined();
     expect(loadV4Save(storage)?.run.hero.name).toBe(valid.run.hero.name);
+  });
+
+  it('reports a persistence failure without interrupting gameplay', () => {
+    const broken = {
+      getItem: () => null,
+      setItem: () => { throw new Error('quota exceeded'); },
+      removeItem: () => {},
+    } as unknown as Storage;
+
+    expect(persistV4Save(createInitialV4Save(987), broken)).toBe(false);
   });
 
   it.each([
