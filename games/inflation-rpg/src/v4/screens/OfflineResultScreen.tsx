@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { OfflineSummary } from '../types';
 import { getV4CurrencyName } from '../data';
 import { getV4EquipmentName } from '../equipment';
@@ -15,6 +15,12 @@ interface Props {
 }
 
 export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = false, onClose, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !event.defaultPrevented) onClose();
@@ -57,7 +63,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
         {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasPositiveResourceReward || !canDoubleReward || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onDoubleReward}>
           {!hasPositiveResourceReward ? '이번 정산은 2배 대상 없음' : !canDoubleReward ? '보상 2배 적용 완료' : !adFree && adsToday >= V4_DAILY_REWARDED_LIMIT ? '오늘 광고 한도 도달' : adFree ? '광고 제거 적용 · 오프라인 재화 2배' : '광고 보고 오프라인 재화 2배'}
         </button>}
-        <button type="button" className="v4-btn v4-btn--primary" onClick={onClose}>마을 확인</button>
+        <button ref={closeButtonRef} type="button" className="v4-btn v4-btn--primary" onClick={onClose}>마을 확인</button>
       </section>
     </div>
   );

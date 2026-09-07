@@ -84,6 +84,7 @@ describe('V4 offline result screen', () => {
     const dialog = screen.getByRole('dialog', { name: '마을이 당신을 기다렸습니다' });
     expect(dialog).toHaveAttribute('aria-labelledby', 'v4-offline-result-title');
     expect(screen.getByRole('heading', { name: '마을이 당신을 기다렸습니다' })).toHaveAttribute('id', 'v4-offline-result-title');
+    expect(screen.getByRole('button', { name: '마을 확인' })).toHaveFocus();
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledOnce();
