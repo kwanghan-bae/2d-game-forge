@@ -79,7 +79,8 @@ function PurchaseHarness({ monetization }: { monetization: V4MonetizationAdapter
   return (
     <>
       <div data-testid="purchase-message">{game.message ?? ''}</div>
-      <button type="button" onClick={() => { void game.buyAdFree(); }}>purchase</button>
+      <div data-testid="purchase-pending">{game.adFreePurchasePending ? 'pending' : 'idle'}</div>
+      <button type="button" disabled={game.adFreePurchasePending} onClick={() => { void game.buyAdFree(); }}>purchase</button>
     </>
   );
 }
@@ -783,6 +784,29 @@ describe('useV4Game monetization actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'purchase' }));
 
     await waitFor(() => expect(screen.getByTestId('purchase-message')).toHaveTextContent('구매를 확인하지 못했습니다'));
+  });
+
+  it('allows only one ad-free purchase request while the provider is pending', async () => {
+    const monetization = new V4MonetizationAdapter(null, null);
+    let releasePurchase!: (result: Awaited<ReturnType<V4MonetizationAdapter['buyAdFree']>>) => void;
+    const pending = new Promise<Awaited<ReturnType<V4MonetizationAdapter['buyAdFree']>>>((resolve) => {
+      releasePurchase = resolve;
+    });
+    const purchase = vi.spyOn(monetization, 'buyAdFree').mockReturnValue(pending);
+    render(<PurchaseHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'purchase' }));
+    expect(screen.getByTestId('purchase-pending')).toHaveTextContent('pending');
+    expect(screen.getByRole('button', { name: 'purchase' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'purchase' }));
+    expect(purchase).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      releasePurchase({ granted: false, reason: 'provider_failed' });
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId('purchase-pending')).toHaveTextContent('idle');
+    expect(screen.getByRole('button', { name: 'purchase' })).toBeEnabled();
   });
 
   it('keeps the game playable when a restore bridge rejects', async () => {

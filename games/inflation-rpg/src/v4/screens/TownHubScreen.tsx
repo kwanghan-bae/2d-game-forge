@@ -21,6 +21,7 @@ interface Props {
   monetizationAvailable: boolean;
   adFree: boolean;
   adsToday: number;
+  adFreePurchasePending: boolean;
   onInterventionCharge: () => void;
   onBuyAdFree: () => void;
 }
@@ -97,7 +98,7 @@ function getTownObjective(save: V4SaveEnvelope): string {
   return '저승의 사가를 완성하세요. 시설을 강화하고 정책과 장비를 조정해 영원한 영웅의 마지막 원정을 준비하세요.';
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, adFreePurchasePending, onInterventionCharge, onBuyAdFree }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
@@ -263,7 +264,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
           <button type="button" className="v4-btn v4-btn--quiet" disabled={interventionFull || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onInterventionCharge}>
             {interventionFull ? '개입 충전 가득 참' : adFree ? '개입 충전' : '개입 충전 광고'}
           </button>
-          {!adFree && <button type="button" className="v4-btn v4-btn--quiet" onClick={onBuyAdFree}>광고 제거 구매</button>}
+          {!adFree && <button type="button" className="v4-btn v4-btn--quiet" disabled={adFreePurchasePending} onClick={onBuyAdFree}>{adFreePurchasePending ? '구매 처리 중' : '광고 제거 구매'}</button>}
         </div>
       </section>}
     </main>

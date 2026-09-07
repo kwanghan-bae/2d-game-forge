@@ -343,7 +343,7 @@ pnpm circular
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,542개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,544개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 약 5.2분).
@@ -358,6 +358,7 @@ pnpm circular
 - 저장 schema의 사가 `title`·`text`를 non-empty 문자열로 강화해 공백·빈 기록을 `invalid_schema`로 격리했다. save recovery 회귀 테스트를 추가했다.
 - 시설 task의 표시명과 원정 패배 원인도 non-empty 문자열로 강화해 빈 작업·빈 결과 설명이 저장 payload를 통과하지 못하도록 했다. save recovery 회귀 테스트를 추가했다.
 - 설정의 구매 복원 버튼을 provider 응답 대기 중 잠그고 진행 문구를 표시해 모바일 연속 탭의 중복 native 요청을 UI 단계에서 차단했다. SettingsScreen 회귀 테스트를 추가했다.
+- 광고 제거 구매도 훅과 TownHub 버튼에서 처리 중 상태를 공유해, store 응답 전 연속 탭과 중복 구매 요청을 차단했다. TownHub·useV4Game 회귀 테스트를 추가했다.
 - 실제 산출물을 만들지 않는 workspace typecheck의 `tsbuildinfo` output 경고를 제거하도록 Turbo task 선언을 정리했다.
 - 명시적 V3 영웅 가져오기에서 active task·원정·사가가 공유하는 ID namespace 충돌을 피하도록 saga ID allocator를 보강했다.
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.

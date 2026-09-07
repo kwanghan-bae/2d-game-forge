@@ -92,6 +92,8 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const offlineRewardClaimInFlight = useRef(false);
   const instantTaskInFlight = useRef(new Set<FacilityId>());
   const interventionChargeInFlight = useRef(false);
+  const adFreePurchaseInFlight = useRef(false);
+  const [adFreePurchasePending, setAdFreePurchasePending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const updatePresentationClock = useCallback((timestamp: number) => {
@@ -366,11 +368,17 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setMessage('현재 환경에서는 결제를 사용할 수 없습니다. 게임은 계속 진행됩니다.');
       return;
     }
+    if (adFreePurchaseInFlight.current || readAdFreeEntitlement(monetization)) return;
+    adFreePurchaseInFlight.current = true;
+    if (mountedRef.current) setAdFreePurchasePending(true);
     try {
       const result = await monetization.buyAdFree();
       if (mountedRef.current) setMessage(result.granted ? '광고 제거가 적용되었습니다.' : '구매가 완료되지 않았습니다.');
     } catch {
       if (mountedRef.current) setMessage('구매를 확인하지 못했습니다. 게임은 계속 진행됩니다.');
+    } finally {
+      adFreePurchaseInFlight.current = false;
+      if (mountedRef.current) setAdFreePurchasePending(false);
     }
   }, [monetization]);
 
@@ -478,6 +486,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     adFree: readAdFreeEntitlement(monetization),
     adsToday: readAdsToday(monetization),
     offlineRewardDoubled,
+    adFreePurchasePending,
     doubleOfflineReward,
     instantTask,
     addInterventionCharge,

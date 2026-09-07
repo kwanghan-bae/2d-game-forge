@@ -21,6 +21,7 @@ function renderHub(overrides: Partial<React.ComponentProps<typeof TownHubScreen>
     monetizationAvailable: false,
     adFree: false,
     adsToday: 0,
+    adFreePurchasePending: false,
     onInterventionCharge: vi.fn(),
     onBuyAdFree: vi.fn(),
     ...overrides,
@@ -335,6 +336,17 @@ describe('V4 town hub support assignment', () => {
     if (!benefits) return;
     const charge = within(benefits).getByRole('button', { name: '개입 충전 가득 참' });
     expect(charge).toBeDisabled();
+  });
+
+  it('disables the ad-free purchase button while the store request is pending', () => {
+    const save = createInitialV4Save(109);
+    renderHub({ save, monetizationAvailable: true, adFreePurchasePending: true });
+
+    const benefits = screen.getByRole('heading', { name: /후원 혜택/ }).closest('section');
+    expect(benefits).not.toBeNull();
+    if (!benefits) return;
+
+    expect(within(benefits).getByRole('button', { name: '구매 처리 중' })).toBeDisabled();
   });
 
   it('disables instant facility completion after the daily ad limit', () => {
