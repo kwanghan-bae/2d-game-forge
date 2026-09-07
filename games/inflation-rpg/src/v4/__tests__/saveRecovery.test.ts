@@ -119,6 +119,15 @@ describe('V4 save recovery boundary', () => {
     expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
   });
 
+  it('rejects a payload with a blank hero equipment identifier', () => {
+    const invalid = createInitialV4Save(65431);
+    invalid.run.hero.equipmentIds = ['  '];
+    invalid.run.hero.equipmentLevels = { '  ': 1 };
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(invalid) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+  });
+
   it.each([
     ['title', (save: ReturnType<typeof createInitialV4Save>) => { save.meta.sagaEntries[0]!.title = '  '; }],
     ['text', (save: ReturnType<typeof createInitialV4Save>) => { save.meta.sagaEntries[0]!.text = ''; }],

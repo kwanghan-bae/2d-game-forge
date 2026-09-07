@@ -315,9 +315,10 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || typeof hero.emoji !== 'string' || hero.emoji.trim().length === 0
     || !REALM_IDS.includes(hero.realmId as typeof REALM_IDS[number])
     || !['rest', 'train', 'expedition'].includes(hero.currentAction as string)
-    || !Array.isArray(hero.equipmentIds) || !hero.equipmentIds.every((id) => typeof id === 'string')
+    || !Array.isArray(hero.equipmentIds)
+    || !hero.equipmentIds.every((id) => typeof id === 'string' && id.trim().length > 0)
     || (hero.equipmentLevels !== undefined && (!isRecord(hero.equipmentLevels)
-      || !Object.entries(hero.equipmentLevels).every(([id, level]) => typeof id === 'string'
+      || !Object.entries(hero.equipmentLevels).every(([id, level]) => id.trim().length > 0
         && isPersistableNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)))) return false;
   const equipmentIds = hero.equipmentIds as string[];
   if (hero.equipmentLevels !== undefined) {
