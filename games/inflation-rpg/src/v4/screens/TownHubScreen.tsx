@@ -3,6 +3,7 @@ import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getN
 import { getV4EquipmentName } from '../equipment';
 import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
 import type { FacilityId, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
+import { V4_MAX_INTERVENTION_CHARGES } from '../types';
 
 interface Props {
   save: V4SaveEnvelope;
@@ -76,7 +77,7 @@ function getTownObjective(save: V4SaveEnvelope): string {
 export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
-  const interventionFull = save.run.interventionCharges >= 3;
+  const interventionFull = save.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES;
   return (
     <main className="v4-container" data-testid="v4-town-hub">
       <section className="v4-panel v4-hero-card">
@@ -195,7 +196,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
       <section className="v4-panel">
         <div className="v4-panel-head">
           <h2>신의 개입</h2>
-          <span className="v4-action">충전 {save.run.interventionCharges}/3</span>
+          <span className="v4-action">충전 {save.run.interventionCharges}/{V4_MAX_INTERVENTION_CHARGES}</span>
         </div>
         <p>자동 흐름을 바꾸는 안전장치입니다. 사용해도 장비나 영구 재화를 잃지 않습니다.</p>
         <div className="v4-button-row">

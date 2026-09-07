@@ -28,6 +28,7 @@ import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
 import type { V4MonetizationAdapter, V4RewardedPlacement } from './monetization';
 import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope, V4Settings } from './types';
+import { V4_MAX_INTERVENTION_CHARGES } from './types';
 
 export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [boot] = useState(() => {
@@ -189,7 +190,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   const addInterventionCharge = useCallback(async () => {
     if (interventionChargeInFlight.current) return;
-    if (saveRef.current.run.interventionCharges >= 3) {
+    if (saveRef.current.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES) {
       setMessage('개입 충전이 이미 가득 찼습니다.');
       return;
     }

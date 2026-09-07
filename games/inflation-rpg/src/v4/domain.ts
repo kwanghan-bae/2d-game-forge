@@ -3,7 +3,7 @@ import {
   getV4FacilityDefinition,
   getV4RealmDefinition,
 } from './data';
-import { V4_MAX_SAGA_ENTRIES } from './types';
+import { V4_MAX_INTERVENTION_CHARGES, V4_MAX_SAGA_ENTRIES } from './types';
 import { applyV4EquipmentBonuses, getV4EquipmentBonuses } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
@@ -52,7 +52,7 @@ export interface FacilityTaskPreview {
 
 export type FacilityUpgradeCost = { gold: number; materials: number };
 
-export const MAX_INTERVENTION_CHARGES = 3;
+export { V4_MAX_INTERVENTION_CHARGES as MAX_INTERVENTION_CHARGES } from './types';
 export const AGENT_REST_RECOVERY = 25;
 const FACILITY_OUTPUT_PER_LEVEL = 0.18;
 const FACILITY_UPGRADE_GROWTH = 1.35;
@@ -856,10 +856,10 @@ export function grantOfflineResourceBonus(
 }
 
 export function grantInterventionCharge(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
-  if (!isActionClockValid(source, now) || source.run.interventionCharges >= MAX_INTERVENTION_CHARGES) return source;
+  if (!isActionClockValid(source, now) || source.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES) return source;
   const save = cloneSave(source);
   save.run.interventionCharges = Math.min(
-    MAX_INTERVENTION_CHARGES,
+    V4_MAX_INTERVENTION_CHARGES,
     save.run.interventionCharges + 1,
   );
   touchSave(save, now);

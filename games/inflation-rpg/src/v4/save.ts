@@ -11,13 +11,14 @@ import type {
   V4HeroSnapshot,
   V4SaveEnvelope,
 } from './types';
-import { V4_MAX_SAGA_ENTRIES } from './types';
+import { V4_MAX_INTERVENTION_CHARGES, V4_MAX_SAGA_ENTRIES } from './types';
+
+export { V4_MAX_INTERVENTION_CHARGES } from './types';
 
 export const V4_SAVE_KEY = 'shin-ui-eternal-sponsor-v4-save-v1';
 export const V4_SCHEMA_VERSION = 1 as const;
 export const V4_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 export const V4_OFFLINE_EFFICIENCY = 0.7;
-export const V4_MAX_INTERVENTION_CHARGES = 3;
 export const V4_RECOVERY_BACKUP_KEY = `${V4_SAVE_KEY}-recovery-backup`;
 
 export type V4SaveLoadResult =

@@ -14,6 +14,7 @@ export type RealmId = 'joseon_plains' | 'deep_forest' | 'underworld';
 export type EncounterTier = 'normal' | 'elite' | 'boss';
 
 export const V4_MAX_SAGA_ENTRIES = 200;
+export const V4_MAX_INTERVENTION_CHARGES = 3;
 
 export interface RealmEncounterDefinition {
   id: string;
