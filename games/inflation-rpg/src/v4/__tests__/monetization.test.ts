@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createNativeV4Monetization, createV4MonetizationAdapter, hasV4AdFreeEntitlement, V4_DAILY_REWARDED_LIMIT, V4MonetizationAdapter } from '../monetization';
+import { createNativeV4Monetization, createV4MonetizationAdapter, hasV4AdFreeEntitlement, V4_DAILY_REWARDED_LIMIT, V4_MONETIZATION_TIMEOUT_MS, V4MonetizationAdapter } from '../monetization';
 
 const nativeBridge = vi.hoisted(() => ({
   onAdFreeChanged: null as ((owned: boolean) => void) | null,
@@ -59,6 +59,22 @@ describe('v4 monetization adapter', () => {
       reason: 'provider_failed',
     });
     expect(adapter.getAdsToday()).toBe(0);
+  });
+
+  it('fails a rewarded request when the provider stays pending beyond the safety deadline', async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = new Promise<boolean>(() => {});
+      const adapter = new V4MonetizationAdapter({ showRewarded: async () => pending }, null);
+      const reward = adapter.watchRewarded('offline_double');
+
+      await vi.advanceTimersByTimeAsync(V4_MONETIZATION_TIMEOUT_MS);
+
+      await expect(reward).resolves.toEqual({ granted: false, reason: 'provider_failed' });
+      expect(adapter.getAdsToday()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('rejects an unknown rewarded placement before calling the provider', async () => {
