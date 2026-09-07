@@ -165,7 +165,10 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(meta) || !isRecord(run)) return false;
 
   const currencies = meta.currencies;
-  if (!isRecord(currencies) || !CURRENCY_KEYS.every((key) => isPersistableNonNegativeNumber(currencies[key]))) return false;
+  if (!isRecord(currencies)
+    || Object.keys(currencies).length !== CURRENCY_KEYS.length
+    || !Object.keys(currencies).every((key) => CURRENCY_KEYS.includes(key as V4CurrencyKey))
+    || !CURRENCY_KEYS.every((key) => isPersistableNonNegativeNumber(currencies[key]))) return false;
 
   const facilities = meta.facilities;
   if (!isRecord(facilities) || Object.keys(facilities).length !== FACILITY_IDS.length || !FACILITY_IDS.every((id) => {

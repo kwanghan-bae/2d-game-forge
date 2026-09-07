@@ -98,6 +98,12 @@ describe('v4 save and domain', () => {
 
     storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
       ...save,
+      meta: { ...save.meta, currencies: { ...save.meta.currencies, cheat: 1 } },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
       meta: { ...save.meta, sagaEntries: [save.meta.sagaEntries[0], save.meta.sagaEntries[0]] },
     }));
     expect(loadV4Save(fakeStorage)).toBeNull();
