@@ -32,6 +32,7 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
       <div data-testid="clock">{game.now}</div>
       <div data-testid="ad-free">{game.adFree ? 'owned' : 'not-owned'}</div>
+      <div data-testid="message">{game.message ?? ''}</div>
       <button type="button" onClick={() => { void game.doubleOfflineReward(); }}>double</button>
       <button type="button" onClick={game.settleOffline}>resume</button>
       <button type="button" onClick={() => game.startTask('temple')}>start temple</button>
@@ -66,6 +67,16 @@ function RestoreHarness({ monetization }: { monetization: V4MonetizationAdapter 
       <div data-testid="ad-free-state">{game.adFree ? 'owned' : 'not-owned'}</div>
       <div data-testid="restore-message">{game.message ?? ''}</div>
       <button type="button" onClick={() => { void game.restorePurchases(); }}>restore</button>
+    </>
+  );
+}
+
+function PurchaseHarness({ monetization }: { monetization: V4MonetizationAdapter }) {
+  const game = useV4Game(monetization);
+  return (
+    <>
+      <div data-testid="purchase-message">{game.message ?? ''}</div>
+      <button type="button" onClick={() => { void game.buyAdFree(); }}>purchase</button>
     </>
   );
 }
@@ -137,6 +148,27 @@ describe('useV4Game monetization actions', () => {
     act(() => { monetization.setAdFreeOwned(true); });
 
     expect(screen.getByTestId('ad-free')).toHaveTextContent(/^owned$/);
+  });
+
+  it('keeps offline rewards playable when a custom ad bridge rejects', async () => {
+    const base = createInitialV4Save(2);
+    const startedAt = Date.now() - 60_000;
+    setFixtureTimeline(base, startedAt);
+    const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    persistV4Save(started.save);
+
+    const monetization = new V4MonetizationAdapter(null, null);
+    vi.spyOn(monetization, 'watchRewarded').mockRejectedValue(new Error('native bridge unavailable'));
+    render(<Harness monetization={monetization} />);
+    await waitFor(() => expect(screen.getByTestId('offline-state')).toHaveTextContent('ready'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'double' }));
+
+    await waitFor(() => expect(screen.getByTestId('message')).toHaveTextContent('광고를 불러오지 못했습니다'));
+    expect(screen.getByTestId('spirit')).toHaveTextContent('112');
   });
 
   it('uses offline efficiency when settling work after a background resume', async () => {
@@ -722,6 +754,26 @@ describe('useV4Game monetization actions', () => {
 
     await waitFor(() => expect(screen.getByTestId('ad-free-state')).toHaveTextContent('owned'));
     expect(screen.getByTestId('restore-message')).toHaveTextContent('광고 제거 구매를 복원했습니다.');
+  });
+
+  it('keeps the game playable when a purchase bridge rejects', async () => {
+    const monetization = new V4MonetizationAdapter(null, null);
+    vi.spyOn(monetization, 'buyAdFree').mockRejectedValue(new Error('store unavailable'));
+    render(<PurchaseHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'purchase' }));
+
+    await waitFor(() => expect(screen.getByTestId('purchase-message')).toHaveTextContent('구매를 확인하지 못했습니다'));
+  });
+
+  it('keeps the game playable when a restore bridge rejects', async () => {
+    const monetization = new V4MonetizationAdapter(null, null, null, async () => true);
+    vi.spyOn(monetization, 'restorePurchases').mockRejectedValue(new Error('store unavailable'));
+    render(<RestoreHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'restore' }));
+
+    await waitFor(() => expect(screen.getByTestId('restore-message')).toHaveTextContent('구매 복원에 실패했습니다'));
   });
 });
 

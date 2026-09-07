@@ -336,6 +336,42 @@ describe('v4 monetization adapter', () => {
     vi.useRealTimers();
   });
 
+  it('accumulates every ad that crosses midnight after today has been initialized', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date(2026, 8, 6, 23, 59));
+      const counts = new Map<string, number>();
+      const releases: Array<(watched: boolean) => void> = [];
+      const adapter = new V4MonetizationAdapter(
+        { showRewarded: () => new Promise<boolean>((resolve) => { releases.push(resolve); }) },
+        null,
+        {
+          read: (day) => counts.get(day) ?? 0,
+          write: (day, count) => counts.set(day, count),
+        },
+      );
+
+      const yesterdayFirst = adapter.watchRewarded('offline_double');
+      const yesterdaySecond = adapter.watchRewarded('instant_task');
+      await Promise.resolve();
+
+      vi.setSystemTime(new Date(2026, 8, 7, 0, 1));
+      const today = adapter.watchRewarded('intervention_charge');
+      await Promise.resolve();
+
+      releases[0]?.(true);
+      releases[1]?.(true);
+      await Promise.all([yesterdayFirst, yesterdaySecond]);
+      releases[2]?.(true);
+      await today;
+
+      expect(counts.get('2026-8-6')).toBe(2);
+      expect(counts.get('2026-8-7')).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('restores the daily usage count when the adapter is recreated', async () => {
     const counts = new Map<string, number>();
     const usageStore = {

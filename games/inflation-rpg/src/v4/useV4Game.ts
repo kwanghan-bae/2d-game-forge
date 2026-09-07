@@ -191,15 +191,21 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setMessage('현재 환경에서는 광고 혜택을 사용할 수 없습니다. 게임은 계속 진행됩니다.');
       return false;
     }
-    const result = await monetization.watchRewarded(placement);
-    if (!mountedRef.current) return false;
-    if (result.granted) return true;
     const messages = {
       daily_limit: '오늘의 보상형 광고 횟수를 모두 사용했습니다.',
       provider_failed: '광고를 불러오지 못했습니다. 게임은 계속 진행됩니다.',
       not_purchased: '구매가 완료되지 않았습니다.',
       granted: '',
     } as const;
+    let result;
+    try {
+      result = await monetization.watchRewarded(placement);
+    } catch {
+      if (mountedRef.current) setMessage(messages.provider_failed);
+      return false;
+    }
+    if (!mountedRef.current) return false;
+    if (result.granted) return true;
     setMessage(messages[result.reason]);
     return false;
   }, [monetization]);
@@ -333,8 +339,12 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setMessage('현재 환경에서는 결제를 사용할 수 없습니다. 게임은 계속 진행됩니다.');
       return;
     }
-    const result = await monetization.buyAdFree();
-    if (mountedRef.current) setMessage(result.granted ? '광고 제거가 적용되었습니다.' : '구매가 완료되지 않았습니다.');
+    try {
+      const result = await monetization.buyAdFree();
+      if (mountedRef.current) setMessage(result.granted ? '광고 제거가 적용되었습니다.' : '구매가 완료되지 않았습니다.');
+    } catch {
+      if (mountedRef.current) setMessage('구매를 확인하지 못했습니다. 게임은 계속 진행됩니다.');
+    }
   }, [monetization]);
 
   const restorePurchases = useCallback(async () => {
@@ -342,13 +352,17 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setMessage('현재 환경에서는 구매 복원을 사용할 수 없습니다. 게임은 계속 진행됩니다.');
       return;
     }
-    const result = await monetization.restorePurchases();
-    if (!mountedRef.current) return;
-    setMessage(result.granted
-      ? '광고 제거 구매를 복원했습니다.'
-      : result.reason === 'not_purchased'
-        ? '복원할 광고 제거 구매를 찾지 못했습니다.'
-        : '구매 복원에 실패했습니다. 게임은 계속 진행됩니다.');
+    try {
+      const result = await monetization.restorePurchases();
+      if (!mountedRef.current) return;
+      setMessage(result.granted
+        ? '광고 제거 구매를 복원했습니다.'
+        : result.reason === 'not_purchased'
+          ? '복원할 광고 제거 구매를 찾지 못했습니다.'
+          : '구매 복원에 실패했습니다. 게임은 계속 진행됩니다.');
+    } catch {
+      if (mountedRef.current) setMessage('구매 복원에 실패했습니다. 게임은 계속 진행됩니다.');
+    }
   }, [monetization]);
 
   const startRun = useCallback((realmId: RealmId, agentId: SupportAgentId | null = null) => {
