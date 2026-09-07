@@ -199,6 +199,7 @@ pnpm circular
 - dev-shell의 서버 manifest와 클라이언트 loader가 공용 data-only manifest를 사용하도록 통합해 slug·제품명·asset 경로 drift를 차단했다.
 - dev-shell portal E2E에서 V4/legacy route가 각각 실제 V4App/V3 MainMenu를 마운트하는지 검증했다(4/4).
 - dev-shell 동적 게임 loader의 import/부팅 예외를 accessible 오류 상태로 격리하고, route cleanup 이후 늦게 도착한 promise의 마운트를 무시하도록 보강했다.
+- loader 오류 UI는 게임이 소유하는 `#game-container` 밖에 렌더링해 부팅 실패 시에도 별도 React root와 충돌하지 않도록 고정했다.
 - loader route가 바뀔 때 이전 게임의 오류 상태가 남지 않도록 effect lifecycle에서 오류 표시를 초기화했다.
 - V4 신규 저장 vertical-slice의 Chromium·iPhone14 smoke에서 document 가로 overflow가 발생하지 않는지 함께 검증했다.
 - dev-shell README와 ARCHITECTURE의 registry·라우팅 설명을 공용 manifest 및 V4/legacy 실제 경로와 일치시켰다.

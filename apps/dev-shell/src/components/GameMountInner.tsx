@@ -46,12 +46,13 @@ export default function GameMountInner({ slug, assetsBasePath }: GameMountProps)
   }, [slug, assetsBasePath, containerId]);
 
   return (
-    <div id={containerId} className="mx-auto">
+    <>
+      <div id={containerId} className="mx-auto" />
       {loadError && (
         <p role="alert" data-testid="game-load-error" className="rounded-md border border-red-900 bg-red-950/40 p-4 text-sm text-red-200">
           {loadError}
         </p>
       )}
-    </div>
+    </>
   );
 }
