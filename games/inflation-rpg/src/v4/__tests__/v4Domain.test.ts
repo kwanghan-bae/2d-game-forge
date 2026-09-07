@@ -1730,6 +1730,38 @@ describe('v4 save and domain', () => {
     expect(expedition.save).toBe(initial);
   });
 
+  it('does not overflow the clock when a staged expedition reaches the next encounter', () => {
+    const initial = createInitialV4Save(127);
+    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const expedition = started.save.run.expedition;
+    if (!expedition) throw new Error('expedition was not started');
+    expedition.id = 'staged-clock-overflow';
+    expedition.startedAt = Number.MAX_SAFE_INTEGER - 1_000;
+    expedition.completesAt = Number.MAX_SAFE_INTEGER - 1;
+    started.save.run.hero.atk = Number.MAX_SAFE_INTEGER;
+    started.save.run.hero.def = Number.MAX_SAFE_INTEGER;
+    started.save.run.hero.hp = Number.MAX_SAFE_INTEGER;
+    started.save.run.hero.hpMax = Number.MAX_SAFE_INTEGER;
+
+    const settled = completeFacilityTasks(started.save, expedition.completesAt);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+
+    expect(settled.run.expedition).toMatchObject({
+      encounterIndex: 0,
+      startedAt: Number.MAX_SAFE_INTEGER - 1_000,
+      completesAt: Number.MAX_SAFE_INTEGER - 1,
+    });
+    expect(persistV4Save(settled, fakeStorage)).toBe(true);
+    expect(loadV4Save(fakeStorage)).not.toBeNull();
+  });
+
   it('does not mutate a full intervention reserve', () => {
     const full = createInitialV4Save(97);
     full.run.interventionCharges = 3;

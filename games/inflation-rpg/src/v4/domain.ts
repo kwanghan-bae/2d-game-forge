@@ -574,6 +574,18 @@ function resolveExpedition(
       expedition.status = 'awaiting_confirmation';
       return;
     }
+    // Preflight the next stage before resolving this encounter. Without this
+    // guard, a valid-but-near-ceiling completion time could resolve the battle
+    // and then write an unsafe `completesAt` for the next encounter, leaving a
+    // save that fails schema validation on the next load.
+    const nextEncounter = !isBoss ? realm.encounters[encounterIndex + 1] : undefined;
+    const nextCompletionAt = nextEncounter
+      ? safeCompletionTimestamp(
+        expedition.completesAt,
+        expeditionDurationSeconds(save, nextEncounter.durationSeconds, expedition.assignedAgentId === 'guide'),
+      )
+      : null;
+    if (nextEncounter && nextCompletionAt === null) return;
 
     const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
     const runtime = createV4HeroRuntime(save.run.hero);
@@ -603,11 +615,10 @@ function resolveExpedition(
     expedition.totalDamageTaken = (expedition.totalDamageTaken ?? 0) + battle.totalDamageTaken;
 
     if (won && !isBoss) {
-      const nextEncounter = realm.encounters[encounterIndex + 1];
-      if (!nextEncounter) return;
+      if (!nextEncounter || nextCompletionAt === null) return;
       expedition.encounterIndex = encounterIndex + 1;
       expedition.startedAt = expedition.completesAt;
-      expedition.completesAt = expedition.startedAt + expeditionDurationSeconds(save, nextEncounter.durationSeconds, Boolean(guide)) * 1000;
+      expedition.completesAt = nextCompletionAt;
       continue;
     }
 
