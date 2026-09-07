@@ -649,6 +649,20 @@ export function simulateOfflineProgress(
     };
   }
   const processed = completeFacilityTasks(save, processUntil, V4_OFFLINE_EFFICIENCY, false, true);
+  if (processed === save) {
+    // A malformed balance, agent, or task must not consume the offline clock.
+    // Keeping the original envelope lets a later recovery or explicit action
+    // retry the blocked settlement instead of permanently skipping it.
+    return {
+      save,
+      summary: {
+        processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [], equipmentUpgraded: [],
+        wasClamped: false, clockAnomaly: null,
+        notes: ['저장 상태를 확인할 수 없어 오프라인 보상을 정산하지 않았습니다.'],
+      },
+    };
+  }
   if (shouldParkRiskyExpeditionAfterOfflineCap(processed.run.expedition, processUntil, now)
     && processed.run.expedition) {
     // A non-safe route that finished after the 8h calculation window must not

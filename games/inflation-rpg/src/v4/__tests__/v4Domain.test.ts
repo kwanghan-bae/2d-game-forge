@@ -1132,6 +1132,26 @@ describe('v4 save and domain', () => {
     expect(guide.level).toBe(1.5);
   });
 
+  it('does not consume the offline clock when malformed agent settlement is blocked', () => {
+    const initial = createInitialV4Save(138);
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const agent = started.save.meta.agents.find((item) => item.id === 'blacksmith');
+    if (!agent) return;
+    agent.trust = Number.NaN;
+    const beforeUpdatedAt = started.save.updatedAt;
+    const beforeProcessedAt = started.save.lastProcessedAt;
+
+    const result = simulateOfflineProgress(started.save, started.task.completesAt + HOUR);
+
+    expect(result.save).toBe(started.save);
+    expect(result.save.updatedAt).toBe(beforeUpdatedAt);
+    expect(result.save.lastProcessedAt).toBe(beforeProcessedAt);
+    expect(result.summary.completedTaskIds).toEqual([]);
+    expect(result.summary.resourcesGained).toEqual({});
+  });
+
   it('promotes an agent after trust grows through completed work', () => {
     const initial = createInitialV4Save(78);
     initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'
