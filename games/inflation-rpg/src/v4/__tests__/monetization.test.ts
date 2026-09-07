@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createV4MonetizationAdapter, V4_DAILY_REWARDED_LIMIT, V4MonetizationAdapter } from '../monetization';
+import { createV4MonetizationAdapter, hasV4AdFreeEntitlement, V4_DAILY_REWARDED_LIMIT, V4MonetizationAdapter } from '../monetization';
 
 describe('v4 monetization adapter', () => {
+  it('recognizes only the ad-free product during purchase restoration', () => {
+    expect(hasV4AdFreeEntitlement([])).toBe(false);
+    expect(hasV4AdFreeEntitlement([{ productId: 'crack_stones' }])).toBe(false);
+    expect(hasV4AdFreeEntitlement([{ productId: 'ad_free' }])).toBe(true);
+    expect(hasV4AdFreeEntitlement([{ productId: 'ad_free' }, { productId: 'other' }])).toBe(true);
+  });
+
   it('limits rewarded ads to five successful views and never blocks play', async () => {
     let calls = 0;
     const adapter = new V4MonetizationAdapter({

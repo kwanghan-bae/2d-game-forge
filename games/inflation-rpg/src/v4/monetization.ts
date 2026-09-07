@@ -34,6 +34,12 @@ function isRewardedPlacement(value: unknown): value is V4RewardedPlacement {
   return value === 'offline_double' || value === 'instant_task' || value === 'intervention_charge';
 }
 
+export function hasV4AdFreeEntitlement(
+  purchases: readonly { productId?: unknown }[],
+): boolean {
+  return purchases.some((purchase) => purchase?.productId === 'ad_free');
+}
+
 function normalizeDailyUsage(count: number): number {
   return Number.isFinite(count)
     ? Math.min(V4_DAILY_REWARDED_LIMIT, Math.max(0, Math.floor(count)))
@@ -140,7 +146,7 @@ export async function createNativeV4Monetization(
   });
   const adapter = createV4MonetizationAdapter(service, options.usageStore, async () => {
     const restored = await service.restorePurchasesManually();
-    return restored.some((purchase) => purchase.productId === 'ad_free');
+    return hasV4AdFreeEntitlement(restored);
   });
   adapter.setAdFreeOwned(adFreeOwned);
   const syncEntitlement = () => {
@@ -162,9 +168,9 @@ export async function createNativeV4Monetization(
     },
     async restorePurchases() {
       try {
-        await service.restorePurchasesManually();
+        const restored = await service.restorePurchasesManually();
         syncEntitlement();
-        return true;
+        return hasV4AdFreeEntitlement(restored);
       } catch {
         return false;
       }
