@@ -303,7 +303,8 @@ pnpm circular
 - 영웅 상세 헤더의 나이도 마을 화면과 동일한 안전 정수·한국어 숫자 표시를 사용한다.
 - malformed 영웅 스탯 합산이 `Infinity`가 되는 경우에도 전투력을 0으로 되돌리지 않고 `Number.MAX_SAFE_INTEGER`로 포화시키는 회귀를 추가해, `NaN` fallback과 overflow 상한을 분리했다.
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 398개 파일, 3,464개 테스트 통과.
+- 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 398개 파일, 3,465개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 30/30 통과(각 프로젝트 15/15).
 - V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22, 4.5분).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).

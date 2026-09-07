@@ -38,6 +38,26 @@ describe('V4 save recovery boundary', () => {
     expect(loadV4Save(storage)).toBeNull();
   });
 
+  it('isolates arbitrary JSON payloads without throwing during recovery', () => {
+    const payloads: unknown[] = [
+      null,
+      [],
+      0,
+      false,
+      'text',
+      { schemaVersion: 1 },
+      { schemaVersion: 1, meta: { currencies: { gold: Number.MAX_SAFE_INTEGER + 1 } } },
+      { schemaVersion: 1, run: { hero: { equipmentIds: { nested: true } } } },
+      { __proto__: { schemaVersion: 1 }, schemaVersion: 1, meta: [], run: null },
+    ];
+
+    for (const payload of payloads) {
+      const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(payload) });
+      expect(() => readV4Save(storage)).not.toThrow();
+      expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+    }
+  });
+
   it('backs up the invalid payload only when the player starts a fresh V4 save', () => {
     const raw = JSON.stringify({ schemaVersion: 999, keep: 'for-recovery' });
     const storage = memoryStorage({ [V4_SAVE_KEY]: raw });
