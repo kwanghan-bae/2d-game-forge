@@ -478,6 +478,14 @@ export function cancelFacilityTask(
     return { ok: false, save: source, error: '취소할 작업이 없습니다.' };
   }
 
+  if (task.completesAt <= eventTimestamp(save, now)) {
+    return {
+      ok: false,
+      save: source,
+      error: '이미 완료된 작업입니다. 진행 확인으로 결과를 정산해 주세요.',
+    };
+  }
+
   give(save, task.input, 0.8);
   facility.activeTaskId = null;
   delete save.meta.tasks[task.id];

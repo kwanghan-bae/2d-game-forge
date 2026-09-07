@@ -837,6 +837,21 @@ describe('v4 save and domain', () => {
     expect(canceled.save.meta.agents.find((agent) => agent.id === 'blacksmith')?.activeTaskId).toBeNull();
   });
 
+  it('does not refund a facility task that is already due for settlement', () => {
+    const initial = createInitialV4Save(72);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const result = cancelFacilityTask(started.save, 'temple', started.task.completesAt);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(started.save);
+    if (result.ok) return;
+    expect(result.error).toContain('이미 완료');
+    expect(result.save.meta.tasks[started.task.id]).toBeDefined();
+  });
+
   it('gates agent specialty by trust and slows tired agents', () => {
     const initial = createInitialV4Save(75);
     const baseline = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
