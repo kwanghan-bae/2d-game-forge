@@ -81,6 +81,9 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
         {summary.clockAnomaly === 'backwards' && <div className="v4-alert">기기 시간이 이전 처리 시각보다 빠릅니다. 중복 보상을 막았습니다.</div>}
         {summary.clockAnomaly === 'future' && <div className="v4-alert">저장 시각이 현재보다 미래입니다. 기기 시간을 확인해 주세요.</div>}
         {summary.clockAnomaly === 'invalid' && <div className="v4-alert">기기 시각을 확인할 수 없어 보상을 정산하지 않았습니다.</div>}
+        {summary.notes
+          .filter((note) => typeof note === 'string' && note.trim().length > 0)
+          .map((note, index) => <div className="v4-alert" key={`${note}-${index}`}>{note}</div>)}
         <div className="v4-detail-grid">
           {resourceEntries.length > 0
             ? resourceEntries.map(([key, value]) => <div className="v4-detail-stat" key={key}><small>{getV4CurrencyName(key)}</small><strong>+{value.toLocaleString('ko-KR')}</strong></div>)

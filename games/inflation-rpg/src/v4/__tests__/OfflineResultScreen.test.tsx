@@ -77,6 +77,12 @@ describe('V4 offline result screen', () => {
     expect(result.textContent).not.toContain('-5');
   });
 
+  it('shows offline settlement notes that explain the applied boundary', () => {
+    render(<OfflineResultScreen summary={summary({ notes: ['안전한 작업만 오프라인으로 정산했습니다.'] })} onClose={() => {}} />);
+
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('안전한 작업만 오프라인으로 정산했습니다.');
+  });
+
   it('closes from Escape and exposes the dialog title to assistive technology', () => {
     const onClose = vi.fn();
     render(<OfflineResultScreen summary={summary()} onClose={onClose} />);
