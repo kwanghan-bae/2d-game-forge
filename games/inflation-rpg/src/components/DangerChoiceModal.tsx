@@ -13,6 +13,10 @@ const IDLE_TIMEOUT_MS = 4000;
  */
 export function DangerChoiceModal({ onClose }: Props) {
   const controller = useCycleStoreV2(s => s.controller);
+  const hero = controller?.getHero() ?? null;
+  const shouldAutoRetreat = hero !== null
+    && hero.hpMax > 0
+    && hero.hp / hero.hpMax < 0.5;
   const [timeLeft, setTimeLeft] = useState(IDLE_TIMEOUT_MS);
   const resolvedRef = useRef(false);
   const onCloseRef = useRef(onClose);
@@ -24,9 +28,9 @@ export function DangerChoiceModal({ onClose }: Props) {
         if (resolvedRef.current) return 0;
         if (current <= 100) {
           resolvedRef.current = true;
-          // Full HP is the safest default for an idle run: keep the route
-          // moving instead of silently spending gold on a retreat.
-          controller?.setDangerChoice(false);
+          // Keep a healthy run moving, but avoid an idle death spiral when
+          // the hero is already below half HP.
+          controller?.setDangerChoice(shouldAutoRetreat);
           onCloseRef.current();
           return 0;
         }
@@ -34,11 +38,9 @@ export function DangerChoiceModal({ onClose }: Props) {
       });
     }, 100);
     return () => clearInterval(interval);
-  }, [controller]);
+  }, [controller, shouldAutoRetreat]);
 
-  if (!controller) return null;
-
-  const hero = controller.getHero();
+  if (!controller || !hero) return null;
   const retreatCost = Math.max(50, hero.level * 3);
 
   const handleChoice = (retreat: boolean) => {
@@ -77,7 +79,7 @@ export function DangerChoiceModal({ onClose }: Props) {
           <div style={{ height: '100%', background: '#f0c040', width: `${(timeLeft / IDLE_TIMEOUT_MS) * 100}%`, transition: 'width 0.1s linear' }} />
         </div>
         <div style={{ marginBottom: 12, fontSize: 11, color: '#888' }}>
-          {Math.ceil(timeLeft / 1000)}초 후 자동 전투
+          {Math.ceil(timeLeft / 1000)}초 후 자동 {shouldAutoRetreat ? '도주' : '전투'}
         </div>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button data-testid="danger-choice-fight" onClick={handleFight} style={{
