@@ -422,6 +422,68 @@ describe('useV4Game monetization actions', () => {
     expect(screen.getByTestId('policy')).toHaveTextContent('training');
   });
 
+  it('does not call the instant-task ad when a stale task is already naturally complete', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(114);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1_000;
+    persistV4Save(started.save);
+
+    const showRewarded = vi.fn(async () => true);
+    const monetization = new V4MonetizationAdapter({ showRewarded }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+    vi.setSystemTime(11_001);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('message')).toHaveTextContent('이미 완료된 작업입니다');
+    expect(showRewarded).not.toHaveBeenCalled();
+    expect(screen.getByTestId('instant-task-count')).toHaveTextContent('1');
+  });
+
+  it('does not apply instant completion when the task becomes due while the ad is pending', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(115);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1_000;
+    persistV4Save(started.save);
+
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const showRewarded = vi.fn(async () => {
+      await pending;
+      return true;
+    });
+    const monetization = new V4MonetizationAdapter({ showRewarded }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+      await Promise.resolve();
+    });
+    expect(showRewarded).toHaveBeenCalledOnce();
+
+    vi.setSystemTime(11_001);
+    await act(async () => {
+      release();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('instant-task-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('message')).toHaveTextContent('자연 완료되어');
+  });
+
   it('does not commit an instant task after the game unmounts while an ad is pending', async () => {
     const base = createInitialV4Save(111);
     const started = startFacilityTask(base, 'temple', base.updatedAt);

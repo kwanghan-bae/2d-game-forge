@@ -193,8 +193,14 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     if (instantTaskInFlight.current.has(facilityId)) return;
     const current = saveRef.current;
     const activeTaskId = current.meta.facilities[facilityId]?.activeTaskId;
-    if (!activeTaskId || !current.meta.tasks[activeTaskId]) {
+    const currentTask = activeTaskId ? current.meta.tasks[activeTaskId] : undefined;
+    if (!activeTaskId || !currentTask) {
       setMessage('즉시 완료할 작업이 없습니다.');
+      return;
+    }
+    const currentTimestamp = Date.now();
+    if (!Number.isFinite(currentTimestamp) || currentTask.completesAt <= currentTimestamp) {
+      setMessage('이미 완료된 작업입니다. 진행 확인으로 결과를 정산해 주세요.');
       return;
     }
     instantTaskInFlight.current.add(facilityId);
@@ -205,6 +211,11 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       const latestTaskId = latest.meta.facilities[facilityId]?.activeTaskId;
       if (latestTaskId !== activeTaskId || !latestTaskId || !latest.meta.tasks[latestTaskId]) {
         setMessage('작업 상태가 바뀌어 광고 즉시 완료를 적용하지 않았습니다.');
+        return;
+      }
+      const latestTimestamp = Date.now();
+      if (!Number.isFinite(latestTimestamp) || latest.meta.tasks[latestTaskId].completesAt <= latestTimestamp) {
+        setMessage('작업이 자연 완료되어 광고 혜택을 적용하지 않았습니다.');
         return;
       }
       const result = completeFacilityTaskNow(latest, facilityId, Date.now());
