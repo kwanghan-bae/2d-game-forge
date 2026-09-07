@@ -50,7 +50,7 @@ function formatFiniteNumber(value: unknown): string {
 
 function formatFiniteDuration(value: unknown): string {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
-    ? Math.ceil(value).toLocaleString('ko-KR')
+    ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.ceil(value))).toLocaleString('ko-KR')
     : '0';
 }
 

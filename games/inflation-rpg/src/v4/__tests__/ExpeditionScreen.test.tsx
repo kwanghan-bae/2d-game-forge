@@ -223,6 +223,17 @@ describe('V4 expedition result screen', () => {
     expect(result.textContent).not.toContain('-5');
   });
 
+  it('caps an unsafe retry estimate before rendering it', () => {
+    renderResult(baseResult({
+      outcome: 'defeat',
+      retryAfterSeconds: Number.MAX_SAFE_INTEGER + 1,
+    }));
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result).toHaveTextContent('예상 재도전 9,007,199,254,740,991초');
+    expect(result.textContent).not.toContain('9,007,199,254,740,992');
+  });
+
   it('does not crash when an active expedition contains an inherited Realm key', () => {
     const save = createInitialV4Save(105);
     save.run.expedition = {
