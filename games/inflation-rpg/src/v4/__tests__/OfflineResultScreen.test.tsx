@@ -89,4 +89,32 @@ describe('V4 offline result screen', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it('keeps keyboard focus inside the result dialog', () => {
+    render(<OfflineResultScreen summary={summary()} onClose={() => {}} onDoubleReward={() => {}} />);
+
+    const doubleReward = screen.getByRole('button', { name: /오프라인 재화 2배/ });
+    const close = screen.getByRole('button', { name: '마을 확인' });
+    close.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(doubleReward).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(close).toHaveFocus();
+  });
+
+  it('restores focus to the opener when the result dialog unmounts', () => {
+    const opener = document.createElement('button');
+    opener.type = 'button';
+    opener.textContent = '오프라인 결과 열기';
+    document.body.append(opener);
+    opener.focus();
+
+    const { unmount } = render(<OfflineResultScreen summary={summary()} onClose={() => {}} />);
+    expect(screen.getByRole('button', { name: '마을 확인' })).toHaveFocus();
+    unmount();
+
+    expect(opener).toHaveFocus();
+    opener.remove();
+  });
 });

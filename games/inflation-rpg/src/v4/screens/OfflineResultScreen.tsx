@@ -15,15 +15,47 @@ interface Props {
 }
 
 export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = false, onClose, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
+  const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    const activeElement = document.activeElement;
+    openerRef.current = activeElement instanceof HTMLElement ? activeElement : null;
     closeButtonRef.current?.focus();
+
+    return () => {
+      const opener = openerRef.current;
+      if (opener && document.contains(opener)) opener.focus();
+    };
   }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !event.defaultPrevented) onClose();
+      if (event.key !== 'Tab' || event.defaultPrevented) return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter((element) => !element.hasAttribute('disabled'));
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const activeElement = document.activeElement;
+      const isInsideDialog = activeElement instanceof Node && dialog.contains(activeElement);
+      if (event.shiftKey && (!isInsideDialog || activeElement === first)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (!isInsideDialog || activeElement === last)) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -41,7 +73,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
 
   return (
     <div className="v4-overlay" role="dialog" aria-modal="true" aria-labelledby="v4-offline-result-title">
-      <section className="v4-modal" data-testid="v4-offline-result">
+      <section ref={dialogRef} className="v4-modal" data-testid="v4-offline-result">
         <div className="v4-kicker">돌아온 후원자</div>
         <h2 id="v4-offline-result-title">마을이 당신을 기다렸습니다</h2>
         <p>{Math.floor(processedSeconds / 3600)}시간 {Math.floor((processedSeconds % 3600) / 60)}분 동안 안전한 작업을 정산했습니다. 효율 {Math.round(efficiency * 100)}%</p>
