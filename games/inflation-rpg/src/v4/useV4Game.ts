@@ -201,7 +201,13 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     try {
       if (!(await watchRewarded('instant_task'))) return;
       if (!mountedRef.current) return;
-      const result = completeFacilityTaskNow(saveRef.current, facilityId, Date.now());
+      const latest = saveRef.current;
+      const latestTaskId = latest.meta.facilities[facilityId]?.activeTaskId;
+      if (latestTaskId !== activeTaskId || !latestTaskId || !latest.meta.tasks[latestTaskId]) {
+        setMessage('작업 상태가 바뀌어 광고 즉시 완료를 적용하지 않았습니다.');
+        return;
+      }
+      const result = completeFacilityTaskNow(latest, facilityId, Date.now());
       if (result.ok) commit(result.save, '광고 혜택으로 작업을 즉시 완료했습니다.');
       else setMessage(result.error);
     } finally {

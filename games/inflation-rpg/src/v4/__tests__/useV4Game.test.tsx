@@ -31,6 +31,8 @@ function InstantTaskHarness({ monetization }: { monetization: V4MonetizationAdap
       <div data-testid="muted">{game.save.meta.settings.muted ? 'true' : 'false'}</div>
       <div data-testid="message">{game.message ?? ''}</div>
       <button type="button" onClick={() => { void game.instantTask('temple'); }}>instant</button>
+      <button type="button" onClick={game.refresh}>refresh</button>
+      <button type="button" onClick={() => game.startTask('temple')}>start</button>
       <button type="button" onClick={() => { void game.addInterventionCharge(); }}>charge</button>
       <button type="button" onClick={() => game.changePolicy('training')}>policy</button>
       <button type="button" onClick={() => { game.changePolicy('training'); game.updateSettings({ muted: true }); }}>multi</button>
@@ -448,6 +450,50 @@ describe('useV4Game monetization actions', () => {
     expect(setItemSpy).not.toHaveBeenCalled();
     expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').meta.tasks).toHaveProperty(started.task.id);
     setItemSpy.mockRestore();
+  });
+
+  it('does not instantly complete a replacement task after the original task finishes during an ad', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(112);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    persistV4Save(started.save);
+
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        await pending;
+        return true;
+      },
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+      await Promise.resolve();
+    });
+    expect(monetization.getAdsToday()).toBe(0);
+    act(() => {
+      vi.setSystemTime(10_002);
+      fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+    });
+    expect(screen.getByTestId('instant-task-count')).toHaveTextContent('0');
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'start' })); });
+    expect(screen.getByTestId('instant-task-count')).toHaveTextContent('1');
+
+    await act(async () => {
+      release();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('instant-task-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('instant-spirit')).toHaveTextContent('118');
+    expect(screen.getByTestId('message')).toHaveTextContent('작업 상태가 바뀌어');
   });
 
   it('preserves both same-event save mutations instead of applying the second to stale state', async () => {
