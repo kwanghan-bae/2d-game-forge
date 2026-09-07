@@ -1077,6 +1077,61 @@ describe('v4 save and domain', () => {
     expect(malformed.run.expedition).toBeNull();
   });
 
+  it.each([
+    ['trust-not-a-number', 'trust', Number.NaN],
+    ['trust-over-cap', 'trust', 101],
+    ['level-fractional', 'level', 1.5],
+    ['level-infinite', 'level', Number.POSITIVE_INFINITY],
+  ])('rejects assigning an agent with malformed %s', (_label, field, value) => {
+    const malformed = createInitialV4Save(135);
+    malformed.meta.agents = malformed.meta.agents.map((agent) => {
+      if (agent.id !== 'blacksmith' && agent.id !== 'guide') return agent;
+      return { ...agent, [field]: value } as typeof agent;
+    });
+
+    const task = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt + 1_000, 'blacksmith');
+    const expedition = startExpedition(malformed, 'joseon_plains', malformed.updatedAt + 1_000, 'aggression', 'guide');
+
+    expect(task.ok).toBe(false);
+    expect(task.save).toBe(malformed);
+    expect(expedition.ok).toBe(false);
+    expect(expedition.save).toBe(malformed);
+    expect(malformed.meta.tasks).toEqual({});
+    expect(malformed.run.expedition).toBeNull();
+  });
+
+  it('does not settle assigned facility work when agent trust is malformed', () => {
+    const initial = createInitialV4Save(136);
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const agent = started.save.meta.agents.find((item) => item.id === 'blacksmith');
+    if (!agent) return;
+    agent.trust = Number.NaN;
+
+    const settled = completeFacilityTasks(started.save, started.task.completesAt);
+
+    expect(settled).toBe(started.save);
+    expect(started.save.meta.tasks[started.task.id]).toBeDefined();
+    expect(agent.trust).toBe(Number.NaN);
+  });
+
+  it('does not settle a guide expedition when agent level is malformed', () => {
+    const initial = createInitialV4Save(137);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const guide = started.save.meta.agents.find((item) => item.id === 'guide');
+    if (!guide) return;
+    guide.level = 1.5;
+
+    const settled = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+
+    expect(settled).toBe(started.save);
+    expect(started.save.run.expedition).not.toBeNull();
+    expect(guide.level).toBe(1.5);
+  });
+
   it('promotes an agent after trust grows through completed work', () => {
     const initial = createInitialV4Save(78);
     initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'

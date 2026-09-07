@@ -20,6 +20,7 @@ import type {
   V4Policy,
   V4SaveEnvelope,
   V4Settings,
+  SupportAgent,
 } from './types';
 
 export type DomainResult<T extends V4SaveEnvelope = V4SaveEnvelope> =
@@ -153,6 +154,25 @@ function isValidInterventionCharges(value: number): boolean {
 
 function isValidAgentFatigue(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
+function isValidAgentLevel(value: unknown): value is number {
+  return typeof value === 'number'
+    && Number.isFinite(value)
+    && Number.isInteger(value)
+    && value >= 1
+    && value <= 3;
+}
+
+function isValidAgentTrust(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
+function isValidAgentState(agent: SupportAgent | undefined): agent is SupportAgent {
+  return Boolean(agent
+    && isValidAgentLevel(agent.level)
+    && isValidAgentTrust(agent.trust)
+    && isValidAgentFatigue(agent.fatigue));
 }
 
 function isValidCurrencyBalance(value: unknown): value is number {
@@ -404,8 +424,8 @@ export function getFacilityTaskPreview(
     error = '해당 지원 에이전트가 다른 작업 중입니다.';
   } else if (requestedAgentId && agent && getV4AgentDefinition(agent.id)?.specialty !== facilityId) {
     error = '해당 지원 에이전트는 이 시설의 전문 담당자가 아닙니다.';
-  } else if (agent && !isValidAgentFatigue(agent.fatigue)) {
-    error = '지원 에이전트의 피로도를 확인할 수 없습니다.';
+  } else if (agent && !isValidAgentState(agent)) {
+    error = '지원 에이전트 정보를 확인할 수 없습니다.';
   } else if (agent && agent.fatigue >= 100) {
     error = '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.';
   } else if (!canPay(source, economy.input)) {
@@ -565,8 +585,8 @@ export function restAgent(
   const sourceAgent = source.meta.agents.find((agent) => agent.id === agentId);
   if (!sourceAgent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
   if (sourceAgent.activeTaskId) return { ok: false, save: source, error: '작업 중인 에이전트는 휴식할 수 없습니다.' };
-  if (!Number.isFinite(sourceAgent.fatigue) || sourceAgent.fatigue < 0 || sourceAgent.fatigue > 100) {
-    return { ok: false, save: source, error: '에이전트의 피로도를 확인할 수 없습니다.' };
+  if (!isValidAgentState(sourceAgent)) {
+    return { ok: false, save: source, error: '에이전트 정보를 확인할 수 없습니다.' };
   }
   if (sourceAgent.fatigue <= 0) return { ok: false, save: source, error: '에이전트의 피로도가 이미 0입니다.' };
 
@@ -903,6 +923,8 @@ function settleFacilityTasks(
     if (onlyTaskId !== null && task.id !== onlyTaskId) continue;
     if (task.completesAt > eventAt) continue;
     if (!canApplyCurrencyOutput(source, task.outputPreview)) return source;
+    if (task.assignedAgentId
+      && !isValidAgentState(source.meta.agents.find((agent) => agent.id === task.assignedAgentId))) return source;
   }
   if (resolveExpeditionOnSettlement && source.run.expedition
     && source.run.expedition.completesAt <= eventAt) {
@@ -912,6 +934,8 @@ function settleFacilityTasks(
         || !canApplyCurrencyOutput(source, realm.cost))) {
       return source;
     }
+    if (source.run.expedition.assignedAgentId === 'guide'
+      && !isValidAgentState(source.meta.agents.find((agent) => agent.id === 'guide'))) return source;
   }
   const save = cloneSave(source);
   // Offline settlement may intentionally resolve the capped historical
@@ -1152,6 +1176,10 @@ export function useIntervention(
   if (!canApplyCurrencyOutput(source, realm.cost)) {
     return { ok: false, save: source, error: '환불할 원정 재화 잔액을 확인할 수 없습니다.' };
   }
+  if (expedition.assignedAgentId
+    && !isValidAgentState(source.meta.agents.find((agent) => agent.id === expedition.assignedAgentId))) {
+    return { ok: false, save: source, error: '원정 지원 에이전트 정보를 확인할 수 없습니다.' };
+  }
   // A retreat refunds half of the preparation cost. It preserves the
   // no-permanent-loss rule while making the charge a meaningful safety valve.
   give(save, realm.cost, 0.5);
@@ -1229,8 +1257,8 @@ export function startExpedition(
   const assignedGuide = assignedAgentId === 'guide'
     ? save.meta.agents.find((agent) => agent.id === 'guide')
     : undefined;
-  if (assignedAgentId === 'guide' && (!assignedGuide || !isValidAgentFatigue(assignedGuide.fatigue))) {
-    return { ok: false, save: source, error: '길잡이의 피로도를 확인할 수 없습니다.' };
+  if (assignedAgentId === 'guide' && (!assignedGuide || !isValidAgentState(assignedGuide))) {
+    return { ok: false, save: source, error: '길잡이 정보를 확인할 수 없습니다.' };
   }
   if (assignedAgentId === 'guide' && assignedGuide && assignedGuide.fatigue >= 100) {
     return { ok: false, save: source, error: '길잡이가 너무 피로합니다. 휴식 후 다시 출발하세요.' };
