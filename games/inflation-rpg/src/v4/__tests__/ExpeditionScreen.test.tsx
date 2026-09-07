@@ -65,6 +65,30 @@ describe('V4 expedition result screen', () => {
     expect(plains).toHaveTextContent('기본 경로 80초');
   });
 
+  it('blocks both departure paths when the Realm preparation cost is unavailable', () => {
+    const save = createInitialV4Save(108);
+    save.meta.currencies.spirit = 0;
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    expect(plains).not.toBeNull();
+    if (!plains) return;
+    expect(plains).toHaveTextContent('출발 비용 부족 · 신력 12 필요');
+    expect(within(plains).getAllByRole('button', { name: '재화 부족' })).toHaveLength(2);
+    expect(within(plains).getAllByRole('button', { name: '재화 부족' }).every((button) => (button as HTMLButtonElement).disabled)).toBe(true);
+  });
+
   it('moves focus to the expedition heading when the screen opens', () => {
     const save = createInitialV4Save(107);
     const props = {

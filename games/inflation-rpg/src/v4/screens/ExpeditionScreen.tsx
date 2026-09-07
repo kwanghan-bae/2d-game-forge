@@ -43,6 +43,18 @@ function formatCosts(cost: Partial<Record<V4CurrencyKey, number>>): string {
     .join(' · ') || '없음';
 }
 
+function getMissingRealmCost(save: V4SaveEnvelope, cost: Partial<Record<V4CurrencyKey, number>>): string | null {
+  const missing = Object.entries(cost).flatMap(([key, value]) => {
+    const required = safePositiveResource(value);
+    if (required === null) return [];
+    const available = safePositiveResource(save.meta.currencies[key as V4CurrencyKey]) ?? 0;
+    return available < required
+      ? `${getV4CurrencyName(key)} ${required.toLocaleString('ko-KR')} 필요 (현재 ${available.toLocaleString('ko-KR')})`
+      : [];
+  });
+  return missing.length > 0 ? `출발 비용 부족 · ${missing.join(' · ')}` : null;
+}
+
 function formatFiniteNumber(value: unknown): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '0';
   return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))).toLocaleString('ko-KR');
@@ -162,11 +174,14 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
           {(Object.keys(REALM_DEFINITIONS) as RealmId[]).map((realmId) => {
             const realm = REALM_DEFINITIONS[realmId];
             const unlocked = save.meta.unlockedRealms.includes(realmId);
+            const missingRealmCost = unlocked ? getMissingRealmCost(save, realm.cost) : null;
             const guideReady = Boolean(guide && !guide.activeTaskId && (guide.fatigue ?? 0) < 100);
             const guideButtonLabel = nextRealmPending
               ? '기록 먼저 확정'
               : !unlocked
               ? '미해금'
+              : missingRealmCost
+                ? '재화 부족'
               : guideReady
                 ? '길잡이와 출발'
                 : (guide?.fatigue ?? 0) >= 100
@@ -177,6 +192,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
                 <div className="v4-realm-head"><h3 className="v4-realm-title">{realm.icon} {realm.nameKR}</h3><span className="v4-realm-risk">위험도 {Math.round(realm.risk * 100)}%</span></div>
                 <p>{realm.description}</p>
                 <div className="v4-stat-line"><span className="v4-chip">권장 전투력 {realm.recommendedPower}</span><span className="v4-chip">기본 경로 {getV4RealmRouteDurationSeconds(realm)}초</span><span className="v4-chip">준비 비용 · {formatCosts(realm.cost)}</span></div>
+                {missingRealmCost && <div className="v4-task v4-task--blocked">{missingRealmCost}</div>}
                 <p className="v4-muted">보스 예상 승률 {Math.round(getExpeditionSuccessChance(save, realmId, 2, guideReady ? 'guide' : null) * 100)}% · 현재 전투력 {getV4HeroPower(save).toLocaleString('ko-KR')}</p>
                 <p className="v4-muted">예상 보상 · {formatResources(realm.reward)}</p>
                 <div className="v4-encounter-row" aria-label={`${realm.nameKR} 원정 단계`}>
@@ -186,12 +202,12 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
                   <button
                     type="button"
                     className="v4-btn v4-btn--primary"
-                    disabled={!unlocked || !guideReady || nextRealmPending}
+                    disabled={!unlocked || !guideReady || nextRealmPending || Boolean(missingRealmCost)}
                     onClick={() => onStart(realmId, 'guide')}
                   >
                     {guideButtonLabel}
                   </button>
-                  <button type="button" className="v4-btn v4-btn--quiet" disabled={!unlocked || nextRealmPending} onClick={() => onStart(realmId, null)}>{nextRealmPending ? '기록 먼저 확정' : '혼자 출발'}</button>
+                  <button type="button" className="v4-btn v4-btn--quiet" disabled={!unlocked || nextRealmPending || Boolean(missingRealmCost)} onClick={() => onStart(realmId, null)}>{nextRealmPending ? '기록 먼저 확정' : missingRealmCost ? '재화 부족' : '혼자 출발'}</button>
                 </div>
               </article>
             );
