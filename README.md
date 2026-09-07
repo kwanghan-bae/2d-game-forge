@@ -21,8 +21,8 @@
 - **보존 경로**: 기존 V3 `조선 인플레이션 RPG`는
   `inflation-rpg-legacy`와 `StartLegacyGame()`으로 분리되어 기존 저장 키를
   유지한다.
-- **현재 검증**: game Vitest 397개 파일·3,440개 테스트, game E2E 42/42
-  (Chromium 20/20·iPhone14 20/20), root typecheck/lint/circular/build 통과.
+- **현재 검증**: game Vitest 397개 파일·3,441개 테스트, V4 E2E 28/28, game E2E 기준선 42/42
+  (Chromium 21/21·iPhone14 21/21), root typecheck/lint/circular/build 통과.
 
 아래 Phase 및 자율진화 항목은 V4 이전에 누적된 V3 개발 이력이다.
 

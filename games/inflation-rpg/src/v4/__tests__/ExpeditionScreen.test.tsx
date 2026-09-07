@@ -65,6 +65,24 @@ describe('V4 expedition result screen', () => {
     expect(plains).toHaveTextContent('기본 경로 80초');
   });
 
+  it('moves focus to the expedition heading when the screen opens', () => {
+    const save = createInitialV4Save(107);
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    expect(screen.getByRole('heading', { name: '원정소' })).toHaveFocus();
+  });
+
   it('renders Korean resource labels instead of storage keys', () => {
     renderResult(baseResult());
 

@@ -100,6 +100,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-offline-result')).toBeVisible();
     await page.getByRole('button', { name: '원정 결과 보기' }).click();
     await expect(page.getByTestId('v4-expedition-result')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '원정소' })).toBeFocused();
   });
 
   test('손상된 저장은 원본을 보존한 복구 화면을 거친다', async ({ page }) => {

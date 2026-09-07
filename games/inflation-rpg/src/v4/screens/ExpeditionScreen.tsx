@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmDefinition, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
 import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
 import { getV4EquipmentName } from '../equipment';
@@ -46,6 +47,12 @@ function getExpeditionRemainingSeconds(now: number, completesAt: number): number
 }
 
 export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnlock, onRefresh, onIntervention, onBack }: Props) {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
@@ -62,7 +69,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
     <main className="v4-container">
       <section className="v4-panel">
         <div className="v4-button-row"><button type="button" className="v4-btn v4-btn--quiet" onClick={onBack}>← 마을로</button></div>
-        <h2 style={{ marginTop: 12 }}>원정소</h2>
+        <h2 ref={titleRef} tabIndex={-1} style={{ marginTop: 12 }}>원정소</h2>
         <p>정책: <span className="v4-action">{getV4PolicyName(expedition?.policy ?? save.run.policy)}</span> · 길잡이: {guide?.nameKR ?? '없음'}</p>
       </section>
 
