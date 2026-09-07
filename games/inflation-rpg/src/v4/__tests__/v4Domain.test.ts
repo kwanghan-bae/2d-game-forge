@@ -1055,6 +1055,28 @@ describe('v4 save and domain', () => {
     expect(malformed.meta.agents.find((agent) => agent.id === 'blacksmith')?.fatigue).toBe(fatigue);
   });
 
+  it.each([
+    ['missing', undefined],
+    ['not-a-number', Number.NaN],
+    ['infinite', Number.POSITIVE_INFINITY],
+    ['over-cap', 101],
+  ])('rejects assigning an agent with %s fatigue', (_label, fatigue) => {
+    const malformed = createInitialV4Save(134);
+    malformed.meta.agents = malformed.meta.agents.map((agent) => agent.id === 'blacksmith' || agent.id === 'guide'
+      ? { ...agent, fatigue: fatigue as never }
+      : agent);
+
+    const task = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt + 1_000, 'blacksmith');
+    const expedition = startExpedition(malformed, 'joseon_plains', malformed.updatedAt + 1_000, 'aggression', 'guide');
+
+    expect(task.ok).toBe(false);
+    expect(task.save).toBe(malformed);
+    expect(expedition.ok).toBe(false);
+    expect(expedition.save).toBe(malformed);
+    expect(malformed.meta.tasks).toEqual({});
+    expect(malformed.run.expedition).toBeNull();
+  });
+
   it('promotes an agent after trust grows through completed work', () => {
     const initial = createInitialV4Save(78);
     initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'

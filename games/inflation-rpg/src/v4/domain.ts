@@ -151,6 +151,10 @@ function isValidInterventionCharges(value: number): boolean {
     && value <= V4_MAX_INTERVENTION_CHARGES;
 }
 
+function isValidAgentFatigue(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
 function isValidCurrencyBalance(value: unknown): value is number {
   return isPersistableFiniteNumber(value) && Number.isSafeInteger(value) && value >= 0;
 }
@@ -389,6 +393,8 @@ export function getFacilityTaskPreview(
     error = '해당 지원 에이전트가 다른 작업 중입니다.';
   } else if (requestedAgentId && agent && getV4AgentDefinition(agent.id)?.specialty !== facilityId) {
     error = '해당 지원 에이전트는 이 시설의 전문 담당자가 아닙니다.';
+  } else if (agent && !isValidAgentFatigue(agent.fatigue)) {
+    error = '지원 에이전트의 피로도를 확인할 수 없습니다.';
   } else if (agent && agent.fatigue >= 100) {
     error = '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.';
   } else if (!canPay(source, economy.input)) {
@@ -1185,7 +1191,10 @@ export function startExpedition(
   const assignedGuide = assignedAgentId === 'guide'
     ? save.meta.agents.find((agent) => agent.id === 'guide')
     : undefined;
-  if (assignedAgentId === 'guide' && (assignedGuide?.fatigue ?? 0) >= 100) {
+  if (assignedAgentId === 'guide' && (!assignedGuide || !isValidAgentFatigue(assignedGuide.fatigue))) {
+    return { ok: false, save: source, error: '길잡이의 피로도를 확인할 수 없습니다.' };
+  }
+  if (assignedAgentId === 'guide' && assignedGuide && assignedGuide.fatigue >= 100) {
     return { ok: false, save: source, error: '길잡이가 너무 피로합니다. 휴식 후 다시 출발하세요.' };
   }
   const eventAt = eventTimestamp(save, now);
