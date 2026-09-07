@@ -202,6 +202,7 @@ Next 16 (Turbopack) 의 server component bundle 에 Phaser 가 들어가지 않�
 다음 분리가 강제된다.
 
 ```
+apps/dev-shell/src/lib/registry.shared.ts ← server/client 공용 data-only manifest.
 apps/dev-shell/src/lib/registry.server.ts   ← server-safe. 매니페스트만.
 apps/dev-shell/src/lib/registry.ts          ← client-only. 동적 import 콜백 포함.
 
