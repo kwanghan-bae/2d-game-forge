@@ -297,6 +297,7 @@ pnpm circular
 - native monetization bridge의 ad-free entitlement callback도 V4 adapter 상태에 즉시 반영해, 구매·복원 후속 응답 없이 도착한 권한 변경이 UI와 보상 경로에서 누락되지 않게 했다.
 - AdMob 배너의 표시·숨김 요청을 최신 의도 상태로 수렴하는 단일 reconciliation queue로 직렬화해, 표시 요청이 진행 중 광고 제거가 확정되어도 배너가 다시 살아나는 경합을 차단했다.
 - 원스토어 상품 조회 응답도 허용된 카탈로그·상품 유형·가격 필드를 검증해, 알 수 없는 상품이나 깨진 가격 payload가 구매 캐시와 UI로 전파되지 않게 했다.
+- 원스토어 상품 가격 `priceAmountMicros`도 양수 safe-integer인지 검증해, 0원·정밀도 손실 payload를 상품 캐시에서 격리했다. `IapManager` 회귀 케이스를 추가했다.
 - 원스토어 V21 Android plugin의 실제 `PurchaseClient` Builder/Listener wire를 연결하고, 구매 listener 결과·`PurchaseData` token cache·비소모성 acknowledge/소모성 consume·복원 조회를 compile 검증했다. 실기기 sandbox 결제 QA는 별도 단계로 남겼다.
 - V4 root가 V3 legacy로 전환되거나 unmount될 때 native monetization handle을 정리해 AdMob 배너가 이전 화면에 남지 않게 했고, React StrictMode의 임시 effect teardown에서는 조기 dispose하지 않도록 lifecycle token을 적용했다.
 - native monetization bootstrap 중 설정 공급원이 교체되면 늦게 도착한 handle을 폐기하고, StrictMode probe와 실제 unmount에서는 중복 dispose를 막도록 handle 소유권 경계를 회귀 테스트로 고정했다.

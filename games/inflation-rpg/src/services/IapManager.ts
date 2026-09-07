@@ -36,8 +36,8 @@ export function isValidIapProductInfo(value: unknown): value is ProductInfo {
     && typeof product.price === 'string'
     && product.price.trim().length > 0
     && typeof product.priceAmountMicros === 'number'
-    && Number.isFinite(product.priceAmountMicros)
-    && product.priceAmountMicros >= 0
+    && Number.isSafeInteger(product.priceAmountMicros)
+    && product.priceAmountMicros > 0
     && typeof product.priceCurrencyCode === 'string'
     && product.priceCurrencyCode.trim().length > 0;
 }

@@ -112,6 +112,14 @@ describe('IapManager', () => {
           price: '', priceAmountMicros: Number.NaN, priceCurrencyCode: 'KRW',
         },
         {
+          productId: 'crack_stone_pack_mid', type: 'consumable', title: '무료처럼 보이는 가격', description: '',
+          price: '₩0', priceAmountMicros: 0, priceCurrencyCode: 'KRW',
+        },
+        {
+          productId: 'crack_stone_pack_large', type: 'consumable', title: '정밀도 손실 가격', description: '',
+          price: '₩1,200', priceAmountMicros: Number.MAX_SAFE_INTEGER + 1, priceCurrencyCode: 'KRW',
+        },
+        {
           productId: 'unknown_product', type: 'consumable', title: '알 수 없음', description: '',
           price: '₩1,200', priceAmountMicros: 1_200_000_000, priceCurrencyCode: 'KRW',
         },
@@ -123,6 +131,8 @@ describe('IapManager', () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.productId).toBe('ad_free');
     expect(mgr.getProduct('crack_stone_pack_small')).toBeUndefined();
+    expect(mgr.getProduct('crack_stone_pack_mid')).toBeUndefined();
+    expect(mgr.getProduct('crack_stone_pack_large')).toBeUndefined();
   });
 
   it('treats a malformed product container as an empty safe result', async () => {
