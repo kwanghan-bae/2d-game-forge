@@ -351,6 +351,7 @@ pnpm circular
 - native onestore Web 테스트 7/7과 Android `compileDebugKotlin`·`assembleDebug`가 통과했다. 실기기 sandbox 결제·복원·환불 QA는 `adb`·sandbox 계정 부재로 남아 있다.
 - 광고·결제 브리지의 truthy 비-boolean 반환은 보상이나 광고 제거 권한으로 인정하지 않도록 회귀 테스트와 strict boundary를 추가했다.
 - 광고·결제·복원 provider의 영구 pending을 60초 뒤 provider failure로 정리하는 timeout boundary와 세 경로 회귀 테스트를 추가했다.
+- 원스토어 Android 구매 callback 유실로 `pendingPurchase`가 영구 점유되는 경로도 60초 native timeout으로 해제하고, 이후 구매 재시도가 가능하도록 정리했다. Kotlin compile·debug APK assemble을 재검증했다.
 - 명시적 V3 영웅 가져오기에서 active task·원정·사가가 공유하는 ID namespace 충돌을 피하도록 saga ID allocator를 보강했다.
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - workspace `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `pnpm build` 통과.

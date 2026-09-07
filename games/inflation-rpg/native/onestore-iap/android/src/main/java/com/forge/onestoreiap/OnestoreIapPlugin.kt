@@ -1,5 +1,7 @@
 package com.forge.onestoreiap
 
+import android.os.Handler
+import android.os.Looper
 import com.gaa.sdk.iap.AcknowledgeListener
 import com.gaa.sdk.iap.AcknowledgeParams
 import com.gaa.sdk.iap.ConsumeListener
@@ -33,6 +35,10 @@ import com.getcapacitor.annotation.CapacitorPlugin
 @CapacitorPlugin(name = "OnestoreIap")
 class OnestoreIapPlugin : Plugin() {
 
+    private companion object {
+        const val PENDING_PURCHASE_TIMEOUT_MS = 60_000L
+    }
+
     private data class PendingPurchase(val productId: String, val call: PluginCall)
 
     private var purchaseClient: PurchaseClient? = null
@@ -40,6 +46,8 @@ class OnestoreIapPlugin : Plugin() {
     private var connected = false
     private var connectionInFlight = false
     private var pendingPurchase: PendingPurchase? = null
+    private var pendingPurchaseTimeout: Runnable? = null
+    private val purchaseTimeoutHandler = Handler(Looper.getMainLooper())
     private val initializeCalls = mutableListOf<PluginCall>()
     private val purchaseDataByToken = mutableMapOf<String, PurchaseData>()
 
@@ -62,25 +70,22 @@ class OnestoreIapPlugin : Plugin() {
 
                 val pending = pendingPurchase
                 if (pending != null && pending.productId == purchase.getProductId()) {
-                    pendingPurchase = null
                     val response = JSObject()
                     response.put("status", "success")
                     response.put("purchase", purchaseObject)
-                    pending.call.resolve(response)
+                    takePendingPurchase()?.call?.resolve(response)
                 }
             }
 
             if (purchased.isEmpty()) {
                 val pending = pendingPurchase
                 if (pending != null) {
-                    pendingPurchase = null
-                    pending.call.resolve(failedPurchase("구매 결과를 확인하지 못했습니다.", result))
+                    takePendingPurchase()?.call?.resolve(failedPurchase("구매 결과를 확인하지 못했습니다.", result))
                 }
             } else {
                 val pending = pendingPurchase
                 if (pending != null && purchased.none { it.getProductId() == pending.productId }) {
-                    pendingPurchase = null
-                    pending.call.resolve(failedPurchase("요청한 상품의 구매 결과를 확인하지 못했습니다.", result))
+                    takePendingPurchase()?.call?.resolve(failedPurchase("요청한 상품의 구매 결과를 확인하지 못했습니다.", result))
                 }
             }
         }
@@ -131,8 +136,7 @@ class OnestoreIapPlugin : Plugin() {
                     }
                     val pending = pendingPurchase
                     if (pending != null) {
-                        pendingPurchase = null
-                        pending.call.resolve(failedPurchase("ONE store IAP service disconnected"))
+                        takePendingPurchase()?.call?.resolve(failedPurchase("ONE store IAP service disconnected"))
                     }
                 }
             })
@@ -213,16 +217,15 @@ class OnestoreIapPlugin : Plugin() {
         try {
             val launchResult = client.launchPurchaseFlow(currentActivity, params)
             if (!launchResult.isSuccess) {
-                pendingPurchase = null
-                call.resolve(purchaseResult(launchResult))
+                takePendingPurchase()?.call?.resolve(purchaseResult(launchResult))
                 return
             }
+            schedulePendingPurchaseTimeout(productId)
             // The final result is delivered by onPurchasesUpdated. Keeping the
             // call here prevents a successful dialog launch from being
             // mistaken for a completed and grantable purchase.
         } catch (error: Exception) {
-            pendingPurchase = null
-            call.resolve(failedPurchase(error.message ?: "purchase launch failed"))
+            takePendingPurchase()?.call?.resolve(failedPurchase(error.message ?: "purchase launch failed"))
         }
     }
 
@@ -290,14 +293,34 @@ class OnestoreIapPlugin : Plugin() {
     override fun handleOnDestroy() {
         initializeCalls.forEach { it.reject("ONE store IAP plugin was destroyed") }
         initializeCalls.clear()
-        pendingPurchase?.call?.reject("ONE store IAP plugin was destroyed")
-        pendingPurchase = null
+        takePendingPurchase()?.call?.reject("ONE store IAP plugin was destroyed")
         connectionInFlight = false
         purchaseClient?.endConnection()
         purchaseClient = null
         purchaseDataByToken.clear()
         connected = false
         super.handleOnDestroy()
+    }
+
+    private fun schedulePendingPurchaseTimeout(productId: String) {
+        pendingPurchaseTimeout?.let { purchaseTimeoutHandler.removeCallbacks(it) }
+        val timeout = Runnable {
+            val pending = pendingPurchase
+            if (pending == null || pending.productId != productId) return@Runnable
+            pendingPurchaseTimeout = null
+            pendingPurchase = null
+            pending.call.resolve(failedPurchase("구매 응답 제한 시간이 지나 결제를 확인하지 못했습니다."))
+        }
+        pendingPurchaseTimeout = timeout
+        purchaseTimeoutHandler.postDelayed(timeout, PENDING_PURCHASE_TIMEOUT_MS)
+    }
+
+    private fun takePendingPurchase(): PendingPurchase? {
+        val pending = pendingPurchase
+        pendingPurchase = null
+        pendingPurchaseTimeout?.let { purchaseTimeoutHandler.removeCallbacks(it) }
+        pendingPurchaseTimeout = null
+        return pending
     }
 
     private fun requireClient(call: PluginCall): PurchaseClient? {
@@ -333,9 +356,7 @@ class OnestoreIapPlugin : Plugin() {
     }
 
     private fun resolvePendingPurchaseFailure(result: IapResult) {
-        val pending = pendingPurchase ?: return
-        pendingPurchase = null
-        pending.call.resolve(purchaseResult(result))
+        takePendingPurchase()?.call?.resolve(purchaseResult(result))
     }
 
     private fun productToJs(product: ProductDetail): JSObject {
