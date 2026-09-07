@@ -595,6 +595,8 @@ describe('v4 save and domain', () => {
 
   it('preserves the destination hero action while explicitly importing a V3 hero', () => {
     const destination = createInitialV4Save(118);
+    destination.meta.unlockedRealms.push('deep_forest');
+    destination.run.hero.realmId = 'deep_forest';
     const started = startFacilityTask(destination, 'training', destination.createdAt, null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
@@ -608,6 +610,7 @@ describe('v4 save and domain', () => {
     } as unknown as HeroSnapshot, destination.createdAt + 1_000);
 
     expect(imported.run.hero.currentAction).toBe('train');
+    expect(imported.run.hero.realmId).toBe('deep_forest');
   });
 
   it('normalizes duplicate V3 equipment records during explicit import', () => {

@@ -499,8 +499,12 @@ export function importV3HeroSnapshot(
     : source.updatedAt;
   const updatedAt = Math.min(MAX_PERSISTED_NUMBER, Math.max(source.updatedAt, source.lastProcessedAt, eventAt));
   const next = cloneV4Save(source);
+  const destinationRealmId = source.meta.unlockedRealms.includes(source.run.hero.realmId)
+    ? source.run.hero.realmId
+    : 'joseon_plains';
   const hero = {
     ...migrateV3HeroSnapshot(input),
+    realmId: destinationRealmId,
     currentAction: destinationHeroAction(source),
   };
   next.updatedAt = updatedAt;

@@ -220,6 +220,7 @@ pnpm circular
 - 광고 제거 구매와 동일하게 구매 복원도 in-flight Promise를 공유해 설정 화면의 빠른 중복 탭이 native store 복원 요청을 병렬로 발행하지 않도록 했다.
 - 구매 복원 성공 후 hook의 `adFree` 상태와 한국어 완료 메시지가 갱신되는 통합 테스트를 추가해 실제 UI가 native entitlement 결과를 반영하는 경계를 고정했다.
 - V4 시설 작업의 장비 산출물도 고정 장비 정의를 통과해야 저장되도록 검증해, 손상된 작업 큐가 알 수 없는 장비를 영웅 loadout에 주입하지 못하게 했다. V3 import의 legacy 장비 fallback은 그대로 보존한다.
+- 명시적 V3 영웅 import가 이미 진행한 V4 Realm을 조선 평야로 되돌리지 않고 목적지 영웅의 유효한 Realm을 유지하도록 보강해, import가 기존 진행도를 덮어쓰지 않게 했다.
 - 오프라인 정산이 경과 시간 0초인 정확한 워터마크에서 위험 보스를 `awaiting_confirmation`으로 보류해도 결과 모달을 열도록 hook 전환 감지를 추가하고 회귀 테스트로 고정했다.
 - V4 저장 검증이 활성 시설 작업·원정의 시작 시각도 저장 생성~마지막 저장 범위 안에서만 허용하도록 강화해, chronology가 깨진 local payload가 정상 진행으로 재진입하지 못하게 했다.
 - V4 고정 내비게이션·오프라인 결과 모달에 좌우·하단 safe-area 여백을 적용해 iPhone 홈 인디케이터와 겹치지 않게 하고, Chromium·iPhone14 V4 E2E 26/26으로 확인했다.
