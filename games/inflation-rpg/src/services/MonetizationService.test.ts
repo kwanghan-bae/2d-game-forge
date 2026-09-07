@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { PurchaseInfo } from '@forge/inflation-rpg-native-onestore-iap';
+
 import { AdManager } from './AdManager';
 import { IapManager } from './IapManager';
 import { MonetizationService } from './MonetizationService';
@@ -16,6 +18,7 @@ describe('MonetizationService', () => {
   let iapPurchase: ReturnType<typeof vi.fn>;
   let svc: MonetizationService;
   let onAdFreeChanged: ReturnType<typeof vi.fn> & ((owned: boolean) => void);
+  let emitPurchaseUpdated: ((purchase: PurchaseInfo) => void) | undefined;
 
   beforeEach(() => {
     adShowRewarded = vi.fn().mockResolvedValue(true);
@@ -25,6 +28,7 @@ describe('MonetizationService', () => {
     iapRestore = vi.fn().mockResolvedValue([]);
     iapPurchase = vi.fn();
     onAdFreeChanged = vi.fn() as ReturnType<typeof vi.fn> & ((owned: boolean) => void);
+    emitPurchaseUpdated = undefined;
 
     (AdManager as unknown as { mockImplementation: (fn: () => unknown) => void }).mockImplementation(function () {
       return {
@@ -34,12 +38,16 @@ describe('MonetizationService', () => {
         hideBanner: adHideBanner,
       };
     });
-    (IapManager as unknown as { mockImplementation: (fn: () => unknown) => void }).mockImplementation(function () {
+    (IapManager as unknown as { mockImplementation: (fn: (...args: unknown[]) => unknown) => void }).mockImplementation(function (...args: unknown[]) {
+      emitPurchaseUpdated = typeof args[2] === 'function'
+        ? args[2] as (purchase: PurchaseInfo) => void
+        : undefined;
       return {
         initialize: iapInit,
         queryProducts: vi.fn().mockResolvedValue([]),
         restorePurchases: iapRestore,
         purchase: iapPurchase,
+        dispose: vi.fn().mockResolvedValue(undefined),
       };
     });
 
@@ -92,6 +100,17 @@ describe('MonetizationService', () => {
       { productId: 'ad_free', purchaseToken: 't', purchaseTime: 0, acknowledged: true },
     ]);
     await svc.initialize();
+    expect(onAdFreeChanged).toHaveBeenCalledWith(true);
+  });
+
+  it('applies a validated late ad-free purchaseUpdated event immediately', async () => {
+    await svc.initialize();
+
+    emitPurchaseUpdated?.({
+      productId: 'ad_free', purchaseToken: 'tok_late_event', purchaseTime: 100, acknowledged: false,
+    });
+
+    expect(svc.isAdFreeOwned()).toBe(true);
     expect(onAdFreeChanged).toHaveBeenCalledWith(true);
   });
 

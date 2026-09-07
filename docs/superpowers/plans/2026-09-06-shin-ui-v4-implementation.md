@@ -300,6 +300,7 @@ pnpm circular
 - 원스토어 V21 Android plugin의 실제 `PurchaseClient` Builder/Listener wire를 연결하고, 구매 listener 결과·`PurchaseData` token cache·비소모성 acknowledge/소모성 consume·복원 조회를 compile 검증했다. 실기기 sandbox 결제 QA는 별도 단계로 남겼다.
 - V4 root가 V3 legacy로 전환되거나 unmount될 때 native monetization handle을 정리해 AdMob 배너가 이전 화면에 남지 않게 했고, React StrictMode의 임시 effect teardown에서는 조기 dispose하지 않도록 lifecycle token을 적용했다.
 - V4 unmount와 native `initialize()`/restore 응답이 경합해도 dispose 이후 늦은 초기화가 배너를 다시 표시하지 않도록 `MonetizationService`의 폐기 상태 경계를 추가했다.
+- 원스토어 `purchaseUpdated` 이벤트를 검증된 ad-free entitlement에만 연결하고, V4 unmount 시 native listener를 제거해 늦은 callback이 stale UI나 소모성 중복 지급으로 이어지지 않게 했다.
 - 원스토어 복원 시 미승인 `ad_free`만 acknowledge를 재시도해 앱 종료 직후의 승인 누락을 다음 부팅에서 복구하고, 소모성 상품은 자동 소비하지 않도록 경계를 고정했다.
 - ad-free 비소모성 구매는 승인 호출이 일시 실패해도 store의 구매 성공을 권한 실패로 숨기지 않도록 했고, 중복 지급 위험이 있는 균열석 소모성 상품은 승인 실패를 계속 전파하도록 분리했다.
 - IAP store success 응답도 구매 기록·요청 상품·구매 토큰을 검증한 뒤에만 entitlement 경로로 전달해 malformed provider payload가 광고 제거를 무단 부여하지 않도록 했다.
@@ -331,7 +332,7 @@ pnpm circular
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,508개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,510개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 4.6분).

@@ -47,18 +47,31 @@ type PluginFacet = Pick<
   'initialize' | 'queryProducts' | 'purchase' | 'acknowledge' | 'restorePurchases' | 'addListener'
 >;
 
+interface PurchaseUpdatedListenerHandle {
+  remove(): Promise<void> | void;
+}
+
 export class IapManager {
   private initialized = false;
   private initializeInFlight: Promise<void> | null = null;
   private products: Map<string, ProductInfo> = new Map();
+  private purchaseUpdatedListener: Promise<PurchaseUpdatedListenerHandle | null> | null = null;
+  private disposed = false;
 
-  constructor(private plugin: PluginFacet, private licenseKey: string) {}
+  constructor(
+    private plugin: PluginFacet,
+    private licenseKey: string,
+    private readonly onPurchaseUpdated?: (purchase: PurchaseInfo) => void,
+  ) {}
 
   async initialize(): Promise<void> {
+    if (this.disposed) return;
     if (this.initialized) return;
     if (this.initializeInFlight) return this.initializeInFlight;
-    const pending = this.plugin.initialize({ licenseKey: this.licenseKey }).then(() => {
-      this.initialized = true;
+    const pending = this.plugin.initialize({ licenseKey: this.licenseKey }).then(async () => {
+      if (this.disposed) return;
+      await this.registerPurchaseUpdatedListener();
+      if (!this.disposed) this.initialized = true;
     });
     this.initializeInFlight = pending;
     try {
@@ -74,6 +87,33 @@ export class IapManager {
     this.products.clear();
     for (const p of products) this.products.set(p.productId, p);
     return products;
+  }
+
+  private async registerPurchaseUpdatedListener(): Promise<void> {
+    if (this.disposed || this.purchaseUpdatedListener) return;
+    const pending = (async (): Promise<PurchaseUpdatedListenerHandle | null> => {
+      try {
+        const handle = await this.plugin.addListener('purchaseUpdated', (purchase) => {
+          if (this.disposed || !isValidIapPurchaseInfo(purchase)) return;
+          try {
+            this.onPurchaseUpdated?.(purchase);
+          } catch {
+            // An entitlement observer must never break the native listener.
+          }
+        });
+        if (this.disposed) {
+          await handle.remove();
+          return null;
+        }
+        return handle;
+      } catch {
+        // The purchase event is an optional recovery path. Direct purchase
+        // calls and restore remain usable when a platform cannot register it.
+        return null;
+      }
+    })();
+    this.purchaseUpdatedListener = pending;
+    await pending;
   }
 
   getProduct(id: IapProductId): ProductInfo | undefined {
@@ -149,5 +189,18 @@ export class IapManager {
       }
     }
     return reconciled;
+  }
+
+  async dispose(): Promise<void> {
+    this.disposed = true;
+    const pending = this.purchaseUpdatedListener;
+    this.purchaseUpdatedListener = null;
+    if (!pending) return;
+    try {
+      const handle = await pending;
+      await handle?.remove();
+    } catch {
+      // Listener cleanup is best effort during route/app teardown.
+    }
   }
 }

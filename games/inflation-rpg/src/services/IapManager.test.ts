@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { OnestoreIapPlugin } from '@forge/inflation-rpg-native-onestore-iap';
+import type { OnestoreIapPlugin, PurchaseInfo } from '@forge/inflation-rpg-native-onestore-iap';
 import { IapManager } from './IapManager';
 
 const makeMockPlugin = () =>
@@ -33,6 +33,32 @@ describe('IapManager', () => {
   it('initialize calls plugin.initialize with licenseKey', async () => {
     await mgr.initialize();
     expect(plugin.initialize).toHaveBeenCalledWith({ licenseKey: 'TEST_LICENSE_KEY' });
+  });
+
+  it('forwards only validated purchaseUpdated records after initialization', async () => {
+    let listener!: (purchase: PurchaseInfo) => void;
+    const remove = vi.fn();
+    const addListener = plugin.addListener as unknown as ReturnType<typeof vi.fn>;
+    addListener.mockImplementation(async (_event: string, callback: (purchase: PurchaseInfo) => void) => {
+      listener = callback;
+      return { remove };
+    });
+    const onPurchaseUpdated = vi.fn();
+    mgr = new IapManager(plugin, 'TEST_LICENSE_KEY', onPurchaseUpdated);
+
+    await mgr.initialize();
+    listener({ productId: 'ad_free', purchaseToken: 'tok_event', purchaseTime: 100, acknowledged: false });
+    listener({ productId: 'unknown_product', purchaseToken: 'tok_bad', purchaseTime: 100, acknowledged: false } as unknown as PurchaseInfo);
+
+    expect(onPurchaseUpdated).toHaveBeenCalledTimes(1);
+    expect(onPurchaseUpdated).toHaveBeenCalledWith({
+      productId: 'ad_free', purchaseToken: 'tok_event', purchaseTime: 100, acknowledged: false,
+    });
+
+    await mgr.dispose();
+    listener({ productId: 'ad_free', purchaseToken: 'tok_late', purchaseTime: 101, acknowledged: false });
+    expect(remove).toHaveBeenCalledOnce();
+    expect(onPurchaseUpdated).toHaveBeenCalledTimes(1);
   });
 
   it('shares concurrent initialization with one provider call', async () => {
