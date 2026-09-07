@@ -161,6 +161,7 @@ pnpm circular
 - 시간 역행·미래·비유한 시각에서 신의 개입을 원본 save no-op으로 거부해 잘못된 시계 조작이 충전을 소모하지 않게 한다.
 - V3 import adapter가 목적지 V4 save를 깊은 복제해 중첩 재화·시설·작업·에이전트 참조를 공유하지 않게 한다.
 - 영웅 runtime의 회춘도 malformed 나이·회춘 횟수·HP 최대값을 유한 범위로 정규화해 adapter 직접 호출의 `NaN` 전파를 차단한다.
+- 영웅 runtime의 극단적 회춘 기간도 비용을 `Number.MAX_SAFE_INTEGER` 이하로 포화시켜 직접 adapter 호출이 unsafe gold 비용을 반환하지 않게 한다.
 - 영웅 runtime snapshot 복제 시 malformed 장비 배열·레벨 map을 정제해 adapter 생성 단계의 iterable/type 오류를 차단한다.
 - 장비 보너스 적용 시 malformed 영웅 공격력·방어력·HP·치명타 수치를 정규화하고 음수/overflow 보너스를 차단해 equipment adapter 단독 호출도 유효 상태를 유지한다.
 - 장비 정의 lookup은 own-property만 허용해 `__proto__`·`constructor` 같은 상속 키가 장비로 오인되어 `NaN` 보너스를 만드는 경로를 차단한다.
@@ -208,10 +209,11 @@ pnpm circular
 - 오프라인 위험 원정 안내 문구와 재접속→보스 확인 E2E를 보강하고 전체 게임 테스트 396개 파일·3,381개 테스트를 다시 통과시켰다.
 - 오프라인 승리 직후 마을의 가장 가까운 목표가 이미 완료한 승리를 반복 안내하지 않도록 다음 Realm 기록 확정 문구를 추가하고 전체 게임 테스트 396개 파일·3,382개 테스트를 다시 통과시켰다.
 - V3 import와 회춘에서 극단적으로 큰 영웅 나이가 파생 행동 시계를 안전 정수 범위 밖으로 만들지 않도록 clamp하고 전체 게임 테스트 396개 파일·3,384개 테스트를 다시 통과시켰다.
-- 원정 결과의 빈 보상·패배 보호 문구, 전체 준비 비용 표시, malformed Realm fallback UX를 TDD로 보강하고 전체 게임 테스트 396개 파일·3,388개 테스트를 다시 통과시켰다.
+- 원정 결과의 빈 보상·패배 보호 문구, 전체 준비 비용 표시, malformed Realm fallback UX를 TDD로 보강하고 전체 게임 테스트 396개 파일·3,389개 테스트를 다시 통과시켰다.
+- 극단적 회춘 비용이 안전 정수 범위를 넘지 않도록 runtime 비용 clamp 회귀를 추가하고 전체 게임 테스트 396개 파일·3,389개 테스트를 다시 통과시켰다.
 - 저장된 원정 결과의 완료 시각도 저장 생성 시각 이상이어야 하도록 검증해, 생성 이전에 발생한 것처럼 보이는 결과 payload를 복구 단계에서 거부한다.
 - V4 저장 검증은 알 수 없는 통화 키를 거부하고, 원정 결과의 저장 watermark·해금 Realm chronology를 확인한다. 구형 schema 1의 초과 사가 기록은 기존 hydrate trim 호환을 유지한다.
-- V4 단위/컴포넌트 테스트: 396개 파일, 3,388개 테스트 통과.
+- V4 단위/컴포넌트 테스트: 396개 파일, 3,389개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 26/26 통과(각 프로젝트 13/13).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.

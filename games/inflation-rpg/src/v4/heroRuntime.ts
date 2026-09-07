@@ -66,6 +66,14 @@ function safeActionCountForAge(age: number): number {
     : MAX_BATTLE_VALUE;
 }
 
+function safeRejuvenationCost(yearsReduced: number): number {
+  if (!Number.isFinite(yearsReduced) || yearsReduced <= 0) return 0;
+  const cost = yearsReduced * 10;
+  return Number.isFinite(cost)
+    ? Math.min(MAX_BATTLE_VALUE, Math.max(0, Math.floor(cost)))
+    : MAX_BATTLE_VALUE;
+}
+
 function addBattleDamage(total: number, amount: number): number {
   return Math.min(MAX_BATTLE_VALUE, total + amount);
 }
@@ -163,7 +171,7 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
       return {
         snapshot: cloneSnapshot(snapshot),
         yearsReduced: beforeAge - nextAge,
-        cost: (beforeAge - nextAge) * 10,
+        cost: safeRejuvenationCost(beforeAge - nextAge),
       };
     },
   };

@@ -1599,6 +1599,20 @@ describe('v4 save and domain', () => {
     expect(Number.isSafeInteger(result.snapshot.actionCount)).toBe(true);
   });
 
+  it('keeps extreme rejuvenation costs within the persistable integer range', () => {
+    const save = createInitialV4Save(123);
+    const runtime = createV4HeroRuntime({
+      ...save.run.hero,
+      age: Number.MAX_SAFE_INTEGER,
+      actionCount: Number.MAX_SAFE_INTEGER,
+    });
+
+    const result = runtime.rejuvenate(Number.MAX_SAFE_INTEGER);
+
+    expect(Number.isSafeInteger(result.cost)).toBe(true);
+    expect(result.cost).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
   it('keeps runtime snapshot cloning safe for malformed equipment collections', () => {
     const save = createInitialV4Save(121);
     const runtime = createV4HeroRuntime({
