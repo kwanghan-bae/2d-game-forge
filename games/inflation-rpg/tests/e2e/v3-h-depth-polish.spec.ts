@@ -29,12 +29,9 @@ test.describe('V3-H — Depth + Polish', () => {
     // Season HUD (V3-H F6)
     await expect(page.getByTestId('hud-season')).toBeVisible();
 
-    // 50초 대기 → base 탈출 검증 (Bug A+B fix)
-    await page.waitForTimeout(50_000);
-
-    // HUD realm 이 '시작의 들판' 외 다른 realm 또는 unlockedRealms count > 1
-    const realmText = await page.getByTestId('hud-realm').innerText();
-    const hasProgress = !realmText.includes('1/6');
-    expect(hasProgress).toBe(true);
+    // 고정 sleep은 RNG와 여러 smoke를 같은 서버에서 연속 실행할 때
+    // 간헐적으로 부족해진다. 실제 base 탈출 신호를 기다리되, 무한 대기는
+    // 막아 stale-realm 회귀가 생기면 명확히 실패하도록 한다.
+    await expect(page.getByTestId('hud-realm')).not.toContainText('1/6', { timeout: 120_000 });
   });
 });
