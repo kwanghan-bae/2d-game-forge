@@ -51,6 +51,16 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(false);
   });
 
+  it('does not grant a reward when a provider returns a truthy non-boolean value', async () => {
+    const adapter = new V4MonetizationAdapter({ showRewarded: async () => 'yes' as never }, null);
+
+    expect(await adapter.watchRewarded('offline_double')).toEqual({
+      granted: false,
+      reason: 'provider_failed',
+    });
+    expect(adapter.getAdsToday()).toBe(0);
+  });
+
   it('rejects an unknown rewarded placement before calling the provider', async () => {
     const showRewarded = vi.fn(async () => true);
     const adapter = new V4MonetizationAdapter({ showRewarded }, null);
@@ -258,6 +268,16 @@ describe('v4 monetization adapter', () => {
     expect((await adapter.watchRewarded('offline_double')).granted).toBe(true);
     expect((await adapter.buyAdFree()).granted).toBe(true);
     expect(adapter.isAdFree()).toBe(true);
+  });
+
+  it('does not grant an ad-free purchase when the existing bridge returns a truthy non-boolean value', async () => {
+    const adapter = createV4MonetizationAdapter({
+      showRewardedAd: async () => true,
+      purchase: async () => 'purchased' as never,
+    });
+
+    expect(await adapter.buyAdFree()).toEqual({ granted: false, reason: 'provider_failed' });
+    expect(adapter.isAdFree()).toBe(false);
   });
 
   it('mirrors an already-restored ad-free entitlement from the existing service', () => {

@@ -106,7 +106,7 @@ export function createV4MonetizationAdapter(
 ): V4MonetizationAdapter {
   const adapter = new V4MonetizationAdapter(
     { showRewarded: () => service.showRewardedAd() },
-    { purchase: async () => (await service.purchase('ad_free') ? 'purchased' : 'failed') },
+    { purchase: async () => (await service.purchase('ad_free')) === true ? 'purchased' : 'failed' },
     usageStore,
     restorePurchases,
   );
@@ -312,7 +312,7 @@ export class V4MonetizationAdapter {
       // without consuming a daily ad slot, even if the provider reports a
       // cancellation or failure.
       if (this.adFree) return { granted: true, reason: 'granted' };
-      if (!watched) return { granted: false, reason: 'provider_failed' };
+      if (watched !== true) return { granted: false, reason: 'provider_failed' };
       const usage = requestDay === this.rewardedDay
         ? normalizeDailyUsage(this.adsToday + 1)
         : normalizeDailyUsage(this.readStoredUsage(requestDay) + 1);
