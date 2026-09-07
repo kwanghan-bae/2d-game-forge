@@ -16,6 +16,7 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
       <button type="button" onClick={() => { void game.doubleOfflineReward(); }}>double</button>
       <button type="button" onClick={game.settleOffline}>resume</button>
+      <button type="button" onClick={() => game.startTask('temple')}>start temple</button>
     </>
   );
 }
@@ -201,6 +202,45 @@ describe('useV4Game monetization actions', () => {
 
     await act(async () => { release(); });
     await waitFor(() => expect(screen.getByTestId('spirit')).toHaveTextContent('124'));
+    expect(monetization.getAdsToday()).toBe(1);
+  });
+
+  it('does not apply an older offline reward after a newer settlement replaces it', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(89);
+    const startedAt = 9_000;
+    base.createdAt = startedAt;
+    base.lastProcessedAt = startedAt;
+    base.updatedAt = startedAt;
+    const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    persistV4Save(started.save);
+
+    let providerCalls = 0;
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        providerCalls += 1;
+        await pending;
+        return true;
+      },
+    }, null);
+    render(<Harness monetization={monetization} />);
+    expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
+
+    fireEvent.click(screen.getByRole('button', { name: 'double' }));
+    expect(providerCalls).toBe(1);
+    fireEvent.click(screen.getByRole('button', { name: 'start temple' }));
+    vi.setSystemTime(41_000);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'resume' })); });
+    expect(screen.getByTestId('spirit')).toHaveTextContent('124');
+
+    await act(async () => { release(); });
+    expect(screen.getByTestId('spirit')).toHaveTextContent('124');
     expect(monetization.getAdsToday()).toBe(1);
   });
 

@@ -276,7 +276,7 @@ pnpm circular
 - 오프라인 상한으로 보스 이전 단계에 주차된 원정은 UI에서도 보스 전용 문구 대신 현재 단계에 맞는 일반 결과 확인 안내를 표시하도록 보강했다.
 - 오프라인 결과 모달도 현재 원정 단계를 알 수 없는 상태에서 보스 전용 문구를 노출하지 않고 일반 결과 확인 안내를 표시하도록 통일했다.
 - 광고 즉시 완료 handler의 stale 자연 완료 선검증·광고 대기 중 재검증을 회귀 테스트로 고정했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 397개 파일, 3,430개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 397개 파일, 3,431개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 26/26 통과(각 프로젝트 13/13).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
@@ -289,7 +289,8 @@ pnpm circular
 - V3-H 깊이 회귀가 RNG와 연속 smoke 실행 부하에 따라 50초 안에 Realm을 벗어나지 못하던 간헐 실패를 고정 sleep 대신 실제 `hud-realm` 전환 assertion으로 교정하고, 개발 전용 고정 시드와 선택 모달 polling으로 Chromium/iPhone14에서 결정론적으로 검증했다.
 - V2 vertical slice가 보스 선택창에 걸리던 모바일/데스크톱 타이밍 변동을 dev-only fast-forward 후 blocking choice polling으로 보강해 실제 Phaser→컨트롤러→결과 화면 경로를 유지하면서 안정화했다.
 - Chromium·iPhone14 각각 short 회귀 17/17(장시간 V2 baseline 제외)을 통과했고, v9 저장 마이그레이션 smoke도 두 프로파일에서 통과했다.
-- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, 현재 HEAD에서도 전체 E2E 40/40(Chromium 20/20, iPhone14 20/20, 4.7분)을 통과했다. root `pnpm test`(game 397개 파일·3,430개 테스트 포함), `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 성공했다.
+- 오프라인 보상형 광고가 대기 중 새 정산으로 교체되는 경합을 정산 요약 세대 가드로 차단하고, 이전 정산 보상이 새 정산에 중복 적용되지 않음을 훅 테스트로 고정했다.
+- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, 현재 HEAD에서도 전체 E2E 40/40(Chromium 20/20, iPhone14 20/20, 4.7분)을 통과했다. root `pnpm test`(game 397개 파일·3,431개 테스트 포함), `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 성공했다.
 
 ### 다음 자동 사이클 우선순위
 

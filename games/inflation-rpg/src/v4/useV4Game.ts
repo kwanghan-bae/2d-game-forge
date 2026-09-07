@@ -46,6 +46,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [storageIssue] = useState(() => boot.loaded.status === 'invalid' ? boot.loaded.reason : null);
   const [clock, setClock] = useState(() => Date.now());
   const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
+  const offlineSummaryRef = useRef<OfflineSummary | null>(null);
   const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
   const offlineRewardClaimInFlight = useRef(false);
   const instantTaskInFlight = useRef(new Set<FacilityId>());
@@ -89,6 +90,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
         (value) => typeof value === 'number' && Number.isFinite(value) && value > 0,
       );
     if (hasOfflineResult) {
+      offlineSummaryRef.current = result.summary;
       setOfflineSummary(result.summary);
       setOfflineRewardDoubled(false);
     }
@@ -169,15 +171,20 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, [monetization]);
 
   const doubleOfflineReward = useCallback(async () => {
-    const hasPositiveResourceReward = Boolean(offlineSummary
-      && Object.values(offlineSummary.resourcesGained).some((value) => Number.isFinite(value) && value > 0));
-    if (!offlineSummary || !hasPositiveResourceReward || offlineRewardDoubled || offlineRewardClaimInFlight.current) return;
+    const summary = offlineSummaryRef.current;
+    const hasPositiveResourceReward = Boolean(summary
+      && Object.values(summary.resourcesGained).some((value) => Number.isFinite(value) && value > 0));
+    if (!summary || !hasPositiveResourceReward || offlineRewardDoubled || offlineRewardClaimInFlight.current) return;
     offlineRewardClaimInFlight.current = true;
     try {
       if (!(await watchRewarded('offline_double'))) return;
       if (!mountedRef.current) return;
+      if (offlineSummaryRef.current !== summary) {
+        setMessage('오프라인 정산이 새로 갱신되어 이전 보상 2배를 적용하지 않았습니다.');
+        return;
+      }
       const current = saveRef.current;
-      const next = grantOfflineResourceBonus(current, offlineSummary.resourcesGained, Date.now());
+      const next = grantOfflineResourceBonus(current, summary.resourcesGained, Date.now());
       if (next === current) {
         setMessage('저장 시각을 확인할 수 없어 오프라인 2배 보상을 적용하지 않았습니다.');
         return;
@@ -187,7 +194,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     } finally {
       offlineRewardClaimInFlight.current = false;
     }
-  }, [commit, offlineRewardDoubled, offlineSummary, watchRewarded]);
+  }, [commit, offlineRewardDoubled, watchRewarded]);
 
   const instantTask = useCallback(async (facilityId: FacilityId) => {
     if (instantTaskInFlight.current.has(facilityId)) return;
@@ -335,7 +342,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     setMessage('새 V4 저장을 시작했습니다. 기존 손상 저장은 복구 백업으로 보존되었습니다.');
   }, [storageStatus]);
 
-  const closeOffline = useCallback(() => setOfflineSummary(null), []);
+  const closeOffline = useCallback(() => {
+    offlineSummaryRef.current = null;
+    setOfflineSummary(null);
+  }, []);
   const closeMessage = useCallback(() => setMessage(null), []);
   const activeTasks = useMemo(() => Object.values(save.meta.tasks), [save.meta.tasks]);
 
