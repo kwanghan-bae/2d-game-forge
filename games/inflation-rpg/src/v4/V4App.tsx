@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
 import { setVolumes } from '../systems/sound';
-import { POLICY_LABELS } from './data';
+import { getV4PolicyName } from './data';
 import { createNativeV4Monetization, type V4MonetizationAdapter } from './monetization';
 import { useV4Game } from './useV4Game';
 import { ExpeditionScreen } from './screens/ExpeditionScreen';
@@ -104,7 +104,7 @@ export function V4App({ config }: Props) {
         <header className="v4-header">
           <div><div className="v4-kicker">LOCAL-FIRST · V4</div><h1 className="v4-title">신의 마을: 영원의 후원자</h1><p className="v4-subtitle">한 명의 영웅, 일곱 시설, 끝나지 않는 사가</p></div>
           <div className="v4-header-actions">
-            <div className="v4-action">{POLICY_LABELS[game.save.run.policy]}</div>
+            <div className="v4-action">{getV4PolicyName(game.save.run.policy)}</div>
             <button type="button" className="v4-btn v4-btn--quiet" onClick={() => setScreen('settings')}>⚙ 설정</button>
           </div>
         </header>

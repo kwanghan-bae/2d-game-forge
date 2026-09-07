@@ -10,8 +10,10 @@ function mockGame(
   refresh: ReturnType<typeof vi.fn>,
   settleOffline: ReturnType<typeof vi.fn>,
   storageStatus: 'valid' | 'unavailable' = 'valid',
+  policy: string = 'aggression',
 ): ReturnType<typeof useV4Game> {
   const save = createInitialV4Save(1);
+  save.run.policy = policy as typeof save.run.policy;
   return {
     save,
     storageStatus,
@@ -116,5 +118,13 @@ describe('V4 app resume handling', () => {
 
     expect(hero).toHaveAttribute('aria-current', 'page');
     expect(town).not.toHaveAttribute('aria-current');
+  });
+
+  it('keeps the header readable when a runtime policy value is unknown', () => {
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn(), 'valid', 'constructor'));
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    expect(screen.getByTestId('v4-app')).toHaveTextContent('정책 확인 필요');
   });
 });
