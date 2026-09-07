@@ -30,6 +30,7 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
     <>
       <div data-testid="offline-state">{game.offlineSummary ? 'ready' : 'pending'}</div>
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
+      <div data-testid="clock">{game.now}</div>
       <button type="button" onClick={() => { void game.doubleOfflineReward(); }}>double</button>
       <button type="button" onClick={game.settleOffline}>resume</button>
       <button type="button" onClick={() => game.startTask('temple')}>start temple</button>
@@ -86,6 +87,7 @@ function RefreshHarness() {
   return (
     <>
       <div data-testid="task-count">{Object.keys(game.save.meta.tasks).length}</div>
+      <div data-testid="refresh-clock">{game.now}</div>
       <button type="button" onClick={game.refresh}>refresh</button>
     </>
   );
@@ -136,6 +138,7 @@ describe('useV4Game monetization actions', () => {
 
     expect(screen.getByTestId('spirit')).toHaveTextContent('112');
     expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
+    expect(screen.getByTestId('clock')).toHaveTextContent('11000');
   });
 
   it('shows a result when a sub-second offline window still completes work', async () => {
@@ -744,6 +747,21 @@ describe('useV4Game save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
     expect(screen.getByTestId('task-count')).toHaveTextContent('1');
+  });
+
+  it('keeps the presentation clock monotonic when the device clock moves backwards', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    persistV4Save(createInitialV4Save(105));
+
+    render(<RefreshHarness />);
+    vi.setSystemTime(20_000);
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
+    vi.setSystemTime(15_000);
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
+    expect(screen.getByTestId('refresh-clock')).toHaveTextContent('20000');
   });
 
   it('does not report a risky expedition confirmation before its completion time', async () => {

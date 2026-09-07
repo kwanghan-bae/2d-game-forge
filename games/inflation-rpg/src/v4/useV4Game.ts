@@ -53,6 +53,13 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const interventionChargeInFlight = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const updatePresentationClock = useCallback((timestamp: number) => {
+    if (!Number.isFinite(timestamp)) return;
+    setClock((previous) => Number.isFinite(previous)
+      ? Math.max(previous, timestamp)
+      : timestamp);
+  }, []);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
@@ -68,8 +75,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   const settleOffline = useCallback(() => {
     if (storageStatus === 'invalid') return;
+    const timestamp = Date.now();
+    updatePresentationClock(timestamp);
     const current = saveRef.current;
-    const result = simulateOfflineProgress(current, Date.now());
+    const result = simulateOfflineProgress(current, timestamp);
     const shouldPersist = result.save !== current || storageStatus !== 'valid';
     if (shouldPersist) {
       saveRef.current = result.save;
@@ -94,7 +103,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setOfflineSummary(result.summary);
       setOfflineRewardDoubled(false);
     }
-  }, [storageStatus]);
+  }, [storageStatus, updatePresentationClock]);
 
   useEffect(() => {
     if (initialOfflineSettlementDone.current) return;
@@ -108,7 +117,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const refresh = useCallback(() => {
     const timestamp = Date.now();
     const current = saveRef.current;
-    setClock(timestamp);
+    updatePresentationClock(timestamp);
     if (!Number.isFinite(timestamp) || timestamp < current.updatedAt) return;
     const hasDueWork = Object.values(current.meta.tasks).some((task) => task.completesAt <= timestamp)
       || Boolean(current.run.expedition
@@ -118,7 +127,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       const next = completeFacilityTasks(current, timestamp);
       commit(next);
     }
-  }, [commit]);
+  }, [commit, updatePresentationClock]);
 
   const changePolicy = useCallback((policy: V4Policy) => {
     commit(setV4Policy(saveRef.current, policy, Date.now()));
