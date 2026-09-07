@@ -215,9 +215,10 @@ pnpm circular
 - 활성 원정의 Realm ID도 own-property accessor로 해석해 `constructor` 같은 상속 키가 화면 렌더링을 중단하지 않도록 fallback을 추가했다.
 - V4 주요 메뉴가 현재 화면을 `aria-current="page"`로 노출하도록 해 모바일·보조기기 탐색 상태를 명확히 했다.
 - 후원 정책 선택 버튼이 `aria-pressed`로 현재 정책을 노출하도록 해 시각 선택 스타일과 접근성 상태를 일치시켰다.
+- V4 헤더의 알 수 없는 런타임 정책도 안전한 fallback 문구로 표시하도록 하고, 정책 라벨 경계 회귀를 추가했다.
 - 저장된 원정 결과의 완료 시각도 저장 생성 시각 이상이어야 하도록 검증해, 생성 이전에 발생한 것처럼 보이는 결과 payload를 복구 단계에서 거부한다.
 - V4 저장 검증은 알 수 없는 통화 키를 거부하고, 원정 결과의 저장 watermark·해금 Realm chronology를 확인한다. 구형 schema 1의 초과 사가 기록은 기존 hydrate trim 호환을 유지한다.
-- V4 단위/컴포넌트 테스트: 397개 파일, 3,393개 테스트 통과.
+- V4 단위/컴포넌트 테스트: 397개 파일, 3,394개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 26/26 통과(각 프로젝트 13/13).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
