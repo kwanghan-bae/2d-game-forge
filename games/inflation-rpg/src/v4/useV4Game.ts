@@ -27,7 +27,7 @@ import {
 } from './save';
 import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
-import type { V4MonetizationAdapter, V4RewardedPlacement } from './monetization';
+import { V4_DAILY_REWARDED_LIMIT, type V4MonetizationAdapter, type V4RewardedPlacement } from './monetization';
 import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope, V4Settings } from './types';
 import { V4_MAX_INTERVENTION_CHARGES } from './types';
 
@@ -41,6 +41,33 @@ function monotonicActionTimestamp(
   return actionStartedAt >= actionStartUpdatedAt && save.updatedAt <= actionStartUpdatedAt
     ? actionStartUpdatedAt
     : timestamp;
+}
+
+function readAdFreeEntitlement(monetization: V4MonetizationAdapter | undefined): boolean {
+  try {
+    return monetization?.isAdFree() === true;
+  } catch {
+    return false;
+  }
+}
+
+function readAdsToday(monetization: V4MonetizationAdapter | undefined): number {
+  try {
+    const value = monetization?.getAdsToday();
+    return typeof value === 'number' && Number.isFinite(value)
+      ? Math.min(V4_DAILY_REWARDED_LIMIT, Math.max(0, Math.floor(value)))
+      : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function canRestorePurchases(monetization: V4MonetizationAdapter | undefined): boolean {
+  try {
+    return monetization?.canRestorePurchases() === true;
+  } catch {
+    return false;
+  }
 }
 
 export function useV4Game(monetization?: V4MonetizationAdapter) {
@@ -348,7 +375,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, [monetization]);
 
   const restorePurchases = useCallback(async () => {
-    if (!monetization?.canRestorePurchases()) {
+    if (!monetization || !canRestorePurchases(monetization)) {
       setMessage('현재 환경에서는 구매 복원을 사용할 수 없습니다. 게임은 계속 진행됩니다.');
       return;
     }
@@ -448,8 +475,8 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     restSupportAgent,
     rejuvenate,
     monetizationAvailable: Boolean(monetization),
-    adFree: monetization?.isAdFree() ?? false,
-    adsToday: monetization?.getAdsToday() ?? 0,
+    adFree: readAdFreeEntitlement(monetization),
+    adsToday: readAdsToday(monetization),
     offlineRewardDoubled,
     doubleOfflineReward,
     instantTask,
@@ -457,7 +484,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     intervene,
     buyAdFree,
     restorePurchases,
-    restorePurchasesAvailable: Boolean(monetization?.canRestorePurchases()),
+    restorePurchasesAvailable: canRestorePurchases(monetization),
     startRun,
     confirmRun,
     confirmUnlock,

@@ -32,10 +32,13 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
       <div data-testid="clock">{game.now}</div>
       <div data-testid="ad-free">{game.adFree ? 'owned' : 'not-owned'}</div>
+      <div data-testid="ads-today">{game.adsToday}</div>
+      <div data-testid="restore-available">{game.restorePurchasesAvailable ? 'available' : 'unavailable'}</div>
       <div data-testid="message">{game.message ?? ''}</div>
       <button type="button" onClick={() => { void game.doubleOfflineReward(); }}>double</button>
       <button type="button" onClick={game.settleOffline}>resume</button>
       <button type="button" onClick={() => game.startTask('temple')}>start temple</button>
+      <button type="button" onClick={() => { void game.restorePurchases(); }}>restore</button>
     </>
   );
 }
@@ -148,6 +151,22 @@ describe('useV4Game monetization actions', () => {
     act(() => { monetization.setAdFreeOwned(true); });
 
     expect(screen.getByTestId('ad-free')).toHaveTextContent(/^owned$/);
+  });
+
+  it('keeps the game playable when monetization status getters throw', async () => {
+    const monetization = new V4MonetizationAdapter(null, null);
+    vi.spyOn(monetization, 'isAdFree').mockImplementation(() => { throw new Error('entitlement bridge unavailable'); });
+    vi.spyOn(monetization, 'getAdsToday').mockImplementation(() => { throw new Error('usage bridge unavailable'); });
+    vi.spyOn(monetization, 'canRestorePurchases').mockImplementation(() => { throw new Error('restore bridge unavailable'); });
+
+    render(<Harness monetization={monetization} />);
+
+    expect(screen.getByTestId('ad-free')).toHaveTextContent('not-owned');
+    expect(screen.getByTestId('ads-today')).toHaveTextContent('0');
+    expect(screen.getByTestId('restore-available')).toHaveTextContent('unavailable');
+
+    fireEvent.click(screen.getByRole('button', { name: 'restore' }));
+    await waitFor(() => expect(screen.getByTestId('message')).toHaveTextContent('구매 복원을 사용할 수 없습니다'));
   });
 
   it('keeps offline rewards playable when a custom ad bridge rejects', async () => {
