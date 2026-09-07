@@ -120,4 +120,19 @@ describe('MonetizationService', () => {
     expect(svc.isAdFreeOwned()).toBe(true);
     expect(onAdFreeChanged).not.toHaveBeenCalledWith(false);
   });
+
+  it('does not show a banner when dispose races with an in-flight initialization', async () => {
+    let releaseRestore!: (purchases: never[]) => void;
+    iapRestore.mockReturnValueOnce(new Promise((resolve) => { releaseRestore = resolve; }));
+
+    const initialize = svc.initialize();
+    await Promise.resolve();
+    const dispose = svc.dispose();
+    releaseRestore([]);
+
+    await Promise.all([initialize, dispose]);
+
+    expect(adHideBanner).toHaveBeenCalled();
+    expect(adShowBanner).not.toHaveBeenCalled();
+  });
 });

@@ -21,6 +21,7 @@ export class MonetizationService {
   private adFreeOwned: boolean;
   private initialized = false;
   private initializeInFlight: Promise<void> | null = null;
+  private disposed = false;
 
   constructor(private opts: MonetizationServiceOptions) {
     this.adFreeOwned = opts.adFreeOwned === true;
@@ -43,18 +44,22 @@ export class MonetizationService {
   }
 
   async initialize(): Promise<void> {
+    if (this.disposed) return;
     if (this.initialized) return;
     if (this.initializeInFlight) return this.initializeInFlight;
     const pending = (async () => {
       await Promise.all([this.ad.initialize(), this.iap.initialize()]);
+      if (this.disposed) return;
       await this.iap.queryProducts();
 
       const restored = await this.iap.restorePurchases();
+      if (this.disposed) return;
       this.applyRestoredAdFreeEntitlement(restored);
 
+      if (this.disposed) return;
       if (!this.adFreeOwned) await this.ad.showBanner();
       else await this.ad.hideBanner();
-      this.initialized = true;
+      if (!this.disposed) this.initialized = true;
     })();
     this.initializeInFlight = pending;
     try {
@@ -66,17 +71,20 @@ export class MonetizationService {
 
   setAdFreeOwned(owned: boolean): void {
     this.adFreeOwned = owned === true;
-    if (this.adFreeOwned) void this.ad.hideBanner();
+    if (this.adFreeOwned || this.disposed) void this.ad.hideBanner();
     else void this.ad.showBanner();
   }
 
   async showRewardedAd(): Promise<boolean> {
+    if (this.disposed) return false;
     if (this.adFreeOwned) return true;
     return this.ad.showRewardedAd();
   }
 
   async purchase(productId: IapProductId): Promise<boolean> {
+    if (this.disposed) return false;
     const result = await this.iap.purchase(productId);
+    if (this.disposed) return false;
     if (result.status !== 'success') return false;
 
     if (productId === 'ad_free') {
@@ -100,12 +108,15 @@ export class MonetizationService {
   }
 
   async restorePurchasesManually(): Promise<PurchaseInfo[]> {
+    if (this.disposed) return [];
     const restored = await this.iap.restorePurchases();
+    if (this.disposed) return [];
     this.applyRestoredAdFreeEntitlement(restored);
     return restored;
   }
 
   async dispose(): Promise<void> {
+    this.disposed = true;
     await this.ad.hideBanner();
   }
 }
