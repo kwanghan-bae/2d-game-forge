@@ -121,7 +121,8 @@ pnpm dev
 apps/dev-shell (Next.js, http://localhost:3000)
   ↓
 /                       → 게임 셀렉터
-/games/inflation-rpg    → inflation-rpg 동적 로드
+/games/inflation-rpg    → 신의 마을: 영원의 후원자 V4 동적 로드
+/games/inflation-rpg-legacy → 조선 인플레이션 RPG V3 legacy 동적 로드
 /games/<future-slug>    → 추가 게임
 ```
 

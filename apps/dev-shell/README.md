@@ -12,12 +12,13 @@ hot-swap 으로 띄울 수 있다. 외부 출시되지 않는다 — 로컬 개�
 
 ## 게임 등록
 
-두 파일을 모두 수정해야 한다.
+공용 manifest와 client loader를 함께 갱신해야 한다.
 
 | 파일 | 역할 |
 |---|---|
-| `src/lib/registry.server.ts` | server component 가 사용. 매니페스트 데이터만. Phaser 가 server bundle 로 끌려 들어가지 않도록 격리 |
-| `src/lib/registry.ts` | client component 가 사용. `load: () => import('@forge/game-...')` 동적 import 콜백 포함 |
+| `src/lib/registry.shared.ts` | server/client가 함께 쓰는 data-only manifest 원본. slug·제목·asset 경로의 단일 출처 |
+| `src/lib/registry.server.ts` | server component가 사용. shared manifest만 복사해 Phaser가 server bundle로 끌려 들어가지 않도록 격리 |
+| `src/lib/registry.ts` | client component가 사용. shared manifest에 `load: () => import('@forge/game-...')` 동적 import 콜백을 연결 |
 
 추가로 `next.config.ts` 의 `transpilePackages` 에 게임 패키지명을 추가하고,
 `pnpm --filter @forge/dev-shell add @forge/game-<slug>@workspace:*` 로
