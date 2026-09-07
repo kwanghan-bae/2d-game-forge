@@ -57,6 +57,9 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
 
 function getTownObjective(save: V4SaveEnvelope): string {
   if (save.run.expedition) {
+    if (save.run.expedition.status === 'awaiting_confirmation') {
+      return '원정 결과 확인이 필요합니다. 원정 화면에서 귀환을 확정하세요.';
+    }
     return '원정이 진행 중입니다. 원정 화면에서 현재 단계와 예상 승률을 확인하세요.';
   }
 

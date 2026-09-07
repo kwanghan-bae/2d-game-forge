@@ -208,6 +208,25 @@ describe('V4 town hub support assignment', () => {
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정이 진행 중입니다.');
   });
 
+  it('prioritizes an awaiting expedition confirmation in the closest objective', () => {
+    const save = createInitialV4Save(107);
+    save.run.expedition = {
+      id: 'objective-awaiting-confirmation',
+      realmId: 'deep_forest',
+      policy: 'aggression',
+      assignedAgentId: null,
+      startedAt: save.createdAt,
+      completesAt: save.createdAt + 30_000,
+      status: 'awaiting_confirmation',
+      encounterIndex: 2,
+    };
+
+    renderHub({ save });
+
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정 결과 확인이 필요합니다.');
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정 화면에서 귀환을 확정하세요.');
+  });
+
   it('keeps the hub readable when a malformed result has an unknown Realm id', () => {
     const save = createInitialV4Save(103);
     save.run.lastExpeditionResult = {
