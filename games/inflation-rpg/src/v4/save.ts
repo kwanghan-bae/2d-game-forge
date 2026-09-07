@@ -101,7 +101,9 @@ function safeActionCountForAge(age: number): number {
 
 function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey, number>> {
   return isRecord(value) && Object.entries(value).every(([key, amount]) =>
-    CURRENCY_KEYS.includes(key as V4CurrencyKey) && isPersistableNonNegativeNumber(amount));
+    CURRENCY_KEYS.includes(key as V4CurrencyKey)
+      && isPersistableNonNegativeNumber(amount)
+      && Number.isInteger(amount));
 }
 
 function isFacilityTaskRecord(value: unknown): boolean {
@@ -188,7 +190,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(currencies)
     || Object.keys(currencies).length !== CURRENCY_KEYS.length
     || !Object.keys(currencies).every((key) => CURRENCY_KEYS.includes(key as V4CurrencyKey))
-    || !CURRENCY_KEYS.every((key) => isPersistableNonNegativeNumber(currencies[key]))) return false;
+    || !CURRENCY_KEYS.every((key) => isPersistableNonNegativeNumber(currencies[key])
+      && Number.isInteger(currencies[key]))) return false;
 
   const facilities = meta.facilities;
   if (!isRecord(facilities) || Object.keys(facilities).length !== FACILITY_IDS.length || !FACILITY_IDS.every((id) => {

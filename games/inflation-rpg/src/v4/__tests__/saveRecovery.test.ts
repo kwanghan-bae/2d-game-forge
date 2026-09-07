@@ -128,6 +128,25 @@ describe('V4 save recovery boundary', () => {
     expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
   });
 
+  it('rejects fractional persisted currency amounts', () => {
+    const invalid = createInitialV4Save(65432);
+    invalid.meta.currencies.gold = 1.5;
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(invalid) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+  });
+
+  it('rejects fractional currency values inside a facility task', () => {
+    const source = createInitialV4Save(65433);
+    const started = startFacilityTask(source, 'temple', source.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.task.outputPreview.spirit = 1.5;
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(started.save) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+  });
+
   it.each([
     ['title', (save: ReturnType<typeof createInitialV4Save>) => { save.meta.sagaEntries[0]!.title = '  '; }],
     ['text', (save: ReturnType<typeof createInitialV4Save>) => { save.meta.sagaEntries[0]!.text = ''; }],
