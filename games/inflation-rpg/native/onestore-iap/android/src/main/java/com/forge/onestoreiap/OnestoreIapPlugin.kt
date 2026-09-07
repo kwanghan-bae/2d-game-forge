@@ -36,7 +36,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 class OnestoreIapPlugin : Plugin() {
 
     private companion object {
-        const val PENDING_PURCHASE_TIMEOUT_MS = 60_000L
+        const val NATIVE_OPERATION_TIMEOUT_MS = 60_000L
     }
 
     private data class PendingPurchase(val productId: String, val call: PluginCall)
@@ -45,6 +45,7 @@ class OnestoreIapPlugin : Plugin() {
     private var licenseKey: String? = null
     private var connected = false
     private var connectionInFlight = false
+    private var initializeTimeout: Runnable? = null
     private var pendingPurchase: PendingPurchase? = null
     private var pendingPurchaseTimeout: Runnable? = null
     private val purchaseTimeoutHandler = Handler(Looper.getMainLooper())
@@ -123,6 +124,7 @@ class OnestoreIapPlugin : Plugin() {
             }
             purchaseClient?.startConnection(object : PurchaseClientStateListener {
                 override fun onSetupFinished(result: IapResult) {
+                    clearInitializeTimeout()
                     connectionInFlight = false
                     connected = result.isSuccess
                     if (connected) resolveInitializeCalls() else rejectInitializeCalls(result)
@@ -131,6 +133,7 @@ class OnestoreIapPlugin : Plugin() {
                 override fun onServiceDisconnected() {
                     connected = false
                     if (connectionInFlight) {
+                        clearInitializeTimeout()
                         connectionInFlight = false
                         rejectInitializeCalls("ONE store IAP service disconnected")
                     }
@@ -140,7 +143,9 @@ class OnestoreIapPlugin : Plugin() {
                     }
                 }
             })
+            if (connectionInFlight) scheduleInitializeTimeout()
         } catch (error: Exception) {
+            clearInitializeTimeout()
             connectionInFlight = false
             connected = false
             rejectInitializeCalls(error.message ?: "ONE store IAP initialization failed")
@@ -220,7 +225,7 @@ class OnestoreIapPlugin : Plugin() {
                 takePendingPurchase()?.call?.resolve(purchaseResult(launchResult))
                 return
             }
-            schedulePendingPurchaseTimeout(productId)
+            if (pendingPurchase?.productId == productId) schedulePendingPurchaseTimeout(productId)
             // The final result is delivered by onPurchasesUpdated. Keeping the
             // call here prevents a successful dialog launch from being
             // mistaken for a completed and grantable purchase.
@@ -291,6 +296,7 @@ class OnestoreIapPlugin : Plugin() {
     }
 
     override fun handleOnDestroy() {
+        clearInitializeTimeout()
         initializeCalls.forEach { it.reject("ONE store IAP plugin was destroyed") }
         initializeCalls.clear()
         takePendingPurchase()?.call?.reject("ONE store IAP plugin was destroyed")
@@ -300,6 +306,24 @@ class OnestoreIapPlugin : Plugin() {
         purchaseDataByToken.clear()
         connected = false
         super.handleOnDestroy()
+    }
+
+    private fun scheduleInitializeTimeout() {
+        clearInitializeTimeout()
+        val timeout = Runnable {
+            initializeTimeout = null
+            if (!connectionInFlight) return@Runnable
+            connectionInFlight = false
+            connected = false
+            rejectInitializeCalls("ONE store IAP initialization timed out")
+        }
+        initializeTimeout = timeout
+        purchaseTimeoutHandler.postDelayed(timeout, NATIVE_OPERATION_TIMEOUT_MS)
+    }
+
+    private fun clearInitializeTimeout() {
+        initializeTimeout?.let { purchaseTimeoutHandler.removeCallbacks(it) }
+        initializeTimeout = null
     }
 
     private fun schedulePendingPurchaseTimeout(productId: String) {
@@ -312,7 +336,7 @@ class OnestoreIapPlugin : Plugin() {
             pending.call.resolve(failedPurchase("구매 응답 제한 시간이 지나 결제를 확인하지 못했습니다."))
         }
         pendingPurchaseTimeout = timeout
-        purchaseTimeoutHandler.postDelayed(timeout, PENDING_PURCHASE_TIMEOUT_MS)
+        purchaseTimeoutHandler.postDelayed(timeout, NATIVE_OPERATION_TIMEOUT_MS)
     }
 
     private fun takePendingPurchase(): PendingPurchase? {
