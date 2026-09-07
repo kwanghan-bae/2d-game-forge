@@ -111,4 +111,36 @@ describe('V4 hero detail screen', () => {
     expect(main.textContent).not.toContain('Infinity');
     expect(main.textContent).not.toContain('NaN');
   });
+
+  it('does not expose negative hero values from an in-memory malformed snapshot', () => {
+    const save = createInitialV4Save(129);
+    const hero = {
+      ...save.run.hero,
+      hp: -50,
+      hpMax: -100,
+      atk: -3,
+      def: -2,
+      actionCount: -1,
+      rejuvenationCount: -4,
+      equipmentIds: ['v4_iron_sword'],
+      equipmentLevels: { v4_iron_sword: -2 },
+    };
+
+    render(
+      <HeroDetailScreen
+        hero={hero}
+        gold={100}
+        expeditionActive={false}
+        onBack={vi.fn()}
+        onImportLegacy={vi.fn()}
+        onRejuvenate={vi.fn()}
+      />,
+    );
+
+    const main = screen.getByRole('main');
+    expect(main.textContent).not.toContain('HP -');
+    expect(main.textContent).not.toContain('공격력-');
+    expect(main.textContent).not.toContain('방어력-');
+    expect(main.textContent).not.toContain('행동 기록 -');
+  });
 });

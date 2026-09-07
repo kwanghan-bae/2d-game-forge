@@ -12,9 +12,13 @@ interface Props {
 }
 
 function finiteHeroNumber(value: unknown, fallback = 0): string {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? value.toLocaleString('ko-KR')
-    : fallback.toLocaleString('ko-KR');
+  const safeFallback = typeof fallback === 'number' && Number.isFinite(fallback)
+    ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(fallback)))
+    : 0;
+  const safeValue = typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value)))
+    : safeFallback;
+  return safeValue.toLocaleString('ko-KR');
 }
 
 function finiteHeroValue(value: unknown, fallback: number): number {
