@@ -170,6 +170,7 @@ pnpm circular
 - V4 브라우저 부팅 E2E에서 기존 V3 저장 키가 변경되지 않는지 Chromium·iPhone 14 양쪽으로 확인한다.
 - V3 명시 import의 선택적 방어력·치명타·HP 최대값도 유한 범위로 보정해 손상된 legacy snapshot이 v4에 `NaN`을 유입하지 않게 한다.
 - V3 명시 import의 장비 배열은 문자열 항목만 남겨 비정상 payload가 v4 장비 UI와 레벨 map을 오염시키지 않게 한다.
+- V3 명시 import의 장비 배열은 비어 있거나 공백뿐인 문자열도 제외하되, 알 수 있는 비공백 legacy ID는 보존해 호환성을 유지한다.
 - V3 명시 import의 이름·나이·레벨·EXP·HP·공격력·행동 카운트도 V4 유효 범위로 정규화해 손상된 영웅 snapshot이 저장 복구를 깨뜨리지 않게 한다.
 - React StrictMode의 초기 effect 재실행을 1회 정산 guard로 막아 개발 셸에서도 offline 저장 side effect가 중복 실행되지 않게 한다.
 - 비동기 보상 광고와 위험 원정 확인이 저장 시각 검증으로 no-op이 된 경우 성공 문구를 표시하지 않고 재시도 안내를 표시한다.
@@ -344,7 +345,7 @@ pnpm circular
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,575개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,576개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 약 5.2분).

@@ -438,7 +438,7 @@ export function createInitialV4Save(seed: number): V4SaveEnvelope {
 export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
   const snapshot = input && typeof input === 'object' ? input : {} as HeroSnapshot;
   const legacyEquipment = Array.isArray(snapshot.equipment)
-    ? snapshot.equipment.filter((id): id is string => typeof id === 'string')
+    ? snapshot.equipment.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
     : [];
   const equipmentIds = [...new Set(legacyEquipment)];
   const equipmentLevels = Object.fromEntries(

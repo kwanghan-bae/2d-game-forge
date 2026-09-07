@@ -744,6 +744,22 @@ describe('v4 save and domain', () => {
     expect(hero.equipmentLevels).toEqual({ 'w-knife': 1 });
   });
 
+  it('filters blank V3 equipment identifiers during explicit import', () => {
+    const source = {
+      name: '빈 장비 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
+      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
+      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0,
+      equipment: ['', '  ', '\t', 'legacy-knife', 'legacy-knife'] as never,
+      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
+    } as unknown as HeroSnapshot;
+
+    const hero = migrateV3HeroSnapshot(source);
+
+    expect(hero.equipmentIds).toEqual(['legacy-knife']);
+    expect(hero.equipmentLevels).toEqual({ 'legacy-knife': 2 });
+  });
+
   it('normalizes malformed V3 core stats into a valid V4 hero snapshot', () => {
     const source = {
       name: 42, emoji: null, age: Number.MAX_VALUE, chapter: '청년기', job: '검객', level: Number.MAX_VALUE,
