@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SettingsScreen } from '../screens/SettingsScreen';
 
@@ -21,7 +21,7 @@ describe('V4 settings screen', () => {
     expect(screen.getByText('V4 전용 저장')).toBeInTheDocument();
   });
 
-  it('exposes purchase restoration only when the native bridge provides it', () => {
+  it('exposes purchase restoration only when the native bridge provides it', async () => {
     const onRestorePurchases = vi.fn();
     const { rerender } = render(
       <SettingsScreen
@@ -32,7 +32,10 @@ describe('V4 settings screen', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '구매 복원' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '구매 복원' }));
+      await Promise.resolve();
+    });
     expect(onRestorePurchases).toHaveBeenCalledTimes(1);
 
     rerender(
@@ -61,8 +64,10 @@ describe('V4 settings screen', () => {
     expect(restore).toHaveBeenCalledOnce();
     expect(screen.getByRole('button', { name: '구매 복원 중' })).toBeDisabled();
 
-    resolveRestore();
-    await Promise.resolve();
+    await act(async () => {
+      resolveRestore();
+      await Promise.resolve();
+    });
     rerender(
       <SettingsScreen
         settings={{ music: 0.7, sfx: 0.8, muted: false }}
