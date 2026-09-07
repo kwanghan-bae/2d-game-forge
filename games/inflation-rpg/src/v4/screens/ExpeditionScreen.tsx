@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
 import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { InterventionType, RealmId, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from '../types';
@@ -22,8 +22,15 @@ const ENCOUNTER_LABELS = {
 
 function formatResources(resources: Partial<Record<V4CurrencyKey, number>>): string {
   return Object.entries(resources)
-    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value !== 0)
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0)
     .map(([key, value]) => `${getV4CurrencyName(key)} +${value!.toLocaleString('ko-KR')}`)
+    .join(' · ') || '없음';
+}
+
+function formatCosts(cost: Partial<Record<V4CurrencyKey, number>>): string {
+  return Object.entries(cost)
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0)
+    .map(([key, value]) => `${getV4CurrencyName(key)} ${value!.toLocaleString('ko-KR')}`)
     .join(' · ') || '없음';
 }
 
@@ -54,14 +61,14 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
       <section className="v4-panel">
         <div className="v4-button-row"><button type="button" className="v4-btn v4-btn--quiet" onClick={onBack}>← 마을로</button></div>
         <h2 style={{ marginTop: 12 }}>원정소</h2>
-        <p>정책: <span className="v4-action">{save.run.policy === 'aggression' ? '공격 우선' : save.run.policy === 'hoarding' ? '안전 비축' : '성장 집중'}</span> · 길잡이: {guide?.nameKR ?? '없음'}</p>
+        <p>정책: <span className="v4-action">{getV4PolicyName(save.run.policy)}</span> · 길잡이: {guide?.nameKR ?? '없음'}</p>
       </section>
 
       {!expedition && result && (
         <section className="v4-panel" data-testid="v4-expedition-result">
           <div className="v4-panel-head">
             <h2>{result.outcome === 'victory' ? '원정 성공' : '원정 중단'}</h2>
-            <span className="v4-action">{REALM_DEFINITIONS[result.realmId].nameKR}</span>
+            <span className="v4-action">{getV4RealmName(result.realmId)}</span>
           </div>
           <p>{result.outcome === 'victory' ? '영웅이 무사히 돌아와 마을에 보상을 남겼습니다.' : '이번 원정은 영웅의 안전을 위해 중단되었습니다.'}</p>
           <div className="v4-detail-grid">
@@ -72,13 +79,14 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
           {result.encountersCleared !== undefined && <p className="v4-muted">원정 단계 {result.encountersCleared}/{result.totalEncounterCount ?? result.encountersCleared} 정산</p>}
           {result.outcome === 'victory' ? (
             <>
-              <div className="v4-alert">획득 보상 · {formatResources(result.reward)}</div>
-              {nextRealmPending && nextRealmId && <div className="v4-button-row"><p className="v4-muted">오프라인 승리는 다음 Realm 해금을 자동 확정하지 않습니다.</p><button type="button" className="v4-btn v4-btn--primary" onClick={onConfirmUnlock}>{REALM_DEFINITIONS[nextRealmId].nameKR} 기록하기</button></div>}
+              <div className="v4-alert">획득 보상 · {formatResources(result.reward)}{formatResources(result.reward) === '없음' ? ' · 다음 시설 작업으로 준비하세요.' : ''}</div>
+              {nextRealmPending && nextRealmId && <div className="v4-button-row"><p className="v4-muted">오프라인 승리는 다음 Realm 해금을 자동 확정하지 않습니다.</p><button type="button" className="v4-btn v4-btn--primary" onClick={onConfirmUnlock}>{getV4RealmName(nextRealmId)} 기록하기</button></div>}
             </>
           ) : (
             <>
               <div className="v4-alert">부족한 점 · {result.weaknessKR}</div>
-              <p>추천 시설 · {FACILITY_DEFINITIONS[result.recommendedFacilityId].nameKR} · 예상 재도전 {result.retryAfterSeconds}초</p>
+              <div className="v4-alert">영구 자산은 보존되었습니다. 출발 준비 비용도 반환되어 다음 선택을 준비할 수 있습니다.</div>
+              <p>추천 시설 · {getV4FacilityName(result.recommendedFacilityId)} · 예상 재도전 {result.retryAfterSeconds}초</p>
               {result.recommendedEquipmentId && <p>추천 장비 · {getV4EquipmentName(result.recommendedEquipmentId)}</p>}
             </>
           )}
@@ -122,7 +130,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
               <article key={realmId} className={`v4-realm-card ${unlocked ? '' : 'v4-realm-card--locked'}`}>
                 <div className="v4-realm-head"><h3 className="v4-realm-title">{realm.icon} {realm.nameKR}</h3><span className="v4-realm-risk">위험도 {Math.round(realm.risk * 100)}%</span></div>
                 <p>{realm.description}</p>
-                <div className="v4-stat-line"><span className="v4-chip">권장 전투력 {realm.recommendedPower}</span><span className="v4-chip">기본 경로 {getV4RealmRouteDurationSeconds(realm)}초</span><span className="v4-chip">신력 {realm.cost.spirit ?? 0}</span></div>
+                <div className="v4-stat-line"><span className="v4-chip">권장 전투력 {realm.recommendedPower}</span><span className="v4-chip">기본 경로 {getV4RealmRouteDurationSeconds(realm)}초</span><span className="v4-chip">준비 비용 · {formatCosts(realm.cost)}</span></div>
                 <p className="v4-muted">보스 예상 승률 {Math.round(getExpeditionSuccessChance(save, realmId, 2, guideReady ? 'guide' : null) * 100)}% · 현재 전투력 {getV4HeroPower(save).toLocaleString('ko-KR')}</p>
                 <p className="v4-muted">예상 보상 · {formatResources(realm.reward)}</p>
                 <div className="v4-encounter-row" aria-label={`${realm.nameKR} 원정 단계`}>

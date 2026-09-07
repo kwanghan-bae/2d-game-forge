@@ -141,6 +141,30 @@ describe('V4 town hub support assignment', () => {
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정이 진행 중입니다.');
   });
 
+  it('keeps the hub readable when a malformed result has an unknown Realm id', () => {
+    const save = createInitialV4Save(103);
+    save.run.lastExpeditionResult = {
+      id: 'unknown-realm-result',
+      realmId: 'lost_realm' as never,
+      outcome: 'defeat',
+      completedAt: save.createdAt,
+      reward: {},
+      heroPower: 90,
+      recommendedPower: 120,
+      turns: 8,
+      totalDamageDealt: 80,
+      totalDamageTaken: 120,
+      heroRemainingHp: 0,
+      weaknessKR: '기록되지 않은 전투 결과입니다.',
+      recommendedFacilityId: 'blacksmith',
+      recommendedEquipmentId: null,
+      retryAfterSeconds: 45,
+    };
+
+    expect(() => renderHub({ save })).not.toThrow();
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('기록되지 않은 Realm 재도전을 준비하세요.');
+  });
+
   it('does not expose an infinite remaining time for malformed facility clocks', () => {
     const initial = createInitialV4Save(99);
     const started = startFacilityTask(initial, 'temple', initial.createdAt);

@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, getV4CurrencyName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4RealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
 import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { FacilityId, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
@@ -48,13 +48,13 @@ function getTownObjective(save: V4SaveEnvelope): string {
 
   const lastResult = save.run.lastExpeditionResult;
   if (lastResult?.outcome === 'defeat') {
-    return `${REALM_DEFINITIONS[lastResult.realmId].nameKR} 재도전을 준비하세요. ${lastResult.weaknessKR}을 보완하면 다음 승리에 가까워집니다.`;
+    return `${getV4RealmName(lastResult.realmId)} 재도전을 준비하세요. ${lastResult.weaknessKR}을 보완하면 다음 승리에 가까워집니다.`;
   }
 
   if (lastResult?.outcome === 'victory') {
     const nextRealmId = getNextRealmId(lastResult.realmId);
     if (nextRealmId && !save.meta.unlockedRealms.includes(nextRealmId)) {
-      return `${REALM_DEFINITIONS[nextRealmId].nameKR} 기록을 먼저 확정하세요. 원정 화면에서 승리 기록을 남긴 뒤 새 원정을 출발할 수 있습니다.`;
+      return `${getV4RealmName(nextRealmId)} 기록을 먼저 확정하세요. 원정 화면에서 승리 기록을 남긴 뒤 새 원정을 출발할 수 있습니다.`;
     }
   }
 
@@ -66,7 +66,7 @@ function getTownObjective(save: V4SaveEnvelope): string {
       : 'joseon_plains';
   const nextRealmId = getNextRealmId(currentRealmId);
   if (nextRealmId && !unlocked.includes(nextRealmId)) {
-    return `${REALM_DEFINITIONS[currentRealmId].nameKR}에서 승리하면 ${REALM_DEFINITIONS[nextRealmId].nameKR}이 열립니다. 대장간에서 장비를 만든 뒤 정책을 바꿔 다음 원정의 성격을 정하세요.`;
+    return `${getV4RealmName(currentRealmId)}에서 승리하면 ${getV4RealmName(nextRealmId)}이 열립니다. 대장간에서 장비를 만든 뒤 정책을 바꿔 다음 원정의 성격을 정하세요.`;
   }
 
   return '저승의 사가를 완성하세요. 시설을 강화하고 정책과 장비를 조정해 영원한 영웅의 마지막 원정을 준비하세요.';
@@ -82,7 +82,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <div className="v4-hero-emoji" aria-hidden="true">{hero.emoji}</div>
         <div>
           <h2 className="v4-hero-name">{hero.name}</h2>
-          <p className="v4-hero-meta">{hero.age}세 · Lv.{hero.level} · {hero.realmId === 'joseon_plains' ? '조선 평야' : hero.realmId === 'deep_forest' ? '깊은 숲' : '저승'}</p>
+          <p className="v4-hero-meta">{hero.age}세 · Lv.{hero.level} · {getV4RealmName(hero.realmId)}</p>
           <div className="v4-stat-line">
             <span className="v4-chip">HP {formatNumber(hero.hp)}/{formatNumber(hero.hpMax)}</span>
             <span className="v4-chip">⚔ {formatNumber(hero.atk)}</span>

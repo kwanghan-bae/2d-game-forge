@@ -140,12 +140,20 @@ export function getV4FacilityDefinition(id: string): FacilityDefinition | undefi
   return getOwnDefinition(FACILITY_DEFINITIONS, id);
 }
 
+export function getV4FacilityName(id: string): string {
+  return getV4FacilityDefinition(id)?.nameKR ?? '기록되지 않은 시설';
+}
+
 export function getV4AgentDefinition(id: string): AgentDefinition | undefined {
   return getOwnDefinition(AGENT_DEFINITIONS, id);
 }
 
 export function getV4RealmDefinition(id: string): RealmDefinition | undefined {
   return getOwnDefinition(REALM_DEFINITIONS, id);
+}
+
+export function getV4RealmName(id: string): string {
+  return getV4RealmDefinition(id)?.nameKR ?? '기록되지 않은 Realm';
 }
 
 /**
@@ -167,6 +175,12 @@ export const POLICY_LABELS: Record<V4Policy, string> = {
   hoarding: '안전 비축',
   training: '성장 집중',
 };
+
+export function getV4PolicyName(policy: string): string {
+  return Object.prototype.hasOwnProperty.call(POLICY_LABELS, policy)
+    ? POLICY_LABELS[policy as V4Policy]
+    : '정책 확인 필요';
+}
 
 export const FACILITY_IDS = Object.keys(FACILITY_DEFINITIONS) as FacilityId[];
 export const REALM_IDS = Object.keys(REALM_DEFINITIONS) as RealmId[];

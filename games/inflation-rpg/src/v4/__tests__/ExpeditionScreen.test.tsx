@@ -86,6 +86,49 @@ describe('V4 expedition result screen', () => {
     expect(result.textContent).not.toContain('v4_guardian_armor');
   });
 
+  it('explains the no-reward outcome instead of leaving an empty victory card', () => {
+    renderResult(baseResult({ reward: {} }));
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result).toHaveTextContent('획득 보상 · 없음');
+    expect(result).toHaveTextContent('다음 시설 작업으로 준비하세요');
+  });
+
+  it('shows that a defeat preserves permanent resources and displays every preparation cost', () => {
+    const save = createInitialV4Save(104);
+    save.meta.unlockedRealms.push('deep_forest');
+    save.run.lastExpeditionResult = baseResult({
+      realmId: 'deep_forest',
+      outcome: 'defeat',
+      reward: {},
+      recommendedFacilityId: 'training',
+    });
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result).toHaveTextContent('영구 자산은 보존되었습니다');
+    const forest = screen.getByRole('heading', { name: /깊은 숲/ }).closest('article');
+    expect(forest).not.toBeNull();
+    if (!forest) return;
+    expect(forest).toHaveTextContent('준비 비용 · 신력 25 · 재료 1');
+  });
+
+  it('keeps the result screen readable when a malformed Realm id is supplied', () => {
+    expect(() => renderResult(baseResult({ realmId: 'lost_realm' as never }))).not.toThrow();
+    expect(screen.getByTestId('v4-expedition-result')).toHaveTextContent('기록되지 않은 Realm');
+  });
+
   it('does not present a fully fatigued guide as ready for dispatch', () => {
     const save = createInitialV4Save(102);
     save.meta.agents = save.meta.agents.map((agent) => agent.id === 'guide'
