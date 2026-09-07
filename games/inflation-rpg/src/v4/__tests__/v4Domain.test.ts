@@ -146,6 +146,8 @@ describe('v4 save and domain', () => {
     const settledExpedition = completeFacilityTasks(expedition.save, expedition.save.run.expedition!.completesAt);
     expect(settledExpedition.run.lastExpeditionResult).not.toBeNull();
     if (!settledExpedition.run.lastExpeditionResult) return;
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(settledExpedition));
+    expect(loadV4Save(fakeStorage)).not.toBeNull();
     settledExpedition.run.lastExpeditionResult.recommendedEquipmentId = 'unknown-v4-equipment';
     storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(settledExpedition));
     expect(loadV4Save(fakeStorage)).toBeNull();
