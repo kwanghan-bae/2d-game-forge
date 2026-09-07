@@ -1716,6 +1716,20 @@ describe('v4 save and domain', () => {
     expect(confirmPendingExpedition(startedExpedition.save, unsafeClock)).toBe(startedExpedition.save);
   });
 
+  it('does not schedule work past the persistable clock ceiling', () => {
+    const initial = createInitialV4Save(126);
+    initial.lastProcessedAt = Number.MAX_SAFE_INTEGER;
+    initial.updatedAt = Number.MAX_SAFE_INTEGER;
+
+    const task = startFacilityTask(initial, 'temple', initial.updatedAt, null);
+    const expedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+
+    expect(task.ok).toBe(false);
+    expect(task.save).toBe(initial);
+    expect(expedition.ok).toBe(false);
+    expect(expedition.save).toBe(initial);
+  });
+
   it('does not mutate a full intervention reserve', () => {
     const full = createInitialV4Save(97);
     full.run.interventionCharges = 3;

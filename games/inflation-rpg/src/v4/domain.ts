@@ -104,6 +104,13 @@ function eventTimestamp(save: V4SaveEnvelope, now: number): number {
   return Math.min(MAX_ECONOMY_VALUE, Math.max(save.updatedAt, requested));
 }
 
+function safeCompletionTimestamp(startedAt: number, durationSeconds: number): number | null {
+  if (!isPersistableClock(startedAt) || !Number.isFinite(durationSeconds) || durationSeconds <= 0) return null;
+  const durationMs = durationSeconds * 1000;
+  if (!Number.isFinite(durationMs) || durationMs > MAX_ECONOMY_VALUE - startedAt) return null;
+  return startedAt + durationMs;
+}
+
 function touchSave(save: V4SaveEnvelope, now: number): void {
   const requested = eventTimestamp(save, now);
   save.updatedAt = Math.min(MAX_ECONOMY_VALUE, Math.max(save.updatedAt, save.lastProcessedAt, requested));
@@ -374,6 +381,8 @@ export function startFacilityTask(
   const definition = getV4FacilityDefinition(facilityId);
   const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
   if (!facility || !definition) return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
+  const completesAt = safeCompletionTimestamp(eventAt, preview.durationSeconds);
+  if (completesAt === null) return { ok: false, save: source, error: '작업 시각 범위를 확인할 수 없어 시작하지 않았습니다.' };
 
   pay(save, preview.input);
   const task: FacilityTask = {
@@ -381,7 +390,7 @@ export function startFacilityTask(
     facilityId,
     type: definition.taskLabelKR,
     startedAt: eventAt,
-    completesAt: eventAt + preview.durationSeconds * 1000,
+    completesAt,
     input: preview.input,
     outputPreview: preview.output,
     outputEquipmentIds: preview.outputEquipmentIds.length > 0 ? preview.outputEquipmentIds : undefined,
@@ -944,13 +953,15 @@ export function startExpedition(
   if (assignedAgentId === 'guide' && (assignedGuide?.fatigue ?? 0) >= 100) {
     return { ok: false, save: source, error: '길잡이가 너무 피로합니다. 휴식 후 다시 출발하세요.' };
   }
-  pay(save, realm.cost);
   const eventAt = eventTimestamp(save, now);
   const firstEncounterDuration = expeditionDurationSeconds(
     save,
     realm.encounters[0]?.durationSeconds ?? realm.durationSeconds,
     assignedAgentId === 'guide',
   );
+  const completesAt = safeCompletionTimestamp(eventAt, firstEncounterDuration);
+  if (completesAt === null) return { ok: false, save: source, error: '원정 시각 범위를 확인할 수 없어 출발하지 않았습니다.' };
+  pay(save, realm.cost);
   const id = nextSaveId(save, `expedition-${realmId}-${eventAt}`);
   save.run.expedition = {
     id,
@@ -958,7 +969,7 @@ export function startExpedition(
     policy,
     assignedAgentId,
     startedAt: eventAt,
-    completesAt: eventAt + firstEncounterDuration * 1000,
+    completesAt,
     status: 'traveling',
     encounterIndex: 0,
     encountersCleared: 0,
