@@ -156,6 +156,33 @@ describe('V4 expedition result screen', () => {
     expect(screen.getByTestId('v4-active-expedition')).toHaveTextContent('기록되지 않은 Realm');
   });
 
+  it('uses generic confirmation wording when a risky route is parked before its boss stage', () => {
+    const initial = createInitialV4Save(106);
+    initial.meta.unlockedRealms.push('deep_forest');
+    const started = startExpedition(initial, 'deep_forest', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.status = 'awaiting_confirmation';
+    started.save.run.expedition!.encounterIndex = 0;
+    const props = {
+      save: started.save,
+      now: started.save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    const active = screen.getByTestId('v4-active-expedition');
+    expect(active).toHaveTextContent('원정 결과와 보상을 확인한 뒤 귀환을 확정하세요');
+    expect(within(active).getByRole('button', { name: '원정 결과 확인' })).toBeInTheDocument();
+    expect(within(active).queryByRole('button', { name: '보스 결과 확인' })).toBeNull();
+  });
+
   it('does not present a fully fatigued guide as ready for dispatch', () => {
     const save = createInitialV4Save(102);
     save.meta.agents = save.meta.agents.map((agent) => agent.id === 'guide'

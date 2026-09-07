@@ -53,6 +53,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const activeEncounter = activeRealm
     ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition?.encounterIndex ?? activeRealm.encounters.length - 1))]
     : null;
+  const waitingForBoss = activeEncounter?.tier === 'boss';
   const nextRealmId = result?.outcome === 'victory' ? getNextRealmId(result.realmId) : null;
   const nextRealmPending = Boolean(nextRealmId && !save.meta.unlockedRealms.includes(nextRealmId));
 
@@ -99,12 +100,12 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
           <p>{activeRealm?.icon} {getV4RealmName(expedition.realmId)} · {activeEncounter?.nameKR ?? activeRealm?.boss ?? '기록 확인 필요'}</p>
           {activeEncounter && <div className="v4-stat-line"><span className="v4-chip">현재 단계 {activeEncounter.tier === 'normal' ? '일반' : activeEncounter.tier === 'elite' ? '정예' : '보스'}</span><span className="v4-chip">{(expedition.encounterIndex ?? activeRealm!.encounters.length - 1) + 1}/{activeRealm!.encounters.length}</span><span className="v4-chip">권장 {activeEncounter.recommendedPower}</span></div>}
           {activeEncounter && <p className="v4-muted">현재 전투력 {getV4HeroPower(save).toLocaleString('ko-KR')} · 예상 승률 {Math.round(getExpeditionSuccessChance(save, expedition.realmId, expedition.encounterIndex ?? activeRealm!.encounters.length - 1, expedition.assignedAgentId) * 100)}%</p>}
-          {expedition.status === 'awaiting_confirmation' && <div className="v4-alert">오프라인 동안 위험 구간에 도착했습니다. 보스 결과와 보상을 확인한 뒤 귀환을 확정하세요.</div>}
+          {expedition.status === 'awaiting_confirmation' && <div className="v4-alert">오프라인 동안 위험 구간에 도착했습니다. {waitingForBoss ? '보스 결과와 보상을' : '원정 결과와 보상을'} 확인한 뒤 귀환을 확정하세요.</div>}
           <div className="v4-progress"><span style={{ width: `${getExpeditionProgressPercent(now, expedition.startedAt, expedition.completesAt)}%` }} /></div>
           <p>{expedition.status === 'awaiting_confirmation' ? '귀환 판정 대기 중' : `귀환까지 ${getExpeditionRemainingSeconds(now, expedition.completesAt)}초`}</p>
           <div className="v4-button-row">
             {expedition.status === 'awaiting_confirmation'
-              ? <button type="button" className="v4-btn v4-btn--primary" onClick={onConfirm}>보스 결과 확인</button>
+              ? <button type="button" className="v4-btn v4-btn--primary" onClick={onConfirm}>{waitingForBoss ? '보스 결과 확인' : '원정 결과 확인'}</button>
               : <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>시간 진행 확인</button>}
             <button type="button" className="v4-btn v4-btn--quiet" disabled={save.run.interventionCharges <= 0} onClick={() => onIntervention('retreat')}>신의 개입: 후퇴 ({save.run.interventionCharges})</button>
           </div>
