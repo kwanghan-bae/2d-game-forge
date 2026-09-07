@@ -295,6 +295,7 @@ pnpm circular
 - 보상형 광고가 진행 중일 때 ad-free entitlement가 먼저 확정되면 뒤늦은 광고 취소·예외를 실패로 처리하지 않고 혜택을 부여하며, 일일 광고 슬롯도 소비하지 않도록 경합을 고정했다.
 - 동일한 ad-free entitlement 콜백이 반복되어도 실제 상태 변경이 아닐 때는 revision을 올리지 않아, 진행 중인 구매 복원 응답을 정상적으로 반영하도록 경계를 고정했다.
 - native monetization bridge의 ad-free entitlement callback도 V4 adapter 상태에 즉시 반영해, 구매·복원 후속 응답 없이 도착한 권한 변경이 UI와 보상 경로에서 누락되지 않게 했다.
+- AdMob 배너의 표시·숨김 요청을 최신 의도 상태로 수렴하는 단일 reconciliation queue로 직렬화해, 표시 요청이 진행 중 광고 제거가 확정되어도 배너가 다시 살아나는 경합을 차단했다.
 - ad-free 비소모성 구매는 승인 호출이 일시 실패해도 store의 구매 성공을 권한 실패로 숨기지 않도록 했고, 중복 지급 위험이 있는 균열석 소모성 상품은 승인 실패를 계속 전파하도록 분리했다.
 - IAP store success 응답도 구매 기록·요청 상품·구매 토큰을 검증한 뒤에만 entitlement 경로로 전달해 malformed provider payload가 광고 제거를 무단 부여하지 않도록 했다.
 - IAP 복원 응답도 알려진 상품·구매 토큰·구매 시각·승인 상태를 검증하고, V4 ad-free 판정에서 같은 레코드 경계를 재확인해 malformed restore payload가 권한을 만들지 않도록 했다.
@@ -325,7 +326,7 @@ pnpm circular
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,500개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,501개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 4.6분).

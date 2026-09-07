@@ -68,4 +68,25 @@ describe('AdManager', () => {
     await mgr.hideBanner();
     expect(AdMob.hideBanner).toHaveBeenCalled();
   });
+
+  it('reconciles a hide request that arrives while showing the banner', async () => {
+    let releaseShow!: () => void;
+    const showPending = new Promise<void>((resolve) => { releaseShow = resolve; });
+    (AdMob.showBanner as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(showPending)
+      .mockResolvedValue(undefined);
+
+    const show = mgr.showBanner();
+    const hide = mgr.hideBanner();
+    await Promise.resolve();
+
+    expect(AdMob.showBanner).toHaveBeenCalledTimes(1);
+    expect(AdMob.hideBanner).not.toHaveBeenCalled();
+
+    releaseShow();
+    await Promise.all([show, hide]);
+
+    expect(AdMob.hideBanner).toHaveBeenCalledTimes(1);
+    expect(mgr.isBannerVisible()).toBe(false);
+  });
 });

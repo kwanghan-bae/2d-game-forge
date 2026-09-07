@@ -13,6 +13,8 @@ export class AdManager {
   private initialized = false;
   private initializeInFlight: Promise<void> | null = null;
   private bannerVisible = false;
+  private bannerDesiredVisible = false;
+  private bannerReconcileInFlight: Promise<void> | null = null;
 
   constructor(private cfg: AdManagerConfig) {}
 
@@ -51,27 +53,44 @@ export class AdManager {
   }
 
   async showBanner(): Promise<void> {
-    if (this.bannerVisible) return;
-    try {
-      await AdMob.showBanner({
-        adId: this.cfg.bannerUnitId,
-        adSize: BannerAdSize.ADAPTIVE_BANNER,
-        position: BannerAdPosition.BOTTOM_CENTER,
-        margin: 0,
-      });
-      this.bannerVisible = true;
-    } catch (e) {
-      console.warn('[AdManager] showBanner failed:', e);
-    }
+    this.bannerDesiredVisible = true;
+    return this.reconcileBannerVisibility();
   }
 
   async hideBanner(): Promise<void> {
-    if (!this.bannerVisible) return;
+    this.bannerDesiredVisible = false;
+    return this.reconcileBannerVisibility();
+  }
+
+  private async reconcileBannerVisibility(): Promise<void> {
+    if (this.bannerReconcileInFlight) return this.bannerReconcileInFlight;
+
+    const pending = (async () => {
+      while (this.bannerVisible !== this.bannerDesiredVisible) {
+        const desiredVisible = this.bannerDesiredVisible;
+        try {
+          if (desiredVisible) {
+            await AdMob.showBanner({
+              adId: this.cfg.bannerUnitId,
+              adSize: BannerAdSize.ADAPTIVE_BANNER,
+              position: BannerAdPosition.BOTTOM_CENTER,
+              margin: 0,
+            });
+          } else {
+            await AdMob.hideBanner();
+          }
+          this.bannerVisible = desiredVisible;
+        } catch (e) {
+          console.warn(`[AdManager] ${desiredVisible ? 'show' : 'hide'}Banner failed:`, e);
+          break;
+        }
+      }
+    })();
+    this.bannerReconcileInFlight = pending;
     try {
-      await AdMob.hideBanner();
-      this.bannerVisible = false;
-    } catch (e) {
-      console.warn('[AdManager] hideBanner failed:', e);
+      await pending;
+    } finally {
+      if (this.bannerReconcileInFlight === pending) this.bannerReconcileInFlight = null;
     }
   }
 
