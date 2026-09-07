@@ -299,6 +299,10 @@ export class V4MonetizationAdapter {
     const pending = (async (): Promise<V4MonetizationResult> => {
       try {
         const result = await purchases.purchase('ad_free');
+        // A native entitlement callback can complete while the purchase UI is
+        // still pending. Preserve that authoritative grant even when the
+        // older purchase promise resolves as cancelled or failed.
+        if (this.adFree) return { granted: true, reason: 'granted' };
         if (result === 'purchased') {
           this.setAdFreeOwned(true);
           return { granted: true, reason: 'granted' };

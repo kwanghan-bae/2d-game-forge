@@ -91,6 +91,20 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('does not report a stale purchase failure after entitlement is granted externally', async () => {
+    let release!: (result: 'purchased' | 'cancelled' | 'failed') => void;
+    const pending = new Promise<'purchased' | 'cancelled' | 'failed'>((resolve) => { release = resolve; });
+    const adapter = new V4MonetizationAdapter(null, { purchase: () => pending });
+
+    const purchase = adapter.buyAdFree();
+    await Promise.resolve();
+    adapter.setAdFreeOwned(true);
+    release('cancelled');
+
+    expect((await purchase).granted).toBe(true);
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('does not let a stale restore response revoke a purchase completed while restore was pending', async () => {
     let releaseRestore!: (owned: boolean) => void;
     const pendingRestore = new Promise<boolean>((resolve) => { releaseRestore = resolve; });
