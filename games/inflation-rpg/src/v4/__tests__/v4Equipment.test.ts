@@ -25,6 +25,31 @@ describe('v4 equipment progression', () => {
     expect(upgraded.run.hero.atk).toBe(initial.run.hero.atk + 160);
   });
 
+  it('unlocks armor and talisman through higher-level blacksmith work', () => {
+    const source = createInitialV4Save(117);
+    source.meta.facilities.blacksmith.level = 3;
+    source.run.hero.equipmentIds = ['v4_iron_sword'];
+    source.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+
+    const armorTask = startFacilityTask(source, 'blacksmith', source.updatedAt);
+    expect(armorTask.ok).toBe(true);
+    if (!armorTask.ok) return;
+    expect(armorTask.task.outputEquipmentIds).toEqual(['v4_guardian_armor']);
+
+    const armored = completeFacilityTasks(armorTask.save, armorTask.task.completesAt);
+    const talismanTask = startFacilityTask(armored, 'blacksmith', armored.updatedAt);
+    expect(talismanTask.ok).toBe(true);
+    if (!talismanTask.ok) return;
+    expect(talismanTask.task.outputEquipmentIds).toEqual(['v4_spirit_talisman']);
+
+    const equipped = completeFacilityTasks(talismanTask.save, talismanTask.task.completesAt);
+    expect(equipped.run.hero.equipmentIds).toEqual([
+      'v4_iron_sword',
+      'v4_guardian_armor',
+      'v4_spirit_talisman',
+    ]);
+  });
+
   it('hydrates equipment stats from a pre-upgrade V4 save exactly once', () => {
     const oldSave = createInitialV4Save(102);
     oldSave.run.hero.equipmentIds = ['v4_iron_sword'];

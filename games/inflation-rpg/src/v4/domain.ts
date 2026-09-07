@@ -61,6 +61,11 @@ const AGENT_SPEED_PER_LEVEL = 0.03;
 const MAX_HERO_EXP_SETTLEMENT = 100_000;
 const MAX_LEVELS_PER_SETTLEMENT = 1_000;
 const MAX_ECONOMY_VALUE = Number.MAX_SAFE_INTEGER;
+const BLACKSMITH_EQUIPMENT_UNLOCKS = [
+  { id: 'v4_iron_sword', facilityLevel: 1 },
+  { id: 'v4_guardian_armor', facilityLevel: 2 },
+  { id: 'v4_spirit_talisman', facilityLevel: 3 },
+] as const;
 
 function positiveFiniteLevel(value: number | undefined): number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 1 ? value : 1;
@@ -249,6 +254,40 @@ export function getHeroNextAction(source: V4SaveEnvelope): HeroAction {
   });
 }
 
+function savedEquipmentLevel(source: V4SaveEnvelope, equipmentId: string): number {
+  const savedLevel = source.run.hero.equipmentLevels?.[equipmentId];
+  if (typeof savedLevel === 'number' && Number.isFinite(savedLevel)) {
+    return Math.min(20, Math.max(0, Math.floor(savedLevel)));
+  }
+  return source.run.hero.equipmentIds.includes(equipmentId) ? 1 : 0;
+}
+
+/**
+ * Selects the next equipment reward for blacksmith work.
+ *
+ * Newly unlocked equipment takes priority over upgrades so a levelled-up
+ * blacksmith reveals the full three-slot loadout before returning to the
+ * weapon upgrade loop. Once every available item exists, the lowest-level
+ * item is upgraded to keep the task useful without making higher-tier items
+ * permanently unreachable.
+ */
+export function getBlacksmithEquipmentOutput(source: V4SaveEnvelope): string {
+  const facilityLevel = positiveFiniteLevel(source.meta.facilities.blacksmith?.level);
+  const available = BLACKSMITH_EQUIPMENT_UNLOCKS.filter(
+    (equipment) => equipment.facilityLevel <= facilityLevel,
+  );
+  const nextMissing = available.find((equipment) => savedEquipmentLevel(source, equipment.id) < 1);
+  if (nextMissing) return nextMissing.id;
+
+  const nextUpgrade = available.reduce((selected, equipment) => {
+    if (!selected) return equipment;
+    return savedEquipmentLevel(source, equipment.id) < savedEquipmentLevel(source, selected.id)
+      ? equipment
+      : selected;
+  }, available[0]);
+  return nextUpgrade?.id ?? BLACKSMITH_EQUIPMENT_UNLOCKS[0].id;
+}
+
 function facilityTaskEconomy(
   save: V4SaveEnvelope,
   facilityId: FacilityId,
@@ -277,7 +316,9 @@ function facilityTaskEconomy(
     output: Object.fromEntries(
       Object.entries(definition?.output ?? {}).map(([key, value]) => [key, safeScaledEconomyAmount(value, outputMultiplier)]),
     ) as Partial<Record<V4CurrencyKey, number>>,
-    outputEquipmentIds: definition?.outputEquipmentIds ? [...definition.outputEquipmentIds] : [],
+    outputEquipmentIds: facilityId === 'blacksmith'
+      ? [getBlacksmithEquipmentOutput(save)]
+      : definition?.outputEquipmentIds ? [...definition.outputEquipmentIds] : [],
     heroExpGain: safeScaledEconomyAmount(definition?.heroExpGain, outputMultiplier),
   };
 }
