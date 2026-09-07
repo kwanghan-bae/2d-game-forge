@@ -243,6 +243,7 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
         traits: [],
         heroHpMax: 100 + hpBaseBonus,
         heroAtkBase: 50 + atkBaseBonus,
+        pauseOnInteractiveChoice: true,
         // heroSnapshot is picked up automatically from run.heroSnapshot inside cycleSliceV2.start
       });
     }

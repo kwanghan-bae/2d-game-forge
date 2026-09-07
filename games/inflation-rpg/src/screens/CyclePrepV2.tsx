@@ -35,6 +35,7 @@ export function CyclePrepV2({ onStart, onCancel, onClearSnapshot }: Props) {
       heroHpMax: 100 + hpBaseBonus,
       heroAtkBase: 50 + atkBaseBonus,
       heroSnapshot: null,  // explicit null overrides run.heroSnapshot in cycleSliceV2.start
+      pauseOnInteractiveChoice: true,
     });
     onStart();
   };

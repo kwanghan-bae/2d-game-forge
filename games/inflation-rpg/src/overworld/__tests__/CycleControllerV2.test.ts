@@ -44,6 +44,27 @@ describe('CycleControllerV2', () => {
     expect(events.length).toBeGreaterThan(0);
   });
 
+  it('browser-runner mode pauses the next arrival while a choice modal awaits input', () => {
+    const ctrl = new CycleControllerV2({
+      seed: 42,
+      traits: [],
+      heroHpMax: 100,
+      heroAtkBase: 100000,
+      pauseOnInteractiveChoice: true,
+    });
+
+    let pending = false;
+    for (let i = 0; i < 500 && !pending; i += 1) {
+      ctrl.handleArrival('enemy', `choice_guard_${i}`);
+      pending = ctrl.hasPendingInteractiveChoice();
+    }
+
+    expect(pending).toBe(true);
+    const actionCountBeforeBlockedArrival = ctrl.getHero().actionCount;
+    expect(ctrl.handleArrival('enemy', 'choice_guard_blocked')).toEqual([]);
+    expect(ctrl.getHero().actionCount).toBe(actionCountBeforeBlockedArrival);
+  });
+
   it('finalize produces a CycleSaga with events recorded', () => {
     const ctrl = new CycleControllerV2({
       seed: 42,

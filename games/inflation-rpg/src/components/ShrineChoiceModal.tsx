@@ -13,7 +13,7 @@ export function ShrineChoiceModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div style={{
+    <div data-testid="shrine-choice-modal" style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
     }}>
@@ -29,18 +29,21 @@ export function ShrineChoiceModal({ onClose }: { onClose: () => void }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button
+            data-testid="shrine-choice-gold"
             onClick={() => choose(0)}
             style={{ padding: '12px 16px', fontSize: 15, background: '#2a2a4a', border: '1px solid #ffd700', borderRadius: 8, color: '#ffd700', cursor: 'pointer' }}
           >
             💰 황금 축복 (+500 골드)
           </button>
           <button
+            data-testid="shrine-choice-exp"
             onClick={() => choose(1)}
             style={{ padding: '12px 16px', fontSize: 15, background: '#2a2a4a', border: '1px solid #88f', borderRadius: 8, color: '#88f', cursor: 'pointer' }}
           >
             📖 지혜의 축복 (+300 경험치)
           </button>
           <button
+            data-testid="shrine-choice-heal"
             onClick={() => choose(2)}
             style={{ padding: '12px 16px', fontSize: 15, background: '#2a2a4a', border: '1px solid #8f8', borderRadius: 8, color: '#8f8', cursor: 'pointer' }}
           >

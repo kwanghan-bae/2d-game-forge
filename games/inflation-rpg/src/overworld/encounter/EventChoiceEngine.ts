@@ -69,8 +69,10 @@ export enum VeteransChallengeChoice {
 
 export class EventChoiceEngine {
   private shrineChoice: ShrineChoice | -1 = -1;
+  private shrineChoiceAwaitingInput = false;
   private dangerChoice: DangerChoice = DangerChoice.NONE;
   private dangerPending = false;
+  private dangerChoiceAwaitingInput = false;
   private merchantChoice: MerchantChoice = MerchantChoice.BUY;
   private merchantPending = false;
   private gamblerChoice: GamblerChoice = GamblerChoice.BET_LOW;
@@ -84,18 +86,26 @@ export class EventChoiceEngine {
     return this.shrineChoice >= 0;
   }
 
+  /** True only while the shrine modal still needs a player response. */
+  isAwaitingShrineChoice(): boolean {
+    return this.hasPendingShrineChoice() && this.shrineChoiceAwaitingInput;
+  }
+
   setPendingShrineChoice(): void {
     this.shrineChoice = ShrineChoice.GOLD; // default
+    this.shrineChoiceAwaitingInput = true;
   }
 
   setShrineChoice(choice: ShrineChoice): void {
     this.shrineChoice = choice;
+    this.shrineChoiceAwaitingInput = false;
   }
 
   /** Resolve and consume the pending shrine choice. Returns the choice. */
   resolveShrineChoice(): ShrineChoice {
     const c = this.shrineChoice as ShrineChoice;
     this.shrineChoice = -1;
+    this.shrineChoiceAwaitingInput = false;
     return c;
   }
 
@@ -105,13 +115,20 @@ export class EventChoiceEngine {
     return this.dangerPending;
   }
 
+  /** True only while the danger-zone modal still needs a player response. */
+  isAwaitingDangerChoice(): boolean {
+    return this.dangerPending && this.dangerChoiceAwaitingInput;
+  }
+
   enterDangerZone(): void {
     this.dangerPending = true;
     this.dangerChoice = DangerChoice.FIGHT; // default
+    this.dangerChoiceAwaitingInput = true;
   }
 
   setDangerChoice(retreat: boolean): void {
     this.dangerChoice = retreat ? DangerChoice.RETREAT : DangerChoice.FIGHT;
+    this.dangerChoiceAwaitingInput = false;
   }
 
   getDangerChoice(): DangerChoice {
@@ -122,6 +139,7 @@ export class EventChoiceEngine {
   clearDangerChoice(): void {
     this.dangerPending = false;
     this.dangerChoice = DangerChoice.NONE;
+    this.dangerChoiceAwaitingInput = false;
   }
 
   exitDangerZone(): void {

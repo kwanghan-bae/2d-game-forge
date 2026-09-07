@@ -12,6 +12,17 @@ describe('EventChoiceEngine', () => {
       const engine = new EventChoiceEngine();
       engine.setPendingShrineChoice();
       expect(engine.hasPendingShrineChoice()).toBe(true);
+      expect(engine.isAwaitingShrineChoice()).toBe(true);
+    });
+
+    test('keeps the selected shrine choice for the next encounter without blocking arrivals', () => {
+      const engine = new EventChoiceEngine();
+      engine.setPendingShrineChoice();
+      engine.setShrineChoice(ShrineChoice.EXP);
+
+      expect(engine.hasPendingShrineChoice()).toBe(true);
+      expect(engine.isAwaitingShrineChoice()).toBe(false);
+      expect(engine.resolveShrineChoice()).toBe(ShrineChoice.EXP);
     });
 
     test('resolveShrineChoice returns the choice and clears pending', () => {
@@ -42,6 +53,7 @@ describe('EventChoiceEngine', () => {
       const engine = new EventChoiceEngine();
       engine.enterDangerZone();
       expect(engine.hasPendingDangerChoice()).toBe(true);
+      expect(engine.isAwaitingDangerChoice()).toBe(true);
     });
 
     test('setDangerChoice(retreat) resolves to RETREAT', () => {
@@ -49,6 +61,7 @@ describe('EventChoiceEngine', () => {
       engine.enterDangerZone();
       engine.setDangerChoice(true);
       expect(engine.getDangerChoice()).toBe(DangerChoice.RETREAT);
+      expect(engine.isAwaitingDangerChoice()).toBe(false);
     });
 
     test('setDangerChoice(fight) resolves to FIGHT', () => {
@@ -56,6 +69,7 @@ describe('EventChoiceEngine', () => {
       engine.enterDangerZone();
       engine.setDangerChoice(false);
       expect(engine.getDangerChoice()).toBe(DangerChoice.FIGHT);
+      expect(engine.isAwaitingDangerChoice()).toBe(false);
     });
 
     test('clearDangerChoice resets state', () => {

@@ -26,7 +26,7 @@ export function DangerChoiceModal({ onClose }: Props) {
   };
 
   return (
-    <div style={{
+    <div data-testid="danger-choice-modal" style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
     }}>
@@ -43,14 +43,14 @@ export function DangerChoiceModal({ onClose }: Props) {
           HP: {Math.round(hero.hp / hero.hpMax * 100)}%
         </div>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <button onClick={handleFight} style={{
+          <button data-testid="danger-choice-fight" onClick={handleFight} style={{
             padding: '10px 20px', background: '#c44', border: 'none',
             borderRadius: 8, color: '#fff', fontSize: 14, cursor: 'pointer',
             minWidth: 100, minHeight: 44,
           }}>
             ⚔️ 전투!
           </button>
-          <button onClick={handleRetreat} style={{
+          <button data-testid="danger-choice-retreat" onClick={handleRetreat} style={{
             padding: '10px 20px', background: '#444', border: '1px solid #888',
             borderRadius: 8, color: '#fff', fontSize: 14, cursor: 'pointer',
             minWidth: 100, minHeight: 44,

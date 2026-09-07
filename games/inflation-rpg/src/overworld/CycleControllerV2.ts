@@ -87,6 +87,11 @@ export interface CycleControllerV2Opts {
   perkRelicFindBonus?: number;
   /** C1037: Reforged armor damage reduction */
   reforgeArmorDrBonus?: number;
+  /**
+   * Browser-runner mode pauses arrival processing while a choice modal awaits
+   * input. Direct simulation callers keep the historical continuous mode.
+   */
+  pauseOnInteractiveChoice?: boolean;
 }
 
 export class CycleControllerV2 {
@@ -97,6 +102,7 @@ export class CycleControllerV2 {
   private rng: SeededRng;
   private endCause: DeathCause | null = null;
   private readonly seed: number;
+  private readonly pauseOnInteractiveChoice: boolean;
   private kills: number = 0;
   private bossKills: number = 0;
   private drops: number = 0;
@@ -197,6 +203,7 @@ export class CycleControllerV2 {
   constructor(opts: CycleControllerV2Opts) {
     this.seed = opts.seed;
     this.traits = opts.traits;
+    this.pauseOnInteractiveChoice = opts.pauseOnInteractiveChoice ?? false;
     // V3-H B2: restore from snapshot if present, otherwise create fresh hero.
     this.hero = opts.heroSnapshot
       ? HeroEntity.restore(opts.heroSnapshot)
@@ -929,6 +936,7 @@ export class CycleControllerV2 {
   getCombatSummary() { return this.encounter.getCombatSummary(); }
   hasPendingShrineChoice() { return this.encounter.hasPendingShrineChoice(); }
   setShrineChoice(choice: 0 | 1 | 2) { this.encounter.setShrineChoice(choice); }
+  hasPendingInteractiveChoice() { return this.encounter.hasPendingInteractiveChoice(); }
   getTotalDeaths() { return this.encounter.getTotalDeaths(); }
   getTotalFights() { return this.encounter.getTotalFights(); }
   // C801: Generic event accessors — all per-event methods delegate here
@@ -1022,6 +1030,10 @@ export class CycleControllerV2 {
     // Cycle 110 F1: same guard for realm fork pending. Modal open → no further
     // arrivals processed until resolveRealmFork is invoked.
     if (this.realmForkPending) return [];
+    // Choice modals are also a controller boundary. At 10x speed the scene
+    // can reach another landmark before React has painted the first modal;
+    // without this guard the second choice would stack over the first one.
+    if (this.pauseOnInteractiveChoice && this.encounter.hasPendingInteractiveChoice()) return [];
 
     // V3-B: staggered hero recovers (hp full, staggered=false) without
     // processing the encounter content. This arrival "costs" the actionCount

@@ -698,6 +698,30 @@ export class EncounterEngine {
   hasPendingDangerChoice(): boolean { return this.choiceEngine.hasPendingDangerChoice(); }
   setDangerChoice(retreat: boolean): void { this.choiceEngine.setDangerChoice(retreat); }
 
+  /**
+   * True while an interactive event still needs input from the player.
+   * Arrival callbacks can continue to arrive while the Phaser scene is
+   * running at an accelerated speed, so they must not open a second choice
+   * modal underneath the first one. Shrine and danger choices intentionally
+   * remain pending after the click so their selected value can be consumed by
+   * the next encounter; their dedicated awaiting flags keep that hand-off
+   * path open.
+   */
+  hasPendingInteractiveChoice(): boolean {
+    return this.choiceEngine.isAwaitingShrineChoice()
+      || this.choiceEngine.isAwaitingDangerChoice()
+      || this.choiceEngine.hasPendingProvingChoice()
+      || this.choiceEngine.hasPendingMercenaryChoice()
+      || this.choiceEngine.hasPendingCrossroadsChoice()
+      || this.choiceEngine.hasPendingWanderingMerchantChoice()
+      || this.choiceEngine.hasPendingVeteransChallengeChoice()
+      || this.lastStandPending
+      || this.firstTrialPending
+      || this.wanderingSagePending
+      || this.eldersJudgmentPending
+      || this.inflationRushPending;
+  }
+
   // C875: Proving Grounds accept/decline choice
   hasPendingProvingChoice(): boolean { return this.choiceEngine.hasPendingProvingChoice(); }
   setProvingChoice(accept: boolean): void {
