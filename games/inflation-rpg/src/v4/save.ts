@@ -182,7 +182,6 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (!isRecord(tasks) || !Object.entries(tasks).every(([id, task]) =>
     isRecord(task) && isFacilityTaskRecord(task) && task.id === id)
     || !Array.isArray(meta.agents) || !Array.isArray(meta.unlockedRealms) || !Array.isArray(meta.sagaEntries)
-    || meta.sagaEntries.length > V4_MAX_SAGA_ENTRIES
     || !meta.sagaEntries.every(isSagaEntryRecord)
     || new Set(meta.sagaEntries.map((entry) => entry.id)).size !== meta.sagaEntries.length) return false;
   if (meta.unlockedRealms.length === 0

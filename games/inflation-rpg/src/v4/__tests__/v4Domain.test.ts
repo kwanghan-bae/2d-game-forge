@@ -121,18 +121,6 @@ describe('v4 save and domain', () => {
     }));
     expect(loadV4Save(fakeStorage)).toBeNull();
 
-    const oversizedSaga = Array.from({ length: V4_MAX_SAGA_ENTRIES + 1 }, (_, index) => ({
-      id: `oversized-${index}`,
-      kind: 'milestone' as const,
-      createdAt: save.createdAt + index,
-      title: '기록',
-      text: '내용',
-    }));
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
-      ...save,
-      meta: { ...save.meta, sagaEntries: oversizedSaga },
-    }));
-    expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
   it('rejects an expedition result newer than the save watermark', () => {
