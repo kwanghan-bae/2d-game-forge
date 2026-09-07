@@ -1681,6 +1681,15 @@ describe('v4 save and domain', () => {
     expect(settings.meta.settings).toEqual(initial.meta.settings);
   });
 
+  it('keeps audio settings valid when the settings patch itself is malformed', () => {
+    const initial = createInitialV4Save(130);
+
+    expect(() => updateV4Settings(initial, null as never, initial.updatedAt + 1_000)).not.toThrow();
+    expect(() => updateV4Settings(initial, [] as never, initial.updatedAt + 1_000)).not.toThrow();
+    expect(updateV4Settings(initial, null as never, initial.updatedAt + 1_000).meta.settings)
+      .toEqual(initial.meta.settings);
+  });
+
   it('rejects an unknown expedition policy before charging or dispatching', () => {
     const initial = createInitialV4Save(107);
     const result = startExpedition(initial, 'joseon_plains', initial.updatedAt + 1_000, 'unsafe' as never, null);

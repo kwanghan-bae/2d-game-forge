@@ -1047,10 +1047,13 @@ export function updateV4Settings(
   now: number,
 ): V4SaveEnvelope {
   const save = cloneSave(source);
+  const safePatch: Partial<V4Settings> = patch && typeof patch === 'object' && !Array.isArray(patch)
+    ? patch
+    : {};
   save.meta.settings = {
-    music: clampVolume(patch.music, source.meta.settings.music),
-    sfx: clampVolume(patch.sfx, source.meta.settings.sfx),
-    muted: typeof patch.muted === 'boolean' ? patch.muted : source.meta.settings.muted,
+    music: clampVolume(safePatch.music, source.meta.settings.music),
+    sfx: clampVolume(safePatch.sfx, source.meta.settings.sfx),
+    muted: typeof safePatch.muted === 'boolean' ? safePatch.muted : source.meta.settings.muted,
   };
   touchSave(save, now);
   return save;
