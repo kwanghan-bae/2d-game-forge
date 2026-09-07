@@ -73,6 +73,19 @@ describe('V4 town hub support assignment', () => {
     expect(town.textContent).not.toContain('v4_iron_sword');
   });
 
+  it('labels the next blacksmith task with the newly unlocked equipment', () => {
+    const save = createInitialV4Save(104);
+    save.meta.facilities.blacksmith.level = 3;
+    save.run.hero.equipmentIds = ['v4_iron_sword'];
+    save.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    renderHub({ save });
+
+    const blacksmith = screen.getByText('대장간').closest('article');
+    expect(blacksmith).not.toBeNull();
+    if (!blacksmith) return;
+    expect(blacksmith).toHaveTextContent('다음: 수호 갑옷 제작');
+  });
+
   it('updates the closest objective as realms are unlocked', () => {
     const save = createInitialV4Save(97);
     save.meta.unlockedRealms = ['joseon_plains', 'deep_forest'];

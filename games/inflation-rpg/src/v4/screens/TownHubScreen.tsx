@@ -38,6 +38,12 @@ function formatResources(resources: Partial<Record<string, number>>): string {
     : '없음';
 }
 
+function getFacilityTaskLabel(facilityId: FacilityId, fallback: string, outputEquipmentIds: string[]): string {
+  return facilityId === 'blacksmith' && outputEquipmentIds[0]
+    ? `${getV4EquipmentName(outputEquipmentIds[0])} 제작`
+    : fallback;
+}
+
 function remainingSeconds(completesAt: number | undefined, now: number): number {
   if (typeof completesAt !== 'number' || !Number.isFinite(completesAt) || !Number.isFinite(now)) return 0;
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
@@ -140,7 +146,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 {task ? (
                   <div className="v4-task">{task.type}<br />남은 시간 {remainingSeconds(task.completesAt, now)}초</div>
                 ) : (
-                  <div className="v4-task">다음: {definition.taskLabelKR}</div>
+                  <div className="v4-task">다음: {getFacilityTaskLabel(facilityId, definition.taskLabelKR, preview.outputEquipmentIds)}</div>
                 )}
                 {!task && agentId && !assignedAgentId && <div className="v4-task">지원 담당자 없이 기본 방식으로 시작합니다.</div>}
                 <div className="v4-economy" aria-label={`${definition.nameKR} 작업 경제 정보`}>

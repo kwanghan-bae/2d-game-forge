@@ -4,7 +4,7 @@ import {
   getV4RealmDefinition,
 } from './data';
 import { V4_MAX_INTERVENTION_CHARGES, V4_MAX_SAGA_ENTRIES } from './types';
-import { applyV4EquipmentBonuses, getV4EquipmentBonuses } from './equipment';
+import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentName } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import type {
@@ -442,10 +442,13 @@ export function startFacilityTask(
   if (completesAt === null) return { ok: false, save: source, error: '작업 시각 범위를 확인할 수 없어 시작하지 않았습니다.' };
 
   pay(save, preview.input);
+  const taskLabel = facilityId === 'blacksmith' && preview.outputEquipmentIds[0]
+    ? `${getV4EquipmentName(preview.outputEquipmentIds[0])} 제작`
+    : definition.taskLabelKR;
   const task: FacilityTask = {
     id: nextTaskId(save, facilityId, eventAt),
     facilityId,
-    type: definition.taskLabelKR,
+    type: taskLabel,
     startedAt: eventAt,
     completesAt,
     input: preview.input,

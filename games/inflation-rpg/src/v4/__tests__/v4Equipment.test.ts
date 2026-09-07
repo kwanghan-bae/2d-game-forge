@@ -35,12 +35,14 @@ describe('v4 equipment progression', () => {
     expect(armorTask.ok).toBe(true);
     if (!armorTask.ok) return;
     expect(armorTask.task.outputEquipmentIds).toEqual(['v4_guardian_armor']);
+    expect(armorTask.task.type).toBe('수호 갑옷 제작');
 
     const armored = completeFacilityTasks(armorTask.save, armorTask.task.completesAt);
     const talismanTask = startFacilityTask(armored, 'blacksmith', armored.updatedAt);
     expect(talismanTask.ok).toBe(true);
     if (!talismanTask.ok) return;
     expect(talismanTask.task.outputEquipmentIds).toEqual(['v4_spirit_talisman']);
+    expect(talismanTask.task.type).toBe('영혼 부적 제작');
 
     const equipped = completeFacilityTasks(talismanTask.save, talismanTask.task.completesAt);
     expect(equipped.run.hero.equipmentIds).toEqual([
