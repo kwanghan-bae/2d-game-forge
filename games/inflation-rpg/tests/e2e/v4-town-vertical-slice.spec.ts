@@ -167,7 +167,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
         createdAt: number;
         updatedAt: number;
         lastProcessedAt: number;
-        meta: { unlockedRealms: string[] };
+        meta: { unlockedRealms: string[]; sagaEntries: Array<{ createdAt: number }> };
         run: { hero: { hp: number }; expedition: { realmId: string; startedAt: number; completesAt: number; encounterIndex: number } | null };
       };
       if (!save.run.expedition) throw new Error('expedition was not started');
@@ -180,6 +180,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       save.run.expedition.startedAt = save.createdAt;
       save.lastProcessedAt = save.createdAt;
       save.updatedAt = save.createdAt;
+      save.meta.sagaEntries = save.meta.sagaEntries.map((entry) => ({ ...entry, createdAt: save.createdAt }));
       localStorage.setItem(key, JSON.stringify(save));
     }, V4_SAVE_KEY);
     await page.reload();

@@ -83,6 +83,8 @@ describe('V4 save recovery boundary', () => {
 
   it('trims oversized saga history while hydrating an older valid save', () => {
     const save = createInitialV4Save(654);
+    save.updatedAt = save.createdAt + V4_MAX_SAGA_ENTRIES + 4;
+    save.lastProcessedAt = save.updatedAt;
     save.meta.sagaEntries = Array.from({ length: V4_MAX_SAGA_ENTRIES + 5 }, (_, index) => ({
       id: `legacy-saga-${index}`,
       kind: 'milestone' as const,

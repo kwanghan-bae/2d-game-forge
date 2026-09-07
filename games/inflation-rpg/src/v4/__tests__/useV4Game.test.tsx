@@ -8,6 +8,20 @@ import { useV4Game } from '../useV4Game';
 
 const HOUR = 60 * 60 * 1000;
 
+function setFixtureTimeline(
+  save: ReturnType<typeof createInitialV4Save>,
+  createdAt: number,
+  updatedAt = createdAt,
+) {
+  save.createdAt = createdAt;
+  save.lastProcessedAt = createdAt;
+  save.updatedAt = updatedAt;
+  save.meta.sagaEntries = save.meta.sagaEntries.map((entry) => ({
+    ...entry,
+    createdAt: Math.min(updatedAt, Math.max(createdAt, entry.createdAt)),
+  }));
+}
+
 function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
   const game = useV4Game(monetization);
   return (
@@ -174,9 +188,7 @@ describe('useV4Game monetization actions', () => {
     const startedAt = Date.now() - 60_000;
     // Keep the fixture chronologically valid: a save cannot have been
     // processed before it was created.
-    base.createdAt = startedAt;
-    base.lastProcessedAt = startedAt;
-    base.updatedAt = startedAt;
+    setFixtureTimeline(base, startedAt);
     const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
@@ -210,9 +222,7 @@ describe('useV4Game monetization actions', () => {
     vi.setSystemTime(10_000);
     const base = createInitialV4Save(89);
     const startedAt = 9_000;
-    base.createdAt = startedAt;
-    base.lastProcessedAt = startedAt;
-    base.updatedAt = startedAt;
+    setFixtureTimeline(base, startedAt);
     const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
@@ -247,9 +257,7 @@ describe('useV4Game monetization actions', () => {
   it('settles the initial offline state once under React StrictMode', async () => {
     const base = createInitialV4Save(90);
     const startedAt = Date.now() - 60_000;
-    base.createdAt = startedAt;
-    base.lastProcessedAt = startedAt;
-    base.updatedAt = startedAt;
+    setFixtureTimeline(base, startedAt);
     const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
@@ -316,9 +324,7 @@ describe('useV4Game monetization actions', () => {
   it('does not request an ad when offline settlement has no positive currency reward', async () => {
     const base = createInitialV4Save(89);
     const startedAt = Date.now() - 60_000;
-    base.createdAt = startedAt;
-    base.lastProcessedAt = startedAt;
-    base.updatedAt = startedAt;
+    setFixtureTimeline(base, startedAt);
     const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;

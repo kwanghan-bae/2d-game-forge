@@ -196,6 +196,7 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     isRecord(task) && isFacilityTaskRecord(task) && task.id === id)
     || !Array.isArray(meta.agents) || !Array.isArray(meta.unlockedRealms) || !Array.isArray(meta.sagaEntries)
     || !meta.sagaEntries.every(isSagaEntryRecord)
+    || !meta.sagaEntries.every((entry) => entry.createdAt >= createdAt && entry.createdAt <= updatedAt)
     || new Set(meta.sagaEntries.map((entry) => entry.id)).size !== meta.sagaEntries.length) return false;
   if (Object.values(tasks).some((task) => isRecord(task)
     && typeof task.startedAt === 'number'
