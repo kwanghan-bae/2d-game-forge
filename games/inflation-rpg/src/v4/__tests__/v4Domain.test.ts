@@ -1895,6 +1895,14 @@ describe('v4 save and domain', () => {
     expect(getV4HeroPower(save)).toBe(Number.MAX_SAFE_INTEGER);
   });
 
+  it('saturates hero power when malformed stats overflow during addition', () => {
+    const save = createInitialV4Save(125);
+    save.run.hero.atk = Number.MAX_VALUE;
+    save.run.hero.def = Number.MAX_VALUE;
+
+    expect(getV4HeroPower(save)).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
   it('carries V3 hit variance, crits, and defense mitigation into V4 battles', () => {
     const critical = createInitialV4Save(11);
     critical.run.hero.critRateBase = 1;

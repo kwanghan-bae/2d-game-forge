@@ -565,8 +565,18 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
 
 export function getV4HeroPower(save: V4SaveEnvelope): number {
   const hero = save.run.hero;
-  const power = hero.atk + hero.def + Math.floor(hero.hpMax / 100);
-  return Number.isFinite(power) ? Math.min(MAX_ECONOMY_VALUE, Math.max(0, power)) : 0;
+  const parts = [hero.atk, hero.def, hero.hpMax / 100];
+  if (parts.some((part) => Number.isNaN(part))) return 0;
+  let power = 0;
+  for (const part of parts) {
+    if (part < 0) continue;
+    const safePart = Number.isFinite(part)
+      ? Math.min(MAX_ECONOMY_VALUE, Math.floor(part))
+      : MAX_ECONOMY_VALUE;
+    if (power >= MAX_ECONOMY_VALUE - safePart) return MAX_ECONOMY_VALUE;
+    power += safePart;
+  }
+  return power;
 }
 
 const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
