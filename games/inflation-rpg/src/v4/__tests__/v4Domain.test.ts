@@ -364,6 +364,43 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('rejects active work whose timestamps fall outside the save chronology', () => {
+    const initial = createInitialV4Save(25);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => { storage.set(key, value); },
+    } as unknown as Storage;
+
+    const taskStart = startFacilityTask(initial, 'temple', initial.createdAt, null);
+    expect(taskStart.ok).toBe(true);
+    if (!taskStart.ok) return;
+    const task = taskStart.save.meta.tasks[taskStart.task.id];
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...taskStart.save,
+      meta: {
+        ...taskStart.save.meta,
+        tasks: { ...taskStart.save.meta.tasks, [task.id]: { ...task, startedAt: initial.createdAt - 1 } },
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
+    const expeditionStart = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(expeditionStart.ok).toBe(true);
+    if (!expeditionStart.ok) return;
+    const expedition = expeditionStart.save.run.expedition;
+    expect(expedition).not.toBeNull();
+    if (!expedition) return;
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...expeditionStart.save,
+      run: {
+        ...expeditionStart.save.run,
+        expedition: { ...expedition, startedAt: expeditionStart.save.updatedAt + 1 },
+      },
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
   it('rejects zero-duration active tasks and expeditions before they reach the UI', () => {
     const initial = createInitialV4Save(22);
     const taskStart = startFacilityTask(initial, 'temple', initial.createdAt, null);

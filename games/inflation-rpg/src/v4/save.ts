@@ -167,6 +167,8 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || value.updatedAt < value.createdAt
     || value.lastProcessedAt < value.createdAt
     || value.lastProcessedAt > value.updatedAt) return false;
+  const createdAt = value.createdAt;
+  const updatedAt = value.updatedAt;
 
   const meta = value.meta;
   const run = value.run;
@@ -192,6 +194,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
     || !Array.isArray(meta.agents) || !Array.isArray(meta.unlockedRealms) || !Array.isArray(meta.sagaEntries)
     || !meta.sagaEntries.every(isSagaEntryRecord)
     || new Set(meta.sagaEntries.map((entry) => entry.id)).size !== meta.sagaEntries.length) return false;
+  if (Object.values(tasks).some((task) => isRecord(task)
+    && typeof task.startedAt === 'number'
+    && (task.startedAt < createdAt || task.startedAt > updatedAt))) return false;
   if (meta.unlockedRealms.length === 0
     || new Set(meta.unlockedRealms).size !== meta.unlockedRealms.length
     || !meta.unlockedRealms.includes('joseon_plains')
@@ -219,6 +224,9 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
 
   const expedition = run.expedition;
   if (expedition !== null && !isExpeditionRecord(expedition)) return false;
+  if (expedition !== null
+    && typeof expedition.startedAt === 'number'
+    && (expedition.startedAt < createdAt || expedition.startedAt > updatedAt)) return false;
   if (expedition !== null && !meta.unlockedRealms.includes(expedition.realmId as typeof REALM_IDS[number])) return false;
   const hasTrainingTask = Object.values(tasks).some((task) => isRecord(task) && task.facilityId === 'training');
   if (expedition !== null && hasTrainingTask) return false;
