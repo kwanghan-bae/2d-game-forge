@@ -144,6 +144,24 @@ describe('V4 hero detail screen', () => {
     expect(main.textContent).not.toContain('행동 기록 -');
   });
 
+  it('keeps the hero detail usable when the equipment collection is malformed', () => {
+    const save = createInitialV4Save(131);
+    const hero = { ...save.run.hero, equipmentIds: undefined as never };
+
+    expect(() => render(
+      <HeroDetailScreen
+        hero={hero}
+        gold={100}
+        expeditionActive={false}
+        onBack={vi.fn()}
+        onImportLegacy={vi.fn()}
+        onRejuvenate={vi.fn()}
+      />,
+    )).not.toThrow();
+
+    expect(screen.getByRole('main')).toHaveTextContent('아직 장비가 없습니다.');
+  });
+
   it('caps an unsafe hero age before rendering the detail header', () => {
     const save = createInitialV4Save(130);
     const hero = { ...save.run.hero, age: Number.MAX_SAFE_INTEGER + 1 };

@@ -37,6 +37,9 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
   const level = Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, Math.floor(finiteHeroValue(hero.level, 1))));
   const years = Math.min(5, Math.max(0, age - 5));
   const cost = years * 10;
+  const equipmentIds = Array.isArray(hero.equipmentIds)
+    ? hero.equipmentIds.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    : [];
 
   return (
     <main className="v4-container">
@@ -68,7 +71,7 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
       </section>
       <section className="v4-panel">
         <h2>장비</h2>
-        {hero.equipmentIds.length > 0 ? hero.equipmentIds.map((equipmentId) => {
+        {equipmentIds.length > 0 ? equipmentIds.map((equipmentId) => {
           const definition = getV4EquipmentDefinition(equipmentId);
           const level = equipmentLevel(hero.equipmentLevels?.[equipmentId]);
           const bonuses = definition
