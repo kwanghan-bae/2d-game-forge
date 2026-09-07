@@ -1958,6 +1958,26 @@ describe('v4 save and domain', () => {
     expect(Number.isFinite(getExpeditionSuccessChance(save, 'joseon_plains', 2, null))).toBe(true);
   });
 
+  it('keeps malformed HP and support stats from poisoning the expedition forecast', () => {
+    const malformed = createInitialV4Save(127);
+    malformed.run.hero.atk = 30;
+    malformed.run.hero.hp = Number.NaN;
+    malformed.meta.facilities.mudang.level = Number.NaN;
+    malformed.meta.agents = malformed.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, trust: Number.NaN }
+      : agent);
+
+    const safeEquivalent = createInitialV4Save(128);
+    safeEquivalent.run.hero.atk = 30;
+    safeEquivalent.run.hero.hp = 0;
+    safeEquivalent.meta.agents = safeEquivalent.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, trust: 0 }
+      : agent);
+
+    expect(getExpeditionSuccessChance(malformed, 'joseon_plains', 2, 'guide'))
+      .toBe(getExpeditionSuccessChance(safeEquivalent, 'joseon_plains', 2, 'guide'));
+  });
+
   it('treats missing hero power fields as zero instead of maximum power', () => {
     const save = createInitialV4Save(126);
     save.run.hero.atk = undefined as never;

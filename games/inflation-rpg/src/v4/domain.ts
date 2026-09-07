@@ -619,8 +619,11 @@ export function getExpeditionSuccessChance(
       && guide.fatigue < 100
       && (!guide.activeTaskId || guideIsAssignedToThisExpedition),
   );
+  const guideTrust = guide && typeof guide.trust === 'number' && Number.isFinite(guide.trust)
+    ? Math.max(0, guide.trust)
+    : 0;
   const guideBonus = guideIsAvailable && guide
-    ? Math.min(0.08, guide.trust / 1_250)
+    ? Math.min(0.08, guideTrust / 1_250)
     : 0;
   // Once an expedition has departed, its policy is part of the immutable run
   // snapshot. The town policy can be changed for the next departure without
@@ -633,8 +636,17 @@ export function getExpeditionSuccessChance(
     : expeditionPolicy === 'training'
       ? (encounter.tier === 'boss' ? -0.02 : 0.02)
       : 0;
-  const mudangBlessing = Math.min(0.06, Math.max(0, (source.meta.facilities.mudang?.level ?? 1) - 1) * 0.02);
-  const healthPenalty = source.run.hero.hp / Math.max(1, source.run.hero.hpMax) < 0.35 ? 0.15 : 0;
+  const mudangLevel = positiveFiniteLevel(source.meta.facilities.mudang?.level);
+  const mudangBlessing = Math.min(0.06, Math.max(0, mudangLevel - 1) * 0.02);
+  const heroHpMax = typeof source.run.hero.hpMax === 'number'
+    && Number.isFinite(source.run.hero.hpMax)
+    && source.run.hero.hpMax > 0
+    ? Math.min(MAX_ECONOMY_VALUE, source.run.hero.hpMax)
+    : 1;
+  const heroHp = typeof source.run.hero.hp === 'number' && Number.isFinite(source.run.hero.hp)
+    ? Math.min(heroHpMax, Math.max(0, source.run.hero.hp))
+    : 0;
+  const healthPenalty = heroHp / heroHpMax < 0.35 ? 0.15 : 0;
   return clampSuccessChance(
     SUCCESS_BASE_BY_TIER[encounter.tier] + readinessBonus + guideBonus + policyBonus
       + mudangBlessing - encounter.risk * 0.05 - healthPenalty,
