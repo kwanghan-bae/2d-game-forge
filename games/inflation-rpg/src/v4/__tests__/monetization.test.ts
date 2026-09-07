@@ -77,6 +77,38 @@ describe('v4 monetization adapter', () => {
     }
   });
 
+  it('fails an ad-free purchase when the provider stays pending beyond the safety deadline', async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = new Promise<'purchased' | 'cancelled' | 'failed'>(() => {});
+      const adapter = new V4MonetizationAdapter(null, { purchase: async () => pending });
+      const purchase = adapter.buyAdFree();
+
+      await vi.advanceTimersByTimeAsync(V4_MONETIZATION_TIMEOUT_MS);
+
+      await expect(purchase).resolves.toEqual({ granted: false, reason: 'provider_failed' });
+      expect(adapter.isAdFree()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('fails purchase restoration when the provider stays pending beyond the safety deadline', async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = new Promise<boolean>(() => {});
+      const adapter = new V4MonetizationAdapter(null, null, null, async () => pending);
+      const restore = adapter.restorePurchases();
+
+      await vi.advanceTimersByTimeAsync(V4_MONETIZATION_TIMEOUT_MS);
+
+      await expect(restore).resolves.toEqual({ granted: false, reason: 'provider_failed' });
+      expect(adapter.isAdFree()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects an unknown rewarded placement before calling the provider', async () => {
     const showRewarded = vi.fn(async () => true);
     const adapter = new V4MonetizationAdapter({ showRewarded }, null);

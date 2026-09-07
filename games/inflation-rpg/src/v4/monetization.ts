@@ -59,23 +59,28 @@ function normalizeDailyUsage(count: number): number {
     : 0;
 }
 
-function withProviderTimeout<T>(operation: Promise<T>, fallback: T): Promise<T> {
+interface ProviderOutcome<T> {
+  value: T;
+  failed: boolean;
+}
+
+function withProviderTimeout<T>(operation: Promise<T>, fallback: T): Promise<ProviderOutcome<T>> {
   return new Promise((resolve) => {
     let settled = false;
     const timeoutId = setTimeout(() => {
       settled = true;
-      resolve(fallback);
+      resolve({ value: fallback, failed: true });
     }, V4_MONETIZATION_TIMEOUT_MS);
     Promise.resolve(operation).then((value) => {
       if (settled) return;
       settled = true;
       clearTimeout(timeoutId);
-      resolve(value);
+      resolve({ value, failed: false });
     }, () => {
       if (settled) return;
       settled = true;
       clearTimeout(timeoutId);
-      resolve(fallback);
+      resolve({ value: fallback, failed: true });
     });
   });
 }
@@ -292,7 +297,9 @@ export class V4MonetizationAdapter {
     const restoreRevision = this.entitlementRevision;
     const pending = (async (): Promise<V4MonetizationResult> => {
       try {
-        const owned = await withProviderTimeout(restore(), false);
+        const outcome = await withProviderTimeout(restore(), false);
+        if (outcome.failed) return { granted: false, reason: 'provider_failed' };
+        const owned = outcome.value;
         if (this.entitlementRevision !== restoreRevision) {
           return this.adFree
             ? { granted: true, reason: 'granted' }
@@ -329,7 +336,7 @@ export class V4MonetizationAdapter {
     if (!this.ads) return { granted: false, reason: 'provider_failed' };
     this.rewardedInFlightByDay.set(requestDay, inFlightForDay + 1);
     try {
-      const watched = await withProviderTimeout(this.ads.showRewarded(placement), false);
+      const { value: watched } = await withProviderTimeout(this.ads.showRewarded(placement), false);
       // The entitlement may be confirmed while the native ad UI is open. In
       // that case the ad result is stale: ad-free users receive the benefit
       // without consuming a daily ad slot, even if the provider reports a
@@ -364,7 +371,7 @@ export class V4MonetizationAdapter {
     if (!purchases) return { granted: false, reason: 'provider_failed' };
     const pending = (async (): Promise<V4MonetizationResult> => {
       try {
-        const result = await withProviderTimeout(purchases.purchase('ad_free'), 'failed');
+        const { value: result } = await withProviderTimeout(purchases.purchase('ad_free'), 'failed');
         // A native entitlement callback can complete while the purchase UI is
         // still pending. Preserve that authoritative grant even when the
         // older purchase promise resolves as cancelled or failed.

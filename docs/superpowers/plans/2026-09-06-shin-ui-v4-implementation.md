@@ -343,14 +343,14 @@ pnpm circular
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,531개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,533개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 약 5.2분).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
 - native onestore Web 테스트 7/7과 Android `compileDebugKotlin`·`assembleDebug`가 통과했다. 실기기 sandbox 결제·복원·환불 QA는 `adb`·sandbox 계정 부재로 남아 있다.
 - 광고·결제 브리지의 truthy 비-boolean 반환은 보상이나 광고 제거 권한으로 인정하지 않도록 회귀 테스트와 strict boundary를 추가했다.
-- 광고·결제·복원 provider의 영구 pending을 60초 뒤 provider failure로 정리하는 timeout boundary와 회귀 테스트를 추가했다.
+- 광고·결제·복원 provider의 영구 pending을 60초 뒤 provider failure로 정리하는 timeout boundary와 세 경로 회귀 테스트를 추가했다.
 - 명시적 V3 영웅 가져오기에서 active task·원정·사가가 공유하는 ID namespace 충돌을 피하도록 saga ID allocator를 보강했다.
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - workspace `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `pnpm build` 통과.
