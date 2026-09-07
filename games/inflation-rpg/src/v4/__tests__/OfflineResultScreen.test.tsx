@@ -110,6 +110,18 @@ describe('V4 offline result screen', () => {
     expect(result.textContent).not.toContain('-5');
   });
 
+  it('normalizes fractional and unsafe currency deltas before rendering rewards', () => {
+    render(<OfflineResultScreen summary={summary({
+      resourcesGained: { gold: 1.9, spirit: Number.MAX_SAFE_INTEGER + 1 },
+    })} onClose={() => {}} />);
+
+    const result = screen.getByTestId('v4-offline-result');
+    expect(result).toHaveTextContent('금화+1');
+    expect(result).toHaveTextContent('신력+9,007,199,254,740,991');
+    expect(result.textContent).not.toContain('1.9');
+    expect(result.textContent).not.toContain('9,007,199,254,740,992');
+  });
+
   it('shows offline settlement notes that explain the applied boundary', () => {
     render(<OfflineResultScreen summary={summary({ notes: ['안전한 작업만 오프라인으로 정산했습니다.'] })} onClose={() => {}} />);
 

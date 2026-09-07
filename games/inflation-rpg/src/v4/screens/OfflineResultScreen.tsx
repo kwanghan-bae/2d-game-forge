@@ -15,6 +15,12 @@ interface Props {
   adFree?: boolean;
 }
 
+function safePositiveResource(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
+  const amount = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value)));
+  return amount > 0 ? amount : null;
+}
+
 export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = false, onClose, onOpenExpedition, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -68,9 +74,11 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
   const efficiency = typeof summary.efficiency === 'number' && Number.isFinite(summary.efficiency)
     ? Math.min(1, Math.max(0, summary.efficiency))
     : 0;
-  const resourceEntries = Object.entries(summary.resourcesGained)
-    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0);
-  const hasPositiveResourceReward = resourceEntries.some(([, value]) => Number.isFinite(value) && value > 0);
+  const resourceEntries = Object.entries(summary.resourcesGained).flatMap(([key, value]) => {
+    const amount = safePositiveResource(value);
+    return amount === null ? [] : [[key, amount] as const];
+  });
+  const hasPositiveResourceReward = resourceEntries.length > 0;
 
   return (
     <div className="v4-overlay" role="dialog" aria-modal="true" aria-labelledby="v4-offline-result-title">
