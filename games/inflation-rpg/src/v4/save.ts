@@ -212,9 +212,12 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (expedition !== null && !meta.unlockedRealms.includes(expedition.realmId as typeof REALM_IDS[number])) return false;
   const hasTrainingTask = Object.values(tasks).some((task) => isRecord(task) && task.facilityId === 'training');
   if (expedition !== null && hasTrainingTask) return false;
-  if (run.lastExpeditionResult !== undefined
-    && run.lastExpeditionResult !== null
-    && !isExpeditionResultRecord(run.lastExpeditionResult)) return false;
+  const lastExpeditionResult = run.lastExpeditionResult;
+  if (lastExpeditionResult !== undefined && lastExpeditionResult !== null) {
+    if (!isExpeditionResultRecord(lastExpeditionResult)
+      || typeof lastExpeditionResult.completedAt !== 'number'
+      || lastExpeditionResult.completedAt > value.updatedAt) return false;
+  }
 
   // Facility, task, and agent links must be symmetric. This prevents a
   // partially-written save from making a task impossible to finish or

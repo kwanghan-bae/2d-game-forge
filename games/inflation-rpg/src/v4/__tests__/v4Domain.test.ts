@@ -129,6 +129,36 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
+  it('rejects an expedition result newer than the save watermark', () => {
+    const initial = createInitialV4Save(130);
+    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+    const settled = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+    expect(settled.run.lastExpeditionResult).not.toBeNull();
+
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...settled,
+      run: {
+        ...settled.run,
+        lastExpeditionResult: {
+          ...settled.run.lastExpeditionResult,
+          completedAt: settled.updatedAt + 1,
+        },
+      },
+    }));
+
+    expect(loadV4Save(fakeStorage)).toBeNull();
+  });
+
   it('keeps gameplay alive when local persistence is unavailable', () => {
     const brokenStorage = {
       setItem: () => { throw new Error('quota'); },
