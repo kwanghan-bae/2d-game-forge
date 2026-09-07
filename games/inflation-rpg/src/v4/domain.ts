@@ -570,6 +570,7 @@ export function getV4HeroPower(save: V4SaveEnvelope): number {
   if (parts.some((part) => Number.isNaN(part))) return 0;
   let power = 0;
   for (const part of parts) {
+    if (typeof part !== 'number') continue;
     if (part < 0) continue;
     const safePart = Number.isFinite(part)
       ? Math.min(MAX_ECONOMY_VALUE, Math.floor(part))

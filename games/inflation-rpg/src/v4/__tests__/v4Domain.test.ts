@@ -1958,6 +1958,15 @@ describe('v4 save and domain', () => {
     expect(Number.isFinite(getExpeditionSuccessChance(save, 'joseon_plains', 2, null))).toBe(true);
   });
 
+  it('treats missing hero power fields as zero instead of maximum power', () => {
+    const save = createInitialV4Save(126);
+    save.run.hero.atk = undefined as never;
+    save.run.hero.def = 10;
+    save.run.hero.hpMax = 1_000;
+
+    expect(getV4HeroPower(save)).toBe(20);
+  });
+
   it('saturates hero power before it can invalidate a result save', () => {
     const save = createInitialV4Save(124);
     save.run.hero.atk = Number.MAX_SAFE_INTEGER;
