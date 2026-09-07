@@ -108,6 +108,11 @@ export function V4App({ config }: Props) {
             <button type="button" className="v4-btn v4-btn--quiet" onClick={() => setScreen('settings')}>⚙ 설정</button>
           </div>
         </header>
+        {game.storageStatus === 'unavailable' && (
+          <div className="v4-alert" role="status" data-testid="v4-storage-warning">
+            기기 저장을 사용할 수 없습니다. 현재 세션은 진행되지만 앱을 닫으면 진행이 보존되지 않을 수 있습니다.
+          </div>
+        )}
         <div className="v4-resource-row" aria-label="보유 재화">
           {RESOURCES.map(([key, label, icon]) => <div className="v4-resource" key={key}><span className="v4-resource-label">{icon} {label}</span><strong className="v4-resource-value">{game.save.meta.currencies[key].toLocaleString('ko-KR')}</strong></div>)}
         </div>

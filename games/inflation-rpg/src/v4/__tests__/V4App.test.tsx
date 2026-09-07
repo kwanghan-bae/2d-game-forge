@@ -1,4 +1,4 @@
-import { act, render } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
 import { useV4Game } from '../useV4Game';
@@ -9,11 +9,12 @@ vi.mock('../useV4Game', () => ({ useV4Game: vi.fn() }));
 function mockGame(
   refresh: ReturnType<typeof vi.fn>,
   settleOffline: ReturnType<typeof vi.fn>,
+  storageStatus: 'valid' | 'unavailable' = 'valid',
 ): ReturnType<typeof useV4Game> {
   const save = createInitialV4Save(1);
   return {
     save,
-    storageStatus: 'valid',
+    storageStatus,
     storageIssue: null,
     now: save.updatedAt,
     offlineSummary: null,
@@ -83,5 +84,16 @@ describe('V4 app resume handling', () => {
     expect(settleOffline).not.toHaveBeenCalled();
     unmount();
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+  });
+
+  it('keeps the game playable but warns when device storage is unavailable', () => {
+    const refresh = vi.fn();
+    const settleOffline = vi.fn();
+    vi.mocked(useV4Game).mockReturnValue(mockGame(refresh, settleOffline, 'unavailable'));
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    expect(screen.getByTestId('v4-storage-warning')).toHaveTextContent('진행이 보존되지 않을 수 있습니다');
+    expect(screen.getByTestId('v4-town-hub')).toBeInTheDocument();
   });
 });
