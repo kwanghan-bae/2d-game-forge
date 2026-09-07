@@ -62,6 +62,22 @@ describe('V4 app resume handling', () => {
     vi.clearAllMocks();
   });
 
+  it('clears global legacy audio when the V4 root enters and leaves', () => {
+    const refresh = vi.fn();
+    const settleOffline = vi.fn();
+    vi.mocked(useV4Game).mockReturnValue(mockGame(refresh, settleOffline));
+    const playBgm = vi.spyOn(sound, 'playBgm');
+    const stopAmbient = vi.spyOn(sound, 'stopAmbient');
+
+    const { unmount } = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    expect(playBgm).toHaveBeenCalledWith(null);
+    expect(stopAmbient).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(playBgm).toHaveBeenCalledTimes(2);
+    expect(stopAmbient).toHaveBeenCalledTimes(2);
+  });
+
   it('settles offline progress when the document becomes visible or the page is shown', () => {
     vi.useFakeTimers();
     const refresh = vi.fn();
