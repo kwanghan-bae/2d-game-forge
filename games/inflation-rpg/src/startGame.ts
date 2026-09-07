@@ -10,6 +10,8 @@ import './styles/game.css';
 
 export type { StartGameConfig };
 
+const TEST_HOOK_OWNER_KEY = '__inflation_rpg_game_config_owner__';
+
 export function StartGame(config: StartGameConfig): ForgeGameInstance {
   return mount(config, V4App);
 }
@@ -27,6 +29,7 @@ function mount(
   if (!container) throw new Error(`#${config.parent} not found`);
 
   const root: Root = createRoot(container);
+  const hookOwner = {};
   root.render(React.createElement(Screen, { config }));
 
   if (config.exposeTestHooks) {
@@ -34,11 +37,12 @@ function mount(
     // A route transition can resolve an older legacy import after the V4
     // root has already mounted. Do not leave its dev-only stores available to
     // the next route's browser tests.
-    if (Screen === V4App && w['gameConfig'] !== config) {
+    if (Screen === V4App) {
       delete w['__zustand_inflation_rpg_store__'];
       delete w['__cycle_store_v2__'];
     }
     w['gameConfig'] = config;
+    w[TEST_HOOK_OWNER_KEY] = hookOwner;
     if (Screen === App) {
       w['__zustand_inflation_rpg_store__'] = useGameStore;
       // Legacy E2E only: expose the active controller so long natural-death
@@ -57,8 +61,9 @@ function mount(
           const w = window as unknown as Record<string, unknown>;
           // Only the active owner may clear shared test hooks. This protects a
           // newer route when an older async loader is destroyed late.
-          if (w['gameConfig'] === config) {
+          if (w[TEST_HOOK_OWNER_KEY] === hookOwner) {
             delete w['gameConfig'];
+            delete w[TEST_HOOK_OWNER_KEY];
             if (Screen === App) {
               delete w['__zustand_inflation_rpg_store__'];
               delete w['__cycle_store_v2__'];

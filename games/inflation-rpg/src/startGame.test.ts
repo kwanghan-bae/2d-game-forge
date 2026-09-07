@@ -35,6 +35,7 @@ describe('game entrypoint lifecycle', () => {
     mocks.root.render.mockClear();
     mocks.root.unmount.mockClear();
     delete testWindow().gameConfig;
+    delete testWindow().__inflation_rpg_game_config_owner__;
     delete testWindow().__zustand_inflation_rpg_store__;
     delete testWindow().__cycle_store_v2__;
   });
@@ -80,6 +81,21 @@ describe('game entrypoint lifecycle', () => {
     legacy.destroy();
     expect(testWindow().gameConfig).toBe(v4Config);
 
+    v4.destroy();
+    expect(testWindow().gameConfig).toBeUndefined();
+  });
+
+  it('keeps V4 hooks owned correctly when a route reuses the same config object', () => {
+    const legacy = StartLegacyGame(config);
+    const v4 = StartGame(config);
+
+    expect(testWindow().gameConfig).toBe(config);
+    expect(testWindow().__zustand_inflation_rpg_store__).toBeUndefined();
+    expect(testWindow().__cycle_store_v2__).toBeUndefined();
+
+    legacy.destroy();
+
+    expect(testWindow().gameConfig).toBe(config);
     v4.destroy();
     expect(testWindow().gameConfig).toBeUndefined();
   });
