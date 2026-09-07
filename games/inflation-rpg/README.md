@@ -124,11 +124,10 @@ games/inflation-rpg/
 │       └── game.css             # safe-area, 터치 타겟, scroll-list 유틸
 ├── public/assets/               # 큐레이션된 에셋
 └── tests/
-    ├── game/                    # Vitest 103 테스트
-    └── e2e/
-        ├── full-game-flow.spec.ts
-        ├── full-run.spec.ts
-        └── mobile-layout.spec.ts  # iPhone 14 E2E (Phase 4a)
+    └── e2e/                     # V3/V4 Playwright 8개 spec
+        ├── v4-town-vertical-slice.spec.ts
+        ├── v9-migration.spec.ts
+        └── ...
 ```
 
 ## 의존성
