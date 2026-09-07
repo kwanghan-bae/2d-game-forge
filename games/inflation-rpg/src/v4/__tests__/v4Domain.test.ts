@@ -1692,6 +1692,30 @@ describe('v4 save and domain', () => {
     expect(intervention.save).toBe(initial);
   });
 
+  it('rejects unsafe completion clocks before pending work can be settled', () => {
+    const initial = createInitialV4Save(125);
+    const unsafeClock = Number.MAX_SAFE_INTEGER + 1;
+    const startedTask = startFacilityTask(initial, 'temple', initial.updatedAt, null);
+    expect(startedTask.ok).toBe(true);
+    if (!startedTask.ok) return;
+
+    const settled = completeFacilityTasks(startedTask.save, unsafeClock);
+    const instant = completeFacilityTaskNow(startedTask.save, 'temple', unsafeClock);
+    expect(settled).toBe(startedTask.save);
+    expect(instant.ok).toBe(false);
+    if (instant.ok) return;
+    expect(instant.save).toBe(startedTask.save);
+
+    const startedExpedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    expect(startedExpedition.ok).toBe(true);
+    if (!startedExpedition.ok) return;
+    const pending = startedExpedition.save.run.expedition!;
+    pending.status = 'awaiting_confirmation';
+    pending.encounterIndex = 2;
+    pending.completesAt = startedExpedition.save.updatedAt;
+    expect(confirmPendingExpedition(startedExpedition.save, unsafeClock)).toBe(startedExpedition.save);
+  });
+
   it('does not mutate a full intervention reserve', () => {
     const full = createInitialV4Save(97);
     full.run.interventionCharges = 3;

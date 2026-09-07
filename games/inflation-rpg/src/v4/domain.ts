@@ -93,8 +93,12 @@ function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
 }
 
+function isPersistableClock(value: number): boolean {
+  return Number.isFinite(value) && value >= 0 && value <= MAX_ECONOMY_VALUE;
+}
+
 function eventTimestamp(save: V4SaveEnvelope, now: number): number {
-  const requested = Number.isFinite(now) && now >= 0 && now <= MAX_ECONOMY_VALUE
+  const requested = isPersistableClock(now)
     ? now
     : save.updatedAt;
   return Math.min(MAX_ECONOMY_VALUE, Math.max(save.updatedAt, requested));
@@ -109,10 +113,7 @@ function touchSave(save: V4SaveEnvelope, now: number): void {
 }
 
 function isActionClockValid(save: V4SaveEnvelope, now: number): boolean {
-  return Number.isFinite(now)
-    && now >= 0
-    && now <= MAX_ECONOMY_VALUE
-    && now >= save.updatedAt;
+  return isPersistableClock(now) && now >= save.updatedAt;
 }
 
 function isV4Policy(value: unknown): value is V4Policy {
@@ -686,7 +687,7 @@ export function completeFacilityTasks(
   allowPermanentUnlock = true,
   allowHistoricalSettlement = false,
 ): V4SaveEnvelope {
-  if (!Number.isFinite(now) || (!allowHistoricalSettlement && now < source.updatedAt)) return source;
+  if (!isPersistableClock(now) || (!allowHistoricalSettlement && now < source.updatedAt)) return source;
   const save = cloneSave(source);
   // Offline settlement may intentionally resolve the capped historical
   // window before a later manual write timestamp. Real-time callers keep the
@@ -757,7 +758,7 @@ export function completeFacilityTaskNow(
   facilityId: FacilityId,
   now: number,
 ): DomainResult {
-  if (!Number.isFinite(now)) return { ok: false, save: source, error: '기기 시각을 확인할 수 없어 작업을 완료하지 않았습니다.' };
+  if (!isPersistableClock(now)) return { ok: false, save: source, error: '기기 시각을 확인할 수 없어 작업을 완료하지 않았습니다.' };
   const prepared = cloneSave(source);
   const eventAt = eventTimestamp(prepared, now);
   if (now < prepared.updatedAt) return { ok: false, save: source, error: '저장 시각이 미래라 작업을 즉시 완료하지 않았습니다.' };
@@ -775,7 +776,7 @@ export function completeFacilityTaskNow(
 export function confirmPendingExpedition(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
   const pending = source.run.expedition;
   if (pending?.status !== 'awaiting_confirmation') return source;
-  if (!Number.isFinite(now) || now < source.updatedAt || now < pending.completesAt) return source;
+  if (!isPersistableClock(now) || now < source.updatedAt || now < pending.completesAt) return source;
   const save = cloneSave(source);
   if (!save.run.expedition) return source;
   save.run.expedition.status = 'traveling';
