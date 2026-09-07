@@ -13,7 +13,7 @@
 
 ## 현재 상태
 
-### V4 현재 baseline (2026-09-07)
+### V4 현재 baseline (2026-09-08)
 
 - **기본 제품**: `신의 마을: 영원의 후원자` — `inflation-rpg` 경로에서 V4가
   실행된다. 로컬 우선 저장, 7개 시설, 3명 지원 에이전트, 3개 Realm,
@@ -21,7 +21,7 @@
 - **보존 경로**: 기존 V3 `조선 인플레이션 RPG`는
   `inflation-rpg-legacy`와 `StartLegacyGame()`으로 분리되어 기존 저장 키를
   유지한다.
-- **현재 검증**: game Vitest 400개 파일·3,523개 테스트, V4 E2E 32/32, game E2E 46/46
+- **현재 검증**: game Vitest 400개 파일·3,524개 테스트, V4 E2E 32/32, game E2E 46/46
   (Chromium 23/23·iPhone14 23/23), dev-shell portal E2E 5/5, root test/typecheck/lint/circular/build 통과.
 
 아래 Phase 및 자율진화 항목은 V4 이전에 누적된 V3 개발 이력이다.

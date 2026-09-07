@@ -251,6 +251,21 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
       || !meta.unlockedRealms.includes(lastExpeditionResult.realmId as typeof REALM_IDS[number])) return false;
   }
 
+  // Task, expedition, result, and saga IDs share the domain's monotonic ID
+  // allocator. Reject a save that violates that namespace boundary instead
+  // of allowing two completion paths to mutate the same record identity.
+  const reservedIds = new Set(Object.keys(tasks));
+  const expeditionId = expedition && typeof expedition.id === 'string' ? expedition.id : undefined;
+  const resultId = isRecord(lastExpeditionResult) && typeof lastExpeditionResult.id === 'string'
+    ? lastExpeditionResult.id
+    : undefined;
+  if ((expeditionId && reservedIds.has(expeditionId))
+    || (resultId && reservedIds.has(resultId))
+    || (expeditionId && resultId && expeditionId === resultId)
+    || meta.sagaEntries.some((entry) => reservedIds.has(entry.id)
+      || entry.id === expeditionId
+      || entry.id === resultId)) return false;
+
   // Facility, task, and agent links must be symmetric. This prevents a
   // partially-written save from making a task impossible to finish or
   // leaving an agent permanently marked as busy.

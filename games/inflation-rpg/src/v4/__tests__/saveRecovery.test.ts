@@ -8,7 +8,7 @@ import {
   V4_RECOVERY_BACKUP_KEY,
   V4_SAVE_KEY,
 } from '../save';
-import { startExpedition } from '../domain';
+import { startExpedition, startFacilityTask } from '../domain';
 import { V4_MAX_SAGA_ENTRIES } from '../types';
 
 function memoryStorage(initial: Record<string, string> = {}) {
@@ -85,6 +85,28 @@ describe('V4 save recovery boundary', () => {
       totalEncounterCount: 3,
     };
     const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(started.save) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+  });
+
+  it('rejects a payload whose active expedition id collides with a facility task id', () => {
+    const base = createInitialV4Save(6542);
+    const taskStarted = startFacilityTask(base, 'blacksmith', base.updatedAt, null);
+    expect(taskStarted.ok).toBe(true);
+    if (!taskStarted.ok) return;
+
+    const expeditionStarted = startExpedition(
+      taskStarted.save,
+      'joseon_plains',
+      taskStarted.save.updatedAt,
+      'aggression',
+      null,
+    );
+    expect(expeditionStarted.ok).toBe(true);
+    if (!expeditionStarted.ok) return;
+
+    expeditionStarted.save.run.expedition!.id = taskStarted.task.id;
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(expeditionStarted.save) });
 
     expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
   });
