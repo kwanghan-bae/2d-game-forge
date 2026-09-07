@@ -44,4 +44,21 @@ describe('V4 hero detail screen', () => {
 
     expect(screen.getByText(/치명타 \+6%/)).toBeInTheDocument();
   });
+
+  it('blocks V3 hero import while an expedition is active', () => {
+    const save = createInitialV4Save(126);
+
+    render(
+      <HeroDetailScreen
+        hero={save.run.hero}
+        gold={100}
+        expeditionActive
+        onBack={vi.fn()}
+        onImportLegacy={vi.fn()}
+        onRejuvenate={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: '원정 귀환 후 V3 영웅 가져오기' })).toBeDisabled();
+  });
 });
