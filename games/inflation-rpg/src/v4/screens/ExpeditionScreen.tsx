@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmDefinition, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
 import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { InterventionType, RealmId, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from '../types';
@@ -49,7 +49,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
-  const activeRealm = expedition ? REALM_DEFINITIONS[expedition.realmId] : null;
+  const activeRealm = expedition ? getV4RealmDefinition(expedition.realmId) ?? null : null;
   const activeEncounter = activeRealm
     ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition?.encounterIndex ?? activeRealm.encounters.length - 1))]
     : null;
@@ -96,7 +96,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
       {expedition ? (
         <section className="v4-panel" data-testid="v4-active-expedition">
           <h2>{expedition.status === 'awaiting_confirmation' ? '원정 결과 확인 필요' : '원정 진행 중'}</h2>
-          <p>{activeRealm?.icon} {activeRealm?.nameKR} · {activeEncounter?.nameKR ?? activeRealm?.boss}</p>
+          <p>{activeRealm?.icon} {getV4RealmName(expedition.realmId)} · {activeEncounter?.nameKR ?? activeRealm?.boss ?? '기록 확인 필요'}</p>
           {activeEncounter && <div className="v4-stat-line"><span className="v4-chip">현재 단계 {activeEncounter.tier === 'normal' ? '일반' : activeEncounter.tier === 'elite' ? '정예' : '보스'}</span><span className="v4-chip">{(expedition.encounterIndex ?? activeRealm!.encounters.length - 1) + 1}/{activeRealm!.encounters.length}</span><span className="v4-chip">권장 {activeEncounter.recommendedPower}</span></div>}
           {activeEncounter && <p className="v4-muted">현재 전투력 {getV4HeroPower(save).toLocaleString('ko-KR')} · 예상 승률 {Math.round(getExpeditionSuccessChance(save, expedition.realmId, expedition.encounterIndex ?? activeRealm!.encounters.length - 1, expedition.assignedAgentId) * 100)}%</p>}
           {expedition.status === 'awaiting_confirmation' && <div className="v4-alert">오프라인 동안 위험 구간에 도착했습니다. 보스 결과와 보상을 확인한 뒤 귀환을 확정하세요.</div>}

@@ -129,6 +129,33 @@ describe('V4 expedition result screen', () => {
     expect(screen.getByTestId('v4-expedition-result')).toHaveTextContent('기록되지 않은 Realm');
   });
 
+  it('does not crash when an active expedition contains an inherited Realm key', () => {
+    const save = createInitialV4Save(105);
+    save.run.expedition = {
+      id: 'malformed-active-realm',
+      realmId: 'constructor' as never,
+      policy: 'aggression',
+      assignedAgentId: null,
+      startedAt: save.createdAt,
+      completesAt: save.createdAt + 30_000,
+      status: 'traveling',
+      encounterIndex: 0,
+    };
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    expect(() => render(<ExpeditionScreen {...props} />)).not.toThrow();
+    expect(screen.getByTestId('v4-active-expedition')).toHaveTextContent('기록되지 않은 Realm');
+  });
+
   it('does not present a fully fatigued guide as ready for dispatch', () => {
     const save = createInitialV4Save(102);
     save.meta.agents = save.meta.agents.map((agent) => agent.id === 'guide'
