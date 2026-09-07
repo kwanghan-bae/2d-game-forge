@@ -1654,6 +1654,20 @@ describe('v4 save and domain', () => {
     });
   });
 
+  it('counts only successful staged encounters as cleared after a defeat', () => {
+    const initial = createInitialV4Save(126);
+    initial.run.hero.atk = 1;
+    initial.run.hero.hp = 1;
+    initial.run.hero.hpMax = 1;
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+
+    expect(completed.run.lastExpeditionResult).toMatchObject({ outcome: 'defeat', encountersCleared: 0 });
+  });
+
   it('forecasts target success bands and makes support policy effects visible', () => {
     const atRecommendedPower = createInitialV4Save(92);
     atRecommendedPower.run.hero.atk = 30;

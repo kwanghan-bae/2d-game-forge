@@ -702,7 +702,7 @@ function resolveExpedition(
     );
     const won = battle.won && deterministicRoll(`${expedition.id}:${encounter.id}`) < successChance;
     save.run.hero.hp = battle.heroRemainingHp;
-    expedition.encountersCleared = saturatingCounterAdd(expedition.encountersCleared, 1, 3);
+    if (won) expedition.encountersCleared = saturatingCounterAdd(expedition.encountersCleared, 1, 3);
     expedition.totalTurns = saturatingCounterAdd(expedition.totalTurns, battle.turns);
     expedition.totalDamageDealt = saturatingCounterAdd(expedition.totalDamageDealt, battle.totalDamageDealt);
     expedition.totalDamageTaken = saturatingCounterAdd(expedition.totalDamageTaken, battle.totalDamageTaken);
@@ -720,7 +720,7 @@ function resolveExpedition(
     const totalTurns = expedition.totalTurns ?? battle.turns;
     const totalDamageDealt = expedition.totalDamageDealt ?? battle.totalDamageDealt;
     const totalDamageTaken = expedition.totalDamageTaken ?? battle.totalDamageTaken;
-    const encountersCleared = expedition.encountersCleared ?? 1;
+    const encountersCleared = expedition.encountersCleared ?? (won ? 1 : 0);
     const totalEncounterCount = realm.encounters.length;
     const lowHp = save.run.hero.hpMax > 0 && save.run.hero.hp / save.run.hero.hpMax < 0.35;
     const recommendedFacilityId = lowHp
