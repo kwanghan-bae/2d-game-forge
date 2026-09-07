@@ -14,7 +14,7 @@ export default function HomePage() {
             data-testid="no-games"
             className="mt-3 rounded-md border border-slate-800 bg-slate-900 p-4 text-sm text-slate-300"
           >
-            아직 등록된 게임이 없습니다. Phase 1 에서 inflation-rpg 가 추가됩니다.
+            아직 등록된 게임이 없습니다. 게임 manifest를 확인해 주세요.
           </p>
         ) : (
           <ul className="mt-3 space-y-2">

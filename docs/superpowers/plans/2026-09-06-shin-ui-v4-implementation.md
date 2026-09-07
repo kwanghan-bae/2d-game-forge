@@ -208,6 +208,7 @@ pnpm circular
 - standalone Next의 기본 V4 loader도 import/부팅 실패를 별도 오류 UI로 격리하고 게임 React root와 분리했다.
 - 신규 게임 등록 가이드의 `StartGame` 반환 계약과 shared/server/client registry 예시도 `ForgeGameInstance` 기반 현재 구조로 갱신했다.
 - ARCHITECTURE의 알려진 부채 항목도 V3 upstream 저장 키/appId와 V4 namespace를 구분해 기록했다.
+- 포털의 빈 manifest fallback도 과거 Phase 1 안내 대신 현재 registry 상태를 설명하도록 정리했다.
 - 루트 README의 빠른 시작 안내도 V4 기본 제품과 V3 legacy 경로를 분리해 실제 포털 manifest와 일치시켰다.
 - 작업·원정 시작 시 완료 시각이 저장 가능한 정수 상한을 넘으면 재화 차감 없이 원본 저장을 보존한다.
 - staged 원정이 다음 단계의 완료 시각을 저장 상한 밖으로 밀어내는 경우 전투를 중복 정산하지 않고 현재 단계를 보존한다.
