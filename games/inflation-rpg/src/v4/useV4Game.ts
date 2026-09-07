@@ -76,10 +76,13 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       const persisted = persistV4Save(result.save);
       setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
     }
+    const parkedRiskyExpedition = result.save.run.expedition?.status === 'awaiting_confirmation'
+      && current.run.expedition?.status !== 'awaiting_confirmation';
     const hasOfflineResult = result.summary.processedSeconds > 0
       || result.summary.clockAnomaly !== null
       || result.summary.completedTaskIds.length > 0
       || result.summary.completedExpedition
+      || parkedRiskyExpedition
       || result.summary.equipmentGained.length > 0
       || result.summary.equipmentUpgraded.length > 0
       || Object.values(result.summary.resourcesGained).some(

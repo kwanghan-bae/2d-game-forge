@@ -113,6 +113,29 @@ describe('useV4Game monetization actions', () => {
     expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
   });
 
+  it('shows a result when resume parks a risky boss at the exact watermark', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(88);
+    base.meta.unlockedRealms.push('deep_forest');
+    const started = startExpedition(base, 'deep_forest', base.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const expedition = started.save.run.expedition;
+    if (!expedition) return;
+    expedition.encounterIndex = 2;
+    expedition.startedAt = base.createdAt;
+    expedition.completesAt = base.createdAt + 1_000;
+    started.save.lastProcessedAt = expedition.completesAt;
+    started.save.updatedAt = expedition.completesAt;
+    persistV4Save(started.save);
+    vi.setSystemTime(expedition.completesAt);
+
+    render(<Harness monetization={new V4MonetizationAdapter(null, null)} />);
+
+    expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
+  });
+
   it('shows a result when offline settlement only upgrades existing equipment', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(10_000);
