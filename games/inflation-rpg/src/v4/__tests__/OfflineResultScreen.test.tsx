@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { OfflineResultScreen } from '../screens/OfflineResultScreen';
 import type { OfflineSummary } from '../types';
 
@@ -75,5 +75,17 @@ describe('V4 offline result screen', () => {
     const result = screen.getByTestId('v4-offline-result');
     expect(result).toHaveTextContent('획득 재화 없음');
     expect(result.textContent).not.toContain('-5');
+  });
+
+  it('closes from Escape and exposes the dialog title to assistive technology', () => {
+    const onClose = vi.fn();
+    render(<OfflineResultScreen summary={summary()} onClose={onClose} />);
+
+    const dialog = screen.getByRole('dialog', { name: '마을이 당신을 기다렸습니다' });
+    expect(dialog).toHaveAttribute('aria-labelledby', 'v4-offline-result-title');
+    expect(screen.getByRole('heading', { name: '마을이 당신을 기다렸습니다' })).toHaveAttribute('id', 'v4-offline-result-title');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

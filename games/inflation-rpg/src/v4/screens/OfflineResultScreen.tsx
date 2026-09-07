@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { OfflineSummary } from '../types';
 import { getV4CurrencyName } from '../data';
 import { getV4EquipmentName } from '../equipment';
@@ -14,6 +15,14 @@ interface Props {
 }
 
 export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = false, onClose, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !event.defaultPrevented) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const processedSeconds = typeof summary.processedSeconds === 'number' && Number.isFinite(summary.processedSeconds)
     ? Math.max(0, summary.processedSeconds)
     : 0;
@@ -25,10 +34,10 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
   const hasPositiveResourceReward = resourceEntries.some(([, value]) => Number.isFinite(value) && value > 0);
 
   return (
-    <div className="v4-overlay" role="dialog" aria-modal="true" aria-label="오프라인 결과">
+    <div className="v4-overlay" role="dialog" aria-modal="true" aria-labelledby="v4-offline-result-title">
       <section className="v4-modal" data-testid="v4-offline-result">
         <div className="v4-kicker">돌아온 후원자</div>
-        <h2>마을이 당신을 기다렸습니다</h2>
+        <h2 id="v4-offline-result-title">마을이 당신을 기다렸습니다</h2>
         <p>{Math.floor(processedSeconds / 3600)}시간 {Math.floor((processedSeconds % 3600) / 60)}분 동안 안전한 작업을 정산했습니다. 효율 {Math.round(efficiency * 100)}%</p>
         {summary.wasClamped && <div className="v4-alert">오프라인 보상은 최대 8시간까지만 계산했습니다.</div>}
         {summary.clockAnomaly === 'backwards' && <div className="v4-alert">기기 시간이 이전 처리 시각보다 빠릅니다. 중복 보상을 막았습니다.</div>}
