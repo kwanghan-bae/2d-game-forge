@@ -106,6 +106,7 @@ pnpm circular
 
 - V4 전용 저장 envelope·schema 1·V3 명시 import adapter·시간 조작 검증을 구현했다.
 - V4를 기본 진입점으로 연결하고 V3를 `StartLegacyGame()` 및 `inflation-rpg-legacy` manifest로 보존했다.
+- standalone Next 진입점의 문서 제목·설명과 HTML 로케일을 출시명 및 한국어 UX 기준으로 정렬했다.
 - 7개 시설, 3명 지원 에이전트, 시설 작업 큐, 레벨·신뢰도·피로도·전문 보정, 작업 취소 환불을 구현했다.
 - 영웅 정책·노화·회춘·훈련·장비 3종·V3 순수 전투 계산 adapter를 연결했다.
 - 3개 Realm의 일반·정예·보스 단계, 결정론적 승률 예측·전투, 패배 보호, 보스/다음 Realm 확인 흐름을 구현했다.

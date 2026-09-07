@@ -22,8 +22,8 @@ const geistMono = Geist_Mono({
  * 애플리케이션의 메타데이터 및 SEO 정보를 정의합니다.
  */
 export const metadata: Metadata = {
-  title: "무한성장: 조선의 검",
-  description: "A web-based remake of Inflation RPG with Korean aesthetics",
+  title: "신의 마을: 영원의 후원자",
+  description: "영원한 영웅을 후원하고 조선의 마을을 성장시키는 방치형 RPG",
 };
 
 /**
@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ko" suppressHydrationWarning>
       <head>
         <meta
           name="viewport"
