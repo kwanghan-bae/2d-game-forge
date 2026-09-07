@@ -1762,6 +1762,40 @@ describe('v4 save and domain', () => {
     expect(loadV4Save(fakeStorage)).not.toBeNull();
   });
 
+  it('saturates malformed expedition totals before writing a result save', () => {
+    const initial = createInitialV4Save(128);
+    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const expedition = started.save.run.expedition;
+    if (!expedition) throw new Error('expedition was not started');
+    expedition.id = 'malformed-expedition-totals';
+    expedition.encounterIndex = 2;
+    expedition.startedAt = started.save.updatedAt;
+    expedition.completesAt = started.save.updatedAt;
+    expedition.encountersCleared = Number.MAX_VALUE;
+    expedition.totalTurns = Number.MAX_VALUE;
+    expedition.totalDamageDealt = Number.MAX_VALUE;
+    expedition.totalDamageTaken = Number.MAX_VALUE;
+
+    const settled = completeFacilityTasks(started.save, expedition.completesAt);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    const result = settled.run.lastExpeditionResult;
+
+    expect(result).not.toBeNull();
+    expect(result?.encountersCleared).toBe(3);
+    expect(result?.turns).toBe(Number.MAX_SAFE_INTEGER);
+    expect(result?.totalDamageDealt).toBe(Number.MAX_SAFE_INTEGER);
+    expect(result?.totalDamageTaken).toBe(Number.MAX_SAFE_INTEGER);
+    expect(persistV4Save(settled, fakeStorage)).toBe(true);
+    expect(loadV4Save(fakeStorage)).not.toBeNull();
+  });
+
   it('does not mutate a full intervention reserve', () => {
     const full = createInitialV4Save(97);
     full.run.interventionCharges = 3;

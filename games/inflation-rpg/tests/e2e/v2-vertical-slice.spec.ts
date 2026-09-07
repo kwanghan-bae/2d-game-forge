@@ -48,7 +48,13 @@ test.describe('Phase V1a vertical slice', () => {
       const cycleStore = w['__cycle_store_v2__'] as {
         getState(): {
           controller: {
-            getHero(): { age: number; actionCount: number; chapter: string; staggered: boolean };
+            getHero(): {
+              age: number;
+              actionCount: number;
+              chapter: string;
+              staggered: boolean;
+              rejuvenationCount: number;
+            };
           } | null;
         };
       } | undefined;
@@ -58,6 +64,11 @@ test.describe('Phase V1a vertical slice', () => {
       hero.actionCount = 999;
       hero.chapter = '노년기';
       hero.staggered = false;
+      // The product may auto-rejuvenate at age 65 when enough light has been
+      // earned during the fast-forward. Exhaust that normal per-cycle budget
+      // so this smoke deterministically exercises the natural-death result
+      // path instead of racing the optional rejuvenation branch.
+      hero.rejuvenationCount = 2;
     });
 
     // Next arrival ticks age to 70 and follows the real natural-death result path.

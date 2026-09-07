@@ -89,6 +89,14 @@ function saturatingAdd(value: number, amount: number): number {
   return Math.min(MAX_ECONOMY_VALUE, base + amount);
 }
 
+function saturatingCounterAdd(value: number | undefined, amount: number, cap = MAX_ECONOMY_VALUE): number {
+  const base = Number.isFinite(value) && (value ?? 0) >= 0
+    ? Math.min(cap, Math.floor(value ?? 0))
+    : 0;
+  const increment = Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : 0;
+  return Math.min(cap, base + increment);
+}
+
 function cloneSave(save: V4SaveEnvelope): V4SaveEnvelope {
   return JSON.parse(JSON.stringify(save)) as V4SaveEnvelope;
 }
@@ -609,10 +617,10 @@ function resolveExpedition(
     );
     const won = battle.won && deterministicRoll(`${expedition.id}:${encounter.id}`) < successChance;
     save.run.hero.hp = battle.heroRemainingHp;
-    expedition.encountersCleared = (expedition.encountersCleared ?? 0) + 1;
-    expedition.totalTurns = (expedition.totalTurns ?? 0) + battle.turns;
-    expedition.totalDamageDealt = (expedition.totalDamageDealt ?? 0) + battle.totalDamageDealt;
-    expedition.totalDamageTaken = (expedition.totalDamageTaken ?? 0) + battle.totalDamageTaken;
+    expedition.encountersCleared = saturatingCounterAdd(expedition.encountersCleared, 1, 3);
+    expedition.totalTurns = saturatingCounterAdd(expedition.totalTurns, battle.turns);
+    expedition.totalDamageDealt = saturatingCounterAdd(expedition.totalDamageDealt, battle.totalDamageDealt);
+    expedition.totalDamageTaken = saturatingCounterAdd(expedition.totalDamageTaken, battle.totalDamageTaken);
 
     if (won && !isBoss) {
       if (!nextEncounter || nextCompletionAt === null) return;
