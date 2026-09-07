@@ -105,6 +105,39 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('grants a pending rewarded action when ad-free entitlement arrives before the provider resolves', async () => {
+    let release!: (watched: boolean) => void;
+    const pending = new Promise<boolean>((resolve) => { release = resolve; });
+    const adapter = new V4MonetizationAdapter({ showRewarded: () => pending }, null);
+
+    const reward = adapter.watchRewarded('offline_double');
+    await Promise.resolve();
+    adapter.setAdFreeOwned(true);
+    release(false);
+
+    expect(await reward).toEqual({ granted: true, reason: 'granted' });
+    expect(adapter.getAdsToday()).toBe(0);
+  });
+
+  it('keeps a pending rewarded action granted when the stale provider rejects', async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const adapter = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        await pending;
+        throw new Error('native ad dismissed');
+      },
+    }, null);
+
+    const reward = adapter.watchRewarded('instant_task');
+    await Promise.resolve();
+    adapter.setAdFreeOwned(true);
+    release();
+
+    expect(await reward).toEqual({ granted: true, reason: 'granted' });
+    expect(adapter.getAdsToday()).toBe(0);
+  });
+
   it('does not let a stale restore response revoke a purchase completed while restore was pending', async () => {
     let releaseRestore!: (owned: boolean) => void;
     const pendingRestore = new Promise<boolean>((resolve) => { releaseRestore = resolve; });

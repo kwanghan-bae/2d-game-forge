@@ -271,6 +271,11 @@ export class V4MonetizationAdapter {
     this.rewardedInFlightByDay.set(requestDay, inFlightForDay + 1);
     try {
       const watched = await this.ads.showRewarded(placement);
+      // The entitlement may be confirmed while the native ad UI is open. In
+      // that case the ad result is stale: ad-free users receive the benefit
+      // without consuming a daily ad slot, even if the provider reports a
+      // cancellation or failure.
+      if (this.adFree) return { granted: true, reason: 'granted' };
       if (!watched) return { granted: false, reason: 'provider_failed' };
       const usage = requestDay === this.rewardedDay
         ? normalizeDailyUsage(this.adsToday + 1)
@@ -283,7 +288,9 @@ export class V4MonetizationAdapter {
       }
       return { granted: true, reason: 'granted' };
     } catch {
-      return { granted: false, reason: 'provider_failed' };
+      return this.adFree
+        ? { granted: true, reason: 'granted' }
+        : { granted: false, reason: 'provider_failed' };
     } finally {
       const remaining = (this.rewardedInFlightByDay.get(requestDay) ?? 1) - 1;
       if (remaining > 0) this.rewardedInFlightByDay.set(requestDay, remaining);
