@@ -72,12 +72,14 @@ describe('V4 app resume handling', () => {
   });
 
   it('does not settle while the document is hidden', () => {
+    vi.useFakeTimers();
     const refresh = vi.fn();
     const settleOffline = vi.fn();
     vi.mocked(useV4Game).mockReturnValue(mockGame(refresh, settleOffline));
     const { unmount } = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
 
+    act(() => { vi.advanceTimersByTime(2_000); });
     act(() => { document.dispatchEvent(new Event('visibilitychange')); });
     act(() => { window.dispatchEvent(new Event('pageshow')); });
 
