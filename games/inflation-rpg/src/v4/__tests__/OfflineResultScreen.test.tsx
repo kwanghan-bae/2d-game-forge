@@ -53,7 +53,8 @@ describe('V4 offline result screen', () => {
     render(<OfflineResultScreen summary={summary()} pendingExpeditionConfirmation onClose={() => {}} />);
 
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('위험 원정 결과 확인 필요');
-    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('원정 화면에서 보스 결과를 확인하세요');
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('원정 화면에서 결과를 확인하세요');
+    expect(screen.getByTestId('v4-offline-result').textContent).not.toContain('보스 결과를 확인하세요');
   });
 
   it('keeps a completed expedition summary neutral until its outcome is shown', () => {
