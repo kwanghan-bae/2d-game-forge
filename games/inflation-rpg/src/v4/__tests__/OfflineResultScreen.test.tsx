@@ -56,6 +56,14 @@ describe('V4 offline result screen', () => {
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('원정 화면에서 보스 결과를 확인하세요');
   });
 
+  it('keeps a completed expedition summary neutral until its outcome is shown', () => {
+    render(<OfflineResultScreen summary={summary({ completedExpedition: true })} onClose={() => {}} />);
+
+    const result = screen.getByTestId('v4-offline-result');
+    expect(result).toHaveTextContent('원정 귀환 완료 · 원정 화면에서 결과를 확인하세요.');
+    expect(result).not.toHaveTextContent('다음 Realm 해금은');
+  });
+
   it('does not expose an unknown resource storage key to players', () => {
     render(<OfflineResultScreen summary={summary({ resourcesGained: { unknown: 2 } as never })} onClose={() => {}} />);
 

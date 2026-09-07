@@ -92,7 +92,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
         {summary.equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {summary.equipmentGained.map(getV4EquipmentName).join(', ')}</div>}
         {summary.equipmentUpgraded.length > 0 && <div className="v4-alert">장비 강화 · {summary.equipmentUpgraded.map(getV4EquipmentName).join(', ')}</div>}
         <p>{summary.completedTaskIds.length}개 작업 완료 · {summary.completedExpedition
-          ? '원정 귀환 완료 · 다음 Realm 해금은 원정 화면에서 확인'
+          ? '원정 귀환 완료 · 원정 화면에서 결과를 확인하세요.'
           : pendingExpeditionConfirmation
             ? '위험 원정 결과 확인 필요 · 원정 화면에서 보스 결과를 확인하세요.'
             : '선택형 사건은 보류됨'}</p>
