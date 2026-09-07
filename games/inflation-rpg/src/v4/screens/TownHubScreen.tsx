@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4RealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4PolicyName, getV4RealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
 import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
@@ -113,7 +113,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
       <section className="v4-panel">
         <h2>후원 정책</h2>
         <p>{save.run.expedition
-          ? `현재 원정은 ${POLICY_LABELS[save.run.expedition.policy]}로 출발했습니다. 지금 변경하면 다음 원정부터 적용됩니다.`
+          ? `현재 원정은 ${getV4PolicyName(save.run.expedition.policy)}로 출발했습니다. 지금 변경하면 다음 원정부터 적용됩니다.`
           : '영웅의 다음 행동을 정합니다. HP가 35% 아래면 자동으로 회복을 우선합니다.'}<br />다음 판단 · <span className="v4-action">{HERO_ACTION_LABELS[nextAction]}</span></p>
         <div className="v4-policy-row">
           {(Object.keys(POLICY_LABELS) as V4Policy[]).map((policy) => (

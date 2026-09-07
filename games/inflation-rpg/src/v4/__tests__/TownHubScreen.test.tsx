@@ -97,6 +97,19 @@ describe('V4 town hub support assignment', () => {
     expect(policyPanel).toHaveTextContent('다음 원정부터 적용됩니다');
   });
 
+  it('keeps an unknown active expedition policy readable', () => {
+    const initial = createInitialV4Save(128);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.policy = 'constructor' as never;
+
+    renderHub({ save: started.save });
+
+    const policyPanel = screen.getByRole('heading', { name: '후원 정책' }).parentElement;
+    expect(policyPanel).toHaveTextContent('정책 확인 필요');
+  });
+
   it('renders equipment output names instead of internal ids', () => {
     renderHub();
 
