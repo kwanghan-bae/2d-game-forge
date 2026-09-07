@@ -131,6 +131,16 @@ describe('V4 town hub support assignment', () => {
     expect(blacksmith).toHaveTextContent('다음: 수호 갑옷 제작');
   });
 
+  it('shows the next facility upgrade cost in the card instead of hiding it in accessibility text', () => {
+    renderHub();
+
+    const temple = screen.getByText('신전').closest('article');
+    expect(temple).not.toBeNull();
+    if (!temple) return;
+
+    expect(temple).toHaveTextContent('강화 비용 · 금화 80 · 재료 4');
+  });
+
   it('updates the closest objective as realms are unlocked', () => {
     const save = createInitialV4Save(97);
     save.meta.unlockedRealms = ['joseon_plains', 'deep_forest'];

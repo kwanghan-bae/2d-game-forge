@@ -40,6 +40,7 @@ class OnestoreIapPlugin : Plugin() {
     }
 
     private data class PendingPurchase(val productId: String, val call: PluginCall)
+    private data class PendingNativeCall(val call: PluginCall, val timeout: Runnable)
 
     private var purchaseClient: PurchaseClient? = null
     private var licenseKey: String? = null
@@ -50,6 +51,7 @@ class OnestoreIapPlugin : Plugin() {
     private var pendingPurchaseTimeout: Runnable? = null
     private val purchaseTimeoutHandler = Handler(Looper.getMainLooper())
     private val initializeCalls = mutableListOf<PluginCall>()
+    private val pendingNativeCalls = mutableListOf<PendingNativeCall>()
     private val purchaseDataByToken = mutableMapOf<String, PurchaseData>()
 
     private val purchasesUpdatedListener = object : PurchasesUpdatedListener {
@@ -180,20 +182,26 @@ class OnestoreIapPlugin : Plugin() {
             .setProductIdList(productIds)
             .setProductType(PurchaseClient.ProductType.INAPP)
             .build()
-        client.queryProductDetailsAsync(params, object : ProductDetailsListener {
-            override fun onProductDetailsResponse(result: IapResult, products: List<ProductDetail>?) {
-                if (!result.isSuccess) {
-                    call.reject("queryProducts failed: ${result.getMessage()}", result.getResponseCode().toString())
-                    return
-                }
+        val pending = beginNativeCall(call, "상품 조회 응답 제한 시간이 지나 상품을 확인하지 못했습니다.")
+        try {
+            client.queryProductDetailsAsync(params, object : ProductDetailsListener {
+                override fun onProductDetailsResponse(result: IapResult, products: List<ProductDetail>?) {
+                    if (!finishNativeCall(pending)) return
+                    if (!result.isSuccess) {
+                        call.reject("queryProducts failed: ${result.getMessage()}", result.getResponseCode().toString())
+                        return
+                    }
 
-                val productArray = JSArray()
-                products.orEmpty().forEach { product -> productArray.put(productToJs(product)) }
-                val response = JSObject()
-                response.put("products", productArray)
-                call.resolve(response)
-            }
-        })
+                    val productArray = JSArray()
+                    products.orEmpty().forEach { product -> productArray.put(productToJs(product)) }
+                    val response = JSObject()
+                    response.put("products", productArray)
+                    call.resolve(response)
+                }
+            })
+        } catch (error: Exception) {
+            if (finishNativeCall(pending)) call.reject(error.message ?: "queryProducts failed")
+        }
     }
 
     @PluginMethod
@@ -248,57 +256,75 @@ class OnestoreIapPlugin : Plugin() {
             return
         }
 
+        val pending = beginNativeCall(call, "구매 확인 응답 제한 시간이 지나 결제를 확정하지 못했습니다.")
         if (isConsumable(purchase.getProductId())) {
             val params = ConsumeParams.newBuilder().setPurchaseData(purchase).build()
-            client.consumeAsync(params, object : ConsumeListener {
-                override fun onConsumeResponse(result: IapResult, ignoredPurchase: PurchaseData?) {
-                    if (result.isSuccess) call.resolve()
-                    else call.reject("consume failed: ${result.getMessage()}", result.getResponseCode().toString())
-                }
-            })
+            try {
+                client.consumeAsync(params, object : ConsumeListener {
+                    override fun onConsumeResponse(result: IapResult, ignoredPurchase: PurchaseData?) {
+                        if (!finishNativeCall(pending)) return
+                        if (result.isSuccess) call.resolve()
+                        else call.reject("consume failed: ${result.getMessage()}", result.getResponseCode().toString())
+                    }
+                })
+            } catch (error: Exception) {
+                if (finishNativeCall(pending)) call.reject(error.message ?: "consume failed")
+            }
         } else {
             val params = AcknowledgeParams.newBuilder().setPurchaseData(purchase).build()
-            client.acknowledgeAsync(params, object : AcknowledgeListener {
-                override fun onAcknowledgeResponse(result: IapResult, ignoredPurchase: PurchaseData?) {
-                    if (result.isSuccess) call.resolve()
-                    else call.reject("acknowledge failed: ${result.getMessage()}", result.getResponseCode().toString())
-                }
-            })
+            try {
+                client.acknowledgeAsync(params, object : AcknowledgeListener {
+                    override fun onAcknowledgeResponse(result: IapResult, ignoredPurchase: PurchaseData?) {
+                        if (!finishNativeCall(pending)) return
+                        if (result.isSuccess) call.resolve()
+                        else call.reject("acknowledge failed: ${result.getMessage()}", result.getResponseCode().toString())
+                    }
+                })
+            } catch (error: Exception) {
+                if (finishNativeCall(pending)) call.reject(error.message ?: "acknowledge failed")
+            }
         }
     }
 
     @PluginMethod
     fun restorePurchases(call: PluginCall) {
         val client = requireClient(call) ?: return
-        client.queryPurchasesAsync(PurchaseClient.ProductType.INAPP, object : QueryPurchasesListener {
-            override fun onPurchasesResponse(result: IapResult, purchases: List<PurchaseData>?) {
-                if (!result.isSuccess) {
-                    call.reject("restorePurchases failed: ${result.getMessage()}", result.getResponseCode().toString())
-                    return
-                }
+        val pending = beginNativeCall(call, "복원 응답 제한 시간이 지나 구매 내역을 확인하지 못했습니다.")
+        try {
+            client.queryPurchasesAsync(PurchaseClient.ProductType.INAPP, object : QueryPurchasesListener {
+                override fun onPurchasesResponse(result: IapResult, purchases: List<PurchaseData>?) {
+                    if (!finishNativeCall(pending)) return
+                    if (!result.isSuccess) {
+                        call.reject("restorePurchases failed: ${result.getMessage()}", result.getResponseCode().toString())
+                        return
+                    }
 
-                val purchaseArray = JSArray()
-                purchases.orEmpty()
-                    .filter { purchase ->
-                        purchase.getPurchaseState() == PurchaseData.PurchaseState.PURCHASED
-                            && purchase.getProductId().isNotBlank()
-                            && purchase.getPurchaseToken().isNotBlank()
-                    }
-                    .forEach { purchase ->
-                        rememberPurchase(purchase)
-                        purchaseArray.put(purchaseToJs(purchase))
-                    }
-                val response = JSObject()
-                response.put("purchases", purchaseArray)
-                call.resolve(response)
-            }
-        })
+                    val purchaseArray = JSArray()
+                    purchases.orEmpty()
+                        .filter { purchase ->
+                            purchase.getPurchaseState() == PurchaseData.PurchaseState.PURCHASED
+                                && purchase.getProductId().isNotBlank()
+                                && purchase.getPurchaseToken().isNotBlank()
+                        }
+                        .forEach { purchase ->
+                            rememberPurchase(purchase)
+                            purchaseArray.put(purchaseToJs(purchase))
+                        }
+                    val response = JSObject()
+                    response.put("purchases", purchaseArray)
+                    call.resolve(response)
+                }
+            })
+        } catch (error: Exception) {
+            if (finishNativeCall(pending)) call.reject(error.message ?: "restorePurchases failed")
+        }
     }
 
     override fun handleOnDestroy() {
         clearInitializeTimeout()
         initializeCalls.forEach { it.reject("ONE store IAP plugin was destroyed") }
         initializeCalls.clear()
+        cancelNativeCalls("ONE store IAP plugin was destroyed")
         takePendingPurchase()?.call?.reject("ONE store IAP plugin was destroyed")
         connectionInFlight = false
         purchaseClient?.endConnection()
@@ -324,6 +350,33 @@ class OnestoreIapPlugin : Plugin() {
     private fun clearInitializeTimeout() {
         initializeTimeout?.let { purchaseTimeoutHandler.removeCallbacks(it) }
         initializeTimeout = null
+    }
+
+    private fun beginNativeCall(call: PluginCall, message: String): PendingNativeCall {
+        lateinit var pending: PendingNativeCall
+        val timeout = Runnable {
+            if (!pendingNativeCalls.remove(pending)) return@Runnable
+            call.reject(message)
+        }
+        pending = PendingNativeCall(call, timeout)
+        pendingNativeCalls += pending
+        purchaseTimeoutHandler.postDelayed(timeout, NATIVE_OPERATION_TIMEOUT_MS)
+        return pending
+    }
+
+    private fun finishNativeCall(pending: PendingNativeCall): Boolean {
+        if (!pendingNativeCalls.remove(pending)) return false
+        purchaseTimeoutHandler.removeCallbacks(pending.timeout)
+        return true
+    }
+
+    private fun cancelNativeCalls(message: String) {
+        val pending = pendingNativeCalls.toList()
+        pendingNativeCalls.clear()
+        pending.forEach {
+            purchaseTimeoutHandler.removeCallbacks(it.timeout)
+            it.call.reject(message)
+        }
     }
 
     private fun schedulePendingPurchaseTimeout(productId: String) {

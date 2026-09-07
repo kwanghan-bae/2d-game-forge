@@ -44,6 +44,11 @@ function formatResources(resources: Partial<Record<string, number>>): string {
     : '없음';
 }
 
+function formatUpgradeCost(cost: { gold: number; materials: number } | null): string {
+  if (!cost) return '강화 비용 확인 필요';
+  return `강화 비용 · 금화 ${formatNumber(cost.gold)} · 재료 ${formatNumber(cost.materials)}`;
+}
+
 function getFacilityTaskLabel(facilityId: FacilityId, fallback: string, outputEquipmentIds: string[]): string {
   return facilityId === 'blacksmith' && outputEquipmentIds[0]
     ? `${getV4EquipmentName(outputEquipmentIds[0])} 제작`
@@ -187,6 +192,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                   <span>산출 · {formatResources(preview.output)}{preview.outputEquipmentIds.length > 0 ? ` · 장비 ${preview.outputEquipmentIds.map(getV4EquipmentName).join(', ')}` : ''}</span>
                   <span>소요 · {preview.durationSeconds}초</span>
                 </div>
+                <div className="v4-upgrade-cost">{formatUpgradeCost(upgradeCost)}</div>
                 {!task && !preview.canStart && <div className="v4-task v4-task--blocked">시작 불가 · {preview.error}</div>}
                 <div className="v4-button-row">
                   {task ? (
