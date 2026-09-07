@@ -61,6 +61,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
   const offlineSummaryRef = useRef<OfflineSummary | null>(null);
   const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
+  const [, setMonetizationRevision] = useState(0);
   const offlineRewardClaimInFlight = useRef(false);
   const instantTaskInFlight = useRef(new Set<FacilityId>());
   const interventionChargeInFlight = useRef(false);
@@ -77,6 +78,13 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
+
+  useEffect(() => {
+    if (!monetization) return;
+    return monetization.subscribe(() => {
+      setMonetizationRevision((revision) => revision + 1);
+    });
+  }, [monetization]);
 
   const commit = useCallback((next: V4SaveEnvelope, nextMessage?: string) => {
     saveRef.current = next;

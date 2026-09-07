@@ -59,6 +59,20 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('notifies active entitlement subscribers only when the state changes', () => {
+    const adapter = new V4MonetizationAdapter(null, null);
+    const listener = vi.fn();
+    const unsubscribe = adapter.subscribe(listener);
+
+    adapter.setAdFreeOwned(true);
+    adapter.setAdFreeOwned(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+    adapter.setAdFreeOwned(false);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
   it('restores a native ad-free entitlement through the adapter boundary', async () => {
     const adapter = new V4MonetizationAdapter(null, null, null, async () => true);
 

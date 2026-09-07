@@ -31,6 +31,7 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
       <div data-testid="offline-state">{game.offlineSummary ? 'ready' : 'pending'}</div>
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
       <div data-testid="clock">{game.now}</div>
+      <div data-testid="ad-free">{game.adFree ? 'owned' : 'not-owned'}</div>
       <button type="button" onClick={() => { void game.doubleOfflineReward(); }}>double</button>
       <button type="button" onClick={game.settleOffline}>resume</button>
       <button type="button" onClick={() => game.startTask('temple')}>start temple</button>
@@ -121,6 +122,21 @@ describe('useV4Game monetization actions', () => {
   afterEach(() => {
     vi.useRealTimers();
     localStorage.clear();
+  });
+
+  it('refreshes the ad-free UI when an entitlement callback changes the adapter externally', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(1);
+    setFixtureTimeline(base, 10_000);
+    persistV4Save(base);
+    const monetization = new V4MonetizationAdapter(null, null);
+    render(<Harness monetization={monetization} />);
+
+    expect(screen.getByTestId('ad-free')).toHaveTextContent('not-owned');
+    act(() => { monetization.setAdFreeOwned(true); });
+
+    expect(screen.getByTestId('ad-free')).toHaveTextContent(/^owned$/);
   });
 
   it('uses offline efficiency when settling work after a background resume', async () => {

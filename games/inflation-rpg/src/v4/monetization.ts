@@ -189,6 +189,7 @@ export class V4MonetizationAdapter {
   private adsToday = 0;
   private adFree = false;
   private entitlementRevision = 0;
+  private readonly listeners = new Set<() => void>();
   private rewardedDay = localDayKey();
   private rewardedInFlightByDay = new Map<string, number>();
   private adFreePurchaseInFlight: Promise<V4MonetizationResult> | null = null;
@@ -227,10 +228,21 @@ export class V4MonetizationAdapter {
   }
   isAdFree(): boolean { return this.adFree; }
   canRestorePurchases(): boolean { return this.restorePurchasesProvider !== null; }
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
+  }
   setAdFreeOwned(owned: boolean): void {
     if (this.adFree === owned) return;
     this.adFree = owned;
     this.entitlementRevision += 1;
+    for (const listener of this.listeners) {
+      try {
+        listener();
+      } catch {
+        // A UI observer must never interrupt entitlement state updates.
+      }
+    }
   }
 
   async restorePurchases(): Promise<V4MonetizationResult> {
