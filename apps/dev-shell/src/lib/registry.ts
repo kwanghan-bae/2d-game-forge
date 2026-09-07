@@ -1,4 +1,5 @@
 import type { GameManifestValue, ForgeGameInstance } from '@forge/core';
+import { GAME_MANIFESTS } from './registry.shared';
 
 export interface RegisteredGame {
   manifest: GameManifestValue;
@@ -11,24 +12,16 @@ export interface RegisteredGame {
   }>;
 }
 
-export const registeredGames: RegisteredGame[] = [
-  {
-    manifest: {
-      slug: 'inflation-rpg',
-      title: '신의 마을: 영원의 후원자',
-      assetsBasePath: '/games/inflation-rpg/assets',
-    },
-    load: () => import('@forge/game-inflation-rpg'),
-  },
-  {
-    manifest: {
-      slug: 'inflation-rpg-legacy',
-      title: '조선 인플레이션 RPG (Legacy)',
-      assetsBasePath: '/games/inflation-rpg/assets',
-    },
-    load: () => import('@forge/game-inflation-rpg').then((mod) => ({ StartGame: mod.StartLegacyGame })),
-  },
-];
+const loaders: Record<string, RegisteredGame['load']> = {
+  'inflation-rpg': () => import('@forge/game-inflation-rpg'),
+  'inflation-rpg-legacy': () => import('@forge/game-inflation-rpg').then((mod) => ({ StartGame: mod.StartLegacyGame })),
+};
+
+export const registeredGames: RegisteredGame[] = GAME_MANIFESTS.map((manifest) => {
+  const load = loaders[manifest.slug];
+  if (!load) throw new Error(`No game loader registered for ${manifest.slug}`);
+  return { manifest, load };
+});
 
 export function findGame(slug: string): RegisteredGame | undefined {
   return registeredGames.find((g) => g.manifest.slug === slug);
