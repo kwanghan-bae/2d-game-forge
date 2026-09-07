@@ -229,6 +229,8 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     }, V4_SAVE_KEY);
     await page.reload();
 
+    await expect(page.getByTestId('v4-offline-result')).toContainText('위험 원정 결과 확인 필요');
+    await page.getByRole('button', { name: '마을 확인' }).click();
     await page.getByRole('button', { name: '원정 준비 →' }).click();
     await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 결과 확인 필요');
     await page.getByRole('button', { name: '보스 결과 확인' }).click();
