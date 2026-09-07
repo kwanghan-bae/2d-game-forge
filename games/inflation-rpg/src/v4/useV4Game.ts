@@ -40,6 +40,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   });
   const [save, setSave] = useState<V4SaveEnvelope>(() => boot.save);
   const saveRef = useRef(save);
+  const mountedRef = useRef(true);
   const initialOfflineSettlementDone = useRef(false);
   const [storageStatus, setStorageStatus] = useState(() => boot.loaded.status);
   const [storageIssue] = useState(() => boot.loaded.status === 'invalid' ? boot.loaded.reason : null);
@@ -50,6 +51,11 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const instantTaskInFlight = useRef(new Set<FacilityId>());
   const interventionChargeInFlight = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const commit = useCallback((next: V4SaveEnvelope, nextMessage?: string) => {
     saveRef.current = next;
@@ -146,6 +152,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       return false;
     }
     const result = await monetization.watchRewarded(placement);
+    if (!mountedRef.current) return false;
     if (result.granted) return true;
     const messages = {
       daily_limit: '오늘의 보상형 광고 횟수를 모두 사용했습니다.',
@@ -164,6 +171,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     offlineRewardClaimInFlight.current = true;
     try {
       if (!(await watchRewarded('offline_double'))) return;
+      if (!mountedRef.current) return;
       const current = saveRef.current;
       const next = grantOfflineResourceBonus(current, offlineSummary.resourcesGained, Date.now());
       if (next === current) {
@@ -188,6 +196,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     instantTaskInFlight.current.add(facilityId);
     try {
       if (!(await watchRewarded('instant_task'))) return;
+      if (!mountedRef.current) return;
       const result = completeFacilityTaskNow(saveRef.current, facilityId, Date.now());
       if (result.ok) commit(result.save, '광고 혜택으로 작업을 즉시 완료했습니다.');
       else setMessage(result.error);
@@ -205,6 +214,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     interventionChargeInFlight.current = true;
     try {
       if (!(await watchRewarded('intervention_charge'))) return;
+      if (!mountedRef.current) return;
       const current = saveRef.current;
       const next = grantInterventionCharge(current, Date.now());
       if (next === current) {
@@ -232,7 +242,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       return;
     }
     const result = await monetization.buyAdFree();
-    setMessage(result.granted ? '광고 제거가 적용되었습니다.' : '구매가 완료되지 않았습니다.');
+    if (mountedRef.current) setMessage(result.granted ? '광고 제거가 적용되었습니다.' : '구매가 완료되지 않았습니다.');
   }, [monetization]);
 
   const startRun = useCallback((realmId: RealmId, agentId: SupportAgentId | null = null) => {

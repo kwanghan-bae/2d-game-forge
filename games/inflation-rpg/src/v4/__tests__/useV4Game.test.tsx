@@ -367,6 +367,36 @@ describe('useV4Game monetization actions', () => {
     expect(screen.getByTestId('policy')).toHaveTextContent('training');
   });
 
+  it('does not commit an instant task after the game unmounts while an ad is pending', async () => {
+    const base = createInitialV4Save(111);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    persistV4Save(started.save);
+
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        await pending;
+        return true;
+      },
+    }, null);
+    const setItemSpy = vi.spyOn(window.localStorage, 'setItem');
+    const { unmount } = render(<InstantTaskHarness monetization={monetization} />);
+    await waitFor(() => expect(screen.getByTestId('instant-task-count')).toHaveTextContent('1'));
+    setItemSpy.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+    await waitFor(() => expect(monetization.getAdsToday()).toBe(0));
+    unmount();
+
+    await act(async () => { release(); });
+    expect(setItemSpy).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').meta.tasks).toHaveProperty(started.task.id);
+    setItemSpy.mockRestore();
+  });
+
   it('preserves both same-event save mutations instead of applying the second to stale state', async () => {
     const monetization = new V4MonetizationAdapter(null, null);
     render(<InstantTaskHarness monetization={monetization} />);
