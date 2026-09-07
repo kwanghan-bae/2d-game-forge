@@ -127,8 +127,9 @@ apps/dev-shell (Next.js, http://localhost:3000)
 ```
 
 - 한 개의 dev 서버가 모든 게임을 hot-swap 한다.
-- Phaser 인스턴스는 라우트 이동 시 `destroy(true)`.
-- E2E hook 이 활성화되어 있다 (`window.gameState`, `window.phaserGame` 등).
+- 게임 인스턴스는 라우트 이동 시 `destroy(true)`로 정리된다.
+- E2E hook은 entrypoint별로 필요한 경우에만 활성화된다. V3 legacy의 cycle store
+  hook과 V4의 DOM/localStorage 검증 모두 `exposeTestHooks` 게이트를 따른다.
 - `process.env.NODE_ENV !== 'production'` 일 때만 hook 노출.
 
 ### 릴리스 모드 (게임별 독립 앱)
@@ -152,22 +153,25 @@ apps/dev-shell (Next.js, http://localhost:3000)
 
 ```ts
 // games/<slug>/src/startGame.ts
+import type { ForgeGameInstance } from '@forge/core';
+
 export interface StartGameConfig {
   parent: string;            // DOM 컨테이너 id
   assetsBasePath: string;    // 에셋 URL prefix (Phaser load.setBaseURL)
   exposeTestHooks: boolean;  // window.* hook 노출 여부
 }
 
-export function StartGame(config: StartGameConfig): Phaser.Game { ... }
+export function StartGame(config: StartGameConfig): ForgeGameInstance { ... }
+export function StartLegacyGame(config: StartGameConfig): ForgeGameInstance { ... }
 ```
 
 이 원칙이 깨지지 않도록 다음을 지킨다:
 
 1. 게임 코드는 `window.location` 같은 전역 경로를 가정하지 않는다.
 2. 모든 에셋 경로는 `config.assetsBasePath` 로부터 계산한다.
-3. 저장 키는 게임마다 고유하다 (현재 inflation-rpg 는 upstream 키
-   `'korea_inflation_rpg_save'` 를 그대로 쓴다 — 게임 #2 도착 시
-   `@forge/core` 로 승격하면서 namespace 도입 예정).
+3. entrypoint별 저장 키도 고유해야 한다. `inflation-rpg` V4는
+   `'shin-ui-eternal-sponsor-v4-save-v1'`, V3 legacy는 upstream 키
+   `'korea_inflation_rpg_save'`를 사용하며 서로 자동 import·overwrite하지 않는다.
 4. E2E hook 은 `config.exposeTestHooks` 플래그 아래에서만 활성화된다.
 
 ## 5. assetsBasePath 흐름
@@ -176,7 +180,7 @@ export function StartGame(config: StartGameConfig): Phaser.Game { ... }
 
 | 모드 | URL 패턴 | 어떻게 서빙되나 |
 |---|---|---|
-| 포털 | `/games/inflation-rpg/assets/...` | `apps/dev-shell/public/games/inflation-rpg/assets` 가 `games/inflation-rpg/public/assets` 로 symlink |
+| 포털(V4/legacy) | `/games/inflation-rpg/assets/...` | `apps/dev-shell/public/games/inflation-rpg/assets` 가 `games/inflation-rpg/public/assets` 로 symlink |
 | 릴리스 | `/assets/...` | `games/inflation-rpg/public/assets` 를 Next 가 그대로 정적 서빙 |
 
 이 차이를 게임 코드가 알 필요 없도록, 다음 흐름이 만들어진다:
