@@ -25,12 +25,24 @@ export function CyclePrepV2({ onStart, onCancel, onClearSnapshot }: Props) {
   const preview = useMemo(() => HeroSpawner.spawn(new SeededRng(previewSeed)), [previewSeed]);
 
   const handleStart = () => {
+    // Legacy E2E only: keep the long realm-transition smoke deterministic
+    // without changing production runs. `gameConfig` is exposed by
+    // startGame.ts only when the host explicitly enables test hooks.
+    const exposedWindow = typeof window === 'undefined'
+      ? null
+      : window as unknown as { gameConfig?: { exposeTestHooks?: boolean }; __inflation_rpg_test_seed__?: unknown };
+    const configuredSeed = exposedWindow?.gameConfig?.exposeTestHooks
+      ? exposedWindow.__inflation_rpg_test_seed__
+      : undefined;
+    const seed = typeof configuredSeed === 'number' && Number.isSafeInteger(configuredSeed)
+      ? configuredSeed
+      : previewSeed;
     // V3-H B2: clear any persisted snapshot so fresh hero spawns (not resume).
     onClearSnapshot?.();
     // C1008: save directive to run state before starting
     useGameStore.setState(s => ({ run: { ...s.run, directive: selectedDirective } }));
     startCycle({
-      seed: previewSeed,
+      seed,
       traits: [],
       heroHpMax: 100 + hpBaseBonus,
       heroAtkBase: 50 + atkBaseBonus,

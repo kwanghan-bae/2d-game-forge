@@ -21,6 +21,27 @@ describe('CyclePrepV2', () => {
     expect(useCycleStoreV2.getState().status).toBe('running');
   });
 
+  it('dev test seed is used only when the host exposes test hooks', () => {
+    const testWindow = window as unknown as {
+      gameConfig?: { exposeTestHooks?: boolean };
+      __inflation_rpg_test_seed__?: unknown;
+    };
+    const previousConfig = testWindow.gameConfig;
+    const previousSeed = testWindow.__inflation_rpg_test_seed__;
+    testWindow.gameConfig = { exposeTestHooks: true };
+    testWindow.__inflation_rpg_test_seed__ = 1234;
+
+    const { unmount } = render(<CyclePrepV2 onStart={() => {}} onCancel={() => {}} />);
+    try {
+      fireEvent.click(screen.getByTestId('btn-prep-start'));
+      expect(useCycleStoreV2.getState().controller?.getSeed()).toBe(1234);
+    } finally {
+      unmount();
+      testWindow.gameConfig = previousConfig;
+      testWindow.__inflation_rpg_test_seed__ = previousSeed;
+    }
+  });
+
   it('cancel button triggers onCancel', () => {
     const onCancel = vi.fn();
     render(<CyclePrepV2 onStart={() => {}} onCancel={onCancel} />);

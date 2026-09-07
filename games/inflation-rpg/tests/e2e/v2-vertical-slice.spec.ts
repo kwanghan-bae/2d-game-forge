@@ -1,4 +1,18 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function resolveBlockingLegacyChoices(page: Page) {
+  // The dev-only hero fast-forward can land on a boss while the real Phaser
+  // loop is still running. Resolve the boss intro immediately so the smoke
+  // checks the result pipeline instead of waiting through a second choice.
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const bossIntro = page.getByTestId('boss-intro-modal');
+    if (await bossIntro.isVisible().catch(() => false)) {
+      await page.getByTestId('boss-intro-card-0').click();
+      continue;
+    }
+    return;
+  }
+}
 
 test.describe('Phase V1a vertical slice', () => {
   test('Start cycle → overworld → natural death → result screen → back to menu', async ({ page }) => {
@@ -47,7 +61,11 @@ test.describe('Phase V1a vertical slice', () => {
     });
 
     // Next arrival ticks age to 70 and follows the real natural-death result path.
-    await expect(page.getByTestId('cycle-result-v2')).toBeVisible({ timeout: 30_000 });
+    await expect(async () => {
+      await resolveBlockingLegacyChoices(page);
+      expect(await page.getByTestId('cycle-result-v2').count()).toBeGreaterThan(0);
+    }).toPass({ timeout: 30_000 });
+    await expect(page.getByTestId('cycle-result-v2')).toBeVisible();
     await expect(page.getByTestId('result-hero-name')).toBeVisible();
     await expect(page.getByTestId('result-narrative-list')).toBeVisible();
 
