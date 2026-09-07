@@ -1,10 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Phase V1a vertical slice', () => {
-  test('Start cycle → overworld → BP exhausted → result screen → back to menu', async ({ page }) => {
-    // bpMax = 100 (Sim-G) means a live cycle runs ~5-10 minutes. Tween + arrival
-    // delay = ~3-5s per arrival × ~98 arrivals → up to ~9 min wall clock.
-    test.setTimeout(720_000);
+  test('Start cycle → overworld → natural death → result screen → back to menu', async ({ page }) => {
+    test.setTimeout(60_000);
 
     // V3 regression coverage must use the preserved legacy entrypoint now
     // that the product's default route mounts the V4 town hub.
@@ -24,14 +22,32 @@ test.describe('Phase V1a vertical slice', () => {
     // OverworldRunner mounts
     await expect(page.getByTestId('overworld-runner')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('overworld-hud')).toBeVisible();
-    // Keep the long legacy regression deterministic in CI. The other V3
-    // smoke flows already use the documented speed control; without it this
-    // scenario can sit in a timed choice card until the ten-minute timeout.
+    // The live legacy loop can take several minutes to reach natural death.
+    // Use the explicit dev-only cycle hook to put the already-running hero at
+    // the final action before the next real arrival. This preserves the full
+    // React → Phaser → controller → cycle-result path without making CI wait
+    // through 1,000 simulated actions.
     await page.getByTestId('speed-10x').click();
     await expect(page.getByTestId('speed-10x')).toHaveAttribute('data-active', 'true');
+    await page.evaluate(() => {
+      const w = window as unknown as Record<string, unknown>;
+      const cycleStore = w['__cycle_store_v2__'] as {
+        getState(): {
+          controller: {
+            getHero(): { age: number; actionCount: number; chapter: string; staggered: boolean };
+          } | null;
+        };
+      } | undefined;
+      const hero = cycleStore?.getState().controller?.getHero();
+      if (!hero) throw new Error('cycle controller test hook not exposed');
+      hero.age = 69;
+      hero.actionCount = 999;
+      hero.chapter = '노년기';
+      hero.staggered = false;
+    });
 
-    // Wait for cycle-result (bpMax=100 ⇒ ~5-10 min live)
-    await expect(page.getByTestId('cycle-result-v2')).toBeVisible({ timeout: 600_000 });
+    // Next arrival ticks age to 70 and follows the real natural-death result path.
+    await expect(page.getByTestId('cycle-result-v2')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('result-hero-name')).toBeVisible();
     await expect(page.getByTestId('result-narrative-list')).toBeVisible();
 

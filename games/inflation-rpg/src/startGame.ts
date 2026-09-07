@@ -4,6 +4,7 @@ import type { ForgeGameInstance } from '@forge/core';
 import type { StartGameConfig } from './types';
 import { App } from './App';
 import { useGameStore } from './store/gameStore';
+import { useCycleStoreV2 } from './overworld/cycleSliceV2';
 import { V4App } from './v4/V4App';
 import './styles/game.css';
 
@@ -33,6 +34,10 @@ function mount(
     w['gameConfig'] = config;
     if (Screen === App) {
       w['__zustand_inflation_rpg_store__'] = useGameStore;
+      // Legacy E2E only: expose the active controller so long natural-death
+      // smoke tests can fast-forward the hero without changing production
+      // timing or bypassing the real arrival/result pipeline.
+      w['__cycle_store_v2__'] = useCycleStoreV2;
     }
   }
 

@@ -195,7 +195,7 @@ pnpm circular
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
 - 시설·에이전트·Realm 정의 lookup을 own-property accessor로 통일해 외부 문자열이 `constructor` 같은 상속 키로 해석되지 않게 했다.
 - V4 저장 숫자 필드를 `Number.MAX_SAFE_INTEGER` 이하로 검증해 JSON 재로드 때 정밀도를 잃는 재화·시간·전투 수치가 유효 저장으로 남지 않게 했다.
-- legacy `v2-vertical-slice`는 기존 장시간 자동 진행 경로가 10분 제한에 걸리는 별도 baseline 이슈로 남아 있다. 모달 자동 선택 재시작 결함은 수정했고, 관련 V3 smoke는 통과했다. 이 케이스는 제품 코드 회귀와 분리해 다음 QA 사이클에서 결정론적 테스트 시간 단축을 검토한다.
+- legacy `v2-vertical-slice`는 dev-only cycle controller hook으로 영웅을 다음 자연사 직전까지 준비한 뒤 실제 Phaser 도착→CycleResult 경로를 검증하도록 단축했다. Chromium 6.7초, iPhone14 6.2초에 통과하며 제품 런타임에는 hook이 노출되지 않는다.
 - 레거시 브라우저 실행에는 `pauseOnInteractiveChoice` 경계를 적용해 선택창이 열린 동안 다음 도착을 보류하고, shrine/danger 선택창에 안정적인 test id를 추가했다. V3-C spend smoke는 새 서버에서 통과했으며 직접 시뮬레이션의 연속 진행 기본값은 유지한다.
 - 브라우저 선택 게이트가 멈출 수 있던 미연결 선택 이벤트 4종(first trial, wandering sage, elder's judgment, veteran's challenge)을 `TimedChoiceModal`과 컨트롤러 proxy로 연결하고 idle fallback을 추가했다.
 - 브라우저 선택 게이트에서 idle 진행이 멈추지 않도록 danger는 4초 후 자동 전투, shrine은 4초 후 자동 황금 축복으로 안전하게 해소하고 중복 클릭을 차단했다. V3-H·V3-DEF·사가 필터 smoke와 전체 단위 테스트로 회귀를 확인했다.
