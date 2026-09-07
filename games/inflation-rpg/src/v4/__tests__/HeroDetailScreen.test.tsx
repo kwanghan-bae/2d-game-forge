@@ -143,4 +143,24 @@ describe('V4 hero detail screen', () => {
     expect(main.textContent).not.toContain('방어력-');
     expect(main.textContent).not.toContain('행동 기록 -');
   });
+
+  it('caps an unsafe hero age before rendering the detail header', () => {
+    const save = createInitialV4Save(130);
+    const hero = { ...save.run.hero, age: Number.MAX_SAFE_INTEGER + 1 };
+
+    render(
+      <HeroDetailScreen
+        hero={hero}
+        gold={100}
+        expeditionActive={false}
+        onBack={vi.fn()}
+        onImportLegacy={vi.fn()}
+        onRejuvenate={vi.fn()}
+      />,
+    );
+
+    const main = screen.getByRole('main');
+    expect(main).toHaveTextContent('9,007,199,254,740,991세');
+    expect(main.textContent).not.toContain('9,007,199,254,740,992세');
+  });
 });

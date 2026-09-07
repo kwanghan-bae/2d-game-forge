@@ -33,8 +33,8 @@ function equipmentLevel(value: unknown): number {
 
 export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImportLegacy, onRejuvenate }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
-  const age = Math.max(5, Math.floor(finiteHeroValue(hero.age, 17)));
-  const level = Math.max(1, Math.floor(finiteHeroValue(hero.level, 1)));
+  const age = Math.min(Number.MAX_SAFE_INTEGER, Math.max(5, Math.floor(finiteHeroValue(hero.age, 17))));
+  const level = Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, Math.floor(finiteHeroValue(hero.level, 1))));
   const years = Math.min(5, Math.max(0, age - 5));
   const cost = years * 10;
 
@@ -44,7 +44,7 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
         <div className="v4-button-row"><button type="button" className="v4-btn v4-btn--quiet" onClick={onBack}>← 마을로</button></div>
         <div className="v4-hero-card" style={{ marginTop: 12 }}>
           <div className="v4-hero-emoji" aria-hidden="true">{hero.emoji}</div>
-          <div><h2 ref={titleRef} tabIndex={-1} className="v4-hero-name">{hero.name}</h2><p className="v4-hero-meta">영원한 영웅 · {age}세</p></div>
+          <div><h2 ref={titleRef} tabIndex={-1} className="v4-hero-name">{hero.name}</h2><p className="v4-hero-meta">영원한 영웅 · {finiteHeroNumber(age)}세</p></div>
           <div className="v4-action">Lv.{finiteHeroNumber(level)}</div>
         </div>
       </section>
