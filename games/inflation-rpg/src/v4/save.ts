@@ -50,6 +50,10 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 function isNonNegativeNumber(value: unknown): value is number {
   return isFiniteNumber(value) && value >= 0;
 }
@@ -101,7 +105,7 @@ function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey
 }
 
 function isFacilityTaskRecord(value: unknown): boolean {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.facilityId !== 'string'
+  if (!isRecord(value) || !isNonEmptyString(value.id) || typeof value.facilityId !== 'string'
     || !FACILITY_IDS.includes(value.facilityId as typeof FACILITY_IDS[number]) || typeof value.type !== 'string'
     || !isPersistableNonNegativeNumber(value.startedAt) || !isPersistableNonNegativeNumber(value.completesAt)
     || value.completesAt <= value.startedAt
@@ -117,7 +121,7 @@ function isFacilityTaskRecord(value: unknown): boolean {
 }
 
 function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
-  return isRecord(value) && typeof value.id === 'string'
+  return isRecord(value) && isNonEmptyString(value.id)
     && typeof value.realmId === 'string' && REALM_IDS.includes(value.realmId as typeof REALM_IDS[number])
     && ['aggression', 'hoarding', 'training'].includes(value.policy as string)
     && (value.assignedAgentId === null || value.assignedAgentId === 'guide')
@@ -135,7 +139,7 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
 
 function isExpeditionResultRecord(value: unknown): value is Record<string, unknown> {
   return isRecord(value)
-    && typeof value.id === 'string'
+    && isNonEmptyString(value.id)
     && typeof value.realmId === 'string'
     && REALM_IDS.includes(value.realmId as typeof REALM_IDS[number])
     && (value.outcome === 'victory' || value.outcome === 'defeat')
@@ -162,7 +166,7 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
 }
 
 function isSagaEntryRecord(value: unknown): boolean {
-  return isRecord(value) && typeof value.id === 'string' && isPersistableNonNegativeNumber(value.createdAt)
+  return isRecord(value) && isNonEmptyString(value.id) && isPersistableNonNegativeNumber(value.createdAt)
     && typeof value.title === 'string' && typeof value.text === 'string'
     && ['birth', 'facility', 'expedition', 'rejuvenation', 'milestone'].includes(value.kind as string);
 }

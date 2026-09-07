@@ -335,6 +335,7 @@ pnpm circular
 - 작업·활성 원정·최근 결과·사가 ID의 namespace 충돌도 복구 단계에서 격리해, 부분 저장이 완료 경로 간 기록을 공유하지 않도록 했다.
 - native monetization getter가 예외를 던지는 환경에서도 entitlement·광고 사용량·구매 복원 capability를 안전한 fallback으로 읽도록 hook 경계를 보강했다.
 - 사가 화면도 in-memory 항목의 비문자열 title/text와 누락 ID를 안전한 문구·고유 key로 정규화해 React 렌더 예외를 격리했다.
+- 저장 envelope의 task·원정·결과·사가 식별자도 비어 있지 않은 문자열인지 검증해, 손상 저장이 빈 ID namespace를 통과하지 않게 했다.
 - 원정 화면의 결과 보상·Realm 준비 비용도 동일한 재화 표시 경계를 사용해 소수·음수·안전 정수 초과값이 승리·재도전 안내에 노출되지 않게 했다.
 - 오프라인 결과 화면의 처리 시간도 정산 엔진의 8시간 상한을 공유해 손상된 요약 객체가 거대한 시간 문자열을 노출하지 않게 했다.
 - 영웅 상세 헤더의 나이도 마을 화면과 동일한 안전 정수·한국어 숫자 표시를 사용한다.
@@ -342,7 +343,7 @@ pnpm circular
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,526개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,527개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 4.6분).
