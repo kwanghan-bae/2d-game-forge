@@ -231,9 +231,10 @@ SSR 단계에서 실패한다.
   `next.config.ts` 가 `games/inflation-rpg/src/game/*` 로 직접 별칭을 건다.
   새 게임 추가 시 별칭이 늘어난다. 정책 옵션: 신규 게임은 내부에서 상대
   경로를 쓰고, inflation-rpg 만 grandfathered.
-- **upstream 호환 키** — `'korea_inflation_rpg_save'` localStorage 키와
-  `com.korea.inflationrpg` Capacitor appId 가 그대로 살아있다. `SaveManager`
-  를 `@forge/core` 로 승격할 때 namespace 패턴으로 통합한다.
+- **V3 upstream 호환 키** — legacy entrypoint의 `'korea_inflation_rpg_save'`
+  localStorage 키와 `com.korea.inflationrpg` Capacitor appId가 그대로 살아있다.
+  V4는 `'shin-ui-eternal-sponsor-v4-save-v1'`로 분리되어 있다. `SaveManager`
+  를 `@forge/core`로 승격할 때 legacy namespace 패턴을 정리한다.
 
 ## 9. 더 자세한 의도
 
