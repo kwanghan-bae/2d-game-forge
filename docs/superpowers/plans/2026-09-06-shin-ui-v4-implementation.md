@@ -307,7 +307,7 @@ pnpm circular
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
 - 전체 게임 단위/컴포넌트 테스트(V4 포함): 398개 파일, 3,466개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 30/30 통과(각 프로젝트 15/15).
-- V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22, 4.5분).
+- V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22, 4.9분).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - workspace `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `pnpm build` 통과.
