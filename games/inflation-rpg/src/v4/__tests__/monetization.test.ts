@@ -1,5 +1,24 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createV4MonetizationAdapter, hasV4AdFreeEntitlement, V4_DAILY_REWARDED_LIMIT, V4MonetizationAdapter } from '../monetization';
+import { createNativeV4Monetization, createV4MonetizationAdapter, hasV4AdFreeEntitlement, V4_DAILY_REWARDED_LIMIT, V4MonetizationAdapter } from '../monetization';
+
+const nativeBridge = vi.hoisted(() => ({
+  onAdFreeChanged: null as ((owned: boolean) => void) | null,
+}));
+
+vi.mock('../../services/MonetizationService', () => ({
+  MonetizationService: class {
+    constructor(options: { onAdFreeChanged: (owned: boolean) => void }) {
+      nativeBridge.onAdFreeChanged = options.onAdFreeChanged;
+    }
+
+    async initialize() {}
+    async queryProducts() { return []; }
+    async restorePurchasesManually() { return []; }
+    async showRewardedAd() { return true; }
+    async purchase() { return true; }
+    isAdFreeOwned() { return false; }
+  },
+}));
 
 describe('v4 monetization adapter', () => {
   it('recognizes only the ad-free product during purchase restoration', () => {
@@ -218,6 +237,18 @@ describe('v4 monetization adapter', () => {
     });
 
     expect(adapter.isAdFree()).toBe(false);
+  });
+
+  it('mirrors an entitlement change delivered through the native bridge callback', async () => {
+    nativeBridge.onAdFreeChanged = null;
+    const handle = await createNativeV4Monetization();
+
+    const onAdFreeChanged = nativeBridge.onAdFreeChanged as ((owned: boolean) => void) | null;
+    expect(onAdFreeChanged).not.toBeNull();
+    if (!onAdFreeChanged) return;
+    onAdFreeChanged(true);
+
+    expect(handle.adapter.isAdFree()).toBe(true);
   });
 
   it('resets the rewarded limit when the local calendar day changes', async () => {

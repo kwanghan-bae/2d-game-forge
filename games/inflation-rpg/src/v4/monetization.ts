@@ -133,10 +133,12 @@ export async function createNativeV4Monetization(
     import('../config/monetization.config'),
   ]);
   let adFreeOwned = options.adFreeOwned ?? false;
+  let updateAdapterEntitlement: ((owned: boolean) => void) | undefined;
   const service = new MonetizationService({
     adFreeOwned,
     onAdFreeChanged: (owned) => {
       adFreeOwned = owned;
+      updateAdapterEntitlement?.(owned);
       options.onAdFreeChanged?.(owned);
     },
     onCrackStonesAwarded: (amount) => options.onCrackStonesAwarded?.(amount),
@@ -148,6 +150,7 @@ export async function createNativeV4Monetization(
     const restored = await service.restorePurchasesManually();
     return hasV4AdFreeEntitlement(restored);
   });
+  updateAdapterEntitlement = (owned) => adapter.setAdFreeOwned(owned);
   adapter.setAdFreeOwned(adFreeOwned);
   const syncEntitlement = () => {
     const owned = service.isAdFreeOwned();
