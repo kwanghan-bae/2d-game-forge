@@ -1918,6 +1918,23 @@ describe('v4 save and domain', () => {
     expect(result.error).toContain('회복');
   });
 
+  it.each([
+    ['missing', undefined],
+    ['not-a-number', Number.NaN],
+    ['infinite', Number.POSITIVE_INFINITY],
+    ['unsafe', Number.MAX_VALUE],
+  ])('rejects expedition start when hero HP is %s', (_label, hp) => {
+    const malformed = createInitialV4Save(201);
+    malformed.run.hero.hp = hp as never;
+
+    const result = startExpedition(malformed, 'joseon_plains', malformed.updatedAt, 'aggression', null);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(malformed);
+    expect(malformed.meta.currencies.spirit).toBe(100);
+    expect(malformed.run.expedition).toBeNull();
+  });
+
   it('rejuvenates the eternal hero through V4 storage with a gold cost and saga entry', () => {
     const initial = createInitialV4Save(12);
     const result = rejuvenateHero(initial, 5, initial.createdAt + 1_000);

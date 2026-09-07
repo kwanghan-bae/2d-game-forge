@@ -152,7 +152,13 @@ function isValidInterventionCharges(value: number): boolean {
 }
 
 function isValidCurrencyBalance(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+  return isPersistableFiniteNumber(value) && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isPersistableFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number'
+    && Number.isFinite(value)
+    && Math.abs(value) <= MAX_ECONOMY_VALUE;
 }
 
 function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
@@ -1122,6 +1128,14 @@ export function startExpedition(
 ): DomainResult {
   if (!isV4Policy(policy)) {
     return { ok: false, save: source, error: '알 수 없는 원정 정책입니다.' };
+  }
+  const sourceHero = source.run.hero;
+  if (!isPersistableFiniteNumber(sourceHero.hp)
+    || !isPersistableFiniteNumber(sourceHero.hpMax)
+    || sourceHero.hpMax <= 0
+    || sourceHero.hp < 0
+    || sourceHero.hp > sourceHero.hpMax) {
+    return { ok: false, save: source, error: '영웅 HP 정보를 확인할 수 없어 원정을 시작하지 않았습니다.' };
   }
   const save = cloneSave(source);
   const realm = getV4RealmDefinition(realmId);
