@@ -24,6 +24,11 @@ const RESOURCES = [
   ['rift', '균열석', '🪨'],
 ] as const;
 
+function formatHeaderResource(value: unknown): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '0';
+  return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))).toLocaleString('ko-KR');
+}
+
 export function V4App({ config }: Props) {
   const [nativeMonetization, setNativeMonetization] = useState<V4MonetizationAdapter | undefined>(undefined);
   const nativeMonetizationPromise = useRef<ReturnType<typeof createNativeV4Monetization> | null>(null);
@@ -125,7 +130,7 @@ export function V4App({ config }: Props) {
           </div>
         )}
         <div className="v4-resource-row" aria-label="보유 재화">
-          {RESOURCES.map(([key, label, icon]) => <div className="v4-resource" key={key}><span className="v4-resource-label">{icon} {label}</span><strong className="v4-resource-value">{game.save.meta.currencies[key].toLocaleString('ko-KR')}</strong></div>)}
+          {RESOURCES.map(([key, label, icon]) => <div className="v4-resource" key={key}><span className="v4-resource-label">{icon} {label}</span><strong className="v4-resource-value">{formatHeaderResource(game.save.meta.currencies[key])}</strong></div>)}
         </div>
         {game.message && <div className="v4-alert" role="status"><span>{game.message}</span><button type="button" className="v4-btn v4-btn--quiet v4-alert-close" onClick={game.closeMessage}>닫기</button></div>}
       </div>

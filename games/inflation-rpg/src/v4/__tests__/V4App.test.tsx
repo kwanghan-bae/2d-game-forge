@@ -133,6 +133,24 @@ describe('V4 app resume handling', () => {
     expect(screen.getByTestId('v4-app')).toHaveTextContent('정책 확인 필요');
   });
 
+  it('normalizes malformed resource values before rendering the header', () => {
+    const game = mockGame(vi.fn(), vi.fn());
+    game.save.meta.currencies.spirit = Number.NaN;
+    game.save.meta.currencies.gold = Number.POSITIVE_INFINITY;
+    game.save.meta.currencies.materials = -25;
+    vi.mocked(useV4Game).mockReturnValue(game);
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    const resources = screen.getByLabelText('보유 재화');
+    expect(resources.textContent).toContain('신력0');
+    expect(resources.textContent).toContain('금화0');
+    expect(resources.textContent).toContain('재료0');
+    expect(resources).not.toHaveTextContent('NaN');
+    expect(resources).not.toHaveTextContent('∞');
+    expect(resources).not.toHaveTextContent('-25');
+  });
+
   it('keeps the offline result modal focus above the town heading', () => {
     const offlineSummary: OfflineSummary = {
       processedSeconds: 3_600,
