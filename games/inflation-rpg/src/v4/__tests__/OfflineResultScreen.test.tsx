@@ -122,6 +122,14 @@ describe('V4 offline result screen', () => {
     expect(result.textContent).not.toContain('9,007,199,254,740,992');
   });
 
+  it('caps an unsafe processed duration at the offline settlement limit', () => {
+    render(<OfflineResultScreen summary={summary({ processedSeconds: Number.MAX_SAFE_INTEGER + 3_600 })} onClose={() => {}} />);
+
+    const result = screen.getByTestId('v4-offline-result');
+    expect(result).toHaveTextContent('8시간 0분 동안 안전한 작업을 정산했습니다.');
+    expect(result.textContent).not.toContain('2,501,999,792,984시간');
+  });
+
   it('shows offline settlement notes that explain the applied boundary', () => {
     render(<OfflineResultScreen summary={summary({ notes: ['안전한 작업만 오프라인으로 정산했습니다.'] })} onClose={() => {}} />);
 

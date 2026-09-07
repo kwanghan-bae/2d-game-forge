@@ -3,6 +3,7 @@ import type { OfflineSummary } from '../types';
 import { getV4CurrencyName } from '../data';
 import { getV4EquipmentName } from '../equipment';
 import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
+import { V4_OFFLINE_CAP_MS } from '../save';
 
 interface Props {
   summary: OfflineSummary;
@@ -20,6 +21,8 @@ function safePositiveResource(value: unknown): number | null {
   const amount = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value)));
   return amount > 0 ? amount : null;
 }
+
+const MAX_OFFLINE_DISPLAY_SECONDS = V4_OFFLINE_CAP_MS / 1000;
 
 export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = false, onClose, onOpenExpedition, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
   const dialogRef = useRef<HTMLElement>(null);
@@ -69,7 +72,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
   }, [onClose]);
 
   const processedSeconds = typeof summary.processedSeconds === 'number' && Number.isFinite(summary.processedSeconds)
-    ? Math.max(0, summary.processedSeconds)
+    ? Math.min(MAX_OFFLINE_DISPLAY_SECONDS, Math.max(0, Math.floor(summary.processedSeconds)))
     : 0;
   const efficiency = typeof summary.efficiency === 'number' && Number.isFinite(summary.efficiency)
     ? Math.min(1, Math.max(0, summary.efficiency))
