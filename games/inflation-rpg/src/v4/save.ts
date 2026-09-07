@@ -238,6 +238,11 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   const hasTrainingTask = Object.values(tasks).some((task) => isRecord(task) && task.facilityId === 'training');
   if (expedition !== null && hasTrainingTask) return false;
   const lastExpeditionResult = run.lastExpeditionResult;
+  // A new expedition clears the previous result before charging its cost.
+  // Keeping both records would let a partially-written save expose a stale
+  // result while a different run is active, so quarantine the contradiction
+  // instead of guessing which side should win during hydration.
+  if (expedition !== null && lastExpeditionResult !== undefined && lastExpeditionResult !== null) return false;
   if (lastExpeditionResult !== undefined && lastExpeditionResult !== null) {
     if (!isExpeditionResultRecord(lastExpeditionResult)
       || typeof lastExpeditionResult.completedAt !== 'number'

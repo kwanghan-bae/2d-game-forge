@@ -8,6 +8,7 @@ import {
   V4_RECOVERY_BACKUP_KEY,
   V4_SAVE_KEY,
 } from '../save';
+import { startExpedition } from '../domain';
 import { V4_MAX_SAGA_ENTRIES } from '../types';
 
 function memoryStorage(initial: Record<string, string> = {}) {
@@ -56,6 +57,36 @@ describe('V4 save recovery boundary', () => {
       expect(() => readV4Save(storage)).not.toThrow();
       expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
     }
+  });
+
+  it('rejects a payload that combines an active expedition with an old result', () => {
+    const base = createInitialV4Save(6541);
+    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.lastExpeditionResult = {
+      id: 'old-result',
+      realmId: 'joseon_plains',
+      outcome: 'victory',
+      completedAt: started.save.updatedAt,
+      reward: { gold: 1 },
+      heroPower: 200,
+      recommendedPower: 120,
+      turns: 1,
+      totalDamageDealt: 1,
+      totalDamageTaken: 1,
+      heroRemainingHp: started.save.run.hero.hp,
+      weaknessKR: '기록',
+      recommendedFacilityId: 'training',
+      recommendedEquipmentId: null,
+      retryAfterSeconds: 0,
+      successChance: 0.9,
+      encountersCleared: 1,
+      totalEncounterCount: 3,
+    };
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(started.save) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
   });
 
   it('backs up the invalid payload only when the player starts a fresh V4 save', () => {
