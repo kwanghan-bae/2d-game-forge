@@ -44,7 +44,12 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
           const definition = getV4EquipmentDefinition(equipmentId);
           const level = hero.equipmentLevels?.[equipmentId] ?? 1;
           const bonuses = definition
-            ? [`공격 +${definition.atk * level}`, `방어 +${definition.def * level}`, `HP +${definition.hpMax * level}`].filter((value) => !value.endsWith('+0'))
+            ? [
+              `공격 +${definition.atk * level}`,
+              `방어 +${definition.def * level}`,
+              `HP +${definition.hpMax * level}`,
+              ...(definition.critRate > 0 ? [`치명타 +${Math.round(definition.critRate * level * 100)}%`] : []),
+            ].filter((value) => !value.endsWith('+0'))
             : [];
           return (
             <div className="v4-agent" key={equipmentId}>
