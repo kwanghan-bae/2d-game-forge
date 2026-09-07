@@ -39,7 +39,16 @@ export class IapManager {
   async purchase(productId: IapProductId): Promise<PurchaseResult> {
     const result = await this.plugin.purchase({ productId });
     if (result.status === 'success' && result.purchase) {
-      await this.plugin.acknowledge({ purchaseToken: result.purchase.purchaseToken });
+      try {
+        await this.plugin.acknowledge({ purchaseToken: result.purchase.purchaseToken });
+      } catch (error) {
+        // A non-consumable purchase is already owned once the store reports
+        // success. Do not make a transient acknowledgement outage hide the
+        // ad-free entitlement; a later restore can reconcile the store state.
+        // Consumables remain strict because granting before acknowledgement
+        // would make a retry capable of duplicating the currency award.
+        if (productId !== 'ad_free') throw error;
+      }
     }
     return result;
   }

@@ -62,6 +62,40 @@ describe('IapManager', () => {
     expect(plugin.acknowledge).not.toHaveBeenCalled();
   });
 
+  it('keeps a completed ad-free purchase successful when acknowledgement is temporarily unavailable', async () => {
+    plugin.purchase.mockResolvedValue({
+      status: 'success',
+      purchase: {
+        productId: 'ad_free',
+        purchaseToken: 'tok_ack_retry',
+        purchaseTime: 100,
+        acknowledged: false,
+      },
+    });
+    plugin.acknowledge.mockRejectedValueOnce(new Error('store temporarily unavailable'));
+
+    const result = await mgr.purchase('ad_free');
+
+    expect(result.status).toBe('success');
+    expect(result.purchase?.purchaseToken).toBe('tok_ack_retry');
+    expect(plugin.acknowledge).toHaveBeenCalledWith({ purchaseToken: 'tok_ack_retry' });
+  });
+
+  it('does not hide acknowledgement failures for consumable purchases', async () => {
+    plugin.purchase.mockResolvedValue({
+      status: 'success',
+      purchase: {
+        productId: 'crack_stone_pack_small',
+        purchaseToken: 'tok_consumable_ack',
+        purchaseTime: 100,
+        acknowledged: false,
+      },
+    });
+    plugin.acknowledge.mockRejectedValueOnce(new Error('store temporarily unavailable'));
+
+    await expect(mgr.purchase('crack_stone_pack_small')).rejects.toThrow('store temporarily unavailable');
+  });
+
   it('restorePurchases returns the plugin result list', async () => {
     plugin.restorePurchases.mockResolvedValue({
       purchases: [
