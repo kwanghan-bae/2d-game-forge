@@ -1930,6 +1930,37 @@ describe('v4 save and domain', () => {
     expect(result.save.meta.sagaEntries[0]?.kind).toBe('rejuvenation');
   });
 
+  it.each([
+    ['missing', undefined],
+    ['fractional', 12.5],
+  ])('does not mutate a save when the rejuvenation gold balance is %s', (_label, gold) => {
+    const malformed = createInitialV4Save(721);
+    malformed.meta.currencies.gold = gold as never;
+
+    const result = rejuvenateHero(malformed, 5, malformed.updatedAt + 1_000);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(malformed);
+    expect(malformed.meta.currencies.gold).toBe(gold);
+  });
+
+  it.each([
+    ['fractional', 100.5],
+    ['infinite', Number.POSITIVE_INFINITY],
+  ])('rejects currency-paying actions when the gold balance is %s', (_label, gold) => {
+    const malformed = createInitialV4Save(722);
+    malformed.meta.currencies.gold = gold;
+
+    const task = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt, null);
+    const upgrade = upgradeFacility(malformed, 'temple', malformed.updatedAt + 1_000);
+
+    expect(task.ok).toBe(false);
+    expect(task.save).toBe(malformed);
+    expect(upgrade.ok).toBe(false);
+    expect(upgrade.save).toBe(malformed);
+    expect(malformed.meta.currencies.gold).toBe(gold);
+  });
+
   it('keeps V4 hero decisions and battle independent from the V3 cycle controller', () => {
     const save = createInitialV4Save(10);
     const runtime = createV4HeroRuntime(save.run.hero);

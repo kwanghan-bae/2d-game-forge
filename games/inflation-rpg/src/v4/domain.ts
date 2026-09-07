@@ -151,8 +151,17 @@ function isValidInterventionCharges(value: number): boolean {
     && value <= V4_MAX_INTERVENTION_CHARGES;
 }
 
+function isValidCurrencyBalance(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
 function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
-  return Object.entries(input).every(([key, value]) => save.meta.currencies[key as V4CurrencyKey] >= (value ?? 0));
+  return Object.entries(input).every(([key, value]) => {
+    const balance = save.meta.currencies[key as V4CurrencyKey];
+    return isValidCurrencyBalance(balance)
+      && isValidCurrencyBalance(value)
+      && balance >= value;
+  });
 }
 
 function pay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): void {
@@ -556,17 +565,23 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
     return { ok: false, save: source, error: '원정 중에는 회춘 의식을 진행할 수 없습니다.' };
   }
 
-  const save = cloneSave(source);
-  const eventAt = eventTimestamp(save, now);
-  const runtime = createV4HeroRuntime(save.run.hero);
+  const gold = source.meta.currencies.gold;
+  if (!isValidCurrencyBalance(gold)) {
+    return { ok: false, save: source, error: '금화 잔액을 확인할 수 없어 회춘하지 않았습니다.' };
+  }
+
+  const eventAt = eventTimestamp(source, now);
+  const runtime = createV4HeroRuntime(source.run.hero);
   const result = runtime.rejuvenate(years);
   if (result.yearsReduced <= 0) {
     return { ok: false, save: source, error: '영웅은 이미 가장 젊은 상태입니다.' };
   }
-  if (save.meta.currencies.gold < result.cost) {
+  if (gold < result.cost) {
     return { ok: false, save: source, error: `회춘 비용 ${result.cost} 금화가 부족합니다.` };
   }
 
+  const save = cloneSave(source);
+  save.meta.currencies.gold = gold;
   save.meta.currencies.gold -= result.cost;
   save.run.hero = result.snapshot;
   save.meta.sagaEntries.unshift({
