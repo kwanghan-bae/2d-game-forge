@@ -306,8 +306,9 @@ pnpm circular
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
 - 전체 게임 단위/컴포넌트 테스트(V4 포함): 398개 파일, 3,466개 테스트 통과.
-- V4 Chromium·iPhone 14 E2E: 30/30 통과(각 프로젝트 15/15).
-- V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22, 4.9분).
+- 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
+- V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
+- V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 5.0분).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - workspace `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `pnpm build` 통과.
