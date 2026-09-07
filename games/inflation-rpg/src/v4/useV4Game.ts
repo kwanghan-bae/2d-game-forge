@@ -60,11 +60,15 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   const settleOffline = useCallback(() => {
     if (storageStatus === 'invalid') return;
-    const result = simulateOfflineProgress(saveRef.current, Date.now());
-    saveRef.current = result.save;
-    setSave(result.save);
-    const persisted = persistV4Save(result.save);
-    setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
+    const current = saveRef.current;
+    const result = simulateOfflineProgress(current, Date.now());
+    const shouldPersist = result.save !== current || storageStatus !== 'valid';
+    if (shouldPersist) {
+      saveRef.current = result.save;
+      setSave(result.save);
+      const persisted = persistV4Save(result.save);
+      setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
+    }
     if (result.summary.processedSeconds > 0 || result.summary.clockAnomaly) {
       setOfflineSummary(result.summary);
       setOfflineRewardDoubled(false);

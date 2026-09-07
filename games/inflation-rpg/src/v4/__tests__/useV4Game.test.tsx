@@ -157,6 +157,23 @@ describe('useV4Game monetization actions', () => {
     setItemSpy.mockRestore();
   });
 
+  it('does not persist or rerender when resume has no new offline work', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    persistV4Save(createInitialV4Save(901));
+    const setItemSpy = vi.spyOn(window.localStorage, 'setItem');
+
+    render(<Harness monetization={new V4MonetizationAdapter(null, null)} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'resume' }));
+      fireEvent.click(screen.getByRole('button', { name: 'resume' }));
+    });
+
+    expect(setItemSpy).not.toHaveBeenCalled();
+    expect(screen.getByTestId('offline-state')).toHaveTextContent('pending');
+    setItemSpy.mockRestore();
+  });
+
   it('does not request an ad when offline settlement has no positive currency reward', async () => {
     const base = createInitialV4Save(89);
     const startedAt = Date.now() - 60_000;
@@ -322,6 +339,18 @@ describe('useV4Game save recovery', () => {
   afterEach(() => {
     vi.useRealTimers();
     localStorage.clear();
+  });
+
+  it('persists a newly created save even when the offline window is empty', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const setItemSpy = vi.spyOn(window.localStorage, 'setItem');
+
+    render(<RecoveryHarness />);
+
+    expect(screen.getByTestId('storage-status')).toHaveTextContent('valid');
+    expect(setItemSpy).toHaveBeenCalledTimes(1);
+    setItemSpy.mockRestore();
   });
 
   it('does not overwrite an invalid save until the player explicitly starts fresh', async () => {
