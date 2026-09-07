@@ -47,7 +47,7 @@ class OnestoreIapPlugin : Plugin() {
     private var connected = false
     private var connectionInFlight = false
     private var initializeTimeout: Runnable? = null
-    private var pendingPurchase: PendingPurchase? = null
+    private val pendingPurchase = PendingPurchaseSlot<PendingPurchase>()
     private var pendingPurchaseTimeout: Runnable? = null
     private val purchaseTimeoutHandler = Handler(Looper.getMainLooper())
     private val initializeCalls = mutableListOf<PluginCall>()
@@ -71,23 +71,21 @@ class OnestoreIapPlugin : Plugin() {
                 val purchaseObject = purchaseToJs(purchase)
                 emitPurchaseUpdated(purchaseObject)
 
-                val pending = pendingPurchase
-                if (pending != null && pending.productId == purchase.getProductId()) {
+                if (pendingPurchase.peekProductId() == purchase.getProductId()) {
                     val response = JSObject()
                     response.put("status", "success")
                     response.put("purchase", purchaseObject)
-                    takePendingPurchase()?.call?.resolve(response)
+                    pendingPurchase.takeIfMatches(purchase.getProductId())?.call?.resolve(response)
                 }
             }
 
             if (purchased.isEmpty()) {
-                val pending = pendingPurchase
-                if (pending != null) {
+                if (pendingPurchase.hasPending()) {
                     takePendingPurchase()?.call?.resolve(failedPurchase("구매 결과를 확인하지 못했습니다.", result))
                 }
             } else {
-                val pending = pendingPurchase
-                if (pending != null && purchased.none { it.getProductId() == pending.productId }) {
+                val pendingProductId = pendingPurchase.peekProductId()
+                if (pendingProductId != null && purchased.none { it.getProductId() == pendingProductId }) {
                     takePendingPurchase()?.call?.resolve(failedPurchase("요청한 상품의 구매 결과를 확인하지 못했습니다.", result))
                 }
             }
@@ -139,8 +137,7 @@ class OnestoreIapPlugin : Plugin() {
                         connectionInFlight = false
                         rejectInitializeCalls("ONE store IAP service disconnected")
                     }
-                    val pending = pendingPurchase
-                    if (pending != null) {
+                    if (pendingPurchase.hasPending()) {
                         takePendingPurchase()?.call?.resolve(failedPurchase("ONE store IAP service disconnected"))
                     }
                 }
@@ -212,7 +209,7 @@ class OnestoreIapPlugin : Plugin() {
             call.reject("productId is required")
             return
         }
-        if (pendingPurchase != null) {
+        if (pendingPurchase.hasPending()) {
             call.reject("another purchase is already in progress")
             return
         }
@@ -226,14 +223,14 @@ class OnestoreIapPlugin : Plugin() {
             .setProductId(productId)
             .setProductType(PurchaseClient.ProductType.INAPP)
             .build()
-        pendingPurchase = PendingPurchase(productId, call)
+        pendingPurchase.start(productId, PendingPurchase(productId, call))
         try {
             val launchResult = client.launchPurchaseFlow(currentActivity, params)
             if (!launchResult.isSuccess) {
                 takePendingPurchase()?.call?.resolve(purchaseResult(launchResult))
                 return
             }
-            if (pendingPurchase?.productId == productId) schedulePendingPurchaseTimeout(productId)
+            if (pendingPurchase.peekProductId() == productId) schedulePendingPurchaseTimeout(productId)
             // The final result is delivered by onPurchasesUpdated. Keeping the
             // call here prevents a successful dialog launch from being
             // mistaken for a completed and grantable purchase.
@@ -382,19 +379,16 @@ class OnestoreIapPlugin : Plugin() {
     private fun schedulePendingPurchaseTimeout(productId: String) {
         pendingPurchaseTimeout?.let { purchaseTimeoutHandler.removeCallbacks(it) }
         val timeout = Runnable {
-            val pending = pendingPurchase
-            if (pending == null || pending.productId != productId) return@Runnable
+            if (pendingPurchase.peekProductId() != productId) return@Runnable
             pendingPurchaseTimeout = null
-            pendingPurchase = null
-            pending.call.resolve(failedPurchase("구매 응답 제한 시간이 지나 결제를 확인하지 못했습니다."))
+            pendingPurchase.take()?.call?.resolve(failedPurchase("구매 응답 제한 시간이 지나 결제를 확인하지 못했습니다."))
         }
         pendingPurchaseTimeout = timeout
         purchaseTimeoutHandler.postDelayed(timeout, NATIVE_OPERATION_TIMEOUT_MS)
     }
 
     private fun takePendingPurchase(): PendingPurchase? {
-        val pending = pendingPurchase
-        pendingPurchase = null
+        val pending = pendingPurchase.take()
         pendingPurchaseTimeout?.let { purchaseTimeoutHandler.removeCallbacks(it) }
         pendingPurchaseTimeout = null
         return pending
