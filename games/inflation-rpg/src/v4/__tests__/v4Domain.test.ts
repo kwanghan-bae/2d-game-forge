@@ -668,6 +668,21 @@ describe('v4 save and domain', () => {
     expect(replay.save.meta.currencies).toEqual(offline.save.meta.currencies);
   });
 
+  it('reports an offline equipment upgrade separately from a new equipment gain', () => {
+    const initial = createInitialV4Save(708);
+    initial.run.hero.equipmentIds = ['v4_iron_sword'];
+    initial.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const offline = simulateOfflineProgress(started.save, initial.createdAt + HOUR);
+
+    expect(offline.summary.equipmentGained).toEqual([]);
+    expect(offline.summary.equipmentUpgraded).toEqual(['v4_iron_sword']);
+    expect(offline.save.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 2 });
+  });
+
   it('does not create a second save when a resume has no newly due work', () => {
     const initial = createInitialV4Save(708);
     const settled = simulateOfflineProgress(initial, initial.createdAt + HOUR);

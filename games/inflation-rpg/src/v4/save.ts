@@ -518,6 +518,12 @@ function resourceDelta(
   return result;
 }
 
+function summaryEquipmentLevel(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(20, Math.max(1, Math.floor(value)))
+    : 1;
+}
+
 export function simulateOfflineProgress(
   save: V4SaveEnvelope,
   now: number,
@@ -534,7 +540,7 @@ export function simulateOfflineProgress(
       save,
       summary: {
         processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
-        completedExpedition: false, resourcesGained: {}, equipmentGained: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [], equipmentUpgraded: [],
         wasClamped: false, clockAnomaly: 'invalid',
         notes: ['기기 시각을 확인할 수 없습니다. 보상을 정산하지 않았습니다.'],
       },
@@ -546,7 +552,7 @@ export function simulateOfflineProgress(
       save,
       summary: {
         processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
-        completedExpedition: false, resourcesGained: {}, equipmentGained: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [], equipmentUpgraded: [],
         wasClamped: false, clockAnomaly: 'backwards',
         notes: ['기기의 시간이 이전 처리 시각보다 빠릅니다. 보상을 중복 정산하지 않았습니다.'],
       },
@@ -558,7 +564,7 @@ export function simulateOfflineProgress(
       save,
       summary: {
         processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
-        completedExpedition: false, resourcesGained: {}, equipmentGained: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [], equipmentUpgraded: [],
         wasClamped: false, clockAnomaly: 'future',
         notes: ['저장 시각이 현재 기기 시각보다 미래입니다. 시계를 확인한 뒤 다시 시도해 주세요.'],
       },
@@ -574,7 +580,7 @@ export function simulateOfflineProgress(
       save,
       summary: {
         processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
-        completedExpedition: false, resourcesGained: {}, equipmentGained: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [], equipmentUpgraded: [],
         wasClamped: false, clockAnomaly: null,
         notes: [],
       },
@@ -600,7 +606,10 @@ export function simulateOfflineProgress(
       completedTaskIds,
       completedExpedition,
       resourcesGained: resourceDelta(beforeCurrencies, nextSave.meta.currencies),
-      equipmentGained: nextSave.run.hero.equipmentIds.filter((id, index) => beforeEquipment[index] !== id),
+      equipmentGained: nextSave.run.hero.equipmentIds.filter((id) => !beforeEquipment.includes(id)),
+      equipmentUpgraded: nextSave.run.hero.equipmentIds.filter((id) => beforeEquipment.includes(id)
+        && summaryEquipmentLevel(nextSave.run.hero.equipmentLevels?.[id])
+          > summaryEquipmentLevel(save.run.hero.equipmentLevels?.[id])),
       wasClamped: rawElapsed > V4_OFFLINE_CAP_MS,
       clockAnomaly: null,
       notes: rawElapsed === 0 ? [] : ['안전한 시설 작업과 원정만 오프라인으로 정산했습니다.'],

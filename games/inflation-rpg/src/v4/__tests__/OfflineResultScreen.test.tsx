@@ -10,6 +10,7 @@ const summary = (overrides: Partial<OfflineSummary> = {}): OfflineSummary => ({
   completedExpedition: false,
   resourcesGained: { gold: 55 },
   equipmentGained: [],
+  equipmentUpgraded: [],
   wasClamped: false,
   clockAnomaly: null,
   notes: [],
@@ -22,6 +23,12 @@ describe('V4 offline result screen', () => {
 
     expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('마을의 철검');
     expect(screen.getByTestId('v4-offline-result').textContent).not.toContain('v4_iron_sword');
+  });
+
+  it('shows offline equipment upgrades separately from newly gained gear', () => {
+    render(<OfflineResultScreen summary={summary({ equipmentUpgraded: ['v4_iron_sword'] })} onClose={() => {}} />);
+
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('장비 강화 · 마을의 철검');
   });
 
   it('explains whether the device clock moved backwards or into the future', () => {

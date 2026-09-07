@@ -81,6 +81,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       || result.summary.completedTaskIds.length > 0
       || result.summary.completedExpedition
       || result.summary.equipmentGained.length > 0
+      || result.summary.equipmentUpgraded.length > 0
       || Object.values(result.summary.resourcesGained).some(
         (value) => typeof value === 'number' && Number.isFinite(value) && value > 0,
       );

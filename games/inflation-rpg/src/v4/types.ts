@@ -165,6 +165,7 @@ export interface OfflineSummary {
   completedExpedition: boolean;
   resourcesGained: Partial<Record<V4CurrencyKey, number>>;
   equipmentGained: string[];
+  equipmentUpgraded: string[];
   wasClamped: boolean;
   clockAnomaly: 'backwards' | 'future' | 'invalid' | null;
   notes: string[];

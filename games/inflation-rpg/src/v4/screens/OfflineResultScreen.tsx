@@ -90,6 +90,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
             : <div className="v4-detail-stat"><small>정산</small><strong>획득 재화 없음</strong></div>}
         </div>
         {summary.equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {summary.equipmentGained.map(getV4EquipmentName).join(', ')}</div>}
+        {summary.equipmentUpgraded.length > 0 && <div className="v4-alert">장비 강화 · {summary.equipmentUpgraded.map(getV4EquipmentName).join(', ')}</div>}
         <p>{summary.completedTaskIds.length}개 작업 완료 · {summary.completedExpedition
           ? '원정 귀환 완료 · 다음 Realm 해금은 원정 화면에서 확인'
           : pendingExpeditionConfirmation
