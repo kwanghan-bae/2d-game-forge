@@ -15,10 +15,12 @@ export class AdManager {
   private bannerVisible = false;
   private bannerDesiredVisible = false;
   private bannerReconcileInFlight: Promise<void> | null = null;
+  private disposed = false;
 
   constructor(private cfg: AdManagerConfig) {}
 
   async initialize(): Promise<void> {
+    if (this.disposed) return;
     if (this.initialized) return;
     if (this.initializeInFlight) return this.initializeInFlight;
     const pending = this.initializeProvider();
@@ -31,21 +33,24 @@ export class AdManager {
   }
 
   private async initializeProvider(): Promise<void> {
+    if (this.disposed) return;
     try {
       await AdMob.initialize({
         initializeForTesting: true,
       });
-      this.initialized = true;
+      if (!this.disposed) this.initialized = true;
     } catch (e) {
       console.warn('[AdManager] initialize failed:', e);
     }
   }
 
   async showRewardedAd(): Promise<boolean> {
+    if (this.disposed) return false;
     try {
       await AdMob.prepareRewardVideoAd({ adId: this.cfg.rewardedUnitId });
+      if (this.disposed) return false;
       const result = await AdMob.showRewardVideoAd();
-      return result !== null && result !== undefined;
+      return !this.disposed && result !== null && result !== undefined;
     } catch (e) {
       console.warn('[AdManager] showRewardedAd failed:', e);
       return false;
@@ -53,6 +58,7 @@ export class AdManager {
   }
 
   async showBanner(): Promise<void> {
+    if (this.disposed) return;
     this.bannerDesiredVisible = true;
     return this.reconcileBannerVisibility();
   }
@@ -60,6 +66,12 @@ export class AdManager {
   async hideBanner(): Promise<void> {
     this.bannerDesiredVisible = false;
     return this.reconcileBannerVisibility();
+  }
+
+  async dispose(): Promise<void> {
+    this.disposed = true;
+    this.bannerDesiredVisible = false;
+    await this.reconcileBannerVisibility();
   }
 
   private async reconcileBannerVisibility(): Promise<void> {

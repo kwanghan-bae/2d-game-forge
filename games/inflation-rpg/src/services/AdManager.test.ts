@@ -89,4 +89,34 @@ describe('AdManager', () => {
     expect(AdMob.hideBanner).toHaveBeenCalledTimes(1);
     expect(mgr.isBannerVisible()).toBe(false);
   });
+
+  it('does not show a rewarded ad after disposal wins the prepare race', async () => {
+    let releasePrepare!: () => void;
+    const preparePending = new Promise<void>((resolve) => { releasePrepare = resolve; });
+    (AdMob.prepareRewardVideoAd as ReturnType<typeof vi.fn>).mockReturnValueOnce(preparePending);
+
+    const rewarded = mgr.showRewardedAd();
+    await Promise.resolve();
+    await mgr.dispose();
+    releasePrepare();
+
+    await expect(rewarded).resolves.toBe(false);
+    expect(AdMob.showRewardVideoAd).not.toHaveBeenCalled();
+  });
+
+  it('hides a banner when disposal races with an in-flight show', async () => {
+    let releaseShow!: () => void;
+    const showPending = new Promise<void>((resolve) => { releaseShow = resolve; });
+    (AdMob.showBanner as ReturnType<typeof vi.fn>).mockReturnValueOnce(showPending);
+
+    const show = mgr.showBanner();
+    await Promise.resolve();
+    const dispose = mgr.dispose();
+    releaseShow();
+
+    await Promise.all([show, dispose]);
+
+    expect(AdMob.hideBanner).toHaveBeenCalledTimes(1);
+    expect(mgr.isBannerVisible()).toBe(false);
+  });
 });

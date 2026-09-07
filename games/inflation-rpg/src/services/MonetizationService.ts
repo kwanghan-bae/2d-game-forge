@@ -84,7 +84,8 @@ export class MonetizationService {
   async showRewardedAd(): Promise<boolean> {
     if (this.disposed) return false;
     if (this.adFreeOwned) return true;
-    return this.ad.showRewardedAd();
+    const result = await this.ad.showRewardedAd();
+    return !this.disposed && result;
   }
 
   async purchase(productId: IapProductId): Promise<boolean> {
@@ -123,7 +124,7 @@ export class MonetizationService {
   async dispose(): Promise<void> {
     this.disposed = true;
     await Promise.all([
-      this.ad.hideBanner(),
+      this.ad.dispose(),
       this.iap.dispose?.(),
     ]);
   }

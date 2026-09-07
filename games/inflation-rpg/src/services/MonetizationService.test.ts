@@ -13,6 +13,7 @@ describe('MonetizationService', () => {
   let adShowRewarded: ReturnType<typeof vi.fn>;
   let adShowBanner: ReturnType<typeof vi.fn>;
   let adHideBanner: ReturnType<typeof vi.fn>;
+  let adDispose: ReturnType<typeof vi.fn>;
   let iapInit: ReturnType<typeof vi.fn>;
   let iapRestore: ReturnType<typeof vi.fn>;
   let iapPurchase: ReturnType<typeof vi.fn>;
@@ -24,6 +25,7 @@ describe('MonetizationService', () => {
     adShowRewarded = vi.fn().mockResolvedValue(true);
     adShowBanner = vi.fn().mockResolvedValue(undefined);
     adHideBanner = vi.fn().mockResolvedValue(undefined);
+    adDispose = vi.fn().mockResolvedValue(undefined);
     iapInit = vi.fn().mockResolvedValue(undefined);
     iapRestore = vi.fn().mockResolvedValue([]);
     iapPurchase = vi.fn();
@@ -36,6 +38,7 @@ describe('MonetizationService', () => {
         showRewardedAd: adShowRewarded,
         showBanner: adShowBanner,
         hideBanner: adHideBanner,
+        dispose: adDispose,
       };
     });
     (IapManager as unknown as { mockImplementation: (fn: (...args: unknown[]) => unknown) => void }).mockImplementation(function (...args: unknown[]) {
@@ -151,7 +154,20 @@ describe('MonetizationService', () => {
 
     await Promise.all([initialize, dispose]);
 
-    expect(adHideBanner).toHaveBeenCalled();
+    expect(adDispose).toHaveBeenCalled();
     expect(adShowBanner).not.toHaveBeenCalled();
+  });
+
+  it('does not report a rewarded success when dispose wins the provider race', async () => {
+    let releaseRewarded!: (result: boolean) => void;
+    adShowRewarded.mockReturnValueOnce(new Promise<boolean>((resolve) => { releaseRewarded = resolve; }));
+
+    const rewarded = svc.showRewardedAd();
+    await Promise.resolve();
+    const dispose = svc.dispose();
+    releaseRewarded(true);
+
+    await Promise.all([dispose, expect(rewarded).resolves.toBe(false)]);
+    expect(adDispose).toHaveBeenCalledOnce();
   });
 });
