@@ -157,6 +157,9 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       const raw = localStorage.getItem(key);
       if (!raw) throw new Error('v4 save was not created');
       const save = JSON.parse(raw) as {
+        createdAt: number;
+        updatedAt: number;
+        lastProcessedAt: number;
         meta: { unlockedRealms: string[] };
         run: { hero: { hp: number }; expedition: { realmId: string; completesAt: number; encounterIndex: number } | null };
       };
@@ -166,10 +169,15 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       save.run.expedition.realmId = 'deep_forest';
       save.run.expedition.encounterIndex = 2;
       save.run.expedition.completesAt = Date.now() - 1;
+      save.createdAt = Date.now() - 60_000;
+      save.lastProcessedAt = save.createdAt;
+      save.updatedAt = save.createdAt;
       localStorage.setItem(key, JSON.stringify(save));
     }, V4_SAVE_KEY);
     await page.reload();
 
+    await expect(page.getByTestId('v4-offline-result')).toContainText('위험 원정 결과 확인 필요');
+    await page.getByRole('button', { name: '마을 확인' }).click();
     await page.getByRole('button', { name: '원정 준비 →' }).click();
     await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 결과 확인 필요');
     await page.getByRole('button', { name: '보스 결과 확인' }).click();

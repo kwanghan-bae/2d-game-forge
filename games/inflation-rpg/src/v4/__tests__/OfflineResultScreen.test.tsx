@@ -42,6 +42,13 @@ describe('V4 offline result screen', () => {
     expect(screen.getByRole('button', { name: '이번 정산은 2배 대상 없음' })).toBeDisabled();
   });
 
+  it('calls out a risky expedition that still needs player confirmation', () => {
+    render(<OfflineResultScreen summary={summary()} pendingExpeditionConfirmation onClose={() => {}} />);
+
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('위험 원정 결과 확인 필요');
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('원정 화면에서 보스 결과를 확인하세요');
+  });
+
   it('does not expose an unknown resource storage key to players', () => {
     render(<OfflineResultScreen summary={summary({ resourcesGained: { unknown: 2 } as never })} onClose={() => {}} />);
 
