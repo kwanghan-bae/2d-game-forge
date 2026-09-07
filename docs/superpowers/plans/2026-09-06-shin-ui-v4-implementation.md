@@ -206,6 +206,7 @@ pnpm circular
 - 광고 보상 대기 중 V4 화면이 unmount되면 늦게 도착한 보상 성공을 저장에 커밋하지 않도록 hook lifecycle guard와 회귀 테스트를 추가했다.
 - 오프라인 결과 모달에서 계산된 `OfflineSummary.notes`를 실제 정산 안내로 표시해 상한·안전 작업·보류 경계를 사용자가 확인할 수 있게 했다.
 - dev-shell의 서버 manifest와 클라이언트 loader가 공용 data-only manifest를 사용하도록 통합해 slug·제품명·asset 경로 drift를 차단했다.
+- dev-shell 게임 route의 browser title·description도 공용 manifest 제품명에서 생성해 V4와 legacy의 화면 제목·탭 제목 drift를 차단했다.
 - dev-shell portal E2E에서 V4/legacy route가 각각 실제 V4App/V3 MainMenu를 마운트하는지 검증했다(4/4).
 - 포털에서 V4 진입 후 뒤로 돌아가 V3 legacy를 여는 browser navigation도 검증해 이전 게임 root가 남지 않음을 확인했다(5/5).
 - dev-shell 동적 게임 loader의 import/부팅 예외를 accessible 오류 상태로 격리하고, route cleanup 이후 늦게 도착한 promise의 마운트를 무시하도록 보강했다.

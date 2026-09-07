@@ -1,9 +1,16 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { findManifest } from '@/lib/registry.server';
 import GameMount from '@/components/GameMount';
 
 interface GamePageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: GamePageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const manifest = findManifest(slug);
+  return manifest ? { title: manifest.title, description: `${manifest.title} · 2d-game-forge` } : {};
 }
 
 export default async function GamePage({ params }: GamePageProps) {
