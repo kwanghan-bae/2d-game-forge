@@ -545,6 +545,9 @@ export function restAgent(
   const sourceAgent = source.meta.agents.find((agent) => agent.id === agentId);
   if (!sourceAgent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
   if (sourceAgent.activeTaskId) return { ok: false, save: source, error: '작업 중인 에이전트는 휴식할 수 없습니다.' };
+  if (!Number.isFinite(sourceAgent.fatigue) || sourceAgent.fatigue < 0 || sourceAgent.fatigue > 100) {
+    return { ok: false, save: source, error: '에이전트의 피로도를 확인할 수 없습니다.' };
+  }
   if (sourceAgent.fatigue <= 0) return { ok: false, save: source, error: '에이전트의 피로도가 이미 0입니다.' };
 
   const save = cloneSave(source);

@@ -1037,6 +1037,24 @@ describe('v4 save and domain', () => {
     expect(result.error).toContain('작업 중');
   });
 
+  it.each([
+    ['missing', undefined],
+    ['not-a-number', Number.NaN],
+    ['infinite', Number.POSITIVE_INFINITY],
+    ['over-cap', 101],
+  ])('rejects resting an agent with %s fatigue', (_label, fatigue) => {
+    const malformed = createInitialV4Save(133);
+    malformed.meta.agents = malformed.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, fatigue: fatigue as never }
+      : agent);
+
+    const result = restAgent(malformed, 'blacksmith', malformed.updatedAt + 1_000);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(malformed);
+    expect(malformed.meta.agents.find((agent) => agent.id === 'blacksmith')?.fatigue).toBe(fatigue);
+  });
+
   it('promotes an agent after trust grows through completed work', () => {
     const initial = createInitialV4Save(78);
     initial.meta.agents = initial.meta.agents.map((agent) => agent.id === 'blacksmith'
