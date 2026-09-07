@@ -618,6 +618,21 @@ describe('v4 save and domain', () => {
     });
   });
 
+  it('bounds derived hero action clocks when an imported age is extremely large', () => {
+    const source = {
+      name: '극한 영웅', emoji: '⚔️', age: Number.MAX_SAFE_INTEGER, chapter: '마지막', job: '검객',
+      level: 1, exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
+      actionCount: Number.NaN, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
+      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
+    } as unknown as HeroSnapshot;
+
+    const hero = migrateV3HeroSnapshot(source);
+
+    expect(hero.actionCount).toBe(Number.MAX_SAFE_INTEGER);
+    expect(Number.isSafeInteger(hero.actionCount)).toBe(true);
+  });
+
   it('settles completed facility work once and applies the 70% offline efficiency', () => {
     vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
     const initial = createInitialV4Save(7);
@@ -1555,6 +1570,20 @@ describe('v4 save and domain', () => {
     expect(result.snapshot.rejuvenationCount).toBe(1);
     expect(result.snapshot.hp).toBe(1_000);
     expect([result.yearsReduced, result.cost, result.snapshot.hp].every((value) => Number.isFinite(value))).toBe(true);
+  });
+
+  it('keeps rejuvenation action clocks persistable for an extremely old hero', () => {
+    const save = createInitialV4Save(122);
+    const runtime = createV4HeroRuntime({
+      ...save.run.hero,
+      age: Number.MAX_SAFE_INTEGER,
+      actionCount: Number.MAX_SAFE_INTEGER,
+    });
+
+    const result = runtime.rejuvenate(5);
+
+    expect(result.snapshot.actionCount).toBe(Number.MAX_SAFE_INTEGER);
+    expect(Number.isSafeInteger(result.snapshot.actionCount)).toBe(true);
   });
 
   it('keeps runtime snapshot cloning safe for malformed equipment collections', () => {

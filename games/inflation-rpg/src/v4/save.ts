@@ -84,6 +84,13 @@ function nonNegativeIntegerOr(value: unknown, fallback: number): number {
     : fallback;
 }
 
+function safeActionCountForAge(age: number): number {
+  const derived = HeroLifecycle.actionsForAge(age);
+  return Number.isFinite(derived)
+    ? Math.min(MAX_PERSISTED_NUMBER, Math.max(0, Math.floor(derived)))
+    : MAX_PERSISTED_NUMBER;
+}
+
 function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey, number>> {
   return isRecord(value) && Object.entries(value).every(([key, amount]) =>
     CURRENCY_KEYS.includes(key as V4CurrencyKey) && isPersistableNonNegativeNumber(amount));
@@ -410,7 +417,7 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): V4HeroSnapshot {
   const defBase = finiteNonNegativeOr(snapshot.defBase, fallbackDefBase);
   const fallbackDef = Math.round(hpMax * 0.1);
   const def = finiteNonNegativeOr(snapshot.def, finiteNonNegativeOr(snapshot.defBase, fallbackDef));
-  const actionCount = nonNegativeIntegerOr(snapshot.actionCount, HeroLifecycle.actionsForAge(age));
+  const actionCount = nonNegativeIntegerOr(snapshot.actionCount, safeActionCountForAge(age));
   const rejuvenationCount = nonNegativeIntegerOr(snapshot.rejuvenationCount, 0);
   return {
     name,

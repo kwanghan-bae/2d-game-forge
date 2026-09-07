@@ -59,6 +59,13 @@ function positiveFinite(value: unknown, fallback: number): number {
     : fallback;
 }
 
+function safeActionCountForAge(age: number): number {
+  const derived = HeroLifecycle.actionsForAge(age);
+  return Number.isFinite(derived)
+    ? Math.min(MAX_BATTLE_VALUE, Math.max(0, Math.floor(derived)))
+    : MAX_BATTLE_VALUE;
+}
+
 function addBattleDamage(total: number, amount: number): number {
   return Math.min(MAX_BATTLE_VALUE, total + amount);
 }
@@ -148,7 +155,7 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
       snapshot = {
         ...snapshot,
         age: nextAge,
-        actionCount: HeroLifecycle.actionsForAge(nextAge),
+        actionCount: safeActionCountForAge(nextAge),
         rejuvenationCount: Math.min(MAX_BATTLE_VALUE, currentRejuvenationCount + (safeYears > 0 ? 1 : 0)),
         hpMax: safeHpMax,
         hp: safeHpMax,
