@@ -130,6 +130,41 @@ describe('V4 save recovery boundary', () => {
     expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
   });
 
+  it('rejects a facility task with an empty player-facing type', () => {
+    const invalid = createInitialV4Save(6545);
+    const started = startFacilityTask(invalid, 'temple', invalid.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.task.type = '  ';
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(started.save) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+  });
+
+  it('rejects an expedition result with an empty weakness explanation', () => {
+    const invalid = createInitialV4Save(6546);
+    invalid.run.lastExpeditionResult = {
+      id: 'empty-weakness-result',
+      realmId: 'joseon_plains',
+      outcome: 'defeat',
+      completedAt: invalid.updatedAt,
+      reward: {},
+      heroPower: 90,
+      recommendedPower: 120,
+      turns: 3,
+      totalDamageDealt: 80,
+      totalDamageTaken: 120,
+      heroRemainingHp: 0,
+      weaknessKR: '',
+      recommendedFacilityId: 'blacksmith',
+      recommendedEquipmentId: null,
+      retryAfterSeconds: 45,
+    };
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(invalid) });
+
+    expect(readV4Save(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
+  });
+
   it('backs up the invalid payload only when the player starts a fresh V4 save', () => {
     const raw = JSON.stringify({ schemaVersion: 999, keep: 'for-recovery' });
     const storage = memoryStorage({ [V4_SAVE_KEY]: raw });

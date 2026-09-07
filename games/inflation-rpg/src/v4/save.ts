@@ -106,7 +106,7 @@ function isCurrencyRecord(value: unknown): value is Partial<Record<V4CurrencyKey
 
 function isFacilityTaskRecord(value: unknown): boolean {
   if (!isRecord(value) || !isNonEmptyString(value.id) || typeof value.facilityId !== 'string'
-    || !FACILITY_IDS.includes(value.facilityId as typeof FACILITY_IDS[number]) || typeof value.type !== 'string'
+    || !FACILITY_IDS.includes(value.facilityId as typeof FACILITY_IDS[number]) || !isNonEmptyString(value.type)
     || !isPersistableNonNegativeNumber(value.startedAt) || !isPersistableNonNegativeNumber(value.completesAt)
     || value.completesAt <= value.startedAt
     || !isCurrencyRecord(value.input) || !isCurrencyRecord(value.outputPreview)
@@ -151,7 +151,7 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
     && isPersistableNonNegativeNumber(value.totalDamageDealt)
     && isPersistableNonNegativeNumber(value.totalDamageTaken)
     && isPersistableNonNegativeNumber(value.heroRemainingHp)
-    && typeof value.weaknessKR === 'string'
+    && isNonEmptyString(value.weaknessKR)
     && typeof value.recommendedFacilityId === 'string'
     && FACILITY_IDS.includes(value.recommendedFacilityId as typeof FACILITY_IDS[number])
     && (value.recommendedEquipmentId === null
