@@ -22,7 +22,7 @@ forge 의 첫 번째 게임. 조선 시대 배경의 영웅 후원·마을 경�
 - `pnpm --filter @forge/game-inflation-rpg test` — Vitest (396개 파일,
   3,378개 테스트).
 - `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright. V4 vertical slice는
-  iPhone 14 / Desktop Chrome 두 프로파일에서 24개 시나리오를 검증한다.
+  iPhone 14 / Desktop Chrome 두 프로파일에서 26개 시나리오를 검증한다.
 
 ## 모바일 UI 확인
 

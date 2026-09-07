@@ -177,6 +177,49 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-expedition-result')).toContainText('추천 시설');
   });
 
+  test('위험 보스 승리와 다음 Realm 기록을 별도로 확정한다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), V4_SAVE_KEY);
+
+    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await page.getByRole('button', { name: '혼자 출발' }).first().click();
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('v4 save was not created');
+      const save = JSON.parse(raw) as {
+        meta: { unlockedRealms: string[] };
+        run: {
+          hero: { atk: number; def: number; defBase: number; hp: number; hpMax: number };
+          expedition: { id: string; realmId: string; startedAt: number; completesAt: number; encounterIndex: number } | null;
+        };
+      };
+      if (!save.run.expedition) throw new Error('expedition was not started');
+      save.meta.unlockedRealms.push('deep_forest');
+      save.run.hero.atk = 10_000;
+      save.run.hero.def = 10_000;
+      save.run.hero.defBase = 10_000;
+      save.run.hero.hp = 10_000;
+      save.run.hero.hpMax = 10_000;
+      save.run.expedition.id = 'e2e-victory-4';
+      save.run.expedition.realmId = 'deep_forest';
+      save.run.expedition.startedAt = Date.now() - 60_000;
+      save.run.expedition.encounterIndex = 2;
+      save.run.expedition.completesAt = Date.now() - 1;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, V4_SAVE_KEY);
+    await page.reload();
+
+    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 결과 확인 필요');
+    await page.getByRole('button', { name: '보스 결과 확인' }).click();
+    await expect(page.getByTestId('v4-expedition-result')).toContainText('원정 성공');
+    await expect(page.getByRole('button', { name: '저승 기록하기' })).toBeVisible();
+    await page.getByRole('button', { name: '저승 기록하기' }).click();
+    await expect(page.locator('.v4-realm-card').filter({ hasText: '저승' }).getByRole('button', { name: '혼자 출발' })).toBeEnabled();
+  });
+
   test('안전 원정의 다음 Realm 해금은 오프라인 복귀 후 명시적으로 확정한다', async ({ page }) => {
     await page.goto(GAME_URL);
     await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);

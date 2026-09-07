@@ -197,7 +197,7 @@ pnpm circular
 - 위험 보스의 명시적 결과 확인과 다음 Realm의 영구 해금을 분리해, 보스 승리 확인만으로 `underworld`가 열리지 않고 별도 기록 확인을 요구한다.
 - V4 저장 검증은 알 수 없는 통화 키를 거부하고, 원정 결과의 저장 watermark·해금 Realm chronology를 확인한다. 구형 schema 1의 초과 사가 기록은 기존 hydrate trim 호환을 유지한다.
 - V4 단위/컴포넌트 테스트: 396개 파일, 3,378개 테스트 통과.
-- V4 Chromium·iPhone 14 E2E: 24/24 통과(각 프로젝트 12/12).
+- V4 Chromium·iPhone 14 E2E: 26/26 통과(각 프로젝트 13/13).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
 - 시설·에이전트·Realm 정의 lookup을 own-property accessor로 통일해 외부 문자열이 `constructor` 같은 상속 키로 해석되지 않게 했다.
@@ -209,7 +209,7 @@ pnpm circular
 - V3-H 깊이 회귀가 RNG와 연속 smoke 실행 부하에 따라 50초 안에 Realm을 벗어나지 못하던 간헐 실패를 고정 sleep 대신 실제 `hud-realm` 전환 assertion으로 교정하고, 개발 전용 고정 시드와 선택 모달 polling으로 Chromium/iPhone14에서 결정론적으로 검증했다.
 - V2 vertical slice가 보스 선택창에 걸리던 모바일/데스크톱 타이밍 변동을 dev-only fast-forward 후 blocking choice polling으로 보강해 실제 Phaser→컨트롤러→결과 화면 경로를 유지하면서 안정화했다.
 - Chromium·iPhone14 각각 short 회귀 17/17(장시간 V2 baseline 제외)을 통과했고, v9 저장 마이그레이션 smoke도 두 프로파일에서 통과했다.
-- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, `8c840c61` 기준 최신 전체 E2E 38/38(Chromium 19/19, iPhone14 19/19, 4.7분)을 통과했다. root `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 최신 HEAD에서 성공했다.
+- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, `09e5c126` 기준 최신 전체 E2E 40/40(Chromium 20/20, iPhone14 20/20, 4.8분)을 통과했다. root `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 최신 HEAD에서 성공했다.
 
 ### 다음 자동 사이클 우선순위
 
