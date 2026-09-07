@@ -101,6 +101,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
               key={policy}
               type="button"
               className={`v4-btn ${save.run.policy === policy ? 'v4-btn--selected' : ''}`}
+              aria-pressed={save.run.policy === policy}
               onClick={() => onPolicyChange(policy)}
             >
               {POLICY_LABELS[policy]}

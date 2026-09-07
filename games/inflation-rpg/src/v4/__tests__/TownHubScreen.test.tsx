@@ -57,6 +57,13 @@ describe('V4 town hub support assignment', () => {
     expect(props.onStartTask).toHaveBeenCalledWith('blacksmith', 'blacksmith');
   });
 
+  it('exposes the selected sponsor policy to assistive technology', () => {
+    renderHub();
+
+    expect(screen.getByRole('button', { name: '공격 우선' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '안전 비축' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('renders equipment output names instead of internal ids', () => {
     renderHub();
 
