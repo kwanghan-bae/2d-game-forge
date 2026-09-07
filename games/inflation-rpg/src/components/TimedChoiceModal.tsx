@@ -9,6 +9,7 @@ export interface TimedChoiceOption {
 }
 
 interface Props {
+  testId?: string;
   title: string;
   titleIcon: string;
   description: ReactNode;
@@ -25,6 +26,7 @@ interface Props {
  * Shows options with countdown timer. Auto-picks default on timeout (idle-friendly).
  */
 export function TimedChoiceModal({
+  testId,
   title, titleIcon, description, subdescription,
   options, timeoutMs, defaultOptionId, accentColor, onChoose,
 }: Props) {
@@ -46,7 +48,7 @@ export function TimedChoiceModal({
   const progress = timeLeft / timeoutMs;
 
   return (
-    <div style={{
+    <div data-testid={testId} style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
     }}>

@@ -50,6 +50,7 @@ import { ActiveBuffHUD } from '../components/ActiveBuffHUD';
 import { WanderingMerchantChoiceModal } from '../components/WanderingMerchantChoiceModal';
 import { LastStandChoiceModal } from '../components/LastStandChoiceModal';
 import { InflationRushChoiceModal } from '../components/InflationRushChoiceModal';
+import { TimedChoiceModal } from '../components/TimedChoiceModal';
 import { FateRollModal } from './FateRollModal';
 import { BossIntroModal, type BossIntroCard } from './BossIntroModal';
 import { RealmForkModal } from './RealmForkModal';
@@ -181,6 +182,10 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const [wanderingMerchantModalOpen, setWanderingMerchantModalOpen] = useState(false); // C881
   const [lastStandModalOpen, setLastStandModalOpen] = useState(false); // C893a
   const [inflationRushModalOpen, setInflationRushModalOpen] = useState(false); // C989
+  const [firstTrialModalOpen, setFirstTrialModalOpen] = useState(false); // C911
+  const [wanderingSageModalOpen, setWanderingSageModalOpen] = useState(false); // C921
+  const [eldersJudgmentModalOpen, setEldersJudgmentModalOpen] = useState(false); // C926
+  const [veteransChallengeModalOpen, setVeteransChallengeModalOpen] = useState(false); // C959
   const [npcModal, setNpcModal] = useState<{ npcInstanceId: string } | null>(null);
   // Cycle 108 F1 — fate roll modal state.
   const [fateRollModal, setFateRollModal] = useState<{ oldLevel: number; pendingDeathPenaltyNewLevel: number } | null>(null);
@@ -214,6 +219,34 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
   const moveMul = getMoveSpeedMul(meta);
   const speedRef = useRef<SpeedPreset>(1);
   const moveMulRef = useRef(moveMul);
+
+  const resolveFirstTrialChoice = useCallback((choice: string) => {
+    if (choice === 'heal' || choice === 'atk' || choice === 'exp') {
+      controller?.setFirstTrialChoice(choice);
+    }
+    setFirstTrialModalOpen(false);
+  }, [controller]);
+
+  const resolveWanderingSageChoice = useCallback((choice: string) => {
+    if (choice === 'exp' || choice === 'atk') {
+      controller?.setWanderingSageChoice(choice);
+    }
+    setWanderingSageModalOpen(false);
+  }, [controller]);
+
+  const resolveEldersJudgmentChoice = useCallback((choice: string) => {
+    if (choice === 'double_down' || choice === 'diversify') {
+      controller?.setEldersJudgmentChoice(choice);
+    }
+    setEldersJudgmentModalOpen(false);
+  }, [controller]);
+
+  const resolveVeteransChallengeChoice = useCallback((choice: string) => {
+    if (choice === 'accept' || choice === 'decline') {
+      controller?.setVeteransChallengeChoice(choice === 'accept');
+    }
+    setVeteransChallengeModalOpen(false);
+  }, [controller]);
 
   const emitLightFloat = useCallback((amount: number) => {
     setLightFloats(prev => {
@@ -382,6 +415,10 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
           if (event.landmarkKind === 'village') {
             setMomentumDisplay(0);
           }
+          if (evs.some(e => e.type === 'first_trial_choice')) setFirstTrialModalOpen(true);
+          if (evs.some(e => e.type === 'wandering_sage_choice')) setWanderingSageModalOpen(true);
+          if (evs.some(e => e.type === 'elders_judgment_choice')) setEldersJudgmentModalOpen(true);
+          if (evs.some(e => e.type === 'veterans_challenge_choice')) setVeteransChallengeModalOpen(true);
           // C131: battle flavor text float
           const tick = Date.now();
           const flavor =
@@ -392,6 +429,10 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
            evs.some(e => e.type === 'crossroads_choice') ? (() => { setCrossroadsModalOpen(true); return '🔀 갈림길!'; })() :
            evs.some(e => e.type === 'wandering_merchant_choice') ? (() => { setWanderingMerchantModalOpen(true); return '🏪 떠돌이 상인!'; })() :
            evs.some(e => e.type === 'last_stand_choice') ? (() => { setLastStandModalOpen(true); return '🔥 최후의 항전!'; })() :
+           evs.some(e => e.type === 'first_trial_choice') ? '🌱 첫 시련! 길을 선택하세요' :
+           evs.some(e => e.type === 'wandering_sage_choice') ? '📖 방랑 현자! 가르침을 선택하세요' :
+           evs.some(e => e.type === 'elders_judgment_choice') ? '⚖️ 장로의 심판! 운명을 선택하세요' :
+           evs.some(e => e.type === 'veterans_challenge_choice') ? '🛡️ 베테랑의 도전! 수락하시겠습니까?' :
            evs.some(e => e.type === 'event_merchant') ? '🏪 상인 등장! 렐릭 구매' :
            evs.some(e => e.type === 'event_treasure_shrine') ? '✨ 보물 제단 발견!' :
             evs.some(e => e.type === 'event_trap_avoided') ? '⚡ 함정 회피! (높은 콤보)' :
@@ -826,6 +867,73 @@ export function OverworldRunner({ onCycleEnd, onExitToMenu }: Props) {
       {wanderingMerchantModalOpen && <WanderingMerchantChoiceModal onClose={() => setWanderingMerchantModalOpen(false)} />}
       {lastStandModalOpen && <LastStandChoiceModal onClose={() => setLastStandModalOpen(false)} />}
       {inflationRushModalOpen && <InflationRushChoiceModal onClose={() => setInflationRushModalOpen(false)} />}
+      {firstTrialModalOpen && (
+        <TimedChoiceModal
+          testId="first-trial-choice-modal"
+          title="첫 시련"
+          titleIcon="🌱"
+          description="처음 맞는 시련이다. 영웅의 길을 선택하세요."
+          subdescription="치유는 즉시 회복, 공격은 전투 강화, 경험은 성장 가속을 제공합니다."
+          options={[
+            { id: 'heal', label: '치유', sublabel: 'HP 회복', icon: '💚', color: '#287a55' },
+            { id: 'atk', label: '힘', sublabel: 'ATK 강화', icon: '⚔️', color: '#9a3f3f' },
+            { id: 'exp', label: '지혜', sublabel: 'EXP 가속', icon: '📚', color: '#3d5ca8' },
+          ]}
+          timeoutMs={4000}
+          defaultOptionId="exp"
+          accentColor="#83d17b"
+          onChoose={resolveFirstTrialChoice}
+        />
+      )}
+      {wanderingSageModalOpen && (
+        <TimedChoiceModal
+          testId="wandering-sage-choice-modal"
+          title="방랑 현자"
+          titleIcon="📖"
+          description="현자가 짧은 가르침을 건넨다."
+          options={[
+            { id: 'exp', label: '깨달음', sublabel: 'EXP 가속', icon: '📚', color: '#3d5ca8' },
+            { id: 'atk', label: '비전', sublabel: 'ATK 강화 + 회복', icon: '✨', color: '#784ca3' },
+          ]}
+          timeoutMs={4000}
+          defaultOptionId="exp"
+          accentColor="#bca7ff"
+          onChoose={resolveWanderingSageChoice}
+        />
+      )}
+      {eldersJudgmentModalOpen && (
+        <TimedChoiceModal
+          testId="elders-judgment-choice-modal"
+          title="장로의 심판"
+          titleIcon="⚖️"
+          description="지금까지의 선택이 다음 가호를 결정한다."
+          options={[
+            { id: 'double_down', label: '전문화', sublabel: '주력 보너스 강화', icon: '🔥', color: '#9a3f3f' },
+            { id: 'diversify', label: '균형', sublabel: 'ATK·EXP·회복', icon: '🌿', color: '#287a55' },
+          ]}
+          timeoutMs={4000}
+          defaultOptionId="diversify"
+          accentColor="#e3bd6b"
+          onChoose={resolveEldersJudgmentChoice}
+        />
+      )}
+      {veteransChallengeModalOpen && (
+        <TimedChoiceModal
+          testId="veterans-challenge-choice-modal"
+          title="베테랑의 도전"
+          titleIcon="🛡️"
+          description="강한 도전을 받아들이면 짧은 시간 동안 큰 보상을 얻는다."
+          subdescription="수락하면 전투 위험이 증가하지만 EXP와 ATK가 함께 상승합니다."
+          options={[
+            { id: 'accept', label: '수락', sublabel: '도전 시작', icon: '⚔️', color: '#9a3f3f' },
+            { id: 'decline', label: '거절', sublabel: '안전하게 진행', icon: '🛡️', color: '#4a5261' },
+          ]}
+          timeoutMs={4000}
+          defaultOptionId="decline"
+          accentColor="#e3bd6b"
+          onChoose={resolveVeteransChallengeChoice}
+        />
+      )}
       <ActiveBuffHUD />
       {fateRollModal && (
         <FateRollModal

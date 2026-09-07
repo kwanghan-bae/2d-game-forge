@@ -986,9 +986,21 @@ export class CycleControllerV2 {
   // C893a: Last Stand choice proxy
   setLastStandChoice(choice: 'accept' | 'decline') { this.encounter.setLastStandChoice(choice); }
   hasPendingLastStandChoice() { return this.encounter.hasPendingLastStandChoice(); }
+  // C911: First Trial choice proxy
+  setFirstTrialChoice(choice: 'heal' | 'atk' | 'exp') { this.encounter.setFirstTrialChoice(choice); }
+  hasPendingFirstTrialChoice() { return this.encounter.hasPendingFirstTrialChoice(); }
+  // C921: Wandering Sage choice proxy
+  setWanderingSageChoice(choice: 'exp' | 'atk') { this.encounter.setWanderingSageChoice(choice); }
+  hasPendingWanderingSageChoice() { return this.encounter.hasPendingWanderingSageChoice(); }
+  // C926: Elder's Judgment choice proxy
+  setEldersJudgmentChoice(choice: 'double_down' | 'diversify') { this.encounter.setEldersJudgmentChoice(choice); }
+  hasPendingEldersJudgmentChoice() { return this.encounter.hasPendingEldersJudgmentChoice(); }
   // C989: Inflation Rush choice proxy
   setInflationRushChoice(choice: 'ride' | 'cashout') { this.encounter.setInflationRushChoice(choice); }
   hasPendingInflationRushChoice() { return this.encounter.hasPendingInflationRushChoice(); }
+  // C959: Veteran's Challenge choice proxy
+  setVeteransChallengeChoice(accept: boolean) { this.encounter.setVeteransChallengeChoice(accept); }
+  hasPendingVeteransChallengeChoice() { return this.encounter.hasPendingVeteransChallengeChoice(); }
   getAbyssalConvergenceRemaining() { return this.encounter.getEventRemaining('abyssal_convergence'); }
   getAbyssalConvergencePending() { return this.encounter.getEventPending('abyssal_convergence'); }
   resolveAbyssalConvergence(accept: boolean) { this.resolveEventGeneric('abyssal_convergence', accept); }
