@@ -45,6 +45,28 @@ export function V4App({ config }: Props) {
   const soundOwner = useRef(Symbol('v4-app-audio')).current;
   const [nativeMonetization, setNativeMonetization] = useState<V4MonetizationAdapter | undefined>(undefined);
   const nativeMonetizationPromise = useRef<ReturnType<typeof createNativeV4Monetization> | null>(null);
+  const nativeMonetizationLifecycleToken = useRef<symbol | null>(null);
+
+  useEffect(() => {
+    const token = Symbol('v4-monetization-lifecycle');
+    nativeMonetizationLifecycleToken.current = token;
+    return () => {
+      const pendingHandle = nativeMonetizationPromise.current;
+      // React StrictMode may tear down and immediately recreate effects during
+      // development. Defer the disposal check until the replacement effect
+      // has had a chance to claim the lifecycle token.
+      void Promise.resolve().then(() => {
+        if (nativeMonetizationLifecycleToken.current !== token) return;
+        nativeMonetizationLifecycleToken.current = null;
+        if (pendingHandle) {
+          void pendingHandle.then((handle) => handle.dispose?.()).catch(() => {
+            // Monetization cleanup is optional and must never block root unmount.
+          });
+        }
+      });
+    };
+  }, []);
+
   useEffect(() => {
     if (config.v4Monetization || nativeMonetization) return;
     const capacitor = (window as Window & {

@@ -129,6 +129,7 @@ export interface NativeV4MonetizationHandle {
   adapter: V4MonetizationAdapter;
   initialize(): Promise<boolean>;
   restorePurchases(): Promise<boolean>;
+  dispose?(): Promise<void>;
 }
 
 /**
@@ -189,6 +190,9 @@ export async function createNativeV4Monetization(
       } catch {
         return false;
       }
+    },
+    async dispose() {
+      await service.dispose?.();
     },
   };
 }

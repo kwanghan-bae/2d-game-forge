@@ -104,4 +104,8 @@ export class MonetizationService {
     this.applyRestoredAdFreeEntitlement(restored);
     return restored;
   }
+
+  async dispose(): Promise<void> {
+    await this.ad.hideBanner();
+  }
 }

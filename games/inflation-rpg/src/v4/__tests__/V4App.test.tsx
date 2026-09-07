@@ -276,10 +276,12 @@ describe('V4 app resume handling', () => {
     const previousCapacitor = windowWithCapacitor.Capacitor;
     const createNative = vi.spyOn(monetization, 'createNativeV4Monetization');
     const initialize = vi.fn(async () => true);
+    const dispose = vi.fn(async () => {});
     const handle: monetization.NativeV4MonetizationHandle = {
       adapter: new monetization.V4MonetizationAdapter(null, null),
       initialize,
       restorePurchases: vi.fn(async () => true),
+      dispose,
     };
     windowWithCapacitor.Capacitor = { isNativePlatform: () => true };
     createNative.mockResolvedValue(handle);
@@ -298,6 +300,39 @@ describe('V4 app resume handling', () => {
 
       expect(createNative).toHaveBeenCalledTimes(1);
       expect(initialize).toHaveBeenCalledTimes(1);
+      expect(dispose).not.toHaveBeenCalled();
+    } finally {
+      createNative.mockRestore();
+      if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;
+      else delete windowWithCapacitor.Capacitor;
+    }
+  });
+
+  it('disposes native monetization when the V4 root unmounts', async () => {
+    const windowWithCapacitor = window as Window & { Capacitor?: { isNativePlatform?: () => boolean } };
+    const previousCapacitor = windowWithCapacitor.Capacitor;
+    const createNative = vi.spyOn(monetization, 'createNativeV4Monetization');
+    const dispose = vi.fn(async () => {});
+    const handle: monetization.NativeV4MonetizationHandle = {
+      adapter: new monetization.V4MonetizationAdapter(null, null),
+      initialize: vi.fn(async () => true),
+      restorePurchases: vi.fn(async () => true),
+      dispose,
+    };
+    windowWithCapacitor.Capacitor = { isNativePlatform: () => true };
+    createNative.mockResolvedValue(handle);
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    try {
+      const { unmount } = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      unmount();
+      await act(async () => { await Promise.resolve(); });
+
+      expect(dispose).toHaveBeenCalledOnce();
     } finally {
       createNative.mockRestore();
       if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;
