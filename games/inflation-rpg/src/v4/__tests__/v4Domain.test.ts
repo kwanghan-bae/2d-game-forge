@@ -2445,6 +2445,28 @@ describe('v4 save and domain', () => {
     expect(started.save.meta.tasks[started.task.id]).toBeDefined();
   });
 
+  it.each([
+    ['fractional', 100.5],
+    ['not-a-number', Number.NaN],
+    ['infinite', Number.POSITIVE_INFINITY],
+    ['unsafe', Number.MAX_VALUE],
+  ])('does not settle an expedition reward over a malformed %s balance', (_label, gold) => {
+    const malformed = createInitialV4Save(139);
+    const started = startExpedition(malformed, 'joseon_plains', malformed.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+    started.save.meta.currencies.gold = gold;
+
+    const settled = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+
+    expect(settled).toBe(started.save);
+    expect(started.save.meta.currencies.gold).toBe(gold);
+    expect(started.save.run.expedition).not.toBeNull();
+  });
+
   it('saturates a currency bonus at the persistable ceiling', () => {
     const nearLimit = createInitialV4Save(122);
     nearLimit.meta.currencies.gold = Number.MAX_SAFE_INTEGER - 1;

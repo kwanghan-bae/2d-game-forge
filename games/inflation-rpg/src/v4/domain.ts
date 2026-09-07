@@ -904,6 +904,15 @@ function settleFacilityTasks(
     if (task.completesAt > eventAt) continue;
     if (!canApplyCurrencyOutput(source, task.outputPreview)) return source;
   }
+  if (resolveExpeditionOnSettlement && source.run.expedition
+    && source.run.expedition.completesAt <= eventAt) {
+    const realm = getV4RealmDefinition(source.run.expedition.realmId);
+    if (realm
+      && (!canApplyCurrencyOutput(source, realm.reward)
+        || !canApplyCurrencyOutput(source, realm.cost))) {
+      return source;
+    }
+  }
   const save = cloneSave(source);
   // Offline settlement may intentionally resolve the capped historical
   // window before a later manual write timestamp. Real-time callers keep the
