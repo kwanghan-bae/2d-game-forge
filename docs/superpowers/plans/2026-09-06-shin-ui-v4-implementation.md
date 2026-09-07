@@ -198,6 +198,7 @@ pnpm circular
 - 원정 출발 카드에 보스 승률과 함께 예상 보상 재화를 표시해 출발 전 위험·보상 판단을 완성했다.
 - dev-shell의 서버 manifest와 클라이언트 loader가 공용 data-only manifest를 사용하도록 통합해 slug·제품명·asset 경로 drift를 차단했다.
 - dev-shell portal E2E에서 V4/legacy route가 각각 실제 V4App/V3 MainMenu를 마운트하는지 검증했다(4/4).
+- dev-shell 동적 게임 loader의 import/부팅 예외를 accessible 오류 상태로 격리하고, route cleanup 이후 늦게 도착한 promise의 마운트를 무시하도록 보강했다.
 - 작업·원정 시작 시 완료 시각이 저장 가능한 정수 상한을 넘으면 재화 차감 없이 원본 저장을 보존한다.
 - staged 원정이 다음 단계의 완료 시각을 저장 상한 밖으로 밀어내는 경우 전투를 중복 정산하지 않고 현재 단계를 보존한다.
 - malformed 원정 누적 전투 통계도 안전 정수 상한과 최대 encounter 수로 포화시켜 결과 저장을 유효하게 유지한다.
