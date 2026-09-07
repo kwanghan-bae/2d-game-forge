@@ -205,6 +205,7 @@ pnpm circular
 - V4 신규 저장 vertical-slice의 Chromium·iPhone14 smoke에서 document 가로 overflow가 발생하지 않는지 함께 검증했다.
 - dev-shell README와 ARCHITECTURE의 registry·라우팅 설명을 공용 manifest 및 V4/legacy 실제 경로와 일치시켰다.
 - ARCHITECTURE의 `ForgeGameInstance` entrypoint 계약·V4/V3 저장 키 격리·V4/legacy asset 경로 설명을 현재 구현과 일치시켰다.
+- standalone Next의 기본 V4 loader도 import/부팅 실패를 별도 오류 UI로 격리하고 게임 React root와 분리했다.
 - 루트 README의 빠른 시작 안내도 V4 기본 제품과 V3 legacy 경로를 분리해 실제 포털 manifest와 일치시켰다.
 - 작업·원정 시작 시 완료 시각이 저장 가능한 정수 상한을 넘으면 재화 차감 없이 원본 저장을 보존한다.
 - staged 원정이 다음 단계의 완료 시각을 저장 상한 밖으로 밀어내는 경우 전투를 중복 정산하지 않고 현재 단계를 보존한다.
