@@ -91,6 +91,7 @@
 문서 작성 시점에 다음 파일은 작업 중 변경 상태로 확인되었다.
 
 - `games/inflation-rpg/src/systems/paradoxSpiral.ts`
+- `games/inflation-rpg/src/systems/paradoxSpiral.test.ts`
 - `games/inflation-rpg/src/systems/paradoxSpiralBalance.test.ts`
 
 이 문서는 위 변경을 되돌리거나 수정하지 않는다. Paradox Spiral 관련 구현은 출시 1차에서 비노출 대상으로 분류하며, 별도 확장 계획에서 다시 다룬다.
@@ -707,6 +708,14 @@ V4는 V3 persist version 27과 자동 migration 경계를 공유하지 않는다
 4. adapter는 영웅 snapshot과 장비 기록만 V4 형식으로 복사하며 V3 재화·cycle·store mutation은 가져오지 않는다.
 5. V4의 작업·시설·원정 링크는 로드 검증에서 대칭성을 확인한다.
 6. 잘못된 시간·재화·정적 에이전트 정의·잠긴 Realm 상태는 V4 domain에 진입하기 전에 거부한다.
+
+### 14.4 현재 검증 기준선 (2026-09-07)
+
+- game Vitest: 397개 파일·3,440개 테스트 통과.
+- V4 vertical slice: Chromium·iPhone14 28/28 통과(각 14/14).
+- V3 legacy를 포함한 전체 game E2E: 42/42 통과(Chromium 21/21, iPhone14 21/21).
+- monorepo typecheck·lint·circular 검사와 game production build 통과.
+- 위 보호 파일 3종과 사용자 미추적 `output/`, `tmp/`는 V4 작업에서 수정·커밋하지 않는다.
 
 ---
 
