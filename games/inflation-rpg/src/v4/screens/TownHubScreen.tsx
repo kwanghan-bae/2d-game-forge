@@ -46,6 +46,11 @@ function getTownObjective(save: V4SaveEnvelope): string {
     return '원정이 진행 중입니다. 원정 화면에서 현재 단계와 예상 승률을 확인하세요.';
   }
 
+  const lastResult = save.run.lastExpeditionResult;
+  if (lastResult?.outcome === 'defeat') {
+    return `${REALM_DEFINITIONS[lastResult.realmId].nameKR} 재도전을 준비하세요. ${lastResult.weaknessKR}을 보완하면 다음 승리에 가까워집니다.`;
+  }
+
   const unlocked = save.meta.unlockedRealms;
   const currentRealmId: RealmId = unlocked.includes('underworld')
     ? 'underworld'
@@ -57,10 +62,6 @@ function getTownObjective(save: V4SaveEnvelope): string {
     return `${REALM_DEFINITIONS[currentRealmId].nameKR}에서 승리하면 ${REALM_DEFINITIONS[nextRealmId].nameKR}이 열립니다. 대장간에서 장비를 만든 뒤 정책을 바꿔 다음 원정의 성격을 정하세요.`;
   }
 
-  const lastResult = save.run.lastExpeditionResult;
-  if (lastResult?.outcome === 'defeat') {
-    return `${REALM_DEFINITIONS[lastResult.realmId].nameKR} 재도전을 준비하세요. ${lastResult.weaknessKR}을 보완하면 다음 승리에 가까워집니다.`;
-  }
   return '저승의 사가를 완성하세요. 시설을 강화하고 정책과 장비를 조정해 영원한 영웅의 마지막 원정을 준비하세요.';
 }
 

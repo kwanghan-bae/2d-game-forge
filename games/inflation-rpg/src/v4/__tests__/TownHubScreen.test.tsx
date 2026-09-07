@@ -73,6 +73,31 @@ describe('V4 town hub support assignment', () => {
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('깊은 숲에서 승리하면 저승이 열립니다.');
   });
 
+  it('prioritizes a defeat recovery plan over the next Realm unlock prompt', () => {
+    const save = createInitialV4Save(97);
+    save.run.lastExpeditionResult = {
+      id: 'defeat-objective',
+      realmId: 'joseon_plains',
+      outcome: 'defeat',
+      completedAt: save.createdAt,
+      reward: {},
+      heroPower: 90,
+      recommendedPower: 120,
+      turns: 8,
+      totalDamageDealt: 80,
+      totalDamageTaken: 120,
+      heroRemainingHp: 0,
+      weaknessKR: '전투력이 부족했습니다. 대장간에서 장비를 준비하세요.',
+      recommendedFacilityId: 'blacksmith',
+      recommendedEquipmentId: 'v4_iron_sword',
+      retryAfterSeconds: 45,
+    };
+    renderHub({ save });
+
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('재도전을 준비하세요.');
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('대장간에서 장비를 준비하세요.');
+  });
+
   it('points to the active expedition instead of repeating an outdated unlock goal', () => {
     const save = createInitialV4Save(98);
     save.run.expedition = {
