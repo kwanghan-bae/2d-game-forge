@@ -509,7 +509,9 @@ export function simulateOfflineProgress(
   const beforeCurrencies = { ...save.meta.currencies };
   const beforeEquipment = [...save.run.hero.equipmentIds];
   const beforeTaskIds = Object.keys(save.meta.tasks);
-  const expeditionWasReady = Boolean(save.run.expedition && save.run.expedition.completesAt <= now);
+  const expeditionWasReady = Boolean(save.run.expedition
+    && save.run.expedition.status === 'traveling'
+    && save.run.expedition.completesAt <= now);
 
   if (!isPersistableNonNegativeNumber(now)) {
     return {

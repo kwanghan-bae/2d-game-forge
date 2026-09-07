@@ -1172,6 +1172,7 @@ describe('v4 save and domain', () => {
     const started = startExpedition(initial, 'deep_forest', initial.lastProcessedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
 
     const afterNormal = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
     const afterElite = completeFacilityTasks(afterNormal, afterNormal.run.expedition!.completesAt);
@@ -1181,6 +1182,10 @@ describe('v4 save and domain', () => {
     expect(offline.save.run.expedition?.realmId).toBe('deep_forest');
     expect(offline.save.run.expedition?.encounterIndex).toBe(2);
     expect(offline.save.run.expedition?.status).toBe('awaiting_confirmation');
+
+    const replay = simulateOfflineProgress(offline.save, offline.save.lastProcessedAt);
+    expect(replay.save).toBe(offline.save);
+    expect(replay.summary.completedExpedition).toBe(false);
 
     const refreshed = completeFacilityTasks(offline.save, offline.save.lastProcessedAt + 1_000);
     expect(refreshed.run.expedition?.status).toBe('awaiting_confirmation');
