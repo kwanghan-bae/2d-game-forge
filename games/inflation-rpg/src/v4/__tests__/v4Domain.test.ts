@@ -1215,14 +1215,10 @@ describe('v4 save and domain', () => {
     expect(started.ok).toBe(true);
   });
 
-  it('blocks task previews and starts for malformed non-integer facility levels', () => {
-    for (const level of [Number.NaN, 1.5, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, '2']) {
+  it('blocks task previews and starts for malformed facility levels', () => {
+    for (const level of [Number.NaN, 1.5, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
       const malformed = createInitialV4Save(118);
-      if (level === '2') {
-        delete (malformed.meta.facilities.blacksmith as { level?: number }).level;
-      } else {
-        malformed.meta.facilities.blacksmith.level = level;
-      }
+      malformed.meta.facilities.blacksmith.level = level;
 
       const preview = getFacilityTaskPreview(malformed, 'blacksmith', null);
       const started = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt, null);
@@ -1231,6 +1227,24 @@ describe('v4 save and domain', () => {
       expect(preview.error).toBe('아직 사용할 수 없는 시설입니다.');
       expect(started.ok).toBe(false);
     }
+
+    const missingLevel = createInitialV4Save(118);
+    delete (missingLevel.meta.facilities.blacksmith as { level?: number }).level;
+    const preview = getFacilityTaskPreview(missingLevel, 'blacksmith', null);
+    const started = startFacilityTask(missingLevel, 'blacksmith', missingLevel.updatedAt, null);
+
+    expect(preview.canStart).toBe(false);
+    expect(preview.error).toBe('아직 사용할 수 없는 시설입니다.');
+    expect(started.ok).toBe(false);
+
+    const wrongType = createInitialV4Save(118);
+    (wrongType.meta.facilities.blacksmith as { level: unknown }).level = '2';
+    const wrongTypePreview = getFacilityTaskPreview(wrongType, 'blacksmith', null);
+    const wrongTypeStarted = startFacilityTask(wrongType, 'blacksmith', wrongType.updatedAt, null);
+
+    expect(wrongTypePreview.canStart).toBe(false);
+    expect(wrongTypePreview.error).toBe('아직 사용할 수 없는 시설입니다.');
+    expect(wrongTypeStarted.ok).toBe(false);
   });
 
   it('exposes the scaled facility upgrade cost without mutating the save', () => {
@@ -1239,6 +1253,32 @@ describe('v4 save and domain', () => {
 
     expect(getFacilityUpgradeCost(initial, 'temple')).toEqual({ gold: 145, materials: 7 });
     expect(initial.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
+  });
+
+  it('settles only the selected task when an instant completion overlaps due work', () => {
+    const initial = createInitialV4Save(119);
+    const temple = startFacilityTask(initial, 'temple', initial.updatedAt);
+    expect(temple.ok).toBe(true);
+    if (!temple.ok) return;
+
+    const archive = startFacilityTask(temple.save, 'archive', initial.updatedAt);
+    expect(archive.ok).toBe(true);
+    if (!archive.ok) return;
+    archive.save.meta.tasks[archive.task.id]!.completesAt = initial.updatedAt + 500;
+
+    const expedition = startExpedition(archive.save, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    expect(expedition.ok).toBe(true);
+    if (!expedition.ok) return;
+    expedition.save.run.expedition!.completesAt = initial.updatedAt + 500;
+
+    const instant = completeFacilityTaskNow(expedition.save, 'temple', initial.updatedAt + 1_000);
+
+    expect(instant.ok).toBe(true);
+    if (!instant.ok) return;
+    expect(instant.save.meta.tasks[archive.task.id]).toBeDefined();
+    expect(instant.save.meta.facilities.archive.activeTaskId).toBe(archive.task.id);
+    expect(instant.save.run.expedition).toBeDefined();
+    expect(instant.save.meta.currencies).toMatchObject({ spirit: 106, materials: 11, rift: 0 });
   });
 
   it('applies monetization effects through pure V4 domain helpers', () => {

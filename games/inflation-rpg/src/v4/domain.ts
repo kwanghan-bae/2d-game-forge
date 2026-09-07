@@ -831,13 +831,15 @@ function resolveExpedition(
   }
 }
 
-export function completeFacilityTasks(
+function settleFacilityTasks(
   source: V4SaveEnvelope,
   now: number,
   outputEfficiency = 1,
   allowPermanentUnlock = true,
   allowHistoricalSettlement = false,
   allowRiskyBossConfirmation = false,
+  onlyTaskId: string | null = null,
+  resolveExpeditionOnSettlement = true,
 ): V4SaveEnvelope {
   if (!isPersistableClock(now) || (!allowHistoricalSettlement && now < source.updatedAt)) return source;
   const save = cloneSave(source);
@@ -847,6 +849,7 @@ export function completeFacilityTasks(
   const eventAt = allowHistoricalSettlement ? now : eventTimestamp(save, now);
   const efficiency = normalizeSettlementEfficiency(outputEfficiency);
   for (const task of Object.values(save.meta.tasks)) {
+    if (onlyTaskId !== null && task.id !== onlyTaskId) continue;
     if (task.completesAt > eventAt) continue;
     const facility = save.meta.facilities[task.facilityId];
     give(save, task.outputPreview, efficiency);
@@ -898,11 +901,31 @@ export function completeFacilityTasks(
     });
     delete save.meta.tasks[task.id];
   }
-  resolveExpedition(save, eventAt, allowPermanentUnlock, efficiency, allowHistoricalSettlement, allowRiskyBossConfirmation);
+  if (resolveExpeditionOnSettlement) {
+    resolveExpedition(save, eventAt, allowPermanentUnlock, efficiency, allowHistoricalSettlement, allowRiskyBossConfirmation);
+  }
   syncHeroAction(save);
   save.lastProcessedAt = Math.max(save.lastProcessedAt, eventAt);
   touchSave(save, eventAt);
   return save;
+}
+
+export function completeFacilityTasks(
+  source: V4SaveEnvelope,
+  now: number,
+  outputEfficiency = 1,
+  allowPermanentUnlock = true,
+  allowHistoricalSettlement = false,
+  allowRiskyBossConfirmation = false,
+): V4SaveEnvelope {
+  return settleFacilityTasks(
+    source,
+    now,
+    outputEfficiency,
+    allowPermanentUnlock,
+    allowHistoricalSettlement,
+    allowRiskyBossConfirmation,
+  );
 }
 
 export function completeFacilityTaskNow(
@@ -921,7 +944,11 @@ export function completeFacilityTaskNow(
     return { ok: false, save: source, error: '즉시 완료할 작업이 없습니다.' };
   }
   task.completesAt = eventAt;
-  return { ok: true, save: completeFacilityTasks(prepared, eventAt), task };
+  return {
+    ok: true,
+    save: settleFacilityTasks(prepared, eventAt, 1, true, false, false, task.id, false),
+    task,
+  };
 }
 
 /** Explicit player confirmation for a risky expedition held by offline settlement. */
