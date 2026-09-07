@@ -63,7 +63,11 @@ test.describe('Phase V1a vertical slice', () => {
       hero.age = 69;
       hero.actionCount = 999;
       hero.chapter = '노년기';
-      hero.staggered = false;
+      // Mark the fixture as recovering from a prior battle. The next real
+      // Phaser arrival then takes the controller's stagger-recovery branch,
+      // ticks age 69 → 70, and reaches natural death without racing the
+      // unrelated combat-death/free-rejuvenation branch.
+      hero.staggered = true;
       // The product may auto-rejuvenate at age 65 when enough light has been
       // earned during the fast-forward. Exhaust that normal per-cycle budget
       // so this smoke deterministically exercises the natural-death result
