@@ -38,6 +38,17 @@ function InstantTaskHarness({ monetization }: { monetization: V4MonetizationAdap
   );
 }
 
+function RestoreHarness({ monetization }: { monetization: V4MonetizationAdapter }) {
+  const game = useV4Game(monetization);
+  return (
+    <>
+      <div data-testid="ad-free-state">{game.adFree ? 'owned' : 'not-owned'}</div>
+      <div data-testid="restore-message">{game.message ?? ''}</div>
+      <button type="button" onClick={() => { void game.restorePurchases(); }}>restore</button>
+    </>
+  );
+}
+
 function RecoveryHarness() {
   const game = useV4Game();
   return (
@@ -447,6 +458,16 @@ describe('useV4Game monetization actions', () => {
 
     await waitFor(() => expect(screen.getByTestId('policy')).toHaveTextContent('training'));
     expect(screen.getByTestId('muted')).toHaveTextContent('true');
+  });
+
+  it('refreshes the ad-free UI after a successful purchase restoration', async () => {
+    const monetization = new V4MonetizationAdapter(null, null, null, async () => true);
+    render(<RestoreHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'restore' }));
+
+    await waitFor(() => expect(screen.getByTestId('ad-free-state')).toHaveTextContent('owned'));
+    expect(screen.getByTestId('restore-message')).toHaveTextContent('광고 제거 구매를 복원했습니다.');
   });
 });
 
