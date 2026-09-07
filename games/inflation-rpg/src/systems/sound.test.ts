@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setVolumes, playSfx, playBgm, bgmIdForScreen, _resetSoundForTest } from './sound';
+import {
+  setVolumes,
+  playSfx,
+  playBgm,
+  bgmIdForScreen,
+  claimSoundOwner,
+  releaseSoundOwner,
+  _resetSoundForTest,
+} from './sound';
 
 describe('sound system', () => {
   beforeEach(() => {
@@ -44,5 +52,17 @@ describe('sound system', () => {
     playBgm('lobby');
     // Second call with same id should be no-op
     expect(() => playBgm('lobby')).not.toThrow();
+  });
+
+  it('does not release a newer root audio owner from a late cleanup', () => {
+    const oldOwner = Symbol('old-root');
+    const newOwner = Symbol('new-root');
+
+    claimSoundOwner(oldOwner);
+    claimSoundOwner(newOwner);
+
+    expect(releaseSoundOwner(oldOwner)).toBe(false);
+    expect(releaseSoundOwner(newOwner)).toBe(true);
+    expect(releaseSoundOwner(newOwner)).toBe(false);
   });
 });

@@ -290,6 +290,7 @@ pnpm circular
 - 설정 화면의 음량 range와 음소거 checkbox도 비유한·범위 밖·비불리언 payload를 안전한 기본값으로 정규화해 controlled input 경고와 잘못된 오디오 상태 표시를 막았다.
 - V4 앱의 오디오 bridge 호출 직전에도 음량·음소거를 다시 정규화해, 저장 검증을 우회한 런타임 상태가 전역 사운드 상태에 `NaN`·`Infinity`·truthy 문자열을 주입하지 못하게 했다.
 - V3 legacy와 V4가 전역 사운드 매니저를 공유하는 SPA 전환 경계에서 V4 진입·이탈 시 legacy BGM과 ambient를 정리해 이전 제품의 오디오가 겹쳐 재생되지 않게 했다.
+- V3/V4 root마다 전역 사운드 소유권 토큰을 부여하고, 늦은 이전 root cleanup은 새 root의 BGM·ambient를 끄지 않도록 차단했다. Legacy root도 unmount 시 소리를 정리한다.
 - dev-shell route 전환으로 게임 root가 파괴될 때 dev-only `gameConfig`·legacy store·cycle store hook을 소유권 검사와 함께 정리해, 늦게 도착한 이전 loader가 새 V4 test hook을 지우거나 stale hook을 남기지 않게 했다.
 - 원정 결과의 유한하지만 음수인 전투력·권장치·턴·피해도 0 이상 안전 정수로 정규화해 손상 payload가 플레이어에게 음수 전투 통계를 노출하지 않게 했다.
 - 길잡이가 피로 100 또는 다른 작업 중일 때는 직접 호출된 원정 승률 예측에서도 지원 보정을 제외하고, 현재 원정에 실제 배정된 길잡이만 보정을 유지하도록 경계를 고정했다.
@@ -309,7 +310,7 @@ pnpm circular
 - staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
 - 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
 - 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 399개 파일, 3,472개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 399개 파일, 3,474개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 5.3분).

@@ -78,6 +78,29 @@ describe('V4 app resume handling', () => {
     expect(stopAmbient).toHaveBeenCalledTimes(2);
   });
 
+  it('does not let an older V4 cleanup stop a newer root audio owner', () => {
+    const refresh = vi.fn();
+    const settleOffline = vi.fn();
+    vi.mocked(useV4Game).mockReturnValue(mockGame(refresh, settleOffline));
+    const playBgm = vi.spyOn(sound, 'playBgm');
+    const stopAmbient = vi.spyOn(sound, 'stopAmbient');
+
+    const older = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+    const newer = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+    const playCallsAfterNewerMount = playBgm.mock.calls.length;
+    const ambientCallsAfterNewerMount = stopAmbient.mock.calls.length;
+
+    older.unmount();
+
+    expect(playBgm).toHaveBeenCalledTimes(playCallsAfterNewerMount);
+    expect(stopAmbient).toHaveBeenCalledTimes(ambientCallsAfterNewerMount);
+
+    newer.unmount();
+
+    expect(playBgm).toHaveBeenCalledTimes(playCallsAfterNewerMount + 1);
+    expect(stopAmbient).toHaveBeenCalledTimes(ambientCallsAfterNewerMount + 1);
+  });
+
   it('settles offline progress when the document becomes visible or the page is shown', () => {
     vi.useFakeTimers();
     const refresh = vi.fn();

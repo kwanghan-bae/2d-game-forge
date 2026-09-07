@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
-import { playBgm, setVolumes, stopAmbient } from '../systems/sound';
+import {
+  claimSoundOwner,
+  playBgm,
+  releaseSoundOwner,
+  setVolumes,
+  stopAmbient,
+} from '../systems/sound';
 import { getV4PolicyName } from './data';
 import { createNativeV4Monetization, type V4MonetizationAdapter } from './monetization';
 import { useV4Game } from './useV4Game';
@@ -36,6 +42,7 @@ function normalizeVolume(value: unknown): number {
 }
 
 export function V4App({ config }: Props) {
+  const soundOwner = useRef(Symbol('v4-app-audio')).current;
   const [nativeMonetization, setNativeMonetization] = useState<V4MonetizationAdapter | undefined>(undefined);
   const nativeMonetizationPromise = useRef<ReturnType<typeof createNativeV4Monetization> | null>(null);
   useEffect(() => {
@@ -80,13 +87,16 @@ export function V4App({ config }: Props) {
     // The V3 legacy root and Phaser battle scenes share the global sound
     // manager. Clear those tracks at the V4 boundary so SPA navigation cannot
     // leave legacy music or ambient audio playing over the new product.
+    claimSoundOwner(soundOwner);
     playBgm(null);
     stopAmbient();
     return () => {
-      playBgm(null);
-      stopAmbient();
+      if (releaseSoundOwner(soundOwner)) {
+        playBgm(null);
+        stopAmbient();
+      }
     };
-  }, []);
+  }, [soundOwner]);
 
   useEffect(() => {
     if (game.storageStatus === 'invalid') return;

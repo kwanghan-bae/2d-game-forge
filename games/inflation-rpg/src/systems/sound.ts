@@ -12,6 +12,22 @@ let currentBgmId: string | null = null;
 let musicVolume = 0.5;
 let sfxVolume = 0.7;
 let muted = false;
+let activeSoundOwner: symbol | null = null;
+
+/** Claims the shared audio manager for the currently mounted game root. */
+export function claimSoundOwner(owner: symbol): void {
+  activeSoundOwner = owner;
+}
+
+/**
+ * Releases the shared audio manager only when the caller still owns it.
+ * A late cleanup from a previous route must not silence a newer game root.
+ */
+export function releaseSoundOwner(owner: symbol): boolean {
+  if (activeSoundOwner !== owner) return false;
+  activeSoundOwner = null;
+  return true;
+}
 
 const SFX_POOL_SIZE = 4;
 const sfxPools: Record<string, HTMLAudioElement[]> = {};
@@ -125,6 +141,7 @@ export function _resetSoundForTest(): void {
   currentBgm?.pause();
   currentBgm = null;
   currentBgmId = null;
+  activeSoundOwner = null;
   for (const key of Object.keys(sfxPools)) delete sfxPools[key];
   musicVolume = 0.5;
   sfxVolume = 0.7;

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useGameStore } from './store/gameStore';
 import { MainMenu } from './screens/MainMenu';
 import { CyclePrepV2 } from './screens/CyclePrepV2';
@@ -12,7 +12,14 @@ import { ScreenTransition } from './components/ScreenTransition';
 import { getStoryById } from './data/stories';
 import { getCharacterReaction } from './data/characterReactions';
 import { getCharacterById } from './data/characters';
-import { playBgm, playSfx, bgmIdForScreen } from './systems/sound';
+import {
+  claimSoundOwner,
+  playBgm,
+  playSfx,
+  bgmIdForScreen,
+  releaseSoundOwner,
+  stopAmbient,
+} from './systems/sound';
 import { applyRealmAccent } from './systems/realmAccent';
 import type { StartGameConfig } from './types';
 
@@ -21,6 +28,7 @@ interface AppProps {
 }
 
 export function App({ config }: AppProps) {
+  const soundOwner = useRef(Symbol('legacy-app-audio')).current;
   const screen = useGameStore((s) => s.screen);
   const pendingStoryId = useGameStore((s) => s.pendingStoryId);
   const characterId = useGameStore((s) => s.run?.characterId);
@@ -28,8 +36,15 @@ export function App({ config }: AppProps) {
   const setScreen = useGameStore.getState().setScreen;
 
   useEffect(() => {
+    claimSoundOwner(soundOwner);
     playBgm(bgmIdForScreen(screen));
-  }, [screen]);
+    return () => {
+      if (releaseSoundOwner(soundOwner)) {
+        playBgm(null);
+        stopAmbient();
+      }
+    };
+  }, [screen, soundOwner]);
 
   useEffect(() => {
     applyRealmAccent(currentRealmId);
