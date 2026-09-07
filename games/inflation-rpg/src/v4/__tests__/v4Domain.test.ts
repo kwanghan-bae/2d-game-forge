@@ -1694,6 +1694,34 @@ describe('v4 save and domain', () => {
     expect(blessed).toBeGreaterThan(boss);
   });
 
+  it('does not forecast a guide bonus when the guide is unavailable', () => {
+    const baselineSave = createInitialV4Save(98);
+    baselineSave.run.hero.atk = 30;
+    const baseline = getExpeditionSuccessChance(baselineSave, 'joseon_plains', 2, null);
+
+    const tiredSave = createInitialV4Save(99);
+    tiredSave.run.hero.atk = 30;
+    tiredSave.meta.agents = tiredSave.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, fatigue: 100 }
+      : agent);
+    expect(getExpeditionSuccessChance(tiredSave, 'joseon_plains', 2, 'guide')).toBe(baseline);
+
+    const busySave = createInitialV4Save(100);
+    busySave.run.hero.atk = 30;
+    busySave.meta.agents = busySave.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, activeTaskId: 'unrelated-task' }
+      : agent);
+    expect(getExpeditionSuccessChance(busySave, 'joseon_plains', 2, 'guide')).toBe(baseline);
+
+    const activeSave = createInitialV4Save(101);
+    activeSave.run.hero.atk = 30;
+    const started = startExpedition(activeSave, 'joseon_plains', activeSave.createdAt, 'aggression', 'guide');
+    expect(started.ok).toBe(true);
+    if (started.ok) {
+      expect(getExpeditionSuccessChance(started.save, 'joseon_plains', 2, 'guide')).toBeGreaterThan(baseline);
+    }
+  });
+
   it('keeps an active expedition forecast on the policy chosen at departure', () => {
     const initial = createInitialV4Save(93);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);

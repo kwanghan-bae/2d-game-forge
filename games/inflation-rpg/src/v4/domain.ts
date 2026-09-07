@@ -599,7 +599,20 @@ export function getExpeditionSuccessChance(
   const readiness = getV4HeroPower(source) / Math.max(1, encounter.recommendedPower);
   const readinessBonus = Math.max(-0.35, Math.min(0.2, (readiness - 1) * 0.3));
   const guide = assignedAgentId === 'guide' ? source.meta.agents.find((agent) => agent.id === 'guide') : undefined;
-  const guideBonus = guide ? Math.min(0.08, guide.trust / 1_250) : 0;
+  const guideIsAssignedToThisExpedition = Boolean(
+    guide?.activeTaskId
+      && source.run.expedition?.id === guide.activeTaskId
+      && source.run.expedition.realmId === realmId
+      && source.run.expedition.assignedAgentId === 'guide',
+  );
+  const guideIsAvailable = Boolean(
+    guide
+      && guide.fatigue < 100
+      && (!guide.activeTaskId || guideIsAssignedToThisExpedition),
+  );
+  const guideBonus = guideIsAvailable && guide
+    ? Math.min(0.08, guide.trust / 1_250)
+    : 0;
   // Once an expedition has departed, its policy is part of the immutable run
   // snapshot. The town policy can be changed for the next departure without
   // rewriting the battle forecast of the hero who is already travelling.
