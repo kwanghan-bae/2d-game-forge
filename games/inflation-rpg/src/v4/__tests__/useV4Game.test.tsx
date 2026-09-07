@@ -88,6 +88,8 @@ function RefreshHarness() {
     <>
       <div data-testid="task-count">{Object.keys(game.save.meta.tasks).length}</div>
       <div data-testid="refresh-clock">{game.now}</div>
+      <div data-testid="expedition-status">{game.save.run.expedition?.status ?? 'none'}</div>
+      <div data-testid="unlocked-realms">{game.save.meta.unlockedRealms.join(',')}</div>
       <button type="button" onClick={game.refresh}>refresh</button>
     </>
   );
@@ -762,6 +764,29 @@ describe('useV4Game save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
     expect(screen.getByTestId('refresh-clock')).toHaveTextContent('20000');
+  });
+
+  it('routes a large live clock gap through offline safety before resolving a risky boss', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(106);
+    base.meta.unlockedRealms.push('deep_forest');
+    const started = startExpedition(base, 'deep_forest', base.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const expedition = started.save.run.expedition;
+    if (!expedition) return;
+    expedition.encounterIndex = 2;
+    expedition.startedAt = base.updatedAt;
+    expedition.completesAt = base.updatedAt + 1_000;
+    persistV4Save(started.save);
+
+    render(<RefreshHarness />);
+    vi.setSystemTime(10_000 + HOUR);
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
+    expect(screen.getByTestId('expedition-status')).toHaveTextContent('awaiting_confirmation');
+    expect(screen.getByTestId('unlocked-realms')).not.toHaveTextContent('underworld');
   });
 
   it('does not report a risky expedition confirmation before its completion time', async () => {

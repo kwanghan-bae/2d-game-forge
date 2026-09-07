@@ -18,6 +18,9 @@ export { V4_MAX_INTERVENTION_CHARGES } from './types';
 export const V4_SAVE_KEY = 'shin-ui-eternal-sponsor-v4-save-v1';
 export const V4_SCHEMA_VERSION = 1 as const;
 export const V4_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
+// A normal visible tick runs every second. A larger gap is treated like a
+// background resume so live refresh cannot bypass the offline safety rules.
+export const V4_LIVE_REFRESH_GAP_MS = 2 * 60 * 1000;
 export const V4_OFFLINE_EFFICIENCY = 0.7;
 export const V4_RECOVERY_BACKUP_KEY = `${V4_SAVE_KEY}-recovery-backup`;
 

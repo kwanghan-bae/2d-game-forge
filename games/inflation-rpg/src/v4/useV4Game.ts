@@ -23,6 +23,7 @@ import {
   readV4Save,
   simulateOfflineProgress,
   startFreshV4Save,
+  V4_LIVE_REFRESH_GAP_MS,
 } from './save';
 import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
@@ -119,6 +120,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const current = saveRef.current;
     updatePresentationClock(timestamp);
     if (!Number.isFinite(timestamp) || timestamp < current.updatedAt) return;
+    if (timestamp - current.updatedAt > V4_LIVE_REFRESH_GAP_MS) {
+      settleOffline();
+      return;
+    }
     const hasDueWork = Object.values(current.meta.tasks).some((task) => task.completesAt <= timestamp)
       || Boolean(current.run.expedition
         && current.run.expedition.status === 'traveling'
@@ -127,7 +132,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       const next = completeFacilityTasks(current, timestamp);
       commit(next);
     }
-  }, [commit, updatePresentationClock]);
+  }, [commit, settleOffline, updatePresentationClock]);
 
   const changePolicy = useCallback((policy: V4Policy) => {
     commit(setV4Policy(saveRef.current, policy, Date.now()));
