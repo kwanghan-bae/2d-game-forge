@@ -191,7 +191,8 @@ pnpm circular
 - 작업·원정 시작 시 완료 시각이 저장 가능한 정수 상한을 넘으면 재화 차감 없이 원본 저장을 보존한다.
 - staged 원정이 다음 단계의 완료 시각을 저장 상한 밖으로 밀어내는 경우 전투를 중복 정산하지 않고 현재 단계를 보존한다.
 - malformed 원정 누적 전투 통계도 안전 정수 상한과 최대 encounter 수로 포화시켜 결과 저장을 유효하게 유지한다.
-- V4 단위/컴포넌트 테스트: 396개 파일, 3,370개 테스트 통과.
+- malformed Realm 보상도 결과 카드 계산 단계에서 안전 정수 상한으로 포화시켜 `Infinity` 결과가 저장 검증을 우회하지 못하게 한다.
+- V4 단위/컴포넌트 테스트: 396개 파일, 3,371개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 24/24 통과(각 프로젝트 12/12).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.

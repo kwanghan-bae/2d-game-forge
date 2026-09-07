@@ -174,7 +174,7 @@ function scaleResources(
   multiplier: number,
 ): Partial<Record<V4CurrencyKey, number>> {
   return Object.fromEntries(
-    Object.entries(output).map(([key, value]) => [key, Math.floor((value ?? 0) * multiplier)]),
+    Object.entries(output).map(([key, value]) => [key, safeScaledEconomyAmount(value, multiplier)]),
   ) as Partial<Record<V4CurrencyKey, number>>;
 }
 

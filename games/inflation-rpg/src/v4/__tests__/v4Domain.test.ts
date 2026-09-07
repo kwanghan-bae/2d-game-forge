@@ -33,6 +33,7 @@ import {
   useIntervention,
 } from '../domain';
 import { createV4HeroRuntime } from '../heroRuntime';
+import { REALM_DEFINITIONS } from '../data';
 import { V4_MAX_SAGA_ENTRIES } from '../types';
 import type { FacilityId, RealmId } from '../types';
 
@@ -1794,6 +1795,38 @@ describe('v4 save and domain', () => {
     expect(result?.totalDamageTaken).toBe(Number.MAX_SAFE_INTEGER);
     expect(persistV4Save(settled, fakeStorage)).toBe(true);
     expect(loadV4Save(fakeStorage)).not.toBeNull();
+  });
+
+  it('saturates malformed expedition rewards before writing a result save', () => {
+    const initial = createInitialV4Save(129);
+    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const expedition = started.save.run.expedition;
+    if (!expedition) throw new Error('expedition was not started');
+    expedition.id = 'e2e-victory-clock-guard';
+    expedition.encounterIndex = 2;
+    expedition.completesAt = expedition.startedAt;
+
+    const realm = REALM_DEFINITIONS.joseon_plains;
+    const originalReward = realm.reward;
+    realm.reward = { gold: Number.MAX_VALUE };
+    try {
+      const settled = completeFacilityTasks(started.save, expedition.completesAt);
+      const storage = new Map<string, string>();
+      const fakeStorage = {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => storage.set(key, value),
+      } as unknown as Storage;
+
+      expect(settled.run.lastExpeditionResult?.outcome).toBe('victory');
+      expect(settled.run.lastExpeditionResult?.reward.gold).toBe(Number.MAX_SAFE_INTEGER);
+      expect(persistV4Save(settled, fakeStorage)).toBe(true);
+      expect(loadV4Save(fakeStorage)).not.toBeNull();
+    } finally {
+      realm.reward = originalReward;
+    }
   });
 
   it('does not mutate a full intervention reserve', () => {
