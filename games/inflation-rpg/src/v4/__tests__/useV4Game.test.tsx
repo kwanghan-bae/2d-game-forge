@@ -113,6 +113,25 @@ describe('useV4Game monetization actions', () => {
     expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
   });
 
+  it('shows a result when offline settlement only upgrades existing equipment', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(113);
+    base.run.hero.equipmentIds = ['v4_iron_sword'];
+    base.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    const started = startFacilityTask(base, 'blacksmith', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    started.save.meta.tasks[started.task.id].outputPreview = {};
+    persistV4Save(started.save);
+    vi.setSystemTime(10_002);
+
+    render(<Harness monetization={new V4MonetizationAdapter(null, null)} />);
+
+    expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
+  });
+
   it('applies an offline double reward only once when the button is clicked concurrently', async () => {
     const base = createInitialV4Save(88);
     const startedAt = Date.now() - 60_000;
