@@ -50,9 +50,14 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const interventionChargeInFlight = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (initialOfflineSettlementDone.current) return;
-    initialOfflineSettlementDone.current = true;
+  const commit = useCallback((next: V4SaveEnvelope, nextMessage?: string) => {
+    saveRef.current = next;
+    setSave(next);
+    persistV4Save(next);
+    if (nextMessage) setMessage(nextMessage);
+  }, []);
+
+  const settleOffline = useCallback(() => {
     if (boot.loaded.status === 'invalid') return;
     const result = simulateOfflineProgress(saveRef.current, Date.now());
     saveRef.current = result.save;
@@ -62,16 +67,15 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setOfflineSummary(result.summary);
       setOfflineRewardDoubled(false);
     }
+  }, [boot.loaded.status]);
+
+  useEffect(() => {
+    if (initialOfflineSettlementDone.current) return;
+    initialOfflineSettlementDone.current = true;
+    settleOffline();
     // The initial state is intentionally processed once on mount. Subsequent
     // mutations use commit() and do not replay this effect.
-  }, []);
-
-  const commit = useCallback((next: V4SaveEnvelope, nextMessage?: string) => {
-    saveRef.current = next;
-    setSave(next);
-    persistV4Save(next);
-    if (nextMessage) setMessage(nextMessage);
-  }, []);
+  }, [settleOffline]);
 
   const now = clock;
   const refresh = useCallback(() => {
@@ -284,6 +288,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     message,
     activeTasks,
     refresh,
+    settleOffline,
     changePolicy,
     updateSettings,
     startTask,

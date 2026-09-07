@@ -15,6 +15,7 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
       <div data-testid="offline-state">{game.offlineSummary ? 'ready' : 'pending'}</div>
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
       <button type="button" onClick={() => { void game.doubleOfflineReward(); }}>double</button>
+      <button type="button" onClick={game.settleOffline}>resume</button>
     </>
   );
 }
@@ -69,7 +70,29 @@ function ConfirmHarness() {
 
 describe('useV4Game monetization actions', () => {
   beforeEach(() => localStorage.clear());
-  afterEach(() => localStorage.clear());
+  afterEach(() => {
+    vi.useRealTimers();
+    localStorage.clear();
+  });
+
+  it('uses offline efficiency when settling work after a background resume', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(87);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    persistV4Save(started.save);
+
+    render(<Harness monetization={new V4MonetizationAdapter(null, null)} />);
+    vi.setSystemTime(11_000);
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'resume' })); });
+
+    expect(screen.getByTestId('spirit')).toHaveTextContent('112');
+    expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
+  });
 
   it('applies an offline double reward only once when the button is clicked concurrently', async () => {
     const base = createInitialV4Save(88);

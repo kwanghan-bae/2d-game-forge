@@ -52,23 +52,25 @@ export function V4App({ config }: Props) {
 
   useEffect(() => {
     if (game.storageStatus === 'invalid') return;
-    const timer = window.setInterval(game.refresh, 1000);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'hidden') game.refresh();
+    }, 1000);
     return () => window.clearInterval(timer);
   }, [game.refresh, game.storageStatus]);
 
   useEffect(() => {
     if (game.storageStatus === 'invalid') return;
-    const refreshOnResume = () => {
+    const settleOnResume = () => {
       if (document.visibilityState === 'hidden') return;
-      game.refresh();
+      game.settleOffline();
     };
-    document.addEventListener('visibilitychange', refreshOnResume);
-    window.addEventListener('pageshow', refreshOnResume);
+    document.addEventListener('visibilitychange', settleOnResume);
+    window.addEventListener('pageshow', settleOnResume);
     return () => {
-      document.removeEventListener('visibilitychange', refreshOnResume);
-      window.removeEventListener('pageshow', refreshOnResume);
+      document.removeEventListener('visibilitychange', settleOnResume);
+      window.removeEventListener('pageshow', settleOnResume);
     };
-  }, [game.refresh, game.storageStatus]);
+  }, [game.settleOffline, game.storageStatus]);
 
   if (game.storageStatus === 'invalid') {
     return (

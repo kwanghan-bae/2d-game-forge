@@ -6,7 +6,10 @@ import { V4App } from '../V4App';
 
 vi.mock('../useV4Game', () => ({ useV4Game: vi.fn() }));
 
-function mockGame(refresh: ReturnType<typeof vi.fn>): ReturnType<typeof useV4Game> {
+function mockGame(
+  refresh: ReturnType<typeof vi.fn>,
+  settleOffline: ReturnType<typeof vi.fn>,
+): ReturnType<typeof useV4Game> {
   const save = createInitialV4Save(1);
   return {
     save,
@@ -17,6 +20,7 @@ function mockGame(refresh: ReturnType<typeof vi.fn>): ReturnType<typeof useV4Gam
     message: null,
     activeTasks: [],
     refresh,
+    settleOffline,
     changePolicy: vi.fn(),
     updateSettings: vi.fn(),
     startTask: vi.fn(),
@@ -49,18 +53,35 @@ describe('V4 app resume handling', () => {
     vi.clearAllMocks();
   });
 
-  it('refreshes immediately when the document becomes visible or the page is shown', () => {
+  it('settles offline progress when the document becomes visible or the page is shown', () => {
     vi.useFakeTimers();
     const refresh = vi.fn();
-    vi.mocked(useV4Game).mockReturnValue(mockGame(refresh));
+    const settleOffline = vi.fn();
+    vi.mocked(useV4Game).mockReturnValue(mockGame(refresh, settleOffline));
     const { unmount } = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
 
     act(() => { document.dispatchEvent(new Event('visibilitychange')); });
     act(() => { window.dispatchEvent(new Event('pageshow')); });
 
-    expect(refresh).toHaveBeenCalledTimes(2);
+    expect(settleOffline).toHaveBeenCalledTimes(2);
+    expect(refresh).not.toHaveBeenCalled();
     unmount();
     act(() => { window.dispatchEvent(new Event('pageshow')); });
-    expect(refresh).toHaveBeenCalledTimes(2);
+    expect(settleOffline).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not settle while the document is hidden', () => {
+    const refresh = vi.fn();
+    const settleOffline = vi.fn();
+    vi.mocked(useV4Game).mockReturnValue(mockGame(refresh, settleOffline));
+    const { unmount } = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+
+    act(() => { document.dispatchEvent(new Event('visibilitychange')); });
+    act(() => { window.dispatchEvent(new Event('pageshow')); });
+
+    expect(settleOffline).not.toHaveBeenCalled();
+    unmount();
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
   });
 });
