@@ -214,6 +214,30 @@ describe('V4 town hub support assignment', () => {
     expect(objective).not.toHaveTextContent('세요.을');
   });
 
+  it('falls back when a defeat result has malformed weakness text', () => {
+    const save = createInitialV4Save(104);
+    save.run.lastExpeditionResult = {
+      id: 'malformed-weakness-result',
+      realmId: 'joseon_plains',
+      outcome: 'defeat',
+      completedAt: save.createdAt,
+      reward: {},
+      heroPower: 90,
+      recommendedPower: 120,
+      turns: 8,
+      totalDamageDealt: 80,
+      totalDamageTaken: 120,
+      heroRemainingHp: 0,
+      weaknessKR: undefined as never,
+      recommendedFacilityId: 'blacksmith',
+      recommendedEquipmentId: null,
+      retryAfterSeconds: 45,
+    };
+
+    expect(() => renderHub({ save })).not.toThrow();
+    expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정 결과의 준비 정보를 확인하세요.');
+  });
+
   it('does not expose an infinite remaining time for malformed facility clocks', () => {
     const initial = createInitialV4Save(99);
     const started = startFacilityTask(initial, 'temple', initial.createdAt);
