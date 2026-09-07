@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { StrictMode } from 'react';
 import { createInitialV4Save } from '../save';
 import * as monetization from '../monetization';
 import { useV4Game } from '../useV4Game';
@@ -190,6 +191,40 @@ describe('V4 app resume handling', () => {
       unmount();
       await act(async () => { resolveHandle(handle); await pendingHandle; });
       expect(initialize).not.toHaveBeenCalled();
+    } finally {
+      createNative.mockRestore();
+      if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;
+      else delete windowWithCapacitor.Capacitor;
+    }
+  });
+
+  it('starts native monetization bootstrap only once under React StrictMode', async () => {
+    const windowWithCapacitor = window as Window & { Capacitor?: { isNativePlatform?: () => boolean } };
+    const previousCapacitor = windowWithCapacitor.Capacitor;
+    const createNative = vi.spyOn(monetization, 'createNativeV4Monetization');
+    const initialize = vi.fn(async () => true);
+    const handle: monetization.NativeV4MonetizationHandle = {
+      adapter: new monetization.V4MonetizationAdapter(null, null),
+      initialize,
+      restorePurchases: vi.fn(async () => true),
+    };
+    windowWithCapacitor.Capacitor = { isNativePlatform: () => true };
+    createNative.mockResolvedValue(handle);
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    try {
+      render(
+        <StrictMode>
+          <V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />
+        </StrictMode>,
+      );
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(createNative).toHaveBeenCalledTimes(1);
+      expect(initialize).toHaveBeenCalledTimes(1);
     } finally {
       createNative.mockRestore();
       if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;

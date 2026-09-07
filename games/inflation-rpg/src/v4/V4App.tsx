@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
 import { setVolumes } from '../systems/sound';
 import { getV4PolicyName } from './data';
@@ -26,6 +26,7 @@ const RESOURCES = [
 
 export function V4App({ config }: Props) {
   const [nativeMonetization, setNativeMonetization] = useState<V4MonetizationAdapter | undefined>(undefined);
+  const nativeMonetizationPromise = useRef<ReturnType<typeof createNativeV4Monetization> | null>(null);
   useEffect(() => {
     if (config.v4Monetization || nativeMonetization) return;
     const capacitor = (window as Window & {
@@ -40,8 +41,10 @@ export function V4App({ config }: Props) {
     }
     if (!isNativePlatform) return;
 
+    const handlePromise = nativeMonetizationPromise.current
+      ?? (nativeMonetizationPromise.current = createNativeV4Monetization());
     let cancelled = false;
-    void createNativeV4Monetization().then(async (handle) => {
+    void handlePromise.then(async (handle) => {
       if (cancelled) return;
       const initialized = await handle.initialize();
       if (!cancelled && initialized) setNativeMonetization(handle.adapter);
