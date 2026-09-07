@@ -2417,6 +2417,34 @@ describe('v4 save and domain', () => {
     expect(startedExpedition.save.run.expedition).not.toBeNull();
   });
 
+  it.each([
+    ['fractional', 100.5],
+    ['not-a-number', Number.NaN],
+    ['infinite', Number.POSITIVE_INFINITY],
+    ['unsafe', Number.MAX_VALUE],
+  ])('does not settle facility output over a malformed %s balance', (_label, spirit) => {
+    const malformed = createInitialV4Save(138);
+    const started = startFacilityTask(malformed, 'temple', malformed.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.currencies.spirit = spirit;
+
+    const completed = completeFacilityTasks(started.save, started.task.completesAt);
+
+    expect(completed).toBe(started.save);
+    expect(started.save.meta.currencies.spirit).toBe(spirit);
+    expect(started.save.meta.tasks[started.task.id]).toBeDefined();
+
+    const instant = completeFacilityTaskNow(
+      started.save,
+      'temple',
+      started.task.completesAt + 1_000,
+    );
+    expect(instant.ok).toBe(false);
+    expect(instant.save).toBe(started.save);
+    expect(started.save.meta.tasks[started.task.id]).toBeDefined();
+  });
+
   it('saturates a currency bonus at the persistable ceiling', () => {
     const nearLimit = createInitialV4Save(122);
     nearLimit.meta.currencies.gold = Number.MAX_SAFE_INTEGER - 1;

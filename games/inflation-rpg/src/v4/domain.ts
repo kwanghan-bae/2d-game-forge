@@ -898,11 +898,16 @@ function settleFacilityTasks(
   resolveExpeditionOnSettlement = true,
 ): V4SaveEnvelope {
   if (!isPersistableClock(now) || (!allowHistoricalSettlement && now < source.updatedAt)) return source;
+  const eventAt = allowHistoricalSettlement ? now : eventTimestamp(source, now);
+  for (const task of Object.values(source.meta.tasks)) {
+    if (onlyTaskId !== null && task.id !== onlyTaskId) continue;
+    if (task.completesAt > eventAt) continue;
+    if (!canApplyCurrencyOutput(source, task.outputPreview)) return source;
+  }
   const save = cloneSave(source);
   // Offline settlement may intentionally resolve the capped historical
   // window before a later manual write timestamp. Real-time callers keep the
   // stricter persisted-write clock guard above.
-  const eventAt = allowHistoricalSettlement ? now : eventTimestamp(save, now);
   const efficiency = normalizeSettlementEfficiency(outputEfficiency);
   for (const task of Object.values(save.meta.tasks)) {
     if (onlyTaskId !== null && task.id !== onlyTaskId) continue;
@@ -1000,9 +1005,13 @@ export function completeFacilityTaskNow(
     return { ok: false, save: source, error: '즉시 완료할 작업이 없습니다.' };
   }
   task.completesAt = eventAt;
+  const settled = settleFacilityTasks(prepared, eventAt, 1, true, false, false, task.id, false);
+  if (settled === prepared) {
+    return { ok: false, save: source, error: '작업 보상 잔액을 확인할 수 없어 즉시 완료하지 않았습니다.' };
+  }
   return {
     ok: true,
-    save: settleFacilityTasks(prepared, eventAt, 1, true, false, false, task.id, false),
+    save: settled,
     task,
   };
 }
