@@ -29,16 +29,23 @@ export class MonetizationService {
     this.iap = new IapManager(OnestoreIap, opts.licenseKey);
   }
 
+  private applyRestoredAdFreeEntitlement(restored: PurchaseInfo[]): void {
+    const hasAdFree = restored.some((purchase) => purchase.productId === 'ad_free');
+    // A non-consumable purchase is permanent for the current session. Restore
+    // may be empty while the store/account bridge is still unavailable; an
+    // empty response must not turn a previously confirmed entitlement off.
+    if (hasAdFree && !this.adFreeOwned) {
+      this.adFreeOwned = true;
+      this.opts.onAdFreeChanged(true);
+    }
+  }
+
   async initialize(): Promise<void> {
     await Promise.all([this.ad.initialize(), this.iap.initialize()]);
     await this.iap.queryProducts();
 
     const restored = await this.iap.restorePurchases();
-    const hasAdFree = restored.some((p) => p.productId === 'ad_free');
-    if (hasAdFree !== this.adFreeOwned) {
-      this.adFreeOwned = hasAdFree;
-      this.opts.onAdFreeChanged(hasAdFree);
-    }
+    this.applyRestoredAdFreeEntitlement(restored);
 
     if (!this.adFreeOwned) await this.ad.showBanner();
     else await this.ad.hideBanner();
@@ -81,11 +88,7 @@ export class MonetizationService {
 
   async restorePurchasesManually(): Promise<PurchaseInfo[]> {
     const restored = await this.iap.restorePurchases();
-    const hasAdFree = restored.some((p) => p.productId === 'ad_free');
-    if (hasAdFree !== this.adFreeOwned) {
-      this.adFreeOwned = hasAdFree;
-      this.opts.onAdFreeChanged(hasAdFree);
-    }
+    this.applyRestoredAdFreeEntitlement(restored);
     return restored;
   }
 }

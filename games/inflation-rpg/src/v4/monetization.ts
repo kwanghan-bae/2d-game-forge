@@ -269,8 +269,11 @@ export class V4MonetizationAdapter {
             ? { granted: true, reason: 'granted' }
             : { granted: false, reason: 'not_purchased' };
         }
-        this.setAdFreeOwned(Boolean(owned));
-        return owned
+        // A confirmed non-consumable entitlement is permanent for this
+        // session. An empty/false restore result can be a transient store
+        // response, so it may add ownership but never revoke it.
+        if (owned === true) this.setAdFreeOwned(true);
+        return this.adFree
           ? { granted: true, reason: 'granted' }
           : { granted: false, reason: 'not_purchased' };
       } catch {

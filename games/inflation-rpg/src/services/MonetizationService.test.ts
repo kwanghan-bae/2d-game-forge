@@ -78,4 +78,30 @@ describe('MonetizationService', () => {
     await svc.initialize();
     expect(onAdFreeChanged).toHaveBeenCalledWith(true);
   });
+
+  it('does not revoke a previously owned ad-free entitlement when initialize restore is empty', async () => {
+    svc = new MonetizationService({
+      adFreeOwned: true,
+      onAdFreeChanged,
+      onCrackStonesAwarded: vi.fn(),
+      licenseKey: 'TEST',
+      rewardedUnitId: 'r',
+      bannerUnitId: 'b',
+    });
+
+    await svc.initialize();
+
+    expect(svc.isAdFreeOwned()).toBe(true);
+    expect(onAdFreeChanged).not.toHaveBeenCalledWith(false);
+    expect(adHideBanner).toHaveBeenCalled();
+  });
+
+  it('does not revoke a previously owned ad-free entitlement on an empty manual restore', async () => {
+    svc.setAdFreeOwned(true);
+
+    await svc.restorePurchasesManually();
+
+    expect(svc.isAdFreeOwned()).toBe(true);
+    expect(onAdFreeChanged).not.toHaveBeenCalledWith(false);
+  });
 });

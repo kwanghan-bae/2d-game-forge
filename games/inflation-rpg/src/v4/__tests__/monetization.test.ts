@@ -87,6 +87,14 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('keeps an already-owned ad-free entitlement when restore returns no purchase', async () => {
+    const adapter = new V4MonetizationAdapter(null, null, null, async () => false);
+    adapter.setAdFreeOwned(true);
+
+    expect(await adapter.restorePurchases()).toEqual({ granted: true, reason: 'granted' });
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('shares one in-flight purchase restoration across concurrent callers', async () => {
     let restoreCalls = 0;
     let release!: (owned: boolean) => void;
