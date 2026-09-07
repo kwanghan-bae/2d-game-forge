@@ -148,6 +148,8 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 ) : (
                   <div className="v4-task">다음: {getFacilityTaskLabel(facilityId, definition.taskLabelKR, preview.outputEquipmentIds)}</div>
                 )}
+                {task && (!Number.isFinite(task.completesAt) || !Number.isFinite(now) || task.completesAt <= now)
+                  && <div className="v4-task v4-task--blocked">완료된 작업입니다. 진행 확인으로 결과를 정산하세요.</div>}
                 {!task && agentId && !assignedAgentId && <div className="v4-task">지원 담당자 없이 기본 방식으로 시작합니다.</div>}
                 <div className="v4-economy" aria-label={`${definition.nameKR} 작업 경제 정보`}>
                   <span>투입 · {formatResources(preview.input)}</span>
@@ -159,7 +161,12 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                   {task ? (
                     <>
                       <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>진행 확인</button>
-                      <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onCancelTask(facilityId)}>취소</button>
+                      <button
+                        type="button"
+                        className="v4-btn v4-btn--quiet"
+                        disabled={!Number.isFinite(task.completesAt) || !Number.isFinite(now) || task.completesAt <= now}
+                        onClick={() => onCancelTask(facilityId)}
+                      >취소</button>
                       {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" disabled={!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT} onClick={() => onInstantTask(facilityId)}>광고 즉시 완료</button>}
                     </>
                   ) : (
