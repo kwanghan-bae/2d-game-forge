@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
 import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmDefinition, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
 import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { InterventionType, RealmId, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from '../types';
+import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
 
 interface Props {
   save: V4SaveEnvelope;
@@ -47,11 +47,7 @@ function getExpeditionRemainingSeconds(now: number, completesAt: number): number
 }
 
 export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnlock, onRefresh, onIntervention, onBack }: Props) {
-  const titleRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
+  const titleRef = useV4ScreenHeadingFocus();
 
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;

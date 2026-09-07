@@ -44,4 +44,16 @@ describe('V4 settings screen', () => {
     );
     expect(screen.queryByRole('button', { name: '구매 복원' })).not.toBeInTheDocument();
   });
+
+  it('moves focus to the settings heading when the screen opens', () => {
+    render(
+      <SettingsScreen
+        settings={{ music: 0.7, sfx: 0.8, muted: false }}
+        onChange={() => {}}
+        onBack={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '설정' })).toHaveFocus();
+  });
 });

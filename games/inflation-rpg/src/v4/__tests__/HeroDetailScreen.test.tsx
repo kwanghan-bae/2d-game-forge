@@ -61,4 +61,21 @@ describe('V4 hero detail screen', () => {
 
     expect(screen.getByRole('button', { name: '원정 귀환 후 V3 영웅 가져오기' })).toBeDisabled();
   });
+
+  it('moves focus to the hero heading when the screen opens', () => {
+    const save = createInitialV4Save(127);
+
+    render(
+      <HeroDetailScreen
+        hero={save.run.hero}
+        gold={100}
+        expeditionActive={false}
+        onBack={vi.fn()}
+        onImportLegacy={vi.fn()}
+        onRejuvenate={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: save.run.hero.name })).toHaveFocus();
+  });
 });

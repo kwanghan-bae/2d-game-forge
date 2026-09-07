@@ -1,4 +1,5 @@
 import type { V4Settings } from '../types';
+import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
 
 interface Props {
   settings: V4Settings;
@@ -8,13 +9,15 @@ interface Props {
 }
 
 export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases }: Props) {
+  const titleRef = useV4ScreenHeadingFocus();
+
   return (
     <main className="v4-container">
       <section className="v4-panel">
         <div className="v4-button-row">
           <button type="button" className="v4-btn v4-btn--quiet" onClick={onBack}>← 마을로</button>
         </div>
-        <h2 style={{ marginTop: 12 }}>설정</h2>
+        <h2 ref={titleRef} tabIndex={-1} style={{ marginTop: 12 }}>설정</h2>
         <p>한국어 · 로컬 저장 · V3 Legacy 저장과 분리된 V4 설정입니다.</p>
       </section>
 
