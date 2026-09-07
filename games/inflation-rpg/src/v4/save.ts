@@ -497,6 +497,7 @@ export function importV3HeroSnapshot(
   input: HeroSnapshot,
   now: number,
 ): V4SaveEnvelope {
+  if (source.run.expedition) return source;
   const eventAt = isPersistableNonNegativeNumber(now)
     ? Math.max(source.updatedAt, now)
     : source.updatedAt;

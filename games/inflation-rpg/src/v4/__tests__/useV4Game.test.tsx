@@ -5,6 +5,8 @@ import { createInitialV4Save, persistV4Save, V4_RECOVERY_BACKUP_KEY, V4_SAVE_KEY
 import { completeFacilityTasks, startExpedition, startFacilityTask } from '../domain';
 import { V4MonetizationAdapter } from '../monetization';
 import { useV4Game } from '../useV4Game';
+import { useGameStore } from '../../store/gameStore';
+import type { HeroSnapshot } from '../../hero/HeroEntity';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -95,6 +97,17 @@ function ConfirmHarness() {
     <>
       <div data-testid="confirm-message">{game.message ?? ''}</div>
       <button type="button" onClick={game.confirmRun}>confirm</button>
+    </>
+  );
+}
+
+function ImportHarness() {
+  const game = useV4Game();
+  return (
+    <>
+      <div data-testid="import-hero">{game.save.run.hero.name}</div>
+      <div data-testid="import-message">{game.message ?? ''}</div>
+      <button type="button" onClick={game.importLegacyHero}>import</button>
     </>
   );
 }
@@ -343,6 +356,34 @@ describe('useV4Game monetization actions', () => {
 
     expect(providerCalls).toBe(0);
     expect(screen.getByTestId('spirit')).toHaveTextContent('100');
+  });
+
+  it('blocks a stale V3 import callback while an expedition is active', () => {
+    const base = createInitialV4Save(120);
+    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    persistV4Save(started.save);
+    useGameStore.setState((state) => ({
+      ...state,
+      run: {
+        ...state.run,
+        heroSnapshot: {
+          name: 'stale import', emoji: '🛡️', age: 17, chapter: '청년기', job: '검객', level: 1,
+          exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
+          actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
+          personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
+          unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 120,
+        } as unknown as HeroSnapshot,
+      },
+    }));
+
+    render(<ImportHarness />);
+    fireEvent.click(screen.getByRole('button', { name: 'import' }));
+
+    expect(screen.getByTestId('import-hero')).toHaveTextContent(base.run.hero.name);
+    expect(screen.getByTestId('import-message')).toHaveTextContent('원정 중에는 영웅 기록을 바꿀 수 없습니다');
+    useGameStore.setState((state) => ({ ...state, run: { ...state.run, heroSnapshot: null } }));
   });
 
   it('only requests one instant-task ad when the same action is clicked concurrently', async () => {

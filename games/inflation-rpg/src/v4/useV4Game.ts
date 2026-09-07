@@ -322,6 +322,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, [commit]);
 
   const importLegacyHero = useCallback(() => {
+    if (saveRef.current.run.expedition) {
+      setMessage('원정 중에는 영웅 기록을 바꿀 수 없습니다. 귀환 후 다시 시도해 주세요.');
+      return;
+    }
     const legacySnapshot = useGameStore.getState().run?.heroSnapshot;
     if (!legacySnapshot) {
       setMessage('가져올 V3 영웅 기록이 없습니다. V3 Legacy에서 영웅을 먼저 후원하세요.');

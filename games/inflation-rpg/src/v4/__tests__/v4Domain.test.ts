@@ -646,6 +646,24 @@ describe('v4 save and domain', () => {
     expect(imported.run.hero.realmId).toBe('deep_forest');
   });
 
+  it('does not replace the battle hero while an expedition is active', () => {
+    const destination = createInitialV4Save(119);
+    const started = startExpedition(destination, 'joseon_plains', destination.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const imported = importV3HeroSnapshot(started.save, {
+      name: '교체 시도 영웅', emoji: '🛡️', age: 17, chapter: '청년기', job: '검객', level: 1,
+      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
+      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
+      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 119,
+    } as unknown as HeroSnapshot, destination.updatedAt + 1_000);
+
+    expect(imported).toBe(started.save);
+    expect(imported.run.hero.name).not.toBe('교체 시도 영웅');
+  });
+
   it('normalizes duplicate V3 equipment records during explicit import', () => {
     const source = {
       name: '중복 장비 영웅', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,
