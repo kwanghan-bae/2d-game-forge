@@ -109,7 +109,10 @@ function touchSave(save: V4SaveEnvelope, now: number): void {
 }
 
 function isActionClockValid(save: V4SaveEnvelope, now: number): boolean {
-  return Number.isFinite(now) && now >= save.updatedAt;
+  return Number.isFinite(now)
+    && now >= 0
+    && now <= MAX_ECONOMY_VALUE
+    && now >= save.updatedAt;
 }
 
 function isV4Policy(value: unknown): value is V4Policy {

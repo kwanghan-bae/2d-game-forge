@@ -1677,6 +1677,21 @@ describe('v4 save and domain', () => {
     expect(staleCharge).toBe(initial);
   });
 
+  it('rejects an unsafe action clock before direct rewards can normalize it', () => {
+    const initial = createInitialV4Save(124);
+    const unsafeClock = Number.MAX_SAFE_INTEGER + 1;
+
+    const bonus = grantOfflineResourceBonus(initial, { gold: 10 }, unsafeClock);
+    const charge = grantInterventionCharge(initial, unsafeClock);
+    const intervention = useIntervention(initial, 'heal', unsafeClock);
+
+    expect(bonus).toBe(initial);
+    expect(charge).toBe(initial);
+    expect(intervention.ok).toBe(false);
+    if (intervention.ok) return;
+    expect(intervention.save).toBe(initial);
+  });
+
   it('does not mutate a full intervention reserve', () => {
     const full = createInitialV4Save(97);
     full.run.interventionCharges = 3;
