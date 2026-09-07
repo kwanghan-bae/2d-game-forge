@@ -163,6 +163,15 @@ describe('IapManager', () => {
     expect(plugin.acknowledge).not.toHaveBeenCalled();
   });
 
+  it('rejects an unknown runtime product before connecting to the provider', async () => {
+    const result = await mgr.purchase('unknown_product' as never);
+
+    expect(result).toMatchObject({ status: 'failed' });
+    expect(result.errorMessage).toContain('상품');
+    expect(plugin.initialize).not.toHaveBeenCalled();
+    expect(plugin.purchase).not.toHaveBeenCalled();
+  });
+
   it('downgrades a successful store response that has no purchase record', async () => {
     plugin.purchase.mockResolvedValue({ status: 'success' });
 

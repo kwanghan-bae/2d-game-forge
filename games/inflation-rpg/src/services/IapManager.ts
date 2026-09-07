@@ -130,6 +130,9 @@ export class IapManager {
   }
 
   async purchase(productId: IapProductId): Promise<PurchaseResult> {
+    if (!isKnownProductId(productId)) {
+      return { status: 'failed', errorMessage: '알 수 없는 상품입니다.' };
+    }
     await this.refreshProviderConnection();
     const result = await this.plugin.purchase({ productId });
     if (result.status !== 'success') return result;

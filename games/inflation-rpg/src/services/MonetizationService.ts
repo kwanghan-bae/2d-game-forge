@@ -95,6 +95,7 @@ export class MonetizationService {
 
   async purchase(productId: IapProductId): Promise<boolean> {
     if (this.disposed) return false;
+    if (typeof productId !== 'string' || !Object.prototype.hasOwnProperty.call(IAP_CATALOG, productId)) return false;
     const result = await this.iap.purchase(productId);
     if (this.disposed) return false;
     if (result.status !== 'success') return false;

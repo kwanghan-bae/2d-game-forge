@@ -152,6 +152,12 @@ describe('MonetizationService', () => {
     expect(onCrackStonesAwarded).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects an unknown runtime product before invoking the IAP manager', async () => {
+    expect(await svc.purchase('unknown_product' as never)).toBe(false);
+    expect(iapPurchase).not.toHaveBeenCalled();
+    expect(onCrackStonesAwarded).not.toHaveBeenCalled();
+  });
+
   it('applies a validated late ad-free purchaseUpdated event immediately', async () => {
     await svc.initialize();
 
