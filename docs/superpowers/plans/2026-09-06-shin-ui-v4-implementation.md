@@ -201,6 +201,7 @@ pnpm circular
 - 브라우저 선택 게이트에서 idle 진행이 멈추지 않도록 danger는 4초 후 자동 전투, shrine은 4초 후 자동 황금 축복으로 안전하게 해소하고 중복 클릭을 차단했다. V3-H·V3-DEF·사가 필터 smoke와 전체 단위 테스트로 회귀를 확인했다.
 - V3-H 깊이 회귀가 RNG와 연속 smoke 실행 부하에 따라 50초 안에 Realm을 벗어나지 못하던 간헐 실패를 고정 sleep 대신 실제 `hud-realm` 전환 assertion(120초 상한)으로 교정했다.
 - Chromium·iPhone14 각각 short 회귀 17/17(장시간 V2 baseline 제외)을 통과했고, v9 저장 마이그레이션 smoke도 두 프로파일에서 통과했다.
+- 장시간 V2 baseline도 dev-only fast-forward 경로로 Chromium 5.6초·iPhone14 3.4초에 통과했으며, root `pnpm test`(5개 package), `pnpm build`(game/dev-shell 포함)까지 최신 HEAD에서 성공했다.
 
 ### 다음 자동 사이클 우선순위
 
