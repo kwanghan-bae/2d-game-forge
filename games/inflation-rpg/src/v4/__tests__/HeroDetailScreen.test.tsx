@@ -78,4 +78,37 @@ describe('V4 hero detail screen', () => {
 
     expect(screen.getByRole('heading', { name: save.run.hero.name })).toHaveFocus();
   });
+
+  it('does not expose non-finite hero or equipment values', () => {
+    const save = createInitialV4Save(128);
+    const hero = {
+      ...save.run.hero,
+      age: Number.NaN,
+      level: Number.POSITIVE_INFINITY,
+      hp: Number.POSITIVE_INFINITY,
+      hpMax: Number.NaN,
+      atk: Number.POSITIVE_INFINITY,
+      def: Number.NaN,
+      critRateBase: Number.POSITIVE_INFINITY,
+      actionCount: Number.NaN,
+      rejuvenationCount: Number.POSITIVE_INFINITY,
+      equipmentIds: ['v4_iron_sword'],
+      equipmentLevels: { v4_iron_sword: Number.POSITIVE_INFINITY },
+    };
+
+    render(
+      <HeroDetailScreen
+        hero={hero}
+        gold={100}
+        expeditionActive={false}
+        onBack={vi.fn()}
+        onImportLegacy={vi.fn()}
+        onRejuvenate={vi.fn()}
+      />,
+    );
+
+    const main = screen.getByRole('main');
+    expect(main.textContent).not.toContain('Infinity');
+    expect(main.textContent).not.toContain('NaN');
+  });
 });
