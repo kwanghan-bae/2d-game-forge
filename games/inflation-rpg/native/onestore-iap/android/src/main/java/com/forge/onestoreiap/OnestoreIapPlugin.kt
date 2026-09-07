@@ -79,15 +79,14 @@ class OnestoreIapPlugin : Plugin() {
                 }
             }
 
-            if (purchased.isEmpty()) {
-                if (pendingPurchase.hasPending()) {
-                    takePendingPurchase()?.call?.resolve(failedPurchase("구매 결과를 확인하지 못했습니다.", result))
-                }
-            } else {
-                val pendingProductId = pendingPurchase.peekProductId()
-                if (pendingProductId != null && purchased.none { it.getProductId() == pendingProductId }) {
-                    takePendingPurchase()?.call?.resolve(failedPurchase("요청한 상품의 구매 결과를 확인하지 못했습니다.", result))
-                }
+            if (shouldFailPendingAfterSuccessfulCallback(
+                    pendingPurchase.peekProductId(),
+                    purchased.map { it.getProductId() },
+                )) {
+                // An unrelated non-empty callback returns false here and
+                // keeps the pending purchase alive until its matching event
+                // or the native timeout.
+                takePendingPurchase()?.call?.resolve(failedPurchase("요청한 상품의 구매 결과를 확인하지 못했습니다.", result))
             }
         }
     }

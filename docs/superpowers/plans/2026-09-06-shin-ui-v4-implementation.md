@@ -349,11 +349,12 @@ pnpm circular
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 약 5.2분).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
-- native onestore Web 테스트 7/7, Android pending 구매 슬롯 단위 테스트 2/2와 `compileDebugKotlin`·`assembleDebug`가 통과했다. 실기기 sandbox 결제·복원·환불 QA는 `adb`·sandbox 계정 부재로 남아 있다.
+- native onestore Web 테스트 7/7, Android pending 구매 슬롯 단위 테스트 4/4와 `compileDebugKotlin`·`assembleDebug`가 통과했다. 실기기 sandbox 결제·복원·환불 QA는 `adb`·sandbox 계정 부재로 남아 있다.
 - 광고·결제 브리지의 truthy 비-boolean 반환은 보상이나 광고 제거 권한으로 인정하지 않도록 회귀 테스트와 strict boundary를 추가했다.
 - 광고·결제·복원 provider와 native monetization bootstrap의 영구 pending을 60초 뒤 provider failure로 정리하는 timeout boundary와 네 경로 회귀 테스트를 추가했다.
 - 원스토어 Android 초기화·상품 조회·복원·승인/소비 응답·구매 callback 유실로 native 대기 호출이 영구 점유되는 경로도 60초 timeout으로 해제하고, 이후 연결·구매 재시도가 가능하도록 정리했다. Kotlin compile·debug APK assemble을 재검증했다.
 - 원스토어 구매 callback의 pending 슬롯을 별도 단일 소비 경계로 추출해, 요청 상품과 일치하는 성공 응답은 한 번만 PluginCall을 resolve하고 중복 callback은 무시하도록 했다. 일치·비일치 callback 보존을 Kotlin 단위 테스트 2개로 고정했다.
+- 원스토어 성공 callback에 다른 상품이 먼저 섞여 와도 요청 상품의 pending PluginCall을 조기 실패시키지 않고 matching callback 또는 native timeout까지 보존하도록 정리했다. 빈 성공 payload와 비일치 상품 대기 경계를 Kotlin 단위 테스트로 추가했다.
 - 시설 강화 비용을 `+` 버튼의 접근성 라벨에만 두지 않고 시설 카드에 금화·재료로 항상 노출해, 모바일에서도 다음 강화 병목을 판단할 수 있게 했다. TownHub 회귀 테스트를 추가했다.
 - 원정 준비 비용이 부족한 Realm의 길잡이·혼자 출발 버튼을 미리 비활성화하고, 필요한 재화와 현재 보유량을 카드에 표시해 출발 실패를 사전 안내했다. ExpeditionScreen 회귀 테스트를 추가했다.
 - 영웅 상세 화면에서 손상된 `equipmentIds` 컬렉션을 빈 장비 상태로 격리해, 부분 저장·in-memory 복구 payload도 화면을 중단시키지 않도록 했다. HeroDetailScreen 회귀 테스트를 추가했다.

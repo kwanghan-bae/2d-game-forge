@@ -30,3 +30,13 @@ internal class PendingPurchaseSlot<T> {
         return value
     }
 }
+
+/**
+ * A successful callback with unrelated purchases is not a failure for the
+ * currently requested product. Keep waiting for the matching callback or the
+ * native timeout; only an explicitly empty successful result can fail it.
+ */
+internal fun shouldFailPendingAfterSuccessfulCallback(
+    pendingProductId: String?,
+    purchasedProductIds: List<String>,
+): Boolean = pendingProductId != null && purchasedProductIds.isEmpty()
