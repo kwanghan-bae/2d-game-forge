@@ -246,6 +246,20 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     if (mountedRef.current) setMessage(result.granted ? '광고 제거가 적용되었습니다.' : '구매가 완료되지 않았습니다.');
   }, [monetization]);
 
+  const restorePurchases = useCallback(async () => {
+    if (!monetization?.canRestorePurchases()) {
+      setMessage('현재 환경에서는 구매 복원을 사용할 수 없습니다. 게임은 계속 진행됩니다.');
+      return;
+    }
+    const result = await monetization.restorePurchases();
+    if (!mountedRef.current) return;
+    setMessage(result.granted
+      ? '광고 제거 구매를 복원했습니다.'
+      : result.reason === 'not_purchased'
+        ? '복원할 광고 제거 구매를 찾지 못했습니다.'
+        : '구매 복원에 실패했습니다. 게임은 계속 진행됩니다.');
+  }, [monetization]);
+
   const startRun = useCallback((realmId: RealmId, agentId: SupportAgentId | null = null) => {
     const current = saveRef.current;
     const result = startExpedition(current, realmId, Date.now(), current.run.policy, agentId);
@@ -330,6 +344,8 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     addInterventionCharge,
     intervene,
     buyAdFree,
+    restorePurchases,
+    restorePurchasesAvailable: Boolean(monetization?.canRestorePurchases()),
     startRun,
     confirmRun,
     confirmUnlock,

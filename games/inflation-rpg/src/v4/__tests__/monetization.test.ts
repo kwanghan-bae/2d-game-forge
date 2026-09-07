@@ -33,6 +33,14 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('restores a native ad-free entitlement through the adapter boundary', async () => {
+    const adapter = new V4MonetizationAdapter(null, null, null, async () => true);
+
+    expect(adapter.canRestorePurchases()).toBe(true);
+    expect((await adapter.restorePurchases()).granted).toBe(true);
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('shares one in-flight ad-free purchase across concurrent callers', async () => {
     let purchaseCalls = 0;
     let release!: () => void;

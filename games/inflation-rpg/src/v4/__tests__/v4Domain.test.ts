@@ -121,6 +121,15 @@ describe('v4 save and domain', () => {
     }));
     expect(loadV4Save(fakeStorage)).toBeNull();
 
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...save,
+      run: (() => {
+        const { expedition: _expedition, ...runWithoutExpedition } = save.run;
+        return runWithoutExpedition;
+      })(),
+    }));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
   });
 
   it('rejects an expedition result newer than the save watermark', () => {

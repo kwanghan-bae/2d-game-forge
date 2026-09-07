@@ -131,7 +131,7 @@ export function V4App({ config }: Props) {
       {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} gold={game.save.meta.currencies.gold} expeditionActive={Boolean(game.save.run.expedition)} onBack={() => setScreen('town')} onImportLegacy={game.importLegacyHero} onRejuvenate={game.rejuvenate} />}
       {screen === 'expedition' && <ExpeditionScreen save={game.save} now={game.now} onStart={game.startRun} onConfirm={game.confirmRun} onConfirmUnlock={game.confirmUnlock} onRefresh={game.refresh} onIntervention={game.intervene} onBack={() => setScreen('town')} />}
       {screen === 'saga' && <SagaScreen entries={game.save.meta.sagaEntries} onBack={() => setScreen('town')} />}
-      {screen === 'settings' && <SettingsScreen settings={game.save.meta.settings} onChange={game.updateSettings} onBack={() => setScreen('town')} />}
+      {screen === 'settings' && <SettingsScreen settings={game.save.meta.settings} onChange={game.updateSettings} onBack={() => setScreen('town')} onRestorePurchases={game.restorePurchasesAvailable ? game.restorePurchases : undefined} />}
 
       <nav className="v4-nav" aria-label="주요 메뉴"><div className="v4-nav-inner">
         {([['town', '🏘️ 마을'], ['hero', '⚔️ 영웅'], ['expedition', '🧭 원정'], ['saga', '📜 사가']] as Array<[V4Screen, string]>).map(([id, label]) => <button type="button" key={id} className={`v4-nav-btn ${screen === id ? 'v4-nav-btn--active' : ''}`} aria-current={screen === id ? 'page' : undefined} onClick={() => setScreen(id)}>{label}</button>)}

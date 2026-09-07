@@ -15,6 +15,8 @@ export interface V4MonetizationServiceBridge {
   isAdFreeOwned?: () => boolean;
 }
 
+export type V4RestorePurchasesProvider = () => Promise<boolean>;
+
 export interface V4RewardedUsageStore {
   read(day: string): number;
   write(day: string, count: number): void;
@@ -83,11 +85,13 @@ export function createLocalV4RewardedUsageStore(
 export function createV4MonetizationAdapter(
   service: V4MonetizationServiceBridge,
   usageStore: V4RewardedUsageStore = createLocalV4RewardedUsageStore(),
+  restorePurchases?: V4RestorePurchasesProvider,
 ): V4MonetizationAdapter {
   const adapter = new V4MonetizationAdapter(
     { showRewarded: () => service.showRewardedAd() },
     { purchase: async () => (await service.purchase('ad_free') ? 'purchased' : 'failed') },
     usageStore,
+    restorePurchases,
   );
   try {
     if (service.isAdFreeOwned?.()) adapter.setAdFreeOwned(true);
@@ -134,7 +138,10 @@ export async function createNativeV4Monetization(
     rewardedUnitId: ADMOB_CONFIG.rewarded.android,
     bannerUnitId: ADMOB_CONFIG.banner.android,
   });
-  const adapter = createV4MonetizationAdapter(service, options.usageStore);
+  const adapter = createV4MonetizationAdapter(service, options.usageStore, async () => {
+    const restored = await service.restorePurchasesManually();
+    return restored.some((purchase) => purchase.productId === 'ad_free');
+  });
   adapter.setAdFreeOwned(adFreeOwned);
   const syncEntitlement = () => {
     const owned = service.isAdFreeOwned();
@@ -175,12 +182,15 @@ export class V4MonetizationAdapter {
   private rewardedDay = localDayKey();
   private rewardedInFlightByDay = new Map<string, number>();
   private adFreePurchaseInFlight: Promise<V4MonetizationResult> | null = null;
+  private readonly restorePurchasesProvider: V4RestorePurchasesProvider | null;
 
   constructor(
     private readonly ads: V4AdProvider | null,
     private readonly purchases: V4PurchaseProvider | null,
     private readonly usageStore: V4RewardedUsageStore | null = null,
+    restorePurchasesProvider: V4RestorePurchasesProvider | null = null,
   ) {
+    this.restorePurchasesProvider = restorePurchasesProvider;
     this.adsToday = this.readStoredUsage(this.rewardedDay);
   }
 
@@ -205,7 +215,22 @@ export class V4MonetizationAdapter {
     return this.adsToday;
   }
   isAdFree(): boolean { return this.adFree; }
+  canRestorePurchases(): boolean { return this.restorePurchasesProvider !== null; }
   setAdFreeOwned(owned: boolean): void { this.adFree = owned; }
+
+  async restorePurchases(): Promise<V4MonetizationResult> {
+    const restore = this.restorePurchasesProvider;
+    if (!restore) return { granted: false, reason: 'provider_failed' };
+    try {
+      const owned = await restore();
+      this.adFree = Boolean(owned);
+      return owned
+        ? { granted: true, reason: 'granted' }
+        : { granted: false, reason: 'not_purchased' };
+    } catch {
+      return { granted: false, reason: 'provider_failed' };
+    }
+  }
 
   async watchRewarded(placement: V4RewardedPlacement): Promise<V4MonetizationResult> {
     if (!isRewardedPlacement(placement)) return { granted: false, reason: 'provider_failed' };

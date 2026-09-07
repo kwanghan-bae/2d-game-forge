@@ -20,4 +20,28 @@ describe('V4 settings screen', () => {
     expect(onChange).toHaveBeenNthCalledWith(2, { muted: true });
     expect(screen.getByText('V4 전용 저장')).toBeInTheDocument();
   });
+
+  it('exposes purchase restoration only when the native bridge provides it', () => {
+    const onRestorePurchases = vi.fn();
+    const { rerender } = render(
+      <SettingsScreen
+        settings={{ music: 0.7, sfx: 0.8, muted: false }}
+        onChange={() => {}}
+        onBack={() => {}}
+        onRestorePurchases={onRestorePurchases}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '구매 복원' }));
+    expect(onRestorePurchases).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <SettingsScreen
+        settings={{ music: 0.7, sfx: 0.8, muted: false }}
+        onChange={() => {}}
+        onBack={() => {}}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: '구매 복원' })).not.toBeInTheDocument();
+  });
 });
