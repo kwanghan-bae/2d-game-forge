@@ -3,6 +3,7 @@ import { createNativeV4Monetization, createV4MonetizationAdapter, hasV4AdFreeEnt
 
 const nativeBridge = vi.hoisted(() => ({
   onAdFreeChanged: null as ((owned: boolean) => void) | null,
+  initialize: null as (() => Promise<void>) | null,
 }));
 
 vi.mock('../../services/MonetizationService', () => ({
@@ -11,7 +12,9 @@ vi.mock('../../services/MonetizationService', () => ({
       nativeBridge.onAdFreeChanged = options.onAdFreeChanged;
     }
 
-    async initialize() {}
+    async initialize() {
+      await nativeBridge.initialize?.();
+    }
     async queryProducts() { return []; }
     async restorePurchasesManually() { return []; }
     async showRewardedAd() { return true; }
@@ -148,6 +151,22 @@ describe('v4 monetization adapter', () => {
 
     adapter.setAdFreeOwned(0 as never);
     expect(adapter.isAdFree()).toBe(false);
+  });
+
+  it('fails native monetization bootstrap when the service stays pending beyond the safety deadline', async () => {
+    vi.useFakeTimers();
+    nativeBridge.initialize = async () => new Promise<void>(() => {});
+    try {
+      const handle = await createNativeV4Monetization();
+      const initialized = handle.initialize();
+
+      await vi.advanceTimersByTimeAsync(V4_MONETIZATION_TIMEOUT_MS);
+
+      await expect(initialized).resolves.toBe(false);
+    } finally {
+      nativeBridge.initialize = null;
+      vi.useRealTimers();
+    }
   });
 
   it('restores a native ad-free entitlement through the adapter boundary', async () => {

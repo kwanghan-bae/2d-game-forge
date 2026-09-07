@@ -203,7 +203,14 @@ export async function createNativeV4Monetization(
     adapter,
     async initialize() {
       try {
-        await service.initialize();
+        const outcome = await withProviderTimeout(
+          (async () => {
+            await service.initialize();
+            return true;
+          })(),
+          false,
+        );
+        if (outcome.failed || outcome.value !== true) return false;
         syncEntitlement();
         return true;
       } catch {
@@ -212,7 +219,9 @@ export async function createNativeV4Monetization(
     },
     async restorePurchases() {
       try {
-        const restored = await service.restorePurchasesManually();
+        const outcome = await withProviderTimeout(service.restorePurchasesManually(), []);
+        if (outcome.failed) return false;
+        const restored = outcome.value;
         syncEntitlement();
         return hasV4AdFreeEntitlement(restored);
       } catch {
