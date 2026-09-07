@@ -145,6 +145,8 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     }, V4_SAVE_KEY);
     await page.reload();
 
+    await expect(page.getByTestId('v4-offline-result')).toBeVisible();
+    await page.getByRole('button', { name: '마을 확인' }).click();
     await page.getByRole('button', { name: '원정 준비 →' }).click();
     await expect(page.getByTestId('v4-expedition-result')).toContainText('원정 성공');
     await expect(page.getByTestId('v4-expedition-result')).toContainText('전투력');
@@ -342,6 +344,8 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     }, V4_SAVE_KEY);
     await page.reload();
 
+    await expect(page.getByTestId('v4-offline-result')).toBeVisible();
+    await page.getByRole('button', { name: '마을 확인' }).click();
     await page.getByRole('button', { name: '영웅 상세' }).click();
     await expect(page.getByText('마을의 철검 · Lv.1')).toBeVisible();
     await expect(page.getByText('공격 +80')).toBeVisible();

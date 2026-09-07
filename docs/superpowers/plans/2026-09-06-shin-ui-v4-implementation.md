@@ -197,6 +197,7 @@ pnpm circular
 - 직접 작업 완료·위험 원정 확인도 `Number.MAX_SAFE_INTEGER` 밖의 시각을 거부해 timestamp 정규화가 결제를 우회하지 않도록 고정했다.
 - 원정 출발 카드에 보스 승률과 함께 예상 보상 재화를 표시해 출발 전 위험·보상 판단을 완성했다.
 - 1초 미만의 오프라인 경과에서도 작업·장비·재화 결과가 발생하면 offline 결과 모달을 숨기지 않도록 실제 결과 필드를 기준으로 표시하고, 해당 hook 경계를 회귀 테스트로 고정했다.
+- 재접속 결과 모달이 노출되는 원정 귀환·장비 완료 E2E도 `마을 확인` 이후 후속 화면으로 진행하도록 명시해 Chromium·iPhone14 V4 시나리오 26/26을 다시 통과시켰다.
 - dev-shell의 서버 manifest와 클라이언트 loader가 공용 data-only manifest를 사용하도록 통합해 slug·제품명·asset 경로 drift를 차단했다.
 - dev-shell portal E2E에서 V4/legacy route가 각각 실제 V4App/V3 MainMenu를 마운트하는지 검증했다(4/4).
 - 포털에서 V4 진입 후 뒤로 돌아가 V3 legacy를 여는 browser navigation도 검증해 이전 게임 root가 남지 않음을 확인했다(5/5).
