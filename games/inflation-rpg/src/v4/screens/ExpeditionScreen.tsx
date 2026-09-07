@@ -56,6 +56,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const waitingForBoss = activeEncounter?.tier === 'boss';
   const nextRealmId = result?.outcome === 'victory' ? getNextRealmId(result.realmId) : null;
   const nextRealmPending = Boolean(nextRealmId && !save.meta.unlockedRealms.includes(nextRealmId));
+  const resultRewardText = result ? formatResources(result.reward) : '없음';
 
   return (
     <main className="v4-container">
@@ -71,7 +72,11 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
             <h2>{result.outcome === 'victory' ? '원정 성공' : '원정 중단'}</h2>
             <span className="v4-action">{getV4RealmName(result.realmId)}</span>
           </div>
-          <p>{result.outcome === 'victory' ? '영웅이 무사히 돌아와 마을에 보상을 남겼습니다.' : '이번 원정은 영웅의 안전을 위해 중단되었습니다.'}</p>
+          <p>{result.outcome === 'victory'
+            ? resultRewardText === '없음'
+              ? '영웅이 무사히 돌아와 사가에 원정 기록을 남겼습니다.'
+              : '영웅이 무사히 돌아와 마을에 보상을 남겼습니다.'
+            : '이번 원정은 영웅의 안전을 위해 중단되었습니다.'}</p>
           <div className="v4-detail-grid">
             <div className="v4-detail-stat"><small>전투력</small><strong>{result.heroPower.toLocaleString('ko-KR')}</strong><span className="v4-muted">/ 권장 {result.recommendedPower.toLocaleString('ko-KR')}</span></div>
             <div className="v4-detail-stat"><small>전투</small><strong>{result.turns}턴</strong><span className="v4-muted">받은 피해 {result.totalDamageTaken.toLocaleString('ko-KR')}</span></div>
@@ -80,7 +85,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
           {result.encountersCleared !== undefined && <p className="v4-muted">원정 단계 {result.encountersCleared}/{result.totalEncounterCount ?? result.encountersCleared} 정산</p>}
           {result.outcome === 'victory' ? (
             <>
-              <div className="v4-alert">획득 보상 · {formatResources(result.reward)}{formatResources(result.reward) === '없음' ? ' · 다음 시설 작업으로 준비하세요.' : ''}</div>
+              <div className="v4-alert">획득 보상 · {resultRewardText}{resultRewardText === '없음' ? ' · 사가에 원정 기록을 남겼습니다.' : ''}</div>
               {nextRealmPending && nextRealmId && <div className="v4-button-row"><p className="v4-muted">오프라인 승리는 다음 Realm 해금을 자동 확정하지 않습니다.</p><button type="button" className="v4-btn v4-btn--primary" onClick={onConfirmUnlock}>{getV4RealmName(nextRealmId)} 기록하기</button></div>}
             </>
           ) : (

@@ -91,7 +91,8 @@ describe('V4 expedition result screen', () => {
 
     const result = screen.getByTestId('v4-expedition-result');
     expect(result).toHaveTextContent('획득 보상 · 없음');
-    expect(result).toHaveTextContent('다음 시설 작업으로 준비하세요');
+    expect(result).toHaveTextContent('사가에 원정 기록을 남겼습니다');
+    expect(result.textContent).not.toContain('다음 시설 작업으로 준비하세요');
   });
 
   it('shows that a defeat preserves permanent resources and displays every preparation cost', () => {
