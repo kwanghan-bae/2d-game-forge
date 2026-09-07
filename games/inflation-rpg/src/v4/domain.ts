@@ -174,6 +174,17 @@ function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, numbe
   });
 }
 
+function canApplyCurrencyOutput(
+  save: V4SaveEnvelope,
+  output: Partial<Record<V4CurrencyKey, number>>,
+): boolean {
+  return Object.entries(output).every(([key, value]) => {
+    if (!Object.prototype.hasOwnProperty.call(save.meta.currencies, key)
+      || typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return true;
+    return isValidCurrencyBalance(save.meta.currencies[key as V4CurrencyKey]);
+  });
+}
+
 function pay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): void {
   for (const [key, value] of Object.entries(input)) {
     const currency = key as V4CurrencyKey;
@@ -529,6 +540,9 @@ export function cancelFacilityTask(
       save: source,
       error: '이미 완료된 작업입니다. 진행 확인으로 결과를 정산해 주세요.',
     };
+  }
+  if (!canApplyCurrencyOutput(source, task.input)) {
+    return { ok: false, save: source, error: '환불할 재화 잔액을 확인할 수 없습니다.' };
   }
 
   give(save, task.input, 0.8);
@@ -1117,6 +1131,9 @@ export function useIntervention(
 
   const realm = getV4RealmDefinition(expedition.realmId);
   if (!realm) return { ok: false, save: source, error: '원정 기록을 확인할 수 없습니다.' };
+  if (!canApplyCurrencyOutput(source, realm.cost)) {
+    return { ok: false, save: source, error: '환불할 원정 재화 잔액을 확인할 수 없습니다.' };
+  }
   // A retreat refunds half of the preparation cost. It preserves the
   // no-permanent-loss rule while making the charge a meaningful safety valve.
   give(save, realm.cost, 0.5);

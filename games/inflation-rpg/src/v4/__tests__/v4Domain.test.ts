@@ -2387,6 +2387,36 @@ describe('v4 save and domain', () => {
     expect(completed.meta.currencies.gold).toBe(1e308);
   });
 
+  it.each([
+    ['fractional', 100.5],
+    ['not-a-number', Number.NaN],
+    ['infinite', Number.POSITIVE_INFINITY],
+    ['unsafe', Number.MAX_VALUE],
+  ])('does not settle a refund over a malformed %s spirit balance', (_label, spirit) => {
+    const taskSource = createInitialV4Save(136);
+    const startedTask = startFacilityTask(taskSource, 'recovery', taskSource.updatedAt);
+    expect(startedTask.ok).toBe(true);
+    if (!startedTask.ok) return;
+    startedTask.save.meta.currencies.spirit = spirit;
+
+    const canceled = cancelFacilityTask(startedTask.save, 'recovery', startedTask.save.updatedAt + 1_000);
+
+    const expeditionSource = createInitialV4Save(137);
+    const startedExpedition = startExpedition(expeditionSource, 'joseon_plains', expeditionSource.updatedAt, 'aggression', null);
+    expect(startedExpedition.ok).toBe(true);
+    if (!startedExpedition.ok) return;
+    startedExpedition.save.meta.currencies.spirit = spirit;
+
+    const retreated = useIntervention(startedExpedition.save, 'retreat', startedExpedition.save.updatedAt + 1_000);
+
+    expect(canceled.ok).toBe(false);
+    expect(canceled.save).toBe(startedTask.save);
+    expect(startedTask.save.meta.tasks[startedTask.task.id]).toBeDefined();
+    expect(retreated.ok).toBe(false);
+    expect(retreated.save).toBe(startedExpedition.save);
+    expect(startedExpedition.save.run.expedition).not.toBeNull();
+  });
+
   it('saturates a currency bonus at the persistable ceiling', () => {
     const nearLimit = createInitialV4Save(122);
     nearLimit.meta.currencies.gold = Number.MAX_SAFE_INTEGER - 1;
