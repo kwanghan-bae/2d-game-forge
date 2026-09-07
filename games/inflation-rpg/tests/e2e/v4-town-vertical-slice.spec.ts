@@ -168,7 +168,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
         updatedAt: number;
         lastProcessedAt: number;
         meta: { unlockedRealms: string[] };
-        run: { hero: { hp: number }; expedition: { realmId: string; completesAt: number; encounterIndex: number } | null };
+        run: { hero: { hp: number }; expedition: { realmId: string; startedAt: number; completesAt: number; encounterIndex: number } | null };
       };
       if (!save.run.expedition) throw new Error('expedition was not started');
       save.run.hero.hp = 1;
@@ -177,6 +177,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       save.run.expedition.encounterIndex = 2;
       save.run.expedition.completesAt = Date.now() - 1;
       save.createdAt = Date.now() - 60_000;
+      save.run.expedition.startedAt = save.createdAt;
       save.lastProcessedAt = save.createdAt;
       save.updatedAt = save.createdAt;
       localStorage.setItem(key, JSON.stringify(save));
@@ -204,6 +205,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       const raw = localStorage.getItem(key);
       if (!raw) throw new Error('v4 save was not created');
       const save = JSON.parse(raw) as {
+        createdAt: number;
         meta: { unlockedRealms: string[] };
         run: {
           hero: { atk: number; def: number; defBase: number; hp: number; hpMax: number };
@@ -219,9 +221,10 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
       save.run.hero.hpMax = 10_000;
       save.run.expedition.id = 'e2e-victory-4';
       save.run.expedition.realmId = 'deep_forest';
-      save.run.expedition.startedAt = Date.now() - 60_000;
       save.run.expedition.encounterIndex = 2;
       save.run.expedition.completesAt = Date.now() - 1;
+      save.createdAt = Date.now() - 60_000;
+      save.run.expedition.startedAt = save.createdAt;
       localStorage.setItem(key, JSON.stringify(save));
     }, V4_SAVE_KEY);
     await page.reload();

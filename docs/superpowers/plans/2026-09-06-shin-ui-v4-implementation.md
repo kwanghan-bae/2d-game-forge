@@ -217,6 +217,7 @@ pnpm circular
 - 오프라인 정산이 장비 강화만 남긴 경우에도 결과 모달을 열도록 `useV4Game` 회귀 테스트를 추가해, 재화·신규 장비가 없는 복귀 결과도 사용자에게 누락되지 않게 고정했다.
 - 네이티브 광고 제거 권한 조회 bridge가 예외를 던져도 V4 monetization adapter가 선택형 권한만 포기하고 핵심 게임 루프를 계속 제공하도록 보호했다.
 - V4 저장 검증이 활성 시설 작업·원정의 시작 시각도 저장 생성~마지막 저장 범위 안에서만 허용하도록 강화해, chronology가 깨진 local payload가 정상 진행으로 재진입하지 못하게 했다.
+- V4 고정 내비게이션·오프라인 결과 모달에 좌우·하단 safe-area 여백을 적용해 iPhone 홈 인디케이터와 겹치지 않게 하고, Chromium·iPhone14 V4 E2E 26/26으로 확인했다.
 - 포털에서 V4 진입 후 뒤로 돌아가 V3 legacy를 여는 browser navigation도 검증해 이전 게임 root가 남지 않음을 확인했다(5/5).
 - dev-shell 동적 게임 loader의 import/부팅 예외를 accessible 오류 상태로 격리하고, route cleanup 이후 늦게 도착한 promise의 마운트를 무시하도록 보강했다.
 - loader 오류 UI는 게임이 소유하는 `#game-container` 밖에 렌더링해 부팅 실패 시에도 별도 React root와 충돌하지 않도록 고정했다.
