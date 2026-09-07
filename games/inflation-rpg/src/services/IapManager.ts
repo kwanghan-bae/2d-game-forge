@@ -64,9 +64,8 @@ export class IapManager {
     private readonly onPurchaseUpdated?: (purchase: PurchaseInfo) => void,
   ) {}
 
-  async initialize(): Promise<void> {
+  private async connectProvider(): Promise<void> {
     if (this.disposed) return;
-    if (this.initialized) return;
     if (this.initializeInFlight) return this.initializeInFlight;
     const pending = this.plugin.initialize({ licenseKey: this.licenseKey }).then(async () => {
       if (this.disposed) return;
@@ -79,6 +78,15 @@ export class IapManager {
     } finally {
       if (this.initializeInFlight === pending) this.initializeInFlight = null;
     }
+  }
+
+  async initialize(): Promise<void> {
+    if (this.disposed || this.initialized) return;
+    await this.connectProvider();
+  }
+
+  private async refreshProviderConnection(): Promise<void> {
+    await this.connectProvider();
   }
 
   async queryProducts(): Promise<ProductInfo[]> {
@@ -113,7 +121,8 @@ export class IapManager {
       }
     })();
     this.purchaseUpdatedListener = pending;
-    await pending;
+    const handle = await pending;
+    if (!handle && this.purchaseUpdatedListener === pending) this.purchaseUpdatedListener = null;
   }
 
   getProduct(id: IapProductId): ProductInfo | undefined {
@@ -121,6 +130,7 @@ export class IapManager {
   }
 
   async purchase(productId: IapProductId): Promise<PurchaseResult> {
+    await this.refreshProviderConnection();
     const result = await this.plugin.purchase({ productId });
     if (result.status !== 'success') return result;
 
@@ -168,6 +178,7 @@ export class IapManager {
   }
 
   async restorePurchases(): Promise<PurchaseInfo[]> {
+    await this.refreshProviderConnection();
     const result = await this.plugin.restorePurchases();
     const purchases = Array.isArray(result?.purchases) ? result.purchases : [];
     const validPurchases = purchases.filter(isValidIapPurchaseInfo);

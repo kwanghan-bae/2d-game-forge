@@ -75,6 +75,26 @@ describe('IapManager', () => {
     await Promise.all([first, second]);
   });
 
+  it('refreshes the provider connection before a restore after initial bootstrap', async () => {
+    await mgr.initialize();
+    plugin.initialize.mockClear();
+
+    await mgr.restorePurchases();
+
+    expect(plugin.initialize).toHaveBeenCalledWith({ licenseKey: 'TEST_LICENSE_KEY' });
+  });
+
+  it('retries the optional purchase listener after a transient registration failure', async () => {
+    const addListener = plugin.addListener as unknown as ReturnType<typeof vi.fn>;
+    addListener.mockRejectedValueOnce(new Error('listener unavailable'));
+    await mgr.initialize();
+    expect(addListener).toHaveBeenCalledTimes(1);
+
+    await mgr.restorePurchases();
+
+    expect(addListener).toHaveBeenCalledTimes(2);
+  });
+
   it('queryProducts caches product info by id', async () => {
     await mgr.queryProducts();
     expect(mgr.getProduct('ad_free')?.price).toBe('₩1,200');
