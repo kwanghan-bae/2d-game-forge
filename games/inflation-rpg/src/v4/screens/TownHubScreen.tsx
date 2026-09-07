@@ -51,6 +51,13 @@ function getTownObjective(save: V4SaveEnvelope): string {
     return `${REALM_DEFINITIONS[lastResult.realmId].nameKR} 재도전을 준비하세요. ${lastResult.weaknessKR}을 보완하면 다음 승리에 가까워집니다.`;
   }
 
+  if (lastResult?.outcome === 'victory') {
+    const nextRealmId = getNextRealmId(lastResult.realmId);
+    if (nextRealmId && !save.meta.unlockedRealms.includes(nextRealmId)) {
+      return `${REALM_DEFINITIONS[nextRealmId].nameKR} 기록을 먼저 확정하세요. 원정 화면에서 승리 기록을 남긴 뒤 새 원정을 출발할 수 있습니다.`;
+    }
+  }
+
   const unlocked = save.meta.unlockedRealms;
   const currentRealmId: RealmId = unlocked.includes('underworld')
     ? 'underworld'

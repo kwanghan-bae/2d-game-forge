@@ -98,6 +98,32 @@ describe('V4 town hub support assignment', () => {
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('대장간에서 장비를 준비하세요.');
   });
 
+  it('explains that a pending next Realm record must be confirmed before another expedition', () => {
+    const save = createInitialV4Save(102);
+    save.run.lastExpeditionResult = {
+      id: 'pending-unlock-objective',
+      realmId: 'joseon_plains',
+      outcome: 'victory',
+      completedAt: save.createdAt,
+      reward: { gold: 55 },
+      heroPower: 220,
+      recommendedPower: 120,
+      turns: 8,
+      totalDamageDealt: 500,
+      totalDamageTaken: 40,
+      heroRemainingHp: 960,
+      weaknessKR: '다음 Realm의 준비를 점검하세요.',
+      recommendedFacilityId: 'blacksmith',
+      recommendedEquipmentId: null,
+      retryAfterSeconds: 0,
+    };
+    renderHub({ save });
+
+    const objective = screen.getByText('가장 가까운 목표').parentElement;
+    expect(objective).toHaveTextContent('깊은 숲 기록을 먼저 확정하세요.');
+    expect(objective).not.toHaveTextContent('조선 평야에서 승리하면');
+  });
+
   it('points to the active expedition instead of repeating an outdated unlock goal', () => {
     const save = createInitialV4Save(98);
     save.run.expedition = {
