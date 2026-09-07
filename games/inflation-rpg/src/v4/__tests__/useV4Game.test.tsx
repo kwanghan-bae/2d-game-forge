@@ -420,6 +420,44 @@ describe('useV4Game monetization actions', () => {
     expect(monetization.getAdsToday()).toBe(1);
   });
 
+  it('keeps a successful instant-task reward when the device clock moves backwards during the ad', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(107);
+    setFixtureTimeline(base, 10_000);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    persistV4Save(started.save);
+
+    let providerStarted!: () => void;
+    const providerStartedPromise = new Promise<void>((resolve) => { providerStarted = resolve; });
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: async () => {
+        providerStarted();
+        await pending;
+        return true;
+      },
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+    await act(async () => { await providerStartedPromise; });
+    expect(monetization.getAdsToday()).toBe(0);
+    vi.setSystemTime(9_000);
+
+    await act(async () => {
+      release();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId('instant-task-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('instant-spirit')).toHaveTextContent('118');
+  });
+
   it('does not watch an ad when the requested facility has no active task', async () => {
     const showRewarded = vi.fn(async () => true);
     const monetization = new V4MonetizationAdapter({ showRewarded }, null);

@@ -31,6 +31,18 @@ import type { V4MonetizationAdapter, V4RewardedPlacement } from './monetization'
 import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope, V4Settings } from './types';
 import { V4_MAX_INTERVENTION_CHARGES } from './types';
 
+function monotonicActionTimestamp(
+  save: V4SaveEnvelope,
+  actionStartedAt: number,
+  actionStartUpdatedAt: number,
+): number {
+  const timestamp = Date.now();
+  if (!Number.isFinite(timestamp) || timestamp >= save.updatedAt) return timestamp;
+  return actionStartedAt >= actionStartUpdatedAt && save.updatedAt <= actionStartUpdatedAt
+    ? actionStartUpdatedAt
+    : timestamp;
+}
+
 export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [boot] = useState(() => {
     const loaded = readV4Save();
@@ -189,6 +201,13 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const hasPositiveResourceReward = Boolean(summary
       && Object.values(summary.resourcesGained).some((value) => Number.isFinite(value) && value > 0));
     if (!summary || !hasPositiveResourceReward || offlineRewardDoubled || offlineRewardClaimInFlight.current) return;
+    const actionSave = saveRef.current;
+    const actionStartedAt = Date.now();
+    if (!Number.isFinite(actionStartedAt) || actionStartedAt < actionSave.updatedAt) {
+      setMessage('저장 시각을 확인할 수 없어 오프라인 2배 보상을 적용하지 않았습니다.');
+      return;
+    }
+    const actionStartUpdatedAt = actionSave.updatedAt;
     offlineRewardClaimInFlight.current = true;
     try {
       if (!(await watchRewarded('offline_double'))) return;
@@ -198,7 +217,11 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
         return;
       }
       const current = saveRef.current;
-      const next = grantOfflineResourceBonus(current, summary.resourcesGained, Date.now());
+      const next = grantOfflineResourceBonus(
+        current,
+        summary.resourcesGained,
+        monotonicActionTimestamp(current, actionStartedAt, actionStartUpdatedAt),
+      );
       if (next === current) {
         setMessage('저장 시각을 확인할 수 없어 오프라인 2배 보상을 적용하지 않았습니다.');
         return;
@@ -220,10 +243,19 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       return;
     }
     const currentTimestamp = Date.now();
-    if (!Number.isFinite(currentTimestamp) || currentTask.completesAt <= currentTimestamp) {
+    if (!Number.isFinite(currentTimestamp)) {
       setMessage('이미 완료된 작업입니다. 진행 확인으로 결과를 정산해 주세요.');
       return;
     }
+    if (currentTimestamp < current.updatedAt) {
+      setMessage('저장 시각을 확인할 수 없어 작업을 즉시 완료하지 않았습니다.');
+      return;
+    }
+    if (currentTask.completesAt <= currentTimestamp) {
+      setMessage('이미 완료된 작업입니다. 진행 확인으로 결과를 정산해 주세요.');
+      return;
+    }
+    const actionStartUpdatedAt = current.updatedAt;
     instantTaskInFlight.current.add(facilityId);
     try {
       if (!(await watchRewarded('instant_task'))) return;
@@ -234,12 +266,12 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
         setMessage('작업 상태가 바뀌어 광고 즉시 완료를 적용하지 않았습니다.');
         return;
       }
-      const latestTimestamp = Date.now();
+      const latestTimestamp = monotonicActionTimestamp(latest, currentTimestamp, actionStartUpdatedAt);
       if (!Number.isFinite(latestTimestamp) || latest.meta.tasks[latestTaskId].completesAt <= latestTimestamp) {
         setMessage('작업이 자연 완료되어 광고 혜택을 적용하지 않았습니다.');
         return;
       }
-      const result = completeFacilityTaskNow(latest, facilityId, Date.now());
+      const result = completeFacilityTaskNow(latest, facilityId, latestTimestamp);
       if (result.ok) commit(result.save, '광고 혜택으로 작업을 즉시 완료했습니다.');
       else setMessage(result.error);
     } finally {
@@ -249,17 +281,27 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   const addInterventionCharge = useCallback(async () => {
     if (interventionChargeInFlight.current) return;
-    if (saveRef.current.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES) {
+    const current = saveRef.current;
+    if (current.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES) {
       setMessage('개입 충전이 이미 가득 찼습니다.');
       return;
     }
+    const actionStartedAt = Date.now();
+    if (!Number.isFinite(actionStartedAt) || actionStartedAt < current.updatedAt) {
+      setMessage('저장 시각을 확인할 수 없어 개입 충전을 적용하지 않았습니다.');
+      return;
+    }
+    const actionStartUpdatedAt = current.updatedAt;
     interventionChargeInFlight.current = true;
     try {
       if (!(await watchRewarded('intervention_charge'))) return;
       if (!mountedRef.current) return;
-      const current = saveRef.current;
-      const next = grantInterventionCharge(current, Date.now());
-      if (next === current) {
+      const latest = saveRef.current;
+      const next = grantInterventionCharge(
+        latest,
+        monotonicActionTimestamp(latest, actionStartedAt, actionStartUpdatedAt),
+      );
+      if (next === latest) {
         setMessage('저장 시각을 확인할 수 없어 개입 충전을 적용하지 않았습니다.');
         return;
       }
