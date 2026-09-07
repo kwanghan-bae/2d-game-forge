@@ -346,7 +346,7 @@ pnpm circular
 - 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,530개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
-- V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 4.6분).
+- V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 약 5.2분).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
 - native onestore Web 테스트 7/7과 Android `compileDebugKotlin`·`assembleDebug`가 통과했다. 실기기 sandbox 결제·복원·환불 QA는 `adb`·sandbox 계정 부재로 남아 있다.
 - 광고·결제 브리지의 truthy 비-boolean 반환은 보상이나 광고 제거 권한으로 인정하지 않도록 회귀 테스트와 strict boundary를 추가했다.
