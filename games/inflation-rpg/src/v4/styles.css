@@ -38,6 +38,8 @@
 .v4-stat-line { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; color: #e7dcc2; font-size: 11px; }
 .v4-chip { padding: 3px 6px; border-radius: 99px; background: #30293c; color: #dbc990; }
 .v4-action { color: #f3c86b; font-size: 11px; white-space: nowrap; }
+.v4-objective-callout { margin: -2px 0 10px; padding: 9px 12px; border: 1px solid #765b31; border-radius: 9px; background: rgba(55, 43, 31, .9); }
+.v4-objective-callout p { margin: 3px 0 0; color: #f0dfb5; font-size: 11px; line-height: 1.4; }
 .v4-policy-row, .v4-button-row { display: flex; flex-wrap: wrap; gap: 7px; }
 .v4-btn { min-height: 44px; padding: 8px 11px; border: 1px solid #67543a; border-radius: 8px; background: #292333; color: #f7edcf; font-family: inherit; font-size: 12px; cursor: pointer; }
 .v4-btn:hover, .v4-btn:focus-visible { border-color: #d6a84f; outline: none; }

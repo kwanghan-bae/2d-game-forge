@@ -84,6 +84,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
   const interventionFull = save.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES;
+  const objective = getTownObjective(save);
   return (
     <main className="v4-container" data-testid="v4-town-hub">
       <section className="v4-panel v4-hero-card">
@@ -98,6 +99,10 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
           </div>
         </div>
         <div className="v4-action">현재: {hero.currentAction === 'expedition' ? '원정 중' : hero.currentAction === 'train' ? '훈련 중' : '마을 대기'}</div>
+      </section>
+      <section className="v4-objective-callout" data-testid="v4-top-objective" aria-label="가장 가까운 목표">
+        <span className="v4-kicker">다음 목표</span>
+        <p>{objective}</p>
       </section>
 
       <section className="v4-panel">
@@ -204,7 +209,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
 
       <section className="v4-panel">
         <h2>가장 가까운 목표</h2>
-        <p>{getTownObjective(save)}</p>
+        <p>{objective}</p>
         <div className="v4-button-row">
           <button type="button" className="v4-btn v4-btn--primary" onClick={() => onNavigate('hero')}>영웅 상세</button>
           <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onNavigate('saga')}>사가 보기</button>

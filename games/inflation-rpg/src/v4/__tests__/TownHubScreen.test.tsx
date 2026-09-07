@@ -65,6 +65,18 @@ describe('V4 town hub support assignment', () => {
     expect(screen.getByRole('button', { name: '안전 비축' })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('surfaces the closest objective beside the hero before the facility list', () => {
+    renderHub();
+
+    const objective = screen.getByTestId('v4-top-objective');
+    const hero = screen.getByTestId('v4-town-hub').querySelector('.v4-hero-card');
+    expect(objective).toHaveAttribute('aria-label', '가장 가까운 목표');
+    expect(objective).toHaveTextContent('다음 목표');
+    expect(objective).toHaveTextContent('조선 평야에서 승리하면 깊은 숲이 열립니다.');
+    expect(hero).not.toBeNull();
+    expect(hero!.compareDocumentPosition(objective) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('explains that a policy change during an expedition applies to the next departure', () => {
     const initial = createInitialV4Save(103);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
