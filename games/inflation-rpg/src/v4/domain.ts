@@ -589,9 +589,15 @@ export function getExpeditionSuccessChance(
   const readinessBonus = Math.max(-0.35, Math.min(0.2, (readiness - 1) * 0.3));
   const guide = assignedAgentId === 'guide' ? source.meta.agents.find((agent) => agent.id === 'guide') : undefined;
   const guideBonus = guide ? Math.min(0.08, guide.trust / 1_250) : 0;
-  const policyBonus = source.run.policy === 'hoarding'
+  // Once an expedition has departed, its policy is part of the immutable run
+  // snapshot. The town policy can be changed for the next departure without
+  // rewriting the battle forecast of the hero who is already travelling.
+  const expeditionPolicy = source.run.expedition?.realmId === realmId
+    ? source.run.expedition.policy
+    : source.run.policy;
+  const policyBonus = expeditionPolicy === 'hoarding'
     ? 0.04
-    : source.run.policy === 'training'
+    : expeditionPolicy === 'training'
       ? (encounter.tier === 'boss' ? -0.02 : 0.02)
       : 0;
   const mudangBlessing = Math.min(0.06, Math.max(0, (source.meta.facilities.mudang?.level ?? 1) - 1) * 0.02);

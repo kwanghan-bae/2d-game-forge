@@ -1642,6 +1642,21 @@ describe('v4 save and domain', () => {
     expect(blessed).toBeGreaterThan(boss);
   });
 
+  it('keeps an active expedition forecast on the policy chosen at departure', () => {
+    const initial = createInitialV4Save(93);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const beforePolicyChange = getExpeditionSuccessChance(started.save, 'joseon_plains', 2, null);
+    const changed = setV4Policy(started.save, 'hoarding', started.save.updatedAt + 1);
+    const afterPolicyChange = getExpeditionSuccessChance(changed, 'joseon_plains', 2, null);
+
+    expect(changed.run.policy).toBe('hoarding');
+    expect(changed.run.expedition?.policy).toBe('aggression');
+    expect(afterPolicyChange).toBe(beforePolicyChange);
+  });
+
   it('uses the V4 hero battle adapter instead of power alone', () => {
     const initial = createInitialV4Save(11);
     initial.run.hero.atk = 300;

@@ -75,6 +75,28 @@ describe('V4 expedition result screen', () => {
     expect(result.textContent).not.toContain('materials +4');
   });
 
+  it('shows the departure policy while an expedition is active', () => {
+    const save = createInitialV4Save(102);
+    const started = startExpedition(save, 'joseon_plains', save.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.policy = 'hoarding';
+
+    render(<ExpeditionScreen
+      save={started.save}
+      now={started.save.createdAt}
+      onStart={vi.fn()}
+      onConfirm={vi.fn()}
+      onConfirmUnlock={vi.fn()}
+      onRefresh={vi.fn()}
+      onIntervention={vi.fn()}
+      onBack={vi.fn()}
+    />);
+
+    expect(screen.getByText(/정책:/)).toHaveTextContent('공격 우선');
+    expect(screen.getByText(/정책:/)).not.toHaveTextContent('안전 비축');
+  });
+
   it('renders the Korean name of a recommended equipment item', () => {
     renderResult(baseResult({
       outcome: 'defeat',

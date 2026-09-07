@@ -63,7 +63,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
       <section className="v4-panel">
         <div className="v4-button-row"><button type="button" className="v4-btn v4-btn--quiet" onClick={onBack}>← 마을로</button></div>
         <h2 style={{ marginTop: 12 }}>원정소</h2>
-        <p>정책: <span className="v4-action">{getV4PolicyName(save.run.policy)}</span> · 길잡이: {guide?.nameKR ?? '없음'}</p>
+        <p>정책: <span className="v4-action">{getV4PolicyName(expedition?.policy ?? save.run.policy)}</span> · 길잡이: {guide?.nameKR ?? '없음'}</p>
       </section>
 
       {!expedition && result && (
