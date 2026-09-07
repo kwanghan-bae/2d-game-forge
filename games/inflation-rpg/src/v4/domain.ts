@@ -566,8 +566,16 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
 
 export function getV4HeroPower(save: V4SaveEnvelope): number {
   const hero = save.run.hero;
-  const parts = [hero.atk, hero.def, hero.hpMax / 100];
-  if (parts.some((part) => Number.isNaN(part))) return 0;
+  const rawParts = [hero.atk, hero.def, hero.hpMax];
+  // A present numeric NaN indicates a corrupted stat snapshot. Preserve the
+  // existing fail-closed behavior for that case, while treating an omitted
+  // field as zero instead of allowing derived arithmetic to poison every
+  // otherwise valid combat stat.
+  if (rawParts.some((part) => typeof part === 'number' && Number.isNaN(part))) return 0;
+  const parts = rawParts.map((part, index) => {
+    if (typeof part !== 'number') return 0;
+    return index === 2 ? part / 100 : part;
+  });
   let power = 0;
   for (const part of parts) {
     if (typeof part !== 'number') continue;

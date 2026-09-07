@@ -1967,6 +1967,15 @@ describe('v4 save and domain', () => {
     expect(getV4HeroPower(save)).toBe(20);
   });
 
+  it('keeps valid combat stats when the hero max HP field is missing', () => {
+    const save = createInitialV4Save(127);
+    save.run.hero.atk = 160;
+    save.run.hero.def = 10;
+    save.run.hero.hpMax = undefined as never;
+
+    expect(getV4HeroPower(save)).toBe(170);
+  });
+
   it('saturates hero power before it can invalidate a result save', () => {
     const save = createInitialV4Save(124);
     save.run.hero.atk = Number.MAX_SAFE_INTEGER;
