@@ -11,12 +11,24 @@ export interface AdManagerConfig {
 
 export class AdManager {
   private initialized = false;
+  private initializeInFlight: Promise<void> | null = null;
   private bannerVisible = false;
 
   constructor(private cfg: AdManagerConfig) {}
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    if (this.initializeInFlight) return this.initializeInFlight;
+    const pending = this.initializeProvider();
+    this.initializeInFlight = pending;
+    try {
+      await pending;
+    } finally {
+      if (this.initializeInFlight === pending) this.initializeInFlight = null;
+    }
+  }
+
+  private async initializeProvider(): Promise<void> {
     try {
       await AdMob.initialize({
         initializeForTesting: true,

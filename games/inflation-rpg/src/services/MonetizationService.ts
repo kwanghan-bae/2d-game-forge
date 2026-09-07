@@ -19,6 +19,8 @@ export class MonetizationService {
   private ad: AdManager;
   private iap: IapManager;
   private adFreeOwned: boolean;
+  private initialized = false;
+  private initializeInFlight: Promise<void> | null = null;
 
   constructor(private opts: MonetizationServiceOptions) {
     this.adFreeOwned = opts.adFreeOwned;
@@ -41,14 +43,25 @@ export class MonetizationService {
   }
 
   async initialize(): Promise<void> {
-    await Promise.all([this.ad.initialize(), this.iap.initialize()]);
-    await this.iap.queryProducts();
+    if (this.initialized) return;
+    if (this.initializeInFlight) return this.initializeInFlight;
+    const pending = (async () => {
+      await Promise.all([this.ad.initialize(), this.iap.initialize()]);
+      await this.iap.queryProducts();
 
-    const restored = await this.iap.restorePurchases();
-    this.applyRestoredAdFreeEntitlement(restored);
+      const restored = await this.iap.restorePurchases();
+      this.applyRestoredAdFreeEntitlement(restored);
 
-    if (!this.adFreeOwned) await this.ad.showBanner();
-    else await this.ad.hideBanner();
+      if (!this.adFreeOwned) await this.ad.showBanner();
+      else await this.ad.hideBanner();
+      this.initialized = true;
+    })();
+    this.initializeInFlight = pending;
+    try {
+      await pending;
+    } finally {
+      if (this.initializeInFlight === pending) this.initializeInFlight = null;
+    }
   }
 
   setAdFreeOwned(owned: boolean): void {

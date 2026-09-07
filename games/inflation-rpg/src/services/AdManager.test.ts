@@ -33,6 +33,20 @@ describe('AdManager', () => {
     expect((AdMob.initialize as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
   });
 
+  it('shares concurrent initialization with one provider call', async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    (AdMob.initialize as ReturnType<typeof vi.fn>).mockReturnValueOnce(pending);
+
+    const first = mgr.initialize();
+    const second = mgr.initialize();
+    await Promise.resolve();
+    expect((AdMob.initialize as ReturnType<typeof vi.fn>).mock.calls.length).toBe(1);
+
+    release();
+    await Promise.all([first, second]);
+  });
+
   it('showRewardedAd resolves true on completion', async () => {
     await mgr.initialize();
     const ok = await mgr.showRewardedAd();

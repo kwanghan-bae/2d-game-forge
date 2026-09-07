@@ -59,6 +59,22 @@ describe('MonetizationService', () => {
     expect(iapRestore).toHaveBeenCalled();
   });
 
+  it('shares concurrent initialization across the ad and IAP bootstrap', async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    iapInit.mockReturnValueOnce(pending);
+
+    const first = svc.initialize();
+    const second = svc.initialize();
+    await Promise.resolve();
+    expect(iapInit).toHaveBeenCalledTimes(1);
+
+    release();
+    await Promise.all([first, second]);
+    expect(iapRestore).toHaveBeenCalledTimes(1);
+    expect(adShowBanner).toHaveBeenCalledTimes(1);
+  });
+
   it('initialize banner shown when adFreeOwned=false', async () => {
     await svc.initialize();
     expect(adShowBanner).toHaveBeenCalled();

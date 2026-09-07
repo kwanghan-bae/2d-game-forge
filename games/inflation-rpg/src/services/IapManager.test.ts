@@ -35,6 +35,20 @@ describe('IapManager', () => {
     expect(plugin.initialize).toHaveBeenCalledWith({ licenseKey: 'TEST_LICENSE_KEY' });
   });
 
+  it('shares concurrent initialization with one provider call', async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    plugin.initialize.mockReturnValueOnce(pending);
+
+    const first = mgr.initialize();
+    const second = mgr.initialize();
+    await Promise.resolve();
+    expect(plugin.initialize).toHaveBeenCalledTimes(1);
+
+    release();
+    await Promise.all([first, second]);
+  });
+
   it('queryProducts caches product info by id', async () => {
     await mgr.queryProducts();
     expect(mgr.getProduct('ad_free')?.price).toBe('₩1,200');

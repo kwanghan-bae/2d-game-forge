@@ -31,14 +31,23 @@ type PluginFacet = Pick<
 
 export class IapManager {
   private initialized = false;
+  private initializeInFlight: Promise<void> | null = null;
   private products: Map<string, ProductInfo> = new Map();
 
   constructor(private plugin: PluginFacet, private licenseKey: string) {}
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    await this.plugin.initialize({ licenseKey: this.licenseKey });
-    this.initialized = true;
+    if (this.initializeInFlight) return this.initializeInFlight;
+    const pending = this.plugin.initialize({ licenseKey: this.licenseKey }).then(() => {
+      this.initialized = true;
+    });
+    this.initializeInFlight = pending;
+    try {
+      await pending;
+    } finally {
+      if (this.initializeInFlight === pending) this.initializeInFlight = null;
+    }
   }
 
   async queryProducts(): Promise<ProductInfo[]> {
