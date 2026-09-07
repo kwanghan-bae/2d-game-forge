@@ -147,7 +147,9 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
     && typeof value.weaknessKR === 'string'
     && typeof value.recommendedFacilityId === 'string'
     && FACILITY_IDS.includes(value.recommendedFacilityId as typeof FACILITY_IDS[number])
-    && (value.recommendedEquipmentId === null || typeof value.recommendedEquipmentId === 'string')
+    && (value.recommendedEquipmentId === null
+      || (typeof value.recommendedEquipmentId === 'string'
+        && getV4EquipmentDefinition(value.recommendedEquipmentId) !== undefined))
     && isPersistableNonNegativeNumber(value.retryAfterSeconds)
     && (value.successChance === undefined || (isPersistableNonNegativeNumber(value.successChance) && value.successChance <= 1))
     && (value.encountersCleared === undefined

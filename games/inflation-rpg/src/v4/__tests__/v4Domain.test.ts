@@ -137,6 +137,19 @@ describe('v4 save and domain', () => {
     storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(taskSave.save));
     expect(loadV4Save(fakeStorage)).toBeNull();
 
+    const expeditionSave = createInitialV4Save(132);
+    const expedition = startExpedition(expeditionSave, 'joseon_plains', expeditionSave.updatedAt, 'aggression', null);
+    expect(expedition.ok).toBe(true);
+    if (!expedition.ok) return;
+    expedition.save.run.expedition!.encounterIndex = 2;
+    expedition.save.run.expedition!.completesAt = expedition.save.run.expedition!.startedAt;
+    const settledExpedition = completeFacilityTasks(expedition.save, expedition.save.run.expedition!.completesAt);
+    expect(settledExpedition.run.lastExpeditionResult).not.toBeNull();
+    if (!settledExpedition.run.lastExpeditionResult) return;
+    settledExpedition.run.lastExpeditionResult.recommendedEquipmentId = 'unknown-v4-equipment';
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(settledExpedition));
+    expect(loadV4Save(fakeStorage)).toBeNull();
+
   });
 
   it('rejects an expedition result newer than the save watermark', () => {
