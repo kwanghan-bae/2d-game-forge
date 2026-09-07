@@ -31,6 +31,13 @@ function mount(
 
   if (config.exposeTestHooks) {
     const w = window as unknown as Record<string, unknown>;
+    // A route transition can resolve an older legacy import after the V4
+    // root has already mounted. Do not leave its dev-only stores available to
+    // the next route's browser tests.
+    if (Screen === V4App && w['gameConfig'] !== config) {
+      delete w['__zustand_inflation_rpg_store__'];
+      delete w['__cycle_store_v2__'];
+    }
     w['gameConfig'] = config;
     if (Screen === App) {
       w['__zustand_inflation_rpg_store__'] = useGameStore;
@@ -43,7 +50,22 @@ function mount(
 
   return {
     destroy() {
-      root.unmount();
+      try {
+        root.unmount();
+      } finally {
+        if (config.exposeTestHooks) {
+          const w = window as unknown as Record<string, unknown>;
+          // Only the active owner may clear shared test hooks. This protects a
+          // newer route when an older async loader is destroyed late.
+          if (w['gameConfig'] === config) {
+            delete w['gameConfig'];
+            if (Screen === App) {
+              delete w['__zustand_inflation_rpg_store__'];
+              delete w['__cycle_store_v2__'];
+            }
+          }
+        }
+      }
     },
   };
 }
