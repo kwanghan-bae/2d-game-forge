@@ -91,6 +91,26 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('does not let a stale restore response revoke a purchase completed while restore was pending', async () => {
+    let releaseRestore!: (owned: boolean) => void;
+    const pendingRestore = new Promise<boolean>((resolve) => { releaseRestore = resolve; });
+    const adapter = new V4MonetizationAdapter(
+      null,
+      { purchase: async () => 'purchased' },
+      null,
+      async () => pendingRestore,
+    );
+
+    const restore = adapter.restorePurchases();
+    await Promise.resolve();
+    expect((await adapter.buyAdFree()).granted).toBe(true);
+    expect(adapter.isAdFree()).toBe(true);
+
+    releaseRestore(false);
+    expect((await restore).granted).toBe(true);
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('removes the rewarded provider and daily cap after ad-free purchase', async () => {
     let providerCalls = 0;
     const adapter = new V4MonetizationAdapter({

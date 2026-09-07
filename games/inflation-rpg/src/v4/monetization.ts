@@ -185,6 +185,7 @@ export async function createNativeV4Monetization(
 export class V4MonetizationAdapter {
   private adsToday = 0;
   private adFree = false;
+  private entitlementRevision = 0;
   private rewardedDay = localDayKey();
   private rewardedInFlightByDay = new Map<string, number>();
   private adFreePurchaseInFlight: Promise<V4MonetizationResult> | null = null;
@@ -223,16 +224,25 @@ export class V4MonetizationAdapter {
   }
   isAdFree(): boolean { return this.adFree; }
   canRestorePurchases(): boolean { return this.restorePurchasesProvider !== null; }
-  setAdFreeOwned(owned: boolean): void { this.adFree = owned; }
+  setAdFreeOwned(owned: boolean): void {
+    this.adFree = owned;
+    this.entitlementRevision += 1;
+  }
 
   async restorePurchases(): Promise<V4MonetizationResult> {
     if (this.restorePurchasesInFlight) return this.restorePurchasesInFlight;
     const restore = this.restorePurchasesProvider;
     if (!restore) return { granted: false, reason: 'provider_failed' };
+    const restoreRevision = this.entitlementRevision;
     const pending = (async (): Promise<V4MonetizationResult> => {
       try {
         const owned = await restore();
-        this.adFree = Boolean(owned);
+        if (this.entitlementRevision !== restoreRevision) {
+          return this.adFree
+            ? { granted: true, reason: 'granted' }
+            : { granted: false, reason: 'not_purchased' };
+        }
+        this.setAdFreeOwned(Boolean(owned));
         return owned
           ? { granted: true, reason: 'granted' }
           : { granted: false, reason: 'not_purchased' };
@@ -290,7 +300,7 @@ export class V4MonetizationAdapter {
       try {
         const result = await purchases.purchase('ad_free');
         if (result === 'purchased') {
-          this.adFree = true;
+          this.setAdFreeOwned(true);
           return { granted: true, reason: 'granted' };
         }
         return { granted: false, reason: result === 'cancelled' ? 'not_purchased' : 'provider_failed' };
