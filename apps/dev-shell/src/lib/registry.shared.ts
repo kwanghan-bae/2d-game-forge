@@ -15,7 +15,7 @@ export const GAME_MANIFESTS: readonly GameManifestValue[] = [
   },
   {
     slug: 'inflation-rpg-legacy',
-    title: '조선 인플레이션 RPG (Legacy)',
+    title: '조선 인플레이션 RPG',
     assetsBasePath: '/games/inflation-rpg/assets',
   },
 ];
