@@ -104,11 +104,14 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
       ) : (
         <section className="v4-panel">
           <h2>Realm 선택</h2>
+          {nextRealmPending && <div className="v4-alert">다음 Realm 기록을 먼저 확정한 뒤 새 원정을 출발할 수 있습니다.</div>}
           {(Object.keys(REALM_DEFINITIONS) as RealmId[]).map((realmId) => {
             const realm = REALM_DEFINITIONS[realmId];
             const unlocked = save.meta.unlockedRealms.includes(realmId);
             const guideReady = Boolean(guide && !guide.activeTaskId && (guide.fatigue ?? 0) < 100);
-            const guideButtonLabel = !unlocked
+            const guideButtonLabel = nextRealmPending
+              ? '기록 먼저 확정'
+              : !unlocked
               ? '미해금'
               : guideReady
                 ? '길잡이와 출발'
@@ -129,12 +132,12 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
                   <button
                     type="button"
                     className="v4-btn v4-btn--primary"
-                    disabled={!unlocked || !guideReady}
+                    disabled={!unlocked || !guideReady || nextRealmPending}
                     onClick={() => onStart(realmId, 'guide')}
                   >
                     {guideButtonLabel}
                   </button>
-                  <button type="button" className="v4-btn v4-btn--quiet" disabled={!unlocked} onClick={() => onStart(realmId, null)}>혼자 출발</button>
+                  <button type="button" className="v4-btn v4-btn--quiet" disabled={!unlocked || nextRealmPending} onClick={() => onStart(realmId, null)}>{nextRealmPending ? '기록 먼저 확정' : '혼자 출발'}</button>
                 </div>
               </article>
             );

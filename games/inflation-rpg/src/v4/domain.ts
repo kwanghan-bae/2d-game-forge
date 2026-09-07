@@ -953,6 +953,12 @@ export function startExpedition(
   if (save.run.expedition) {
     return { ok: false, save: source, error: '동시에 진행할 수 있는 원정은 1개뿐입니다.' };
   }
+  const pendingRealmUnlock = save.run.lastExpeditionResult?.outcome === 'victory'
+    ? getNextRealmId(save.run.lastExpeditionResult.realmId)
+    : null;
+  if (pendingRealmUnlock && !save.meta.unlockedRealms.includes(pendingRealmUnlock)) {
+    return { ok: false, save: source, error: '다음 Realm 기록을 먼저 확정해 주세요.' };
+  }
   if (save.run.hero.hp <= 0) {
     return { ok: false, save: source, error: '영웅이 쓰러져 있습니다. 회복당에서 먼저 회복하세요.' };
   }

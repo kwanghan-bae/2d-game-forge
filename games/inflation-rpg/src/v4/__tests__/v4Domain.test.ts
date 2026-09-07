@@ -1320,6 +1320,27 @@ describe('v4 save and domain', () => {
     expect(confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 
+  it('keeps a pending Realm record from being lost by starting another expedition', () => {
+    const initial = createInitialV4Save(94);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+
+    const victory = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
+    expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
+    expect(victory.meta.unlockedRealms).toEqual(['joseon_plains']);
+
+    const retry = startExpedition(victory, 'joseon_plains', victory.updatedAt + 1_000, 'aggression', null);
+    expect(retry.ok).toBe(false);
+    expect(retry.save).toBe(victory);
+    if (retry.ok) return;
+    expect(retry.error).toContain('기록');
+    expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
+  });
+
   it('does not unlock a Realm when the confirmation clock is invalid or stale', () => {
     const initial = createInitialV4Save(95);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);

@@ -254,6 +254,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '마을 확인' }).click();
     await page.getByRole('button', { name: '원정 준비 →' }).click();
     await expect(page.getByRole('button', { name: '깊은 숲 기록하기' })).toBeVisible();
+    await expect(page.locator('.v4-realm-card').filter({ hasText: '조선 평야' }).getByRole('button', { name: '기록 먼저 확정' }).first()).toBeDisabled();
     await page.getByRole('button', { name: '깊은 숲 기록하기' }).click();
     await expect(page.locator('.v4-realm-card').filter({ hasText: '깊은 숲' }).getByRole('button', { name: '길잡이와 출발' })).toBeEnabled();
   });
