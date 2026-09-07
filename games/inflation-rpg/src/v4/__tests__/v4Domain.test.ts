@@ -151,6 +151,19 @@ describe('v4 save and domain', () => {
     }));
 
     expect(loadV4Save(fakeStorage)).toBeNull();
+
+    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+      ...settled,
+      run: {
+        ...settled.run,
+        lastExpeditionResult: {
+          ...settled.run.lastExpeditionResult,
+          completedAt: settled.createdAt - 1,
+        },
+      },
+    }));
+
+    expect(loadV4Save(fakeStorage)).toBeNull();
   });
 
   it('rejects an expedition result for a locked Realm', () => {

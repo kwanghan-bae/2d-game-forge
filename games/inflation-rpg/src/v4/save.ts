@@ -225,6 +225,7 @@ function isV4SaveEnvelope(value: unknown): value is V4SaveEnvelope {
   if (lastExpeditionResult !== undefined && lastExpeditionResult !== null) {
     if (!isExpeditionResultRecord(lastExpeditionResult)
       || typeof lastExpeditionResult.completedAt !== 'number'
+      || lastExpeditionResult.completedAt < value.createdAt
       || lastExpeditionResult.completedAt > value.updatedAt
       || !meta.unlockedRealms.includes(lastExpeditionResult.realmId as typeof REALM_IDS[number])) return false;
   }
