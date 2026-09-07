@@ -6,7 +6,7 @@ import type {
 } from '@forge/inflation-rpg-native-onestore-iap';
 
 import type { IapProductId } from './IapTypes';
-import { IAP_PRODUCT_IDS } from './IapCatalog';
+import { IAP_CATALOG, IAP_PRODUCT_IDS } from './IapCatalog';
 
 function isKnownProductId(value: unknown): value is IapProductId {
   return typeof value === 'string' && IAP_PRODUCT_IDS.includes(value as IapProductId);
@@ -22,6 +22,24 @@ export function isValidIapPurchaseInfo(value: unknown): value is PurchaseInfo {
     && Number.isFinite(purchase.purchaseTime)
     && purchase.purchaseTime >= 0
     && typeof purchase.acknowledged === 'boolean';
+}
+
+export function isValidIapProductInfo(value: unknown): value is ProductInfo {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const product = value as Partial<ProductInfo>;
+  if (!isKnownProductId(product.productId)) return false;
+  const catalogEntry = IAP_CATALOG[product.productId];
+  return product.type === catalogEntry.type
+    && typeof product.title === 'string'
+    && product.title.trim().length > 0
+    && typeof product.description === 'string'
+    && typeof product.price === 'string'
+    && product.price.trim().length > 0
+    && typeof product.priceAmountMicros === 'number'
+    && Number.isFinite(product.priceAmountMicros)
+    && product.priceAmountMicros >= 0
+    && typeof product.priceCurrencyCode === 'string'
+    && product.priceCurrencyCode.trim().length > 0;
 }
 
 type PluginFacet = Pick<
@@ -51,7 +69,8 @@ export class IapManager {
   }
 
   async queryProducts(): Promise<ProductInfo[]> {
-    const { products } = await this.plugin.queryProducts({ productIds: IAP_PRODUCT_IDS });
+    const result = await this.plugin.queryProducts({ productIds: IAP_PRODUCT_IDS });
+    const products = Array.isArray(result?.products) ? result.products.filter(isValidIapProductInfo) : [];
     this.products.clear();
     for (const p of products) this.products.set(p.productId, p);
     return products;

@@ -54,6 +54,37 @@ describe('IapManager', () => {
     expect(mgr.getProduct('ad_free')?.price).toBe('₩1,200');
   });
 
+  it('filters malformed and unknown product records before caching them', async () => {
+    plugin.queryProducts.mockResolvedValue({
+      products: [
+        {
+          productId: 'ad_free', type: 'non-consumable', title: '광고 제거', description: '',
+          price: '₩1,200', priceAmountMicros: 1_200_000_000, priceCurrencyCode: 'KRW',
+        },
+        {
+          productId: 'crack_stone_pack_small', type: 'consumable', title: '깨진 가격', description: '',
+          price: '', priceAmountMicros: Number.NaN, priceCurrencyCode: 'KRW',
+        },
+        {
+          productId: 'unknown_product', type: 'consumable', title: '알 수 없음', description: '',
+          price: '₩1,200', priceAmountMicros: 1_200_000_000, priceCurrencyCode: 'KRW',
+        },
+      ],
+    });
+
+    const result = await mgr.queryProducts();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.productId).toBe('ad_free');
+    expect(mgr.getProduct('crack_stone_pack_small')).toBeUndefined();
+  });
+
+  it('treats a malformed product container as an empty safe result', async () => {
+    plugin.queryProducts.mockResolvedValue({ products: undefined });
+
+    await expect(mgr.queryProducts()).resolves.toEqual([]);
+  });
+
   it('purchase success returns status=success and acknowledges automatically', async () => {
     plugin.purchase.mockResolvedValue({
       status: 'success',
