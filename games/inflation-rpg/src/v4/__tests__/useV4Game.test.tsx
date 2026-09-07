@@ -43,7 +43,10 @@ function RecoveryHarness() {
   return (
     <>
       <div data-testid="storage-status">{game.storageStatus}</div>
+      <div data-testid="recovery-spirit">{game.save.meta.currencies.spirit}</div>
       <button type="button" onClick={game.startFreshSave}>fresh</button>
+      <button type="button" onClick={() => game.startTask('temple')}>task</button>
+      <button type="button" onClick={game.settleOffline}>resume</button>
     </>
   );
 }
@@ -316,7 +319,10 @@ describe('useV4Game monetization actions', () => {
 
 describe('useV4Game save recovery', () => {
   beforeEach(() => localStorage.clear());
-  afterEach(() => localStorage.clear());
+  afterEach(() => {
+    vi.useRealTimers();
+    localStorage.clear();
+  });
 
   it('does not overwrite an invalid save until the player explicitly starts fresh', async () => {
     const raw = JSON.stringify({ schemaVersion: 999, preserve: true });
@@ -330,6 +336,22 @@ describe('useV4Game save recovery', () => {
     await waitFor(() => expect(screen.getByTestId('storage-status')).toHaveTextContent('valid'));
     expect(localStorage.getItem(V4_RECOVERY_BACKUP_KEY)).toBe(raw);
     expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
+  });
+
+  it('continues offline settlement after recovery creates a fresh save', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    localStorage.setItem(V4_SAVE_KEY, JSON.stringify({ schemaVersion: 999, preserve: true }));
+
+    render(<RecoveryHarness />);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'fresh' })); });
+    expect(screen.getByTestId('storage-status')).toHaveTextContent('valid');
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'task' })); });
+    vi.setSystemTime(50_000);
+
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'resume' })); });
+
+    expect(screen.getByTestId('recovery-spirit')).toHaveTextContent('112');
   });
 
   it('does not settle due work while the persisted save clock is in the future', async () => {

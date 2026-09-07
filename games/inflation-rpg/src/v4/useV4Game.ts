@@ -58,7 +58,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   }, []);
 
   const settleOffline = useCallback(() => {
-    if (boot.loaded.status === 'invalid') return;
+    if (storageStatus === 'invalid') return;
     const result = simulateOfflineProgress(saveRef.current, Date.now());
     saveRef.current = result.save;
     setSave(result.save);
@@ -67,7 +67,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setOfflineSummary(result.summary);
       setOfflineRewardDoubled(false);
     }
-  }, [boot.loaded.status]);
+  }, [storageStatus]);
 
   useEffect(() => {
     if (initialOfflineSettlementDone.current) return;
