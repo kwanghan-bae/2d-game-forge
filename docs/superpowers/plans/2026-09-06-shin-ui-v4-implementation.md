@@ -192,7 +192,9 @@ pnpm circular
 - staged 원정이 다음 단계의 완료 시각을 저장 상한 밖으로 밀어내는 경우 전투를 중복 정산하지 않고 현재 단계를 보존한다.
 - malformed 원정 누적 전투 통계도 안전 정수 상한과 최대 encounter 수로 포화시켜 결과 저장을 유효하게 유지한다.
 - malformed Realm 보상도 결과 카드 계산 단계에서 안전 정수 상한으로 포화시켜 `Infinity` 결과가 저장 검증을 우회하지 못하게 한다.
-- V4 단위/컴포넌트 테스트: 396개 파일, 3,371개 테스트 통과.
+- 오프라인 정산이 새 작업·원정 없이 재호출되면 동일 save 객체와 빈 요약을 반환해 `setItem`/React 갱신을 반복하지 않으며, 최초 `missing` 저장은 경과 시간이 0이어도 생성한다.
+- 오프라인 위험 보스가 `awaiting_confirmation` 상태에 들어간 뒤 재개되어도 자동 확정하지 않고, 같은 워터마크에서 재호출을 idempotent하게 유지한다. 시간 기반 원정 테스트 fixture는 고정 ID로 결정론화했다.
+- V4 단위/컴포넌트 테스트: 396개 파일, 3,376개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 24/24 통과(각 프로젝트 12/12).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
