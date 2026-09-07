@@ -1067,6 +1067,16 @@ export function useIntervention(
   if (source.run.interventionCharges <= 0) {
     return { ok: false, save: source, error: '신의 개입 충전이 없습니다.' };
   }
+  if (intervention === 'heal') {
+    const sourceHero = source.run.hero;
+    if (!isPersistableFiniteNumber(sourceHero.hp)
+      || !isPersistableFiniteNumber(sourceHero.hpMax)
+      || sourceHero.hpMax <= 0
+      || sourceHero.hp < 0
+      || sourceHero.hp > sourceHero.hpMax) {
+      return { ok: false, save: source, error: '영웅 HP 정보를 확인할 수 없어 회복하지 않았습니다.' };
+    }
+  }
 
   const save = cloneSave(source);
   const eventAt = eventTimestamp(save, now);

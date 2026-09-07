@@ -1403,6 +1403,26 @@ describe('v4 save and domain', () => {
     expect(malformed.run.interventionCharges).toBeNaN();
   });
 
+  it.each([
+    ['missing hp', undefined, 200],
+    ['not-a-number hp', Number.NaN, 200],
+    ['infinite hp', Number.POSITIVE_INFINITY, 200],
+    ['negative hp', -1, 200],
+    ['unsafe hp max', 100, Number.MAX_VALUE],
+  ])('rejects healing when hero HP data is %s', (_label, hp, hpMax) => {
+    const malformed = createInitialV4Save(132);
+    malformed.run.hero.hp = hp as never;
+    malformed.run.hero.hpMax = hpMax;
+
+    const result = useIntervention(malformed, 'heal', malformed.updatedAt + 1_000);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(malformed);
+    expect(malformed.run.interventionCharges).toBe(1);
+    expect(malformed.run.hero.hp).toBe(hp);
+    expect(malformed.run.hero.hpMax).toBe(hpMax);
+  });
+
   it('clamps offline processing to 8 hours and rejects backwards time', () => {
     const initial = createInitialV4Save(8);
     const future = simulateOfflineProgress(initial, initial.lastProcessedAt + 24 * HOUR);
