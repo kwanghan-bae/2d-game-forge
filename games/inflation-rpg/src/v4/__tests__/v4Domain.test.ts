@@ -561,6 +561,30 @@ describe('v4 save and domain', () => {
     expect(replay.save.meta.currencies).toEqual(offline.save.meta.currencies);
   });
 
+  it('does not create a second save when a resume has no newly due work', () => {
+    const initial = createInitialV4Save(708);
+    const settled = simulateOfflineProgress(initial, initial.createdAt + HOUR);
+    const replay = simulateOfflineProgress(settled.save, settled.save.lastProcessedAt);
+
+    expect(replay.save).toBe(settled.save);
+    expect(replay.summary.processedSeconds).toBe(0);
+    expect(replay.summary.completedTaskIds).toEqual([]);
+    expect(replay.summary.completedExpedition).toBe(false);
+  });
+
+  it('still settles work due exactly at the offline watermark', () => {
+    const initial = createInitialV4Save(709);
+    const started = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    started.save.meta.tasks[started.task.id]!.completesAt = started.save.lastProcessedAt;
+    const settled = simulateOfflineProgress(started.save, started.save.lastProcessedAt);
+
+    expect(settled.summary.completedTaskIds).toEqual([started.task.id]);
+    expect(settled.save.meta.tasks[started.task.id]).toBeUndefined();
+  });
+
   it('settles overdue work inside the capped window after a later manual save', () => {
     const initial = createInitialV4Save(118);
     const started = startFacilityTask(initial, 'temple', initial.createdAt);

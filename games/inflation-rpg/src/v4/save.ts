@@ -551,6 +551,17 @@ export function simulateOfflineProgress(
   const processedMs = Math.min(rawElapsed, V4_OFFLINE_CAP_MS);
   const processUntil = save.lastProcessedAt + processedMs;
   const completedBefore = beforeTaskIds.filter((id) => save.meta.tasks[id]?.completesAt <= processUntil);
+  if (rawElapsed === 0 && completedBefore.length === 0 && !expeditionWasReady) {
+    return {
+      save,
+      summary: {
+        processedSeconds: 0, efficiency: V4_OFFLINE_EFFICIENCY, completedTaskIds: [],
+        completedExpedition: false, resourcesGained: {}, equipmentGained: [],
+        wasClamped: false, clockAnomaly: null,
+        notes: [],
+      },
+    };
+  }
   const processed = completeFacilityTasks(save, processUntil, V4_OFFLINE_EFFICIENCY, false, true);
   const completedTaskIds = completedBefore.filter((id) => !processed.meta.tasks[id]);
   const completedExpedition = Boolean(expeditionWasReady && !processed.run.expedition);
