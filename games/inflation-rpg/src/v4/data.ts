@@ -148,6 +148,20 @@ export function getV4RealmDefinition(id: string): RealmDefinition | undefined {
   return getOwnDefinition(REALM_DEFINITIONS, id);
 }
 
+/**
+ * Returns the player-facing duration for the complete staged route. The
+ * legacy `durationSeconds` field remains as a fallback for old single-stage
+ * saves, while new V4 routes are resolved encounter by encounter.
+ */
+export function getV4RealmRouteDurationSeconds(realm: RealmDefinition): number {
+  const stagedDuration = realm.encounters.reduce((total, encounter) => {
+    return total + (Number.isFinite(encounter.durationSeconds) && encounter.durationSeconds > 0
+      ? encounter.durationSeconds
+      : 0);
+  }, 0);
+  return stagedDuration > 0 ? stagedDuration : realm.durationSeconds;
+}
+
 export const POLICY_LABELS: Record<V4Policy, string> = {
   aggression: '공격 우선',
   hoarding: '안전 비축',

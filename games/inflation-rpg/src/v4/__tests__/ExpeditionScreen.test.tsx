@@ -62,6 +62,7 @@ describe('V4 expedition result screen', () => {
     expect(plains).not.toBeNull();
     if (!plains) return;
     expect(plains).toHaveTextContent('예상 보상 · 금화 +55 · 재료 +4');
+    expect(plains).toHaveTextContent('기본 경로 80초');
   });
 
   it('renders Korean resource labels instead of storage keys', () => {
