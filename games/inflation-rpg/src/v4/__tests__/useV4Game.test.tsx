@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save, persistV4Save, V4_RECOVERY_BACKUP_KEY, V4_SAVE_KEY } from '../save';
-import { startExpedition, startFacilityTask } from '../domain';
+import { completeFacilityTasks, startExpedition, startFacilityTask } from '../domain';
 import { V4MonetizationAdapter } from '../monetization';
 import { useV4Game } from '../useV4Game';
 
@@ -163,6 +163,34 @@ describe('useV4Game monetization actions', () => {
     persistV4Save(createInitialV4Save(901));
     const setItemSpy = vi.spyOn(window.localStorage, 'setItem');
 
+    render(<Harness monetization={new V4MonetizationAdapter(null, null)} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'resume' }));
+      fireEvent.click(screen.getByRole('button', { name: 'resume' }));
+    });
+
+    expect(setItemSpy).not.toHaveBeenCalled();
+    expect(screen.getByTestId('offline-state')).toHaveTextContent('pending');
+    setItemSpy.mockRestore();
+  });
+
+  it('does not re-persist a risky boss that is already awaiting confirmation', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(902);
+    base.meta.unlockedRealms.push('deep_forest');
+    const started = startExpedition(base, 'deep_forest', base.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
+    const afterNormal = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+    const afterElite = completeFacilityTasks(afterNormal, afterNormal.run.expedition!.completesAt);
+    const pending = completeFacilityTasks(afterElite, afterElite.run.expedition!.completesAt, 0.7, false);
+    expect(pending.run.expedition?.status).toBe('awaiting_confirmation');
+    vi.setSystemTime(pending.lastProcessedAt);
+    persistV4Save(pending);
+
+    const setItemSpy = vi.spyOn(window.localStorage, 'setItem');
     render(<Harness monetization={new V4MonetizationAdapter(null, null)} />);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'resume' }));
