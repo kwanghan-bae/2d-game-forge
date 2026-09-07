@@ -648,6 +648,34 @@ describe('v4 save and domain', () => {
     expect(imported.run.hero.realmId).toBe('deep_forest');
   });
 
+  it('avoids a saga ID collision with an active facility task during explicit import', () => {
+    const destination = createInitialV4Save(1201);
+    const started = startFacilityTask(destination, 'temple', destination.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    const importAt = destination.createdAt + 1_000;
+    const collidingId = `saga-import-${importAt}`;
+    const task = started.save.meta.tasks[started.task.id];
+    expect(task).toBeDefined();
+    if (!task) return;
+
+    delete started.save.meta.tasks[started.task.id];
+    task.id = collidingId;
+    started.save.meta.tasks[collidingId] = task;
+    started.save.meta.facilities.temple.activeTaskId = collidingId;
+
+    const imported = importV3HeroSnapshot(started.save, {} as HeroSnapshot, importAt);
+
+    expect(imported.meta.sagaEntries[0]?.id).toBe(`${collidingId}-2`);
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    expect(persistV4Save(imported, fakeStorage)).toBe(true);
+  });
+
   it('does not replace the battle hero while an expedition is active', () => {
     const destination = createInitialV4Save(119);
     const started = startExpedition(destination, 'joseon_plains', destination.updatedAt, 'aggression', null);

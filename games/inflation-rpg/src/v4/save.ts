@@ -502,10 +502,13 @@ function hydrateEquipmentStats(save: V4SaveEnvelope): V4SaveEnvelope {
 }
 
 function nextSagaId(source: V4SaveEnvelope, base: string): string {
-  const used = new Set(source.meta.sagaEntries.map((entry) => entry.id));
-  if (!used.has(base)) return base;
+  const isUsed = (id: string): boolean => Object.prototype.hasOwnProperty.call(source.meta.tasks, id)
+    || source.run.expedition?.id === id
+    || source.run.lastExpeditionResult?.id === id
+    || source.meta.sagaEntries.some((entry) => entry.id === id);
+  if (!isUsed(base)) return base;
   let suffix = 2;
-  while (used.has(`${base}-${suffix}`)) suffix += 1;
+  while (isUsed(`${base}-${suffix}`)) suffix += 1;
   return `${base}-${suffix}`;
 }
 
