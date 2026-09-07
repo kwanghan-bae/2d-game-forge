@@ -4,6 +4,7 @@ import { createInitialV4Save } from '../save';
 import * as monetization from '../monetization';
 import { useV4Game } from '../useV4Game';
 import { V4App } from '../V4App';
+import type { OfflineSummary } from '../types';
 
 vi.mock('../useV4Game', () => ({ useV4Game: vi.fn() }));
 
@@ -12,6 +13,7 @@ function mockGame(
   settleOffline: ReturnType<typeof vi.fn>,
   storageStatus: 'valid' | 'unavailable' = 'valid',
   policy: string = 'aggression',
+  overrides: Partial<ReturnType<typeof useV4Game>> = {},
 ): ReturnType<typeof useV4Game> {
   const save = createInitialV4Save(1);
   save.run.policy = policy as typeof save.run.policy;
@@ -48,6 +50,7 @@ function mockGame(
     startFreshSave: vi.fn(),
     closeOffline: vi.fn(),
     closeMessage: vi.fn(),
+    ...overrides,
   } as unknown as ReturnType<typeof useV4Game>;
 }
 
@@ -127,6 +130,26 @@ describe('V4 app resume handling', () => {
     render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
 
     expect(screen.getByTestId('v4-app')).toHaveTextContent('정책 확인 필요');
+  });
+
+  it('keeps the offline result modal focus above the town heading', () => {
+    const offlineSummary: OfflineSummary = {
+      processedSeconds: 3_600,
+      efficiency: 0.7,
+      completedTaskIds: [],
+      completedExpedition: false,
+      resourcesGained: { gold: 55 },
+      equipmentGained: [],
+      equipmentUpgraded: [],
+      wasClamped: false,
+      clockAnomaly: null,
+      notes: [],
+    };
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn(), 'valid', 'aggression', { offlineSummary }));
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    expect(screen.getByRole('button', { name: '마을 확인' })).toHaveFocus();
   });
 
   it('keeps the local-first game playable when native platform detection throws', () => {

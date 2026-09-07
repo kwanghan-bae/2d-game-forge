@@ -711,9 +711,9 @@ V4는 V3 persist version 27과 자동 migration 경계를 공유하지 않는다
 
 ### 14.4 현재 검증 기준선 (2026-09-07)
 
-- game Vitest: 398개 파일·3,444개 테스트 통과.
-- V4 vertical slice: Chromium·iPhone14 28/28 통과(각 14/14).
-- V3 legacy를 포함한 전체 game E2E: 42/42 통과(Chromium 21/21, iPhone14 21/21).
+- game Vitest: 398개 파일·3,447개 테스트 통과.
+- V4 vertical slice: Chromium·iPhone14 30/30 통과(각 15/15).
+- V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22).
 - monorepo typecheck·lint·circular 검사와 game production build 통과.
 - 위 보호 파일 3종과 사용자 미추적 `output/`, `tmp/`는 V4 작업에서 수정·커밋하지 않는다.
 

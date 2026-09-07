@@ -77,6 +77,13 @@ describe('V4 town hub support assignment', () => {
     expect(hero!.compareDocumentPosition(objective) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('moves focus to the hero heading when the town opens', () => {
+    const save = createInitialV4Save(106);
+    renderHub({ save });
+
+    expect(screen.getByRole('heading', { name: save.run.hero.name })).toHaveFocus();
+  });
+
   it('explains that a policy change during an expedition applies to the next departure', () => {
     const initial = createInitialV4Save(103);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);

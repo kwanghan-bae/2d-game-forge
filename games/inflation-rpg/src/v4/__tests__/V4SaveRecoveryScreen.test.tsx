@@ -19,4 +19,10 @@ describe('V4 save recovery screen', () => {
 
     expect(screen.getByTestId('v4-save-recovery')).toHaveTextContent('읽을 수 없습니다');
   });
+
+  it('moves focus to the recovery heading when a save needs attention', () => {
+    render(<V4SaveRecoveryScreen reason="invalid_schema" onStartFresh={() => {}} />);
+
+    expect(screen.getByRole('heading', { name: 'V4 저장을 확인할 수 없습니다' })).toHaveFocus();
+  });
 });

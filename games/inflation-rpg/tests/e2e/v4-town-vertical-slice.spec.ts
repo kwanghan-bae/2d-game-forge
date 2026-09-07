@@ -51,6 +51,26 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByText('V4 전용 저장')).toBeVisible();
   });
 
+  test('주요 V4 화면 이동 후 제목으로 포커스를 안내한다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
+    await page.reload();
+    await expect(page.getByTestId('v4-town-hub')).toBeVisible();
+
+    const navigation = page.getByRole('navigation', { name: '주요 메뉴' });
+    await navigation.getByRole('button', { name: /영웅/ }).click();
+    await expect(page.locator('.v4-hero-name')).toBeFocused();
+
+    await navigation.getByRole('button', { name: /사가/ }).click();
+    await expect(page.getByRole('heading', { name: '영원의 사가' })).toBeFocused();
+
+    await page.getByRole('button', { name: /설정/ }).click();
+    await expect(page.getByRole('heading', { name: '설정' })).toBeFocused();
+
+    await page.getByRole('button', { name: '← 마을로' }).click();
+    await expect(page.locator('.v4-hero-name')).toBeFocused();
+  });
+
   test('8시간 초과 offline 정산 결과를 표시한다', async ({ page }) => {
     await page.goto(GAME_URL);
     await expect(page.getByTestId('v4-app')).toBeVisible();

@@ -1,4 +1,5 @@
 import type { V4SaveLoadResult } from '../save';
+import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
 
 interface Props {
   reason: Extract<V4SaveLoadResult, { status: 'invalid' }>['reason'];
@@ -11,11 +12,13 @@ const REASON_COPY = {
 } as const;
 
 export function V4SaveRecoveryScreen({ reason, onStartFresh }: Props) {
+  const titleRef = useV4ScreenHeadingFocus();
+
   return (
     <main className="v4-container" data-testid="v4-save-recovery">
       <section className="v4-panel v4-recovery-panel">
         <div className="v4-kicker">저장 복구 필요</div>
-        <h2>V4 저장을 확인할 수 없습니다</h2>
+        <h2 ref={titleRef} tabIndex={-1}>V4 저장을 확인할 수 없습니다</h2>
         <p>{REASON_COPY[reason]}</p>
         <div className="v4-alert">
           기존 저장을 덮어쓰지 않았습니다. 새 저장을 시작하기 전까지 원본 데이터는 그대로 보존됩니다.

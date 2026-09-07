@@ -2,6 +2,7 @@ import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4RealmName, POLICY_LABELS,
 import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
+import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
 import type { FacilityId, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 import { V4_MAX_INTERVENTION_CHARGES } from '../types';
 
@@ -84,6 +85,7 @@ function getTownObjective(save: V4SaveEnvelope): string {
 }
 
 export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, onInterventionCharge, onBuyAdFree }: Props) {
+  const titleRef = useV4ScreenHeadingFocus();
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
   const interventionFull = save.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES;
@@ -93,7 +95,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
       <section className="v4-panel v4-hero-card">
         <div className="v4-hero-emoji" aria-hidden="true">{hero.emoji}</div>
         <div>
-          <h2 className="v4-hero-name">{hero.name}</h2>
+          <h2 ref={titleRef} tabIndex={-1} className="v4-hero-name">{hero.name}</h2>
           <p className="v4-hero-meta">{hero.age}세 · Lv.{hero.level} · {getV4RealmName(hero.realmId)}</p>
           <div className="v4-stat-line">
             <span className="v4-chip">HP {formatNumber(hero.hp)}/{formatNumber(hero.hpMax)}</span>
