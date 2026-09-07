@@ -130,6 +130,24 @@ export class IapManager {
   async restorePurchases(): Promise<PurchaseInfo[]> {
     const result = await this.plugin.restorePurchases();
     const purchases = Array.isArray(result?.purchases) ? result.purchases : [];
-    return purchases.filter(isValidIapPurchaseInfo);
+    const validPurchases = purchases.filter(isValidIapPurchaseInfo);
+    const reconciled: PurchaseInfo[] = [];
+    for (const purchase of validPurchases) {
+      if (purchase.productId !== 'ad_free' || purchase.acknowledged) {
+        reconciled.push(purchase);
+        continue;
+      }
+
+      try {
+        await this.plugin.acknowledge({ purchaseToken: purchase.purchaseToken });
+        // Keep the restored record truthful for callers that display or log
+        // the acknowledgement state. If the retry fails, retain false and
+        // let the next restore attempt retry it again.
+        reconciled.push({ ...purchase, acknowledged: true });
+      } catch {
+        reconciled.push(purchase);
+      }
+    }
+    return reconciled;
   }
 }

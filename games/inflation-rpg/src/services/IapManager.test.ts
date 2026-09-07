@@ -185,6 +185,47 @@ describe('IapManager', () => {
     expect(result[0]!.productId).toBe('ad_free');
   });
 
+  it('retries acknowledgement for an unacknowledged non-consumable during restore', async () => {
+    plugin.restorePurchases.mockResolvedValue({
+      purchases: [{
+        productId: 'ad_free', purchaseToken: 'tok_restore_ack', purchaseTime: 100, acknowledged: false,
+      }],
+    });
+
+    const result = await mgr.restorePurchases();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.acknowledged).toBe(true);
+    expect(plugin.acknowledge).toHaveBeenCalledWith({ purchaseToken: 'tok_restore_ack' });
+  });
+
+  it('does not consume a restored consumable automatically', async () => {
+    plugin.restorePurchases.mockResolvedValue({
+      purchases: [{
+        productId: 'crack_stone_pack_small', purchaseToken: 'tok_restore_consumable', purchaseTime: 100, acknowledged: false,
+      }],
+    });
+
+    await mgr.restorePurchases();
+
+    expect(plugin.acknowledge).not.toHaveBeenCalled();
+  });
+
+  it('keeps a restored ad-free entitlement usable when acknowledgement retry fails', async () => {
+    plugin.restorePurchases.mockResolvedValue({
+      purchases: [{
+        productId: 'ad_free', purchaseToken: 'tok_restore_retry', purchaseTime: 100, acknowledged: false,
+      }],
+    });
+    plugin.acknowledge.mockRejectedValueOnce(new Error('store temporarily unavailable'));
+
+    const result = await mgr.restorePurchases();
+
+    expect(result).toEqual([{
+      productId: 'ad_free', purchaseToken: 'tok_restore_retry', purchaseTime: 100, acknowledged: false,
+    }]);
+  });
+
   it('filters malformed restore records before they can grant entitlement', async () => {
     plugin.restorePurchases.mockResolvedValue({
       purchases: [
