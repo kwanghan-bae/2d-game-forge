@@ -79,6 +79,19 @@ describe('v4 monetization adapter', () => {
     expect(listener).toHaveBeenCalledTimes(1);
   });
 
+  it('does not treat malformed native entitlement values as ownership', () => {
+    const adapter = new V4MonetizationAdapter(null, null);
+
+    adapter.setAdFreeOwned('true' as never);
+    expect(adapter.isAdFree()).toBe(false);
+
+    adapter.setAdFreeOwned(true);
+    expect(adapter.isAdFree()).toBe(true);
+
+    adapter.setAdFreeOwned(0 as never);
+    expect(adapter.isAdFree()).toBe(false);
+  });
+
   it('restores a native ad-free entitlement through the adapter boundary', async () => {
     const adapter = new V4MonetizationAdapter(null, null, null, async () => true);
 
@@ -262,6 +275,16 @@ describe('v4 monetization adapter', () => {
       showRewardedAd: async () => true,
       purchase: async () => true,
       isAdFreeOwned: () => { throw new Error('native bridge unavailable'); },
+    });
+
+    expect(adapter.isAdFree()).toBe(false);
+  });
+
+  it('does not treat a malformed existing service entitlement as ownership', () => {
+    const adapter = createV4MonetizationAdapter({
+      showRewardedAd: async () => true,
+      purchase: async () => true,
+      isAdFreeOwned: () => 'yes' as never,
     });
 
     expect(adapter.isAdFree()).toBe(false);

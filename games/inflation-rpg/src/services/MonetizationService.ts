@@ -23,7 +23,7 @@ export class MonetizationService {
   private initializeInFlight: Promise<void> | null = null;
 
   constructor(private opts: MonetizationServiceOptions) {
-    this.adFreeOwned = opts.adFreeOwned;
+    this.adFreeOwned = opts.adFreeOwned === true;
     this.ad = new AdManager({
       rewardedUnitId: opts.rewardedUnitId,
       bannerUnitId: opts.bannerUnitId,
@@ -65,8 +65,8 @@ export class MonetizationService {
   }
 
   setAdFreeOwned(owned: boolean): void {
-    this.adFreeOwned = owned;
-    if (owned) void this.ad.hideBanner();
+    this.adFreeOwned = owned === true;
+    if (this.adFreeOwned) void this.ad.hideBanner();
     else void this.ad.showBanner();
   }
 

@@ -111,7 +111,7 @@ export function createV4MonetizationAdapter(
     restorePurchases,
   );
   try {
-    if (service.isAdFreeOwned?.()) adapter.setAdFreeOwned(true);
+    if (service.isAdFreeOwned?.() === true) adapter.setAdFreeOwned(true);
   } catch {
     // Entitlement restoration is optional; a broken bridge must not block play.
   }
@@ -143,14 +143,15 @@ export async function createNativeV4Monetization(
     import('../services/MonetizationService'),
     import('../config/monetization.config'),
   ]);
-  let adFreeOwned = options.adFreeOwned ?? false;
+  let adFreeOwned = options.adFreeOwned === true;
   let updateAdapterEntitlement: ((owned: boolean) => void) | undefined;
   const service = new MonetizationService({
     adFreeOwned,
     onAdFreeChanged: (owned) => {
-      adFreeOwned = owned;
-      updateAdapterEntitlement?.(owned);
-      options.onAdFreeChanged?.(owned);
+      const normalized = owned === true;
+      adFreeOwned = normalized;
+      updateAdapterEntitlement?.(normalized);
+      options.onAdFreeChanged?.(normalized);
     },
     onCrackStonesAwarded: (amount) => options.onCrackStonesAwarded?.(amount),
     licenseKey: ADMOB_CONFIG.iapLicenseKey,
@@ -244,8 +245,9 @@ export class V4MonetizationAdapter {
     return () => { this.listeners.delete(listener); };
   }
   setAdFreeOwned(owned: boolean): void {
-    if (this.adFree === owned) return;
-    this.adFree = owned;
+    const normalized = owned === true;
+    if (this.adFree === normalized) return;
+    this.adFree = normalized;
     this.entitlementRevision += 1;
     for (const listener of this.listeners) {
       try {
