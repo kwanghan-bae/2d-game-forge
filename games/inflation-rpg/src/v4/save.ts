@@ -1,6 +1,6 @@
 import type { HeroSnapshot } from '../hero/HeroEntity';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
-import { FACILITY_IDS, AGENT_DEFINITIONS, REALM_IDS } from './data';
+import { FACILITY_IDS, AGENT_DEFINITIONS, getV4RealmDefinition, REALM_IDS } from './data';
 import { completeFacilityTasks } from './domain';
 import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentDefinition } from './equipment';
 import type {
@@ -539,6 +539,17 @@ function summaryEquipmentLevel(value: unknown): number {
     : 1;
 }
 
+function shouldParkRiskyExpeditionAfterOfflineCap(
+  expedition: V4SaveEnvelope['run']['expedition'],
+  processUntil: number,
+  now: number,
+): boolean {
+  if (!expedition || expedition.status !== 'traveling'
+    || expedition.completesAt > now || expedition.completesAt <= processUntil) return false;
+  const realm = getV4RealmDefinition(expedition.realmId);
+  return Boolean(realm && !realm.offlineSafe);
+}
+
 export function simulateOfflineProgress(
   save: V4SaveEnvelope,
   now: number,
@@ -602,6 +613,13 @@ export function simulateOfflineProgress(
     };
   }
   const processed = completeFacilityTasks(save, processUntil, V4_OFFLINE_EFFICIENCY, false, true);
+  if (shouldParkRiskyExpeditionAfterOfflineCap(processed.run.expedition, processUntil, now)
+    && processed.run.expedition) {
+    // A non-safe route that finished after the 8h calculation window must not
+    // be consumed by the first live refresh, which would otherwise resolve its
+    // boss and permanent progression without an explicit player confirmation.
+    processed.run.expedition.status = 'awaiting_confirmation';
+  }
   const completedTaskIds = completedBefore.filter((id) => !processed.meta.tasks[id]);
   const completedExpedition = Boolean(expeditionWasReady && !processed.run.expedition);
 
