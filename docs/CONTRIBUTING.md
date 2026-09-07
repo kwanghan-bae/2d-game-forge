@@ -139,6 +139,7 @@ pnpm install
 
 ```ts
 import Phaser from 'phaser';
+import type { ForgeGameInstance } from '@forge/core';
 
 export interface StartGameConfig {
   parent: string;
@@ -146,7 +147,7 @@ export interface StartGameConfig {
   exposeTestHooks: boolean;
 }
 
-export function StartGame(config: StartGameConfig): Phaser.Game {
+export function StartGame(config: StartGameConfig): ForgeGameInstance {
   const phaserConfig: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     width: 1024,
@@ -162,7 +163,11 @@ export function StartGame(config: StartGameConfig): Phaser.Game {
     // 필요한 만큼만 window 에 노출. 기본은 빈 함수.
   }
 
-  return game;
+  return {
+    destroy(removeCanvas = true) {
+      game.destroy(removeCanvas);
+    },
+  };
 }
 ```
 
@@ -219,7 +224,7 @@ export type { StartGameConfig } from './startGame';
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type Phaser from 'phaser';
+import type { ForgeGameInstance } from '@forge/core';
 import { StartGame } from '../startGame';
 
 export interface PhaserGameProps {
@@ -233,7 +238,7 @@ export default function PhaserGame({
   assetsBasePath = '/assets',
   exposeTestHooks = false,
 }: PhaserGameProps) {
-  const gameRef = useRef<Phaser.Game | null>(null);
+  const gameRef = useRef<ForgeGameInstance | null>(null);
 
   useEffect(() => {
     if (gameRef.current) return;
@@ -253,13 +258,16 @@ export default function PhaserGame({
 
 ## 6. 포털 등록
 
-dev-shell 의 두 registry 파일에 추가한다.
+공용 manifest와 client loader를 갱신한다. slug·제품명·asset 경로는
+`registry.shared.ts`를 단일 출처로 삼고, server 쪽은 그 data-only 목록만
+사용해 게임 bundle이 SSR에 끌려오지 않게 한다.
 
-`apps/dev-shell/src/lib/registry.server.ts` (server-safe, 매니페스트만):
+`apps/dev-shell/src/lib/registry.shared.ts` (server/client 공용 metadata):
 
 ```ts
-export const manifests: GameManifestValue[] = [
-  // ... 기존 매니페스트 ...
+import type { GameManifestValue } from '@forge/core/manifest';
+
+export const GAME_MANIFESTS: readonly GameManifestValue[] = [
   {
     slug: '<slug>',
     title: '<게임 한국어 이름>',
@@ -268,16 +276,29 @@ export const manifests: GameManifestValue[] = [
 ];
 ```
 
+`apps/dev-shell/src/lib/registry.server.ts` (server-safe, 매니페스트만):
+
+```ts
+import type { GameManifestValue } from '@forge/core/manifest';
+import { GAME_MANIFESTS } from './registry.shared';
+
+export const manifests: GameManifestValue[] = GAME_MANIFESTS.map((manifest) => ({ ...manifest }));
+```
+
 `apps/dev-shell/src/lib/registry.ts` (client, 동적 import 포함):
 
 ```ts
-export const registeredGames: RegisteredGame[] = [
-  // ... 기존 게임 ...
-  {
-    manifest: { slug: '<slug>', title: '<게임 한국어 이름>', assetsBasePath: '/games/<slug>/assets' },
-    load: () => import('@forge/game-<slug>'),
-  },
-];
+import { GAME_MANIFESTS } from './registry.shared';
+
+const loaders: Record<string, RegisteredGame['load']> = {
+  '<slug>': () => import('@forge/game-<slug>'),
+};
+
+export const registeredGames = GAME_MANIFESTS.map((manifest) => {
+  const load = loaders[manifest.slug];
+  if (!load) throw new Error(`No game loader registered for ${manifest.slug}`);
+  return { manifest, load };
+});
 ```
 
 `apps/dev-shell/next.config.ts` 의 `transpilePackages` 에 추가:
@@ -533,9 +554,10 @@ pnpm add clsx@^2.1.1
 
 ### 14.4. dev-shell 등록
 
-[`apps/dev-shell/src/lib/registry.ts`](../apps/dev-shell/src/lib/registry.ts) 와
-[`registry.server.ts`](../apps/dev-shell/src/lib/registry.server.ts) 에 새 게임 엔트리를 추가한다.
-server 쪽은 매니페스트만, client 쪽은 dynamic import 콜백을 등록.
+[`apps/dev-shell/src/lib/registry.shared.ts`](../apps/dev-shell/src/lib/registry.shared.ts)에
+manifest를 추가하고, [`registry.ts`](../apps/dev-shell/src/lib/registry.ts)에
+dynamic import loader를 연결한다. `registry.server.ts`는 shared manifest를
+복사해 server-safe 목록으로 노출한다.
 
 dev-shell 의 `tsconfig.json` 과 `next.config.ts` 에 새 게임의 `@/components/ui/*`, `@/lib/*` alias 도 cross-workspace 로 등록해야 dev-shell 에서 게임 화면이 렌더된다.
 
