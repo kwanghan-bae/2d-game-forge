@@ -54,6 +54,40 @@ describe('AdManager', () => {
     expect(AdMob.showRewardVideoAd).toHaveBeenCalled();
   });
 
+  it.each([
+    null,
+    undefined,
+    false,
+    [],
+    {},
+    { type: 'boost' },
+    { amount: 1 },
+    { type: 'boost', amount: 0 },
+    { type: 'boost', amount: Number.POSITIVE_INFINITY },
+    { type: 'boost', amount: -1 },
+    { type: 1, amount: 1 },
+    { type: 'boost', amount: '1' },
+    { type: '', amount: 1 },
+    { type: 'boost', amount: Number.NaN },
+  ])('rejects malformed rewarded response: %j', async (response) => {
+    (AdMob.showRewardVideoAd as ReturnType<typeof vi.fn>).mockResolvedValueOnce(response as never);
+
+    await expect(mgr.showRewardedAd()).resolves.toBe(false);
+  });
+
+  it('does not report a rewarded success when disposal wins the show race', async () => {
+    let releaseShow!: (response: unknown) => void;
+    const showPending = new Promise<unknown>((resolve) => { releaseShow = resolve; });
+    (AdMob.showRewardVideoAd as ReturnType<typeof vi.fn>).mockReturnValueOnce(showPending);
+
+    const rewarded = mgr.showRewardedAd();
+    await Promise.resolve();
+    const dispose = mgr.dispose();
+    releaseShow({ type: 'boost', amount: 1 });
+
+    await Promise.all([dispose, expect(rewarded).resolves.toBe(false)]);
+  });
+
   it('showBanner forwards BOTTOM position and resolves', async () => {
     await mgr.initialize();
     await mgr.showBanner();

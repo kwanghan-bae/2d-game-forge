@@ -9,6 +9,16 @@ export interface AdManagerConfig {
   bannerUnitId: string;
 }
 
+function isValidRewardedResponse(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const reward = value as { type?: unknown; amount?: unknown };
+  return typeof reward.type === 'string'
+    && reward.type.trim().length > 0
+    && typeof reward.amount === 'number'
+    && Number.isFinite(reward.amount)
+    && reward.amount > 0;
+}
+
 export class AdManager {
   private initialized = false;
   private initializeInFlight: Promise<void> | null = null;
@@ -50,7 +60,7 @@ export class AdManager {
       await AdMob.prepareRewardVideoAd({ adId: this.cfg.rewardedUnitId });
       if (this.disposed) return false;
       const result = await AdMob.showRewardVideoAd();
-      return !this.disposed && result !== null && result !== undefined;
+      return !this.disposed && isValidRewardedResponse(result);
     } catch (e) {
       console.warn('[AdManager] showRewardedAd failed:', e);
       return false;
