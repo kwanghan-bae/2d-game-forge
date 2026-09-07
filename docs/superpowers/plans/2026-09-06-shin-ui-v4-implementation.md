@@ -215,6 +215,7 @@ pnpm circular
 - 영혼 부적의 치명타 확률을 영웅 상세 장비 카드에도 표시해, 전투 계산에만 존재하던 핵심 장비 효과를 플레이어가 확인할 수 있게 했다.
 - 오프라인 대장간이 기존 장비를 강화한 경우도 신규 장비 획득과 분리해 `장비 강화` 결과로 기록하고, 강화만 발생해도 재접속 결과 모달이 열리도록 정산 summary·hook·UI를 연결했다.
 - 오프라인 정산이 장비 강화만 남긴 경우에도 결과 모달을 열도록 `useV4Game` 회귀 테스트를 추가해, 재화·신규 장비가 없는 복귀 결과도 사용자에게 누락되지 않게 고정했다.
+- 네이티브 광고 제거 권한 조회 bridge가 예외를 던져도 V4 monetization adapter가 선택형 권한만 포기하고 핵심 게임 루프를 계속 제공하도록 보호했다.
 - 포털에서 V4 진입 후 뒤로 돌아가 V3 legacy를 여는 browser navigation도 검증해 이전 게임 root가 남지 않음을 확인했다(5/5).
 - dev-shell 동적 게임 loader의 import/부팅 예외를 accessible 오류 상태로 격리하고, route cleanup 이후 늦게 도착한 promise의 마운트를 무시하도록 보강했다.
 - loader 오류 UI는 게임이 소유하는 `#game-container` 밖에 렌더링해 부팅 실패 시에도 별도 React root와 충돌하지 않도록 고정했다.
@@ -253,7 +254,7 @@ pnpm circular
 - 보상형 광고 5회와 신의 개입 3회 상한을 공용 상수로 연결해 저장 검증·runtime handler·UI 표시가 서로 다른 제한을 갖지 않게 했다.
 - 저장된 원정 결과의 완료 시각도 저장 생성 시각 이상이어야 하도록 검증해, 생성 이전에 발생한 것처럼 보이는 결과 payload를 복구 단계에서 거부한다.
 - V4 저장 검증은 알 수 없는 통화 키를 거부하고, 원정 결과의 저장 watermark·해금 Realm chronology를 확인한다. 구형 schema 1의 초과 사가 기록은 기존 hydrate trim 호환을 유지한다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 397개 파일, 3,412개 테스트 통과.
+- 전체 게임 단위/컴포넌트 테스트(V4 포함): 397개 파일, 3,413개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 26/26 통과(각 프로젝트 13/13).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.
@@ -266,7 +267,7 @@ pnpm circular
 - V3-H 깊이 회귀가 RNG와 연속 smoke 실행 부하에 따라 50초 안에 Realm을 벗어나지 못하던 간헐 실패를 고정 sleep 대신 실제 `hud-realm` 전환 assertion으로 교정하고, 개발 전용 고정 시드와 선택 모달 polling으로 Chromium/iPhone14에서 결정론적으로 검증했다.
 - V2 vertical slice가 보스 선택창에 걸리던 모바일/데스크톱 타이밍 변동을 dev-only fast-forward 후 blocking choice polling으로 보강해 실제 Phaser→컨트롤러→결과 화면 경로를 유지하면서 안정화했다.
 - Chromium·iPhone14 각각 short 회귀 17/17(장시간 V2 baseline 제외)을 통과했고, v9 저장 마이그레이션 smoke도 두 프로파일에서 통과했다.
-- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, 현재 HEAD에서도 전체 E2E 40/40(Chromium 20/20, iPhone14 20/20, 4.7분)을 통과했다. root `pnpm test`(game 397개 파일·3,412개 테스트 포함), `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 성공했다.
+- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, 현재 HEAD에서도 전체 E2E 40/40(Chromium 20/20, iPhone14 20/20, 4.7분)을 통과했다. root `pnpm test`(game 397개 파일·3,413개 테스트 포함), `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 성공했다.
 
 ### 다음 자동 사이클 우선순위
 

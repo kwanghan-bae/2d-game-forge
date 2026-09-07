@@ -89,7 +89,11 @@ export function createV4MonetizationAdapter(
     { purchase: async () => (await service.purchase('ad_free') ? 'purchased' : 'failed') },
     usageStore,
   );
-  if (service.isAdFreeOwned?.()) adapter.setAdFreeOwned(true);
+  try {
+    if (service.isAdFreeOwned?.()) adapter.setAdFreeOwned(true);
+  } catch {
+    // Entitlement restoration is optional; a broken bridge must not block play.
+  }
   return adapter;
 }
 

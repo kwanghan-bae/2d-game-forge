@@ -94,6 +94,16 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('keeps the game playable when the native entitlement lookup throws', () => {
+    const adapter = createV4MonetizationAdapter({
+      showRewardedAd: async () => true,
+      purchase: async () => true,
+      isAdFreeOwned: () => { throw new Error('native bridge unavailable'); },
+    });
+
+    expect(adapter.isAdFree()).toBe(false);
+  });
+
   it('resets the rewarded limit when the local calendar day changes', async () => {
     vi.setSystemTime(new Date(2026, 8, 6, 23, 59));
     const adapter = new V4MonetizationAdapter({ showRewarded: async () => true }, null);
