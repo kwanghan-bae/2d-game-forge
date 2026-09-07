@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
+import * as monetization from '../monetization';
 import { useV4Game } from '../useV4Game';
 import { V4App } from '../V4App';
 
@@ -140,6 +141,34 @@ describe('V4 app resume handling', () => {
       render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
       expect(screen.getByTestId('v4-town-hub')).toBeInTheDocument();
     } finally {
+      if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;
+      else delete windowWithCapacitor.Capacitor;
+    }
+  });
+
+  it('does not initialize a native monetization handle after the app unmounts', async () => {
+    const windowWithCapacitor = window as Window & { Capacitor?: { isNativePlatform?: () => boolean } };
+    const previousCapacitor = windowWithCapacitor.Capacitor;
+    const createNative = vi.spyOn(monetization, 'createNativeV4Monetization');
+    let resolveHandle!: (handle: monetization.NativeV4MonetizationHandle) => void;
+    const pendingHandle = new Promise<monetization.NativeV4MonetizationHandle>((resolve) => { resolveHandle = resolve; });
+    const initialize = vi.fn(async () => true);
+    const handle: monetization.NativeV4MonetizationHandle = {
+      adapter: new monetization.V4MonetizationAdapter(null, null),
+      initialize,
+      restorePurchases: vi.fn(async () => true),
+    };
+    windowWithCapacitor.Capacitor = { isNativePlatform: () => true };
+    createNative.mockReturnValue(pendingHandle);
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    try {
+      const { unmount } = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+      unmount();
+      await act(async () => { resolveHandle(handle); await pendingHandle; });
+      expect(initialize).not.toHaveBeenCalled();
+    } finally {
+      createNative.mockRestore();
       if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;
       else delete windowWithCapacitor.Capacitor;
     }

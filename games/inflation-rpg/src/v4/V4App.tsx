@@ -42,6 +42,7 @@ export function V4App({ config }: Props) {
 
     let cancelled = false;
     void createNativeV4Monetization().then(async (handle) => {
+      if (cancelled) return;
       const initialized = await handle.initialize();
       if (!cancelled && initialized) setNativeMonetization(handle.adapter);
     }).catch(() => {
