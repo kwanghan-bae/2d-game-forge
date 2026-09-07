@@ -1237,6 +1237,11 @@ describe('v4 save and domain', () => {
   it('does not auto-confirm a risky Realm boss during offline processing', () => {
     const initial = createInitialV4Save(19);
     initial.meta.unlockedRealms.push('deep_forest');
+    initial.run.hero.atk = 10_000;
+    initial.run.hero.def = 10_000;
+    initial.run.hero.defBase = 10_000;
+    initial.run.hero.hp = 10_000;
+    initial.run.hero.hpMax = 10_000;
     const started = startExpedition(initial, 'deep_forest', initial.lastProcessedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
@@ -1261,6 +1266,10 @@ describe('v4 save and domain', () => {
     const confirmed = confirmPendingExpedition(refreshed, refreshed.lastProcessedAt + 1_000);
     expect(confirmed.run.expedition).toBeNull();
     expect(confirmed.run.lastExpeditionResult?.realmId).toBe('deep_forest');
+    expect(confirmed.run.lastExpeditionResult?.outcome).toBe('victory');
+    expect(confirmed.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
+    const unlocked = confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000);
+    expect(unlocked.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest', 'underworld']);
     expect(confirmPendingExpedition(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 

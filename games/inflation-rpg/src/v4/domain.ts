@@ -561,6 +561,7 @@ function resolveExpedition(
   allowPermanentUnlock: boolean,
   efficiency: number,
   allowHistoricalSettlement = false,
+  allowRiskyBossConfirmation = false,
 ): void {
   const eventAt = allowHistoricalSettlement ? now : eventTimestamp(save, now);
   while (save.run.expedition) {
@@ -578,7 +579,7 @@ function resolveExpedition(
     const encounter = realm.encounters[encounterIndex] ?? realm.encounters[realm.encounters.length - 1];
     if (!encounter) return;
     const isBoss = isLegacySingleEncounter || encounter.tier === 'boss';
-    if (!allowPermanentUnlock && !realm.offlineSafe && isBoss) {
+    if (!allowRiskyBossConfirmation && !allowPermanentUnlock && !realm.offlineSafe && isBoss) {
       expedition.status = 'awaiting_confirmation';
       return;
     }
@@ -714,6 +715,7 @@ export function completeFacilityTasks(
   outputEfficiency = 1,
   allowPermanentUnlock = true,
   allowHistoricalSettlement = false,
+  allowRiskyBossConfirmation = false,
 ): V4SaveEnvelope {
   if (!isPersistableClock(now) || (!allowHistoricalSettlement && now < source.updatedAt)) return source;
   const save = cloneSave(source);
@@ -774,7 +776,7 @@ export function completeFacilityTasks(
     });
     delete save.meta.tasks[task.id];
   }
-  resolveExpedition(save, eventAt, allowPermanentUnlock, efficiency, allowHistoricalSettlement);
+  resolveExpedition(save, eventAt, allowPermanentUnlock, efficiency, allowHistoricalSettlement, allowRiskyBossConfirmation);
   syncHeroAction(save);
   save.lastProcessedAt = Math.max(save.lastProcessedAt, eventAt);
   touchSave(save, eventAt);
@@ -808,7 +810,7 @@ export function confirmPendingExpedition(source: V4SaveEnvelope, now: number): V
   const save = cloneSave(source);
   if (!save.run.expedition) return source;
   save.run.expedition.status = 'traveling';
-  return completeFacilityTasks(save, now, 1, true);
+  return completeFacilityTasks(save, now, 1, false, false, true);
 }
 
 /** Explicitly commits the next Realm record after an offline victory. */
