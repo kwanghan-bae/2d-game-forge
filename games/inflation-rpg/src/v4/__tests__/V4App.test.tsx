@@ -127,4 +127,21 @@ describe('V4 app resume handling', () => {
 
     expect(screen.getByTestId('v4-app')).toHaveTextContent('정책 확인 필요');
   });
+
+  it('keeps the local-first game playable when native platform detection throws', () => {
+    const windowWithCapacitor = window as Window & { Capacitor?: { isNativePlatform?: () => boolean } };
+    const previousCapacitor = windowWithCapacitor.Capacitor;
+    windowWithCapacitor.Capacitor = {
+      isNativePlatform: () => { throw new Error('native bridge unavailable'); },
+    };
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    try {
+      render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+      expect(screen.getByTestId('v4-town-hub')).toBeInTheDocument();
+    } finally {
+      if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;
+      else delete windowWithCapacitor.Capacitor;
+    }
+  });
 });

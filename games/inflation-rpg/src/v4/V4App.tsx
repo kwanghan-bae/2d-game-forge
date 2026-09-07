@@ -31,7 +31,14 @@ export function V4App({ config }: Props) {
     const capacitor = (window as Window & {
       Capacitor?: { isNativePlatform?: () => boolean };
     }).Capacitor;
-    if (!capacitor?.isNativePlatform?.()) return;
+    let isNativePlatform = false;
+    try {
+      isNativePlatform = Boolean(capacitor?.isNativePlatform?.());
+    } catch {
+      // A broken native bridge must not prevent the local-first game from booting.
+      return;
+    }
+    if (!isNativePlatform) return;
 
     let cancelled = false;
     void createNativeV4Monetization().then(async (handle) => {
