@@ -22,6 +22,8 @@ function renderHub(overrides: Partial<React.ComponentProps<typeof TownHubScreen>
     adFree: false,
     adsToday: 0,
     adFreePurchasePending: false,
+    instantTaskPendingFacilities: [],
+    interventionChargePending: false,
     onInterventionCharge: vi.fn(),
     onBuyAdFree: vi.fn(),
     ...overrides,
@@ -347,6 +349,34 @@ describe('V4 town hub support assignment', () => {
     if (!benefits) return;
 
     expect(within(benefits).getByRole('button', { name: '구매 처리 중' })).toBeDisabled();
+  });
+
+  it('shows the instant-task provider state and blocks task mutations while pending', () => {
+    const initial = createInitialV4Save(110);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    renderHub({ save: started.save, monetizationAvailable: true, onInstantTask: vi.fn(), instantTaskPendingFacilities: ['temple'] });
+
+    const temple = screen.getByText('신전').closest('article');
+    expect(temple).not.toBeNull();
+    if (!temple) return;
+
+    expect(within(temple).getByRole('button', { name: '광고 처리 중' })).toBeDisabled();
+    expect(within(temple).getByRole('button', { name: '진행 확인' })).toBeDisabled();
+    expect(within(temple).getByRole('button', { name: '취소' })).toBeDisabled();
+  });
+
+  it('shows the intervention reward state while the provider is pending', () => {
+    const save = createInitialV4Save(111);
+    renderHub({ save, monetizationAvailable: true, interventionChargePending: true });
+
+    const benefits = screen.getByRole('heading', { name: /후원 혜택/ }).closest('section');
+    expect(benefits).not.toBeNull();
+    if (!benefits) return;
+
+    expect(within(benefits).getByRole('button', { name: '충전 처리 중' })).toBeDisabled();
   });
 
   it('disables instant facility completion after the daily ad limit', () => {

@@ -88,6 +88,9 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
   const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
   const offlineSummaryRef = useRef<OfflineSummary | null>(null);
   const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
+  const [offlineRewardPending, setOfflineRewardPending] = useState(false);
+  const [instantTaskPendingFacilities, setInstantTaskPendingFacilities] = useState<FacilityId[]>([]);
+  const [interventionChargePending, setInterventionChargePending] = useState(false);
   const [, setMonetizationRevision] = useState(0);
   const offlineRewardClaimInFlight = useRef(false);
   const instantTaskInFlight = useRef(new Set<FacilityId>());
@@ -252,6 +255,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     }
     const actionStartUpdatedAt = actionSave.updatedAt;
     offlineRewardClaimInFlight.current = true;
+    if (mountedRef.current) setOfflineRewardPending(true);
     try {
       if (!(await watchRewarded('offline_double'))) return;
       if (!mountedRef.current) return;
@@ -273,6 +277,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       setOfflineRewardDoubled(true);
     } finally {
       offlineRewardClaimInFlight.current = false;
+      if (mountedRef.current) setOfflineRewardPending(false);
     }
   }, [commit, offlineRewardDoubled, watchRewarded]);
 
@@ -300,6 +305,11 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     }
     const actionStartUpdatedAt = current.updatedAt;
     instantTaskInFlight.current.add(facilityId);
+    if (mountedRef.current) {
+      setInstantTaskPendingFacilities((facilities) => facilities.includes(facilityId)
+        ? facilities
+        : [...facilities, facilityId]);
+    }
     try {
       if (!(await watchRewarded('instant_task'))) return;
       if (!mountedRef.current) return;
@@ -319,6 +329,9 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       else setMessage(result.error);
     } finally {
       instantTaskInFlight.current.delete(facilityId);
+      if (mountedRef.current) {
+        setInstantTaskPendingFacilities((facilities) => facilities.filter((id) => id !== facilityId));
+      }
     }
   }, [commit, watchRewarded]);
 
@@ -336,6 +349,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     }
     const actionStartUpdatedAt = current.updatedAt;
     interventionChargeInFlight.current = true;
+    if (mountedRef.current) setInterventionChargePending(true);
     try {
       if (!(await watchRewarded('intervention_charge'))) return;
       if (!mountedRef.current) return;
@@ -351,6 +365,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       commit(next, '개입 충전을 1회 얻었습니다.');
     } finally {
       interventionChargeInFlight.current = false;
+      if (mountedRef.current) setInterventionChargePending(false);
     }
   }, [commit, watchRewarded]);
 
@@ -486,6 +501,9 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     adFree: readAdFreeEntitlement(monetization),
     adsToday: readAdsToday(monetization),
     offlineRewardDoubled,
+    offlineRewardPending,
+    instantTaskPendingFacilities,
+    interventionChargePending,
     adFreePurchasePending,
     doubleOfflineReward,
     instantTask,

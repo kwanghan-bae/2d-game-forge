@@ -29,6 +29,7 @@ function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
   return (
     <>
       <div data-testid="offline-state">{game.offlineSummary ? 'ready' : 'pending'}</div>
+      <div data-testid="double-pending">{game.offlineRewardPending ? 'pending' : 'idle'}</div>
       <div data-testid="spirit">{game.save.meta.currencies.spirit}</div>
       <div data-testid="clock">{game.now}</div>
       <div data-testid="ad-free">{game.adFree ? 'owned' : 'not-owned'}</div>
@@ -48,8 +49,10 @@ function InstantTaskHarness({ monetization }: { monetization: V4MonetizationAdap
   return (
     <>
       <div data-testid="instant-task-count">{Object.keys(game.save.meta.tasks).length}</div>
+      <div data-testid="instant-pending">{game.instantTaskPendingFacilities?.includes('temple') ? 'pending' : 'idle'}</div>
       <div data-testid="instant-spirit">{game.save.meta.currencies.spirit}</div>
       <div data-testid="intervention-charges">{game.save.run.interventionCharges}</div>
+      <div data-testid="charge-pending">{game.interventionChargePending ? 'pending' : 'idle'}</div>
       <div data-testid="policy">{game.save.run.policy}</div>
       <div data-testid="muted">{game.save.meta.settings.muted ? 'true' : 'false'}</div>
       <div data-testid="message">{game.message ?? ''}</div>
@@ -303,6 +306,30 @@ describe('useV4Game monetization actions', () => {
     expect(monetization.getAdsToday()).toBe(1);
   });
 
+  it('exposes offline reward pending state until the provider resolves', async () => {
+    const base = createInitialV4Save(112);
+    const startedAt = Date.now() - 60_000;
+    setFixtureTimeline(base, startedAt);
+    const started = startFacilityTask(base, 'temple', base.lastProcessedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    persistV4Save(started.save);
+
+    let release!: (granted: boolean) => void;
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: () => new Promise<boolean>((resolve) => { release = resolve; }),
+    }, null);
+    render(<Harness monetization={monetization} />);
+
+    await waitFor(() => expect(screen.getByTestId('offline-state')).toHaveTextContent('ready'));
+    fireEvent.click(screen.getByRole('button', { name: 'double' }));
+
+    await waitFor(() => expect(screen.getByTestId('double-pending')).toHaveTextContent('pending'));
+    act(() => { release(false); });
+    await waitFor(() => expect(screen.getByTestId('double-pending')).toHaveTextContent('idle'));
+  });
+
   it('does not apply an older offline reward after a newer settlement replaces it', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(10_000);
@@ -486,6 +513,33 @@ describe('useV4Game monetization actions', () => {
     await waitFor(() => expect(screen.getByTestId('instant-task-count')).toHaveTextContent('0'));
     expect(screen.getByTestId('instant-spirit')).toHaveTextContent('118');
     expect(monetization.getAdsToday()).toBe(1);
+  });
+
+  it('exposes instant-task pending state until the provider resolves', async () => {
+    let release!: (granted: boolean) => void;
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: () => new Promise<boolean>((resolve) => { release = resolve; }),
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'instant' }));
+    await waitFor(() => expect(screen.getByTestId('instant-pending')).toHaveTextContent('pending'));
+    act(() => { release(false); });
+    await waitFor(() => expect(screen.getByTestId('instant-pending')).toHaveTextContent('idle'));
+  });
+
+  it('exposes intervention charge pending state until the provider resolves', async () => {
+    let release!: (granted: boolean) => void;
+    const monetization = new V4MonetizationAdapter({
+      showRewarded: () => new Promise<boolean>((resolve) => { release = resolve; }),
+    }, null);
+    render(<InstantTaskHarness monetization={monetization} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'charge' }));
+    await waitFor(() => expect(screen.getByTestId('charge-pending')).toHaveTextContent('pending'));
+    act(() => { release(false); });
+    await waitFor(() => expect(screen.getByTestId('charge-pending')).toHaveTextContent('idle'));
   });
 
   it('keeps a successful instant-task reward when the device clock moves backwards during the ad', async () => {

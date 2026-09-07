@@ -12,6 +12,7 @@ interface Props {
   onOpenExpedition?: () => void;
   onDoubleReward?: () => void;
   canDoubleReward?: boolean;
+  doubleRewardPending?: boolean;
   adsToday?: number;
   adFree?: boolean;
 }
@@ -24,7 +25,7 @@ function safePositiveResource(value: unknown): number | null {
 
 const MAX_OFFLINE_DISPLAY_SECONDS = V4_OFFLINE_CAP_MS / 1000;
 
-export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = false, onClose, onOpenExpedition, onDoubleReward, canDoubleReward = true, adsToday = 0, adFree = false }: Props) {
+export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = false, onClose, onOpenExpedition, onDoubleReward, canDoubleReward = true, doubleRewardPending = false, adsToday = 0, adFree = false }: Props) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -121,8 +122,8 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
             : pendingExpeditionConfirmation
             ? '위험 원정 결과 확인 필요 · 원정 화면에서 결과를 확인하세요.'
             : '선택형 사건은 보류됨'}</p>
-        {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasPositiveResourceReward || !canDoubleReward || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onDoubleReward}>
-          {!hasPositiveResourceReward ? '이번 정산은 2배 대상 없음' : !canDoubleReward ? '보상 2배 적용 완료' : !adFree && adsToday >= V4_DAILY_REWARDED_LIMIT ? '오늘 광고 한도 도달' : adFree ? '광고 제거 적용 · 오프라인 재화 2배' : '광고 보고 오프라인 재화 2배'}
+        {onDoubleReward && <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasPositiveResourceReward || !canDoubleReward || doubleRewardPending || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onDoubleReward}>
+          {doubleRewardPending ? '오프라인 보상 처리 중' : !hasPositiveResourceReward ? '이번 정산은 2배 대상 없음' : !canDoubleReward ? '보상 2배 적용 완료' : !adFree && adsToday >= V4_DAILY_REWARDED_LIMIT ? '오늘 광고 한도 도달' : adFree ? '광고 제거 적용 · 오프라인 재화 2배' : '광고 보고 오프라인 재화 2배'}
         </button>}
         {onOpenExpedition && (summary.completedExpedition || pendingExpeditionConfirmation) && <button type="button" className="v4-btn v4-btn--quiet" onClick={() => { onOpenExpedition(); onClose(); }}>
           원정 결과 보기

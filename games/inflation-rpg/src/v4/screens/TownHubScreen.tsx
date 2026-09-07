@@ -21,7 +21,9 @@ interface Props {
   monetizationAvailable: boolean;
   adFree: boolean;
   adsToday: number;
-  adFreePurchasePending: boolean;
+  adFreePurchasePending?: boolean;
+  instantTaskPendingFacilities?: readonly FacilityId[];
+  interventionChargePending?: boolean;
   onInterventionCharge: () => void;
   onBuyAdFree: () => void;
 }
@@ -98,7 +100,7 @@ function getTownObjective(save: V4SaveEnvelope): string {
   return '저승의 사가를 완성하세요. 시설을 강화하고 정책과 장비를 조정해 영원한 영웅의 마지막 원정을 준비하세요.';
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, adFreePurchasePending, onInterventionCharge, onBuyAdFree }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, adFreePurchasePending = false, instantTaskPendingFacilities = [], interventionChargePending = false, onInterventionCharge, onBuyAdFree }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
@@ -162,6 +164,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
             const assignedAgentId = agentId && assignedAgent && !assignedAgent.activeTaskId && assignedAgent.fatigue < 100
               ? agentId
               : null;
+            const instantTaskPending = instantTaskPendingFacilities.includes(facilityId);
             const preview = getFacilityTaskPreview(save, facilityId, assignedAgentId);
             const upgradeCost = getFacilityUpgradeCost(save, facilityId);
             const upgradeDisabled = Boolean(
@@ -198,14 +201,14 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 <div className="v4-button-row">
                   {task ? (
                     <>
-                      <button type="button" className="v4-btn v4-btn--primary" onClick={onRefresh}>진행 확인</button>
+                      <button type="button" className="v4-btn v4-btn--primary" disabled={instantTaskPending} onClick={onRefresh}>진행 확인</button>
                       <button
                         type="button"
                         className="v4-btn v4-btn--quiet"
-                        disabled={taskCannotBeCompletedInstantly}
+                        disabled={taskCannotBeCompletedInstantly || instantTaskPending}
                         onClick={() => onCancelTask(facilityId)}
                       >취소</button>
-                      {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" disabled={taskCannotBeCompletedInstantly || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={() => onInstantTask(facilityId)}>광고 즉시 완료</button>}
+                      {onInstantTask && <button type="button" className="v4-btn v4-btn--quiet" disabled={taskCannotBeCompletedInstantly || instantTaskPending || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={() => onInstantTask(facilityId)}>{instantTaskPending ? '광고 처리 중' : '광고 즉시 완료'}</button>}
                     </>
                   ) : (
                     <button type="button" className="v4-btn v4-btn--primary" disabled={!preview.canStart} onClick={() => onStartTask(facilityId, assignedAgentId)}>작업 시작</button>
@@ -261,8 +264,8 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <h2>후원 혜택 {adFree && <span className="v4-action">광고 제거 적용</span>}</h2>
         <p>{adFree ? '광고 제거 구매가 적용되었습니다. 보상 혜택을 계속 사용할 수 있습니다.' : `오늘 보상형 광고 ${formatNumber(adsToday)}/${V4_DAILY_REWARDED_LIMIT}회 · 게임 진행을 막지 않는 선택형 혜택입니다.`}</p>
         <div className="v4-button-row">
-          <button type="button" className="v4-btn v4-btn--quiet" disabled={interventionFull || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onInterventionCharge}>
-            {interventionFull ? '개입 충전 가득 참' : adFree ? '개입 충전' : '개입 충전 광고'}
+          <button type="button" className="v4-btn v4-btn--quiet" disabled={interventionFull || interventionChargePending || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onInterventionCharge}>
+            {interventionChargePending ? '충전 처리 중' : interventionFull ? '개입 충전 가득 참' : adFree ? '개입 충전' : '개입 충전 광고'}
           </button>
           {!adFree && <button type="button" className="v4-btn v4-btn--quiet" disabled={adFreePurchasePending} onClick={onBuyAdFree}>{adFreePurchasePending ? '구매 처리 중' : '광고 제거 구매'}</button>}
         </div>

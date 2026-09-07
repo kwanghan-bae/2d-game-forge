@@ -49,6 +49,19 @@ describe('V4 offline result screen', () => {
     expect(screen.getByRole('button', { name: '이번 정산은 2배 대상 없음' })).toBeDisabled();
   });
 
+  it('disables the offline double-reward action while the provider is pending', () => {
+    render(
+      <OfflineResultScreen
+        summary={summary()}
+        onClose={() => {}}
+        onDoubleReward={() => {}}
+        doubleRewardPending
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: '오프라인 보상 처리 중' })).toBeDisabled();
+  });
+
   it('calls out a risky expedition that still needs player confirmation', () => {
     render(<OfflineResultScreen summary={summary()} pendingExpeditionConfirmation onClose={() => {}} />);
 
