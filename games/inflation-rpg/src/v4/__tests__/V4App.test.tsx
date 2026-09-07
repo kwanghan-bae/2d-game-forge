@@ -308,6 +308,44 @@ describe('V4 app resume handling', () => {
     }
   });
 
+  it('disposes a native handle that resolves after the monetization source is replaced', async () => {
+    const windowWithCapacitor = window as Window & { Capacitor?: { isNativePlatform?: () => boolean } };
+    const previousCapacitor = windowWithCapacitor.Capacitor;
+    const createNative = vi.spyOn(monetization, 'createNativeV4Monetization');
+    let resolveHandle!: (handle: monetization.NativeV4MonetizationHandle) => void;
+    const pendingHandle = new Promise<monetization.NativeV4MonetizationHandle>((resolve) => { resolveHandle = resolve; });
+    const dispose = vi.fn(async () => {});
+    const handle: monetization.NativeV4MonetizationHandle = {
+      adapter: new monetization.V4MonetizationAdapter(null, null),
+      initialize: vi.fn(async () => true),
+      restorePurchases: vi.fn(async () => true),
+      dispose,
+    };
+    const replacement = new monetization.V4MonetizationAdapter(null, null);
+    windowWithCapacitor.Capacitor = { isNativePlatform: () => true };
+    createNative.mockReturnValue(pendingHandle);
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    try {
+      const { rerender, unmount } = render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+      rerender(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false, v4Monetization: replacement }} />);
+      await act(async () => {
+        resolveHandle(handle);
+        await pendingHandle;
+        await Promise.resolve();
+      });
+
+      expect(dispose).toHaveBeenCalledOnce();
+      unmount();
+      await act(async () => { await Promise.resolve(); });
+      expect(dispose).toHaveBeenCalledOnce();
+    } finally {
+      createNative.mockRestore();
+      if (previousCapacitor) windowWithCapacitor.Capacitor = previousCapacitor;
+      else delete windowWithCapacitor.Capacitor;
+    }
+  });
+
   it('disposes native monetization when the V4 root unmounts', async () => {
     const windowWithCapacitor = window as Window & { Capacitor?: { isNativePlatform?: () => boolean } };
     const previousCapacitor = windowWithCapacitor.Capacitor;

@@ -8,7 +8,7 @@ import {
   stopAmbient,
 } from '../systems/sound';
 import { getV4PolicyName } from './data';
-import { createNativeV4Monetization, type V4MonetizationAdapter } from './monetization';
+import { createNativeV4Monetization, type NativeV4MonetizationHandle, type V4MonetizationAdapter } from './monetization';
 import { useV4Game } from './useV4Game';
 import { ExpeditionScreen } from './screens/ExpeditionScreen';
 import { HeroDetailScreen } from './screens/HeroDetailScreen';
@@ -46,6 +46,17 @@ export function V4App({ config }: Props) {
   const [nativeMonetization, setNativeMonetization] = useState<V4MonetizationAdapter | undefined>(undefined);
   const nativeMonetizationPromise = useRef<ReturnType<typeof createNativeV4Monetization> | null>(null);
   const nativeMonetizationLifecycleToken = useRef<symbol | null>(null);
+  const disposedNativeHandles = useRef(new WeakSet<object>());
+
+  const disposeNativeHandle = (handle: NativeV4MonetizationHandle): Promise<void> => {
+    if (disposedNativeHandles.current.has(handle)) return Promise.resolve();
+    disposedNativeHandles.current.add(handle);
+    try {
+      return Promise.resolve(handle.dispose?.()).then(() => undefined);
+    } catch {
+      return Promise.resolve();
+    }
+  };
 
   useEffect(() => {
     const token = Symbol('v4-monetization-lifecycle');
@@ -59,7 +70,7 @@ export function V4App({ config }: Props) {
         if (nativeMonetizationLifecycleToken.current !== token) return;
         nativeMonetizationLifecycleToken.current = null;
         if (pendingHandle) {
-          void pendingHandle.then((handle) => handle.dispose?.()).catch(() => {
+          void pendingHandle.then((handle) => disposeNativeHandle(handle)).catch(() => {
             // Monetization cleanup is optional and must never block root unmount.
           });
         }
@@ -83,11 +94,32 @@ export function V4App({ config }: Props) {
 
     const handlePromise = nativeMonetizationPromise.current
       ?? (nativeMonetizationPromise.current = createNativeV4Monetization());
+    const lifecycleToken = nativeMonetizationLifecycleToken.current;
     let cancelled = false;
     void handlePromise.then(async (handle) => {
-      if (cancelled) return;
-      const initialized = await handle.initialize();
-      if (!cancelled && initialized) setNativeMonetization(handle.adapter);
+      try {
+        if (cancelled) {
+          // The empty-dependency lifecycle effect changes its token during a
+          // StrictMode probe. Only the same live root token means that this
+          // effect was replaced by a new monetization source.
+          if (nativeMonetizationLifecycleToken.current === lifecycleToken) {
+            await disposeNativeHandle(handle);
+          }
+          return;
+        }
+        const initialized = await handle.initialize();
+        if (cancelled || !initialized) {
+          if (!cancelled || nativeMonetizationLifecycleToken.current === lifecycleToken) {
+            await disposeNativeHandle(handle);
+          }
+          return;
+        }
+        setNativeMonetization(handle.adapter);
+      } catch {
+        if (!cancelled || nativeMonetizationLifecycleToken.current === lifecycleToken) {
+          await disposeNativeHandle(handle);
+        }
+      }
     }).catch(() => {
       // Native monetization is optional; failure leaves the core loop playable.
     });
