@@ -1040,6 +1040,9 @@ export function grantOfflineResourceBonus(
       && Number.isFinite(value) && value > 0),
   ) as Partial<Record<V4CurrencyKey, number>>;
   if (Object.keys(positiveGains).length === 0) return source;
+  if (!Object.keys(positiveGains).every((key) =>
+    isValidCurrencyBalance(source.meta.currencies[key as V4CurrencyKey]),
+  )) return source;
   const save = cloneSave(source);
   give(save, positiveGains);
   touchSave(save, now);

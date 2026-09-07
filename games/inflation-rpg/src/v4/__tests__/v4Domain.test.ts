@@ -2345,6 +2345,22 @@ describe('v4 save and domain', () => {
     expect(updated.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 15, rift: 0 });
   });
 
+  it.each([
+    ['fractional', 100.5],
+    ['not-a-number', Number.NaN],
+    ['infinite', Number.POSITIVE_INFINITY],
+    ['unsafe', Number.MAX_VALUE],
+  ])('does not settle an offline bonus over a malformed %s balance', (_label, gold) => {
+    const malformed = createInitialV4Save(135);
+    malformed.meta.currencies.gold = gold;
+
+    const updated = grantOfflineResourceBonus(malformed, { gold: 10 }, malformed.updatedAt + 1_000);
+
+    expect(updated).toBe(malformed);
+    expect(malformed.meta.currencies.gold).toBe(gold);
+    expect(malformed.updatedAt).toBe(malformed.createdAt);
+  });
+
   it('does not advance the save clock when an offline bonus has no valid gains', () => {
     const initial = createInitialV4Save(121);
     const unchanged = grantOfflineResourceBonus(initial, {
