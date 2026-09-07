@@ -16,6 +16,7 @@ export default function GameMountInner({ slug, assetsBasePath }: GameMountProps)
 
   useEffect(() => {
     if (instanceRef.current) return;
+    setLoadError(null);
     let destroyed = false;
     let gameInstance: ForgeGameInstance | null = null;
 
