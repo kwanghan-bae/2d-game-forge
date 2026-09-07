@@ -77,7 +77,20 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
   const efficiency = typeof summary.efficiency === 'number' && Number.isFinite(summary.efficiency)
     ? Math.min(1, Math.max(0, summary.efficiency))
     : 0;
-  const resourceEntries = Object.entries(summary.resourcesGained).flatMap(([key, value]) => {
+  const resourcesGained = summary.resourcesGained
+    && typeof summary.resourcesGained === 'object'
+    && !Array.isArray(summary.resourcesGained)
+    ? summary.resourcesGained
+    : {};
+  const completedTaskIds = Array.isArray(summary.completedTaskIds) ? summary.completedTaskIds : [];
+  const equipmentGained = Array.isArray(summary.equipmentGained)
+    ? summary.equipmentGained.filter((id): id is string => typeof id === 'string')
+    : [];
+  const equipmentUpgraded = Array.isArray(summary.equipmentUpgraded)
+    ? summary.equipmentUpgraded.filter((id): id is string => typeof id === 'string')
+    : [];
+  const notes = Array.isArray(summary.notes) ? summary.notes : [];
+  const resourceEntries = Object.entries(resourcesGained).flatMap(([key, value]) => {
     const amount = safePositiveResource(value);
     return amount === null ? [] : [[key, amount] as const];
   });
@@ -93,7 +106,7 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
         {summary.clockAnomaly === 'backwards' && <div className="v4-alert">기기 시간이 이전 처리 시각보다 빠릅니다. 중복 보상을 막았습니다.</div>}
         {summary.clockAnomaly === 'future' && <div className="v4-alert">저장 시각이 현재보다 미래입니다. 기기 시간을 확인해 주세요.</div>}
         {summary.clockAnomaly === 'invalid' && <div className="v4-alert">기기 시각을 확인할 수 없어 보상을 정산하지 않았습니다.</div>}
-        {summary.clockAnomaly === null && summary.notes
+        {summary.clockAnomaly === null && notes
           .filter((note) => typeof note === 'string' && note.trim().length > 0)
           .map((note, index) => <div className="v4-alert" key={`${note}-${index}`}>{note}</div>)}
         <div className="v4-detail-grid">
@@ -101,9 +114,9 @@ export function OfflineResultScreen({ summary, pendingExpeditionConfirmation = f
             ? resourceEntries.map(([key, value]) => <div className="v4-detail-stat" key={key}><small>{getV4CurrencyName(key)}</small><strong>+{value.toLocaleString('ko-KR')}</strong></div>)
             : <div className="v4-detail-stat"><small>정산</small><strong>획득 재화 없음</strong></div>}
         </div>
-        {summary.equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {summary.equipmentGained.map(getV4EquipmentName).join(', ')}</div>}
-        {summary.equipmentUpgraded.length > 0 && <div className="v4-alert">장비 강화 · {summary.equipmentUpgraded.map(getV4EquipmentName).join(', ')}</div>}
-        <p>{summary.completedTaskIds.length}개 작업 완료 · {summary.completedExpedition
+        {equipmentGained.length > 0 && <div className="v4-alert">장비 획득 · {equipmentGained.map(getV4EquipmentName).join(', ')}</div>}
+        {equipmentUpgraded.length > 0 && <div className="v4-alert">장비 강화 · {equipmentUpgraded.map(getV4EquipmentName).join(', ')}</div>}
+        <p>{completedTaskIds.length}개 작업 완료 · {summary.completedExpedition
           ? '원정 귀환 완료 · 원정 화면에서 결과를 확인하세요.'
             : pendingExpeditionConfirmation
             ? '위험 원정 결과 확인 필요 · 원정 화면에서 결과를 확인하세요.'

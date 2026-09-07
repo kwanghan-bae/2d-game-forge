@@ -102,6 +102,18 @@ describe('V4 offline result screen', () => {
     expect(result).toHaveTextContent('획득 재화 없음');
   });
 
+  it('keeps the result modal usable when collection fields are malformed', () => {
+    expect(() => render(<OfflineResultScreen summary={summary({
+      completedTaskIds: undefined as never,
+      resourcesGained: undefined as never,
+      equipmentGained: undefined as never,
+      equipmentUpgraded: undefined as never,
+      notes: undefined as never,
+    })} onClose={() => {}} />)).not.toThrow();
+
+    expect(screen.getByTestId('v4-offline-result')).toHaveTextContent('획득 재화 없음');
+  });
+
   it('does not present negative currency deltas as offline rewards', () => {
     render(<OfflineResultScreen summary={summary({ resourcesGained: { gold: -5, spirit: 0 } })} onClose={() => {}} />);
 
