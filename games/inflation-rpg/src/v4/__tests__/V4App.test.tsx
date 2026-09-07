@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StrictMode } from 'react';
 import { createInitialV4Save } from '../save';
 import * as monetization from '../monetization';
+import * as sound from '../../systems/sound';
 import { useV4Game } from '../useV4Game';
 import { V4App } from '../V4App';
 import type { OfflineSummary } from '../types';
@@ -149,6 +150,21 @@ describe('V4 app resume handling', () => {
     expect(resources).not.toHaveTextContent('NaN');
     expect(resources).not.toHaveTextContent('∞');
     expect(resources).not.toHaveTextContent('-25');
+  });
+
+  it('normalizes malformed settings before updating the sound state', () => {
+    const game = mockGame(vi.fn(), vi.fn());
+    game.save.meta.settings = { music: Number.NaN, sfx: Number.POSITIVE_INFINITY, muted: 'yes' as never };
+    vi.mocked(useV4Game).mockReturnValue(game);
+    const setVolumes = vi.spyOn(sound, 'setVolumes');
+
+    try {
+      render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+      expect(setVolumes).toHaveBeenCalledWith(0, 0, false);
+    } finally {
+      setVolumes.mockRestore();
+    }
   });
 
   it('keeps the offline result modal focus above the town heading', () => {

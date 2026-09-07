@@ -29,6 +29,12 @@ function formatHeaderResource(value: unknown): string {
   return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))).toLocaleString('ko-KR');
 }
 
+function normalizeVolume(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(1, Math.max(0, value))
+    : 0;
+}
+
 export function V4App({ config }: Props) {
   const [nativeMonetization, setNativeMonetization] = useState<V4MonetizationAdapter | undefined>(undefined);
   const nativeMonetizationPromise = useRef<ReturnType<typeof createNativeV4Monetization> | null>(null);
@@ -63,7 +69,11 @@ export function V4App({ config }: Props) {
   const [screen, setScreen] = useState<V4Screen>('town');
 
   useEffect(() => {
-    setVolumes(game.save.meta.settings.music, game.save.meta.settings.sfx, game.save.meta.settings.muted);
+    setVolumes(
+      normalizeVolume(game.save.meta.settings.music),
+      normalizeVolume(game.save.meta.settings.sfx),
+      game.save.meta.settings.muted === true,
+    );
   }, [game.save.meta.settings.music, game.save.meta.settings.sfx, game.save.meta.settings.muted]);
 
   useEffect(() => {
