@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
 import { useV4Game } from '../useV4Game';
@@ -97,5 +97,24 @@ describe('V4 app resume handling', () => {
 
     expect(screen.getByTestId('v4-storage-warning')).toHaveTextContent('진행이 보존되지 않을 수 있습니다');
     expect(screen.getByTestId('v4-town-hub')).toBeInTheDocument();
+  });
+
+  it('marks the active primary navigation item for assistive technology', () => {
+    const refresh = vi.fn();
+    const settleOffline = vi.fn();
+    vi.mocked(useV4Game).mockReturnValue(mockGame(refresh, settleOffline));
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    const navigation = screen.getByRole('navigation', { name: '주요 메뉴' });
+    const town = within(navigation).getByRole('button', { name: /마을/ });
+    const hero = within(navigation).getByRole('button', { name: /영웅/ });
+    expect(town).toHaveAttribute('aria-current', 'page');
+    expect(hero).not.toHaveAttribute('aria-current');
+
+    fireEvent.click(hero);
+
+    expect(hero).toHaveAttribute('aria-current', 'page');
+    expect(town).not.toHaveAttribute('aria-current');
   });
 });

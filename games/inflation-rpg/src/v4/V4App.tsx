@@ -126,7 +126,7 @@ export function V4App({ config }: Props) {
       {screen === 'settings' && <SettingsScreen settings={game.save.meta.settings} onChange={game.updateSettings} onBack={() => setScreen('town')} />}
 
       <nav className="v4-nav" aria-label="주요 메뉴"><div className="v4-nav-inner">
-        {([['town', '🏘️ 마을'], ['hero', '⚔️ 영웅'], ['expedition', '🧭 원정'], ['saga', '📜 사가']] as Array<[V4Screen, string]>).map(([id, label]) => <button type="button" key={id} className={`v4-nav-btn ${screen === id ? 'v4-nav-btn--active' : ''}`} onClick={() => setScreen(id)}>{label}</button>)}
+        {([['town', '🏘️ 마을'], ['hero', '⚔️ 영웅'], ['expedition', '🧭 원정'], ['saga', '📜 사가']] as Array<[V4Screen, string]>).map(([id, label]) => <button type="button" key={id} className={`v4-nav-btn ${screen === id ? 'v4-nav-btn--active' : ''}`} aria-current={screen === id ? 'page' : undefined} onClick={() => setScreen(id)}>{label}</button>)}
       </div></nav>
 
       {game.offlineSummary && <OfflineResultScreen summary={game.offlineSummary} pendingExpeditionConfirmation={game.save.run.expedition?.status === 'awaiting_confirmation'} onClose={game.closeOffline} onDoubleReward={game.monetizationAvailable ? game.doubleOfflineReward : undefined} canDoubleReward={!game.offlineRewardDoubled} adsToday={game.adsToday} adFree={game.adFree} />}
