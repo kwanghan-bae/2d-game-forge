@@ -258,6 +258,28 @@ describe('V4 town hub support assignment', () => {
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('원정 결과의 준비 정보를 확인하세요.');
   });
 
+  it('normalizes malformed hero and agent numbers before rendering the hub', () => {
+    const save = createInitialV4Save(105);
+    save.run.hero.age = Number.NaN;
+    save.run.hero.level = Number.POSITIVE_INFINITY;
+    save.run.hero.hp = Number.NaN;
+    save.run.hero.hpMax = Number.POSITIVE_INFINITY;
+    save.run.hero.atk = -25;
+    save.run.hero.def = Number.POSITIVE_INFINITY;
+    save.run.interventionCharges = Number.NaN;
+    save.meta.agents = save.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, level: Number.NaN, trust: Number.POSITIVE_INFINITY, fatigue: -10 }
+      : agent);
+
+    expect(() => renderHub({ save })).not.toThrow();
+
+    const town = screen.getByTestId('v4-town-hub');
+    expect(town.textContent).not.toContain('NaN');
+    expect(town.textContent).not.toContain('Infinity');
+    expect(town.textContent).not.toContain('∞');
+    expect(town.textContent).not.toContain('-25');
+  });
+
   it('does not expose an infinite remaining time for malformed facility clocks', () => {
     const initial = createInitialV4Save(99);
     const started = startFacilityTask(initial, 'temple', initial.createdAt);

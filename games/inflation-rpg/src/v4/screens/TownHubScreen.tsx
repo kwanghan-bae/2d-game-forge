@@ -29,13 +29,18 @@ const AGENT_BY_FACILITY: Partial<Record<FacilityId, SupportAgentId>> = {
   blacksmith: 'blacksmith', mudang: 'mudang', expedition: 'guide',
 };
 
-const formatNumber = (value: number) => value.toLocaleString('ko-KR');
+const formatNumber = (value: unknown): string => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '0';
+  return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))).toLocaleString('ko-KR');
+};
 const HERO_ACTION_LABELS = { rest: '마을에서 회복', train: '훈련소에서 성장', expedition: '원정 준비' } as const;
 
 function formatResources(resources: Partial<Record<string, number>>): string {
-  const entries = Object.entries(resources).filter(([, value]) => (value ?? 0) > 0);
+  const entries = Object.entries(resources).filter(([, value]) =>
+    typeof value === 'number' && Number.isFinite(value) && value > 0,
+  );
   return entries.length > 0
-    ? entries.map(([key, value]) => `${getV4CurrencyName(key)} ${formatNumber(value ?? 0)}`).join(' · ')
+    ? entries.map(([key, value]) => `${getV4CurrencyName(key)} ${formatNumber(value)}`).join(' · ')
     : '없음';
 }
 
@@ -96,7 +101,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <div className="v4-hero-emoji" aria-hidden="true">{hero.emoji}</div>
         <div>
           <h2 ref={titleRef} tabIndex={-1} className="v4-hero-name">{hero.name}</h2>
-          <p className="v4-hero-meta">{hero.age}세 · Lv.{hero.level} · {getV4RealmName(hero.realmId)}</p>
+          <p className="v4-hero-meta">{formatNumber(hero.age)}세 · Lv.{formatNumber(hero.level)} · {getV4RealmName(hero.realmId)}</p>
           <div className="v4-stat-line">
             <span className="v4-chip">HP {formatNumber(hero.hp)}/{formatNumber(hero.hpMax)}</span>
             <span className="v4-chip">⚔ {formatNumber(hero.atk)}</span>
@@ -155,7 +160,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 <div className="v4-facility-head">
                   <span className="v4-facility-icon" aria-hidden="true">{definition.icon}</span>
                   <span className="v4-facility-name">{definition.nameKR}</span>
-                  <span className="v4-level">Lv.{facility.level}</span>
+                  <span className="v4-level">Lv.{formatNumber(facility.level)}</span>
                 </div>
                 <p className="v4-facility-desc">{definition.description}</p>
                 {task ? (
@@ -191,7 +196,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                     type="button"
                     className="v4-btn v4-btn--quiet"
                     onClick={() => onUpgrade(facilityId)}
-                    aria-label={`${definition.nameKR} 강화 · 금화 ${upgradeCost?.gold ?? 0}, 재료 ${upgradeCost?.materials ?? 0}`}
+                    aria-label={`${definition.nameKR} 강화 · 금화 ${formatNumber(upgradeCost?.gold)}, 재료 ${formatNumber(upgradeCost?.materials)}`}
                   >+</button>
                 </div>
               </article>
@@ -205,8 +210,8 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <div className="v4-agent-list">
           {save.meta.agents.map((agent) => (
             <div key={agent.id} className="v4-agent">
-              <span><span className="v4-agent-role">{agent.roleKR}</span> {agent.nameKR} · Lv.{agent.level}</span>
-              <span className="v4-agent-state">신뢰 {agent.trust} · 피로 {agent.fatigue}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
+              <span><span className="v4-agent-role">{agent.roleKR}</span> {agent.nameKR} · Lv.{formatNumber(agent.level)}</span>
+              <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
             </div>
           ))}
         </div>
@@ -224,7 +229,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
       <section className="v4-panel">
         <div className="v4-panel-head">
           <h2>신의 개입</h2>
-          <span className="v4-action">충전 {save.run.interventionCharges}/{V4_MAX_INTERVENTION_CHARGES}</span>
+          <span className="v4-action">충전 {formatNumber(save.run.interventionCharges)}/{V4_MAX_INTERVENTION_CHARGES}</span>
         </div>
         <p>자동 흐름을 바꾸는 안전장치입니다. 사용해도 장비나 영구 재화를 잃지 않습니다.</p>
         <div className="v4-button-row">
@@ -235,7 +240,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
 
       {monetizationAvailable && <section className="v4-panel">
         <h2>후원 혜택 {adFree && <span className="v4-action">광고 제거 적용</span>}</h2>
-        <p>{adFree ? '광고 제거 구매가 적용되었습니다. 보상 혜택을 계속 사용할 수 있습니다.' : `오늘 보상형 광고 ${adsToday}/${V4_DAILY_REWARDED_LIMIT}회 · 게임 진행을 막지 않는 선택형 혜택입니다.`}</p>
+        <p>{adFree ? '광고 제거 구매가 적용되었습니다. 보상 혜택을 계속 사용할 수 있습니다.' : `오늘 보상형 광고 ${formatNumber(adsToday)}/${V4_DAILY_REWARDED_LIMIT}회 · 게임 진행을 막지 않는 선택형 혜택입니다.`}</p>
         <div className="v4-button-row">
           <button type="button" className="v4-btn v4-btn--quiet" disabled={interventionFull || (!adFree && adsToday >= V4_DAILY_REWARDED_LIMIT)} onClick={onInterventionCharge}>
             {interventionFull ? '개입 충전 가득 참' : adFree ? '개입 충전' : '개입 충전 광고'}
