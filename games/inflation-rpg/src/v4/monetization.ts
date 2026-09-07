@@ -225,6 +225,7 @@ export class V4MonetizationAdapter {
   isAdFree(): boolean { return this.adFree; }
   canRestorePurchases(): boolean { return this.restorePurchasesProvider !== null; }
   setAdFreeOwned(owned: boolean): void {
+    if (this.adFree === owned) return;
     this.adFree = owned;
     this.entitlementRevision += 1;
   }

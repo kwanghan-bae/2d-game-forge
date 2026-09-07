@@ -68,6 +68,20 @@ describe('v4 monetization adapter', () => {
     expect(adapter.isAdFree()).toBe(true);
   });
 
+  it('does not discard a restore when a duplicate entitlement callback repeats the current state', async () => {
+    let releaseRestore!: (owned: boolean) => void;
+    const pendingRestore = new Promise<boolean>((resolve) => { releaseRestore = resolve; });
+    const adapter = new V4MonetizationAdapter(null, null, null, async () => pendingRestore);
+
+    const restore = adapter.restorePurchases();
+    await Promise.resolve();
+    adapter.setAdFreeOwned(false);
+    releaseRestore(true);
+
+    expect(await restore).toEqual({ granted: true, reason: 'granted' });
+    expect(adapter.isAdFree()).toBe(true);
+  });
+
   it('shares one in-flight ad-free purchase across concurrent callers', async () => {
     let purchaseCalls = 0;
     let release!: () => void;
