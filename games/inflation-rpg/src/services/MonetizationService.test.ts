@@ -7,7 +7,10 @@ import { IapManager } from './IapManager';
 import { MonetizationService } from './MonetizationService';
 
 vi.mock('./AdManager');
-vi.mock('./IapManager');
+vi.mock('./IapManager', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./IapManager')>();
+  return { ...actual, IapManager: vi.fn() };
+});
 
 describe('MonetizationService', () => {
   let adShowRewarded: ReturnType<typeof vi.fn>;
@@ -19,6 +22,7 @@ describe('MonetizationService', () => {
   let iapPurchase: ReturnType<typeof vi.fn>;
   let svc: MonetizationService;
   let onAdFreeChanged: ReturnType<typeof vi.fn> & ((owned: boolean) => void);
+  let onCrackStonesAwarded: ReturnType<typeof vi.fn> & ((amount: number) => void);
   let emitPurchaseUpdated: ((purchase: PurchaseInfo) => void) | undefined;
 
   beforeEach(() => {
@@ -30,6 +34,7 @@ describe('MonetizationService', () => {
     iapRestore = vi.fn().mockResolvedValue([]);
     iapPurchase = vi.fn();
     onAdFreeChanged = vi.fn() as ReturnType<typeof vi.fn> & ((owned: boolean) => void);
+    onCrackStonesAwarded = vi.fn() as ReturnType<typeof vi.fn> & ((amount: number) => void);
     emitPurchaseUpdated = undefined;
 
     (AdManager as unknown as { mockImplementation: (fn: () => unknown) => void }).mockImplementation(function () {
@@ -57,7 +62,7 @@ describe('MonetizationService', () => {
     svc = new MonetizationService({
       adFreeOwned: false,
       onAdFreeChanged,
-      onCrackStonesAwarded: vi.fn(),
+      onCrackStonesAwarded,
       licenseKey: 'TEST',
       rewardedUnitId: 'r',
       bannerUnitId: 'b',
@@ -104,6 +109,47 @@ describe('MonetizationService', () => {
     ]);
     await svc.initialize();
     expect(onAdFreeChanged).toHaveBeenCalledWith(true);
+  });
+
+  it('does not promote a malformed restore record to ad-free ownership', async () => {
+    iapRestore.mockResolvedValue([
+      { productId: 'ad_free' } as unknown as PurchaseInfo,
+    ]);
+
+    await svc.initialize();
+
+    expect(svc.isAdFreeOwned()).toBe(false);
+    expect(onAdFreeChanged).not.toHaveBeenCalledWith(true);
+    expect(adShowBanner).toHaveBeenCalled();
+  });
+
+  it('grants a validated ad-free purchase through the service boundary', async () => {
+    iapPurchase.mockResolvedValue({
+      status: 'success',
+      purchase: { productId: 'ad_free', purchaseToken: 'tok', purchaseTime: 0, acknowledged: true },
+    });
+
+    expect(await svc.purchase('ad_free')).toBe(true);
+    expect(svc.isAdFreeOwned()).toBe(true);
+    expect(onAdFreeChanged).toHaveBeenCalledWith(true);
+  });
+
+  it('awards a validated consumable purchase and ignores cancellation', async () => {
+    iapPurchase.mockResolvedValueOnce({
+      status: 'success',
+      purchase: {
+        productId: 'crack_stone_pack_small',
+        purchaseToken: 'tok-small',
+        purchaseTime: 0,
+        acknowledged: true,
+      },
+    });
+    expect(await svc.purchase('crack_stone_pack_small')).toBe(true);
+    expect(onCrackStonesAwarded).toHaveBeenCalledWith(10);
+
+    iapPurchase.mockResolvedValueOnce({ status: 'canceled' });
+    expect(await svc.purchase('crack_stone_pack_small')).toBe(false);
+    expect(onCrackStonesAwarded).toHaveBeenCalledTimes(1);
   });
 
   it('applies a validated late ad-free purchaseUpdated event immediately', async () => {

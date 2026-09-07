@@ -4,7 +4,7 @@ import type { PurchaseInfo } from '@forge/inflation-rpg-native-onestore-iap';
 import type { IapProductId } from './IapTypes';
 import { AdManager } from './AdManager';
 import { IAP_CATALOG } from './IapCatalog';
-import { IapManager } from './IapManager';
+import { IapManager, isValidIapPurchaseInfo } from './IapManager';
 
 export interface MonetizationServiceOptions {
   adFreeOwned: boolean;
@@ -42,7 +42,12 @@ export class MonetizationService {
   }
 
   private applyRestoredAdFreeEntitlement(restored: PurchaseInfo[]): void {
-    const hasAdFree = restored.some((purchase) => purchase.productId === 'ad_free');
+    // IapManager already filters native restore payloads, but keep this
+    // service boundary defensive as well. A malformed bridge/mock must not
+    // become a permanent entitlement merely because it has the right product
+    // id.
+    const hasAdFree = restored.some((purchase) => isValidIapPurchaseInfo(purchase)
+      && purchase.productId === 'ad_free');
     // A non-consumable purchase is permanent for the current session. Restore
     // may be empty while the store/account bridge is still unavailable; an
     // empty response must not turn a previously confirmed entitlement off.
