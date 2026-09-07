@@ -210,6 +210,19 @@ describe('V4 expedition result screen', () => {
     expect(result.textContent).not.toContain('-3');
   });
 
+  it('normalizes fractional and unsafe reward values before rendering', () => {
+    renderResult(baseResult({
+      reward: { gold: 1.9, materials: Number.MAX_SAFE_INTEGER + 1, spirit: -5 },
+    }));
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result).toHaveTextContent('금화 +1');
+    expect(result).toHaveTextContent('재료 +9,007,199,254,740,991');
+    expect(result.textContent).not.toContain('1.9');
+    expect(result.textContent).not.toContain('9,007,199,254,740,992');
+    expect(result.textContent).not.toContain('-5');
+  });
+
   it('does not crash when an active expedition contains an inherited Realm key', () => {
     const save = createInitialV4Save(105);
     save.run.expedition = {

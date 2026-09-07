@@ -21,17 +21,25 @@ const ENCOUNTER_LABELS = {
   boss: '보스',
 } as const;
 
+function safePositiveResource(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
+  const amount = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value)));
+  return amount > 0 ? amount : null;
+}
+
 function formatResources(resources: Partial<Record<V4CurrencyKey, number>>): string {
-  return Object.entries(resources)
-    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0)
-    .map(([key, value]) => `${getV4CurrencyName(key)} +${value!.toLocaleString('ko-KR')}`)
+  return Object.entries(resources).flatMap(([key, value]) => {
+    const amount = safePositiveResource(value);
+    return amount === null ? [] : `${getV4CurrencyName(key)} +${amount.toLocaleString('ko-KR')}`;
+  })
     .join(' · ') || '없음';
 }
 
 function formatCosts(cost: Partial<Record<V4CurrencyKey, number>>): string {
-  return Object.entries(cost)
-    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && value > 0)
-    .map(([key, value]) => `${getV4CurrencyName(key)} ${value!.toLocaleString('ko-KR')}`)
+  return Object.entries(cost).flatMap(([key, value]) => {
+    const amount = safePositiveResource(value);
+    return amount === null ? [] : `${getV4CurrencyName(key)} ${amount.toLocaleString('ko-KR')}`;
+  })
     .join(' · ') || '없음';
 }
 
