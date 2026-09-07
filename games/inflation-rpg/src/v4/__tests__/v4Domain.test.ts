@@ -1182,6 +1182,22 @@ describe('v4 save and domain', () => {
     expect(initial.run.hero.hp).toBe(120);
   });
 
+  it('does not mutate a malformed intervention reserve into an invalid save', () => {
+    const malformed = createInitialV4Save(131);
+    malformed.run.interventionCharges = Number.NaN;
+    malformed.run.hero.hp = 120;
+
+    const charged = grantInterventionCharge(malformed, malformed.updatedAt + 1_000);
+    const healed = useIntervention(malformed, 'heal', malformed.updatedAt + 1_000);
+
+    expect(charged).toBe(malformed);
+    expect(healed.ok).toBe(false);
+    if (healed.ok) return;
+    expect(healed.save).toBe(malformed);
+    expect(healed.error).toContain('충전');
+    expect(malformed.run.interventionCharges).toBeNaN();
+  });
+
   it('clamps offline processing to 8 hours and rejects backwards time', () => {
     const initial = createInitialV4Save(8);
     const future = simulateOfflineProgress(initial, initial.lastProcessedAt + 24 * HOUR);

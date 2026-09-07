@@ -144,6 +144,13 @@ function isInterventionType(value: unknown): value is InterventionType {
   return value === 'heal' || value === 'retreat';
 }
 
+function isValidInterventionCharges(value: number): boolean {
+  return Number.isFinite(value)
+    && Number.isInteger(value)
+    && value >= 0
+    && value <= V4_MAX_INTERVENTION_CHARGES;
+}
+
 function canPay(save: V4SaveEnvelope, input: Partial<Record<V4CurrencyKey, number>>): boolean {
   return Object.entries(input).every(([key, value]) => save.meta.currencies[key as V4CurrencyKey] >= (value ?? 0));
 }
@@ -916,7 +923,9 @@ export function grantOfflineResourceBonus(
 }
 
 export function grantInterventionCharge(source: V4SaveEnvelope, now: number): V4SaveEnvelope {
-  if (!isActionClockValid(source, now) || source.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES) return source;
+  if (!isActionClockValid(source, now)
+    || !isValidInterventionCharges(source.run.interventionCharges)
+    || source.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES) return source;
   const save = cloneSave(source);
   save.run.interventionCharges = Math.min(
     V4_MAX_INTERVENTION_CHARGES,
@@ -936,6 +945,9 @@ export function useIntervention(
   }
   if (!isActionClockValid(source, now)) {
     return { ok: false, save: source, error: '저장 시각을 확인할 수 없어 신의 개입을 적용하지 않았습니다.' };
+  }
+  if (!isValidInterventionCharges(source.run.interventionCharges)) {
+    return { ok: false, save: source, error: '신의 개입 충전 정보를 확인할 수 없습니다.' };
   }
   if (source.run.interventionCharges <= 0) {
     return { ok: false, save: source, error: '신의 개입 충전이 없습니다.' };
