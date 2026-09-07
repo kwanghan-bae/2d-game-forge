@@ -4,7 +4,7 @@ import {
   getV4RealmDefinition,
 } from './data';
 import { V4_MAX_INTERVENTION_CHARGES, V4_MAX_SAGA_ENTRIES } from './types';
-import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentName } from './equipment';
+import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentDefinition, getV4EquipmentName } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import type {
@@ -417,6 +417,7 @@ function applyHeroExperience(save: V4SaveEnvelope, amount: number): number {
 }
 
 function grantEquipmentLevel(save: V4SaveEnvelope, equipmentId: string): void {
+  if (!getV4EquipmentDefinition(equipmentId)) return;
   const hero = save.run.hero;
   const equipmentLevels = hero.equipmentLevels ?? {};
   const savedLevel = equipmentLevels[equipmentId] ?? 0;

@@ -154,6 +154,8 @@ describe('v4 save and domain', () => {
     taskSave.save.meta.tasks[taskSave.task.id].outputEquipmentIds = ['unknown-v4-equipment'];
     storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(taskSave.save));
     expect(loadV4Save(fakeStorage)).toBeNull();
+    const settledMalformedTask = completeFacilityTasks(taskSave.save, taskSave.task.completesAt);
+    expect(settledMalformedTask.run.hero.equipmentIds).not.toContain('unknown-v4-equipment');
 
     const expeditionSave = createInitialV4Save(132);
     const expedition = startExpedition(expeditionSave, 'joseon_plains', expeditionSave.updatedAt, 'aggression', null);
