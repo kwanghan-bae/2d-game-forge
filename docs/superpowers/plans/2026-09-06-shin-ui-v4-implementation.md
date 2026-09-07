@@ -303,9 +303,10 @@ pnpm circular
 - 영웅 상세 헤더의 나이도 마을 화면과 동일한 안전 정수·한국어 숫자 표시를 사용한다.
 - 전체 게임 단위/컴포넌트 테스트(V4 포함): 398개 파일, 3,462개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 30/30 통과(각 프로젝트 15/15).
-- V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22, 5.0분).
+- V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22, 4.5분).
+- dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
-- standalone Next production build, game typecheck, lint, circular 검사 통과.
+- workspace `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `pnpm build` 통과.
 - 시설·에이전트·Realm 정의 lookup을 own-property accessor로 통일해 외부 문자열이 `constructor` 같은 상속 키로 해석되지 않게 했다.
 - V4 저장 숫자 필드를 `Number.MAX_SAFE_INTEGER` 이하로 검증해 JSON 재로드 때 정밀도를 잃는 재화·시간·전투 수치가 유효 저장으로 남지 않게 했다.
 - legacy `v2-vertical-slice`는 dev-only cycle controller hook으로 영웅을 다음 자연사 직전까지 준비한 뒤 실제 Phaser 도착→CycleResult 경로를 검증하도록 단축했다. Chromium 6.7초, iPhone14 6.2초에 통과하며 제품 런타임에는 hook이 노출되지 않는다.

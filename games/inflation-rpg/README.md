@@ -24,6 +24,8 @@ forge 의 첫 번째 게임. 조선 시대 배경의 영웅 후원·마을 경�
 - `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright. V4 vertical slice는
   iPhone 14 / Desktop Chrome 두 프로파일에서 15개 시나리오(30/30)를 검증하며,
   V3 legacy 회귀를 포함한 전체 실행은 44/44를 통과한다.
+- `pnpm --filter @forge/dev-shell e2e` — 포털에서 V4 기본 경로와 V3 Legacy 경로를
+  함께 확인한다(현재 5/5).
 
 ## 모바일 UI 확인
 
