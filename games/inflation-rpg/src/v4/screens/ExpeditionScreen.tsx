@@ -35,6 +35,30 @@ function formatCosts(cost: Partial<Record<V4CurrencyKey, number>>): string {
     .join(' · ') || '없음';
 }
 
+function formatFiniteNumber(value: unknown): string {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toLocaleString('ko-KR')
+    : '0';
+}
+
+function formatFiniteDuration(value: unknown): string {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.ceil(value).toLocaleString('ko-KR')
+    : '0';
+}
+
+function safeEncounterCount(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0
+    ? Math.min(3, value)
+    : null;
+}
+
+function getResultWeakness(value: unknown): string {
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : '원정 결과의 준비 정보를 확인하세요.';
+}
+
 function getExpeditionProgressPercent(now: number, startedAt: number, completesAt: number): number {
   const duration = completesAt - startedAt;
   if (!Number.isFinite(now) || !Number.isFinite(startedAt) || !Number.isFinite(completesAt) || duration <= 0) return 0;
@@ -60,6 +84,12 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const nextRealmId = result?.outcome === 'victory' ? getNextRealmId(result.realmId) : null;
   const nextRealmPending = Boolean(nextRealmId && !save.meta.unlockedRealms.includes(nextRealmId));
   const resultRewardText = result ? formatResources(result.reward) : '없음';
+  const resultSuccessChance = result && typeof result.successChance === 'number'
+    && Number.isFinite(result.successChance) && result.successChance >= 0 && result.successChance <= 1
+    ? result.successChance
+    : null;
+  const resultEncountersCleared = result ? safeEncounterCount(result.encountersCleared) : null;
+  const resultEncounterTotal = result ? safeEncounterCount(result.totalEncounterCount) ?? resultEncountersCleared : null;
 
   return (
     <main className="v4-container">
@@ -81,11 +111,11 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
               : '영웅이 무사히 돌아와 마을에 보상을 남겼습니다.'
             : '이번 원정은 영웅의 안전을 위해 중단되었습니다.'}</p>
           <div className="v4-detail-grid">
-            <div className="v4-detail-stat"><small>전투력</small><strong>{result.heroPower.toLocaleString('ko-KR')}</strong><span className="v4-muted">/ 권장 {result.recommendedPower.toLocaleString('ko-KR')}</span></div>
-            <div className="v4-detail-stat"><small>전투</small><strong>{result.turns}턴</strong><span className="v4-muted">받은 피해 {result.totalDamageTaken.toLocaleString('ko-KR')}</span></div>
+            <div className="v4-detail-stat"><small>전투력</small><strong>{formatFiniteNumber(result.heroPower)}</strong><span className="v4-muted">/ 권장 {formatFiniteNumber(result.recommendedPower)}</span></div>
+            <div className="v4-detail-stat"><small>전투</small><strong>{formatFiniteNumber(result.turns)}턴</strong><span className="v4-muted">받은 피해 {formatFiniteNumber(result.totalDamageTaken)}</span></div>
           </div>
-          {result.successChance !== undefined && <p className="v4-muted">판정 당시 예상 승률 {Math.round(result.successChance * 100)}%</p>}
-          {result.encountersCleared !== undefined && <p className="v4-muted">원정 단계 {result.encountersCleared}/{result.totalEncounterCount ?? result.encountersCleared} 정산</p>}
+          {resultSuccessChance !== null && <p className="v4-muted">판정 당시 예상 승률 {Math.round(resultSuccessChance * 100)}%</p>}
+          {resultEncountersCleared !== null && resultEncounterTotal !== null && <p className="v4-muted">원정 단계 {resultEncountersCleared}/{resultEncounterTotal} 정산</p>}
           {result.outcome === 'victory' ? (
             <>
               <div className="v4-alert">획득 보상 · {resultRewardText}{resultRewardText === '없음' ? ' · 사가에 원정 기록을 남겼습니다.' : ''}</div>
@@ -93,9 +123,9 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
             </>
           ) : (
             <>
-              <div className="v4-alert">부족한 점 · {result.weaknessKR}</div>
+              <div className="v4-alert">부족한 점 · {getResultWeakness(result.weaknessKR)}</div>
               <div className="v4-alert">영구 자산은 보존되었습니다. 출발 준비 비용도 반환되어 다음 선택을 준비할 수 있습니다.</div>
-              <p>추천 시설 · {getV4FacilityName(result.recommendedFacilityId)} · 예상 재도전 {result.retryAfterSeconds}초</p>
+              <p>추천 시설 · {getV4FacilityName(result.recommendedFacilityId)} · 예상 재도전 {formatFiniteDuration(result.retryAfterSeconds)}초</p>
               {result.recommendedEquipmentId && <p>추천 장비 · {getV4EquipmentName(result.recommendedEquipmentId)}</p>}
             </>
           )}

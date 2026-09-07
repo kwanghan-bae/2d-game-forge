@@ -170,6 +170,26 @@ describe('V4 expedition result screen', () => {
     expect(screen.getByTestId('v4-expedition-result')).toHaveTextContent('기록되지 않은 Realm');
   });
 
+  it('does not expose non-finite result stats or malformed preparation text', () => {
+    renderResult(baseResult({
+      outcome: 'defeat',
+      heroPower: Number.POSITIVE_INFINITY,
+      recommendedPower: Number.NaN,
+      turns: Number.NaN,
+      totalDamageTaken: Number.POSITIVE_INFINITY,
+      successChance: Number.NaN,
+      encountersCleared: Number.NaN,
+      totalEncounterCount: Number.POSITIVE_INFINITY,
+      retryAfterSeconds: Number.NaN,
+      weaknessKR: undefined as never,
+    }));
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result.textContent).not.toContain('Infinity');
+    expect(result.textContent).not.toContain('NaN');
+    expect(result).toHaveTextContent('원정 결과의 준비 정보를 확인하세요.');
+  });
+
   it('does not crash when an active expedition contains an inherited Realm key', () => {
     const save = createInitialV4Save(105);
     save.run.expedition = {
