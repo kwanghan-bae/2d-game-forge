@@ -97,6 +97,22 @@ describe('useV4Game monetization actions', () => {
     expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
   });
 
+  it('shows a result when a sub-second offline window still completes work', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(87);
+    const started = startFacilityTask(base, 'temple', base.updatedAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = started.task.startedAt + 1;
+    persistV4Save(started.save);
+    vi.setSystemTime(10_002);
+
+    render(<Harness monetization={new V4MonetizationAdapter(null, null)} />);
+
+    expect(screen.getByTestId('offline-state')).toHaveTextContent('ready');
+  });
+
   it('applies an offline double reward only once when the button is clicked concurrently', async () => {
     const base = createInitialV4Save(88);
     const startedAt = Date.now() - 60_000;

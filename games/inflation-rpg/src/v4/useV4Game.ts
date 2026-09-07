@@ -70,7 +70,15 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
       const persisted = persistV4Save(result.save);
       setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
     }
-    if (result.summary.processedSeconds > 0 || result.summary.clockAnomaly) {
+    const hasOfflineResult = result.summary.processedSeconds > 0
+      || result.summary.clockAnomaly !== null
+      || result.summary.completedTaskIds.length > 0
+      || result.summary.completedExpedition
+      || result.summary.equipmentGained.length > 0
+      || Object.values(result.summary.resourcesGained).some(
+        (value) => typeof value === 'number' && Number.isFinite(value) && value > 0,
+      );
+    if (hasOfflineResult) {
       setOfflineSummary(result.summary);
       setOfflineRewardDoubled(false);
     }
