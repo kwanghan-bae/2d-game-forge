@@ -489,11 +489,11 @@ export function importV3HeroSnapshot(
   next.run.hero = hero;
   next.meta.sagaEntries = [{
     id: nextSagaId(next, `saga-import-${eventAt}`),
-    kind: 'milestone',
+    kind: 'milestone' as const,
     createdAt: eventAt,
     title: 'V3 영웅 가져오기',
     text: `${hero.name}의 기록을 v4 영웅으로 가져왔습니다.`,
-  }, ...next.meta.sagaEntries];
+  }, ...next.meta.sagaEntries].slice(0, V4_MAX_SAGA_ENTRIES);
   return next;
 }
 

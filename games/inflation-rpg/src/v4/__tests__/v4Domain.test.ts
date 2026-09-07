@@ -514,6 +514,17 @@ describe('v4 save and domain', () => {
     const importedWithUnsafeClock = importV3HeroSnapshot(destination, source, Number.MAX_VALUE);
     expect(importedWithUnsafeClock.updatedAt).toBe(destination.updatedAt);
     expect(importedWithUnsafeClock.meta.sagaEntries[0]?.createdAt).toBe(destination.updatedAt);
+
+    const fullSagaDestination = createInitialV4Save(3);
+    fullSagaDestination.meta.sagaEntries = Array.from({ length: V4_MAX_SAGA_ENTRIES }, (_, index) => ({
+      ...fullSagaDestination.meta.sagaEntries[0]!,
+      id: `existing-${index}`,
+      title: `기존 기록 ${index}`,
+    }));
+    const boundedImport = importV3HeroSnapshot(fullSagaDestination, source, fullSagaDestination.updatedAt + 1_000);
+    expect(boundedImport.meta.sagaEntries).toHaveLength(V4_MAX_SAGA_ENTRIES);
+    expect(boundedImport.meta.sagaEntries[0]?.title).toBe('V3 영웅 가져오기');
+    expect(boundedImport.meta.sagaEntries.at(-1)?.id).toBe(`existing-${V4_MAX_SAGA_ENTRIES - 2}`);
   });
 
   it('preserves the destination hero action while explicitly importing a V3 hero', () => {

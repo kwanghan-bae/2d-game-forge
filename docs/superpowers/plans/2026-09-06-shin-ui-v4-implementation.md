@@ -161,6 +161,7 @@ pnpm circular
 - 장비 보너스 적용 시 malformed 영웅 공격력·방어력·HP·치명타 수치를 정규화하고 음수/overflow 보너스를 차단해 equipment adapter 단독 호출도 유효 상태를 유지한다.
 - 장비 정의 lookup은 own-property만 허용해 `__proto__`·`constructor` 같은 상속 키가 장비로 오인되어 `NaN` 보너스를 만드는 경로를 차단한다.
 - V3 영웅 명시 import에서 중복 장비 ID를 dedupe하고 장비 레벨을 20 이하로 제한해 v4 저장 schema와 UI를 보존한다.
+- V3 영웅 명시 import 직후에도 사가 이력을 최신 200개로 자르도록 해, 로드 전 메모리 상태와 즉시 저장 상태의 상한을 일치시킨다.
 - V4 브라우저 부팅 E2E에서 기존 V3 저장 키가 변경되지 않는지 Chromium·iPhone 14 양쪽으로 확인한다.
 - V3 명시 import의 선택적 방어력·치명타·HP 최대값도 유한 범위로 보정해 손상된 legacy snapshot이 v4에 `NaN`을 유입하지 않게 한다.
 - V3 명시 import의 장비 배열은 문자열 항목만 남겨 비정상 payload가 v4 장비 UI와 레벨 map을 오염시키지 않게 한다.
@@ -195,6 +196,7 @@ pnpm circular
 - 오프라인 정산이 새 작업·원정 없이 재호출되면 동일 save 객체와 빈 요약을 반환해 `setItem`/React 갱신을 반복하지 않으며, 최초 `missing` 저장은 경과 시간이 0이어도 생성한다.
 - 오프라인 위험 보스가 `awaiting_confirmation` 상태에 들어간 뒤 재개되어도 자동 확정하지 않고, 같은 워터마크에서 재호출을 idempotent하게 유지한다. 시간 기반 원정 테스트 fixture는 고정 ID로 결정론화했다.
 - 위험 보스의 명시적 결과 확인과 다음 Realm의 영구 해금을 분리해, 보스 승리 확인만으로 `underworld`가 열리지 않고 별도 기록 확인을 요구한다.
+- V3 영웅 import의 사가 상한 회귀를 추가하고 전체 게임 테스트 396개 파일·3,378개 테스트를 다시 통과시켰다.
 - V4 저장 검증은 알 수 없는 통화 키를 거부하고, 원정 결과의 저장 watermark·해금 Realm chronology를 확인한다. 구형 schema 1의 초과 사가 기록은 기존 hydrate trim 호환을 유지한다.
 - V4 단위/컴포넌트 테스트: 396개 파일, 3,378개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 26/26 통과(각 프로젝트 13/13).
