@@ -43,6 +43,27 @@ function baseResult(overrides: Partial<ExpeditionResult> = {}): ExpeditionResult
 }
 
 describe('V4 expedition result screen', () => {
+  it('shows the expected reward before the player dispatches an expedition', () => {
+    const save = createInitialV4Save(100);
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    expect(plains).not.toBeNull();
+    if (!plains) return;
+    expect(plains).toHaveTextContent('예상 보상 · 금화 +55 · 재료 +4');
+  });
+
   it('renders Korean resource labels instead of storage keys', () => {
     renderResult(baseResult());
 

@@ -182,7 +182,8 @@ pnpm circular
 ### 누적 검증 기록
 
 - 직접 작업 완료·위험 원정 확인도 `Number.MAX_SAFE_INTEGER` 밖의 시각을 거부해 timestamp 정규화가 결제를 우회하지 않도록 고정했다.
-- V4 단위/컴포넌트 테스트: 394개 파일, 3,349개 테스트 통과.
+- 원정 출발 카드에 보스 승률과 함께 예상 보상 재화를 표시해 출발 전 위험·보상 판단을 완성했다.
+- V4 단위/컴포넌트 테스트: 394개 파일, 3,350개 테스트 통과.
 - V4 Chromium·iPhone 14 E2E: 24/24 통과(각 프로젝트 12/12).
 - V3 심층·다중 지역 회귀 smoke: 2/2 통과.
 - standalone Next production build, game typecheck, lint, circular 검사 통과.

@@ -121,6 +121,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
                 <p>{realm.description}</p>
                 <div className="v4-stat-line"><span className="v4-chip">권장 전투력 {realm.recommendedPower}</span><span className="v4-chip">{realm.durationSeconds}초</span><span className="v4-chip">신력 {realm.cost.spirit ?? 0}</span></div>
                 <p className="v4-muted">보스 예상 승률 {Math.round(getExpeditionSuccessChance(save, realmId, 2, guideReady ? 'guide' : null) * 100)}% · 현재 전투력 {getV4HeroPower(save).toLocaleString('ko-KR')}</p>
+                <p className="v4-muted">예상 보상 · {formatResources(realm.reward)}</p>
                 <div className="v4-encounter-row" aria-label={`${realm.nameKR} 원정 단계`}>
                   {realm.encounters.map((encounter) => <span className="v4-encounter" key={encounter.id}><strong>{ENCOUNTER_LABELS[encounter.tier]}</strong><br />{encounter.durationSeconds}초 · {encounter.recommendedPower}</span>)}
                 </div>
