@@ -44,7 +44,7 @@
 - **Phase 5** 완료 (`phase-5-complete`). Monetization 원스토어 single-market shell:
   AdMob (rewarded + banner), 원스토어 IAP 4 품목 (TS contract + web stub),
   MonetizationService facade, persist v14, 개인정보처리방침 GitHub Pages, AdFreeIndicator.
-  Kotlin native wire 는 분리된 Phase 5a-1 (real-device manual-QA 세션 필요).
+  원스토어 V21 Kotlin native wire와 compile 검증까지 반영했으며, 실기기 sandbox 결제·복원·환불 QA는 별도 세션이 필요하다.
 - **자율진화 v1** (cycle-100-complete). 8 페르소나 (게임기획자 / 스토리작가 / QA /
   UI·UX / 게임비평가 / 레벨디자이너 / 웹리서처 / 무료에셋 조사관) + 룰 8 종 +
   100 cycle. narrative tone (age 6 tier × realm × 9 channel = ~1080) + lifecycle
@@ -57,8 +57,8 @@
 - **자율진화 v2 cycle 101-200 완료** (`phase-cycle-200-complete` 후보, 2026-05-28).
   N1 VFX / N2 mid-cycle decision / N3 Hall / N4 SVG / N5 Live Ops 5 mega-phase
   + 룰 9 + 2 페르소나 surface fan-out + SeasonalModifier wire chain 8 분할 완성.
-- 다음: **Phase 5a-1** (원스토어 native wire), Phase 5b (Google Play), 5c (App
-  Store), 또는 v3 자율진화 (mega-phase HeroDecisionAI / EternalCodex 등).
+- 다음: **Phase 5a-1 실기기 QA** (원스토어 sandbox 결제·복원·환불), Phase 5b (Google Play),
+  5c (App Store), 또는 v3 자율진화 (mega-phase HeroDecisionAI / EternalCodex 등).
 - **사용자 prompted 100-cycle 진행 중** (cycle 156-255, 2026-05-27 시작). 8 페르소나
   fan-out (game-critic / story-writer / level-designer / web-researcher /
   asset-investigator / ui-ux-designer / game-planner / qa-engineer) 으로 매

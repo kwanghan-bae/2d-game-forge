@@ -297,6 +297,7 @@ pnpm circular
 - native monetization bridge의 ad-free entitlement callback도 V4 adapter 상태에 즉시 반영해, 구매·복원 후속 응답 없이 도착한 권한 변경이 UI와 보상 경로에서 누락되지 않게 했다.
 - AdMob 배너의 표시·숨김 요청을 최신 의도 상태로 수렴하는 단일 reconciliation queue로 직렬화해, 표시 요청이 진행 중 광고 제거가 확정되어도 배너가 다시 살아나는 경합을 차단했다.
 - 원스토어 상품 조회 응답도 허용된 카탈로그·상품 유형·가격 필드를 검증해, 알 수 없는 상품이나 깨진 가격 payload가 구매 캐시와 UI로 전파되지 않게 했다.
+- 원스토어 V21 Android plugin의 실제 `PurchaseClient` Builder/Listener wire를 연결하고, 구매 listener 결과·`PurchaseData` token cache·비소모성 acknowledge/소모성 consume·복원 조회를 compile 검증했다. 실기기 sandbox 결제 QA는 별도 단계로 남겼다.
 - ad-free 비소모성 구매는 승인 호출이 일시 실패해도 store의 구매 성공을 권한 실패로 숨기지 않도록 했고, 중복 지급 위험이 있는 균열석 소모성 상품은 승인 실패를 계속 전파하도록 분리했다.
 - IAP store success 응답도 구매 기록·요청 상품·구매 토큰을 검증한 뒤에만 entitlement 경로로 전달해 malformed provider payload가 광고 제거를 무단 부여하지 않도록 했다.
 - IAP 복원 응답도 알려진 상품·구매 토큰·구매 시각·승인 상태를 검증하고, V4 ad-free 판정에서 같은 레코드 경계를 재확인해 malformed restore payload가 권한을 만들지 않도록 했다.

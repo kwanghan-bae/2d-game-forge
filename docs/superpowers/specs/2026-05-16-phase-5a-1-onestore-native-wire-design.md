@@ -3,8 +3,8 @@
 ## 한 줄 요약
 
 Phase 5 의 Kotlin compile-only stub (`call.reject(...)`) 을 실제 원스토어 IAP
-SDK V21 의 Builder/Listener 패턴으로 wire. 실 Android 기기 + 원스토어 sandbox
-계정이 필수라 manual QA 세션에 같이 진행하는 sub-phase.
+SDK V21 의 Builder/Listener 패턴으로 wire했다. 실 Android 기기 + 원스토어
+sandbox 계정이 필수인 결제·복원·환불 manual QA가 남은 sub-phase다.
 
 ## 배경
 
@@ -20,17 +20,26 @@ risk (native learning curve) 가 실현되어 다음 발견:
 - `launchPurchaseFlowAsync` → `launchPurchaseFlow(activity, purchaseFlowParams)` (sync, not async)
 - `consumeAsync` 와 `acknowledgeAsync` 가 별개 listener 사용
 
-V21 wire 는 compile 통과만으로는 의미 없음 — 실 결제 flow 동작 검증이 본질.
-실 기기 + 원스토어 앱 설치 + sandbox 계정 + 사인된 APK 가 필요하며 Claude
-session 에서 수행 불가. 따라서 Phase 5 는 **monetization shell** 까지 완성하고,
-실 native wire 는 별도 Phase 5a-1 로 분리.
+V21 wire 는 compile 통과만으로는 의미 없음 — 실 결제 flow 동작 검증이 본질이다.
+실 기기 + 원스토어 앱 설치 + sandbox 계정 + 사인된 APK가 필요하며 현재
+세션에서는 수행할 수 없다. 따라서 코드는 compile 가능한 native wire까지
+완성하고, 실 결제 flow는 Phase 5a-1 manual QA로 남긴다.
 
 ## Phase 5 종료 시점의 상태
 
 - `games/inflation-rpg/native/onestore-iap/android/src/main/java/com/forge/onestoreiap/OnestoreIapPlugin.kt`
-  — V21 실 imports 사용한 compile-only stub. 5 `@PluginMethod` 모두 `call.reject`
+  — V21 `PurchaseClient` Builder/Listener, 상품 조회, 구매 결과, acknowledge/consume,
+  restore를 실제 SDK 호출로 연결
 - `:forge-inflation-rpg-native-onestore-iap:compileDebugKotlin` — PASS
+- purchase listener 결과를 pending Capacitor call과 token별 `PurchaseData` cache에 연결
 - Web stub (`web.ts`) — fully functional, IapManager/IapShop UI/e2e 모두 동작
+
+### Implementation status (2026-09-08)
+
+- Kotlin native wire는 SDK 21.04.00 API 시그니처를 AAR에서 확인한 뒤 compile 검증했다.
+- Android 앱 전체 `assembleDebug`와 실기기 sandbox QA는 아직 별도 검증 대상이다.
+- 실기기에서 결제·복원·환불·서비스 단절·원스토어 앱 미설치 시나리오를 확인하기 전에는
+  `phase-5a1-complete` 태그를 만들지 않는다.
 
 ## Scope (Phase 5a-1)
 
@@ -63,7 +72,7 @@ session 에서 수행 불가. 따라서 Phase 5 는 **monetization shell** 까�
 | Main client | `com.gaa.sdk.iap.PurchaseClient` (Builder pattern) |
 | Builder | `PurchaseClient.Builder` |
 | Connection state | `PurchaseClient.ConnectionState` (DISCONNECTED, CONNECTING, CONNECTED, CLOSED) |
-| Product type | `PurchaseClient.ProductType` (IN_APP, AUTO) |
+| Product type | `PurchaseClient.ProductType` (`INAPP`, `AUTO`) |
 | Response code | `PurchaseClient.ResponseCode` (RESULT_OK, RESULT_USER_CANCELED, ...) |
 | Connection listener | `PurchaseClientStateListener` (`onSetupFinished(IapResult)`, `onServiceDisconnected()`) |
 | Purchase update listener | `PurchasesUpdatedListener` (`onPurchasesUpdated(IapResult, List<PurchaseData>?)`) |
@@ -75,8 +84,8 @@ session 에서 수행 불가. 따라서 Phase 5 는 **monetization shell** 까�
 | Purchase flow params | `PurchaseFlowParams.Builder().setProductId(...).setProductType(...).build()` |
 | Purchase data | `PurchaseData` (productId, purchaseToken, purchaseTime, acknowledged 등) |
 | Purchase state | `PurchaseData.PurchaseState`, `PurchaseData.AcknowledgeState`, `PurchaseData.RecurringState` |
-| Query purchases | `queryPurchasesAsync(ProductType, PurchaseDataListener? — check exact name)` |
-| Acknowledge listener | `AcknowledgeListener` (`onAcknowledgeResponse(IapResult)`) |
+| Query purchases | `queryPurchasesAsync(ProductType, QueryPurchasesListener)` |
+| Acknowledge listener | `AcknowledgeListener` (`onAcknowledgeResponse(IapResult, PurchaseData)`) |
 | Acknowledge params | `AcknowledgeParams.Builder().setPurchaseData(PurchaseData).build()` |
 | Acknowledge | `acknowledgeAsync(AcknowledgeParams, AcknowledgeListener)` |
 | Consume listener | `ConsumeListener` (`onConsumeResponse(IapResult, PurchaseData?)`) |
