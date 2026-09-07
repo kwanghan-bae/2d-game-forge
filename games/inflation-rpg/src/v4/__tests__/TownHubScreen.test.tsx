@@ -241,4 +241,18 @@ describe('V4 town hub support assignment', () => {
     if (!temple) return;
     expect(within(temple).getByRole('button', { name: '취소' })).toBeDisabled();
   });
+
+  it('does not offer an ad to instantly finish a task that is already due', () => {
+    const initial = createInitialV4Save(103);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    renderHub({ save: started.save, now: started.task.completesAt, monetizationAvailable: true, onInstantTask: vi.fn() });
+
+    const temple = screen.getByText('신전').closest('article');
+    expect(temple).not.toBeNull();
+    if (!temple) return;
+    expect(within(temple).getByRole('button', { name: '광고 즉시 완료' })).toBeDisabled();
+  });
 });
