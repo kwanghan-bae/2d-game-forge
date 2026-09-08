@@ -73,6 +73,24 @@ describe('V4 town hub support assignment', () => {
     expect(panel).toHaveTextContent('위험 경로 감지');
   });
 
+  it('uses static support-agent metadata when an in-memory card is tampered', () => {
+    const save = createInitialV4Save(113);
+    save.meta.agents = save.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, nameKR: 'internal_agent_name', roleKR: 'internal_role', trait: 'internal_trait' }
+      : agent);
+
+    renderHub({ save });
+
+    const panel = screen.getByRole('heading', { name: '지원 에이전트' }).closest('section');
+    expect(panel).not.toBeNull();
+    if (!panel) return;
+    expect(panel).toHaveTextContent('대장장이 담철');
+    expect(panel).toHaveTextContent('정밀 제작');
+    expect(panel.textContent).not.toContain('internal_agent_name');
+    expect(panel.textContent).not.toContain('internal_role');
+    expect(panel.textContent).not.toContain('internal_trait');
+  });
+
   it('exposes the selected sponsor policy to assistive technology', () => {
     renderHub();
 

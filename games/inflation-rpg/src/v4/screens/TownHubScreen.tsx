@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4PolicyName, getV4RealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4AgentDefinition, getV4CurrencyName, getV4PolicyName, getV4RealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
 import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
 import { getV4EquipmentDefinition, getV4EquipmentName } from '../equipment';
 import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
@@ -63,6 +63,15 @@ function getActiveFacilityTaskLabel(facilityId: FacilityId, task: FacilityTask, 
     ? task.outputEquipmentIds.filter((id): id is string => typeof id === 'string' && Boolean(getV4EquipmentDefinition(id)))
     : [];
   return getFacilityTaskLabel(facilityId, fallback, equipmentIds);
+}
+
+function getAgentDisplay(agent: V4SaveEnvelope['meta']['agents'][number]): { name: string; role: string; trait: string } {
+  const definition = getV4AgentDefinition(agent.id);
+  return {
+    name: definition?.nameKR ?? '기록되지 않은 에이전트',
+    role: definition?.roleKR ?? '지원 담당자',
+    trait: definition?.trait ?? '특성 확인 필요',
+  };
 }
 
 function remainingSeconds(completesAt: number | undefined, now: number): number {
@@ -255,15 +264,18 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
       <section className="v4-panel">
         <h2>지원 에이전트</h2>
         <div className="v4-agent-list">
-          {save.meta.agents.map((agent) => (
-            <div key={agent.id} className="v4-agent">
-              <span>
-                <span className="v4-agent-role">{agent.roleKR}</span> {agent.nameKR} · Lv.{formatNumber(agent.level)}
-                <br /><span className="v4-agent-trait">특성 · {typeof agent.trait === 'string' && agent.trait.trim() ? agent.trait.trim() : '특성 확인 필요'}</span>
-              </span>
-              <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
-            </div>
-          ))}
+          {save.meta.agents.map((agent) => {
+            const display = getAgentDisplay(agent);
+            return (
+              <div key={agent.id} className="v4-agent">
+                <span>
+                  <span className="v4-agent-role">{display.role}</span> {display.name} · Lv.{formatNumber(agent.level)}
+                  <br /><span className="v4-agent-trait">특성 · {display.trait}</span>
+                </span>
+                <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
+              </div>
+            );
+          })}
         </div>
       </section>
 

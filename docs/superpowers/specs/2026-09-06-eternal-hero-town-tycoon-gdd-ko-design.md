@@ -711,7 +711,7 @@ V4는 V3 persist version 27과 자동 migration 경계를 공유하지 않는다
 
 ### 14.4 현재 검증 기준선 (2026-09-08)
 
-- game Vitest: 400개 파일·3,635개 테스트 통과.
+- game Vitest: 400개 파일·3,636개 테스트 통과.
 - V4 vertical slice: Chromium·iPhone14 32/32 통과(각 16/16).
 - V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23).
 - dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
