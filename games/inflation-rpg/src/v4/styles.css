@@ -93,7 +93,7 @@
 .v4-alert { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; padding: 7px 9px; border: 1px solid #74552c; border-radius: 8px; background: #352a24; color: #f3d58b; font-size: 11px; }
 .v4-alert-close { flex: 0 0 auto; }
 .v4-muted { color: #a9a0ae; font-size: 11px; }
-.v4-setting-row { display: grid; gap: 6px; margin: 12px 0; color: #e7dcc2; font-size: 12px; }
+.v4-setting-row { display: grid; min-height: 44px; gap: 6px; margin: 12px 0; color: #e7dcc2; font-size: 12px; }
 .v4-setting-row > span { display: flex; justify-content: space-between; gap: 8px; }
 .v4-setting-row strong { color: #f3c86b; }
 .v4-setting-row input[type="range"] { width: 100%; min-height: 44px; accent-color: #d6a84f; }

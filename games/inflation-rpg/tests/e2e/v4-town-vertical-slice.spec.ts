@@ -288,7 +288,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-top-objective')).toContainText('원정 결과 확인이 필요합니다.');
   });
 
-  test('위험 보스 승리와 다음 Realm 기록을 별도로 확정한다', async ({ page }) => {
+  test('위험 보스 승리 뒤 숲의 선택으로 다음 영역을 연다', async ({ page }) => {
     await page.goto(GAME_URL);
     await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
     await page.reload();
@@ -330,8 +330,10 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 결과 확인 필요');
     await page.getByRole('button', { name: '보스 결과 확인' }).click();
     await expect(page.getByTestId('v4-expedition-result')).toContainText('원정 성공');
-    await expect(page.getByRole('button', { name: '저승 기록하기' })).toBeVisible();
-    await page.getByRole('button', { name: '저승 기록하기' }).click();
+    await page.getByRole('button', { name: '사가에서 선택하기' }).click();
+    await expect(page.getByRole('heading', { name: '흑송 산군의 불씨' })).toBeVisible();
+    await page.getByRole('button', { name: '불씨를 지킨다' }).click();
+    await page.getByRole('navigation', { name: '주요 메뉴' }).getByRole('button', { name: /원정/ }).click();
     await expect(page.locator('.v4-realm-card').filter({ hasText: '저승' }).getByRole('button', { name: '혼자 출발' })).toBeEnabled();
   });
 
