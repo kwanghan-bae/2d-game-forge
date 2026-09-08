@@ -33,7 +33,7 @@ import { V4_DAILY_REWARDED_LIMIT, type V4MonetizationAdapter, type V4RewardedPla
 import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope, V4Settings } from './types';
 import { V4_MAX_INTERVENTION_CHARGES, type StoryChoiceOptionId } from './types';
 import { getAvailableStoryChoice } from './domain';
-import { recordV4Metric, type V4MetricName, type V4MetricDetail } from './telemetry';
+import { recordV4Metric, type V4MetricName } from './telemetry';
 
 function monotonicActionTimestamp(
   save: V4SaveEnvelope,
@@ -79,7 +79,7 @@ function recordMetric(
   name: V4MetricName,
   id: string,
   occurredAt = save.updatedAt,
-  detail?: V4MetricDetail,
+  detail?: string,
 ): void {
   if (!Number.isFinite(occurredAt) || !Number.isFinite(save.createdAt)) return;
   recordV4Metric({ id, name, occurredAt: Math.max(save.createdAt, occurredAt), saveCreatedAt: save.createdAt, ...(detail ? { detail } : {}) });
@@ -88,9 +88,7 @@ function recordMetric(
 function recordFinishedExpedition(previous: V4SaveEnvelope, next: V4SaveEnvelope): void {
   const result = next.run.lastExpeditionResult;
   if (!result || result.id === previous.run.lastExpeditionResult?.id) return;
-  recordMetric(next, 'expedition_finished', `expedition_finished:${result.id}`, result.completedAt, {
-    outcome: result.outcome,
-  });
+  recordMetric(next, 'expedition_finished', `expedition_finished:${result.id}`, result.completedAt, result.outcome);
 }
 
 export function useV4Game(monetization?: V4MonetizationAdapter) {
@@ -226,9 +224,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const next = setV4Policy(current, policy, Date.now());
     commit(next);
     if (next.run.policy !== current.run.policy) {
-      recordMetric(next, 'policy_changed', `policy_changed:${next.createdAt}:${next.updatedAt}:${next.run.policy}`, next.updatedAt, {
-        policy: next.run.policy,
-      });
+      recordMetric(next, 'policy_changed', `policy_changed:${next.createdAt}:${next.updatedAt}:${next.run.policy}`, next.updatedAt, next.run.policy);
     }
   }, [commit]);
 
@@ -240,9 +236,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const result = startFacilityTask(saveRef.current, facilityId, Date.now(), agentId);
     if (result.ok) {
       commit(result.save, `${result.task.type} 작업을 시작했습니다.`);
-      recordMetric(result.save, 'facility_task_started', `facility_task_started:${result.task.id}`, result.task.startedAt, {
-        facility: result.task.facilityId,
-      });
+      recordMetric(result.save, 'facility_task_started', `facility_task_started:${result.task.id}`, result.task.startedAt, result.task.facilityId);
     }
     else setMessage(result.error);
   }, [commit]);
@@ -467,9 +461,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const result = startExpedition(current, realmId, Date.now(), current.run.policy, agentId);
     if (result.ok) {
       commit(result.save, '원정을 출발시켰습니다.');
-      recordMetric(result.save, 'expedition_started', `expedition_started:${result.task.id}`, result.task.startedAt, {
-        realm: result.save.run.expedition?.realmId ?? realmId,
-      });
+      recordMetric(result.save, 'expedition_started', `expedition_started:${result.task.id}`, result.task.startedAt, result.save.run.expedition?.realmId ?? realmId);
     }
     else setMessage(result.error);
   }, [commit]);
@@ -478,9 +470,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const result = chooseStoryChoiceDomain(saveRef.current, choice, Date.now());
     if (result.ok) {
       commit(result.save, '깊은 숲의 선택을 사가에 기록했습니다. 저승의 길이 열렸습니다.');
-      recordMetric(result.save, 'story_choice_made', `story_choice_made:${result.save.createdAt}:${result.save.updatedAt}`, result.save.updatedAt, {
-        choice,
-      });
+      recordMetric(result.save, 'story_choice_made', `story_choice_made:${result.save.createdAt}:${result.save.updatedAt}`, result.save.updatedAt, choice);
     }
     else setMessage(result.error);
   }, [commit]);

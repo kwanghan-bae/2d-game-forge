@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   V4_METRICS_STORAGE_KEY,
-  getV4OnboardingSummary,
   readV4MetricEvents,
   recordV4Metric,
+  summarizeV4Onboarding,
   type V4MetricEvent,
 } from '../telemetry';
 
@@ -52,16 +52,27 @@ describe('V4 local launch telemetry', () => {
   });
 
   it('ignores a duplicate metric ID', () => {
-    const first = event('same-id', 'policy_changed', saveCreatedAt + 1, { policy: 'training' });
-    const duplicate = event('same-id', 'policy_changed', saveCreatedAt + 2, { policy: 'hoarding' });
+    const first = event('same-id', 'policy_changed', saveCreatedAt + 1, 'training');
+    const duplicate = event('same-id', 'policy_changed', saveCreatedAt + 2, 'hoarding');
 
     expect(recordV4Metric(first)).toBe(true);
     expect(recordV4Metric(duplicate)).toBe(false);
     expect(readV4MetricEvents()).toEqual([first]);
   });
 
+  it('stores metric detail as a bounded string and drops non-string payloads', () => {
+    const detail = 'x'.repeat(81);
+    expect(recordV4Metric(event('detail-long', 'policy_changed', saveCreatedAt + 1, detail))).toBe(true);
+    expect(readV4MetricEvents()[0]?.detail).toBe('x'.repeat(80));
+
+    localStorage.setItem(V4_METRICS_STORAGE_KEY, JSON.stringify([
+      { ...event('detail-object', 'policy_changed', saveCreatedAt + 2), detail: { policy: 'training' } },
+    ]));
+    expect(readV4MetricEvents()[0]?.detail).toBeUndefined();
+  });
+
   it('counts a first expedition at the inclusive 900-second boundary', () => {
-    const summary = getV4OnboardingSummary([
+    const summary = summarizeV4Onboarding([
       event('save', 'save_created', saveCreatedAt),
       event('expedition', 'expedition_started', saveCreatedAt + 900_000),
     ]);
@@ -71,7 +82,7 @@ describe('V4 local launch telemetry', () => {
   });
 
   it('counts two distinct decisions at the inclusive 30-minute boundary', () => {
-    const summary = getV4OnboardingSummary([
+    const summary = summarizeV4Onboarding([
       event('save', 'save_created', saveCreatedAt),
       event('facility', 'facility_task_started', saveCreatedAt + 1_000),
       event('policy', 'policy_changed', saveCreatedAt + 1_800_000),

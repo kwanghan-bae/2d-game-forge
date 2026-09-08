@@ -12,14 +12,14 @@ export const V4_METRIC_NAMES = [
 ] as const;
 
 export type V4MetricName = typeof V4_METRIC_NAMES[number];
-export type V4MetricDetail = Record<string, string | number | boolean>;
+const V4_METRIC_DETAIL_MAX_LENGTH = 80;
 
 export interface V4MetricEvent {
   id: string;
   name: V4MetricName;
   occurredAt: number;
   saveCreatedAt: number;
-  detail?: V4MetricDetail;
+  detail?: string;
 }
 
 export interface V4OnboardingSummary {
@@ -45,16 +45,10 @@ function isMetricName(value: unknown): value is V4MetricName {
   return typeof value === 'string' && (V4_METRIC_NAMES as readonly string[]).includes(value);
 }
 
-function sanitizeDetail(value: unknown): V4MetricDetail | undefined {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
-  const detail: V4MetricDetail = {};
-  for (const [key, entry] of Object.entries(value)) {
-    if (typeof entry === 'string' || typeof entry === 'boolean'
-      || (typeof entry === 'number' && Number.isFinite(entry))) {
-      detail[key] = entry;
-    }
-  }
-  return Object.keys(detail).length > 0 ? detail : undefined;
+function sanitizeDetail(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0
+    ? value.slice(0, V4_METRIC_DETAIL_MAX_LENGTH)
+    : undefined;
 }
 
 function normalizeMetric(value: unknown): V4MetricEvent | null {
@@ -127,7 +121,7 @@ function emptySummary(): V4OnboardingSummary {
   };
 }
 
-export function getV4OnboardingSummary(
+export function summarizeV4Onboarding(
   events: readonly V4MetricEvent[],
   saveCreatedAt?: number,
 ): V4OnboardingSummary {
@@ -162,11 +156,4 @@ export function getV4OnboardingSummary(
     firstExpeditionWithin15Minutes: firstExpeditionSeconds !== null && firstExpeditionSeconds <= 900,
     twoDecisionsWithin30Minutes: decisionKinds.size >= 2,
   };
-}
-
-export function readV4OnboardingSummary(
-  storage: Storage | undefined = defaultStorage(),
-  saveCreatedAt?: number,
-): V4OnboardingSummary {
-  return getV4OnboardingSummary(readV4MetricEvents(storage), saveCreatedAt);
 }

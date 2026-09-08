@@ -7,7 +7,7 @@ import * as sound from '../../systems/sound';
 import { useV4Game } from '../useV4Game';
 import { V4App } from '../V4App';
 import type { OfflineSummary } from '../types';
-import { readV4MetricEvents } from '../telemetry';
+import * as telemetry from '../telemetry';
 
 vi.mock('../useV4Game', () => ({ useV4Game: vi.fn() }));
 
@@ -248,7 +248,23 @@ describe('V4 app resume handling', () => {
 
     render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
 
-    expect(readV4MetricEvents().filter((metric) => metric.name === 'offline_summary_opened')).toHaveLength(1);
+    expect(telemetry.readV4MetricEvents().filter((metric) => metric.name === 'offline_summary_opened')).toHaveLength(1);
+  });
+
+  it('memoizes onboarding summary reads until the save timestamps change', () => {
+    const readMetrics = vi.spyOn(telemetry, 'readV4MetricEvents');
+    const refresh = vi.fn();
+    const settleOffline = vi.fn();
+    const game = mockGame(refresh, settleOffline);
+    vi.mocked(useV4Game).mockReturnValue(game);
+    const config = { parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false };
+    const view = render(<V4App config={config} />);
+    const initialReads = readMetrics.mock.calls.length;
+
+    view.rerender(<V4App config={config} />);
+
+    expect(readMetrics).toHaveBeenCalledTimes(initialReads);
+    readMetrics.mockRestore();
   });
 
   it('keeps the local-first game playable when native platform detection throws', () => {

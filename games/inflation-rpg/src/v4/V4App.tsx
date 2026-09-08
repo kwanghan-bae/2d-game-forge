@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
 import type { OfflineSummary } from './types';
 import {
@@ -18,7 +18,7 @@ import { SagaScreen } from './screens/SagaScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { TownHubScreen } from './screens/TownHubScreen';
 import { V4SaveRecoveryScreen } from './screens/V4SaveRecoveryScreen';
-import { getV4OnboardingSummary, readV4MetricEvents, recordV4Metric } from './telemetry';
+import { readV4MetricEvents, recordV4Metric, summarizeV4Onboarding } from './telemetry';
 import './styles.css';
 
 type V4Screen = 'town' | 'hero' | 'expedition' | 'saga' | 'settings';
@@ -131,7 +131,10 @@ export function V4App({ config }: Props) {
   const game = useV4Game(config.v4Monetization ?? nativeMonetization);
   const [screen, setScreen] = useState<V4Screen>('town');
   const offlineSummaryMetricRef = useRef<OfflineSummary | null>(null);
-  const onboardingSummary = getV4OnboardingSummary(readV4MetricEvents(), game.save.createdAt);
+  const onboardingSummary = useMemo(
+    () => summarizeV4Onboarding(readV4MetricEvents(), game.save.createdAt),
+    [game.save.createdAt, game.save.updatedAt],
+  );
 
   useEffect(() => {
     const summary = game.offlineSummary;

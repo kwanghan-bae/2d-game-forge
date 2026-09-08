@@ -1088,11 +1088,13 @@ describe('useV4Game save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'start expedition' }));
     fireEvent.click(screen.getByRole('button', { name: 'start expedition' }));
 
-    expect(readV4MetricEvents().map((metric) => metric.name)).toEqual([
+    const metrics = readV4MetricEvents();
+    expect(metrics.map((metric) => metric.name)).toEqual([
       'facility_task_started',
       'policy_changed',
       'expedition_started',
     ]);
+    expect(metrics.map((metric) => metric.detail)).toEqual(['temple', 'training', 'joseon_plains']);
   });
 
   it('records a successful story choice but not a failed choice', () => {
@@ -1107,7 +1109,9 @@ describe('useV4Game save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'choose story' }));
     fireEvent.click(screen.getByRole('button', { name: 'choose story' }));
 
-    expect(readV4MetricEvents().filter((metric) => metric.name === 'story_choice_made')).toHaveLength(1);
+    const storyMetrics = readV4MetricEvents().filter((metric) => metric.name === 'story_choice_made');
+    expect(storyMetrics).toHaveLength(1);
+    expect(storyMetrics[0]?.detail).toBe('protect_flame');
   });
 
   it('records each successful expedition result once', () => {
