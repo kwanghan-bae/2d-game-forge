@@ -2,6 +2,7 @@
   width: 100%;
   max-height: 100dvh;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 100dvh;
   box-sizing: border-box;
   padding-top: 12px;
@@ -31,8 +32,8 @@
 .v4-panel { margin-bottom: 10px; padding: 12px; border: 1px solid #443a51; border-radius: 11px; background: rgba(31, 27, 40, 0.92); box-shadow: 0 8px 22px rgba(0,0,0,.18); }
 .v4-panel h2, .v4-panel h3 { margin: 0 0 8px; font-size: 15px; }
 .v4-panel p { margin: 5px 0; color: #bdb4c5; font-size: 12px; line-height: 1.45; }
-.v4-hero-card { display: grid; grid-template-columns: 54px 1fr auto; align-items: center; gap: 10px; }
-.v4-hero-emoji { display: grid; width: 54px; height: 54px; place-items: center; border: 1px solid #83662f; border-radius: 12px; background: #332a27; font-size: 30px; }
+.v4-hero-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.v4-hero-sprite { width: 64px; height: 64px; border: 1px solid #83662f; border-radius: 12px; background-color: #332a27; background-image: var(--v4-hero-sprite); background-position: 0 0; background-repeat: no-repeat; background-size: 256px 256px; image-rendering: pixelated; }
 .v4-hero-name { margin: 0; font-size: 17px; }
 .v4-hero-meta { margin: 4px 0 0; color: #b7afbd; font-size: 11px; }
 .v4-stat-line { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; color: #e7dcc2; font-size: 11px; }
@@ -99,3 +100,10 @@
 .v4-setting-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; color: #e7dcc2; font-size: 12px; }
 .v4-setting-toggle input { width: 18px; height: 18px; accent-color: #d6a84f; }
 @media (min-width: 600px) { .v4-nav { position: static; margin-top: 10px; border: 1px solid #40364b; border-radius: 10px; } }
+@media (min-width: 760px) {
+  .v4-container, .v4-nav-inner { max-width: 900px; }
+  .v4-town-overview { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 10px; align-items: stretch; }
+  .v4-town-overview > .v4-panel, .v4-town-overview > .v4-objective-callout { margin-bottom: 10px; }
+  .v4-town-management { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .8fr); gap: 10px; align-items: start; }
+  .v4-town-management > .v4-panel { margin-bottom: 10px; }
+}

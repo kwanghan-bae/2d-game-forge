@@ -1060,7 +1060,7 @@ function resolveExpedition(
       totalDamageTaken,
       heroRemainingHp: battle.heroRemainingHp,
       weaknessKR: won
-        ? '다음 Realm에 도전하려면 장비와 지원 에이전트를 함께 점검하세요.'
+        ? '다음 영역에 도전하려면 장비와 지원 에이전트를 함께 점검하세요.'
         : lowHp
           ? '영웅의 HP가 부족했습니다. 회복당에서 먼저 회복하세요.'
           : heroPower < encounter.recommendedPower
@@ -1460,10 +1460,10 @@ export function startExpedition(
   const save = cloneSave(source);
   const realm = getV4RealmDefinition(realmId);
   if (!realm) {
-    return { ok: false, save: source, error: '알 수 없는 Realm입니다.' };
+    return { ok: false, save: source, error: '알 수 없는 영역입니다.' };
   }
   if (!save.meta.unlockedRealms.includes(realmId)) {
-    return { ok: false, save: source, error: '아직 기록되지 않은 Realm입니다.' };
+    return { ok: false, save: source, error: '아직 기록되지 않은 영역입니다.' };
   }
   if (save.run.expedition) {
     return { ok: false, save: source, error: '동시에 진행할 수 있는 원정은 1개뿐입니다.' };
@@ -1472,7 +1472,7 @@ export function startExpedition(
     ? getNextRealmId(save.run.lastExpeditionResult.realmId)
     : null;
   if (pendingRealmUnlock && !save.meta.unlockedRealms.includes(pendingRealmUnlock)) {
-    return { ok: false, save: source, error: '다음 Realm 기록을 먼저 확정해 주세요.' };
+    return { ok: false, save: source, error: '다음 영역 기록을 먼저 확정해 주세요.' };
   }
   if (save.run.hero.hp <= 0) {
     return { ok: false, save: source, error: '영웅이 쓰러져 있습니다. 회복당에서 먼저 회복하세요.' };

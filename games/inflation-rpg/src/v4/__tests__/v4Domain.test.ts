@@ -2554,7 +2554,7 @@ describe('v4 save and domain', () => {
     expect(result.ok).toBe(false);
     expect(result.save).toBe(initial);
     if (result.ok) return;
-    expect(result.error).toContain('알 수 없는 Realm');
+    expect(result.error).toContain('알 수 없는 영역');
     expect(initial.run.expedition).toBeNull();
   });
 

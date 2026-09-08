@@ -14,7 +14,7 @@ vi.mock('../useV4Game', () => ({ useV4Game: vi.fn() }));
 function mockGame(
   refresh: ReturnType<typeof vi.fn>,
   settleOffline: ReturnType<typeof vi.fn>,
-  storageStatus: 'valid' | 'unavailable' = 'valid',
+  storageStatus: 'valid' | 'unavailable' | 'invalid' = 'valid',
   policy: string = 'aggression',
   overrides: Partial<ReturnType<typeof useV4Game>> = {},
 ): ReturnType<typeof useV4Game> {
@@ -146,6 +146,39 @@ describe('V4 app resume handling', () => {
 
     expect(screen.getByTestId('v4-storage-warning')).toHaveTextContent('진행이 보존되지 않을 수 있습니다');
     expect(screen.getByTestId('v4-town-hub')).toBeInTheDocument();
+  });
+
+  it('uses the Korean product label instead of a developer-facing V4 header label', () => {
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    const header = screen.getByTestId('v4-app').querySelector('.v4-header');
+    expect(header).toHaveTextContent('조선 설화 후원 RPG');
+    expect(header).not.toHaveTextContent('LOCAL-FIRST');
+    expect(header).not.toHaveTextContent('V4');
+  });
+
+  it('keeps the Korean product label in the recovery header', () => {
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn(), 'invalid', 'aggression', {
+      storageIssue: 'invalid_schema',
+    }));
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    const header = screen.getByTestId('v4-app').querySelector('.v4-header');
+    expect(header).toHaveTextContent('조선 설화 후원 RPG');
+    expect(header).not.toHaveTextContent('LOCAL-FIRST');
+    expect(header).not.toHaveTextContent('V4');
+  });
+
+  it('exposes the existing warrior sheet as the V4 hero sprite token', () => {
+    vi.mocked(useV4Game).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    expect(screen.getByTestId('v4-app').style.getPropertyValue('--v4-hero-sprite'))
+      .toBe('url(/assets/images/joseon_warrior_sheet.png)');
   });
 
   it('marks the active primary navigation item for assistive technology', () => {

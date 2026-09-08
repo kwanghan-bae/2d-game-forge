@@ -490,10 +490,10 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     const current = saveRef.current;
     const next = confirmNextRealmUnlock(current, Date.now());
     if (next === current) {
-      setMessage('확인할 다음 Realm 기록이 없습니다.');
+      setMessage('확인할 다음 영역 기록이 없습니다.');
       return;
     }
-    commit(next, '다음 Realm 기록을 해금했습니다.');
+    commit(next, '다음 영역 기록을 해금했습니다.');
   }, [commit]);
 
   const upgrade = useCallback((facilityId: FacilityId) => {

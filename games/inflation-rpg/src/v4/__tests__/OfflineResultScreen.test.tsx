@@ -75,7 +75,7 @@ describe('V4 offline result screen', () => {
 
     const result = screen.getByTestId('v4-offline-result');
     expect(result).toHaveTextContent('원정 귀환 완료 · 원정 화면에서 결과를 확인하세요.');
-    expect(result).not.toHaveTextContent('다음 Realm 해금은');
+    expect(result).not.toHaveTextContent('다음 영역 해금은');
   });
 
   it('offers a direct route to the expedition result when offline work returned', () => {

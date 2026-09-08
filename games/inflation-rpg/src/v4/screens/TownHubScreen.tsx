@@ -162,23 +162,25 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
   const objective = getTownObjective(save);
   return (
     <main className="v4-container" data-testid="v4-town-hub">
-      <section className="v4-panel v4-hero-card">
-        <div className="v4-hero-emoji" aria-hidden="true">{hero.emoji}</div>
-        <div>
-          <h2 ref={titleRef} tabIndex={-1} className="v4-hero-name">{hero.name}</h2>
-          <p className="v4-hero-meta">{formatNumber(hero.age)}세 · Lv.{formatNumber(hero.level)} · {getV4RealmName(hero.realmId)}</p>
-          <div className="v4-stat-line">
-            <span className="v4-chip">HP {formatNumber(hero.hp)}/{formatNumber(hero.hpMax)}</span>
-            <span className="v4-chip">⚔ {formatNumber(hero.atk)}</span>
-            <span className="v4-chip">🛡 {formatNumber(hero.def)}</span>
+      <div className="v4-town-overview" data-testid="v4-town-overview">
+        <section className="v4-panel v4-hero-card" data-testid="v4-town-hero">
+          <div className="v4-hero-sprite" data-testid="v4-hero-sprite" aria-hidden="true" />
+          <div>
+            <h2 ref={titleRef} tabIndex={-1} className="v4-hero-name">{hero.name}</h2>
+            <p className="v4-hero-meta">{formatNumber(hero.age)}세 · Lv.{formatNumber(hero.level)} · {getV4RealmName(hero.realmId)}</p>
+            <div className="v4-stat-line">
+              <span className="v4-chip">HP {formatNumber(hero.hp)}/{formatNumber(hero.hpMax)}</span>
+              <span className="v4-chip">⚔ {formatNumber(hero.atk)}</span>
+              <span className="v4-chip">🛡 {formatNumber(hero.def)}</span>
+            </div>
           </div>
-        </div>
-        <div className="v4-action">현재: {hero.currentAction === 'expedition' ? '원정 중' : hero.currentAction === 'train' ? '훈련 중' : '마을 대기'}</div>
-      </section>
-      <section className="v4-objective-callout" data-testid="v4-top-objective" aria-label="가장 가까운 목표">
-        <span className="v4-kicker">다음 목표</span>
-        <p>{objective}</p>
-      </section>
+          <div className="v4-action">현재: {hero.currentAction === 'expedition' ? '원정 중' : hero.currentAction === 'train' ? '훈련 중' : '마을 대기'}</div>
+        </section>
+        <section className="v4-objective-callout" data-testid="v4-top-objective" aria-label="가장 가까운 목표">
+          <span className="v4-kicker">다음 목표</span>
+          <p>{objective}</p>
+        </section>
+      </div>
 
       <section className="v4-panel">
         <h2>후원 정책</h2>
@@ -200,12 +202,13 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         </div>
       </section>
 
-      <section className="v4-panel">
-        <div className="v4-panel-head v4-realm-head">
-          <h2>마을 시설</h2>
-          <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onNavigate('expedition')}>원정 준비 →</button>
-        </div>
-        <div className="v4-facility-grid">
+      <div className="v4-town-management" data-testid="v4-town-management">
+        <section className="v4-panel">
+          <div className="v4-panel-head v4-realm-head">
+            <h2>마을 시설</h2>
+            <button type="button" className="v4-btn v4-btn--quiet" onClick={() => onNavigate('expedition')}>원정 준비 →</button>
+          </div>
+          <div className="v4-facility-grid">
           {(Object.keys(FACILITY_DEFINITIONS) as FacilityId[]).map((facilityId) => {
             const definition = FACILITY_DEFINITIONS[facilityId];
             const facility = save.meta.facilities[facilityId];
@@ -278,27 +281,28 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
               </article>
             );
           })}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <section className="v4-panel">
-        <h2>지원 에이전트</h2>
-        <div className="v4-agent-list">
-          {save.meta.agents.map((agent) => {
-            const display = getAgentDisplay(agent);
-            const usable = isUsableAgentState(agent);
-            return (
-              <div key={agent.id} className="v4-agent">
-                <span>
-                  <span className="v4-agent-role">{display.role}</span> {display.name} · Lv.{formatNumber(agent.level)}
-                  <br /><span className="v4-agent-trait">특성 · {display.trait}</span>
-                </span>
-                <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{!usable ? '에이전트 정보 확인 필요' : agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={!usable || Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+        <section className="v4-panel">
+          <h2>지원 에이전트</h2>
+          <div className="v4-agent-list">
+            {save.meta.agents.map((agent) => {
+              const display = getAgentDisplay(agent);
+              const usable = isUsableAgentState(agent);
+              return (
+                <div key={agent.id} className="v4-agent">
+                  <span>
+                    <span className="v4-agent-role">{display.role}</span> {display.name} · Lv.{formatNumber(agent.level)}
+                    <br /><span className="v4-agent-trait">특성 · {display.trait}</span>
+                  </span>
+                  <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{!usable ? '에이전트 정보 확인 필요' : agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={!usable || Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
 
       <section className="v4-panel">
         <h2>가장 가까운 목표</h2>

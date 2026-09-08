@@ -204,12 +204,15 @@ export function V4App({ config }: Props) {
         className="v4-shell"
         data-assets-base={config.assetsBasePath}
         data-testid="v4-app"
-        style={{ '--v4-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)` } as CSSProperties}
+        style={{
+          '--v4-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)`,
+          '--v4-hero-sprite': `url(${config.assetsBasePath}/images/joseon_warrior_sheet.png)`,
+        } as CSSProperties}
       >
         <div className="v4-container">
           <header className="v4-header">
             <div>
-              <div className="v4-kicker">LOCAL-FIRST · V4</div>
+              <div className="v4-kicker">조선 설화 후원 RPG</div>
               <h1 className="v4-title">신의 마을: 영원의 후원자</h1>
             </div>
           </header>
@@ -224,11 +227,14 @@ export function V4App({ config }: Props) {
       className="v4-shell"
       data-assets-base={config.assetsBasePath}
       data-testid="v4-app"
-      style={{ '--v4-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)` } as CSSProperties}
+      style={{
+        '--v4-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)`,
+        '--v4-hero-sprite': `url(${config.assetsBasePath}/images/joseon_warrior_sheet.png)`,
+      } as CSSProperties}
     >
       <div className="v4-container">
         <header className="v4-header">
-          <div><div className="v4-kicker">LOCAL-FIRST · V4</div><h1 className="v4-title">신의 마을: 영원의 후원자</h1><p className="v4-subtitle">한 명의 영웅, 일곱 시설, 끝나지 않는 사가</p></div>
+          <div><div className="v4-kicker">조선 설화 후원 RPG</div><h1 className="v4-title">신의 마을: 영원의 후원자</h1><p className="v4-subtitle">한 명의 영웅, 일곱 시설, 끝나지 않는 사가</p></div>
           <div className="v4-header-actions">
             <div className="v4-action">{getV4PolicyName(game.save.run.policy)}</div>
             <button type="button" className="v4-btn v4-btn--quiet" onClick={() => setScreen('settings')}>⚙ 설정</button>

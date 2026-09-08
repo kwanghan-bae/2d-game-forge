@@ -55,7 +55,7 @@ export const FACILITY_DEFINITIONS: Record<FacilityId, FacilityDefinition> = {
   },
   expedition: {
     id: 'expedition', nameKR: '원정소', icon: '🧭',
-    description: 'Realm을 선택하고 영웅의 다음 장을 엽니다.', taskLabelKR: '경로 정찰',
+    description: '영역을 선택하고 영웅의 다음 장을 엽니다.', taskLabelKR: '경로 정찰',
     baseDurationSeconds: 25, input: { gold: 10 }, output: { materials: 3 },
   },
   archive: {
@@ -153,7 +153,7 @@ export function getV4RealmDefinition(id: string): RealmDefinition | undefined {
 }
 
 export function getV4RealmName(id: string): string {
-  return getV4RealmDefinition(id)?.nameKR ?? '기록되지 않은 Realm';
+  return getV4RealmDefinition(id)?.nameKR ?? '기록되지 않은 영역';
 }
 
 /**

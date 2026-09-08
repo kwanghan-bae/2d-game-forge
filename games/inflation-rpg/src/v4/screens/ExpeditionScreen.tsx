@@ -207,8 +207,8 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
         </section>
       ) : (
         <section className="v4-panel">
-          <h2>Realm 선택</h2>
-          {nextRealmPending && <div className="v4-alert">다음 Realm 기록을 먼저 확정한 뒤 새 원정을 출발할 수 있습니다.</div>}
+          <h2>영역 선택</h2>
+          {nextRealmPending && <div className="v4-alert">다음 영역 기록을 먼저 확정한 뒤 새 원정을 출발할 수 있습니다.</div>}
           {(Object.keys(REALM_DEFINITIONS) as RealmId[]).map((realmId) => {
             const realm = REALM_DEFINITIONS[realmId];
             const unlocked = save.meta.unlockedRealms.includes(realmId);

@@ -225,7 +225,7 @@ describe('V4 expedition result screen', () => {
 
   it('keeps the result screen readable when a malformed Realm id is supplied', () => {
     expect(() => renderResult(baseResult({ realmId: 'lost_realm' as never }))).not.toThrow();
-    expect(screen.getByTestId('v4-expedition-result')).toHaveTextContent('기록되지 않은 Realm');
+    expect(screen.getByTestId('v4-expedition-result')).toHaveTextContent('기록되지 않은 영역');
   });
 
   it('does not expose non-finite result stats or malformed preparation text', () => {
@@ -316,7 +316,7 @@ describe('V4 expedition result screen', () => {
     } satisfies React.ComponentProps<typeof ExpeditionScreen>;
 
     expect(() => render(<ExpeditionScreen {...props} />)).not.toThrow();
-    expect(screen.getByTestId('v4-active-expedition')).toHaveTextContent('기록되지 않은 Realm');
+    expect(screen.getByTestId('v4-active-expedition')).toHaveTextContent('기록되지 않은 영역');
   });
 
   it('uses generic confirmation wording when a risky route is parked before its boss stage', () => {

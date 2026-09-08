@@ -139,6 +139,27 @@ describe('V4 town hub support assignment', () => {
     expect(hero!.compareDocumentPosition(objective) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('groups the overview and management areas for the responsive town layout', () => {
+    renderHub();
+
+    const town = screen.getByTestId('v4-town-hub');
+    const overview = within(town).getByTestId('v4-town-overview');
+    const management = within(town).getByTestId('v4-town-management');
+
+    expect(overview).toContainElement(screen.getByTestId('v4-town-hero'));
+    expect(overview).toContainElement(screen.getByTestId('v4-top-objective'));
+    expect(management).toContainElement(screen.getByRole('heading', { name: '마을 시설' }));
+    expect(management).toContainElement(screen.getByRole('heading', { name: '지원 에이전트' }));
+  });
+
+  it('renders the Joseon warrior sheet as the memorable town hero portrait', () => {
+    renderHub();
+
+    const sprite = screen.getByTestId('v4-hero-sprite');
+    expect(sprite).toHaveClass('v4-hero-sprite');
+    expect(sprite).toHaveAttribute('aria-hidden', 'true');
+  });
+
   it('moves focus to the hero heading when the town opens', () => {
     const save = createInitialV4Save(106);
     renderHub({ save });
@@ -251,7 +272,7 @@ describe('V4 town hub support assignment', () => {
       totalDamageDealt: 500,
       totalDamageTaken: 40,
       heroRemainingHp: 960,
-      weaknessKR: '다음 Realm의 준비를 점검하세요.',
+      weaknessKR: '다음 영역의 준비를 점검하세요.',
       recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: null,
       retryAfterSeconds: 0,
@@ -321,7 +342,7 @@ describe('V4 town hub support assignment', () => {
 
     expect(() => renderHub({ save })).not.toThrow();
     const objective = screen.getByText('가장 가까운 목표').parentElement;
-    expect(objective).toHaveTextContent('기록되지 않은 Realm 재도전을 준비하세요.');
+    expect(objective).toHaveTextContent('기록되지 않은 영역 재도전을 준비하세요.');
     expect(objective).not.toHaveTextContent('세요.을');
   });
 

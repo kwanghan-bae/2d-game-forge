@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AGENT_DEFINITIONS, FACILITY_DEFINITIONS, REALM_DEFINITIONS } from '../data';
+import { AGENT_DEFINITIONS, FACILITY_DEFINITIONS, getV4RealmName, REALM_DEFINITIONS } from '../data';
 
 describe('v4 launch data contract', () => {
   it('keeps the launch boundary at seven facilities, three agents, and three realms', () => {
@@ -24,5 +24,9 @@ describe('v4 launch data contract', () => {
       expect(boss.enemyHpMultiplier).toBeGreaterThan(elite.enemyHpMultiplier);
       expect(boss.enemyAtkMultiplier).toBeGreaterThan(elite.enemyAtkMultiplier);
     }
+  });
+
+  it('uses Korean wording for unknown player-facing areas', () => {
+    expect(getV4RealmName('lost_realm')).toBe('기록되지 않은 영역');
   });
 });
