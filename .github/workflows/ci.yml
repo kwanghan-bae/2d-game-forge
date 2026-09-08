@@ -44,5 +44,6 @@ jobs:
           node-version-file: .nvmrc
       - uses: pnpm/action-setup@v4
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @forge/inflation-rpg-native-onestore-iap build
       - run: pnpm --filter @forge/dev-shell exec playwright install --with-deps chromium
       - run: pnpm --filter @forge/dev-shell e2e

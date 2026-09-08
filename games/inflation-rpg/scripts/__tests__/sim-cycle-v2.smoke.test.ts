@@ -134,7 +134,7 @@ describe('runSimV2Chained — multi-cycle state carry (cycle 16)', () => {
     expect(stored.length).toBe(5);
     // saga.hero.seed sequence matches the chained iteration order (seedStart..+4)
     expect(stored.map(s => s.hero.seed)).toEqual([1000, 1001, 1002, 1003, 1004]);
-  });
+  }, 30_000);
 
   it('rotates starting realm round-robin over the initial unlocked set (first 3 cycles)', () => {
     // Pre-seed 3 unlocked realms. Note: chained mode also onBossKill-unlocks

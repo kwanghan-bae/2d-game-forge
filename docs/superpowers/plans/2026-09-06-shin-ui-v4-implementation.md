@@ -361,6 +361,7 @@ pnpm circular
 - 오프라인 정산이 손상된 상태로 차단되면 `lastProcessedAt`과 `updatedAt`도 소비하지 않아, 저장 상태를 복구한 뒤 같은 보상 창을 안전하게 다시 시도할 수 있게 했다.
 - 위험 원정 결과 확인도 중간 `traveling` 상태를 외부에 노출하지 않는 원자 전환으로 보강해, malformed 재화·에이전트 정산 실패 시 보류 원정과 저장 객체 identity를 그대로 보존한다.
 - 원정 결과의 malformed·null 보상 payload도 화면을 중단시키지 않고 `획득 보상 · 없음`으로 표시해, 저장 복구를 우회한 런타임 오염에서도 결과 카드와 사가 안내를 유지한다.
+- GitHub Actions의 별도 E2E job도 원스토어 native workspace를 먼저 빌드하도록 보강하고, GitHub runner에서 느려지는 연쇄 시뮬레이션 회귀에는 명시적 timeout을 적용해 로컬과 동일한 검증 경로를 유지한다.
 - 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,627개 테스트 통과.
 - 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
 - V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
