@@ -1082,6 +1082,7 @@ describe('v4 save and domain', () => {
     ['trust-over-cap', 'trust', 101],
     ['level-fractional', 'level', 1.5],
     ['level-infinite', 'level', Number.POSITIVE_INFINITY],
+    ['trait-tampered', 'trait', '위조된 특성'],
   ])('rejects assigning an agent with malformed %s', (_label, field, value) => {
     const malformed = createInitialV4Save(135);
     malformed.meta.agents = malformed.meta.agents.map((agent) => {

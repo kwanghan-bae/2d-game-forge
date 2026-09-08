@@ -176,7 +176,12 @@ function isValidAgentTrust(value: unknown): value is number {
 }
 
 function isValidAgentState(agent: SupportAgent | undefined): agent is SupportAgent {
+  const definition = agent ? getV4AgentDefinition(agent.id) : undefined;
   return Boolean(agent
+    && definition
+    && agent.nameKR === definition.nameKR
+    && agent.roleKR === definition.roleKR
+    && agent.trait === definition.trait
     && isValidAgentLevel(agent.level)
     && isValidAgentTrust(agent.trust)
     && isValidAgentFatigue(agent.fatigue));
