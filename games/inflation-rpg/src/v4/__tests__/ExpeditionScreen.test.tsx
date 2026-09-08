@@ -348,6 +348,54 @@ describe('V4 expedition result screen', () => {
     expect(onStart).toHaveBeenCalledWith('joseon_plains', null);
   });
 
+  it('does not describe a missing guide as busy when guide assignment is unavailable', () => {
+    const save = createInitialV4Save(109);
+    save.meta.agents = save.meta.agents.filter((agent) => agent.id !== 'guide');
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    expect(plains).not.toBeNull();
+    if (!plains) return;
+    expect(within(plains).getByRole('button', { name: '길잡이 정보 확인 필요' })).toBeDisabled();
+    expect(plains).not.toHaveTextContent('길잡이 사용 중');
+  });
+
+  it('does not present malformed guide fatigue as an available assignment', () => {
+    const save = createInitialV4Save(110);
+    save.meta.agents = save.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, fatigue: Number.NaN }
+      : agent);
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    expect(plains).not.toBeNull();
+    if (!plains) return;
+    expect(within(plains).getByRole('button', { name: '길잡이 정보 확인 필요' })).toBeDisabled();
+    expect(plains).not.toHaveTextContent('길잡이와 출발');
+  });
+
   it('keeps active expedition progress finite when its clock data is malformed', () => {
     const initial = createInitialV4Save(103);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);

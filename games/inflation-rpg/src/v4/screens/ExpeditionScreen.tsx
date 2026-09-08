@@ -93,12 +93,27 @@ function getExpeditionRemainingSeconds(now: number, completesAt: number): number
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 
+type GuideAvailability = 'ready' | 'fatigued' | 'busy' | 'missing' | 'invalid';
+
+function getGuideAvailability(
+  guide: V4SaveEnvelope['meta']['agents'][number] | undefined,
+): GuideAvailability {
+  if (!guide) return 'missing';
+  if (typeof guide.fatigue !== 'number' || !Number.isFinite(guide.fatigue) || guide.fatigue < 0 || guide.fatigue > 100) {
+    return 'invalid';
+  }
+  if (guide.activeTaskId) return 'busy';
+  if (guide.fatigue >= 100) return 'fatigued';
+  return 'ready';
+}
+
 export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnlock, onRefresh, onIntervention, onBack }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
 
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
+  const guideAvailability = getGuideAvailability(guide);
   const activeRealm = expedition ? getV4RealmDefinition(expedition.realmId) ?? null : null;
   const activeEncounter = activeRealm
     ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition?.encounterIndex ?? activeRealm.encounters.length - 1))]
@@ -179,7 +194,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
             const realm = REALM_DEFINITIONS[realmId];
             const unlocked = save.meta.unlockedRealms.includes(realmId);
             const missingRealmCost = unlocked ? getMissingRealmCost(save, realm.cost) : null;
-            const guideReady = Boolean(guide && !guide.activeTaskId && (guide.fatigue ?? 0) < 100);
+            const guideReady = guideAvailability === 'ready';
             const guideButtonLabel = nextRealmPending
               ? '기록 먼저 확정'
               : !unlocked
@@ -188,9 +203,11 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
                 ? '재화 부족'
               : guideReady
                 ? '길잡이와 출발'
-                : (guide?.fatigue ?? 0) >= 100
+                : guideAvailability === 'fatigued'
                   ? '길잡이 휴식 필요'
-                  : '길잡이 사용 중';
+                  : guideAvailability === 'busy'
+                    ? '길잡이 사용 중'
+                    : '길잡이 정보 확인 필요';
             return (
               <article key={realmId} className={`v4-realm-card ${unlocked ? '' : 'v4-realm-card--locked'}`}>
                 <div className="v4-realm-head"><h3 className="v4-realm-title">{realm.icon} {realm.nameKR}</h3><span className="v4-realm-risk">위험도 {Math.round(realm.risk * 100)}%</span></div>
