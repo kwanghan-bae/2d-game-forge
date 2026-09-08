@@ -396,6 +396,32 @@ describe('V4 expedition result screen', () => {
     expect(plains).not.toHaveTextContent('길잡이와 출발');
   });
 
+  it('does not dispatch a guide whose static metadata is tampered', () => {
+    const save = createInitialV4Save(111);
+    save.meta.agents = save.meta.agents.map((agent) => agent.id === 'guide'
+      ? { ...agent, nameKR: 'internal_guide_name', roleKR: 'internal_role', trait: 'internal_trait' }
+      : agent);
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    expect(plains).not.toBeNull();
+    if (!plains) return;
+    expect(within(plains).getByRole('button', { name: '길잡이 정보 확인 필요' })).toBeDisabled();
+    expect(screen.getByText(/정책:/)).toHaveTextContent('솔바람');
+    expect(screen.getByText(/정책:/).textContent).not.toContain('internal_guide_name');
+  });
+
   it('keeps active expedition progress finite when its clock data is malformed', () => {
     const initial = createInitialV4Save(103);
     const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);

@@ -1,4 +1,4 @@
-import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmDefinition, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
+import { FACILITY_DEFINITIONS, getV4AgentDefinition, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmDefinition, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
 import { getExpeditionSuccessChance, getNextRealmId, getV4HeroPower } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { InterventionType, RealmId, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from '../types';
@@ -95,10 +95,21 @@ function getExpeditionRemainingSeconds(now: number, completesAt: number): number
 
 type GuideAvailability = 'ready' | 'fatigued' | 'busy' | 'missing' | 'invalid';
 
+function hasCanonicalGuideMetadata(
+  guide: V4SaveEnvelope['meta']['agents'][number],
+): boolean {
+  const definition = getV4AgentDefinition(guide.id);
+  return Boolean(definition
+    && guide.nameKR === definition.nameKR
+    && guide.roleKR === definition.roleKR
+    && guide.trait === definition.trait);
+}
+
 function getGuideAvailability(
   guide: V4SaveEnvelope['meta']['agents'][number] | undefined,
 ): GuideAvailability {
   if (!guide) return 'missing';
+  if (!hasCanonicalGuideMetadata(guide)) return 'invalid';
   if (typeof guide.fatigue !== 'number' || !Number.isFinite(guide.fatigue) || guide.fatigue < 0 || guide.fatigue > 100) {
     return 'invalid';
   }
@@ -114,6 +125,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
   const guideAvailability = getGuideAvailability(guide);
+  const guideName = guide ? getV4AgentDefinition(guide.id)?.nameKR ?? '기록되지 않은 에이전트' : '없음';
   const activeRealm = expedition ? getV4RealmDefinition(expedition.realmId) ?? null : null;
   const activeEncounter = activeRealm
     ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition?.encounterIndex ?? activeRealm.encounters.length - 1))]
@@ -134,7 +146,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
       <section className="v4-panel">
         <div className="v4-button-row"><button type="button" className="v4-btn v4-btn--quiet" onClick={onBack}>← 마을로</button></div>
         <h2 ref={titleRef} tabIndex={-1} style={{ marginTop: 12 }}>원정소</h2>
-        <p>정책: <span className="v4-action">{getV4PolicyName(expedition?.policy ?? save.run.policy)}</span> · 길잡이: {guide?.nameKR ?? '없음'}</p>
+        <p>정책: <span className="v4-action">{getV4PolicyName(expedition?.policy ?? save.run.policy)}</span> · 길잡이: {guideName}</p>
       </section>
 
       {!expedition && result && (
