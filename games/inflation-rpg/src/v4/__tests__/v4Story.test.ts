@@ -89,6 +89,15 @@ describe('V4 deep forest story choice', () => {
     expect(chooseStoryChoice(initial, 'protect_flame', STORY_NOW)).toMatchObject({ ok: false });
   });
 
+  it('rejects a choice timestamp that cannot be persisted safely', () => {
+    const source = forestVictorySave();
+    const selected = chooseStoryChoice(source, 'protect_flame', Number.MAX_SAFE_INTEGER + 1);
+
+    expect(selected).toMatchObject({ ok: false });
+    expect(selected.save).toBe(source);
+    expect(source.meta.unlockedRealms).not.toContain('underworld');
+  });
+
   it('offers exactly one choice and unlocks the underworld only after choosing it', () => {
     const source = forestVictorySave();
     const choice = getAvailableStoryChoice(source);

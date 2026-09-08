@@ -186,7 +186,7 @@ export function chooseStoryChoice(
   if (!definition.options.some((option) => option.id === choice)) {
     return { ok: false, save: source, error: '알 수 없는 서사 선택입니다.' };
   }
-  if (!Number.isFinite(now) || now < source.updatedAt) {
+  if (!Number.isSafeInteger(now) || now < 0 || now < source.updatedAt) {
     return { ok: false, save: source, error: '서사 선택 시각을 확인할 수 없습니다.' };
   }
 

@@ -103,7 +103,9 @@
 - 수정: `games/inflation-rpg/src/v4/types.ts`
 - 수정: `games/inflation-rpg/src/v4/useV4Game.ts`
 - 수정: `games/inflation-rpg/src/v4/V4App.tsx`
+- 수정: `games/inflation-rpg/src/v4/screens/SagaScreen.tsx`
 - 수정: `games/inflation-rpg/src/v4/screens/ExpeditionScreen.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/SagaScreen.test.tsx`
 - 수정: `games/inflation-rpg/src/v4/__tests__/ExpeditionScreen.test.tsx`
 - 수정: `games/inflation-rpg/src/v4/__tests__/v4Domain.test.ts`
 
