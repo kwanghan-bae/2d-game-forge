@@ -74,6 +74,26 @@ function getAgentDisplay(agent: V4SaveEnvelope['meta']['agents'][number]): { nam
   };
 }
 
+function isUsableAgentState(agent: V4SaveEnvelope['meta']['agents'][number]): boolean {
+  const definition = getV4AgentDefinition(agent.id);
+  return Boolean(definition
+    && agent.nameKR === definition.nameKR
+    && agent.roleKR === definition.roleKR
+    && agent.trait === definition.trait
+    && typeof agent.level === 'number'
+    && Number.isInteger(agent.level)
+    && agent.level >= 1
+    && agent.level <= 3
+    && typeof agent.trust === 'number'
+    && Number.isFinite(agent.trust)
+    && agent.trust >= 0
+    && agent.trust <= 100
+    && typeof agent.fatigue === 'number'
+    && Number.isFinite(agent.fatigue)
+    && agent.fatigue >= 0
+    && agent.fatigue <= 100);
+}
+
 function remainingSeconds(completesAt: number | undefined, now: number): number {
   if (typeof completesAt !== 'number' || !Number.isFinite(completesAt) || !Number.isFinite(now)) return 0;
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
@@ -266,13 +286,14 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <div className="v4-agent-list">
           {save.meta.agents.map((agent) => {
             const display = getAgentDisplay(agent);
+            const usable = isUsableAgentState(agent);
             return (
               <div key={agent.id} className="v4-agent">
                 <span>
                   <span className="v4-agent-role">{display.role}</span> {display.name} · Lv.{formatNumber(agent.level)}
                   <br /><span className="v4-agent-trait">특성 · {display.trait}</span>
                 </span>
-                <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
+                <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{!usable ? '에이전트 정보 확인 필요' : agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={!usable || Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
               </div>
             );
           })}

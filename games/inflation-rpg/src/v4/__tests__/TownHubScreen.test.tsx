@@ -91,6 +91,21 @@ describe('V4 town hub support assignment', () => {
     expect(panel.textContent).not.toContain('internal_trait');
   });
 
+  it('disables agent rest when the persisted fatigue is malformed', () => {
+    const save = createInitialV4Save(114);
+    save.meta.agents = save.meta.agents.map((agent) => agent.id === 'blacksmith'
+      ? { ...agent, fatigue: Number.NaN }
+      : agent);
+
+    renderHub({ save });
+
+    const agent = screen.getByText('대장장이').closest('.v4-agent') as HTMLElement | null;
+    expect(agent).not.toBeNull();
+    if (!agent) return;
+    expect(agent).toHaveTextContent('에이전트 정보 확인 필요');
+    expect(within(agent).getByRole('button', { name: '휴식' })).toBeDisabled();
+  });
+
   it('exposes the selected sponsor policy to assistive technology', () => {
     renderHub();
 
