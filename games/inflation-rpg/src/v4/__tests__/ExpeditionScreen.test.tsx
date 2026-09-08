@@ -159,6 +159,14 @@ describe('V4 expedition result screen', () => {
     expect(result.textContent).not.toContain('다음 시설 작업으로 준비하세요');
   });
 
+  it('keeps the result card readable when the reward payload is malformed', () => {
+    expect(() => renderResult(baseResult({ reward: null as never }))).not.toThrow();
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result).toHaveTextContent('획득 보상 · 없음');
+    expect(result).toHaveTextContent('사가에 원정 기록을 남겼습니다');
+  });
+
   it('shows that a defeat preserves permanent resources and displays every preparation cost', () => {
     const save = createInitialV4Save(104);
     save.meta.unlockedRealms.push('deep_forest');

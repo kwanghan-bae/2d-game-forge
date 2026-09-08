@@ -27,19 +27,23 @@ function safePositiveResource(value: unknown): number | null {
   return amount > 0 ? amount : null;
 }
 
-function formatResources(resources: Partial<Record<V4CurrencyKey, number>>): string {
-  return Object.entries(resources).flatMap(([key, value]) => {
+function getResourceEntries(resources: unknown): Array<[string, number]> {
+  if (!resources || typeof resources !== 'object' || Array.isArray(resources)) return [];
+  return Object.entries(resources as Record<string, unknown>).flatMap(([key, value]) => {
     const amount = safePositiveResource(value);
-    return amount === null ? [] : `${getV4CurrencyName(key)} +${amount.toLocaleString('ko-KR')}`;
-  })
+    return amount === null ? [] : [[key, amount] as [string, number]];
+  });
+}
+
+function formatResources(resources: unknown): string {
+  return getResourceEntries(resources)
+    .map(([key, amount]) => `${getV4CurrencyName(key)} +${amount.toLocaleString('ko-KR')}`)
     .join(' · ') || '없음';
 }
 
-function formatCosts(cost: Partial<Record<V4CurrencyKey, number>>): string {
-  return Object.entries(cost).flatMap(([key, value]) => {
-    const amount = safePositiveResource(value);
-    return amount === null ? [] : `${getV4CurrencyName(key)} ${amount.toLocaleString('ko-KR')}`;
-  })
+function formatCosts(cost: unknown): string {
+  return getResourceEntries(cost)
+    .map(([key, amount]) => `${getV4CurrencyName(key)} ${amount.toLocaleString('ko-KR')}`)
     .join(' · ') || '없음';
 }
 
