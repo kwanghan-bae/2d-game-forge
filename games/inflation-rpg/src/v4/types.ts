@@ -15,6 +15,7 @@ export type EncounterTier = 'normal' | 'elite' | 'boss';
 
 export const V4_MAX_SAGA_ENTRIES = 200;
 export const V4_MAX_INTERVENTION_CHARGES = 3;
+export const V4_HERO_AUTONOMY_DELAY_MS = 15_000;
 
 export interface RealmEncounterDefinition {
   id: string;
@@ -180,6 +181,35 @@ export interface HeroDecisionContext {
 
 export type HeroAction = 'rest' | 'train' | 'expedition';
 
+export type HeroAutonomyReason =
+  | 'intervention_window'
+  | 'low_hp'
+  | 'aggression_policy'
+  | 'hoarding_policy'
+  | 'training_policy'
+  | 'active_work'
+  | 'active_expedition'
+  | 'result_confirmation'
+  | 'realm_confirmation'
+  | 'insufficient_resources'
+  | 'invalid_clock'
+  | 'no_action';
+
+export interface HeroAutonomyDecision {
+  action: HeroAction;
+  facilityId: FacilityId | null;
+  realmId: RealmId | null;
+  assignedAgentId: SupportAgentId | null;
+  reason: HeroAutonomyReason;
+}
+
+export interface HeroAutonomyResult {
+  save: V4SaveEnvelope;
+  decision: HeroAutonomyDecision;
+  started: boolean;
+  error?: string;
+}
+
 export interface BattleInput {
   heroAtk: number;
   heroDef: number;
@@ -195,6 +225,16 @@ export interface BattleResult {
   totalDamageDealt: number;
   totalDamageTaken: number;
   heroRemainingHp: number;
+}
+
+export interface ExpeditionForecast {
+  realmId: RealmId;
+  encounterIndex: number;
+  battle: BattleResult;
+  successChance: number;
+  soloSuccessChance: number;
+  guideSuccessChance: number;
+  roll: number;
 }
 
 export interface RejuvenationResult {

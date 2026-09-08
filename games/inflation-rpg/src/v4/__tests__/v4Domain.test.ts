@@ -14,8 +14,10 @@ import {
   completeFacilityTasks,
   completeFacilityTaskNow,
   advanceHeroActions,
+  advanceHeroAutonomy,
   getFacilityTaskPreview,
   getFacilityUpgradeCost,
+  getExpeditionForecast,
   getExpeditionSuccessChance,
   getV4HeroPower,
   getHeroNextAction,
@@ -2397,6 +2399,90 @@ describe('v4 save and domain', () => {
       run: { ...initial.run, hero: { ...initial.run.hero, hp: 300 } },
     };
     expect(getHeroNextAction(wounded)).toBe('rest');
+  });
+
+  it('waits fifteen seconds and then starts exactly one policy-directed action', () => {
+    const initial = createInitialV4Save(890);
+
+    const waiting = advanceHeroAutonomy(initial, initial.updatedAt + 14_999);
+    expect(waiting.started).toBe(false);
+    expect(waiting.save).toBe(initial);
+
+    const aggression = advanceHeroAutonomy(initial, initial.updatedAt + 15_000);
+    expect(aggression.started).toBe(true);
+    expect(aggression.save.run.expedition).toMatchObject({
+      realmId: 'joseon_plains',
+      policy: 'aggression',
+      assignedAgentId: null,
+    });
+    expect(Object.keys(aggression.save.meta.tasks)).toHaveLength(0);
+
+    const hoarding = createInitialV4Save(891);
+    hoarding.run.policy = 'hoarding';
+    hoarding.meta.unlockedRealms.push('deep_forest', 'underworld');
+    const safest = advanceHeroAutonomy(hoarding, hoarding.updatedAt + 15_000);
+    expect(safest.started).toBe(true);
+    expect(safest.save.run.expedition?.realmId).toBe('joseon_plains');
+
+    const training = createInitialV4Save(892);
+    training.run.policy = 'training';
+    const trained = advanceHeroAutonomy(training, training.updatedAt + 15_000);
+    expect(trained.started).toBe(true);
+    expect(Object.values(trained.save.meta.tasks)).toHaveLength(1);
+    expect(Object.values(trained.save.meta.tasks)[0]?.facilityId).toBe('training');
+  });
+
+  it('prioritizes a recovery task when the hero is below thirty-five percent HP', () => {
+    const wounded = createInitialV4Save(893);
+    wounded.run.hero.hp = 1;
+
+    const result = advanceHeroAutonomy(wounded, wounded.updatedAt + 15_000);
+
+    expect(result.started).toBe(true);
+    expect(Object.values(result.save.meta.tasks)[0]?.facilityId).toBe('recovery');
+    expect(result.save.run.expedition).toBeNull();
+  });
+
+  it('blocks autonomy while work, results, unlocks, or resources need player confirmation', () => {
+    const withWork = createInitialV4Save(894);
+    const task = startFacilityTask(withWork, 'temple', withWork.updatedAt);
+    expect(task.ok).toBe(true);
+    if (!task.ok) return;
+    expect(advanceHeroAutonomy(task.save, task.save.updatedAt + 15_000).started).toBe(false);
+
+    const withResult = createInitialV4Save(895);
+    withResult.run.lastExpeditionResult = {
+      id: 'pending-result', realmId: 'joseon_plains', outcome: 'victory', completedAt: withResult.updatedAt,
+      reward: {}, heroPower: 120, recommendedPower: 120, turns: 1, totalDamageDealt: 1,
+      totalDamageTaken: 0, heroRemainingHp: 1_000, weaknessKR: '없음', recommendedFacilityId: 'blacksmith',
+      recommendedEquipmentId: null, retryAfterSeconds: 0,
+    };
+    expect(advanceHeroAutonomy(withResult, withResult.updatedAt + 15_000).started).toBe(false);
+
+    const withoutCost = createInitialV4Save(896);
+    withoutCost.meta.currencies.spirit = 0;
+    expect(advanceHeroAutonomy(withoutCost, withoutCost.updatedAt + 15_000).started).toBe(false);
+  });
+
+  it('uses a zero displayed chance when deterministic battle cannot win and separates solo and guide forecasts', () => {
+    const impossible = createInitialV4Save(897);
+    impossible.run.hero.atk = 0;
+    impossible.run.hero.def = 0;
+    impossible.run.hero.hp = 1;
+
+    const blocked = getExpeditionForecast(impossible, 'joseon_plains', 2, null, 'forecast-impossible');
+    expect(blocked.battle.won).toBe(false);
+    expect(blocked.successChance).toBe(0);
+    expect(blocked.soloSuccessChance).toBe(0);
+    expect(blocked.guideSuccessChance).toBe(0);
+
+    const ready = createInitialV4Save(898);
+    ready.run.hero.atk = 100;
+    const solo = getExpeditionForecast(ready, 'joseon_plains', 2, null, 'forecast-ready');
+    const guide = getExpeditionForecast(ready, 'joseon_plains', 2, 'guide', 'forecast-ready');
+    expect(solo.battle.won).toBe(true);
+    expect(guide.successChance).toBeGreaterThan(solo.successChance);
+    expect(guide.soloSuccessChance).toBe(solo.successChance);
   });
 
   it('updates only the V4 audio settings through an isolated save copy', () => {

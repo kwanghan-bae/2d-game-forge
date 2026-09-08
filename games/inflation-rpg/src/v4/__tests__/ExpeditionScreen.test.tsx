@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
-import { getExpeditionSuccessChance, startExpedition } from '../domain';
+import { getExpeditionForecast, getExpeditionSuccessChance, startExpedition } from '../domain';
 import { ExpeditionScreen } from '../screens/ExpeditionScreen';
 import type { ExpeditionResult, V4SaveEnvelope } from '../types';
 
@@ -343,9 +343,33 @@ describe('V4 expedition result screen', () => {
     if (!plains) return;
     const guideButton = within(plains).getByRole('button', { name: '길잡이 휴식 필요' });
     expect(guideButton).toBeDisabled();
-    expect(plains).toHaveTextContent(`보스 예상 승률 ${Math.round(getExpeditionSuccessChance(save, 'joseon_plains', 2, null) * 100)}%`);
+    expect(plains).toHaveTextContent(`혼자 ${Math.round(getExpeditionForecast(save, 'joseon_plains', 2, null).successChance * 100)}%`);
     fireEvent.click(within(plains).getByRole('button', { name: '혼자 출발' }));
     expect(onStart).toHaveBeenCalledWith('joseon_plains', null);
+  });
+
+  it('shows separate solo and guide chances and does not overstate an impossible battle', () => {
+    const save = createInitialV4Save(111);
+    save.run.hero.atk = 0;
+    save.run.hero.def = 0;
+    save.run.hero.hp = 1;
+
+    render(<ExpeditionScreen
+      save={save}
+      now={save.updatedAt}
+      onStart={vi.fn()}
+      onConfirm={vi.fn()}
+      onConfirmUnlock={vi.fn()}
+      onRefresh={vi.fn()}
+      onIntervention={vi.fn()}
+      onBack={vi.fn()}
+    />);
+
+    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    expect(plains).not.toBeNull();
+    if (!plains) return;
+    expect(plains).toHaveTextContent('혼자 0%');
+    expect(plains).toHaveTextContent('길잡이 0%');
   });
 
   it('does not describe a missing guide as busy when guide assignment is unavailable', () => {

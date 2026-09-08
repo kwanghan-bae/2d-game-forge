@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   cancelFacilityTask,
+  advanceHeroAutonomy,
   confirmPendingExpedition,
   completeFacilityTasks,
   completeFacilityTaskNow,
@@ -181,9 +182,13 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
         && current.run.expedition.status === 'traveling'
         && current.run.expedition.completesAt <= timestamp);
     if (hasDueWork) {
-      const next = completeFacilityTasks(current, timestamp);
-      commit(next);
+      const settled = completeFacilityTasks(current, timestamp, 1, false, false, false);
+      const autonomous = advanceHeroAutonomy(settled, timestamp);
+      commit(autonomous.save);
+      return;
     }
+    const autonomous = advanceHeroAutonomy(current, timestamp);
+    if (autonomous.started) commit(autonomous.save);
   }, [commit, settleOffline, updatePresentationClock]);
 
   const changePolicy = useCallback((policy: V4Policy) => {

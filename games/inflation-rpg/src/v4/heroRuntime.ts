@@ -92,6 +92,7 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
     chooseAction(context: HeroDecisionContext): HeroAction {
       if (context.hpMax > 0 && context.hp / context.hpMax < 0.35) return 'rest';
       if (context.policy === 'aggression' && context.expeditionAvailable) return 'expedition';
+      if (context.policy === 'hoarding' && context.expeditionAvailable) return 'expedition';
       if (context.policy === 'training') return 'train';
       // Call the V3 pure AI boundary for the safe/default branch. The V3 AI
       // currently returns the first available node, which maps to resting in

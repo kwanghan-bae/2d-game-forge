@@ -2,16 +2,22 @@ import {
   getV4AgentDefinition,
   getV4FacilityDefinition,
   getV4RealmDefinition,
+  REALM_DEFINITIONS,
 } from './data';
-import { V4_MAX_INTERVENTION_CHARGES, V4_MAX_SAGA_ENTRIES } from './types';
+import { V4_HERO_AUTONOMY_DELAY_MS, V4_MAX_INTERVENTION_CHARGES, V4_MAX_SAGA_ENTRIES } from './types';
 import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentDefinition, getV4EquipmentName } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import type {
   FacilityId,
   FacilityTask,
+  BattleResult,
+  ExpeditionForecast,
   ExpeditionResult,
   HeroAction,
+  HeroAutonomyDecision,
+  HeroAutonomyReason,
+  HeroAutonomyResult,
   InterventionType,
   RealmId,
   SupportAgentId,
@@ -321,6 +327,116 @@ export function getHeroNextAction(source: V4SaveEnvelope): HeroAction {
     policy: source.run.policy,
     expeditionAvailable: source.meta.unlockedRealms.length > 0,
   });
+}
+
+function blockedAutonomyDecision(reason: HeroAutonomyReason): HeroAutonomyDecision {
+  return {
+    action: 'rest',
+    facilityId: null,
+    realmId: null,
+    assignedAgentId: null,
+    reason,
+  };
+}
+
+function getAutonomyRealmId(source: V4SaveEnvelope, policy: V4Policy): RealmId | null {
+  const unlocked = Object.values(REALM_DEFINITIONS).filter((realm) => source.meta.unlockedRealms.includes(realm.id));
+  if (unlocked.length === 0) return null;
+  if (policy === 'aggression') return unlocked[unlocked.length - 1]?.id ?? null;
+  return unlocked.reduce((safest, realm) => realm.risk < safest.risk ? realm : safest, unlocked[0]).id;
+}
+
+/** Selects the one action the autonomous hero may start after the grace period. */
+export function decideHeroAction(source: V4SaveEnvelope): HeroAutonomyDecision {
+  if (source.run.expedition) {
+    return blockedAutonomyDecision('active_expedition');
+  }
+  if (source.run.lastExpeditionResult) {
+    const nextRealm = source.run.lastExpeditionResult.outcome === 'victory'
+      ? getNextRealmId(source.run.lastExpeditionResult.realmId)
+      : null;
+    return blockedAutonomyDecision(nextRealm && !source.meta.unlockedRealms.includes(nextRealm)
+      ? 'realm_confirmation'
+      : 'result_confirmation');
+  }
+  if (Object.keys(source.meta.tasks).length > 0) {
+    return blockedAutonomyDecision('active_work');
+  }
+
+  const hero = source.run.hero;
+  if (hero.hpMax > 0 && hero.hp / hero.hpMax < 0.35) {
+    return {
+      action: 'rest',
+      facilityId: 'recovery',
+      realmId: null,
+      assignedAgentId: null,
+      reason: 'low_hp',
+    };
+  }
+  if (source.run.policy === 'training') {
+    return {
+      action: 'train',
+      facilityId: 'training',
+      realmId: null,
+      assignedAgentId: null,
+      reason: 'training_policy',
+    };
+  }
+
+  const realmId = getAutonomyRealmId(source, source.run.policy);
+  if (!realmId) return blockedAutonomyDecision('no_action');
+  return {
+    action: 'expedition',
+    facilityId: null,
+    realmId,
+    assignedAgentId: null,
+    reason: source.run.policy === 'aggression' ? 'aggression_policy' : 'hoarding_policy',
+  };
+}
+
+/**
+ * Starts at most one real task or expedition. Every other state is a no-op so
+ * an unattended refresh cannot acknowledge results, unlock realms, or spend
+ * more than one preparation cost.
+ */
+export function advanceHeroAutonomy(source: V4SaveEnvelope, now: number): HeroAutonomyResult {
+  if (!Number.isFinite(now) || now < source.updatedAt) {
+    return {
+      save: source,
+      decision: blockedAutonomyDecision('invalid_clock'),
+      started: false,
+    };
+  }
+  if (now - source.updatedAt < V4_HERO_AUTONOMY_DELAY_MS) {
+    return {
+      save: source,
+      decision: blockedAutonomyDecision('intervention_window'),
+      started: false,
+    };
+  }
+
+  const decision = decideHeroAction(source);
+  if (decision.facilityId) {
+    const result = startFacilityTask(source, decision.facilityId, now, decision.assignedAgentId);
+    if (result.ok) return { save: result.save, decision, started: true };
+    return {
+      save: source,
+      decision: { ...decision, reason: result.error.includes('부족') ? 'insufficient_resources' : decision.reason },
+      started: false,
+      error: result.error,
+    };
+  }
+  if (decision.realmId) {
+    const result = startExpedition(source, decision.realmId, now, source.run.policy, decision.assignedAgentId);
+    if (result.ok) return { save: result.save, decision, started: true };
+    return {
+      save: source,
+      decision: { ...decision, reason: result.error.includes('부족') ? 'insufficient_resources' : decision.reason },
+      started: false,
+      error: result.error,
+    };
+  }
+  return { save: source, decision, started: false };
 }
 
 function savedEquipmentLevel(source: V4SaveEnvelope, equipmentId: string): number {
@@ -748,6 +864,72 @@ export function getExpeditionSuccessChance(
   );
 }
 
+function emptyBattleResult(): BattleResult {
+  return {
+    won: false,
+    turns: 0,
+    totalDamageDealt: 0,
+    totalDamageTaken: 0,
+    heroRemainingHp: 0,
+  };
+}
+
+/**
+ * Builds the player-facing and settlement-facing forecast from one battle
+ * calculation. A deterministic battle loss is never presented as a
+ * probabilistic chance to win, even when the policy formula would otherwise
+ * produce a non-zero value.
+ */
+export function getExpeditionForecast(
+  source: V4SaveEnvelope,
+  realmId: RealmId,
+  encounterIndex = 2,
+  assignedAgentId: SupportAgentId | null = null,
+  expeditionId?: string,
+): ExpeditionForecast {
+  const realm = getV4RealmDefinition(realmId);
+  const normalizedIndex = realm
+    ? Math.min(realm.encounters.length - 1, Math.max(0, Math.floor(encounterIndex)))
+    : 0;
+  const encounter = realm?.encounters[normalizedIndex];
+  if (!realm || !encounter) {
+    return {
+      realmId,
+      encounterIndex: normalizedIndex,
+      battle: emptyBattleResult(),
+      successChance: 0,
+      soloSuccessChance: 0,
+      guideSuccessChance: 0,
+      roll: 1,
+    };
+  }
+
+  const battle = createV4HeroRuntime(source.run.hero).resolveBattle({
+    heroAtk: source.run.hero.atk,
+    heroDef: source.run.hero.def,
+    heroHp: source.run.hero.hp,
+    enemyHp: encounter.recommendedPower * encounter.enemyHpMultiplier,
+    enemyAtk: encounter.recommendedPower * encounter.enemyAtkMultiplier,
+  });
+  const soloSuccessChance = battle.won
+    ? getExpeditionSuccessChance(source, realmId, normalizedIndex, null)
+    : 0;
+  const guideSuccessChance = battle.won
+    ? getExpeditionSuccessChance(source, realmId, normalizedIndex, 'guide')
+    : 0;
+  const successChance = assignedAgentId === 'guide' ? guideSuccessChance : soloSuccessChance;
+  const rollKey = expeditionId ?? source.run.expedition?.id ?? `forecast:${realmId}:${normalizedIndex}`;
+  return {
+    realmId,
+    encounterIndex: normalizedIndex,
+    battle,
+    successChance,
+    soloSuccessChance,
+    guideSuccessChance,
+    roll: deterministicRoll(`${rollKey}:${encounter.id}`),
+  };
+}
+
 export function getNextRealmId(realmId: RealmId): RealmId | null {
   return realmId === 'joseon_plains' ? 'deep_forest' : realmId === 'deep_forest' ? 'underworld' : null;
 }
@@ -810,26 +992,21 @@ function resolveExpedition(
     if (nextEncounter && nextCompletionAt === null) return;
 
     const guide = expedition.assignedAgentId === 'guide' ? save.meta.agents.find((agent) => agent.id === 'guide') : undefined;
-    const runtime = createV4HeroRuntime(save.run.hero);
-    const battle = runtime.resolveBattle({
-      heroAtk: save.run.hero.atk,
-      heroDef: save.run.hero.def,
-      heroHp: save.run.hero.hp,
-      enemyHp: encounter.recommendedPower * encounter.enemyHpMultiplier,
-      enemyAtk: encounter.recommendedPower * encounter.enemyAtkMultiplier,
-    });
+    const forecast = getExpeditionForecast(
+      save,
+      expedition.realmId,
+      encounterIndex,
+      expedition.assignedAgentId,
+      expedition.id,
+    );
+    const battle = forecast.battle;
     // One resolved encounter represents one meaningful hero action. Keeping
     // the clock at encounter granularity makes aging predictable and keeps it
     // independent from the number of turns inside the battle loop.
     advanceHeroActionsInPlace(save, 1, eventAt);
     const heroPower = getV4HeroPower(save);
-    const successChance = getExpeditionSuccessChance(
-      save,
-      expedition.realmId,
-      encounterIndex,
-      expedition.assignedAgentId,
-    );
-    const won = battle.won && deterministicRoll(`${expedition.id}:${encounter.id}`) < successChance;
+    const successChance = forecast.successChance;
+    const won = battle.won && forecast.roll < successChance;
     save.run.hero.hp = battle.heroRemainingHp;
     if (won) expedition.encountersCleared = saturatingCounterAdd(expedition.encountersCleared, 1, 3);
     expedition.totalTurns = saturatingCounterAdd(expedition.totalTurns, battle.turns);

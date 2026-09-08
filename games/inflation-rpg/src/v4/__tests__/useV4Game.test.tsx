@@ -969,6 +969,19 @@ describe('useV4Game save recovery', () => {
     expect(screen.getByTestId('refresh-clock')).toHaveTextContent('20000');
   });
 
+  it('starts one autonomous expedition after the fifteen-second intervention window', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    persistV4Save(createInitialV4Save(113));
+
+    render(<RefreshHarness />);
+    vi.setSystemTime(25_000);
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
+    expect(screen.getByTestId('expedition-status')).toHaveTextContent('traveling');
+    expect(screen.getByTestId('task-count')).toHaveTextContent('0');
+  });
+
   it('routes a large live clock gap through offline safety before resolving a risky boss', () => {
     vi.useFakeTimers();
     vi.setSystemTime(10_000);

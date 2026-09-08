@@ -32,6 +32,20 @@ function renderHub(overrides: Partial<React.ComponentProps<typeof TownHubScreen>
 }
 
 describe('V4 town hub support assignment', () => {
+  it('describes recovery and archive effects without promising unsupported effects', () => {
+    renderHub();
+
+    const recovery = screen.getByText('회복당').closest('article');
+    const archive = screen.getByText('기록관').closest('article');
+    expect(recovery).not.toBeNull();
+    expect(archive).not.toBeNull();
+    expect(recovery).toHaveTextContent('HP를 완전히 회복');
+    expect(recovery).not.toHaveTextContent('피로');
+    expect(archive).toHaveTextContent('사가');
+    expect(archive).toHaveTextContent('균열석');
+    expect(archive).not.toHaveTextContent('영구 해금');
+  });
+
   it('keeps a facility startable without its specialist when that agent is busy', () => {
     const save = createInitialV4Save(96);
     save.meta.agents = save.meta.agents.map((agent) => agent.id === 'blacksmith'

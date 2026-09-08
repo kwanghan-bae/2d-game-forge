@@ -34,7 +34,7 @@ export const FACILITY_DEFINITIONS: Record<FacilityId, FacilityDefinition> = {
   },
   recovery: {
     id: 'recovery', nameKR: '회복당', icon: '🫖',
-    description: '영웅의 HP를 회복하고 피로를 낮춥니다.', taskLabelKR: '약탕 달이기',
+    description: '작업이 끝나면 영웅의 HP를 완전히 회복합니다.', taskLabelKR: '약탕 달이기',
     baseDurationSeconds: 20, input: { spirit: 6 }, output: { spirit: 2 },
   },
   blacksmith: {
@@ -60,7 +60,7 @@ export const FACILITY_DEFINITIONS: Record<FacilityId, FacilityDefinition> = {
   },
   archive: {
     id: 'archive', nameKR: '기록관', icon: '📜',
-    description: '선택과 승리를 사가로 남겨 영구 해금의 기반을 만듭니다.', taskLabelKR: '사가 정리',
+    description: '선택과 승리를 사가로 정리하고 균열석을 생산합니다.', taskLabelKR: '사가 정리',
     baseDurationSeconds: 50, input: { materials: 1 }, output: { rift: 1 },
   },
 };
