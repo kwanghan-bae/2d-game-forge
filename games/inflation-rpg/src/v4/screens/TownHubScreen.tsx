@@ -1,9 +1,9 @@
 import { FACILITY_DEFINITIONS, getV4CurrencyName, getV4PolicyName, getV4RealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
 import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
-import { getV4EquipmentName } from '../equipment';
+import { getV4EquipmentDefinition, getV4EquipmentName } from '../equipment';
 import { V4_DAILY_REWARDED_LIMIT } from '../monetization';
 import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
-import type { FacilityId, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
+import type { FacilityId, FacilityTask, InterventionType, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope } from '../types';
 import { V4_MAX_INTERVENTION_CHARGES } from '../types';
 
 interface Props {
@@ -56,6 +56,13 @@ function getFacilityTaskLabel(facilityId: FacilityId, fallback: string, outputEq
   return facilityId === 'blacksmith' && outputEquipmentIds[0]
     ? `${getV4EquipmentName(outputEquipmentIds[0])} 제작`
     : fallback;
+}
+
+function getActiveFacilityTaskLabel(facilityId: FacilityId, task: FacilityTask, fallback: string): string {
+  const equipmentIds = Array.isArray(task.outputEquipmentIds)
+    ? task.outputEquipmentIds.filter((id): id is string => typeof id === 'string' && Boolean(getV4EquipmentDefinition(id)))
+    : [];
+  return getFacilityTaskLabel(facilityId, fallback, equipmentIds);
 }
 
 function remainingSeconds(completesAt: number | undefined, now: number): number {
@@ -202,7 +209,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
                 </div>
                 <p className="v4-facility-desc">{definition.description}</p>
                 {task ? (
-                  <div className="v4-task">{task.type}<br />남은 시간 {remainingSeconds(task.completesAt, now)}초</div>
+                  <div className="v4-task">{getActiveFacilityTaskLabel(facilityId, task, definition.taskLabelKR)}<br />남은 시간 {remainingSeconds(task.completesAt, now)}초</div>
                 ) : (
                   <div className="v4-task">다음: {getFacilityTaskLabel(facilityId, definition.taskLabelKR, preview.outputEquipmentIds)}</div>
                 )}

@@ -341,6 +341,22 @@ describe('V4 town hub support assignment', () => {
     expect(temple.textContent).not.toContain('NaN');
   });
 
+  it('uses the canonical facility label when an active task type is malformed', () => {
+    const initial = createInitialV4Save(112);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+
+    started.save.meta.tasks[started.task.id].type = 'internal_task_key';
+    renderHub({ save: started.save });
+
+    const temple = screen.getByText('신전').closest('article');
+    expect(temple).not.toBeNull();
+    if (!temple) return;
+    expect(temple).toHaveTextContent('기도를 올리기');
+    expect(temple.textContent).not.toContain('internal_task_key');
+  });
+
   it('disables intervention charging when the safety reserve is already full', () => {
     const save = createInitialV4Save(100);
     save.run.interventionCharges = 3;
