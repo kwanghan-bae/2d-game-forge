@@ -60,6 +60,23 @@ describe('V4 local launch telemetry', () => {
     expect(readV4MetricEvents()).toEqual([first]);
   });
 
+  it('keeps only the newest occurrence when stored data already contains duplicate IDs', () => {
+    const older = event('stored-duplicate', 'policy_changed', saveCreatedAt + 1, 'training');
+    const newer = event('stored-duplicate', 'policy_changed', saveCreatedAt + 2, 'hoarding');
+    localStorage.setItem(V4_METRICS_STORAGE_KEY, JSON.stringify([older, newer]));
+
+    expect(readV4MetricEvents()).toEqual([newer]);
+  });
+
+  it('rejects unbounded IDs and timestamps that cannot be stored safely', () => {
+    expect(recordV4Metric(event('x'.repeat(161), 'policy_changed', saveCreatedAt + 1))).toBe(false);
+    expect(recordV4Metric(event('unsafe-time', 'policy_changed', Number.MAX_SAFE_INTEGER + 1))).toBe(false);
+    expect(recordV4Metric({
+      ...event('before-save', 'policy_changed', saveCreatedAt - 1),
+    })).toBe(false);
+    expect(readV4MetricEvents()).toEqual([]);
+  });
+
   it('stores metric detail as a bounded string and drops non-string payloads', () => {
     const detail = 'x'.repeat(81);
     expect(recordV4Metric(event('detail-long', 'policy_changed', saveCreatedAt + 1, detail))).toBe(true);

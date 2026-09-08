@@ -133,7 +133,7 @@ export function V4App({ config }: Props) {
   const offlineSummaryMetricRef = useRef<OfflineSummary | null>(null);
   const onboardingSummary = useMemo(
     () => summarizeV4Onboarding(readV4MetricEvents(), game.save.createdAt),
-    [game.save.createdAt, game.save.updatedAt],
+    [game.save],
   );
 
   useEffect(() => {
@@ -144,7 +144,7 @@ export function V4App({ config }: Props) {
     }
     if (offlineSummaryMetricRef.current === summary) return;
     offlineSummaryMetricRef.current = summary;
-    const id = `offline_summary_opened:${game.save.createdAt}:${game.save.updatedAt}:${summary.processedSeconds}:${summary.completedExpedition ? 'completed' : 'pending'}:${summary.completedTaskIds.join('.')}`;
+    const id = `offline_summary_opened:${game.save.createdAt}:${game.save.updatedAt}`;
     recordV4Metric({
       id,
       name: 'offline_summary_opened',

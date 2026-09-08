@@ -251,7 +251,7 @@ describe('V4 app resume handling', () => {
     expect(telemetry.readV4MetricEvents().filter((metric) => metric.name === 'offline_summary_opened')).toHaveLength(1);
   });
 
-  it('memoizes onboarding summary reads until the save timestamps change', () => {
+  it('memoizes onboarding reads until the save changes, even when two actions share a timestamp', () => {
     const readMetrics = vi.spyOn(telemetry, 'readV4MetricEvents');
     const refresh = vi.fn();
     const settleOffline = vi.fn();
@@ -264,6 +264,11 @@ describe('V4 app resume handling', () => {
     view.rerender(<V4App config={config} />);
 
     expect(readMetrics).toHaveBeenCalledTimes(initialReads);
+
+    vi.mocked(useV4Game).mockReturnValue({ ...game, save: { ...game.save } });
+    view.rerender(<V4App config={config} />);
+
+    expect(readMetrics).toHaveBeenCalledTimes(initialReads + 1);
     readMetrics.mockRestore();
   });
 

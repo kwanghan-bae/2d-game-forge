@@ -13,6 +13,7 @@ export const V4_METRIC_NAMES = [
 
 export type V4MetricName = typeof V4_METRIC_NAMES[number];
 const V4_METRIC_DETAIL_MAX_LENGTH = 80;
+const V4_METRIC_ID_MAX_LENGTH = 160;
 
 export interface V4MetricEvent {
   id: string;
@@ -37,8 +38,8 @@ function defaultStorage(): Storage | undefined {
   }
 }
 
-function isFiniteNonNegativeNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+function isSafeTimestamp(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
 function isMetricName(value: unknown): value is V4MetricName {
@@ -54,13 +55,15 @@ function sanitizeDetail(value: unknown): string | undefined {
 function normalizeMetric(value: unknown): V4MetricEvent | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
-  if (typeof candidate.id !== 'string' || candidate.id.trim().length === 0
+  const id = typeof candidate.id === 'string' ? candidate.id.trim() : '';
+  if (id.length === 0 || id.length > V4_METRIC_ID_MAX_LENGTH
     || !isMetricName(candidate.name)
-    || !isFiniteNonNegativeNumber(candidate.occurredAt)
-    || !isFiniteNonNegativeNumber(candidate.saveCreatedAt)) return null;
+    || !isSafeTimestamp(candidate.occurredAt)
+    || !isSafeTimestamp(candidate.saveCreatedAt)
+    || candidate.occurredAt < candidate.saveCreatedAt) return null;
   const detail = sanitizeDetail(candidate.detail);
   return {
-    id: candidate.id,
+    id,
     name: candidate.name,
     occurredAt: candidate.occurredAt,
     saveCreatedAt: candidate.saveCreatedAt,
@@ -81,10 +84,18 @@ function readStoredMetrics(storage: Storage | undefined): V4MetricEvent[] {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed
+    const normalized = parsed
       .map(normalizeMetric)
-      .filter((metric): metric is V4MetricEvent => metric !== null)
-      .slice(-V4_METRICS_CAP);
+      .filter((metric): metric is V4MetricEvent => metric !== null);
+    const newestUnique: V4MetricEvent[] = [];
+    const seenIds = new Set<string>();
+    for (let index = normalized.length - 1; index >= 0 && newestUnique.length < V4_METRICS_CAP; index -= 1) {
+      const metric = normalized[index];
+      if (!metric || seenIds.has(metric.id)) continue;
+      seenIds.add(metric.id);
+      newestUnique.push(metric);
+    }
+    return newestUnique.reverse();
   } catch {
     return [];
   }
@@ -129,7 +140,7 @@ export function summarizeV4Onboarding(
     .map(normalizeMetric)
     .filter((event): event is V4MetricEvent => event !== null);
   const candidateSaveTimes = validEvents.map((event) => event.saveCreatedAt);
-  const selectedSaveCreatedAt = isFiniteNonNegativeNumber(saveCreatedAt)
+  const selectedSaveCreatedAt = isSafeTimestamp(saveCreatedAt)
     ? saveCreatedAt
     : candidateSaveTimes.length > 0 ? Math.max(...candidateSaveTimes) : null;
   if (selectedSaveCreatedAt === null) return emptySummary();
