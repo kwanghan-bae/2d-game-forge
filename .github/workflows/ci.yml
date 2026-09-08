@@ -32,6 +32,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm test:autonomy
       - run: pnpm turbo run typecheck lint test
       - run: pnpm circular
 

@@ -10,6 +10,7 @@
     "dev": "turbo run dev --filter=@forge/dev-shell",
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:autonomy": "node --test scripts/autonomy/*.test.mjs",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "e2e": "turbo run e2e",

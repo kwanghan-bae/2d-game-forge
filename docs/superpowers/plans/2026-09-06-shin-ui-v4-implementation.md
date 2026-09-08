@@ -1,416 +1,246 @@
-# `신의 마을: 영원의 후원자` v4 실행 계획
+# `신의 마을: 영원의 후원자` 출시 준비 보강 계획
 
-## 목표
+> **에이전트 작업자 필수 절차:** 작업별로 `superpowers:test-driven-development`를 적용하고, 독립 검토 뒤 다음 작업으로 이동한다. 이 문서는 초기 V4 구현을 다시 실행하는 계획이 아니라 2026-09-08 감사에서 확인한 출시 차단 문제를 해결하는 현재 계획이다.
 
-기존 V3를 보존하면서 `games/inflation-rpg/src/v4/`에 로컬 우선 마을 경영형 영원한 영웅 모듈을 구축한다. v4는 기본 진입점으로 실행하고, V3는 명시적인 legacy 진입점과 별도 저장 키로 유지한다.
+**목표:** 안정적인 V4 수직 슬라이스를 설명과 실제 동작이 일치하고, 최소 서사와 측정 가능한 첫 30분 루프를 가진 출시 후보로 보강한다.
 
-## 범위와 보호선
+**구조:** V4 schema 1과 V3 저장 격리를 유지한다. 플레이어는 정책과 시설로 방향을 정하고 영웅은 15초의 개입 유예 뒤 정책에 맞는 다음 행동 하나를 선택한다. 결과 확인·위험 보스·Realm 해금·서사 선택은 자동 확정하지 않는다. 서사는 기존 `SagaEntry`에 결정론적 story beat를 기록하고, 계측은 게임 저장과 분리된 bounded local event log에 둔다.
 
-- 출시 시설 7개, 지원 에이전트 3명, Realm 3개, 동시 원정 1개만 구현한다.
-- v4 저장은 V3 저장과 키·schema·mutation을 공유하지 않는다.
-- V3 `CycleControllerV2`, `paradoxSpiral.ts`, 기존 V3 테스트는 v4 구현에서 수정하지 않는다.
-- 기존 V3 순수 계산은 adapter를 통해서만 재사용한다.
-- 서버·계정·클라우드·PvP·가족/사망 시뮬레이션은 범위 밖이다.
+**기술:** TypeScript, React 19, Vitest, Testing Library, Playwright, Next.js static build, GitHub Actions.
 
-## 단계별 작업
+**기준 스펙:** `docs/superpowers/specs/2026-09-06-eternal-hero-town-tycoon-gdd-ko-design.md`
 
-### 1. 타입·정적 데이터
+## 공통 제약
 
-- v4 통화, 시설, 작업, 에이전트, 영웅 snapshot, 원정, 사가, 저장 envelope 타입을 만든다.
-- 7개 시설과 3개 에이전트의 출시 정적 데이터를 만든다.
-- 3개 Realm, 일반/정예/보스 전투 데이터와 정책 정의를 만든다.
+- V4 저장 키 `shin-ui-eternal-sponsor-v4-save-v1`과 schema 1을 유지한다.
+- V3 저장을 자동으로 읽거나 덮어쓰지 않는다. 가져오기는 명시적 사용자 동작으로만 수행한다.
+- 오프라인 정산은 최대 8시간, 효율 70%이며 보스 결과·선택·영구 해금을 자동 확정하지 않는다.
+- `games/inflation-rpg/src/systems/paradoxSpiral.ts`, 같은 디렉터리의 `paradoxSpiral.test.ts`, `paradoxSpiralBalance.test.ts`는 수정하지 않는다.
+- 사용자 `output/`, `tmp/`는 읽기·수정·커밋하지 않는다.
+- 강제 광고와 전투 승리 판매를 추가하지 않는다.
+- 신규 기능은 실패 테스트를 먼저 실행하고 예상한 이유로 실패한 것을 확인한 뒤 구현한다.
+- 커밋은 허용되지만 push·merge·예약 실행·자율 반복 재개는 이 계획의 권한이 아니다.
 
-검증: 타입 import smoke test, 정적 데이터 수량·ID 중복 테스트.
+---
 
-### 2. 저장·순수 도메인
+### Task 1: 문서와 실행 제어 기준선 확정
 
-- `createInitialV4Save(seed)`를 구현한다.
-- `migrateV3HeroSnapshot(input)`을 구현한다.
-- `simulateOfflineProgress(save, now)`를 순수 함수로 구현한다.
-- 최대 8시간, 온라인 효율 70%, 미래 시각/음수 경과/중복 정산 방지를 적용한다.
-- localStorage adapter와 명시적인 V3 가져오기 adapter를 분리한다.
+**파일**
 
-검증: 초기 저장, round-trip, V3 adapter, 1/8시간 offline, 시간 조작, 재화 source/sink 테스트.
+- 수정: `AGENTS.md`
+- 수정: `README.md`
+- 수정: `CLAUDE.md`
+- 수정: `docs/README.md`
+- 수정: `docs/PRODUCT.md`
+- 수정: `docs/OPERATIONS.md`
+- 수정: `docs/BACKLOG.md`
+- 수정: `docs/DECISIONS.md`
+- 수정: `docs/작업-현황.md`
+- 수정: `docs/archive/README.md`
+- 수정: `docs/superpowers/specs/2026-09-06-eternal-hero-town-tycoon-gdd-ko-design.md`
+- 수정: 이 계획 파일
+- 삭제: `docs/superpowers/evolution/RESUME.md`, `cycle-156-assets.md`를 제외한 과거 cycle 산출물
+- 유지: 현재 문서 링크가 가리키는 `docs/archive/2026-09-08-*.md`
+- 유지: `scripts/autonomy/control.mjs`, `scripts/autonomy/run.mjs`와 테스트
 
-### 3. 영웅 runtime·전투·원정
+**결정**
 
-- V3 순수 계산을 감싸는 `V4HeroRuntime` adapter를 만든다.
-- 정책별 행동 선택, 원정 자동 진행, 일반/정예/보스 결과를 순수 함수로 구현한다.
-- 원정은 한 번에 하나만 진행하며 실패 시 영구 장비/재화 손실을 발생시키지 않는다.
+- 현재 문서 진입점은 제품·운영·상태·백로그·결정으로 제한한다.
+- 과거 cycle 문서는 Git 이력으로 복구할 수 있으므로 현재 트리에서 제거한다.
+- 정책은 영웅의 다음 회복·훈련·원정을 고른다. 플레이어가 15초 안에 직접 행동하면 그 입력이 우선하며 결과·영구 진행·서사 선택은 계속 직접 확인한다.
 
-검증: 정책 선택, 전투 성공/실패, 보상, 보스 자동 확정 금지, 원정 round-trip 테스트.
+- [x] 핵심 문서가 서로 같은 제품 역할과 자동화 범위를 설명하도록 수정한다.
+- [x] `docs` 내부 Markdown 링크를 검사해 현재 문서의 깨진 상대 링크가 0개인지 확인한다.
+- [x] `pnpm test:autonomy`를 실행해 16개 제어 테스트가 통과하는지 확인한다.
+- [x] `git diff --check` 후 문서·제어 기준선만 커밋한다.
 
-### 4. 시설·에이전트 store
+---
 
-- 고정 hub 슬롯 기반 시설 상태를 만든다.
-- 시설별 활성 작업 1개 제한과 작업 시작/완료/취소를 구현한다.
-- 에이전트 레벨·신뢰도·피로도·특성·작업 상태만 저장한다.
-- 시설 생산량, 작업 시간, 에이전트 보정이 영웅/원정 결과에 연결되게 한다.
+### Task 2: 영웅 자율 전이·원정 승률·시설 의미 일치
 
-검증: 시설 레벨별 생산량, 작업 큐, 에이전트 피로/신뢰도, 재화 불변식.
+**파일**
 
-### 5. 진입점·화면
+- 수정: `games/inflation-rpg/src/v4/domain.ts`
+- 수정: `games/inflation-rpg/src/v4/data.ts`
+- 수정: `games/inflation-rpg/src/v4/heroRuntime.ts`
+- 수정: `games/inflation-rpg/src/v4/types.ts`
+- 수정: `games/inflation-rpg/src/v4/useV4Game.ts`
+- 수정: `games/inflation-rpg/src/v4/V4App.tsx`
+- 수정: `games/inflation-rpg/src/v4/screens/TownHubScreen.tsx`
+- 수정: `games/inflation-rpg/src/v4/screens/ExpeditionScreen.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/v4Domain.test.ts`
+- 수정: `games/inflation-rpg/src/v4/__tests__/useV4Game.test.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/TownHubScreen.test.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/ExpeditionScreen.test.tsx`
 
-- `src/v4/startGame.ts`와 v4 `App`을 만든다.
-- `StartGame()`은 v4를 렌더링하고 `StartLegacyGame()`은 기존 App을 렌더링한다.
-- TownHub, 영웅 상세, 원정, offline 결과, 사가 화면을 만든다.
-- 기존 Forge 토큰·Galmuri·Joseon pixel asset을 재사용하고 모바일 390×844를 기준으로 한다.
+**인터페이스**
 
-검증: 신규 저장 → 첫 전투 → 시설 → 장비 → 원정 → offline 결과 E2E, Phaser 중복 생성 방지.
+- `advanceHeroAutonomy(save, now): HeroAutonomyResult`는 한 번에 회복당·훈련소·원정 중 하나만 시작하며, `now - save.updatedAt < 15_000`이면 플레이어 개입을 기다린다.
+- 공격 정책은 가장 높은 해금 영역, 비축 정책은 가장 낮은 위험 영역, 수련 정책은 훈련소를 선택한다. HP 35% 미만이면 정책보다 회복당이 우선한다.
+- 진행 중 작업·원정·미확인 결과·다음 Realm 확인이 있거나 재화가 부족하면 자동 전이하지 않는다.
+- `getExpeditionForecast(save, realmId, encounterIndex, assignedAgentId, expeditionId?)`는 결정론적 전투와 기존 확률 판정을 함께 계산하며 화면과 실제 정산이 공유한다. 전투 자체가 패배하면 표시 승률은 `0`이다.
+- 회복당 설명은 실제 효과인 영웅 HP 완전 회복만 약속한다.
+- 기록관 설명은 실제 효과인 사가 정리와 균열석 생산만 약속한다.
 
-### 6. manifest·legacy·서비스 adapter
+- [ ] **RED:** 정책별 대상, 15초 유예, 저HP 우선, 미확인 결과 차단을 검증하는 자율 전이 테스트를 추가하고 실패를 확인한다.
+- [ ] **GREEN:** `decideHeroAction`과 `advanceHeroAutonomy`를 구현하고 1초 refresh에서 호출한다.
+- [ ] **RED:** 공격력 0·HP 1인 영웅의 표시 승률이 0이어야 한다는 도메인 테스트를 추가하고 기존 구현에서 실패를 확인한다.
+- [ ] **GREEN:** `getExpeditionForecast`를 화면과 정산이 공유하게 하고 길잡이·혼자 출발의 예측을 각각 표시한다.
+- [ ] **RED:** 회복당과 기록관 설명이 정산 가능한 실제 효과만 안내하는지 화면 테스트를 추가하고 실패를 확인한다.
+- [ ] **GREEN:** 마을 문구를 실제 시설 효과와 자율 전이에 맞춘다.
+- [ ] 관련 V4 도메인·화면 테스트와 typecheck를 실행한 뒤 커밋한다.
 
-- `inflation-rpg` manifest를 v4 제품명으로 변경하고 `inflation-rpg-legacy`를 추가한다.
-- v4 광고/IAP adapter를 연결하되 실패 시 진행을 중단하지 않는다.
-- 보상형 광고 하루 5회, 오프라인 2배/작업 즉시 완료/개입 충전에만 사용한다.
+---
 
-검증: manifest registry, 저장 키 격리, 광고 실패·결제 취소, legacy 진입.
+### Task 3: 최소 출시 서사와 깊은 숲 선택
 
-### 7. 품질 게이트와 커밋
+**파일**
 
-각 작업 단위마다 아래 순서로 실행한다.
+- 생성: `games/inflation-rpg/src/v4/story.ts`
+- 생성: `games/inflation-rpg/src/v4/__tests__/v4Story.test.ts`
+- 수정: `games/inflation-rpg/src/v4/domain.ts`
+- 수정: `games/inflation-rpg/src/v4/save.ts`
+- 수정: `games/inflation-rpg/src/v4/types.ts`
+- 수정: `games/inflation-rpg/src/v4/useV4Game.ts`
+- 수정: `games/inflation-rpg/src/v4/V4App.tsx`
+- 수정: `games/inflation-rpg/src/v4/screens/ExpeditionScreen.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/ExpeditionScreen.test.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/v4Domain.test.ts`
 
-1. 실패 테스트 또는 계약 테스트 추가
-2. 최소 구현
-3. 관련 테스트
-4. 전체 game test
-5. typecheck/lint/circular/e2e 가능한 범위 확인
-6. `git diff --check`와 변경 파일 검토
-7. 작업 단위 커밋
+**인터페이스**
 
-기존 baseline 오류와 새 오류는 로그에서 분리한다. 같은 오류가 3회 연속 재현되거나 외부 계정/결제/배포 권한이 필요하면 자동 루프를 멈추고 보고한다.
+```ts
+type StoryChoiceOptionId = 'protect_flame' | 'release_goblin';
 
-## 최종 검증 명령
-
-```bash
-pnpm --filter @forge/game-inflation-rpg typecheck
-pnpm --filter @forge/game-inflation-rpg test
-pnpm --filter @forge/game-inflation-rpg e2e
-pnpm typecheck
-pnpm lint
-pnpm circular
+function getRealmIntroEntry(realmId: RealmId, heroName: string, now: number): SagaEntry;
+function getRealmVictoryEntry(realmId: RealmId, heroName: string, now: number): SagaEntry;
+function getRejuvenationStoryEntry(heroName: string, years: number, now: number): SagaEntry;
+function getAvailableStoryChoice(save: V4SaveEnvelope): StoryChoiceDefinition | null;
+function chooseStoryChoice(save: V4SaveEnvelope, choice: StoryChoiceOptionId, now: number): DomainResult;
+function hasV4Epilogue(save: V4SaveEnvelope): boolean;
 ```
 
-## 출시 판정
+선택 결과는 신규 schema 필드가 아니라 `saga-story-deep-forest-embers` saga entry로 저장한다. `protect_flame`은 월령 신뢰 +5와 균열석 +1, `release_goblin`은 솔바람 신뢰 +5와 재료 +2를 준다. 저승 승리는 게임 종료가 아닌 첫 사가의 완결 entry를 한 번 기록하고 이후 반복 플레이를 허용한다.
 
-- 신규 유저가 15분 안에 첫 원정을 시작한다.
-- 첫 30분 안에 시설·장비·정책 중 2개 이상을 변경한다.
-- 일반 구간 3연속 패배율이 5% 미만이다.
-- 8시간 offline 보상 뒤 의미 있는 선택이 노출된다.
-- V3 legacy 저장과 v4 저장이 서로 변경되지 않는다.
-- 광고/결제 실패가 진행 중단으로 이어지지 않는다.
+- [ ] **RED:** 프롤로그, 각 Realm 진입·승리, 회춘 기록이 한국 설화 세계의 인과를 설명하는지 literal fixture로 검증한다.
+- [ ] **GREEN:** story catalog와 생성 함수를 구현한다.
+- [ ] **RED:** 깊은 숲 승리 전 선택 불가, 승리 후 두 선택 중 하나만 기록 가능, 중복 선택 no-op 테스트를 추가한다.
+- [ ] **GREEN:** `chooseStoryChoice`와 Saga 화면의 두 선택 버튼을 구현하고 선택 전에는 저승 해금을 보류한다.
+- [ ] **RED:** 저승 승리 시 첫 사가 에필로그가 한 번만 기록되고 이후 원정은 계속 가능한지 테스트한다.
+- [ ] **GREEN:** 저승 승리 정산에 중복 없는 에필로그를 연결한다.
+- [ ] **RED:** 신뢰도 50 최초 도달 시 에이전트별 관계 milestone이 한 번만 기록되는지 테스트한다.
+- [ ] **GREEN:** 작업 정산에 관계 milestone을 연결한다.
+- [ ] Saga 화면과 원정 화면 테스트를 실행한 뒤 커밋한다.
 
-## 현재 실행 현황 (2026-09-08)
+---
 
-### 완료된 제품 수직 슬라이스
+### Task 4: 첫 30분 로컬 계측
 
-- V4 전용 저장 envelope·schema 1·V3 명시 import adapter·시간 조작 검증을 구현했다.
-- V4를 기본 진입점으로 연결하고 V3를 `StartLegacyGame()` 및 `inflation-rpg-legacy` manifest로 보존했다.
-- standalone Next 진입점의 문서 제목·설명과 HTML 로케일을 출시명 및 한국어 UX 기준으로 정렬했다.
-- 7개 시설, 3명 지원 에이전트, 시설 작업 큐, 레벨·신뢰도·피로도·전문 보정, 작업 취소 환불을 구현했다.
-- 영웅 정책·노화·회춘·훈련·장비 3종·V3 순수 전투 계산 adapter를 연결했다.
-- 3개 Realm의 일반·정예·보스 단계, 결정론적 승률 예측·전투, 패배 보호, 보스/다음 Realm 확인 흐름을 구현했다.
-- 최대 8시간·70% 효율의 오프라인 정산, 위험 보스 보류, 결과 화면과 선택형 보상 광고를 구현했다.
-- TownHub·영웅 상세·원정·오프라인 결과·사가·설정 화면과 모바일 레이아웃 검증을 구현했다.
-- 저장 손상 복구 화면, 단조 증가 timestamp, 모바일 44px 터치 타깃과 unknown 장비명 fallback을 보강했다.
-- 작업·원정·사가·V3 가져오기 ID의 동일 시각 충돌을 방지하고 중복 사가 ID 저장을 거부한다.
-- 명시적 작업·원정·V3 가져오기 이벤트의 과거 action clock은 마지막 저장 시각으로 정규화하고, 정산 경로의 과거 시각은 계속 no-op으로 유지한다.
-- 앱 재개(`visibilitychange`·`pageshow`)에서 즉시 정산하고, 직접 호출·오프라인 처리 모두 미래 저장 시각을 차단한다.
-- 위험 원정의 조기·비유한 확인 시각은 보류 상태를 해제하지 않으며, 비정상 시각 입력은 저장 가능한 timestamp로 정규화한다.
-- 저장 복구 검증에서 훈련·원정의 동시 상태와 영웅 행동 상태 불일치를 거부한다.
-- 빈 offline 보상 상태를 명시하고, 비정상 정산 효율이 재화·경험치를 오염시키지 않도록 기본 효율로 제한한다.
-- 빈 offline 보상에서는 2배 광고를 노출만 하지 않고 비활성화하며, 훅에서도 광고 provider를 호출하지 않는다.
-- 즉시 작업 완료와 개입 충전 async 광고 액션에 per-action 동시 호출 잠금을 두어 중복 광고 소비/상태 덮어쓰기를 막는다.
-- 광고 제거 IAP adapter도 동시 구매 요청을 하나의 in-flight Promise로 공유해 중복 결제를 방지한다.
-- 보상형 광고 provider 성공 후 usage store가 실패해도 보상은 유지하고 카운터 저장만 best-effort로 처리한다.
-- usage store read 예외도 adapter 생성/일자 전환을 중단시키지 않고 0회 복원으로 격리한다.
-- 활성 작업·원정의 0초 예약을 저장 복구 단계에서 거부해 진행률 `NaN` 상태를 차단한다.
-- 비유한 완료 시각과 미래 저장 시각의 작업/광고 즉시 완료를 no-op 또는 실패로 처리한다.
-- 피로도 100인 길잡이의 신규 원정 배정을 도메인에서 차단하고, 원정 화면에 휴식 필요/사용 중 상태를 명시한다.
-- 원정 예측 승률도 실제 배정 가능 여부를 따르도록 정리해, 피로한 길잡이의 보정치를 미리 보여주지 않는다.
-- 원정 패배 시 출발 준비 비용을 전액 반환해 패배가 영구 재화 손실로 이어지지 않게 한다.
-- 위험 보스 승리 후 다음 Realm 기록이 대기 중이면 새 원정 출발을 도메인·UI 양쪽에서 막아 pending 해금 기록이 사라지지 않게 한다.
-- 설정 patch 자체가 `null`·배열이어도 기존 음량/음소거를 유지해 외부 호출 오류가 게임 진행을 중단하지 않게 한다.
-- 오프라인 결과 모달에서 위험 원정의 `awaiting_confirmation` 상태를 선택형 사건과 구분해 보스 확인 위치를 즉시 안내한다.
-- 오프라인 보상형 재화·개입 충전·다음 Realm 해금은 비유한 또는 저장 시각보다 이전인 action clock에서 no-op 처리한다.
-- 원정 진행률·남은 시간 UI는 0초 예약, 비유한 현재 시각에서도 `NaN`/`Infinity`를 노출하지 않는다.
-- 마을 시설의 남은 작업 시간도 비유한 완료/현재 시각을 0초로 안전 표시한다.
-- 오프라인 결과 모달은 비유한 정산 시간·효율·재화 payload를 0 또는 빈 보상으로 정규화해 내부 숫자를 노출하지 않는다.
-- 개입 충전이 3/3이거나 일일 광고가 5/5이면 무효 수익화 버튼을 비활성화한다.
-- 개입 충전 도메인도 최대치 도달 시 no-op으로 처리해 우회 호출이 저장 시각을 갱신하지 않는다.
-- 장비 레벨 20 상한 이후 제작 보상은 레벨과 영웅 스탯을 추가로 증가시키지 않는다.
-- pre-upgrade V4의 중복 장비 ID를 hydration 때 단일 장비·레벨 20 이하로 정규화해 재저장 후 schema가 깨지지 않게 한다.
-- 정책·음량·음소거 도메인 입력이 런타임 미지원 값으로 들어와도 기존 유효 설정을 유지해 저장 schema 오염을 막는다.
-- 알 수 없는 원정 정책은 재화 차감과 원정 dispatch 전에 거부해 직접 도메인 호출 우회도 안전하게 처리한다.
-- 알 수 없는 신의 개입 타입은 충전 소모와 원정 후퇴 전에 거부해 직접 도메인 호출 우회도 안전하게 처리한다.
-- 과대한 작업 보상이나 재화 합산이 `Infinity`가 될 경우 해당 보상만 무시해 저장 수치 오염을 차단한다.
-- 광고 대기 중 발생한 최신 저장 변경을 `saveRef`로 보존해 즉시 완료·오프라인 2배·개입 충전이 오래된 React 상태를 덮어쓰지 않게 한다.
-- V4 영웅 runtime의 비숫자·비유한 회춘 입력은 0년으로 정규화해 snapshot에 `NaN` 나이가 전파되지 않게 한다.
-- 미지원 Realm ID는 unlock 확인과 원정 비용 차감 전에 명시적으로 거부한다.
-- 전투 adapter의 비숫자 전투 수치와 턴 수는 안전한 기본값으로 정규화해 결과에 `NaN`이 전파되지 않게 한다.
-- V4 hook의 동기·비동기 action 모두 최신 `saveRef`를 읽어 연속 입력과 광고 대기 중 상태 덮어쓰기를 방지한다.
-- 장비 bonus 계산도 비숫자 레벨을 Lv.1로 fallback해 영웅 공격력·방어력·HP에 `NaN`이 전파되지 않게 한다.
-- malformed 영웅 스탯의 전투력·원정 승률 forecast도 0 또는 최소 확률로 제한해 UI에 비유한 수치를 노출하지 않는다.
-- 장비 bonus 적용 단계도 비유한 필드를 0으로 무시해 직접 adapter 호출이 영웅 snapshot을 오염시키지 않게 한다.
-- 영원의 사가는 최신 200개 기록만 유지해 장기 플레이에서도 localStorage와 기록관 DOM이 무한히 커지지 않게 한다.
-- 도메인과 V3 import adapter의 action timestamp도 음수·비유한·MAX_SAFE 초과 입력을 기존 저장 시각으로 정규화해 unsafe save clock을 만들지 않게 한다.
-- 전투 adapter의 유한하지만 overflow를 일으킬 수 있는 스탯·피해 합산을 안전한 상한으로 포화시키고, 외부 턴 예산도 100턴으로 제한한다.
-- 시설 정산의 malformed 경험치 보상과 기존 영웅 EXP도 1회 상한·레벨업 반복 상한으로 제한해 비정상 저장이 무한 정산 루프를 만들지 않게 한다.
-- 시설 레벨이 극단값이어도 작업 산출량·경험치·소요 시간·강화 비용을 유한한 경제 수치로 제한해 UI와 저장 schema 오염을 막는다.
-- V3 영웅을 명시적으로 가져올 때 목적지의 진행 중 훈련·원정 행동 상태를 유지해 가져오기 직후 저장 대칭성이 깨지지 않게 한다.
-- 시간 역행·미래·비유한 시각에서 신의 개입을 원본 save no-op으로 거부해 잘못된 시계 조작이 충전을 소모하지 않게 한다.
-- V3 import adapter가 목적지 V4 save를 깊은 복제해 중첩 재화·시설·작업·에이전트 참조를 공유하지 않게 한다.
-- 영웅 runtime의 회춘도 malformed 나이·회춘 횟수·HP 최대값을 유한 범위로 정규화해 adapter 직접 호출의 `NaN` 전파를 차단한다.
-- 영웅 runtime의 극단적 회춘 기간도 비용을 `Number.MAX_SAFE_INTEGER` 이하로 포화시켜 직접 adapter 호출이 unsafe gold 비용을 반환하지 않게 한다.
-- 영웅 runtime snapshot 복제 시 malformed 장비 배열·레벨 map을 정제해 adapter 생성 단계의 iterable/type 오류를 차단한다.
-- 장비 보너스 적용 시 malformed 영웅 공격력·방어력·HP·치명타 수치를 정규화하고 음수/overflow 보너스를 차단해 equipment adapter 단독 호출도 유효 상태를 유지한다.
-- 장비 정의 lookup은 own-property만 허용해 `__proto__`·`constructor` 같은 상속 키가 장비로 오인되어 `NaN` 보너스를 만드는 경로를 차단한다.
-- V3 영웅 명시 import에서 중복 장비 ID를 dedupe하고 장비 레벨을 20 이하로 제한해 v4 저장 schema와 UI를 보존한다.
-- V3 영웅 명시 import 직후에도 사가 이력을 최신 200개로 자르도록 해, 로드 전 메모리 상태와 즉시 저장 상태의 상한을 일치시킨다.
-- V4 브라우저 부팅 E2E에서 기존 V3 저장 키가 변경되지 않는지 Chromium·iPhone 14 양쪽으로 확인한다.
-- V3 명시 import의 선택적 방어력·치명타·HP 최대값도 유한 범위로 보정해 손상된 legacy snapshot이 v4에 `NaN`을 유입하지 않게 한다.
-- V3 명시 import의 장비 배열은 문자열 항목만 남겨 비정상 payload가 v4 장비 UI와 레벨 map을 오염시키지 않게 한다.
-- V3 명시 import의 장비 배열은 비어 있거나 공백뿐인 문자열도 제외하되, 알 수 있는 비공백 legacy ID는 보존해 호환성을 유지한다.
-- V4 저장 schema의 영웅 장비 ID·레벨 map key도 non-empty 문자열로 제한해 pre-upgrade hydration에서 빈 장비 key가 재생성되지 않게 한다.
-- V4 저장 재화와 시설 작업의 재화 payload도 안전한 정수로 제한해 소수 잔액이 경제 계산과 UI 표시를 분리하지 않게 한다.
-- V3 명시 import의 이름·나이·레벨·EXP·HP·공격력·행동 카운트도 V4 유효 범위로 정규화해 손상된 영웅 snapshot이 저장 복구를 깨뜨리지 않게 한다.
-- React StrictMode의 초기 effect 재실행을 1회 정산 guard로 막아 개발 셸에서도 offline 저장 side effect가 중복 실행되지 않게 한다.
-- 비동기 보상 광고와 위험 원정 확인이 저장 시각 검증으로 no-op이 된 경우 성공 문구를 표시하지 않고 재시도 안내를 표시한다.
-- 보상형 광고 사용량을 일일 상한 범위로 정규화해 비정상 저장값이 UI와 광고 제한을 오염시키지 않게 한다.
-- 8시간 오프라인 상한 구간이 이후 수동 저장 시각보다 앞서도 해당 구간의 완료 작업과 원정을 정산하도록 실시간 시각 검증과 분리한다.
-- 오프라인 상한 밖의 원정은 조기 해결하지 않고 다음 정산으로 넘겨 과도한 보상·전투 진행을 방지한다.
-- 오프라인 상한 밖까지 남은 비안전 원정은 다음 live tick이 보스와 영구 진행을 자동 확정하지 않도록 `awaiting_confirmation`으로 주차하고, 명시적 확인 경로로만 재개한다.
-- 시설 레벨이 저장 가능한 최대 정수에 도달하면 강화 비용을 차감하지 않고 안전하게 중단한다.
-- 유효한 증가분이 없는 오프라인 보너스 입력은 예외나 timestamp-only mutation 없이 원본 저장을 유지한다.
-- 저장 가능한 최대 정수 근처의 재화 bonus와 영웅 행동 기록을 포화시켜 정상 정산 한 번으로 안전 범위를 넘지 않게 한다.
-- 자정 경계에서 진행 중인 보상형 광고를 시작 날짜에 귀속해 새 날짜의 일일 5회 제한을 오염시키지 않는다.
-- 합산 전투력이 안전 정수 상한을 넘지 않게 포화시켜 원정 결과 저장이 다시 무효화되지 않게 한다.
-- 개입 충전이 3/3이면 보상형 광고 provider를 호출하기 전에 handler에서 차단해 불필요한 광고 소비를 막는다.
-- 즉시 완료 대상 작업이 사라진 오래된 handler도 광고 provider를 호출하기 전에 차단해 불필요한 광고 소비를 막는다.
-- 광고 제거·보상형 광고 adapter, 광고 실패/결제 취소 비차단 처리를 연결했다.
-- 앱이 백그라운드에서 복귀할 때는 온라인 100% 정산과 분리된 오프라인 70% 경로를 사용하고, 숨김 상태의 주기 정산은 건너뛴다.
-- 손상 저장에서 새 V4 저장으로 복구한 뒤에도 resume 정산 callback이 새 `storageStatus`를 따라가도록 해 오프라인 진행이 끊기지 않게 한다.
-- 기기 저장소를 사용할 수 없는 환경에서도 게임은 계속 진행하되, 앱 종료 시 진행 보존이 불확실하다는 비차단 경고를 표시한다.
-- 읽기는 가능하지만 `setItem`이 quota/private-mode 오류로 실패하는 경우도 저장 실패로 감지해 unavailable 경고를 표시한다.
-- 최근 원정 패배가 있으면 다음 Realm 해금 문구보다 부족한 능력치·추천 시설·재도전 계획을 첫 화면의 가장 가까운 목표로 우선 표시한다.
-- 원정 화면의 Realm·시설·정책 표기를 공통 데이터 helper로 통일하고, 알 수 없는 기록도 fallback 문구로 렌더링해 결과 화면이 깨지지 않게 한다.
-- 원정 출발 전에 신력만이 아니라 재료를 포함한 전체 준비 비용을 표시하고, 보상 0인 성공에는 다음 시설 작업 안내를, 패배에는 영구 자산 보존과 준비 비용 반환을 명시한다.
+**파일**
 
-### 누적 검증 기록
+- 생성: `games/inflation-rpg/src/v4/telemetry.ts`
+- 생성: `games/inflation-rpg/src/v4/__tests__/v4Telemetry.test.ts`
+- 수정: `games/inflation-rpg/src/v4/useV4Game.ts`
+- 수정: `games/inflation-rpg/src/v4/screens/SettingsScreen.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/useV4Game.test.tsx`
+- 수정: `games/inflation-rpg/src/v4/__tests__/SettingsScreen.test.tsx`
 
-- 직접 작업 완료·위험 원정 확인도 `Number.MAX_SAFE_INTEGER` 밖의 시각을 거부해 timestamp 정규화가 결제를 우회하지 않도록 고정했다.
-- 원정 출발 카드에 보스 승률과 함께 예상 보상 재화를 표시해 출발 전 위험·보상 판단을 완성했다.
-- 1초 미만의 오프라인 경과에서도 작업·장비·재화 결과가 발생하면 offline 결과 모달을 숨기지 않도록 실제 결과 필드를 기준으로 표시하고, 해당 hook 경계를 회귀 테스트로 고정했다.
-- 재접속 결과 모달이 노출되는 원정 귀환·장비 완료 E2E도 `마을 확인` 이후 후속 화면으로 진행하도록 명시해 Chromium·iPhone14 V4 시나리오 26/26을 다시 통과시켰다.
-- 오프라인 결과 모달에 제목 기반 `aria-labelledby`, 열림 시 첫 포커스, Escape 닫기 경계를 추가해 키보드 복귀 경로를 보장하고 컴포넌트 회귀 테스트로 고정했다.
-- 모달 접근성 변경 이후 production `pnpm build`와 전체 game E2E 40/40(Chromium 20/20, iPhone14 20/20, 4.3분)을 다시 통과시켰다.
-- 네이티브 `Capacitor.isNativePlatform()` 판별 bridge가 예외를 던져도 local-first V4 화면을 계속 부팅하도록 monetization 초기화 경계를 격리하고 회귀 테스트로 고정했다.
-- V4 화면이 unmount된 뒤 늦게 도착한 native monetization handle은 `initialize()`를 시작하지 않도록 lifecycle cancellation guard와 회귀 테스트를 추가했다.
-- 오프라인 결과 모달의 Tab 포커스를 내부에서 순환시키고 닫힐 때 열기 버튼으로 포커스를 복귀시켜 모바일 키보드·보조기기 탐색 경계를 보강했다.
-- 광고 보상 대기 중 V4 화면이 unmount되면 늦게 도착한 보상 성공을 저장에 커밋하지 않도록 hook lifecycle guard와 회귀 테스트를 추가했다.
-- 오프라인 결과 모달에서 계산된 `OfflineSummary.notes`를 실제 정산 안내로 표시해 상한·안전 작업·보류 경계를 사용자가 확인할 수 있게 했다.
-- 전용 clock anomaly 경고와 중복되는 offline note는 숨겨 결과 모달에서 같은 시간 오류가 반복 표시되지 않게 했다.
-- dev-shell의 서버 manifest와 클라이언트 loader가 공용 data-only manifest를 사용하도록 통합해 slug·제품명·asset 경로 drift를 차단했다.
-- dev-shell 게임 route의 browser title·description도 공용 manifest 제품명에서 생성해 V4와 legacy의 화면 제목·탭 제목 drift를 차단했다.
-- dev-shell portal E2E에서 V4/legacy route가 각각 실제 V4App/V3 MainMenu를 마운트하는지 검증했다(4/4).
-- 대장간이 시설 레벨 2에서 수호 갑옷, 레벨 3에서 영혼 부적을 순차적으로 해금하고, 전체 장비가 해금된 뒤에는 가장 낮은 장비 레벨을 업그레이드하도록 연결해 고급 장비가 실제 제작 루프에 도달하게 했다.
-- 원정 패배 결과도 현재 대장간 레벨에서 아직 보유하지 않은 다음 장비를 추천하도록 연결해, 철검 이후 갑옷·부적으로 이어지는 준비 선택을 결과 화면에서 잃지 않게 했다.
-- 대장간의 동적 장비 산출물이 작업 시작 안내·활성 작업명에도 반영되도록 해, 고급 장비를 제작하면서도 화면에 철검 작업으로 잘못 표시되는 문구 drift를 제거했다.
-- 영혼 부적의 치명타 확률을 영웅 상세 장비 카드에도 표시해, 전투 계산에만 존재하던 핵심 장비 효과를 플레이어가 확인할 수 있게 했다.
-- 오프라인 대장간이 기존 장비를 강화한 경우도 신규 장비 획득과 분리해 `장비 강화` 결과로 기록하고, 강화만 발생해도 재접속 결과 모달이 열리도록 정산 summary·hook·UI를 연결했다.
-- 오프라인 정산이 장비 강화만 남긴 경우에도 결과 모달을 열도록 `useV4Game` 회귀 테스트를 추가해, 재화·신규 장비가 없는 복귀 결과도 사용자에게 누락되지 않게 고정했다.
-- 네이티브 광고 제거 권한 조회 bridge가 예외를 던져도 V4 monetization adapter가 선택형 권한만 포기하고 핵심 게임 루프를 계속 제공하도록 보호했다.
-- 네이티브 구매 복원 provider를 V4 monetization adapter·설정 화면에 연결해 재설치·기기 변경 뒤 광고 제거 구매를 명시적으로 복원할 수 있게 하고, provider가 없는 웹 빌드에는 복원 버튼을 노출하지 않도록 했다.
-- 광고 제거 구매와 동일하게 구매 복원도 in-flight Promise를 공유해 설정 화면의 빠른 중복 탭이 native store 복원 요청을 병렬로 발행하지 않도록 했다.
-- 구매 복원 성공 후 hook의 `adFree` 상태와 한국어 완료 메시지가 갱신되는 통합 테스트를 추가해 실제 UI가 native entitlement 결과를 반영하는 경계를 고정했다.
-- V4 시설 작업의 장비 산출물도 고정 장비 정의를 통과해야 저장되도록 검증해, 손상된 작업 큐가 알 수 없는 장비를 영웅 loadout에 주입하지 못하게 했다. V3 import의 legacy 장비 fallback은 그대로 보존한다.
-- 명시적 V3 영웅 import가 이미 진행한 V4 Realm을 조선 평야로 되돌리지 않고 목적지 영웅의 유효한 Realm을 유지하도록 보강해, import가 기존 진행도를 덮어쓰지 않게 했다.
-- 오프라인 정산이 경과 시간 0초인 정확한 워터마크에서 위험 보스를 `awaiting_confirmation`으로 보류해도 결과 모달을 열도록 hook 전환 감지를 추가하고 회귀 테스트로 고정했다.
-- V4 저장 검증이 활성 시설 작업·원정의 시작 시각도 저장 생성~마지막 저장 범위 안에서만 허용하도록 강화해, chronology가 깨진 local payload가 정상 진행으로 재진입하지 못하게 했다.
-- V4 고정 내비게이션·오프라인 결과 모달에 좌우·하단 safe-area 여백을 적용해 iPhone 홈 인디케이터와 겹치지 않게 하고, Chromium·iPhone14 V4 E2E 26/26으로 확인했다.
-- 포털에서 V4 진입 후 뒤로 돌아가 V3 legacy를 여는 browser navigation도 검증해 이전 게임 root가 남지 않음을 확인했다(5/5).
-- dev-shell 동적 게임 loader의 import/부팅 예외를 accessible 오류 상태로 격리하고, route cleanup 이후 늦게 도착한 promise의 마운트를 무시하도록 보강했다.
-- loader 오류 UI는 게임이 소유하는 `#game-container` 밖에 렌더링해 부팅 실패 시에도 별도 React root와 충돌하지 않도록 고정했다.
-- loader route가 바뀔 때 이전 게임의 오류 상태가 남지 않도록 effect lifecycle에서 오류 표시를 초기화했다.
-- V4 신규 저장 vertical-slice의 Chromium·iPhone14 smoke에서 document 가로 overflow가 발생하지 않는지 함께 검증했다.
-- dev-shell README와 ARCHITECTURE의 registry·라우팅 설명을 공용 manifest 및 V4/legacy 실제 경로와 일치시켰다.
-- ARCHITECTURE의 `ForgeGameInstance` entrypoint 계약·V4/V3 저장 키 격리·V4/legacy asset 경로 설명을 현재 구현과 일치시켰다.
-- standalone Next의 기본 V4 loader도 import/부팅 실패를 별도 오류 UI로 격리하고 게임 React root와 분리했다.
-- 신규 게임 등록 가이드의 `StartGame` 반환 계약과 shared/server/client registry 예시도 `ForgeGameInstance` 기반 현재 구조로 갱신했다.
-- ARCHITECTURE의 알려진 부채 항목도 V3 upstream 저장 키/appId와 V4 namespace를 구분해 기록했다.
-- 포털의 빈 manifest fallback도 과거 Phase 1 안내 대신 현재 registry 상태를 설명하도록 정리했다.
-- ARCHITECTURE의 server/client 분리 도식에도 `registry.shared.ts` data-only manifest 단계를 명시했다.
-- 루트 README의 빠른 시작 안내도 V4 기본 제품과 V3 legacy 경로를 분리해 실제 포털 manifest와 일치시켰다.
-- 작업·원정 시작 시 완료 시각이 저장 가능한 정수 상한을 넘으면 재화 차감 없이 원본 저장을 보존한다.
-- staged 원정이 다음 단계의 완료 시각을 저장 상한 밖으로 밀어내는 경우 전투를 중복 정산하지 않고 현재 단계를 보존한다.
-- malformed 원정 누적 전투 통계도 안전 정수 상한과 최대 encounter 수로 포화시켜 결과 저장을 유효하게 유지한다.
-- malformed Realm 보상도 결과 카드 계산 단계에서 안전 정수 상한으로 포화시켜 `Infinity` 결과가 저장 검증을 우회하지 못하게 한다.
-- 오프라인 정산이 새 작업·원정 없이 재호출되면 동일 save 객체와 빈 요약을 반환해 `setItem`/React 갱신을 반복하지 않으며, 최초 `missing` 저장은 경과 시간이 0이어도 생성한다.
-- 오프라인 위험 보스가 `awaiting_confirmation` 상태에 들어간 뒤 재개되어도 자동 확정하지 않고, 같은 워터마크에서 재호출을 idempotent하게 유지한다. 시간 기반 원정 테스트 fixture는 고정 ID로 결정론화했다.
-- 위험 보스의 명시적 결과 확인과 다음 Realm의 영구 해금을 분리해, 보스 승리 확인만으로 `underworld`가 열리지 않고 별도 기록 확인을 요구한다.
-- 위험 보스 승리 후 pending Realm 기록을 새 원정으로 덮어쓸 수 없도록 보호하고 관련 Chromium·iPhone14 E2E 2/2를 통과시켰다.
-- V3 영웅 import의 사가 상한 회귀를 추가하고 전체 게임 테스트 396개 파일·3,379개 테스트를 다시 통과시켰다.
-- malformed 설정 patch fallback 회귀를 추가하고 전체 게임 테스트 396개 파일·3,380개 테스트를 다시 통과시켰다.
-- 오프라인 위험 원정 안내 문구와 재접속→보스 확인 E2E를 보강하고 전체 게임 테스트 396개 파일·3,381개 테스트를 다시 통과시켰다.
-- 오프라인 승리 직후 마을의 가장 가까운 목표가 이미 완료한 승리를 반복 안내하지 않도록 다음 Realm 기록 확정 문구를 추가하고 전체 게임 테스트 396개 파일·3,382개 테스트를 다시 통과시켰다.
-- V3 import와 회춘에서 극단적으로 큰 영웅 나이가 파생 행동 시계를 안전 정수 범위 밖으로 만들지 않도록 clamp하고 전체 게임 테스트 396개 파일·3,384개 테스트를 다시 통과시켰다.
-- 원정 결과의 빈 보상·패배 보호 문구, 전체 준비 비용 표시, malformed Realm fallback UX를 TDD로 보강하고 전체 게임 테스트 396개 파일·3,389개 테스트를 다시 통과시켰다.
-- 극단적 회춘 비용이 안전 정수 범위를 넘지 않도록 runtime 비용 clamp 회귀를 추가하고 전체 게임 테스트 396개 파일·3,389개 테스트를 다시 통과시켰다.
-- 영웅이 최연소에 가까울 때 실제 회춘 가능 연수를 표시하도록 Hero 상세 UX와 회귀 테스트를 보강했다.
-- 활성 원정의 Realm ID도 own-property accessor로 해석해 `constructor` 같은 상속 키가 화면 렌더링을 중단하지 않도록 fallback을 추가했다.
-- V4 주요 메뉴가 현재 화면을 `aria-current="page"`로 노출하도록 해 모바일·보조기기 탐색 상태를 명확히 했다.
-- 후원 정책 선택 버튼이 `aria-pressed`로 현재 정책을 노출하도록 해 시각 선택 스타일과 접근성 상태를 일치시켰다.
-- V4 헤더의 알 수 없는 런타임 정책도 안전한 fallback 문구로 표시하도록 하고, 정책 라벨 경계 회귀를 추가했다.
-- 오프라인 결과 카드가 음수·0 delta를 획득 보상으로 오인하지 않도록 양수 재화만 표시하고, 비정상 보상 회귀를 추가했다.
-- 보상형 광고 adapter가 알 수 없는 placement를 provider 호출 전에 거부해 외부 native bridge의 잘못된 보상 경로를 차단한다.
-- 보상형 광고 5회와 신의 개입 3회 상한을 공용 상수로 연결해 저장 검증·runtime handler·UI 표시가 서로 다른 제한을 갖지 않게 했다.
-- 저장된 원정 결과의 완료 시각도 저장 생성 시각 이상이어야 하도록 검증해, 생성 이전에 발생한 것처럼 보이는 결과 payload를 복구 단계에서 거부한다.
-- V4 저장 검증은 알 수 없는 통화 키를 거부하고, 원정 결과의 저장 watermark·해금 Realm chronology를 확인한다. 구형 schema 1의 초과 사가 기록은 기존 hydrate trim 호환을 유지한다.
-- 사가 기록의 `createdAt`도 저장 생성~마지막 저장 범위 안에서만 허용해, 미래 기록이나 생성 이전 기록이 정상 저장으로 재진입하지 못하도록 검증하고 chronology를 조작하는 E2E fixture를 함께 보정했다.
-- 이미 완료 시각에 도달한 시설 작업은 stale UI의 취소 요청에서 투입 재화를 환불하지 않고, 진행 확인을 통해 결과를 정산하도록 보호한다.
-- 완료 시각이 지난 시설 카드도 취소 버튼을 비활성화하고 진행 확인 안내를 표시해, stale 화면에서 잘못된 환불 시도를 UI 단계에서 줄인다.
-- 광고 즉시 완료 승인 사이에 원래 작업이 끝나고 같은 시설에 새 작업이 시작되어도, 캡처한 작업 ID가 다르면 새 작업을 즉시 완료하지 않도록 보호한다.
-- 완료 시각이 지난 시설 작업에는 광고 즉시 완료를 비활성화해, 자연 정산 가능한 작업에 불필요한 보상형 광고를 소비하지 않도록 한다.
-- 광고 즉시 완료 handler도 stale 작업의 자연 완료 시각을 광고 provider 호출 전에 확인하고, 광고 대기 중 자연 완료된 작업에는 즉시 완료 보상을 적용하지 않도록 한다.
-- 손상된 개입 충전 값은 보상·회복 경로에서 `NaN`으로 전파되지 않도록 정수 범위 검증 후 원본 저장을 보존한다.
-- 네이티브 구매 복원은 복원 호출 자체의 성공이 아니라 `ad_free` entitlement가 실제로 존재하는지로 UI 상태를 판정한다.
-- 원정 결과의 추천 장비도 고정 V4 장비 정의만 허용해, 손상된 local payload가 알 수 없는 장비 안내를 정상 기록처럼 통과시키지 않게 한다.
-- 오프라인 원정 완료 안내는 승리·패배를 모르는 요약 단계에서 다음 Realm 해금을 단정하지 않고, 원정 화면에서 실제 결과를 확인하도록 중립화했다.
-- 오프라인 상한을 넘긴 비안전 원정이 재접속 직후 일반 live tick에서 자동 확정되지 않도록 회귀 테스트와 정산 주차를 추가했다.
-- 빈 보상 payload의 원정 승리 카드가 다음 시설 작업을 막연히 안내하지 않고, 보상 없이도 사가 기록이 남았음을 명시하도록 정리하고 화면 회귀 테스트를 추가했다.
-- 출발 후 마을 정책을 바꿔도 활성 원정의 승률 forecast와 원정 화면 정책 표기가 출발 당시 정책을 유지하도록 고정해, 진행 중 판정이 사후 정책 변경으로 변하지 않게 했다.
-- 활성 원정 중 마을 정책을 변경할 때 다음 출발부터 적용된다는 안내를 추가해, 현재 원정과 다음 원정의 정책 경계를 UI에서도 명시했다.
-- 활성 원정 중 V3 영웅 가져오기를 화면·hook·save adapter에서 모두 차단해 전투 중 영웅 스냅샷 교체를 막고, 귀환 후 명시적 import만 허용하도록 경계 회귀 테스트를 추가했다.
-- 오프라인 상한으로 보스 이전 단계에 주차된 원정은 UI에서도 보스 전용 문구 대신 현재 단계에 맞는 일반 결과 확인 안내를 표시하도록 보강했다.
-- 오프라인 결과 모달도 현재 원정 단계를 알 수 없는 상태에서 보스 전용 문구를 노출하지 않고 일반 결과 확인 안내를 표시하도록 통일했다.
-- 광고 즉시 완료 handler의 stale 자연 완료 선검증·광고 대기 중 재검증을 회귀 테스트로 고정했다.
-- 영웅 카드 바로 아래에 `다음 목표` 요약을 배치하고 접근성 라벨을 유지해 모바일 첫 viewport에서도 영웅 상태와 다음 병목을 함께 확인할 수 있게 했다.
-- 패배 원정의 부족한 점을 목표 문장에 합칠 때 종결 어미를 다시 조사하지 않도록 분리해 `준비하세요.을` 같은 한국어 UX 문법 오류를 차단했다.
-- 광고 제거 구매와 복원 요청이 동시에 진행될 때 오래된 복원 응답이 최신 구매 entitlement를 되돌리지 않도록 revision guard를 추가하고 경합 회귀를 고정했다.
-- React StrictMode effect 재실행에서도 native monetization handle Promise를 공유하고 살아 있는 effect만 초기화하도록 해 IAP/AdMob bootstrap의 중복 호출과 0회 초기화 경합을 함께 차단했다.
-- V4 상단 재화 표시도 비유한·음수·소수 손상 payload를 0 이상 안전 정수로 정규화해 헤더에 `NaN`·`∞`가 노출되지 않게 했다.
-- TownHub의 영웅·시설·지원 에이전트·개입·광고 수치도 동일한 표시 formatter를 사용해 손상 snapshot이 첫 화면에 `NaN`·`Infinity`·음수로 노출되지 않게 했다.
-- 설정 화면의 음량 range와 음소거 checkbox도 비유한·범위 밖·비불리언 payload를 안전한 기본값으로 정규화해 controlled input 경고와 잘못된 오디오 상태 표시를 막았다.
-- V4 앱의 오디오 bridge 호출 직전에도 음량·음소거를 다시 정규화해, 저장 검증을 우회한 런타임 상태가 전역 사운드 상태에 `NaN`·`Infinity`·truthy 문자열을 주입하지 못하게 했다.
-- V3 legacy와 V4가 전역 사운드 매니저를 공유하는 SPA 전환 경계에서 V4 진입·이탈 시 legacy BGM과 ambient를 정리해 이전 제품의 오디오가 겹쳐 재생되지 않게 했다.
-- V3/V4 root마다 전역 사운드 소유권 토큰을 부여하고, 늦은 이전 root cleanup은 새 root의 BGM·ambient를 끄지 않도록 차단했다. Legacy root도 unmount 시 소리를 정리한다.
-- 구매 UI가 끝나기 전에 native entitlement 콜백이 ad-free를 확정한 경우, 뒤늦은 `cancelled/failed` 구매 응답이 권한을 실패로 덮어쓰지 않도록 회귀 경계를 추가했다.
-- 보상형 광고가 진행 중일 때 ad-free entitlement가 먼저 확정되면 뒤늦은 광고 취소·예외를 실패로 처리하지 않고 혜택을 부여하며, 일일 광고 슬롯도 소비하지 않도록 경합을 고정했다.
-- 동일한 ad-free entitlement 콜백이 반복되어도 실제 상태 변경이 아닐 때는 revision을 올리지 않아, 진행 중인 구매 복원 응답을 정상적으로 반영하도록 경계를 고정했다.
-- native monetization bridge의 ad-free entitlement callback도 V4 adapter 상태에 즉시 반영해, 구매·복원 후속 응답 없이 도착한 권한 변경이 UI와 보상 경로에서 누락되지 않게 했다.
-- AdMob 배너의 표시·숨김 요청을 최신 의도 상태로 수렴하는 단일 reconciliation queue로 직렬화해, 표시 요청이 진행 중 광고 제거가 확정되어도 배너가 다시 살아나는 경합을 차단했다.
-- 원스토어 상품 조회 응답도 허용된 카탈로그·상품 유형·가격 필드를 검증해, 알 수 없는 상품이나 깨진 가격 payload가 구매 캐시와 UI로 전파되지 않게 했다.
-- 원스토어 상품 가격 `priceAmountMicros`도 양수 safe-integer인지 검증해, 0원·정밀도 손실 payload를 상품 캐시에서 격리했다. `IapManager` 회귀 케이스를 추가했다.
-- IAP manager와 MonetizationService의 상품 ID도 런타임 카탈로그를 재검증해, 타입을 우회한 알 수 없는 상품이 provider 호출·카탈로그 예외로 이어지지 않게 했다. 양쪽 경계 회귀를 추가했다.
-- 원스토어 V21 Android plugin의 실제 `PurchaseClient` Builder/Listener wire를 연결하고, 구매 listener 결과·`PurchaseData` token cache·비소모성 acknowledge/소모성 consume·복원 조회를 compile 검증했다. 실기기 sandbox 결제 QA는 별도 단계로 남겼다.
-- V4 root가 V3 legacy로 전환되거나 unmount될 때 native monetization handle을 정리해 AdMob 배너가 이전 화면에 남지 않게 했고, React StrictMode의 임시 effect teardown에서는 조기 dispose하지 않도록 lifecycle token을 적용했다.
-- native monetization bootstrap 중 설정 공급원이 교체되면 늦게 도착한 handle을 폐기하고, StrictMode probe와 실제 unmount에서는 중복 dispose를 막도록 handle 소유권 경계를 회귀 테스트로 고정했다.
-- V4 unmount와 native `initialize()`/restore 응답이 경합해도 dispose 이후 늦은 초기화가 배너를 다시 표시하지 않도록 `MonetizationService`의 폐기 상태 경계를 추가했다.
-- 원스토어 `purchaseUpdated` 이벤트를 검증된 ad-free entitlement에만 연결하고, V4 unmount 시 native listener를 제거해 늦은 callback이 stale UI나 소모성 중복 지급으로 이어지지 않게 했다.
-- 원스토어 복원 시 미승인 `ad_free`만 acknowledge를 재시도해 앱 종료 직후의 승인 누락을 다음 부팅에서 복구하고, 소모성 상품은 자동 소비하지 않도록 경계를 고정했다.
-- ONE store service가 끊긴 뒤에도 구매·복원 사용자 액션 직전에 provider connection을 재확인하고, 일시적인 `purchaseUpdated` listener 등록 실패는 다음 연결 시 재시도하도록 했다.
-- ad-free 비소모성 구매는 승인 호출이 일시 실패해도 store의 구매 성공을 권한 실패로 숨기지 않도록 했고, 중복 지급 위험이 있는 균열석 소모성 상품은 승인 실패를 계속 전파하도록 분리했다.
-- IAP store success 응답도 구매 기록·요청 상품·구매 토큰을 검증한 뒤에만 entitlement 경로로 전달해 malformed provider payload가 광고 제거를 무단 부여하지 않도록 했다.
-- IAP 복원 응답도 알려진 상품·구매 토큰·구매 시각·승인 상태를 검증하고, V4 ad-free 판정에서 같은 레코드 경계를 재확인해 malformed restore payload가 권한을 만들지 않도록 했다.
-- 이미 확정된 ad-free 영구 구매는 initialize/manual restore가 빈 응답을 받아도 현재 세션에서 철회하지 않고, 복원은 새 유효 entitlement를 추가 확정하는 단방향 경계로 고정했다.
-- AdMob·IAP·MonetizationService 초기화도 in-flight Promise를 공유해 StrictMode·SPA 재진입에서 native bootstrap·복원·배너 요청이 중복 발행되지 않도록 했다.
-- native entitlement callback·기존 service 조회·V4 adapter setter의 truthy 문자열/숫자 payload를 exact boolean으로 정규화해 malformed bridge 응답이 ad-free 권한을 만들지 않도록 했다.
-- 보상형 즉시 완료·오프라인 2배·개입 충전은 광고 대기 중 정상적인 기기 시계 후퇴를 액션 시작 저장 시각으로만 보정하고, 미래 저장이나 비정상 시계에는 광고를 소비하지 않도록 경계를 고정했다.
-- native entitlement callback을 V4 monetization adapter의 구독 경계로 노출하고 `useV4Game`가 이를 구독해, 구매·복원 후속 응답 없이 권한이 바뀌어도 광고 제거 UI가 즉시 갱신되도록 했다.
-- V4 unmount가 보상형 광고의 prepare/show와 경합해도 늦은 native 광고 표시와 성공 반환이 발생하지 않도록 AdManager·MonetizationService dispose 경계를 연결했다.
-- offline 정산·수동 새로고침이 화면 시계를 최신 처리 시각으로 갱신하고, 기기 시계가 뒤로 이동해도 한 세션의 작업 진행률이 화면에서 되돌아가지 않도록 presentation clock을 단조 증가시켰다.
-- visible refresh가 비정상적으로 긴 시각 공백을 만나면 live 정산을 우회하고 offline 상한·위험 보스 확인 대기 정책으로 전환해, 기기 시계 전진만으로 영구 해금이 확정되지 않게 했다.
-- 결정론적 8-seed state-machine fuzz가 시설·정책·원정·오프라인 정산·설정·강화를 640회 섞어 실행한 뒤 매 단계 persist/reload 가능한 V4 envelope인지 검증한다.
-- dev-shell route 전환으로 게임 root가 파괴될 때 dev-only `gameConfig`·legacy store·cycle store hook을 소유권 검사와 함께 정리해, 늦게 도착한 이전 loader가 새 V4 test hook을 지우거나 stale hook을 남기지 않게 했다.
-- 원정 결과의 유한하지만 음수인 전투력·권장치·턴·피해도 0 이상 안전 정수로 정규화해 손상 payload가 플레이어에게 음수 전투 통계를 노출하지 않게 했다.
-- 길잡이가 피로 100 또는 다른 작업 중일 때는 직접 호출된 원정 승률 예측에서도 지원 보정을 제외하고, 현재 원정에 실제 배정된 길잡이만 보정을 유지하도록 경계를 고정했다.
-- 손상된 패배 결과의 `weaknessKR`가 비문자열이어도 TownHub가 중단되지 않고 준비 정보 fallback을 보여주도록 방어했다.
-- 오프라인 결과 모달에서 귀환·보류 원정이 있으면 `원정 결과 보기`로 즉시 원정 화면으로 이동하도록 연결해 결과 확인 안내와 실제 이동 경로를 일치시켰다.
-- 오프라인 귀환 결과의 직접 이동 경로를 Chromium·iPhone14 통합 시나리오로 고정해 V4 E2E 28/28과 legacy 포함 전체 E2E 42/42(4.9분)를 통과시켰다.
-- 오프라인 귀환 결과에서 원정 화면으로 직접 이동할 때 원정소 제목으로 포커스를 옮기고, 컴포넌트·Chromium·iPhone14 회귀로 키보드/보조기기 탐색 경계를 고정했다.
-- 영웅·원정·사가·설정 화면의 라우트 진입 제목 포커스를 공통 훅으로 통일해 메뉴 이동 후 보조기기 탐색 위치를 잃지 않게 했다.
-- TownHub의 활성 원정 정책도 공통 policy accessor를 사용해 손상된 런타임 정책이 `constructor` 같은 상속 키로 노출되지 않고 안전한 fallback으로 표시되게 했다.
-- 원정 결과 카드의 비유한 전투 수치·승률·재도전 시간과 비문자열 부족 사유도 `NaN`/`Infinity` 대신 안전한 숫자·안내 문구로 정규화했다.
-- 영웅 상세의 나이·레벨·HP·전투력·치명타·행동 횟수와 장비 레벨도 표시 단계에서 비유한·음수·소수·안전 정수 범위를 벗어난 값으로 정규화해 손상 스냅샷이 회춘/장비 문구를 오염시키지 않게 했다.
-- 오프라인 결과 모달의 재화 delta도 소수·음수·안전 정수 상한을 표시 전에 정규화해 손상된 정산 payload가 보상 문구와 광고 2배 대상 판정을 오염시키지 않게 했다.
-- 작업 중이거나 malformed/max 레벨인 시설의 강화 버튼을 비활성화해, 모바일에서 도메인 거부만 반복하는 잘못된 탭을 줄였다.
-- 오프라인 결과 모달의 재화·장비·작업·메모 배열이 손상되어도 빈 안전 상태로 렌더링해 정산 결과 확인 자체가 중단되지 않게 했다.
-- 보상형 광고·구매·복원 bridge가 예외를 반환해도 V4 훅이 게임을 중단하지 않고 사용자 안내를 남기도록 실패 경계를 추가했다.
-- 활성 원정과 이전 원정 결과가 동시에 남은 부분 저장 payload를 복구 단계에서 격리해, 서로 다른 원정 상태를 추측해 합치지 않도록 했다.
-- 작업·활성 원정·최근 결과·사가 ID의 namespace 충돌도 복구 단계에서 격리해, 부분 저장이 완료 경로 간 기록을 공유하지 않도록 했다.
-- native monetization getter가 예외를 던지는 환경에서도 entitlement·광고 사용량·구매 복원 capability를 안전한 fallback으로 읽도록 hook 경계를 보강했다.
-- 사가 화면도 in-memory 항목의 비문자열 title/text와 누락 ID를 안전한 문구·고유 key로 정규화해 React 렌더 예외를 격리했다.
-- 저장 envelope의 task·원정·결과·사가 식별자도 비어 있지 않은 문자열인지 검증해, 손상 저장이 빈 ID namespace를 통과하지 않게 했다.
-- 원정 화면의 결과 보상·Realm 준비 비용도 동일한 재화 표시 경계를 사용해 소수·음수·안전 정수 초과값이 승리·재도전 안내에 노출되지 않게 했다.
-- 오프라인 결과 화면의 처리 시간도 정산 엔진의 8시간 상한을 공유해 손상된 요약 객체가 거대한 시간 문자열을 노출하지 않게 했다.
-- 영웅 상세 헤더의 나이도 마을 화면과 동일한 안전 정수·한국어 숫자 표시를 사용한다.
-- malformed 영웅 스탯 합산이 `Infinity`가 되는 경우에도 전투력을 0으로 되돌리지 않고 `Number.MAX_SAFE_INTEGER`로 포화시키는 회귀를 추가해, `NaN` fallback과 overflow 상한을 분리했다.
-- staged 원정 패배 결과의 `encountersCleared`가 실패한 단계를 성공으로 세지 않고 실제로 통과한 단계만 표시하도록 정정했다.
-- 저장 복구 경계에 임의 JSON payload fuzz 계약을 추가해 원시값·부분 envelope·중첩 비정상 값이 예외 없이 `invalid_schema`로 격리되는지 고정했다.
-- 이미 `awaiting_confirmation`인 위험 원정도 TownHub의 첫 목표에서 결과 확인·귀환 확정 병목을 바로 안내해 앱 재시작이나 offline 모달 닫기 뒤에도 다음 행동을 잃지 않게 했다.
-- 회춘·시설 작업·시설 강화의 지불 경계도 금화 잔액이 유한한 안전 정수가 아닐 때 원본 저장을 보존하도록 강화하고, malformed currency 회귀를 추가했다.
-- 원정 출발 전 영웅 HP와 HP 최대값도 저장 가능한 유한 범위인지 확인해, 손상된 메모리 스냅샷이 `null` HP 원정으로 진행되지 않게 했다.
-- 신의 개입 즉시 회복도 같은 HP 경계를 먼저 검증해, 손상된 스냅샷에서 충전 차감이나 잘못된 HP 저장이 일어나지 않게 했다.
-- 지원 에이전트 휴식도 피로도가 유한한 0~100 범위를 벗어나면 원본 저장을 보존하게 했다.
-- 시설 작업과 원정 배정에서도 동일한 에이전트 피로도 범위를 검증해, 손상된 에이전트가 활성 작업을 소유하지 않게 했다.
-- 오프라인 보상 callback도 대상 잔액이 안전한 정수가 아닐 때 원본 저장과 시각을 보존하게 했다.
-- 시설 취소와 원정 후퇴 환불도 대상 잔액을 먼저 검증해, 환불 유실 후 작업·원정만 종료되지 않게 했다.
-- 시설 작업 완료도 due 보상 전 대상 잔액을 검증해, 손상된 재화에 보상을 더하고 작업을 삭제하지 않게 했다.
-- 원정 보상·패배 환불도 정산 전 대상 잔액을 검증해, 손상된 재화에 보상을 더하고 원정을 종료하지 않게 했다.
-- 지원 에이전트의 신뢰도·레벨·피로도도 작업 배정·정산·후퇴·휴식 전에 함께 검증해, 손상된 에이전트 상태가 JSON clone을 거쳐 저장 가능한 값으로 위장되지 않게 했다.
-- 오프라인 정산이 손상된 상태로 차단되면 `lastProcessedAt`과 `updatedAt`도 소비하지 않아, 저장 상태를 복구한 뒤 같은 보상 창을 안전하게 다시 시도할 수 있게 했다.
-- 위험 원정 결과 확인도 중간 `traveling` 상태를 외부에 노출하지 않는 원자 전환으로 보강해, malformed 재화·에이전트 정산 실패 시 보류 원정과 저장 객체 identity를 그대로 보존한다.
-- 원정 결과의 malformed·null 보상 payload도 화면을 중단시키지 않고 `획득 보상 · 없음`으로 표시해, 저장 복구를 우회한 런타임 오염에서도 결과 카드와 사가 안내를 유지한다.
-- 시설 작업·원정의 완료 시각이 `NaN`·무한대·음수로 오염된 메모리 상태에서도 정산·환불·광고 즉시 완료가 보상을 지급하지 않고 원본 작업을 보존하도록 경계를 강화한다.
-- GitHub Actions의 별도 E2E job도 원스토어 native workspace를 먼저 빌드하도록 보강하고, GitHub runner에서 느려지는 연쇄 시뮬레이션 회귀에는 명시적 timeout을 적용해 로컬과 동일한 검증 경로를 유지한다.
-- 전체 게임 단위/컴포넌트 테스트(V4 포함): 400개 파일, 3,638개 테스트 통과.
-- 재접속 후에도 이미 보류된 위험 원정의 TownHub 목표가 귀환 확인을 안내하는 Chromium·iPhone14 E2E를 추가했다(2/2, 6.9초).
-- V4 Chromium·iPhone 14 E2E: 32/32 통과(각 프로젝트 16/16).
-- V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23, 약 5.2분).
-- dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
-- native onestore Web 테스트 7/7, Android pending 구매 슬롯 단위 테스트 4/4와 `compileDebugKotlin`·`assembleDebug`가 통과했다. 실기기 sandbox 결제·복원·환불 QA는 `adb`·sandbox 계정 부재로 남아 있다.
-- 광고·결제 브리지의 truthy 비-boolean 반환은 보상이나 광고 제거 권한으로 인정하지 않도록 회귀 테스트와 strict boundary를 추가했다.
-- 광고·결제·복원 provider와 native monetization bootstrap의 영구 pending을 60초 뒤 provider failure로 정리하는 timeout boundary와 네 경로 회귀 테스트를 추가했다.
-- 원스토어 Android 초기화·상품 조회·복원·승인/소비 응답·구매 callback 유실로 native 대기 호출이 영구 점유되는 경로도 60초 timeout으로 해제하고, 이후 연결·구매 재시도가 가능하도록 정리했다. Kotlin compile·debug APK assemble을 재검증했다.
-- 원스토어 구매 callback의 pending 슬롯을 별도 단일 소비 경계로 추출해, 요청 상품과 일치하는 성공 응답은 한 번만 PluginCall을 resolve하고 중복 callback은 무시하도록 했다. 일치·비일치 callback 보존을 Kotlin 단위 테스트 2개로 고정했다.
-- 원스토어 성공 callback에 다른 상품이 먼저 섞여 와도 요청 상품의 pending PluginCall을 조기 실패시키지 않고 matching callback 또는 native timeout까지 보존하도록 정리했다. 빈 성공 payload와 비일치 상품 대기 경계를 Kotlin 단위 테스트로 추가했다.
-- 시설 강화 비용을 `+` 버튼의 접근성 라벨에만 두지 않고 시설 카드에 금화·재료로 항상 노출해, 모바일에서도 다음 강화 병목을 판단할 수 있게 했다. TownHub 회귀 테스트를 추가했다.
-- 지원 에이전트 카드에 특성을 표시해 작업 배정 전 정밀 제작·안전한 축원·위험 경로 감지의 차이를 확인할 수 있게 하고, TownHub 회귀 테스트를 추가했다.
-- TownHub의 손상된 개입 충전·영웅 HP를 안전한 범위로 정규화해, `NaN`·무한대 상태에서 즉시 회복·원정 후퇴 버튼이 잘못 활성화되지 않도록 하고 회귀 테스트를 추가했다.
-- 원정소의 길잡이 누락·비유한 피로도 상태를 별도 fallback으로 표시해, 손상된 저장이 “길잡이 사용 중”으로 오인되지 않도록 하고 회귀 테스트를 추가했다.
-- V4 domain의 에이전트 이름·역할·특성도 정적 정의와 대조해, 손상된 직접 호출 상태가 전문 보정이나 원정 배정으로 우회되지 않게 하고 회귀 테스트를 추가했다.
-- 활성 시설 작업의 표시명도 시설·장비 정적 정의에서 다시 계산해, 손상된 in-memory 작업 type이 내부 키나 임의 문자열로 화면에 노출되지 않게 하고 회귀 테스트를 추가했다.
-- 지원 에이전트 카드의 이름·역할·특성도 정적 정의에서 다시 읽어, 손상된 in-memory 메타데이터가 내부 문자열로 플레이어에게 노출되지 않게 하고 회귀 테스트를 추가했다.
-- 원정소의 길잡이도 이름·역할·특성이 정적 정의와 다르면 출발을 막고, 화면에는 정적 이름과 “길잡이 정보 확인 필요”를 표시해 손상된 지원 상태를 출발 가능으로 오인하지 않게 하고 회귀 테스트를 추가했다.
-- TownHub의 malformed 에이전트 피로도도 “에이전트 정보 확인 필요”로 표시하고 휴식 버튼을 비활성화해, 화면상 0으로 보이는 손상 상태가 실패할 휴식 액션으로 이어지지 않게 하고 회귀 테스트를 추가했다.
-- 원정 준비 비용이 부족한 Realm의 길잡이·혼자 출발 버튼을 미리 비활성화하고, 필요한 재화와 현재 보유량을 카드에 표시해 출발 실패를 사전 안내했다. ExpeditionScreen 회귀 테스트를 추가했다.
-- 영웅 상세 화면에서 손상된 `equipmentIds` 컬렉션을 빈 장비 상태로 격리해, 부분 저장·in-memory 복구 payload도 화면을 중단시키지 않도록 했다. HeroDetailScreen 회귀 테스트를 추가했다.
-- 저장 schema의 사가 `title`·`text`를 non-empty 문자열로 강화해 공백·빈 기록을 `invalid_schema`로 격리했다. save recovery 회귀 테스트를 추가했다.
-- 시설 task의 표시명과 원정 패배 원인도 non-empty 문자열로 강화해 빈 작업·빈 결과 설명이 저장 payload를 통과하지 못하도록 했다. save recovery 회귀 테스트를 추가했다.
-- 설정의 구매 복원 버튼을 provider 응답 대기 중 잠그고 진행 문구를 표시해 모바일 연속 탭의 중복 native 요청을 UI 단계에서 차단했다. SettingsScreen 회귀 테스트를 추가했다.
-- 광고 제거 구매도 훅과 TownHub 버튼에서 처리 중 상태를 공유해, store 응답 전 연속 탭과 중복 구매 요청을 차단했다. TownHub·useV4Game 회귀 테스트를 추가했다.
-- 오프라인 2배·시설 즉시 완료·개입 충전도 provider 응답 중 버튼 상태와 작업 변경 경계를 공유해, 보상 경합을 화면에서 차단했다. OfflineResultScreen·TownHub·useV4Game 회귀 테스트를 추가했다.
-- 영웅 전투력 산출에서 누락된 숫자 스탯을 `MAX_SAFE_INTEGER`로 포화시키던 in-memory 경로를 0으로 격리하고 도메인 회귀 테스트를 추가했다. 무한값은 기존 포화 정책을 유지한다.
-- 실제 산출물을 만들지 않는 workspace typecheck의 `tsbuildinfo` output 경고를 제거하도록 Turbo task 선언을 정리했다.
-- 명시적 V3 영웅 가져오기에서 active task·원정·사가가 공유하는 ID namespace 충돌을 피하도록 saga ID allocator를 보강했다.
-- V3 심층·다중 지역 회귀 smoke: 2/2 통과.
-- workspace `pnpm test`, `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `pnpm build` 통과.
-- Turbo test task는 실제로 생성하지 않는 `coverage/**` output 선언을 제거해 반복 검증 시 허위 output 경고가 발생하지 않게 했다.
-- 시설·에이전트·Realm 정의 lookup을 own-property accessor로 통일해 외부 문자열이 `constructor` 같은 상속 키로 해석되지 않게 했다.
-- V4 저장 숫자 필드를 `Number.MAX_SAFE_INTEGER` 이하로 검증해 JSON 재로드 때 정밀도를 잃는 재화·시간·전투 수치가 유효 저장으로 남지 않게 했다.
-- legacy `v2-vertical-slice`는 dev-only cycle controller hook으로 영웅을 다음 자연사 직전까지 준비한 뒤 실제 Phaser 도착→CycleResult 경로를 검증하도록 단축했다. Chromium 6.7초, iPhone14 6.2초에 통과하며 제품 런타임에는 hook이 노출되지 않는다.
-- 레거시 브라우저 실행에는 `pauseOnInteractiveChoice` 경계를 적용해 선택창이 열린 동안 다음 도착을 보류하고, shrine/danger 선택창에 안정적인 test id를 추가했다. V3-C spend smoke는 새 서버에서 통과했으며 직접 시뮬레이션의 연속 진행 기본값은 유지한다.
-- 브라우저 선택 게이트가 멈출 수 있던 미연결 선택 이벤트 4종(first trial, wandering sage, elder's judgment, veteran's challenge)을 `TimedChoiceModal`과 컨트롤러 proxy로 연결하고 idle fallback을 추가했다.
-- 브라우저 선택 게이트에서 idle 진행이 멈추지 않도록 danger는 4초 후 자동 전투, shrine은 4초 후 자동 황금 축복으로 안전하게 해소하고 중복 클릭을 차단했다. V3-H·V3-DEF·사가 필터 smoke와 전체 단위 테스트로 회귀를 확인했다.
-- V3-H 깊이 회귀가 RNG와 연속 smoke 실행 부하에 따라 50초 안에 Realm을 벗어나지 못하던 간헐 실패를 고정 sleep 대신 실제 `hud-realm` 전환 assertion으로 교정하고, 개발 전용 고정 시드와 선택 모달 polling으로 Chromium/iPhone14에서 결정론적으로 검증했다.
-- V2 vertical slice가 보스 선택창에 걸리던 모바일/데스크톱 타이밍 변동을 dev-only fast-forward 후 blocking choice polling으로 보강해 실제 Phaser→컨트롤러→결과 화면 경로를 유지하면서 안정화했다.
-- Chromium·iPhone14 각각 short 회귀 17/17(장시간 V2 baseline 제외)을 통과했고, v9 저장 마이그레이션 smoke도 두 프로파일에서 통과했다.
-- 오프라인 보상형 광고가 대기 중 새 정산으로 교체되는 경합을 정산 요약 세대 가드로 차단하고, 이전 정산 보상이 새 정산에 중복 적용되지 않음을 훅 테스트로 고정했다.
-- 장시간 V2 baseline은 dev-only fast-forward 후 회복 상태에서 다음 실제 Phaser 도착을 자연사로 연결해 전투 사망·무료 회춘 경합을 제거했다. `98a002ad` 이후 Chromium 4.0초·iPhone14 5.2초에 통과했고, 현재 HEAD에서도 전체 E2E 44/44(Chromium 22/22, iPhone14 22/22, 5.0분)을 통과했다. root `pnpm test`(game 398개 파일·3,450개 테스트 포함), `pnpm typecheck`(5개 package), `pnpm lint`, `pnpm circular`, `pnpm build`(game/dev-shell 포함)도 성공했다.
+**인터페이스**
 
-### 다음 자동 사이클 우선순위
+```ts
+type V4MetricName =
+  | 'save_created'
+  | 'facility_task_started'
+  | 'policy_changed'
+  | 'expedition_started'
+  | 'expedition_finished'
+  | 'offline_summary_opened'
+  | 'story_choice_made';
 
-1. 오프라인·개입·원정 결과의 중복 정산 및 앱 재개 경계를 실기기에서 재검증한다.
-2. 시설·장비·원정 결과 화면의 남은 하드코딩 문구와 빈 보상 상태를 UX 관점에서 정리한다. (원정 비용·결과 fallback 1차 완료)
-3. 저장 복구·모바일 재개·광고/결제 실패 경계를 실기기 QA 항목으로 확장한다.
-4. 각 단위 완료 후 game test, typecheck, lint, circular, 가능한 E2E를 반복 실행한다.
+interface V4MetricEvent {
+  id: string;
+  name: V4MetricName;
+  occurredAt: number;
+  saveCreatedAt: number;
+  detail?: string;
+}
+
+interface V4OnboardingSummary {
+  firstExpeditionSeconds: number | null;
+  distinctDecisionKindsIn30Minutes: number;
+  firstExpeditionWithin15Minutes: boolean;
+  twoDecisionsWithin30Minutes: boolean;
+}
+```
+
+로그 키는 `shin-ui-eternal-sponsor-v4-metrics-v1`, 최대 500건, 저장 실패 시 게임 진행은 계속한다. 영웅 이름이나 기기 식별자는 기록하지 않는다.
+
+- [ ] **RED:** 잘못된 저장값 복구, 500건 상한, 중복 ID 방지 테스트를 추가한다.
+- [ ] **GREEN:** bounded local metric store를 구현한다.
+- [ ] **RED:** 첫 원정 900초 경계와 30분 내 서로 다른 결정 2종 요약 테스트를 추가한다.
+- [ ] **GREEN:** `summarizeV4Onboarding`을 구현한다.
+- [ ] **RED:** 실제 hook 액션이 성공했을 때만 이벤트가 기록되고 실패 액션에는 기록되지 않는 테스트를 추가한다.
+- [ ] **GREEN:** 시설·정책·원정·오프라인·결말 액션에 계측을 연결한다.
+- [ ] 설정 화면에 서버 전송 없는 로컬 진단 요약을 표시하고 테스트한 뒤 커밋한다.
+
+---
+
+### Task 5: 플레이 화면과 코드 경계 정리
+
+**파일**
+
+- 수정: `games/inflation-rpg/src/v4/V4App.tsx`
+- 수정: `games/inflation-rpg/src/v4/styles.css`
+- 수정: `games/inflation-rpg/src/v4/data.ts`
+- 수정: `games/inflation-rpg/src/v4/screens/TownHubScreen.tsx`
+- 수정: `games/inflation-rpg/src/v4/screens/ExpeditionScreen.tsx`
+- 수정: 관련 V4 화면 테스트
+
+**결과**
+
+- 플레이어 화면에서 `LOCAL-FIRST · V4`와 혼용된 `Realm`을 제거하고 각각 `조선 설화 후원 RPG`, `영역`으로 바꾼다.
+- 기존 Joseon pixel asset을 이용한 마을 hero strip을 추가하되 새 아트 스타일과 신규 이미지 생성은 하지 않는다.
+- 430px 모바일 본문은 유지하되 760px 이상 화면에서는 영웅·목표와 시설·에이전트를 2열로 보여 빈 여백을 줄인다.
+- `story.ts`와 `telemetry.ts`에 새 책임을 두어 `domain.ts`와 `useV4Game.ts`에 서사 문구·저장소 파싱을 추가하지 않는다.
+
+- [ ] **RED:** 개발 용어가 플레이 화면에 없고 한국어 `영역`이 보이는지 화면 테스트를 추가한다.
+- [ ] **GREEN:** 사용자 문구와 레이아웃을 수정한다.
+- [ ] 390×844와 desktop Chromium 스크린샷 및 가로 스크롤 검사를 실행한다.
+- [ ] V4 화면 테스트와 접근성 포커스 E2E를 실행한 뒤 커밋한다.
+
+---
+
+### Task 6: CI 출시 게이트와 최종 검증
+
+**파일**
+
+- 수정: `.github/workflows/ci.yml`
+- 삭제: `games/inflation-rpg/tests/e2e/full-game-flow.spec.ts`
+- 수정: `docs/BACKLOG.md`
+- 수정: `docs/작업-현황.md`
+
+**CI 계약**
+
+- `check`: autonomy test, workspace typecheck/lint/unit test, circular dependency.
+- `game-build`: `pnpm --filter @forge/game-inflation-rpg build`.
+- `game-e2e`: game package Playwright Chromium과 iPhone 14 전체 시나리오.
+- `portal-e2e`: 기존 dev-shell E2E.
+- placeholder 테스트는 통과 개수에 포함하지 않는다.
+
+- [ ] CI job을 분리하고 각 job이 frozen lockfile을 사용하는지 확인한다.
+- [ ] `pnpm test:autonomy`를 실행한다.
+- [ ] `pnpm --filter @forge/game-inflation-rpg typecheck`를 실행한다.
+- [ ] `pnpm --filter @forge/game-inflation-rpg test`를 실행한다.
+- [ ] `pnpm --filter @forge/game-inflation-rpg build`를 실행한다.
+- [ ] `pnpm --filter @forge/game-inflation-rpg e2e`를 실행한다.
+- [ ] `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `git diff --check`를 실행한다.
+- [ ] 백로그와 현재 상태를 실제 결과로 갱신하고 최종 검토 후 커밋한다.
+
+## 출시 후보 판정
+
+- 문서 기본 탐색에서 과거 cycle 보고서가 노출되지 않는다.
+- 정책·시설·승률 설명과 실제 동작이 일치한다.
+- 깊은 숲의 플레이어 선택을 거쳐 저승 승리로 완결되는 최소 서사 호가 존재한다.
+- 첫 원정 15분, 서로 다른 결정 2종 30분 조건을 로컬 데이터로 계산할 수 있다.
+- V4와 V3 저장 격리, 8시간 오프라인 정산, 결제·광고 실패 비차단이 회귀하지 않는다.
+- game build와 game E2E가 원격 CI의 필수 job이다.
