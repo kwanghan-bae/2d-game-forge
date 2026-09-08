@@ -1,3 +1,4 @@
+{% raw %}
 # Phase V3-H — Depth + Polish Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1482,3 +1483,5 @@ Plan complete and saved to `docs/superpowers/plans/2026-05-24-phase-v3-h-depth-p
 **2. Inline Execution** — executing-plans, batch with checkpoints.
 
 Which approach?
+
+{% endraw %}

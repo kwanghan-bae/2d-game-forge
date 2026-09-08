@@ -1,3 +1,4 @@
+{% raw %}
 # Phase B-3β2 — Legacy Flow Removal Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1337,3 +1338,5 @@ Auto-completed by author at write time:
   - `selectDungeon(null)` already exists in store (per type definition); only added at one new call site (Task 3 Step 4g). ✅
   - `'town'` already in Screen union; substituted for `'world-map'` consistently. ✅
   - persist version `5 → 6`; migrate guard `fromVersion < 6`. ✅
+
+{% endraw %}

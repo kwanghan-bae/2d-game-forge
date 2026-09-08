@@ -1,3 +1,4 @@
+{% raw %}
 # Phase F-1 — Ascension MVP + 균열석
 
 - 태그 목표: `phase-f1-complete`
@@ -471,3 +472,5 @@ pnpm --filter @forge/game-inflation-rpg e2e
 
 - 선행: `docs/superpowers/specs/2026-05-05-phase-b3b3-design.md`, `docs/superpowers/specs/2026-05-01-content-300h-design.md` §6 + §10.5.
 - 메모리: `project_phase_b3b3_complete.md`.
+
+{% endraw %}

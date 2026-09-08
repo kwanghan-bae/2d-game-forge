@@ -1,3 +1,4 @@
+{% raw %}
 # Phase G — Ascension Tree (성좌) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1759,3 +1760,5 @@ git log --oneline -20
 **2. Inline Execution** — 현재 세션에서 batch
 
 어느쪽?
+
+{% endraw %}

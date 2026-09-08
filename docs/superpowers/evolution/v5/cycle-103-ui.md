@@ -1,3 +1,4 @@
+{% raw %}
 # Cycle 103 UI/UX Guide
 
 ## 평가 대상
@@ -201,3 +202,5 @@ MainMenu → CyclePrepV2 → OverworldRunner → CycleResultV2 → MainMenu
 - `--color-text`: `#cbd5e1` (body text)
 - `--color-text-muted`: `#94a3b8` (secondary info, musing)
 - raw hex 사용 금지 — 위 매핑을 `theme-modern-dark-gold` 토큰으로 전환 권장
+
+{% endraw %}

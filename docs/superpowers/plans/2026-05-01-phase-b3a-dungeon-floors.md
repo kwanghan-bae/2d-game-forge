@@ -1,3 +1,4 @@
+{% raw %}
 # Phase B-3α — DungeonFloors 화면 + 신 flow 활성 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1119,3 +1120,5 @@ git tag phase-b3a-complete
 - 인플레이션 곡선 (HP=100×1.4^L 등 spec 11.2 Curve 2 도입). 현재는 기존 `monsterLevel * 20 * monster.hpMult` 유지.
 - 구 flow 코드 (`WorldMap.tsx`, `RegionMap.tsx`, `regions.ts`, `maps.ts`, region-based `pickMonster`, `currentAreaId`) 제거 — 진입로만 차단됨, 코드 자체는 dormant. **B-3β 에서 일괄 정리.**
 - 차원 나침반 (자유 던전 선택) — Section 2.4 spec 영역.
+
+{% endraw %}

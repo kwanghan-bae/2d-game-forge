@@ -1,3 +1,4 @@
+{% raw %}
 # Phase A: Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1164,3 +1165,5 @@ Phase A 완료. Phase B 는 별도 spec + plan 으로 진행.
 
 **Placeholder scan:**
 - 없음. 모든 코드 블록 즉시 실행 가능.
+
+{% endraw %}

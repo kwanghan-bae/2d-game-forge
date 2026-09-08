@@ -1,3 +1,4 @@
+{% raw %}
 # Content Expansion Layer 4 — Skills Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -582,3 +583,5 @@ Layer 4 완료 시:
 다음: Layer 5 (스토리) — `2026-04-29-content-layer5-story-plan.md`.
 
 **End of Layer 4 plan. Total tasks: 8.**
+
+{% endraw %}

@@ -1,3 +1,4 @@
+{% raw %}
 # Phase 0 — Bootstrap 구현 계획
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1203,3 +1204,5 @@ git log --oneline | head -20
 2. **인라인 실행** — 현재 세션에서 executing-plans를 사용해 체크포인트와 함께 태스크를 일괄 실행한다.
 
 어떤 방식으로 진행할까?
+
+{% endraw %}

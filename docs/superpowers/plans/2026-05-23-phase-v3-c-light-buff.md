@@ -1,3 +1,4 @@
+{% raw %}
 # Phase V3-C — Light + Buff Catalog + Spend Modal Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1889,3 +1890,5 @@ Plan complete and saved to `docs/superpowers/plans/2026-05-23-phase-v3-c-light-b
 **2. Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints
 
 Which approach?
+
+{% endraw %}

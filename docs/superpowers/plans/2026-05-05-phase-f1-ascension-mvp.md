@@ -1,3 +1,4 @@
+{% raw %}
 # Phase F-1 — Ascension MVP + 균열석 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1251,3 +1252,5 @@ Auto-completed by author at write time:
   - `calcFinalStat` signature: 7 params with `charLevelMult = 1` and `ascTierMult = 1` defaults. Stats tests use 5/6/7-arg forms (backward compat verified). BattleScene's 7 call sites all explicit-pass `ascTierMult`.
   - `Screen` type: `'ascension'` declared in Task 1, routed in Task 5, mapped in sound.ts in Task 5.
   - Persist v6 → v7 monotonic — earlier migrations preserved.
+
+{% endraw %}

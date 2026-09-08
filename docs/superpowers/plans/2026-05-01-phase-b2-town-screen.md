@@ -1,3 +1,4 @@
+{% raw %}
 # Phase B-2: Town Screen (간단 ver.) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -633,3 +634,5 @@ feat/phase-b2-town-screen`)
 **Placeholder scan:**
 - Task 5 의 "B-2 신규" 라벨은 의도된 임시 표시 (Phase B-J 에서 정리). 그
   외엔 placeholder 없음.
+
+{% endraw %}

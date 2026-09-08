@@ -1,3 +1,4 @@
+{% raw %}
 # Inflation RPG Phase 2.5 — 게임 완성도 구현 플랜
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -513,3 +514,5 @@ git commit -m "feat(game-inflation-rpg): enforce level gating on world map areas
 - [ ] `pnpm --filter @forge/game-inflation-rpg typecheck` — 0 errors
 - [ ] `pnpm --filter @forge/game-inflation-rpg lint` — 0 errors
 - [ ] `pnpm circular` — No circular dependency found
+
+{% endraw %}

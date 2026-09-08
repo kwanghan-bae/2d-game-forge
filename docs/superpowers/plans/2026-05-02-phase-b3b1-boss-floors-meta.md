@@ -1,3 +1,4 @@
+{% raw %}
 # Phase B-3β1 — Boss floors + dungeon meta progress Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1089,3 +1090,5 @@ git tag phase-b3b1-complete
 - Mythic 장비 / 시그니처 epic 장비 / "정복자" 칭호 영구 효과 — 본 phase 는 enhanceStones + bossDrop 만. 장비/칭호는 후속 phase (혹은 phase-content-data 의 `guaranteedDrop` 활용 검토).
 - 인플레이션 곡선 (HP=100×1.4^L 등 spec §11.2 Curve 2) — Phase I.
 - 보스 reward magnitude 미세조정 (mini=강화석 1~3, major=5~10, final=50~100 정확 매칭) — 본 phase 는 기존 `bossDrop` 의 `bpReward * 100` DR / `bpReward` enhanceStones 그대로. magnitude tuning 은 Phase I.
+
+{% endraw %}

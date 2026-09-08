@@ -1,3 +1,4 @@
+{% raw %}
 # Phase B-3β3 — Procedural 31+ floors (심층)
 
 - 태그 목표: `phase-b3b3-complete`
@@ -245,3 +246,5 @@ E2E 신규 케이스는 `config.exposeTestHooks` / `__forgeStore` 노출 확인 
 - 선행 spec: `docs/superpowers/specs/2026-05-02-phase-b3b2-design.md`, `docs/superpowers/specs/2026-05-01-content-300h-design.md`.
 - 선행 plan: `docs/superpowers/plans/2026-05-02-phase-b3b2-legacy-removal.md`.
 - 메모리: `project_phase_b3b2_complete.md` (incidental build fix 포함).
+
+{% endraw %}

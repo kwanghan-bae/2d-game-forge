@@ -1,3 +1,4 @@
+{% raw %}
 # Phase V1a — Open World Vertical Slice Skeleton Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -3551,3 +3552,5 @@ Done. Hand off to `finishing-a-development-branch` skill for the merge.
 - **Inflation curve still placeholder.** V1a doesn't fix the `expRequired = 10 * lv^1.3` formula. Sim-G `sim:cycle` continues to measure against it. V1b/V7 (balance) addresses inflation curve.
 - **Run all visual smoke in dev-shell:** after T21, run `pnpm dev` from repo root and open `localhost:3000/games/inflation-rpg`. Click "사이클 시작" → CyclePrepV2 → "후원하기" → watch the overworld for 5–10 minutes. Confirm "game-feel ≠ 2000s text web game" empirically before tagging.
 - **The Phaser canvas is currently 640×384 px** (20×12 tiles × 32px). Not mobile-responsive in V1a — viewport fit is V1b/V6 polish work.
+
+{% endraw %}

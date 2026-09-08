@@ -1,3 +1,4 @@
+{% raw %}
 # Inflation RPG Clone — Plan 2: UI (Screens + Battle + Integration)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1586,3 +1587,5 @@ git commit -m "test(inflation-rpg): add E2E full-run smoke tests"
 ```bash
 git tag phase-2-complete
 ```
+
+{% endraw %}

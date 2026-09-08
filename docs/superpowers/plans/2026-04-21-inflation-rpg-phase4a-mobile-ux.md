@@ -1,3 +1,4 @@
+{% raw %}
 # Inflation RPG Phase 4a — MobileUX Layer Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -642,3 +643,5 @@ Android (에뮬레이터 또는 실기기):
 Phase 4a 완료 후:
 - **Phase 4b** — `docs/superpowers/plans/2026-04-21-inflation-rpg-phase4b-sound.md` 작성
 - 스펙 참조: `docs/superpowers/specs/2026-04-21-inflation-rpg-phase4-5-release-design.md`
+
+{% endraw %}

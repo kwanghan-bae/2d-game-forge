@@ -1,3 +1,4 @@
+{% raw %}
 # Content Expansion Layer 2 — Dungeon Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -712,3 +713,5 @@ Layer 2 완료 시:
 ---
 
 **End of Layer 2 plan. Total tasks: 9. Estimated commits: 9.**
+
+{% endraw %}

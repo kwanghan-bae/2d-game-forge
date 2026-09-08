@@ -1,3 +1,4 @@
+{% raw %}
 # Phase V1b: Job / Skill / Shrine / Moral / Saga Book — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1082,3 +1083,5 @@ git commit -m "docs(game-inflation-rpg): V1b — CHANGELOG entry"
 - 가족 / 결혼 / 자식 — V2 spec Tier 3, V2+
 - 명성 / 악명 — Tier 3
 - 큰 사건 / 자연재해 / 정변 — Tier 3
+
+{% endraw %}

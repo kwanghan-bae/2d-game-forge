@@ -1,3 +1,4 @@
+{% raw %}
 # Phase Sim-A — Vertical Slice + Headless Sim Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -2149,3 +2150,5 @@ Stop here. The next step (merge to main) is handled by the `finishing-a-developm
 - **The 600ms `roundMs`** is the existing BattleScene cadence. Sim-A keeps it so cycle economy stays consistent with manual mode. Phase Sim-G can tune this if needed.
 - **Inflation curve tuning is explicitly NOT in scope** for Sim-A. The placeholder EXP formula `10 * lv^1.3` is for skeleton wiring only — Sim-G is where the real curve is shaped against §11.5 of the spec.
 - **CharacterId 'K01'** is the assumed default first character. If your codebase uses a different ID for the starter character, substitute consistently across Tasks 8, 10, 11, 13, and 14.
+
+{% endraw %}

@@ -1,3 +1,4 @@
+{% raw %}
 # Content Expansion Layer 5 — Story Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -588,3 +589,5 @@ Layer 5 완료 시:
 - inflation-rpg 가 "껍데기" 에서 "온전한 RPG" 로
 
 **End of Layer 5 plan. Total tasks: 8.**
+
+{% endraw %}

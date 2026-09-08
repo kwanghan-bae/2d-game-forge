@@ -1,3 +1,4 @@
+{% raw %}
 # Phase 4c Tutorial Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -384,3 +385,5 @@ echo "Tutorial steps: $(grep -c 'id: ' games/inflation-rpg/src/data/tutorial.ts)
 다음: Phase 4b (Sound) — `2026-04-26-sound-spec.md` 별도 phase.
 
 **End of Phase 4c plan. Total tasks: 7.**
+
+{% endraw %}

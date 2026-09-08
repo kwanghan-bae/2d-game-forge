@@ -1,3 +1,4 @@
+{% raw %}
 # Phase E (Relics + Mythic + Ads stub) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -2706,3 +2707,5 @@ Two options:
 **1. Subagent-Driven (recommended)** — fresh subagent per task, two-stage review (implementer + spec/code reviewer per task), fast iteration. Matches the Phase G / Phase D / Phase 1 pattern that this repo has been following.
 
 **2. Inline Execution** — execute tasks in this session via executing-plans, batch with checkpoints.
+
+{% endraw %}

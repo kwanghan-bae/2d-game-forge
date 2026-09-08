@@ -1,3 +1,4 @@
+{% raw %}
 # Phase Compass Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1872,3 +1873,5 @@ Spec coverage check:
 Type consistency: `awardMiniBossCompass` named identically across Tasks 2, 5, 7. Re-named via alias `awardMiniBossCompassSystem` in Task 5 to avoid store-action / pure-fn collision. `pickRandomDungeon` / `canFreeSelect` / `hasAnyFreeSelect` consistent. `compassOwned` / `dungeonMiniBossesCleared` / `dungeonMajorBossesCleared` field names consistent.
 
 Placeholder scan: 0 TBD / TODO. All code shown in full.
+
+{% endraw %}

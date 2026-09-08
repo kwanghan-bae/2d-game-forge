@@ -1,3 +1,4 @@
+{% raw %}
 # 설계 스펙: Forge-UI CSS 토큰 정렬
 
 이 문서는 `2d-game-forge`의 UI 디자인 시스템 기반 작업을 정의한다.
@@ -260,3 +261,5 @@ git mv games/inflation-rpg/src/styles/game.css \
 | NES.css 의존성 | 없음 |
 | Tailwind v4 `@apply` 추상화 | 없음 |
 | inflation-rpg 테스트 통합 | 기존 60개 테스트 regression 방지 명시 |
+
+{% endraw %}

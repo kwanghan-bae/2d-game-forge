@@ -1,3 +1,4 @@
+{% raw %}
 # Phase F-2+3 — Enhance + Skill Progression Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -3031,3 +3032,5 @@ Expected: `phase-f2f3-complete` tag points to the latest commit. All checkpoints
 - **No placeholders**: every step shows actual code, exact paths, exact commands. The single deferred decision is the `bossType` lookup in BattleScene.ts (Task 27 Step 3) — annotated with the actual helper to use (`getBossType` from `src/data/floors.ts`); subagent must locate the call site precisely.
 
 - **Test count progression**: 251 → +4 (CP1 migration) → +4 (CP2 enhance.ts) → +4 (CP2 enhance store) → +2 (CP2 inventory ui) → +16 (CP3 skill progression) → +9 (CP3 jobskills) → +6 (CP3 boss JP) → +5 (CP3 charLv milestone) → +9 (CP3 levelUp/pickUlt) → +6 (CP4 SkillProgression component) → +5 (CP5 buildActiveSkills) → +1 (CP5 SkillSystem dmgMul) → +2 (CP5 ClassSelect hard gate) ≈ **324 vitest** (exceeds spec target ≥ 295). Some existing tests may shift counts; final exact count in Task 29 verification.
+
+{% endraw %}

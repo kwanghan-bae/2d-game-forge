@@ -1,3 +1,4 @@
+{% raw %}
 # Phase Sim-B — Trait Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1511,3 +1512,5 @@ Done — hand off to `finishing-a-development-branch` for merge.
 - **BASE_TRAIT_IDS** determines what shows up in CyclePrep on a fresh save. Currently 11 out of 16 (per catalog `unlockTier: 'base'`). Mid/rare unlock progression is Sim-E's job.
 - **`traitsUnlocked` is per-save persistent state** — players accumulate unlocks via meta progression. Sim-B seeds it with the base set; Sim-E adds the unlock cadence.
 - **e2e timing:** new trait selector adds ~2s to each Sim-A-equivalent flow run. Total e2e wall-clock for inflation-rpg suite is now ~5–6 min (up from ~4 min). Worth budgeting.
+
+{% endraw %}

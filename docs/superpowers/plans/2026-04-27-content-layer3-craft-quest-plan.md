@@ -1,3 +1,4 @@
+{% raw %}
 # Content Expansion Layer 3 — Craft + Quest Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -964,3 +965,5 @@ Layer 3 완료 시:
 다음: Layer 4 (스킬) — `2026-04-28-content-layer4-skills-plan.md`.
 
 **End of Layer 3 plan. Total tasks: 9. Estimated commits: 9.**
+
+{% endraw %}

@@ -1,3 +1,4 @@
+{% raw %}
 # Phase V3-B — Eternal Hero (BP 폐기 + aging + 회춘) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1336,3 +1337,5 @@ EOF
 ---
 
 — Plan 작성 완료 (2026-05-23, writing-plans v3 산출물).
+
+{% endraw %}

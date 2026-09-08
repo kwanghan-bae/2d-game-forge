@@ -1,6 +1,7 @@
 ---
 category: UI
 ---
+{% raw %}
 
 # Cycle 111 PRD — Run Statistics View (Inflation Curve Chart)
 
@@ -505,3 +506,5 @@ CycleResultV2 의 saga 소비 path 명확 — mount 위치는 line 38 (`</div>` 
 - carry-over: multi-line overlay / interactivity / MainMenu dashboard / export
   / cycle 110 의 F2 extract refactor / handlePostArrival fate roll path 모두
   cycle 112+ backlog.
+
+{% endraw %}

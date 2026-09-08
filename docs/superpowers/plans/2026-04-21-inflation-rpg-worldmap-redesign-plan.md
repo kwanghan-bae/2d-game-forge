@@ -1,3 +1,4 @@
+{% raw %}
 # Inflation RPG — 월드맵 재설계 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -1167,3 +1168,5 @@ git commit -m "fix(game-inflation-rpg): resolve typecheck/lint issues from world
 | WorldMap: 하드모드 전용 Region 숨김/표시 | Task 4 |
 | [Infinity, Infinity] 구역 렌더링 스킵 | Task 2 (getAreasByRegion 필터) |
 | 테스트 업데이트 | Task 3, 4 |
+
+{% endraw %}

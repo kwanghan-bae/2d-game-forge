@@ -1,3 +1,4 @@
+{% raw %}
 # Cycle 106 UI/UX Guide — Inflation Milestone VFX
 
 > PRD: `cycle-106-prd.md` (8 tier preset 표 = PRD §F2 단일 source — 이 가이드는 복사 안 함).
@@ -208,3 +209,5 @@ F3 미구현 상태에서도 F1 의 saga record 는 저장 (PRD §F1 §동작). 
 ## 자가 검증
 
 raw hex CSS custom property wrap / safe area / reduced-motion + mute + screen reader / shake cap rule / forge-* 재발명 없음 / VFX non-interactive (pointer-events: none → 44px 무관, 5+ primary action 무관) — 모두 cover.
+
+{% endraw %}

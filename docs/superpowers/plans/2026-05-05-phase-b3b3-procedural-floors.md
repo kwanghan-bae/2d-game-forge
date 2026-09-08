@@ -1,3 +1,4 @@
+{% raw %}
 # Phase B-3β3 — Procedural 31+ Floors Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -549,3 +550,5 @@ Auto-completed by author at write time:
   - `meta.dungeonProgress[id]?.maxFloor ?? 0` used in Task 2's `enterDeep` and panel render. Same shape, optional-chained. ✅
   - `markDungeonProgress(dungeonId, 31)` (first-clear) and `markDungeonProgress(dungeonId, finishedFloor + 1)` (advancement) — both call the existing store action with `(string, number)`. ✅
   - `getFloorInfo(dungeonId, floor)` already imported in DungeonFloors.tsx (line 4). Reused for `enterDeep` and panel monster-level display. ✅
+
+{% endraw %}

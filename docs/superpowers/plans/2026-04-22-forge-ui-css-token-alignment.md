@@ -1,3 +1,4 @@
+{% raw %}
 # Forge-UI CSS Token Alignment Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -493,3 +494,5 @@ git commit -m "feat(core): add Forge-UI CSS token TypeScript contracts to @forge
 - [ ] `pnpm lint` 0 errors
 - [ ] `pnpm circular` 0 cycles
 - [ ] `pnpm e2e` full-game-flow PASS
+
+{% endraw %}

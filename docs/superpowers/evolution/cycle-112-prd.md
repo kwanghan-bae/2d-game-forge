@@ -1,6 +1,7 @@
 ---
 category: meta
 ---
+{% raw %}
 
 # Cycle 112 PRD — Hall of Sagas (Local Leaderboard MVP)
 
@@ -673,3 +674,5 @@ delta=2 unrelated). 본 cycle = **1396 + 10+ 추가 passing, pre-existing 1 fail
   routing 의 minimal 1-줄 변경 우선. F2 의 styling polish (HallRow 의 visual
   hierarchy / 색상 등) 는 cycle 113+ defer 허용. **F1 (storage + migration)
   은 절대 skip 금지** — 본 cycle 의 핵심.
+
+{% endraw %}

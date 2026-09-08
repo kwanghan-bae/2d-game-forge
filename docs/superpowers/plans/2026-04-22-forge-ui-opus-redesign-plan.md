@@ -1,3 +1,4 @@
+{% raw %}
 # Forge-UI Opus 재설계 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -2114,3 +2115,5 @@ Expected: Layer A + B 의 모든 커밋이 요약 출력.
 ---
 
 **End of plan. Total tasks: 23 (A1-A16 + B1-B8 + C1-C2 + Z1).**
+
+{% endraw %}
