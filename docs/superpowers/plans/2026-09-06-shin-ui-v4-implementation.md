@@ -376,6 +376,7 @@ pnpm circular
 - 원스토어 성공 callback에 다른 상품이 먼저 섞여 와도 요청 상품의 pending PluginCall을 조기 실패시키지 않고 matching callback 또는 native timeout까지 보존하도록 정리했다. 빈 성공 payload와 비일치 상품 대기 경계를 Kotlin 단위 테스트로 추가했다.
 - 시설 강화 비용을 `+` 버튼의 접근성 라벨에만 두지 않고 시설 카드에 금화·재료로 항상 노출해, 모바일에서도 다음 강화 병목을 판단할 수 있게 했다. TownHub 회귀 테스트를 추가했다.
 - 지원 에이전트 카드에 특성을 표시해 작업 배정 전 정밀 제작·안전한 축원·위험 경로 감지의 차이를 확인할 수 있게 하고, TownHub 회귀 테스트를 추가했다.
+- TownHub의 손상된 개입 충전·영웅 HP를 안전한 범위로 정규화해, `NaN`·무한대 상태에서 즉시 회복·원정 후퇴 버튼이 잘못 활성화되지 않도록 하고 회귀 테스트를 추가했다.
 - 원정 준비 비용이 부족한 Realm의 길잡이·혼자 출발 버튼을 미리 비활성화하고, 필요한 재화와 현재 보유량을 카드에 표시해 출발 실패를 사전 안내했다. ExpeditionScreen 회귀 테스트를 추가했다.
 - 영웅 상세 화면에서 손상된 `equipmentIds` 컬렉션을 빈 장비 상태로 격리해, 부분 저장·in-memory 복구 payload도 화면을 중단시키지 않도록 했다. HeroDetailScreen 회귀 테스트를 추가했다.
 - 저장 schema의 사가 `title`·`text`를 non-empty 문자열로 강화해 공백·빈 기록을 `invalid_schema`로 격리했다. save recovery 회귀 테스트를 추가했다.

@@ -322,6 +322,7 @@ describe('V4 town hub support assignment', () => {
     expect(town.textContent).not.toContain('Infinity');
     expect(town.textContent).not.toContain('∞');
     expect(town.textContent).not.toContain('-25');
+    expect(within(town).getByRole('button', { name: '즉시 회복' })).toBeDisabled();
   });
 
   it('does not expose an infinite remaining time for malformed facility clocks', () => {

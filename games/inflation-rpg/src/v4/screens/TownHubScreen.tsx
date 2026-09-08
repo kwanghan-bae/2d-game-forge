@@ -63,6 +63,22 @@ function remainingSeconds(completesAt: number | undefined, now: number): number 
   return Math.max(0, Math.ceil((completesAt - now) / 1000));
 }
 
+function normalizeInterventionCharges(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value)) return 0;
+  return Math.min(V4_MAX_INTERVENTION_CHARGES, Math.max(0, value));
+}
+
+function canHealHero(hero: V4SaveEnvelope['run']['hero']): boolean {
+  return typeof hero.hp === 'number'
+    && Number.isFinite(hero.hp)
+    && typeof hero.hpMax === 'number'
+    && Number.isFinite(hero.hpMax)
+    && hero.hpMax > 0
+    && hero.hp >= 0
+    && hero.hp <= hero.hpMax
+    && hero.hp < hero.hpMax;
+}
+
 function getTownObjective(save: V4SaveEnvelope): string {
   if (save.run.expedition) {
     if (save.run.expedition.status === 'awaiting_confirmation') {
@@ -104,7 +120,9 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
   const titleRef = useV4ScreenHeadingFocus();
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
-  const interventionFull = save.run.interventionCharges >= V4_MAX_INTERVENTION_CHARGES;
+  const interventionCharges = normalizeInterventionCharges(save.run.interventionCharges);
+  const interventionFull = interventionCharges >= V4_MAX_INTERVENTION_CHARGES;
+  const hasInterventionCharge = interventionCharges > 0;
   const objective = getTownObjective(save);
   return (
     <main className="v4-container" data-testid="v4-town-hub">
@@ -253,13 +271,13 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
 
       <section className="v4-panel">
         <div className="v4-panel-head">
-          <h2>신의 개입</h2>
-          <span className="v4-action">충전 {formatNumber(save.run.interventionCharges)}/{V4_MAX_INTERVENTION_CHARGES}</span>
+        <h2>신의 개입</h2>
+          <span className="v4-action">충전 {formatNumber(interventionCharges)}/{V4_MAX_INTERVENTION_CHARGES}</span>
         </div>
         <p>자동 흐름을 바꾸는 안전장치입니다. 사용해도 장비나 영구 재화를 잃지 않습니다.</p>
         <div className="v4-button-row">
-          <button type="button" className="v4-btn v4-btn--quiet" disabled={save.run.interventionCharges <= 0 || hero.hp >= hero.hpMax} onClick={() => onIntervention('heal')}>즉시 회복</button>
-          {save.run.expedition && <button type="button" className="v4-btn v4-btn--quiet" disabled={save.run.interventionCharges <= 0} onClick={() => onIntervention('retreat')}>원정 후퇴</button>}
+          <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasInterventionCharge || !canHealHero(hero)} onClick={() => onIntervention('heal')}>즉시 회복</button>
+          {save.run.expedition && <button type="button" className="v4-btn v4-btn--quiet" disabled={!hasInterventionCharge} onClick={() => onIntervention('retreat')}>원정 후퇴</button>}
         </div>
       </section>
 
