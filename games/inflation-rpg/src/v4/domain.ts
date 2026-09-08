@@ -111,6 +111,13 @@ function isPersistableClock(value: number): boolean {
   return Number.isFinite(value) && value >= 0 && value <= MAX_ECONOMY_VALUE;
 }
 
+function isValidCompletionWindow(startedAt: unknown, completesAt: unknown): boolean {
+  return typeof startedAt === 'number'
+    && typeof completesAt === 'number'
+    && isPersistableClock(startedAt)
+    && isPersistableClock(completesAt);
+}
+
 function eventTimestamp(save: V4SaveEnvelope, now: number): number {
   const requested = isPersistableClock(now)
     ? now
@@ -554,6 +561,9 @@ export function cancelFacilityTask(
     return { ok: false, save: source, error: '취소할 작업이 없습니다.' };
   }
 
+  if (!isValidCompletionWindow(task.startedAt, task.completesAt)) {
+    return { ok: false, save: source, error: '작업 시각 범위를 확인할 수 없습니다.' };
+  }
   if (task.completesAt <= eventTimestamp(save, now)) {
     return {
       ok: false,
@@ -921,10 +931,15 @@ function settleFacilityTasks(
   const eventAt = allowHistoricalSettlement ? now : eventTimestamp(source, now);
   for (const task of Object.values(source.meta.tasks)) {
     if (onlyTaskId !== null && task.id !== onlyTaskId) continue;
+    if (!isValidCompletionWindow(task.startedAt, task.completesAt)) return source;
     if (task.completesAt > eventAt) continue;
     if (!canApplyCurrencyOutput(source, task.outputPreview)) return source;
     if (task.assignedAgentId
       && !isValidAgentState(source.meta.agents.find((agent) => agent.id === task.assignedAgentId))) return source;
+  }
+  if (resolveExpeditionOnSettlement && source.run.expedition
+    && !isValidCompletionWindow(source.run.expedition.startedAt, source.run.expedition.completesAt)) {
+    return source;
   }
   if (resolveExpeditionOnSettlement && source.run.expedition
     && source.run.expedition.completesAt <= eventAt) {
@@ -1036,6 +1051,9 @@ export function completeFacilityTaskNow(
   const task = taskId ? prepared.meta.tasks[taskId] : undefined;
   if (!facility || !task) {
     return { ok: false, save: source, error: '즉시 완료할 작업이 없습니다.' };
+  }
+  if (!isValidCompletionWindow(task.startedAt, task.completesAt)) {
+    return { ok: false, save: source, error: '작업 시각 범위를 확인할 수 없어 즉시 완료하지 않았습니다.' };
   }
   task.completesAt = eventAt;
   const settled = settleFacilityTasks(prepared, eventAt, 1, true, false, false, task.id, false);

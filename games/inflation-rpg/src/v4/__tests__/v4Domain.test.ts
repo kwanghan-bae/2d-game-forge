@@ -1628,6 +1628,59 @@ describe('v4 save and domain', () => {
     expect(result.meta.tasks[started.task.id]).toBeDefined();
   });
 
+  it('does not settle a task whose persisted completion clock is NaN', () => {
+    const initial = createInitialV4Save(291);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = Number.NaN;
+    const beforeCurrencies = { ...started.save.meta.currencies };
+
+    const result = completeFacilityTasks(started.save, started.save.updatedAt + 60_000);
+
+    expect(result).toBe(started.save);
+    expect(result.meta.tasks[started.task.id]).toBeDefined();
+    expect(result.meta.currencies).toEqual(beforeCurrencies);
+  });
+
+  it('does not resolve an expedition whose persisted completion clock is NaN', () => {
+    const initial = createInitialV4Save(292);
+    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    const expedition = started.save.run.expedition;
+    expect(expedition).not.toBeNull();
+    if (!expedition) return;
+    expedition.completesAt = Number.NaN;
+    const beforeCurrencies = { ...started.save.meta.currencies };
+
+    const result = completeFacilityTasks(started.save, started.save.updatedAt + 60_000);
+
+    expect(result).toBe(started.save);
+    expect(result.run.expedition).toBe(expedition);
+    expect(result.run.lastExpeditionResult).toBeNull();
+    expect(result.meta.currencies).toEqual(beforeCurrencies);
+  });
+
+  it('does not refund or instantly complete a task whose clock is NaN', () => {
+    const initial = createInitialV4Save(293);
+    const started = startFacilityTask(initial, 'temple', initial.createdAt);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.meta.tasks[started.task.id].completesAt = Number.NaN;
+    const beforeCurrencies = { ...started.save.meta.currencies };
+
+    const canceled = cancelFacilityTask(started.save, 'temple', started.save.updatedAt + 60_000);
+    const instant = completeFacilityTaskNow(started.save, 'temple', started.save.updatedAt + 60_000);
+
+    expect(canceled.ok).toBe(false);
+    expect(canceled.save).toBe(started.save);
+    expect(instant.ok).toBe(false);
+    expect(instant.save).toBe(started.save);
+    expect(started.save.meta.tasks[started.task.id]).toBeDefined();
+    expect(started.save.meta.currencies).toEqual(beforeCurrencies);
+  });
+
   it('caps malformed training experience before settlement', () => {
     const initial = createInitialV4Save(116);
     const started = startFacilityTask(initial, 'training', initial.createdAt, null);
