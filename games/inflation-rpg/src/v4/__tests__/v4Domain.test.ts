@@ -11,6 +11,7 @@ import {
 } from '../save';
 import {
   cancelFacilityTask,
+  chooseStoryChoice,
   completeFacilityTasks,
   completeFacilityTaskNow,
   advanceHeroActions,
@@ -1805,8 +1806,12 @@ describe('v4 save and domain', () => {
     expect(confirmed.run.lastExpeditionResult?.realmId).toBe('deep_forest');
     expect(confirmed.run.lastExpeditionResult?.outcome).toBe('victory');
     expect(confirmed.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
-    const unlocked = confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000);
-    expect(unlocked.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest', 'underworld']);
+    const blockedUnlock = confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000);
+    expect(blockedUnlock).toBe(confirmed);
+    const choice = chooseStoryChoice(confirmed, 'protect_flame', confirmed.updatedAt + 1_000);
+    expect(choice.ok).toBe(true);
+    if (!choice.ok) return;
+    expect(choice.save.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest', 'underworld']);
     expect(confirmPendingExpedition(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 
@@ -2904,5 +2909,70 @@ describe('v4 save and domain', () => {
     full.run.interventionCharges = 3;
 
     expect(grantInterventionCharge(full, full.updatedAt + 1_000)).toBe(full);
+  });
+
+  it('records one deterministic realm entrance and victory beat for each realm', () => {
+    const initial = createInitialV4Save(130);
+    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    expect(started.save.meta.sagaEntries.some((entry) => entry.id === 'saga-realm-intro-joseon_plains')).toBe(true);
+
+    started.save.run.hero.atk = 10_000;
+    started.save.run.hero.def = 10_000;
+    started.save.run.hero.defBase = 10_000;
+    started.save.run.hero.hp = started.save.run.hero.hpMax;
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
+    const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
+
+    expect(completed.meta.sagaEntries.some((entry) => entry.id === 'saga-realm-victory-joseon_plains')).toBe(true);
+    expect(completed.meta.sagaEntries.filter((entry) => entry.id === 'saga-realm-intro-joseon_plains')).toHaveLength(1);
+    expect(completed.meta.sagaEntries.filter((entry) => entry.id === 'saga-realm-victory-joseon_plains')).toHaveLength(1);
+  });
+
+  it('records the underworld epilogue once while allowing another expedition afterward', () => {
+    const initial = createInitialV4Save(131);
+    initial.meta.unlockedRealms.push('deep_forest', 'underworld');
+    initial.run.hero.atk = 10_000;
+    initial.run.hero.def = 10_000;
+    initial.run.hero.defBase = 10_000;
+    initial.run.hero.hp = initial.run.hero.hpMax;
+
+    const first = startExpedition(initial, 'underworld', initial.updatedAt, 'aggression', null);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    first.save.run.expedition!.encounterIndex = 2;
+    first.save.run.expedition!.completesAt = first.save.run.expedition!.startedAt;
+    const firstCompleted = completeFacilityTasks(first.save, first.save.run.expedition!.completesAt);
+    expect(firstCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-epilogue-first-journey')).toHaveLength(1);
+
+    const second = startExpedition(firstCompleted, 'underworld', firstCompleted.updatedAt + 1_000, 'aggression', null);
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    second.save.run.expedition!.encounterIndex = 2;
+    second.save.run.expedition!.completesAt = second.save.run.expedition!.startedAt;
+    const secondCompleted = completeFacilityTasks(second.save, second.save.run.expedition!.completesAt);
+    expect(secondCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-epilogue-first-journey')).toHaveLength(1);
+  });
+
+  it('records the first trust-50 relationship beat once per agent', () => {
+    const initial = createInitialV4Save(132);
+    const mudang = initial.meta.agents.find((agent) => agent.id === 'mudang');
+    if (!mudang) throw new Error('mudang fixture missing');
+    mudang.trust = 49;
+
+    const first = startFacilityTask(initial, 'mudang', initial.updatedAt, 'mudang');
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    const firstCompleted = completeFacilityTasks(first.save, first.task.completesAt);
+    expect(firstCompleted.meta.agents.find((agent) => agent.id === 'mudang')?.trust).toBe(50);
+    expect(firstCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-agent-trust-mudang-50')).toHaveLength(1);
+
+    const second = startFacilityTask(firstCompleted, 'mudang', firstCompleted.updatedAt + 1_000, 'mudang');
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    const secondCompleted = completeFacilityTasks(second.save, second.task.completesAt);
+    expect(secondCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-agent-trust-mudang-50')).toHaveLength(1);
   });
 });

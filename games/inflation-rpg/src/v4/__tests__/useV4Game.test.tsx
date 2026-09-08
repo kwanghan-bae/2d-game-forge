@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save, persistV4Save, V4_RECOVERY_BACKUP_KEY, V4_SAVE_KEY } from '../save';
 import { completeFacilityTasks, startExpedition, startFacilityTask } from '../domain';
+import { getRealmVictoryEntry } from '../story';
 import { V4MonetizationAdapter } from '../monetization';
 import { useV4Game } from '../useV4Game';
 import { useGameStore } from '../../store/gameStore';
@@ -110,6 +111,17 @@ function RefreshHarness() {
       <div data-testid="expedition-status">{game.save.run.expedition?.status ?? 'none'}</div>
       <div data-testid="unlocked-realms">{game.save.meta.unlockedRealms.join(',')}</div>
       <button type="button" onClick={game.refresh}>refresh</button>
+    </>
+  );
+}
+
+function StoryChoiceHarness() {
+  const game = useV4Game();
+  return (
+    <>
+      <div data-testid="story-choice">{game.storyChoice?.id ?? 'none'}</div>
+      <div data-testid="story-realms">{game.save.meta.unlockedRealms.join(',')}</div>
+      <button type="button" onClick={() => game.chooseStoryChoice('protect_flame')}>protect</button>
     </>
   );
 }
@@ -980,6 +992,25 @@ describe('useV4Game save recovery', () => {
 
     expect(screen.getByTestId('expedition-status')).toHaveTextContent('traveling');
     expect(screen.getByTestId('task-count')).toHaveTextContent('0');
+  });
+
+  it('persists the Saga choice through the hook without adding a schema field', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(114);
+    base.meta.unlockedRealms.push('deep_forest');
+    base.meta.sagaEntries.unshift(getRealmVictoryEntry('deep_forest', base.run.hero.name, base.updatedAt));
+    persistV4Save(base);
+
+    render(<StoryChoiceHarness />);
+
+    expect(screen.getByTestId('story-choice')).toHaveTextContent('deep_forest_embers');
+    fireEvent.click(screen.getByRole('button', { name: 'protect' }));
+
+    expect(screen.getByTestId('story-choice')).toHaveTextContent('none');
+    expect(screen.getByTestId('story-realms')).toHaveTextContent('joseon_plains,deep_forest,underworld');
+    expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
+    expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').meta.storyChoice).toBeUndefined();
   });
 
   it('routes a large live clock gap through offline safety before resolving a risky boss', () => {

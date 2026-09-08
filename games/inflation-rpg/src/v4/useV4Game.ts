@@ -6,6 +6,7 @@ import {
   completeFacilityTasks,
   completeFacilityTaskNow,
   confirmNextRealmUnlock,
+  chooseStoryChoice as chooseStoryChoiceDomain,
   grantInterventionCharge,
   grantOfflineResourceBonus,
   rejuvenateHero,
@@ -30,7 +31,8 @@ import { useGameStore } from '../store/gameStore';
 import type { HeroSnapshot } from '../hero/HeroEntity';
 import { V4_DAILY_REWARDED_LIMIT, type V4MonetizationAdapter, type V4RewardedPlacement } from './monetization';
 import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, V4Policy, V4SaveEnvelope, V4Settings } from './types';
-import { V4_MAX_INTERVENTION_CHARGES } from './types';
+import { V4_MAX_INTERVENTION_CHARGES, type StoryChoiceOptionId } from './types';
+import { getAvailableStoryChoice } from './domain';
 
 function monotonicActionTimestamp(
   save: V4SaveEnvelope,
@@ -427,6 +429,12 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     else setMessage(result.error);
   }, [commit]);
 
+  const chooseStory = useCallback((choice: StoryChoiceOptionId) => {
+    const result = chooseStoryChoiceDomain(saveRef.current, choice, Date.now());
+    if (result.ok) commit(result.save, '깊은 숲의 선택을 사가에 기록했습니다. 저승의 길이 열렸습니다.');
+    else setMessage(result.error);
+  }, [commit]);
+
   const confirmRun = useCallback(() => {
     const current = saveRef.current;
     if (current.run.expedition?.status !== 'awaiting_confirmation') return;
@@ -488,6 +496,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
 
   return {
     save,
+    storyChoice: getAvailableStoryChoice(save),
     storageStatus,
     storageIssue,
     now,
@@ -518,6 +527,7 @@ export function useV4Game(monetization?: V4MonetizationAdapter) {
     restorePurchases,
     restorePurchasesAvailable: canRestorePurchases(monetization),
     startRun,
+    chooseStoryChoice: chooseStory,
     confirmRun,
     confirmUnlock,
     upgrade,

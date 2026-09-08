@@ -170,6 +170,9 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
 function isSagaEntryRecord(value: unknown): boolean {
   return isRecord(value) && isNonEmptyString(value.id) && isPersistableNonNegativeNumber(value.createdAt)
     && isNonEmptyString(value.title) && isNonEmptyString(value.text)
+    // Story beats use the same SagaEntry shape and namespace; retain the
+    // legacy-saga prefix accepted by older schema-1 saves.
+    && (value.id.startsWith('saga-') || value.id.startsWith('legacy-saga-'))
     && ['birth', 'facility', 'expedition', 'rejuvenation', 'milestone'].includes(value.kind as string);
 }
 

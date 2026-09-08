@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createInitialV4Save } from '../save';
 import { getExpeditionForecast, getExpeditionSuccessChance, startExpedition } from '../domain';
 import { ExpeditionScreen } from '../screens/ExpeditionScreen';
+import { getRealmVictoryEntry } from '../story';
 import type { ExpeditionResult, V4SaveEnvelope } from '../types';
 
 function renderResult(result: ExpeditionResult) {
@@ -63,6 +64,31 @@ describe('V4 expedition result screen', () => {
     if (!plains) return;
     expect(plains).toHaveTextContent('예상 보상 · 금화 +55 · 재료 +4');
     expect(plains).toHaveTextContent('기본 경로 80초');
+  });
+
+  it('routes the deep forest victory to the Saga choice before the underworld', () => {
+    const save = createInitialV4Save(113);
+    save.meta.unlockedRealms.push('deep_forest');
+    save.meta.sagaEntries.unshift(getRealmVictoryEntry('deep_forest', save.run.hero.name, save.updatedAt));
+    save.run.lastExpeditionResult = baseResult({ realmId: 'deep_forest' });
+    const onOpenSaga = vi.fn();
+
+    render(<ExpeditionScreen
+      save={save}
+      now={save.updatedAt}
+      onStart={vi.fn()}
+      onConfirm={vi.fn()}
+      onConfirmUnlock={vi.fn()}
+      onRefresh={vi.fn()}
+      onIntervention={vi.fn()}
+      onOpenSaga={onOpenSaga}
+      onBack={vi.fn()}
+    />);
+
+    const result = screen.getByTestId('v4-expedition-result');
+    expect(result).toHaveTextContent('깊은 숲의 선택을 먼저 사가에 기록');
+    fireEvent.click(within(result).getByRole('button', { name: '사가에서 선택하기' }));
+    expect(onOpenSaga).toHaveBeenCalledTimes(1);
   });
 
   it('blocks both departure paths when the Realm preparation cost is unavailable', () => {

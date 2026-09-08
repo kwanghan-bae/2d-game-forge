@@ -1,5 +1,5 @@
 import { FACILITY_DEFINITIONS, getV4AgentDefinition, getV4CurrencyName, getV4FacilityName, getV4PolicyName, getV4RealmDefinition, getV4RealmName, getV4RealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
-import { getExpeditionForecast, getNextRealmId, getV4HeroPower } from '../domain';
+import { getAvailableStoryChoice, getExpeditionForecast, getNextRealmId, getV4HeroPower } from '../domain';
 import { getV4EquipmentName } from '../equipment';
 import type { InterventionType, RealmId, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from '../types';
 import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
@@ -12,6 +12,7 @@ interface Props {
   onConfirmUnlock: () => void;
   onRefresh: () => void;
   onIntervention: (type: InterventionType) => void;
+  onOpenSaga?: () => void;
   onBack: () => void;
 }
 
@@ -118,7 +119,7 @@ function getGuideAvailability(
   return 'ready';
 }
 
-export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnlock, onRefresh, onIntervention, onBack }: Props) {
+export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnlock, onRefresh, onIntervention, onOpenSaga, onBack }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
 
   const expedition = save.run.expedition;
@@ -136,6 +137,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const waitingForBoss = activeEncounter?.tier === 'boss';
   const nextRealmId = result?.outcome === 'victory' ? getNextRealmId(result.realmId) : null;
   const nextRealmPending = Boolean(nextRealmId && !save.meta.unlockedRealms.includes(nextRealmId));
+  const storyChoicePending = Boolean(nextRealmId === 'underworld' && getAvailableStoryChoice(save));
   const resultRewardText = result ? formatResources(result.reward) : '없음';
   const resultSuccessChance = result && typeof result.successChance === 'number'
     && Number.isFinite(result.successChance) && result.successChance >= 0 && result.successChance <= 1
@@ -172,7 +174,9 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
           {result.outcome === 'victory' ? (
             <>
               <div className="v4-alert">획득 보상 · {resultRewardText}{resultRewardText === '없음' ? ' · 사가에 원정 기록을 남겼습니다.' : ''}</div>
-              {nextRealmPending && nextRealmId && <div className="v4-button-row"><p className="v4-muted">오프라인 승리는 다음 Realm 해금을 자동 확정하지 않습니다.</p><button type="button" className="v4-btn v4-btn--primary" onClick={onConfirmUnlock}>{getV4RealmName(nextRealmId)} 기록하기</button></div>}
+              {nextRealmPending && nextRealmId && <div className="v4-button-row"><p className="v4-muted">{storyChoicePending ? '깊은 숲의 선택을 먼저 사가에 기록해야 저승으로 갈 수 있습니다.' : '다음 영역의 기록을 확인한 뒤 원정을 이어가세요.'}</p>{storyChoicePending
+                ? <button type="button" className="v4-btn v4-btn--primary" onClick={onOpenSaga}>사가에서 선택하기</button>
+                : <button type="button" className="v4-btn v4-btn--primary" onClick={onConfirmUnlock}>{getV4RealmName(nextRealmId)} 기록하기</button>}</div>}
             </>
           ) : (
             <>

@@ -12,6 +12,7 @@ export type FacilityId =
 export type SupportAgentId = 'blacksmith' | 'mudang' | 'guide';
 export type RealmId = 'joseon_plains' | 'deep_forest' | 'underworld';
 export type EncounterTier = 'normal' | 'elite' | 'boss';
+export type StoryChoiceOptionId = 'protect_flame' | 'release_goblin';
 
 export const V4_MAX_SAGA_ENTRIES = 200;
 export const V4_MAX_INTERVENTION_CHARGES = 3;
@@ -123,6 +124,19 @@ export interface SagaEntry {
   createdAt: number;
   title: string;
   text: string;
+}
+
+export interface StoryChoiceOption {
+  id: StoryChoiceOptionId;
+  title: string;
+  text: string;
+}
+
+export interface StoryChoiceDefinition {
+  id: 'deep_forest_embers';
+  title: string;
+  prompt: string;
+  options: StoryChoiceOption[];
 }
 
 export interface V4MetaState {

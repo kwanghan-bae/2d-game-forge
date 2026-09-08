@@ -8,6 +8,16 @@ import { V4_HERO_AUTONOMY_DELAY_MS, V4_MAX_INTERVENTION_CHARGES, V4_MAX_SAGA_ENT
 import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentDefinition, getV4EquipmentName } from './equipment';
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
+import {
+  chooseStoryChoice as chooseStoryChoiceEntry,
+  getAgentTrustMilestoneEntry,
+  getAvailableStoryChoice,
+  getRealmIntroEntry,
+  getRealmVictoryEntry,
+  getRejuvenationStoryEntry,
+  getV4EpilogueEntry,
+  hasV4Epilogue,
+} from './story';
 import type {
   FacilityId,
   FacilityTask,
@@ -27,7 +37,10 @@ import type {
   V4SaveEnvelope,
   V4Settings,
   SupportAgent,
+  StoryChoiceOptionId,
 } from './types';
+
+export { getAvailableStoryChoice, hasV4Epilogue } from './story';
 
 export type DomainResult<T extends V4SaveEnvelope = V4SaveEnvelope> =
   | { ok: true; save: T; task: FacilityTask }
@@ -262,6 +275,12 @@ function isSaveIdUsed(save: V4SaveEnvelope, id: string): boolean {
   if (Object.prototype.hasOwnProperty.call(save.meta.tasks, id)) return true;
   if (save.run.expedition?.id === id || save.run.lastExpeditionResult?.id === id) return true;
   return save.meta.sagaEntries.some((entry) => entry.id === id || entry.id.endsWith(`-${id}`));
+}
+
+function addUniqueStoryEntry(save: V4SaveEnvelope, entry: ReturnType<typeof getRealmIntroEntry>): void {
+  if (!save.meta.sagaEntries.some((candidate) => candidate.id === entry.id)) {
+    save.meta.sagaEntries.unshift(entry);
+  }
 }
 
 function nextSaveId(save: V4SaveEnvelope, base: string): string {
@@ -764,13 +783,7 @@ export function rejuvenateHero(source: V4SaveEnvelope, years: number, now: numbe
   save.meta.currencies.gold = gold;
   save.meta.currencies.gold -= result.cost;
   save.run.hero = result.snapshot;
-  save.meta.sagaEntries.unshift({
-    id: nextSaveId(save, `saga-rejuvenation-${eventAt}`),
-    kind: 'rejuvenation',
-    createdAt: eventAt,
-    title: '영원의 회춘 의식',
-    text: `${save.run.hero.name}의 시간이 ${result.yearsReduced}년 되돌아갔다.`,
-  });
+  addUniqueStoryEntry(save, getRejuvenationStoryEntry(save.run.hero.name, result.yearsReduced, eventAt));
   touchSave(save, now);
   return { ok: true, save, result };
 }
@@ -1066,7 +1079,15 @@ function resolveExpedition(
       save.run.hero.currentAction = 'rest';
       if (allowPermanentUnlock) {
         const next = getNextRealmId(expedition.realmId);
-        if (next && !save.meta.unlockedRealms.includes(next)) save.meta.unlockedRealms.push(next);
+        // The deep forest victory intentionally pauses before the underworld:
+        // the player must make the ember choice in the Saga screen first.
+        if (next && next !== 'underworld' && !save.meta.unlockedRealms.includes(next)) {
+          save.meta.unlockedRealms.push(next);
+        }
+      }
+      addUniqueStoryEntry(save, getRealmVictoryEntry(expedition.realmId, save.run.hero.name, eventAt));
+      if (expedition.realmId === 'underworld' && !hasV4Epilogue(save)) {
+        addUniqueStoryEntry(save, getV4EpilogueEntry(save.run.hero.name, eventAt));
       }
       save.meta.sagaEntries.unshift({
         id: nextSaveId(save, `saga-expedition-${expedition.id}`),
@@ -1169,6 +1190,9 @@ function settleFacilityTasks(
         agent.fatigue = Math.min(100, agent.fatigue + 5);
         agent.trust = Math.min(100, agent.trust + 1);
         agent.level = Math.max(agent.level, Math.min(3, 1 + Math.floor(agent.trust / 50)));
+        if (previousTrust < 50 && agent.trust >= 50) {
+          addUniqueStoryEntry(save, getAgentTrustMilestoneEntry(agent.id, agent.nameKR, eventAt));
+        }
         if (previousTrust < 100 && agent.trust === 100) {
           save.meta.sagaEntries.unshift({
             id: nextSaveId(save, `saga-agent-trust-${agent.id}-${task.id}`),
@@ -1271,6 +1295,7 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
   if (!result || result.outcome !== 'victory') return source;
   const next = getNextRealmId(result.realmId);
   if (!next || source.meta.unlockedRealms.includes(next)) return source;
+  if (next === 'underworld' && getAvailableStoryChoice(source)) return source;
   const nextRealm = getV4RealmDefinition(next);
   if (!nextRealm) return source;
   if (!isActionClockValid(source, now)) return source;
@@ -1287,6 +1312,15 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
   });
   touchSave(save, now);
   return save;
+}
+
+/** Explicitly records the one irreversible story choice before the underworld. */
+export function chooseStoryChoice(
+  source: V4SaveEnvelope,
+  choice: StoryChoiceOptionId,
+  now: number,
+) {
+  return chooseStoryChoiceEntry(source, choice, now);
 }
 
 export function grantOfflineResourceBonus(
@@ -1498,6 +1532,7 @@ export function startExpedition(
     const agent = save.meta.agents.find((item) => item.id === assignedAgentId);
     if (agent) agent.activeTaskId = id;
   }
+  addUniqueStoryEntry(save, getRealmIntroEntry(realmId, save.run.hero.name, eventAt));
   touchSave(save, now);
   return {
     ok: true,
