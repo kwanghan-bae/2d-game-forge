@@ -1057,7 +1057,12 @@ export function confirmPendingExpedition(source: V4SaveEnvelope, now: number): V
   const save = cloneSave(source);
   if (!save.run.expedition) return source;
   save.run.expedition.status = 'traveling';
-  return completeFacilityTasks(save, now, 1, false, false, true);
+  const settled = completeFacilityTasks(save, now, 1, false, false, true);
+  // Confirmation is a single atomic transition. If settlement rejects the
+  // cloned state (for example because a persisted balance or agent is
+  // malformed), never expose the intermediate `traveling` status to callers.
+  if (settled === save || settled.run.expedition) return source;
+  return settled;
 }
 
 /** Explicitly commits the next Realm record after an offline victory. */
