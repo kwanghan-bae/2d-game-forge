@@ -232,7 +232,10 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         <div className="v4-agent-list">
           {save.meta.agents.map((agent) => (
             <div key={agent.id} className="v4-agent">
-              <span><span className="v4-agent-role">{agent.roleKR}</span> {agent.nameKR} · Lv.{formatNumber(agent.level)}</span>
+              <span>
+                <span className="v4-agent-role">{agent.roleKR}</span> {agent.nameKR} · Lv.{formatNumber(agent.level)}
+                <br /><span className="v4-agent-trait">특성 · {typeof agent.trait === 'string' && agent.trait.trim() ? agent.trait.trim() : '특성 확인 필요'}</span>
+              </span>
               <span className="v4-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="v4-btn v4-btn--quiet" disabled={Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
             </div>
           ))}

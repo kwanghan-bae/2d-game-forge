@@ -61,6 +61,18 @@ describe('V4 town hub support assignment', () => {
     expect(props.onStartTask).toHaveBeenCalledWith('blacksmith', 'blacksmith');
   });
 
+  it('shows each support agent trait so the player can choose the right assignment', () => {
+    renderHub();
+
+    const panel = screen.getByRole('heading', { name: '지원 에이전트' }).closest('section');
+    expect(panel).not.toBeNull();
+    if (!panel) return;
+
+    expect(panel).toHaveTextContent('정밀 제작');
+    expect(panel).toHaveTextContent('안전한 축원');
+    expect(panel).toHaveTextContent('위험 경로 감지');
+  });
+
   it('exposes the selected sponsor policy to assistive technology', () => {
     renderHub();
 

@@ -63,6 +63,7 @@
 .v4-agent-list { display: grid; gap: 7px; }
 .v4-agent { display: flex; justify-content: space-between; gap: 8px; padding: 8px; border: 1px solid #393148; border-radius: 8px; background: #211c2c; font-size: 11px; }
 .v4-agent-role { color: #d7b86b; }
+.v4-agent-trait { color: #c4bbca; font-size: 10px; }
 .v4-agent-state { color: #aaa1ae; text-align: right; }
 .v4-realm-card { margin-bottom: 8px; padding: 10px; border: 1px solid #43384e; border-radius: 9px; background: #211c2c; }
 .v4-realm-card--locked { opacity: .55; }
