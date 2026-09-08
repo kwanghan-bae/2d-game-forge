@@ -36,7 +36,32 @@ jobs:
       - run: pnpm turbo run typecheck lint test
       - run: pnpm circular
 
-  e2e:
+  game-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @forge/inflation-rpg-native-onestore-iap build
+      - run: pnpm --filter @forge/game-inflation-rpg build
+
+  game-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @forge/inflation-rpg-native-onestore-iap build
+      - run: pnpm --filter @forge/game-inflation-rpg exec playwright install --with-deps chromium
+      - run: pnpm --filter @forge/game-inflation-rpg e2e
+
+  portal-e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

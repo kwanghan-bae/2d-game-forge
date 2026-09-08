@@ -82,13 +82,13 @@
 - 회복당 설명은 실제 효과인 영웅 HP 완전 회복만 약속한다.
 - 기록관 설명은 실제 효과인 사가 정리와 균열석 생산만 약속한다.
 
-- [ ] **RED:** 정책별 대상, 15초 유예, 저HP 우선, 미확인 결과 차단을 검증하는 자율 전이 테스트를 추가하고 실패를 확인한다.
-- [ ] **GREEN:** `decideHeroAction`과 `advanceHeroAutonomy`를 구현하고 1초 refresh에서 호출한다.
-- [ ] **RED:** 공격력 0·HP 1인 영웅의 표시 승률이 0이어야 한다는 도메인 테스트를 추가하고 기존 구현에서 실패를 확인한다.
-- [ ] **GREEN:** `getExpeditionForecast`를 화면과 정산이 공유하게 하고 길잡이·혼자 출발의 예측을 각각 표시한다.
-- [ ] **RED:** 회복당과 기록관 설명이 정산 가능한 실제 효과만 안내하는지 화면 테스트를 추가하고 실패를 확인한다.
-- [ ] **GREEN:** 마을 문구를 실제 시설 효과와 자율 전이에 맞춘다.
-- [ ] 관련 V4 도메인·화면 테스트와 typecheck를 실행한 뒤 커밋한다.
+- [x] **RED:** 정책별 대상, 15초 유예, 저HP 우선, 미확인 결과 차단을 검증하는 자율 전이 테스트를 추가하고 실패를 확인한다.
+- [x] **GREEN:** `decideHeroAction`과 `advanceHeroAutonomy`를 구현하고 1초 refresh에서 호출한다.
+- [x] **RED:** 공격력 0·HP 1인 영웅의 표시 승률이 0이어야 한다는 도메인 테스트를 추가하고 기존 구현에서 실패를 확인한다.
+- [x] **GREEN:** `getExpeditionForecast`를 화면과 정산이 공유하게 하고 길잡이·혼자 출발의 예측을 각각 표시한다.
+- [x] **RED:** 회복당과 기록관 설명이 정산 가능한 실제 효과만 안내하는지 화면 테스트를 추가하고 실패를 확인한다.
+- [x] **GREEN:** 마을 문구를 실제 시설 효과와 자율 전이에 맞춘다.
+- [x] 관련 V4 도메인·화면 테스트와 typecheck를 실행한 뒤 커밋한다.
 
 ---
 
@@ -124,15 +124,15 @@ function hasV4Epilogue(save: V4SaveEnvelope): boolean;
 
 선택 결과는 신규 schema 필드가 아니라 `saga-story-deep-forest-embers` saga entry로 저장한다. `protect_flame`은 월령 신뢰 +5와 균열석 +1, `release_goblin`은 솔바람 신뢰 +5와 재료 +2를 준다. 저승 승리는 게임 종료가 아닌 첫 사가의 완결 entry를 한 번 기록하고 이후 반복 플레이를 허용한다.
 
-- [ ] **RED:** 프롤로그, 각 Realm 진입·승리, 회춘 기록이 한국 설화 세계의 인과를 설명하는지 literal fixture로 검증한다.
-- [ ] **GREEN:** story catalog와 생성 함수를 구현한다.
-- [ ] **RED:** 깊은 숲 승리 전 선택 불가, 승리 후 두 선택 중 하나만 기록 가능, 중복 선택 no-op 테스트를 추가한다.
-- [ ] **GREEN:** `chooseStoryChoice`와 Saga 화면의 두 선택 버튼을 구현하고 선택 전에는 저승 해금을 보류한다.
-- [ ] **RED:** 저승 승리 시 첫 사가 에필로그가 한 번만 기록되고 이후 원정은 계속 가능한지 테스트한다.
-- [ ] **GREEN:** 저승 승리 정산에 중복 없는 에필로그를 연결한다.
-- [ ] **RED:** 신뢰도 50 최초 도달 시 에이전트별 관계 milestone이 한 번만 기록되는지 테스트한다.
-- [ ] **GREEN:** 작업 정산에 관계 milestone을 연결한다.
-- [ ] Saga 화면과 원정 화면 테스트를 실행한 뒤 커밋한다.
+- [x] **RED:** 프롤로그, 각 Realm 진입·승리, 회춘 기록이 한국 설화 세계의 인과를 설명하는지 literal fixture로 검증한다.
+- [x] **GREEN:** story catalog와 생성 함수를 구현한다.
+- [x] **RED:** 깊은 숲 승리 전 선택 불가, 승리 후 두 선택 중 하나만 기록 가능, 중복 선택 no-op 테스트를 추가한다.
+- [x] **GREEN:** `chooseStoryChoice`와 Saga 화면의 두 선택 버튼을 구현하고 선택 전에는 저승 해금을 보류한다.
+- [x] **RED:** 저승 승리 시 첫 사가 에필로그가 한 번만 기록되고 이후 원정은 계속 가능한지 테스트한다.
+- [x] **GREEN:** 저승 승리 정산에 중복 없는 에필로그를 연결한다.
+- [x] **RED:** 신뢰도 50 최초 도달 시 에이전트별 관계 milestone이 한 번만 기록되는지 테스트한다.
+- [x] **GREEN:** 작업 정산에 관계 milestone을 연결한다.
+- [x] Saga 화면과 원정 화면 테스트를 실행한 뒤 커밋한다.
 
 ---
 
@@ -177,13 +177,13 @@ interface V4OnboardingSummary {
 
 로그 키는 `shin-ui-eternal-sponsor-v4-metrics-v1`, 최대 500건, 저장 실패 시 게임 진행은 계속한다. 영웅 이름이나 기기 식별자는 기록하지 않는다.
 
-- [ ] **RED:** 잘못된 저장값 복구, 500건 상한, 중복 ID 방지 테스트를 추가한다.
-- [ ] **GREEN:** bounded local metric store를 구현한다.
-- [ ] **RED:** 첫 원정 900초 경계와 30분 내 서로 다른 결정 2종 요약 테스트를 추가한다.
-- [ ] **GREEN:** `summarizeV4Onboarding`을 구현한다.
-- [ ] **RED:** 실제 hook 액션이 성공했을 때만 이벤트가 기록되고 실패 액션에는 기록되지 않는 테스트를 추가한다.
-- [ ] **GREEN:** 시설·정책·원정·오프라인·결말 액션에 계측을 연결한다.
-- [ ] 설정 화면에 서버 전송 없는 로컬 진단 요약을 표시하고 테스트한 뒤 커밋한다.
+- [x] **RED:** 잘못된 저장값 복구, 500건 상한, 중복 ID 방지 테스트를 추가한다.
+- [x] **GREEN:** bounded local metric store를 구현한다.
+- [x] **RED:** 첫 원정 900초 경계와 30분 내 서로 다른 결정 2종 요약 테스트를 추가한다.
+- [x] **GREEN:** `summarizeV4Onboarding`을 구현한다.
+- [x] **RED:** 실제 hook 액션이 성공했을 때만 이벤트가 기록되고 실패 액션에는 기록되지 않는 테스트를 추가한다.
+- [x] **GREEN:** 시설·정책·원정·오프라인·결말 액션에 계측을 연결한다.
+- [x] 설정 화면에 서버 전송 없는 로컬 진단 요약을 표시하고 테스트한 뒤 커밋한다.
 
 ---
 
@@ -205,10 +205,10 @@ interface V4OnboardingSummary {
 - 430px 모바일 본문은 유지하되 760px 이상 화면에서는 영웅·목표와 시설·에이전트를 2열로 보여 빈 여백을 줄인다.
 - `story.ts`와 `telemetry.ts`에 새 책임을 두어 `domain.ts`와 `useV4Game.ts`에 서사 문구·저장소 파싱을 추가하지 않는다.
 
-- [ ] **RED:** 개발 용어가 플레이 화면에 없고 한국어 `영역`이 보이는지 화면 테스트를 추가한다.
-- [ ] **GREEN:** 사용자 문구와 레이아웃을 수정한다.
-- [ ] 390×844와 desktop Chromium 스크린샷 및 가로 스크롤 검사를 실행한다.
-- [ ] V4 화면 테스트와 접근성 포커스 E2E를 실행한 뒤 커밋한다.
+- [x] **RED:** 개발 용어가 플레이 화면에 없고 한국어 `영역`이 보이는지 화면 테스트를 추가한다.
+- [x] **GREEN:** 사용자 문구와 레이아웃을 수정한다.
+- [x] 390×844와 desktop Chromium 스크린샷 및 가로 스크롤 검사를 실행한다.
+- [x] V4 화면 테스트와 접근성 포커스 E2E를 실행한 뒤 커밋한다.
 
 ---
 
@@ -229,14 +229,14 @@ interface V4OnboardingSummary {
 - `portal-e2e`: 기존 dev-shell E2E.
 - placeholder 테스트는 통과 개수에 포함하지 않는다.
 
-- [ ] CI job을 분리하고 각 job이 frozen lockfile을 사용하는지 확인한다.
-- [ ] `pnpm test:autonomy`를 실행한다.
-- [ ] `pnpm --filter @forge/game-inflation-rpg typecheck`를 실행한다.
-- [ ] `pnpm --filter @forge/game-inflation-rpg test`를 실행한다.
-- [ ] `pnpm --filter @forge/game-inflation-rpg build`를 실행한다.
-- [ ] `pnpm --filter @forge/game-inflation-rpg e2e`를 실행한다.
-- [ ] `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `git diff --check`를 실행한다.
-- [ ] 백로그와 현재 상태를 실제 결과로 갱신하고 최종 검토 후 커밋한다.
+- [x] CI job을 분리하고 각 job이 frozen lockfile을 사용하는지 확인한다.
+- [x] `pnpm test:autonomy`를 실행한다.
+- [x] `pnpm --filter @forge/game-inflation-rpg typecheck`를 실행한다.
+- [x] `pnpm --filter @forge/game-inflation-rpg test`를 실행한다.
+- [x] `pnpm --filter @forge/game-inflation-rpg build`를 실행한다.
+- [x] `pnpm --filter @forge/game-inflation-rpg e2e`를 실행한다.
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm circular`, `git diff --check`를 실행한다.
+- [x] 백로그와 현재 상태를 실제 결과로 갱신하고 최종 검토 후 커밋한다.
 
 ## 출시 후보 판정
 
