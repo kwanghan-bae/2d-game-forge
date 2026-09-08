@@ -62,6 +62,16 @@ describe('V4 story catalog', () => {
       text: '연화의 시간이 5년 되돌아가 다시 한 번 마을의 약속을 짊어졌다.',
     });
   });
+
+  it.each(['joseon_plains', 'deep_forest', 'underworld'] as const)(
+    'uses the provided hero name in the %s entrance and victory text',
+    (realmId) => {
+      expect(getRealmIntroEntry(realmId, '무진', STORY_NOW).text).toContain('무진');
+      expect(getRealmVictoryEntry(realmId, '무진', STORY_NOW).text).toContain('무진');
+      expect(getRealmIntroEntry(realmId, '무진', STORY_NOW).text).not.toContain('연화');
+      expect(getRealmVictoryEntry(realmId, '무진', STORY_NOW).text).not.toContain('연화');
+    },
+  );
 });
 
 describe('V4 deep forest story choice', () => {
@@ -106,6 +116,81 @@ describe('V4 deep forest story choice', () => {
     if (!selected.ok) return;
     expect(selected.save.meta.currencies.materials).toBe(14);
     expect(selected.save.meta.agents.find((agent) => agent.id === 'guide')?.trust).toBe(35);
+  });
+
+  it.each([
+    ['protect_flame', 'mudang', 'saga-agent-trust-mudang-50'] as const,
+    ['release_goblin', 'guide', 'saga-agent-trust-guide-50'] as const,
+  ])('records one trust milestone when %s crosses trust 50', (choice, agentId, milestoneId) => {
+    const source = forestVictorySave();
+    const agent = source.meta.agents.find((candidate) => candidate.id === agentId);
+    if (!agent) throw new Error(`${agentId} fixture missing`);
+    agent.trust = 49;
+    agent.level = 1;
+
+    const selected = chooseStoryChoice(source, choice, STORY_NOW);
+
+    expect(selected.ok).toBe(true);
+    if (!selected.ok) return;
+    expect(selected.save.meta.agents.find((candidate) => candidate.id === agentId)).toMatchObject({
+      trust: 54,
+      level: 2,
+    });
+    expect(selected.save.meta.sagaEntries.filter((entry) => entry.id === milestoneId)).toHaveLength(1);
+  });
+
+  it.each([
+    ['protect_flame', 'rift', Number.NaN] as const,
+    ['protect_flame', 'rift', 1.5] as const,
+    ['release_goblin', 'materials', Number.POSITIVE_INFINITY] as const,
+    ['release_goblin', 'materials', Number.MAX_SAFE_INTEGER + 1] as const,
+  ])('fails closed before cloning when %s targets an invalid %s balance', (choice, currency, invalidValue) => {
+    const source = forestVictorySave();
+    source.meta.currencies[currency] = invalidValue;
+
+    const result = chooseStoryChoice(source, choice, STORY_NOW);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(source);
+    expect(source.meta.unlockedRealms).not.toContain('underworld');
+    expect(source.meta.sagaEntries.some((entry) => entry.id === 'saga-story-deep-forest-embers')).toBe(false);
+    if (Number.isNaN(invalidValue)) expect(Number.isNaN(source.meta.currencies[currency])).toBe(true);
+  });
+
+  it.each([
+    ['protect_flame', 'mudang', 'trust', Number.NaN] as const,
+    ['protect_flame', 'mudang', 'level', 1.5] as const,
+    ['protect_flame', 'mudang', 'fatigue', Number.POSITIVE_INFINITY] as const,
+    ['release_goblin', 'guide', 'trust', -1] as const,
+    ['release_goblin', 'guide', 'level', 4] as const,
+    ['release_goblin', 'guide', 'fatigue', 101] as const,
+  ])('fails closed for %s when the target %s has invalid %s', (choice, agentId, field, invalidValue) => {
+    const source = forestVictorySave();
+    const agent = source.meta.agents.find((candidate) => candidate.id === agentId);
+    if (!agent) throw new Error(`${agentId} fixture missing`);
+    agent[field] = invalidValue;
+
+    const result = chooseStoryChoice(source, choice, STORY_NOW);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(source);
+    expect(source.meta.unlockedRealms).not.toContain('underworld');
+  });
+
+  it.each([
+    ['protect_flame', 'mudang'] as const,
+    ['release_goblin', 'guide'] as const,
+  ])('fails closed for %s when the target %s metadata is not canonical', (choice, agentId) => {
+    const source = forestVictorySave();
+    const agent = source.meta.agents.find((candidate) => candidate.id === agentId);
+    if (!agent) throw new Error(`${agentId} fixture missing`);
+    agent.nameKR = '변조된 이름';
+
+    const result = chooseStoryChoice(source, choice, STORY_NOW);
+
+    expect(result.ok).toBe(false);
+    expect(result.save).toBe(source);
+    expect(source.meta.unlockedRealms).not.toContain('underworld');
   });
 
   it('identifies the first underworld epilogue and keeps it idempotent', () => {

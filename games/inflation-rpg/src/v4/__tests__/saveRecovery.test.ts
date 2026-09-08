@@ -255,4 +255,14 @@ describe('V4 save recovery boundary', () => {
     expect(loaded?.meta.sagaEntries[0]?.id).toBe(`legacy-saga-${V4_MAX_SAGA_ENTRIES + 4}`);
     expect(loaded?.meta.sagaEntries.at(-1)?.id).toBe('legacy-saga-5');
   });
+
+  it('loads a schema-1 save with an arbitrary non-empty historical saga id', () => {
+    const save = createInitialV4Save(655);
+    save.meta.sagaEntries[0]!.id = 'historic-choice-without-prefix';
+    const storage = memoryStorage({ [V4_SAVE_KEY]: JSON.stringify(save) });
+
+    const loaded = loadV4Save(storage);
+
+    expect(loaded?.meta.sagaEntries[0]?.id).toBe('historic-choice-without-prefix');
+  });
 });

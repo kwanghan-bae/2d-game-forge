@@ -9,8 +9,8 @@ import { applyV4EquipmentBonuses, getV4EquipmentBonuses, getV4EquipmentDefinitio
 import { createV4HeroRuntime } from './heroRuntime';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import {
+  applyAgentTrustGain,
   chooseStoryChoice as chooseStoryChoiceEntry,
-  getAgentTrustMilestoneEntry,
   getAvailableStoryChoice,
   getRealmIntroEntry,
   getRealmVictoryEntry,
@@ -1115,7 +1115,7 @@ function resolveExpedition(
     if (guide) {
       guide.activeTaskId = null;
       guide.fatigue = Math.min(100, guide.fatigue + 8);
-      guide.trust = Math.min(100, guide.trust + (won ? 2 : 1));
+      applyAgentTrustGain(save, guide.id, won ? 2 : 1, eventAt);
     }
   }
 }
@@ -1188,11 +1188,7 @@ function settleFacilityTasks(
         const previousTrust = agent.trust;
         agent.activeTaskId = null;
         agent.fatigue = Math.min(100, agent.fatigue + 5);
-        agent.trust = Math.min(100, agent.trust + 1);
-        agent.level = Math.max(agent.level, Math.min(3, 1 + Math.floor(agent.trust / 50)));
-        if (previousTrust < 50 && agent.trust >= 50) {
-          addUniqueStoryEntry(save, getAgentTrustMilestoneEntry(agent.id, agent.nameKR, eventAt));
-        }
+        applyAgentTrustGain(save, agent.id, 1, eventAt);
         if (previousTrust < 100 && agent.trust === 100) {
           save.meta.sagaEntries.unshift({
             id: nextSaveId(save, `saga-agent-trust-${agent.id}-${task.id}`),

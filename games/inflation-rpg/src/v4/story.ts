@@ -1,5 +1,5 @@
-import { getV4RealmDefinition } from './data';
-import type { RealmId, SagaEntry, StoryChoiceDefinition, StoryChoiceOptionId, SupportAgentId, V4SaveEnvelope } from './types';
+import { getV4AgentDefinition, getV4RealmDefinition } from './data';
+import type { RealmId, SagaEntry, StoryChoiceDefinition, StoryChoiceOptionId, SupportAgent, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from './types';
 
 export type { StoryChoiceDefinition, StoryChoiceOptionId } from './types';
 
@@ -28,33 +28,33 @@ const DEEP_FOREST_CHOICE: StoryChoiceDefinition = {
   ],
 };
 
-const REALM_INTROS: Record<RealmId, { title: string; text: string }> = {
+const REALM_INTROS: Record<RealmId, { title: string; text: (heroName: string) => string }> = {
   joseon_plains: {
     title: '첫 장: 장승 아래의 약속',
-    text: '연화는 마을 어귀 장승에 새겨진 신탁을 따라 조선 평야로 나섰다. 떠돌이 도깨비가 훔쳐 간 곡식의 혼을 되찾아야 마을의 불씨가 꺼지지 않는다.',
+    text: (heroName) => `${heroName}은(는) 마을 어귀 장승에 새겨진 신탁을 따라 조선 평야로 나섰다. 떠돌이 도깨비가 훔쳐 간 곡식의 혼을 되찾아야 마을의 불씨가 꺼지지 않는다.`,
   },
   deep_forest: {
     title: '둘째 장: 산군의 푸른 불씨',
-    text: '조선 평야의 장승이 가리킨 길 끝에서 깊은 숲이 입을 열었다. 산군이 품은 푸른 불씨에는 마을과 저승을 잇는 오래된 약속이 잠들어 있다.',
+    text: (heroName) => `${heroName}은(는) 조선 평야의 장승이 가리킨 길을 따라 깊은 숲에 들었다. 산군이 품은 푸른 불씨에는 마을과 저승을 잇는 오래된 약속이 잠들어 있다.`,
   },
   underworld: {
     title: '셋째 장: 황천의 문',
-    text: '숲의 불씨가 저승의 문을 밝혀 주었다. 영웅은 망자의 행렬 사이에서 염라의 대리인을 만나, 살아 있는 마을의 이름을 증명해야 한다.',
+    text: (heroName) => `숲의 불씨가 저승의 문을 밝혀 주었다. ${heroName}은(는) 망자의 행렬 사이에서 염라의 대리인을 만나, 살아 있는 마을의 이름을 증명해야 한다.`,
   },
 };
 
-const REALM_VICTORIES: Record<RealmId, { title: string; text: string }> = {
+const REALM_VICTORIES: Record<RealmId, { title: string; text: (heroName: string) => string }> = {
   joseon_plains: {
     title: '첫 승리: 장승이 기억한 이름',
-    text: '연화는 장승 수문장을 넘어 도깨비가 훔친 곡식의 혼을 돌려놓았다. 장승은 영웅의 이름을 기억하고 깊은 숲으로 향하는 길을 열었다.',
+    text: (heroName) => `${heroName}은(는) 장승 수문장을 넘어 도깨비가 훔친 곡식의 혼을 돌려놓았다. 장승은 영웅의 이름을 기억하고 깊은 숲으로 향하는 길을 열었다.`,
   },
   deep_forest: {
     title: '둘째 승리: 흑송 산군의 불씨',
-    text: '연화는 흑송 산군의 시험을 이겨 내고 푸른 불씨 앞에 섰다. 이 불씨의 쓰임을 정하는 선택이 저승으로 가는 다음 장을 결정한다.',
+    text: (heroName) => `${heroName}은(는) 흑송 산군의 시험을 이겨 내고 푸른 불씨 앞에 섰다. 이 불씨의 쓰임을 정하는 선택이 저승으로 가는 다음 장을 결정한다.`,
   },
   underworld: {
     title: '셋째 승리: 염라 앞의 귀환',
-    text: '연화는 염라의 대리인 앞에서 마을과 맺은 약속을 증명했다. 저승의 문은 닫혔지만, 영웅과 마을의 사가는 끝나지 않았다.',
+    text: (heroName) => `${heroName}은(는) 염라의 대리인 앞에서 마을과 맺은 약속을 증명했다. 저승의 문은 닫혔지만, 영웅과 마을의 사가는 끝나지 않았다.`,
   },
 };
 
@@ -78,6 +78,41 @@ function addUniqueEntry(save: V4SaveEnvelope, entry: SagaEntry): void {
   if (!hasEntry(save, entry.id)) save.meta.sagaEntries.unshift(entry);
 }
 
+function isSafeCurrencyBalance(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isValidChoiceAgent(agent: SupportAgent | undefined, agentId: SupportAgentId): agent is SupportAgent {
+  const definition = getV4AgentDefinition(agentId);
+  return Boolean(agent
+    && definition
+    && agent.id === agentId
+    && agent.nameKR === definition.nameKR
+    && agent.roleKR === definition.roleKR
+    && agent.trait === definition.trait
+    && Number.isInteger(agent.level) && agent.level >= 1 && agent.level <= 3
+    && Number.isFinite(agent.trust) && agent.trust >= 0 && agent.trust <= 100
+    && Number.isFinite(agent.fatigue) && agent.fatigue >= 0 && agent.fatigue <= 100
+    && (agent.activeTaskId === null || typeof agent.activeTaskId === 'string'));
+}
+
+export function applyAgentTrustGain(
+  save: V4SaveEnvelope,
+  agentId: SupportAgentId,
+  amount: number,
+  now: number,
+): void {
+  if (!Number.isSafeInteger(amount) || amount <= 0) return;
+  const agent = save.meta.agents.find((candidate) => candidate.id === agentId);
+  if (!agent) return;
+  const previousTrust = agent.trust;
+  agent.trust = Math.min(100, previousTrust + amount);
+  agent.level = Math.max(agent.level, Math.min(3, 1 + Math.floor(agent.trust / 50)));
+  if (previousTrust < 50 && agent.trust >= 50) {
+    addUniqueEntry(save, getAgentTrustMilestoneEntry(agent.id, agent.nameKR, now));
+  }
+}
+
 export function getRealmIntroEntry(realmId: RealmId, heroName: string, now: number): SagaEntry {
   const realm = getV4RealmDefinition(realmId);
   const catalog = REALM_INTROS[realmId];
@@ -86,7 +121,7 @@ export function getRealmIntroEntry(realmId: RealmId, heroName: string, now: numb
     'expedition',
     now,
     catalog?.title ?? `${realm?.nameKR ?? '미지의 영역'} 진입`,
-    catalog?.text ?? `${heroName}은(는) 기록되지 않은 영역의 경계에 발을 디뎠다.`,
+    catalog?.text(heroName) ?? `${heroName}은(는) 기록되지 않은 영역의 경계에 발을 디뎠다.`,
   );
 }
 
@@ -98,7 +133,7 @@ export function getRealmVictoryEntry(realmId: RealmId, heroName: string, now: nu
     'expedition',
     now,
     catalog?.title ?? `${realm?.nameKR ?? '미지의 영역'} 승리`,
-    catalog?.text ?? `${heroName}은(는) 기록되지 않은 영역의 시련을 넘어섰다.`,
+    catalog?.text(heroName) ?? `${heroName}은(는) 기록되지 않은 영역의 시련을 넘어섰다.`,
   );
 }
 
@@ -155,18 +190,25 @@ export function chooseStoryChoice(
     return { ok: false, save: source, error: '서사 선택 시각을 확인할 수 없습니다.' };
   }
 
+  const target: { agentId: SupportAgentId; currency: V4CurrencyKey; reward: number } = choice === 'protect_flame'
+    ? { agentId: 'mudang', currency: 'rift', reward: 1 }
+    : { agentId: 'guide', currency: 'materials', reward: 2 };
+  const targetAgents = Array.isArray(source.meta.agents)
+    ? source.meta.agents.filter((agent) => agent.id === target.agentId)
+    : [];
+  if (targetAgents.length !== 1 || !isValidChoiceAgent(targetAgents[0], target.agentId)) {
+    return { ok: false, save: source, error: '선택 대상 에이전트 기록을 확인할 수 없습니다.' };
+  }
+  const targetBalance = source.meta.currencies[target.currency];
+  if (!isSafeCurrencyBalance(targetBalance)) {
+    return { ok: false, save: source, error: '선택 보상 재화 기록을 확인할 수 없습니다.' };
+  }
+
   const save = cloneSave(source);
   const eventAt = Math.max(source.updatedAt, now);
   const heroName = save.run.hero.name;
-  if (choice === 'protect_flame') {
-    const mudang = save.meta.agents.find((agent) => agent.id === 'mudang');
-    if (mudang) mudang.trust = Math.min(100, mudang.trust + 5);
-    save.meta.currencies.rift = Math.min(Number.MAX_SAFE_INTEGER, save.meta.currencies.rift + 1);
-  } else {
-    const guide = save.meta.agents.find((agent) => agent.id === 'guide');
-    if (guide) guide.trust = Math.min(100, guide.trust + 5);
-    save.meta.currencies.materials = Math.min(Number.MAX_SAFE_INTEGER, save.meta.currencies.materials + 2);
-  }
+  applyAgentTrustGain(save, target.agentId, 5, eventAt);
+  save.meta.currencies[target.currency] = Math.min(Number.MAX_SAFE_INTEGER, targetBalance + target.reward);
   addUniqueEntry(save, storyEntry(
     DEEP_FOREST_STORY_ID,
     'milestone',

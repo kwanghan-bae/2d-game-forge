@@ -2975,4 +2975,37 @@ describe('v4 save and domain', () => {
     const secondCompleted = completeFacilityTasks(second.save, second.task.completesAt);
     expect(secondCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-agent-trust-mudang-50')).toHaveLength(1);
   });
+
+  it('updates guide level and records the trust-50 milestone once after expedition settlement', () => {
+    const initial = createInitialV4Save(133);
+    initial.run.hero.atk = 10_000;
+    initial.run.hero.def = 10_000;
+    initial.run.hero.defBase = 10_000;
+    initial.run.hero.hp = initial.run.hero.hpMax;
+    const guide = initial.meta.agents.find((agent) => agent.id === 'guide');
+    if (!guide) throw new Error('guide fixture missing');
+    guide.trust = 49;
+    guide.level = 1;
+
+    const first = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', 'guide');
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    first.save.run.expedition!.encounterIndex = 2;
+    first.save.run.expedition!.completesAt = first.save.run.expedition!.startedAt;
+    const firstCompleted = completeFacilityTasks(first.save, first.save.run.expedition!.completesAt);
+
+    expect(firstCompleted.meta.agents.find((agent) => agent.id === 'guide')).toMatchObject({
+      trust: 51,
+      level: 2,
+    });
+    expect(firstCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-agent-trust-guide-50')).toHaveLength(1);
+
+    const second = startExpedition(firstCompleted, 'joseon_plains', firstCompleted.updatedAt + 1_000, 'aggression', 'guide');
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    second.save.run.expedition!.encounterIndex = 2;
+    second.save.run.expedition!.completesAt = second.save.run.expedition!.startedAt;
+    const secondCompleted = completeFacilityTasks(second.save, second.save.run.expedition!.completesAt);
+    expect(secondCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-agent-trust-guide-50')).toHaveLength(1);
+  });
 });
