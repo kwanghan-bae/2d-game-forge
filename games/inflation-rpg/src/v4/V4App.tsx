@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { StartGameConfig } from '../types';
+import type { OfflineSummary } from './types';
 import {
   claimSoundOwner,
   playBgm,
@@ -17,6 +18,7 @@ import { SagaScreen } from './screens/SagaScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { TownHubScreen } from './screens/TownHubScreen';
 import { V4SaveRecoveryScreen } from './screens/V4SaveRecoveryScreen';
+import { getV4OnboardingSummary, readV4MetricEvents, recordV4Metric } from './telemetry';
 import './styles.css';
 
 type V4Screen = 'town' | 'hero' | 'expedition' | 'saga' | 'settings';
@@ -128,6 +130,25 @@ export function V4App({ config }: Props) {
 
   const game = useV4Game(config.v4Monetization ?? nativeMonetization);
   const [screen, setScreen] = useState<V4Screen>('town');
+  const offlineSummaryMetricRef = useRef<OfflineSummary | null>(null);
+  const onboardingSummary = getV4OnboardingSummary(readV4MetricEvents(), game.save.createdAt);
+
+  useEffect(() => {
+    const summary = game.offlineSummary;
+    if (!summary) {
+      offlineSummaryMetricRef.current = null;
+      return;
+    }
+    if (offlineSummaryMetricRef.current === summary) return;
+    offlineSummaryMetricRef.current = summary;
+    const id = `offline_summary_opened:${game.save.createdAt}:${game.save.updatedAt}:${summary.processedSeconds}:${summary.completedExpedition ? 'completed' : 'pending'}:${summary.completedTaskIds.join('.')}`;
+    recordV4Metric({
+      id,
+      name: 'offline_summary_opened',
+      occurredAt: Math.max(game.save.createdAt, game.now),
+      saveCreatedAt: game.save.createdAt,
+    });
+  }, [game.offlineSummary, game.now, game.save.createdAt, game.save.updatedAt]);
 
   useEffect(() => {
     setVolumes(
@@ -225,7 +246,7 @@ export function V4App({ config }: Props) {
       {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} gold={game.save.meta.currencies.gold} expeditionActive={Boolean(game.save.run.expedition)} onBack={() => setScreen('town')} onImportLegacy={game.importLegacyHero} onRejuvenate={game.rejuvenate} />}
       {screen === 'expedition' && <ExpeditionScreen save={game.save} now={game.now} onStart={game.startRun} onConfirm={game.confirmRun} onConfirmUnlock={game.confirmUnlock} onRefresh={game.refresh} onIntervention={game.intervene} onOpenSaga={() => setScreen('saga')} onBack={() => setScreen('town')} />}
       {screen === 'saga' && <SagaScreen entries={game.save.meta.sagaEntries} storyChoice={game.storyChoice} onChooseStoryChoice={game.chooseStoryChoice} onBack={() => setScreen('town')} />}
-      {screen === 'settings' && <SettingsScreen settings={game.save.meta.settings} onChange={game.updateSettings} onBack={() => setScreen('town')} onRestorePurchases={game.restorePurchasesAvailable ? game.restorePurchases : undefined} />}
+      {screen === 'settings' && <SettingsScreen settings={game.save.meta.settings} onChange={game.updateSettings} onBack={() => setScreen('town')} onRestorePurchases={game.restorePurchasesAvailable ? game.restorePurchases : undefined} onboardingSummary={onboardingSummary} />}
 
       <nav className="v4-nav" aria-label="주요 메뉴"><div className="v4-nav-inner">
         {([['town', '🏘️ 마을'], ['hero', '⚔️ 영웅'], ['expedition', '🧭 원정'], ['saga', '📜 사가']] as Array<[V4Screen, string]>).map(([id, label]) => <button type="button" key={id} className={`v4-nav-btn ${screen === id ? 'v4-nav-btn--active' : ''}`} aria-current={screen === id ? 'page' : undefined} onClick={() => setScreen(id)}>{label}</button>)}

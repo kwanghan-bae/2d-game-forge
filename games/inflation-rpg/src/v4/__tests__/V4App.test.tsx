@@ -7,6 +7,7 @@ import * as sound from '../../systems/sound';
 import { useV4Game } from '../useV4Game';
 import { V4App } from '../V4App';
 import type { OfflineSummary } from '../types';
+import { readV4MetricEvents } from '../telemetry';
 
 vi.mock('../useV4Game', () => ({ useV4Game: vi.fn() }));
 
@@ -60,6 +61,7 @@ describe('V4 app resume handling', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it('clears global legacy audio when the V4 root enters and leaves', () => {
@@ -224,6 +226,29 @@ describe('V4 app resume handling', () => {
     render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
 
     expect(screen.getByRole('button', { name: '마을 확인' })).toHaveFocus();
+  });
+
+  it('records an offline summary only when the successful summary UI is present', () => {
+    const offlineSummary: OfflineSummary = {
+      processedSeconds: 3_600,
+      efficiency: 0.7,
+      completedTaskIds: ['task-1'],
+      completedExpedition: false,
+      resourcesGained: { gold: 55 },
+      equipmentGained: [],
+      equipmentUpgraded: [],
+      wasClamped: false,
+      clockAnomaly: null,
+      notes: [],
+    };
+    const game = mockGame(vi.fn(), vi.fn(), 'valid', 'aggression', { offlineSummary });
+    game.save.createdAt = 10_000;
+    game.save.updatedAt = 10_000;
+    vi.mocked(useV4Game).mockReturnValue(game);
+
+    render(<V4App config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    expect(readV4MetricEvents().filter((metric) => metric.name === 'offline_summary_opened')).toHaveLength(1);
   });
 
   it('keeps the local-first game playable when native platform detection throws', () => {

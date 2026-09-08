@@ -133,4 +133,29 @@ describe('V4 settings screen', () => {
     expect(document.body.textContent).not.toContain('NaN');
     expect(document.body.textContent).not.toContain('Infinity');
   });
+
+  it('renders the Korean local launch diagnostics summary without implying network collection', () => {
+    render(
+      <SettingsScreen
+        settings={{ music: 0.7, sfx: 0.8, muted: false }}
+        onChange={() => {}}
+        onBack={() => {}}
+        onboardingSummary={{
+          firstExpeditionSeconds: 420,
+          distinctDecisionKindsIn30Minutes: 2,
+          firstExpeditionWithin15Minutes: true,
+          twoDecisionsWithin30Minutes: true,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: '로컬 출시 진단' })).toBeInTheDocument();
+    expect(screen.getByText('첫 원정까지')).toBeInTheDocument();
+    expect(screen.getByText('420초')).toBeInTheDocument();
+    expect(screen.getByText('30분 내 서로 다른 결정')).toBeInTheDocument();
+    expect(screen.getByText('2종')).toBeInTheDocument();
+    expect(screen.getByText('15분 내 첫 원정')).toBeInTheDocument();
+    expect(screen.getByText('30분 내 2종 결정')).toBeInTheDocument();
+    expect(screen.getByText('진단 데이터는 이 기기에만 저장되며 외부로 전송되지 않습니다.')).toBeInTheDocument();
+  });
 });

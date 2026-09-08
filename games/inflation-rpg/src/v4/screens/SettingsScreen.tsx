@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { V4Settings } from '../types';
+import type { V4OnboardingSummary } from '../telemetry';
 import { useV4ScreenHeadingFocus } from '../useV4ScreenHeadingFocus';
 
 interface Props {
@@ -7,7 +8,15 @@ interface Props {
   onChange: (patch: Partial<V4Settings>) => void;
   onBack: () => void;
   onRestorePurchases?: () => void | Promise<void>;
+  onboardingSummary?: V4OnboardingSummary;
 }
+
+const EMPTY_ONBOARDING_SUMMARY: V4OnboardingSummary = {
+  firstExpeditionSeconds: null,
+  distinctDecisionKindsIn30Minutes: 0,
+  firstExpeditionWithin15Minutes: false,
+  twoDecisionsWithin30Minutes: false,
+};
 
 function normalizeVolume(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value)
@@ -15,7 +24,7 @@ function normalizeVolume(value: unknown): number {
     : 0;
 }
 
-export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases }: Props) {
+export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases, onboardingSummary = EMPTY_ONBOARDING_SUMMARY }: Props) {
   const titleRef = useV4ScreenHeadingFocus();
   const mountedRef = useRef(true);
   const [restorePending, setRestorePending] = useState(false);
@@ -88,6 +97,29 @@ export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases 
         <h2>저장 안내</h2>
         <p>이 기기의 V4 저장은 자동으로 기록됩니다. V3 Legacy 기록은 명시적으로 가져오기를 선택하기 전까지 변경되지 않습니다.</p>
         <div className="v4-alert">V4 전용 저장</div>
+      </section>
+
+      <section className="v4-panel" aria-labelledby="v4-local-launch-diagnostics">
+        <h2 id="v4-local-launch-diagnostics">로컬 출시 진단</h2>
+        <p>진단 데이터는 이 기기에만 저장되며 외부로 전송되지 않습니다.</p>
+        <dl>
+          <div className="v4-setting-row">
+            <dt>첫 원정까지</dt>
+            <dd>{onboardingSummary.firstExpeditionSeconds === null ? '미기록' : `${Math.max(0, Math.round(onboardingSummary.firstExpeditionSeconds))}초`}</dd>
+          </div>
+          <div className="v4-setting-row">
+            <dt>30분 내 서로 다른 결정</dt>
+            <dd>{onboardingSummary.distinctDecisionKindsIn30Minutes}종</dd>
+          </div>
+          <div className="v4-setting-row">
+            <dt>15분 내 첫 원정</dt>
+            <dd>{onboardingSummary.firstExpeditionWithin15Minutes ? '달성' : '미달성'}</dd>
+          </div>
+          <div className="v4-setting-row">
+            <dt>30분 내 2종 결정</dt>
+            <dd>{onboardingSummary.twoDecisionsWithin30Minutes ? '달성' : '미달성'}</dd>
+          </div>
+        </dl>
       </section>
 
       {onRestorePurchases && <section className="v4-panel">

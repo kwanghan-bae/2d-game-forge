@@ -7,6 +7,7 @@ import { getRealmVictoryEntry } from '../story';
 import { V4MonetizationAdapter } from '../monetization';
 import { useV4Game } from '../useV4Game';
 import { useGameStore } from '../../store/gameStore';
+import { readV4MetricEvents } from '../telemetry';
 import type { HeroSnapshot } from '../../hero/HeroEntity';
 
 const HOUR = 60 * 60 * 1000;
@@ -132,6 +133,18 @@ function ConfirmHarness() {
     <>
       <div data-testid="confirm-message">{game.message ?? ''}</div>
       <button type="button" onClick={game.confirmRun}>confirm</button>
+    </>
+  );
+}
+
+function TelemetryHarness() {
+  const game = useV4Game();
+  return (
+    <>
+      <button type="button" onClick={() => game.startTask('temple')}>start facility</button>
+      <button type="button" onClick={() => game.changePolicy('training')}>change policy</button>
+      <button type="button" onClick={() => game.startRun('joseon_plains')}>start expedition</button>
+      <button type="button" onClick={() => game.chooseStoryChoice('protect_flame')}>choose story</button>
     </>
   );
 }
@@ -397,7 +410,7 @@ describe('useV4Game monetization actions', () => {
     );
     await waitFor(() => expect(screen.getByTestId('offline-state')).toHaveTextContent('ready'));
 
-    expect(setItemSpy).toHaveBeenCalledTimes(1);
+    expect(setItemSpy.mock.calls.filter(([key]) => key === V4_SAVE_KEY)).toHaveLength(1);
     setItemSpy.mockRestore();
   });
 
@@ -901,7 +914,7 @@ describe('useV4Game save recovery', () => {
     render(<RecoveryHarness />);
 
     expect(screen.getByTestId('storage-status')).toHaveTextContent('valid');
-    expect(setItemSpy).toHaveBeenCalledTimes(1);
+    expect(setItemSpy.mock.calls.filter(([key]) => key === V4_SAVE_KEY)).toHaveLength(1);
     setItemSpy.mockRestore();
   });
 
@@ -1050,5 +1063,69 @@ describe('useV4Game save recovery', () => {
 
     await waitFor(() => expect(screen.getByTestId('confirm-message')).toHaveTextContent('확인할 수 없습니다'));
     expect(JSON.parse(localStorage.getItem(V4_SAVE_KEY) ?? '{}').run.expedition).not.toBeNull();
+  });
+
+  it('records save creation only once under React StrictMode', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+
+    render(<StrictMode><TelemetryHarness /></StrictMode>);
+
+    expect(readV4MetricEvents().filter((metric) => metric.name === 'save_created')).toHaveLength(1);
+  });
+
+  it('records successful facility, policy, and expedition actions only after domain success', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    persistV4Save(createInitialV4Save(115));
+
+    render(<TelemetryHarness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'start facility' }));
+    fireEvent.click(screen.getByRole('button', { name: 'start facility' }));
+    fireEvent.click(screen.getByRole('button', { name: 'change policy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'change policy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'start expedition' }));
+    fireEvent.click(screen.getByRole('button', { name: 'start expedition' }));
+
+    expect(readV4MetricEvents().map((metric) => metric.name)).toEqual([
+      'facility_task_started',
+      'policy_changed',
+      'expedition_started',
+    ]);
+  });
+
+  it('records a successful story choice but not a failed choice', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(10_000);
+    const base = createInitialV4Save(116);
+    base.meta.unlockedRealms.push('deep_forest');
+    base.meta.sagaEntries.unshift(getRealmVictoryEntry('deep_forest', base.run.hero.name, base.updatedAt));
+    persistV4Save(base);
+
+    render(<TelemetryHarness />);
+    fireEvent.click(screen.getByRole('button', { name: 'choose story' }));
+    fireEvent.click(screen.getByRole('button', { name: 'choose story' }));
+
+    expect(readV4MetricEvents().filter((metric) => metric.name === 'story_choice_made')).toHaveLength(1);
+  });
+
+  it('records each successful expedition result once', () => {
+    const base = createInitialV4Save(117);
+    const startedAt = Date.now() - 1_000;
+    setFixtureTimeline(base, startedAt);
+    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    started.save.run.expedition!.encounterIndex = 2;
+    started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt + 1;
+    persistV4Save(started.save);
+
+    render(<RefreshHarness />);
+    expect(readV4MetricEvents().filter((metric) => metric.name === 'expedition_finished')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
+    expect(readV4MetricEvents().filter((metric) => metric.name === 'expedition_finished')).toHaveLength(1);
   });
 });
