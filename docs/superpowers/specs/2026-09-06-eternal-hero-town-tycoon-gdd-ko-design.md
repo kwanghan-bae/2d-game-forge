@@ -2,7 +2,7 @@
 
 > **문서 상태:** V4 구현 기준선 (soft-launch 후보 검증 전)
 > **작성일:** 2026-09-06
-> **최종 정합성 점검:** 2026-09-07
+> **최종 정합성 점검:** 2026-09-08
 > **대상 프로젝트:** `games/inflation-rpg`
 > **대상 플랫폼:** 모바일 우선(iOS / Android), 웹 개발 셸 병행
 > **참고작:** Evil Hunter Tycoon
@@ -709,12 +709,14 @@ V4는 V3 persist version 27과 자동 migration 경계를 공유하지 않는다
 5. V4의 작업·시설·원정 링크는 로드 검증에서 대칭성을 확인한다.
 6. 잘못된 시간·재화·정적 에이전트 정의·잠긴 Realm 상태는 V4 domain에 진입하기 전에 거부한다.
 
-### 14.4 현재 검증 기준선 (2026-09-07)
+### 14.4 현재 검증 기준선 (2026-09-08)
 
-- game Vitest: 398개 파일·3,462개 테스트 통과.
-- V4 vertical slice: Chromium·iPhone14 30/30 통과(각 15/15).
-- V3 legacy를 포함한 전체 game E2E: 44/44 통과(Chromium 22/22, iPhone14 22/22).
+- game Vitest: 400개 파일·3,627개 테스트 통과.
+- V4 vertical slice: Chromium·iPhone14 32/32 통과(각 16/16).
+- V3 legacy를 포함한 전체 game E2E: 46/46 통과(Chromium 23/23, iPhone14 23/23).
+- dev-shell portal E2E: 5/5 통과(V4 기본 경로·V3 Legacy 경로·포털 네비게이션·404).
 - monorepo typecheck·lint·circular 검사와 game production build 통과.
+- CI 별도 E2E job은 원스토어 native workspace build 후 실행하며, GitHub Actions CI와 Pages 배포가 `main` 최신 커밋에서 성공했다.
 - 위 보호 파일 3종과 사용자 미추적 `output/`, `tmp/`는 V4 작업에서 수정·커밋하지 않는다.
 
 ---
