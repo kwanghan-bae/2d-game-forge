@@ -24,20 +24,11 @@ function stripIdentifiers(text) {
     .replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, (match) => ' '.repeat(match.length));
 }
 
-function isJsxTextToken(source, index) {
-  const lastOpen = source.lastIndexOf('<', index);
-  const lastClose = source.lastIndexOf('>', index);
-  if (lastClose <= lastOpen) return false;
-  const nextOpen = source.indexOf('<', index);
-  return nextOpen !== -1 && !source.slice(lastClose + 1, index).includes('{');
-}
-
 function findSourceIdentityViolations(relativePath, source) {
   const violations = [];
   const identifiers = stripIdentifiers(source);
   const identityPattern = /\b(?:V4[A-Za-z0-9_]*|useV4[A-Za-z0-9_]*|v4[A-Z][A-Za-z0-9_]*)\b/g;
   for (const match of identifiers.matchAll(identityPattern)) {
-    if (match[0] === 'V4' && isJsxTextToken(source, match.index)) continue;
     violations.push(`${relativePath}: current-product identifier ${match[0]}`);
   }
 
@@ -98,4 +89,12 @@ test('scanner rejects JSX identity strings and exact V4 identifiers', () => {
   assert.ok(violations.some((violation) => violation.includes('v4-shell')), 'expected v4-shell violation');
   assert.ok(violations.some((violation) => violation.includes('v4-app')), 'expected v4-app violation');
   assert.ok(violations.some((violation) => violation.includes('identifier V4')), 'expected exact V4 identifier violation');
+});
+
+test('scanner rejects exact V4 player-facing JSX text', () => {
+  const violations = findSourceIdentityViolations(
+    'games/inflation-rpg/src/village/scanner-jsx-text-fixture.tsx',
+    'export function Fixture() { return <div>V4</div>; }',
+  );
+  assert.ok(violations.some((violation) => violation.includes('identifier V4')), 'expected exact V4 JSX text violation');
 });
