@@ -1,4 +1,5 @@
 import { getV4AgentDefinition, getV4RealmDefinition } from './data';
+import { V4_MAX_SAGA_ENTRIES } from './types';
 import type { RealmId, SagaEntry, StoryChoiceDefinition, StoryChoiceOptionId, SupportAgent, SupportAgentId, V4CurrencyKey, V4SaveEnvelope } from './types';
 
 export type { StoryChoiceDefinition, StoryChoiceOptionId } from './types';
@@ -75,7 +76,11 @@ function hasEntry(save: V4SaveEnvelope, id: string): boolean {
 }
 
 function addUniqueEntry(save: V4SaveEnvelope, entry: SagaEntry): void {
-  if (!hasEntry(save, entry.id)) save.meta.sagaEntries.unshift(entry);
+  if (hasEntry(save, entry.id)) return;
+  save.meta.sagaEntries.unshift(entry);
+  if (save.meta.sagaEntries.length > V4_MAX_SAGA_ENTRIES) {
+    save.meta.sagaEntries.length = V4_MAX_SAGA_ENTRIES;
+  }
 }
 
 function isSafeCurrencyBalance(value: unknown): value is number {
@@ -169,7 +174,10 @@ export function getV4EpilogueEntry(heroName: string, now: number): SagaEntry {
 }
 
 export function getAvailableStoryChoice(save: V4SaveEnvelope): StoryChoiceDefinition | null {
-  if (hasEntry(save, DEEP_FOREST_STORY_ID) || !hasEntry(save, 'saga-realm-victory-deep_forest')) return null;
+  const result = save.run.lastExpeditionResult;
+  if (save.meta.unlockedRealms.includes('underworld')
+    || result?.realmId !== 'deep_forest'
+    || result.outcome !== 'victory') return null;
   return {
     ...DEEP_FOREST_CHOICE,
     options: DEEP_FOREST_CHOICE.options.map((option) => ({ ...option })),

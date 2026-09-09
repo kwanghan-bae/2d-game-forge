@@ -91,7 +91,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-offline-result')).toContainText('최대 8시간');
   });
 
-  test('오프라인 원정 귀환 결과에서 원정 화면으로 바로 이동한다', async ({ page }) => {
+  test('오프라인 보스 확인 결과에서 원정 화면으로 바로 이동한다', async ({ page }) => {
     await page.goto(GAME_URL);
     await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
     await page.reload();
@@ -118,9 +118,12 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await page.reload();
 
     await expect(page.getByTestId('v4-offline-result')).toBeVisible();
+    await expect(page.getByTestId('v4-offline-result')).toContainText('위험 원정 결과 확인 필요');
     await page.getByRole('button', { name: '원정 결과 보기' }).click();
-    await expect(page.getByTestId('v4-expedition-result')).toBeVisible();
+    await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 결과 확인 필요');
     await expect(page.getByRole('heading', { name: '원정소' })).toBeFocused();
+    await page.getByRole('button', { name: '보스 결과 확인' }).click();
+    await expect(page.getByTestId('v4-expedition-result')).toBeVisible();
   });
 
   test('손상된 저장은 원본을 보존한 복구 화면을 거친다', async ({ page }) => {
@@ -200,6 +203,8 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('v4-offline-result')).toBeVisible();
     await page.getByRole('button', { name: '마을 확인' }).click();
     await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 결과 확인 필요');
+    await page.getByRole('button', { name: '보스 결과 확인' }).click();
     await expect(page.getByTestId('v4-expedition-result')).toContainText('원정 성공');
     await expect(page.getByTestId('v4-expedition-result')).toContainText('전투력');
   });
@@ -337,7 +342,7 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     await expect(page.locator('.v4-realm-card').filter({ hasText: '저승' }).getByRole('button', { name: '혼자 출발' })).toBeEnabled();
   });
 
-  test('안전 원정의 다음 Realm 해금은 오프라인 복귀 후 명시적으로 확정한다', async ({ page }) => {
+  test('안전 원정도 보스 결과와 다음 Realm 해금을 각각 명시적으로 확정한다', async ({ page }) => {
     await page.goto(GAME_URL);
     await page.evaluate((key) => localStorage.removeItem(key), V4_SAVE_KEY);
     await page.reload();
@@ -367,9 +372,11 @@ test.describe('V4 — 신의 마을 vertical slice', () => {
     }, V4_SAVE_KEY);
     await page.reload();
 
-    await expect(page.getByTestId('v4-offline-result')).toContainText('원정 귀환 완료');
-    await page.getByRole('button', { name: '마을 확인' }).click();
-    await page.getByRole('button', { name: '원정 준비 →' }).click();
+    await expect(page.getByTestId('v4-offline-result')).toContainText('위험 원정 결과 확인 필요');
+    await page.getByRole('button', { name: '원정 결과 보기' }).click();
+    await expect(page.getByTestId('v4-active-expedition')).toContainText('원정 결과 확인 필요');
+    await page.getByRole('button', { name: '보스 결과 확인' }).click();
+    await expect(page.getByTestId('v4-expedition-result')).toContainText('원정 성공');
     await expect(page.getByRole('button', { name: '깊은 숲 기록하기' })).toBeVisible();
     await expect(page.locator('.v4-realm-card').filter({ hasText: '조선 평야' }).getByRole('button', { name: '기록 먼저 확정' }).first()).toBeDisabled();
     await page.getByRole('button', { name: '깊은 숲 기록하기' }).click();

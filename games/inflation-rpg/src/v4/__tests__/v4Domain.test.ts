@@ -1860,14 +1860,55 @@ describe('v4 save and domain', () => {
     started.save.run.expedition!.encounterIndex = 2;
     started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
 
-    const offline = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
-    expect(offline.run.lastExpeditionResult?.outcome).toBe('victory');
-    expect(offline.meta.unlockedRealms).toEqual(['joseon_plains']);
+    const offline = simulateOfflineProgress(started.save, started.save.run.expedition!.completesAt);
+    expect(offline.save.run.expedition?.status).toBe('awaiting_confirmation');
+    expect(offline.save.run.lastExpeditionResult).toBeNull();
+    expect(offline.summary.completedExpedition).toBe(false);
+    expect(offline.save.meta.unlockedRealms).toEqual(['joseon_plains']);
 
-    const confirmed = confirmNextRealmUnlock(offline, offline.updatedAt + 1_000);
+    const victory = confirmPendingExpedition(offline.save, offline.save.updatedAt + 1_000);
+    expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
+    expect(victory.run.expedition).toBeNull();
+    expect(victory.meta.unlockedRealms).toEqual(['joseon_plains']);
+
+    const confirmed = confirmNextRealmUnlock(victory, victory.updatedAt + 1_000);
     expect(confirmed.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
     expect(confirmed.meta.sagaEntries[0]?.title).toContain('깊은 숲');
     expect(confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
+  });
+
+  it('never unlocks the underworld through the generic confirmation path when its saga log is capped', () => {
+    const source = createInitialV4Save(140);
+    source.meta.unlockedRealms.push('deep_forest');
+    source.run.lastExpeditionResult = {
+      id: 'deep-forest-result-with-evicted-log',
+      realmId: 'deep_forest',
+      outcome: 'victory',
+      completedAt: source.updatedAt,
+      reward: { materials: 1 },
+      heroPower: 100,
+      recommendedPower: 90,
+      turns: 3,
+      totalDamageDealt: 120,
+      totalDamageTaken: 20,
+      heroRemainingHp: 80,
+      weaknessKR: '없음',
+      recommendedFacilityId: 'training',
+      recommendedEquipmentId: null,
+      retryAfterSeconds: 0,
+    };
+    source.meta.sagaEntries = Array.from({ length: V4_MAX_SAGA_ENTRIES }, (_, index) => ({
+      id: `old-saga-${index}`,
+      kind: 'facility' as const,
+      createdAt: source.updatedAt - index,
+      title: '오래된 기록',
+      text: '깊은 숲 승리 기록이 상한에서 밀려난 상태',
+    }));
+
+    const confirmed = confirmNextRealmUnlock(source, source.updatedAt + 1_000);
+
+    expect(confirmed).toBe(source);
+    expect(source.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
   });
 
   it('keeps a pending Realm record from being lost by starting another expedition', () => {
@@ -1879,7 +1920,9 @@ describe('v4 save and domain', () => {
     started.save.run.expedition!.encounterIndex = 2;
     started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
 
-    const victory = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
+    const pending = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
+    expect(pending.run.expedition?.status).toBe('awaiting_confirmation');
+    const victory = confirmPendingExpedition(pending, pending.updatedAt + 1_000);
     expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
     expect(victory.meta.unlockedRealms).toEqual(['joseon_plains']);
 
@@ -1900,7 +1943,9 @@ describe('v4 save and domain', () => {
     started.save.run.expedition!.encounterIndex = 2;
     started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
 
-    const victory = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
+    const pending = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt, 0.7, false);
+    expect(pending.run.expedition?.status).toBe('awaiting_confirmation');
+    const victory = confirmPendingExpedition(pending, pending.updatedAt + 1_000);
     expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
 
     expect(confirmNextRealmUnlock(victory, Number.NaN)).toBe(victory);

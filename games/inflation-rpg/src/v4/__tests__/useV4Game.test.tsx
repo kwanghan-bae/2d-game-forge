@@ -9,6 +9,7 @@ import { useV4Game } from '../useV4Game';
 import { useGameStore } from '../../store/gameStore';
 import { readV4MetricEvents } from '../telemetry';
 import type { HeroSnapshot } from '../../hero/HeroEntity';
+import type { ExpeditionResult, V4SaveEnvelope } from '../types';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -24,6 +25,28 @@ function setFixtureTimeline(
     ...entry,
     createdAt: Math.min(updatedAt, Math.max(createdAt, entry.createdAt)),
   }));
+}
+
+function setDeepForestVictory(save: V4SaveEnvelope): void {
+  const result: ExpeditionResult = {
+    id: 'expedition-result-deep-forest',
+    realmId: 'deep_forest',
+    outcome: 'victory',
+    completedAt: save.updatedAt,
+    reward: { materials: 1 },
+    heroPower: 100,
+    recommendedPower: 90,
+    turns: 3,
+    totalDamageDealt: 120,
+    totalDamageTaken: 20,
+    heroRemainingHp: 80,
+    weaknessKR: '없음',
+    recommendedFacilityId: 'training',
+    recommendedEquipmentId: null,
+    retryAfterSeconds: 0,
+  };
+  save.run.lastExpeditionResult = result;
+  save.meta.sagaEntries.unshift(getRealmVictoryEntry('deep_forest', save.run.hero.name, save.updatedAt));
 }
 
 function Harness({ monetization }: { monetization: V4MonetizationAdapter }) {
@@ -1012,7 +1035,7 @@ describe('useV4Game save recovery', () => {
     vi.setSystemTime(10_000);
     const base = createInitialV4Save(114);
     base.meta.unlockedRealms.push('deep_forest');
-    base.meta.sagaEntries.unshift(getRealmVictoryEntry('deep_forest', base.run.hero.name, base.updatedAt));
+    setDeepForestVictory(base);
     persistV4Save(base);
 
     render(<StoryChoiceHarness />);
@@ -1102,7 +1125,7 @@ describe('useV4Game save recovery', () => {
     vi.setSystemTime(10_000);
     const base = createInitialV4Save(116);
     base.meta.unlockedRealms.push('deep_forest');
-    base.meta.sagaEntries.unshift(getRealmVictoryEntry('deep_forest', base.run.hero.name, base.updatedAt));
+    setDeepForestVictory(base);
     persistV4Save(base);
 
     render(<TelemetryHarness />);
@@ -1125,10 +1148,10 @@ describe('useV4Game save recovery', () => {
     started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt + 1;
     persistV4Save(started.save);
 
-    render(<RefreshHarness />);
-    expect(readV4MetricEvents().filter((metric) => metric.name === 'expedition_finished')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
-    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+    render(<ConfirmHarness />);
+    expect(readV4MetricEvents().filter((metric) => metric.name === 'expedition_finished')).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
+    fireEvent.click(screen.getByRole('button', { name: 'confirm' }));
 
     expect(readV4MetricEvents().filter((metric) => metric.name === 'expedition_finished')).toHaveLength(1);
   });

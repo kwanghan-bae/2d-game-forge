@@ -8,7 +8,8 @@ import {
   hasV4Epilogue,
 } from '../story';
 import { createInitialV4Save } from '../save';
-import type { SagaEntry } from '../types';
+import { V4_MAX_SAGA_ENTRIES } from '../types';
+import type { ExpeditionResult, SagaEntry } from '../types';
 
 const STORY_NOW = 10_000;
 
@@ -75,11 +76,32 @@ describe('V4 story catalog', () => {
 });
 
 describe('V4 deep forest story choice', () => {
+  function deepForestVictoryResult(): ExpeditionResult {
+    return {
+      id: 'expedition-result-deep-forest',
+      realmId: 'deep_forest',
+      outcome: 'victory',
+      completedAt: STORY_NOW,
+      reward: { materials: 1 },
+      heroPower: 100,
+      recommendedPower: 90,
+      turns: 3,
+      totalDamageDealt: 120,
+      totalDamageTaken: 20,
+      heroRemainingHp: 80,
+      weaknessKR: '없음',
+      recommendedFacilityId: 'training',
+      recommendedEquipmentId: null,
+      retryAfterSeconds: 0,
+    };
+  }
+
   function forestVictorySave() {
     const initial = createInitialV4Save(400);
     initial.createdAt = STORY_NOW;
     initial.updatedAt = STORY_NOW;
     initial.lastProcessedAt = STORY_NOW;
+    initial.run.lastExpeditionResult = deepForestVictoryResult();
     return withSaga(initial, getRealmVictoryEntry('deep_forest', initial.run.hero.name, STORY_NOW));
   }
 
@@ -87,6 +109,37 @@ describe('V4 deep forest story choice', () => {
     const initial = createInitialV4Save(401);
     expect(getAvailableStoryChoice(initial)).toBeNull();
     expect(chooseStoryChoice(initial, 'protect_flame', STORY_NOW)).toMatchObject({ ok: false });
+  });
+
+  it('does not trust a saga marker without the durable deep forest victory result', () => {
+    const initial = createInitialV4Save(403);
+    const forgedLog = withSaga(initial, getRealmVictoryEntry('deep_forest', initial.run.hero.name, STORY_NOW));
+
+    expect(getAvailableStoryChoice(forgedLog)).toBeNull();
+    expect(chooseStoryChoice(forgedLog, 'protect_flame', STORY_NOW)).toMatchObject({ ok: false });
+  });
+
+  it('keeps the choice available after the victory saga entry is evicted and preserves the saga cap', () => {
+    const source = forestVictorySave();
+    source.meta.sagaEntries = Array.from({ length: V4_MAX_SAGA_ENTRIES }, (_, index) => ({
+      id: `old-saga-${index}`,
+      kind: 'facility' as const,
+      createdAt: STORY_NOW - index - 1,
+      title: `오래된 기록 ${index}`,
+      text: '사가 상한 회귀 테스트',
+    }));
+    const mudang = source.meta.agents.find((agent) => agent.id === 'mudang');
+    if (!mudang) throw new Error('mudang fixture missing');
+    mudang.trust = 49;
+
+    expect(getAvailableStoryChoice(source)?.id).toBe('deep_forest_embers');
+    const selected = chooseStoryChoice(source, 'protect_flame', STORY_NOW);
+
+    expect(selected.ok).toBe(true);
+    if (!selected.ok) return;
+    expect(selected.save.meta.sagaEntries).toHaveLength(V4_MAX_SAGA_ENTRIES);
+    expect(selected.save.meta.sagaEntries.some((entry) => entry.id === 'saga-story-deep-forest-embers')).toBe(true);
+    expect(selected.save.meta.sagaEntries.some((entry) => entry.id === 'saga-agent-trust-mudang-50')).toBe(true);
   });
 
   it('rejects a choice timestamp that cannot be persisted safely', () => {

@@ -987,7 +987,7 @@ function resolveExpedition(
     const encounter = realm.encounters[encounterIndex] ?? realm.encounters[realm.encounters.length - 1];
     if (!encounter) return;
     const isBoss = isLegacySingleEncounter || encounter.tier === 'boss';
-    if (!allowRiskyBossConfirmation && !allowPermanentUnlock && !realm.offlineSafe && isBoss) {
+    if (!allowRiskyBossConfirmation && !allowPermanentUnlock && isBoss) {
       expedition.status = 'awaiting_confirmation';
       return;
     }
@@ -1291,7 +1291,10 @@ export function confirmNextRealmUnlock(source: V4SaveEnvelope, now: number): V4S
   if (!result || result.outcome !== 'victory') return source;
   const next = getNextRealmId(result.realmId);
   if (!next || source.meta.unlockedRealms.includes(next)) return source;
-  if (next === 'underworld' && getAvailableStoryChoice(source)) return source;
+  // The deep-forest branch is intentionally irreversible. Never let the
+  // generic Realm confirmation bypass its explicit story choice, even when
+  // the corresponding saga entry has already been evicted by history caps.
+  if (next === 'underworld') return source;
   const nextRealm = getV4RealmDefinition(next);
   if (!nextRealm) return source;
   if (!isActionClockValid(source, now)) return source;
