@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { test } from 'node:test';
 
 const ROOT = join(import.meta.dirname, '..', '..');
@@ -60,9 +60,16 @@ function findSourceIdentityViolations(relativePath, source) {
   const sourceWithoutCompatibilityValues = source.replace(
     /shin-ui-eternal-sponsor-v4-(?:save|metrics|rewarded-usage)-v1/g,
     '',
-  );
-  for (const match of sourceWithoutCompatibilityValues.matchAll(/\bv4-[A-Za-z0-9_-]+/g)) {
+  ).replace(/\bv4_(?:iron_sword|guardian_armor|spirit_talisman)\b/g, '');
+  for (const match of sourceWithoutCompatibilityValues.matchAll(/\bv4[-_][A-Za-z0-9_-]+/g)) {
     violations.push(`${relativePath}: current-product CSS/test id or token ${match[0]}`);
+  }
+
+  const stringLiterals = sourceWithoutCompatibilityValues.match(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g) ?? [];
+  for (const literal of stringLiterals) {
+    if (/\bV4\b|\bv4\b|\bv4[-_][A-Za-z0-9_-]+/.test(literal)) {
+      violations.push(`${relativePath}: current-product string ${literal}`);
+    }
   }
 
   return violations;
@@ -108,6 +115,48 @@ function currentTrackedFiles() {
   return trackedFiles().filter((path) => existsSync(join(ROOT, path)));
 }
 
+function findTrackedRootStatusViolations(paths) {
+  return paths
+    .filter((path) => /^STATUS-[^/]+\.md$/.test(path))
+    .map((path) => `tracked root status file remains: ${path}`);
+}
+
+function findMarkdownLinkViolations(relativePath, source) {
+  const violations = [];
+  const markdownLink = /\[[^\]]+\]\(([^)]+)\)/g;
+  const documentPath = join(ROOT, relativePath);
+
+  for (const match of source.matchAll(markdownLink)) {
+    const rawTarget = match[1].trim().replace(/^<|>$/g, '');
+    const target = rawTarget.split('#')[0].trim();
+    if (!target || rawTarget.startsWith('#') || target.startsWith('/') || /^(?:https?:|mailto:|data:|\/\/)/i.test(target)) continue;
+
+    const targetPath = resolve(dirname(documentPath), target);
+    if (!existsSync(targetPath)) violations.push(`${relativePath}: broken relative Markdown link ${rawTarget}`);
+  }
+
+  return violations;
+}
+
+function findDocumentSourceViolations(relativePath, source) {
+  const violations = [];
+  for (const match of source.matchAll(/\bSTATUS-[^/\s)`]+\.md\b/g)) {
+    violations.push(`${relativePath}: canonical document references ${match[0]}`);
+  }
+  violations.push(...findMarkdownLinkViolations(relativePath, source));
+  return [...new Set(violations)];
+}
+
+function documentFixtureViolations(relativePath, source) {
+  if (typeof findDocumentSourceViolations !== 'function') return ['document scanner helper is missing'];
+  return findDocumentSourceViolations(relativePath, source);
+}
+
+function trackedStatusFixtureViolations(paths) {
+  if (typeof findTrackedRootStatusViolations !== 'function') return ['tracked status scanner helper is missing'];
+  return findTrackedRootStatusViolations(paths);
+}
+
 function findDocumentationViolations() {
   const violations = [];
   const canonicalText = CORE_DOCUMENTS.map((path) => {
@@ -120,6 +169,8 @@ function findDocumentationViolations() {
       violations.push(`${path}: missing canonical document`);
       continue;
     }
+
+    violations.push(...findDocumentSourceViolations(path, source));
 
     for (const [lineNumber, line] of source.split('\n').entries()) {
       if (/\bV4\b|\bv4(?:[-_]|\b)/.test(line) && !/(호환|격리|legacy|레거시|이전|저장 키|appId|alias)/i.test(line)) {
@@ -134,8 +185,7 @@ function findDocumentationViolations() {
     }
   }
 
-  const statusFiles = currentTrackedFiles().filter((path) => /^STATUS-[^/]+\.md$/.test(path));
-  for (const path of statusFiles) violations.push(`tracked root status file remains: ${path}`);
+  violations.push(...findTrackedRootStatusViolations(currentTrackedFiles()));
 
   for (const prefix of HISTORICAL_PREFIXES) {
     for (const path of currentTrackedFiles()) {
@@ -191,6 +241,45 @@ test('scanner rejects exact V4 player-facing JSX text', () => {
     'export function Fixture() { return <div>V4</div>; }',
   );
   assert.ok(violations.some((violation) => violation.includes('identifier V4')), 'expected exact V4 JSX text violation');
+});
+
+test('scanner rejects quoted V4 and v4_ player-facing strings', () => {
+  const violations = findSourceIdentityViolations(
+    'games/inflation-rpg/src/village/screens/Fixture.tsx',
+    "const title = 'V4'; const testId = 'v4-player-card'; const legacyToken = 'v4_legacy';",
+  );
+  assert.ok(violations.some((violation) => violation.includes("string 'V4'")), 'expected quoted V4 violation');
+  assert.ok(violations.some((violation) => violation.includes('v4-player-card')), 'expected v4 test-id violation');
+  assert.ok(violations.some((violation) => violation.includes('v4_legacy')), 'expected v4_ string violation');
+});
+
+test('scanner rejects STATUS references in canonical document fixtures', () => {
+  const violations = documentFixtureViolations(
+    'docs/fixture.md',
+    '현재 상태는 [이전 상태](../STATUS-2026-09-09.md)를 참조한다.',
+  );
+  assert.ok(violations.some((violation) => violation.includes('STATUS-2026-09-09.md')), 'expected STATUS reference violation');
+});
+
+test('scanner rejects tracked root STATUS files', () => {
+  const violations = trackedStatusFixtureViolations(['STATUS-2026-09-09.md', 'docs/작업-현황.md']);
+  assert.ok(violations.some((violation) => violation.includes('STATUS-2026-09-09.md')), 'expected tracked root STATUS violation');
+  assert.equal(violations.some((violation) => violation.includes('docs/작업-현황.md')), false, 'nested status-like docs are not root snapshots');
+});
+
+test('scanner rejects broken relative Markdown links and skips external links', () => {
+  const violations = documentFixtureViolations(
+    'docs/fixture.md',
+    '[broken](missing-target.md) [web](https://example.com) [anchor](#section) [mail](mailto:test@example.com)',
+  );
+  assert.ok(violations.some((violation) => violation.includes('missing-target.md')), 'expected broken link violation');
+  assert.equal(violations.some((violation) => violation.includes('example.com')), false, 'external links must be skipped');
+  assert.equal(violations.some((violation) => violation.includes('#section')), false, 'anchors must be skipped');
+  assert.equal(violations.some((violation) => violation.includes('mailto:')), false, 'mailto links must be skipped');
+});
+
+test('scanner preserves the legacy compatibility escape hatch', () => {
+  assert.deepEqual(findIdentityViolations(), [], 'legacyCompatibility.ts and approved migration fixtures must remain allowed');
 });
 
 test('canonical documents preserve current facts and isolate historical material', () => {

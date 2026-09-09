@@ -6,7 +6,7 @@
 
 과거 계획·평가·페르소나는 Git 이력에 보존된 역사 자료다. 그 안의 다음 작업·강제 반복·평가 점수는 현재 실행 권한이 아니다.
 
-사용자의 변경을 보존한다. `games/inflation-rpg/src/systems/`의 `paradoxSpiral.ts`, `paradoxSpiral.test.ts`, `paradoxSpiralBalance.test.ts`와 사용자 `output/`, `tmp/`는 변경·커밋하지 않는다. V3 legacy와 저장을 보존한다.
+사용자의 변경을 보존한다. `games/inflation-rpg/src/systems/`의 `paradoxSpiral.ts`, `paradoxSpiral.test.ts`, `paradoxSpiralBalance.test.ts`와 사용자 `output/`, `tmp/`는 변경·커밋하지 않는다. 이전 제품 **신의 마을: 옛 모험**의 호환 경로와 저장을 보존한다.
 
 보고와 제품 문서는 한국어로 작성한다. 구현 완료는 대상 변경의 검증 증거로 판단한다. `games/inflation-rpg`, 관련 package/route alias, Capacitor `appId`, 이전 버전 저장 키는 격리된 호환 표면이므로 이름을 바꾸지 않는다.
 

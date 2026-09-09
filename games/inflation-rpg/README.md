@@ -1,7 +1,7 @@
 # @forge/game-inflation-rpg
 
-forge의 첫 번째 게임인 **신의 마을: 영원의 후원자**를 제공한다. 이전 버전은
-`inflation-rpg-legacy` 경로와 `StartLegacyGame()`으로 보존한다.
+forge의 첫 번째 게임인 **신의 마을: 영원의 후원자**를 제공한다. 이전 제품
+**신의 마을: 옛 모험**은 `inflation-rpg-legacy` 경로와 `StartLegacyGame()`으로 보존한다.
 
 ## 플랫폼
 
@@ -21,7 +21,7 @@ forge의 첫 번째 게임인 **신의 마을: 영원의 후원자**를 제공�
 - `pnpm --filter @forge/game-inflation-rpg test` — Vitest.
 - `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright. 현재 게임과 이전
   버전 회귀를 함께 검증한다.
-- `pnpm --filter @forge/dev-shell e2e` — 포털의 현재 게임·이전 버전 경로를 확인한다.
+- `pnpm --filter @forge/dev-shell e2e` — 포털의 현재 게임·신의 마을: 옛 모험 경로를 확인한다.
 
 ## 모바일 UI 확인
 

@@ -121,7 +121,7 @@ apps/dev-shell (Next.js, http://localhost:3000)
   ↓
 /                       → 게임 셀렉터
 /games/inflation-rpg    → 신의 마을: 영원의 후원자 동적 로드
-/games/inflation-rpg-legacy → 조선 인플레이션 RPG V3 legacy 동적 로드
+/games/inflation-rpg-legacy → 신의 마을: 옛 모험 동적 로드 (내부 호환 식별자: 조선 인플레이션 RPG V3)
 /games/<future-slug>    → 추가 게임
 ```
 
