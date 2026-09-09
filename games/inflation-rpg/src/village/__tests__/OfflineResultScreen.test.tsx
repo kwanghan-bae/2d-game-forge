@@ -19,14 +19,14 @@ const summary = (overrides: Partial<OfflineSummary> = {}): OfflineSummary => ({
 
 describe('Village offline result screen', () => {
   it('renders player-facing equipment names instead of storage ids', () => {
-    render(<OfflineResultScreen summary={summary({ equipmentGained: ['v4_iron_sword'] })} onClose={() => {}} />);
+    render(<OfflineResultScreen summary={summary({ equipmentGained: ['iron_sword'] })} onClose={() => {}} />);
 
     expect(screen.getByTestId('village-offline-result')).toHaveTextContent('마을의 철검');
-    expect(screen.getByTestId('village-offline-result').textContent).not.toContain('v4_iron_sword');
+    expect(screen.getByTestId('village-offline-result').textContent).not.toContain('iron_sword');
   });
 
   it('shows offline equipment upgrades separately from newly gained gear', () => {
-    render(<OfflineResultScreen summary={summary({ equipmentUpgraded: ['v4_iron_sword'] })} onClose={() => {}} />);
+    render(<OfflineResultScreen summary={summary({ equipmentUpgraded: ['iron_sword'] })} onClose={() => {}} />);
 
     expect(screen.getByTestId('village-offline-result')).toHaveTextContent('장비 강화 · 마을의 철검');
   });

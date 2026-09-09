@@ -22,6 +22,68 @@ function memoryStorage(initial: Record<string, string> = {}) {
 }
 
 describe('Village save recovery boundary', () => {
+  it('migrates a schema-1 current-product save from the legacy key without mutating it', () => {
+    const source = createInitialVillageSave(9876) as unknown as Record<string, any>;
+    source.schemaVersion = 1;
+    source.meta.unlockedRealms = ['joseon_plains', 'deep_forest'];
+    source.meta.sagaEntries[0].id = 'saga-realm-intro-joseon_plains';
+    source.meta.sagaEntries[0].text = '조선 평야에서 v4_iron_sword를 들었다.';
+    source.run.hero.realmId = 'joseon_plains';
+    source.run.hero.equipmentIds = ['v4_iron_sword'];
+    source.run.hero.equipmentLevels = { v4_iron_sword: 3 };
+    source.run.lastExpeditionResult = {
+      id: 'result-joseon_plains',
+      realmId: 'joseon_plains',
+      outcome: 'victory',
+      completedAt: source.updatedAt,
+      reward: { gold: 1 },
+      heroPower: 120,
+      recommendedPower: 120,
+      turns: 1,
+      totalDamageDealt: 1,
+      totalDamageTaken: 1,
+      heroRemainingHp: source.run.hero.hp,
+      weaknessKR: '기록',
+      recommendedFacilityId: 'training',
+      recommendedEquipmentId: 'v4_guardian_armor',
+      retryAfterSeconds: 0,
+    };
+    const legacyKey = 'shin-ui-eternal-sponsor-v4-save-v1';
+    const canonicalKey = 'shin-ui-eternal-sponsor-save-v2';
+    const legacyRaw = JSON.stringify(source);
+    const storage = memoryStorage({ [legacyKey]: legacyRaw });
+
+    const result = readVillageSave(storage);
+
+    expect(result.status).toBe('valid');
+    if (result.status !== 'valid') return;
+    expect(result.save.schemaVersion).toBe(2);
+    expect(result.save.meta.unlockedRealms).toEqual(['sacred_fields', 'deep_forest']);
+    expect(result.save.run.hero.realmId).toBe('sacred_fields');
+    expect(result.save.run.hero.equipmentIds).toEqual(['iron_sword']);
+    expect(result.save.run.hero.equipmentLevels).toEqual({ iron_sword: 3 });
+    expect(result.save.run.lastExpeditionResult?.realmId).toBe('sacred_fields');
+    expect(result.save.run.lastExpeditionResult?.recommendedEquipmentId).toBe('guardian_armor');
+    expect(result.save.meta.sagaEntries[0]?.id).toBe('saga-realm-intro-sacred_fields');
+    expect(result.save.meta.sagaEntries[0]?.text).toContain('신목 들판');
+    expect(storage.dump(legacyKey)).toBe(legacyRaw);
+    expect(storage.dump(canonicalKey)).toBeTruthy();
+    expect(source.run.hero.realmId).toBe('joseon_plains');
+    expect(source.run.hero.equipmentIds).toEqual(['v4_iron_sword']);
+  });
+
+  it('does not revive legacy data when the canonical save is malformed', () => {
+    const legacyKey = 'shin-ui-eternal-sponsor-v4-save-v1';
+    const canonicalKey = 'shin-ui-eternal-sponsor-save-v2';
+    const legacyRaw = JSON.stringify(createInitialVillageSave(456));
+    const canonicalRaw = '{not-json';
+    const storage = memoryStorage({ [canonicalKey]: canonicalRaw, [legacyKey]: legacyRaw });
+
+    expect(readVillageSave(storage)).toEqual({ status: 'invalid', reason: 'malformed_json' });
+    expect(storage.dump(canonicalKey)).toBe(canonicalRaw);
+    expect(storage.dump(legacyKey)).toBe(legacyRaw);
+  });
+
   it('distinguishes an absent save from a malformed save', () => {
     const empty = memoryStorage();
     expect(readVillageSave(empty)).toEqual({ status: 'missing' });
@@ -61,12 +123,12 @@ describe('Village save recovery boundary', () => {
 
   it('rejects a payload that combines an active expedition with an old result', () => {
     const base = createInitialVillageSave(6541);
-    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    const started = startExpedition(base, 'sacred_fields', base.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.lastExpeditionResult = {
       id: 'old-result',
-      realmId: 'joseon_plains',
+      realmId: 'sacred_fields',
       outcome: 'victory',
       completedAt: started.save.updatedAt,
       reward: { gold: 1 },
@@ -97,7 +159,7 @@ describe('Village save recovery boundary', () => {
 
     const expeditionStarted = startExpedition(
       taskStarted.save,
-      'joseon_plains',
+      'sacred_fields',
       taskStarted.save.updatedAt,
       'aggression',
       null,
@@ -173,7 +235,7 @@ describe('Village save recovery boundary', () => {
     const invalid = createInitialVillageSave(6546);
     invalid.run.lastExpeditionResult = {
       id: 'empty-weakness-result',
-      realmId: 'joseon_plains',
+      realmId: 'sacred_fields',
       outcome: 'defeat',
       completedAt: invalid.updatedAt,
       reward: {},
@@ -200,8 +262,20 @@ describe('Village save recovery boundary', () => {
     const fresh = startFreshVillageSave(storage, 123);
 
     expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBe(raw);
-    expect(loadVillageSave(storage)).toMatchObject({ schemaVersion: 1, run: { hero: { name: fresh.run.hero.name } } });
+    expect(loadVillageSave(storage)).toMatchObject({ schemaVersion: 2, run: { hero: { name: fresh.run.hero.name } } });
     expect(fresh.meta.sagaEntries[0]?.title).toBe('영원한 후원자의 탄생');
+  });
+
+  it('backs up an invalid legacy payload before starting a fresh canonical save', () => {
+    const legacyKey = 'shin-ui-eternal-sponsor-v4-save-v1';
+    const legacyRaw = JSON.stringify({ schemaVersion: 1, broken: true });
+    const storage = memoryStorage({ [legacyKey]: legacyRaw });
+
+    startFreshVillageSave(storage, 124);
+
+    expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBe(legacyRaw);
+    expect(storage.dump(legacyKey)).toBe(legacyRaw);
+    expect(storage.dump('shin-ui-eternal-sponsor-save-v2')).toContain('"schemaVersion":2');
   });
 
   it('does not alter a valid save when recovery is not needed', () => {
@@ -209,7 +283,7 @@ describe('Village save recovery boundary', () => {
     const raw = JSON.stringify(valid);
     const storage = memoryStorage({ [Village_SAVE_KEY]: raw });
 
-    expect(startFreshVillageSave(storage, 789)).toMatchObject({ schemaVersion: 1 });
+    expect(startFreshVillageSave(storage, 789)).toMatchObject({ schemaVersion: 2 });
     expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBeUndefined();
     expect(loadVillageSave(storage)?.run.hero.name).toBe(valid.run.hero.name);
   });

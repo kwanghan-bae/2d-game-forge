@@ -143,7 +143,7 @@ function getTownObjective(save: VillageSaveEnvelope): string {
     ? 'underworld'
     : unlocked.includes('deep_forest')
       ? 'deep_forest'
-      : 'joseon_plains';
+      : 'sacred_fields';
   const nextRealmId = getNextRealmId(currentRealmId);
   if (nextRealmId && !unlocked.includes(nextRealmId)) {
     return `${getVillageRealmName(currentRealmId)}에서 승리하면 ${getVillageRealmName(nextRealmId)}이 열립니다. 대장간에서 장비를 만든 뒤 정책을 바꿔 다음 원정의 성격을 정하세요.`;

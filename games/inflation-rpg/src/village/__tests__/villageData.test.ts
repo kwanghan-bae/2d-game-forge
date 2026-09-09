@@ -5,7 +5,7 @@ describe('Village launch data contract', () => {
   it('keeps the launch boundary at seven facilities, three agents, and three realms', () => {
     expect(Object.keys(FACILITY_DEFINITIONS)).toHaveLength(7);
     expect(Object.keys(AGENT_DEFINITIONS)).toEqual(['blacksmith', 'mudang', 'guide']);
-    expect(Object.keys(REALM_DEFINITIONS)).toEqual(['joseon_plains', 'deep_forest', 'underworld']);
+    expect(Object.keys(REALM_DEFINITIONS)).toEqual(['sacred_fields', 'deep_forest', 'underworld']);
   });
 
   it('defines normal, elite, and boss encounters in the production target time bands', () => {

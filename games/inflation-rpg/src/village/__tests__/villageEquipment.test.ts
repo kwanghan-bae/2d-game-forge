@@ -11,8 +11,8 @@ describe('Village equipment progression', () => {
     if (!first.ok) return;
 
     const crafted = completeFacilityTasks(first.save, first.task.completesAt);
-    expect(crafted.run.hero.equipmentIds).toEqual(['v4_iron_sword']);
-    expect(crafted.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 1 });
+    expect(crafted.run.hero.equipmentIds).toEqual(['iron_sword']);
+    expect(crafted.run.hero.equipmentLevels).toEqual({ iron_sword: 1 });
     expect(crafted.run.hero.atk).toBe(initial.run.hero.atk + 80);
 
     const second = startFacilityTask(crafted, 'blacksmith', crafted.updatedAt, 'blacksmith');
@@ -20,41 +20,41 @@ describe('Village equipment progression', () => {
     if (!second.ok) return;
     const upgraded = completeFacilityTasks(second.save, second.task.completesAt);
 
-    expect(upgraded.run.hero.equipmentIds).toEqual(['v4_iron_sword']);
-    expect(upgraded.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 2 });
+    expect(upgraded.run.hero.equipmentIds).toEqual(['iron_sword']);
+    expect(upgraded.run.hero.equipmentLevels).toEqual({ iron_sword: 2 });
     expect(upgraded.run.hero.atk).toBe(initial.run.hero.atk + 160);
   });
 
   it('unlocks armor and talisman through higher-level blacksmith work', () => {
     const source = createInitialVillageSave(117);
     source.meta.facilities.blacksmith.level = 3;
-    source.run.hero.equipmentIds = ['v4_iron_sword'];
-    source.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    source.run.hero.equipmentIds = ['iron_sword'];
+    source.run.hero.equipmentLevels = { iron_sword: 1 };
 
     const armorTask = startFacilityTask(source, 'blacksmith', source.updatedAt);
     expect(armorTask.ok).toBe(true);
     if (!armorTask.ok) return;
-    expect(armorTask.task.outputEquipmentIds).toEqual(['v4_guardian_armor']);
+    expect(armorTask.task.outputEquipmentIds).toEqual(['guardian_armor']);
     expect(armorTask.task.type).toBe('수호 갑옷 제작');
 
     const armored = completeFacilityTasks(armorTask.save, armorTask.task.completesAt);
     const talismanTask = startFacilityTask(armored, 'blacksmith', armored.updatedAt);
     expect(talismanTask.ok).toBe(true);
     if (!talismanTask.ok) return;
-    expect(talismanTask.task.outputEquipmentIds).toEqual(['v4_spirit_talisman']);
+    expect(talismanTask.task.outputEquipmentIds).toEqual(['spirit_talisman']);
     expect(talismanTask.task.type).toBe('영혼 부적 제작');
 
     const equipped = completeFacilityTasks(talismanTask.save, talismanTask.task.completesAt);
     expect(equipped.run.hero.equipmentIds).toEqual([
-      'v4_iron_sword',
-      'v4_guardian_armor',
-      'v4_spirit_talisman',
+      'iron_sword',
+      'guardian_armor',
+      'spirit_talisman',
     ]);
   });
 
   it('hydrates equipment stats from a pre-upgrade Village save exactly once', () => {
     const oldSave = createInitialVillageSave(102);
-    oldSave.run.hero.equipmentIds = ['v4_iron_sword'];
+    oldSave.run.hero.equipmentIds = ['iron_sword'];
     delete oldSave.run.hero.equipmentLevels;
     const storage = new Map<string, string>();
     const fakeStorage = {
@@ -64,7 +64,7 @@ describe('Village equipment progression', () => {
 
     persistVillageSave(oldSave, fakeStorage);
     const hydrated = loadVillageSave(fakeStorage);
-    expect(hydrated?.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 1 });
+    expect(hydrated?.run.hero.equipmentLevels).toEqual({ iron_sword: 1 });
     expect(hydrated?.run.hero.atk).toBe(oldSave.run.hero.atk + 80);
 
     if (!hydrated) return;
@@ -74,7 +74,7 @@ describe('Village equipment progression', () => {
 
   it('caps duplicate legacy equipment records while hydrating old saves', () => {
     const oldSave = createInitialVillageSave(104);
-    oldSave.run.hero.equipmentIds = Array.from({ length: 21 }, () => 'v4_iron_sword');
+    oldSave.run.hero.equipmentIds = Array.from({ length: 21 }, () => 'iron_sword');
     delete oldSave.run.hero.equipmentLevels;
     const storage = new Map<string, string>();
     const fakeStorage = {
@@ -84,8 +84,8 @@ describe('Village equipment progression', () => {
 
     persistVillageSave(oldSave, fakeStorage);
     const hydrated = loadVillageSave(fakeStorage);
-    expect(hydrated?.run.hero.equipmentIds).toEqual(['v4_iron_sword']);
-    expect(hydrated?.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 20 });
+    expect(hydrated?.run.hero.equipmentIds).toEqual(['iron_sword']);
+    expect(hydrated?.run.hero.equipmentLevels).toEqual({ iron_sword: 20 });
 
     if (!hydrated) return;
     persistVillageSave(hydrated, fakeStorage);
@@ -93,7 +93,7 @@ describe('Village equipment progression', () => {
   });
 
   it('keeps equipment bonuses explicit and bounded by the saved level', () => {
-    expect(getVillageEquipmentBonuses(['v4_iron_sword'], { v4_iron_sword: 3 })).toEqual({
+    expect(getVillageEquipmentBonuses(['iron_sword'], { iron_sword: 3 })).toEqual({
       atk: 240,
       def: 0,
       hpMax: 0,
@@ -102,8 +102,8 @@ describe('Village equipment progression', () => {
   });
 
   it('falls back to equipment level one for malformed runtime levels', () => {
-    expect(getVillageEquipmentBonuses(['v4_iron_sword'], {
-      v4_iron_sword: 'broken' as never,
+    expect(getVillageEquipmentBonuses(['iron_sword'], {
+      iron_sword: 'broken' as never,
     })).toEqual({ atk: 80, def: 0, hpMax: 0, critRate: 0 });
   });
 
@@ -143,8 +143,8 @@ describe('Village equipment progression', () => {
 
   it('does not increase hero stats after an equipment level reaches the cap', () => {
     const capped = createInitialVillageSave(103);
-    capped.run.hero.equipmentIds = ['v4_iron_sword'];
-    capped.run.hero.equipmentLevels = { v4_iron_sword: 20 };
+    capped.run.hero.equipmentIds = ['iron_sword'];
+    capped.run.hero.equipmentLevels = { iron_sword: 20 };
     capped.run.hero.atk += 80 * 20;
     const started = startFacilityTask(capped, 'blacksmith', capped.updatedAt, null);
     expect(started.ok).toBe(true);
@@ -152,7 +152,7 @@ describe('Village equipment progression', () => {
 
     const crafted = completeFacilityTasks(started.save, started.task.completesAt);
 
-    expect(crafted.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 20 });
+    expect(crafted.run.hero.equipmentLevels).toEqual({ iron_sword: 20 });
     expect(crafted.run.hero.atk).toBe(capped.run.hero.atk);
   });
 

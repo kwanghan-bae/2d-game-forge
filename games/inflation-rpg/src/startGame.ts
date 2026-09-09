@@ -16,8 +16,9 @@ export function StartGame(config: StartGameConfig): ForgeGameInstance {
   return mount(config, VillageApp);
 }
 
-/** Explicit V3 entry point. It keeps the legacy store and save key untouched. */
+/** Explicit legacy entry point. It keeps the legacy store and save key untouched. */
 export function StartLegacyGame(config: StartGameConfig): ForgeGameInstance {
+  void useGameStore.persist?.rehydrate?.();
   return mount(config, App);
 }
 

@@ -30,13 +30,13 @@ const DEEP_FOREST_CHOICE: StoryChoiceDefinition = {
 };
 
 const REALM_INTROS: Record<RealmId, { title: string; text: (heroName: string) => string }> = {
-  joseon_plains: {
+  sacred_fields: {
     title: '첫 장: 장승 아래의 약속',
-    text: (heroName) => `${heroName}은(는) 마을 어귀 장승에 새겨진 신탁을 따라 조선 평야로 나섰다. 떠돌이 도깨비가 훔쳐 간 곡식의 혼을 되찾아야 마을의 불씨가 꺼지지 않는다.`,
+    text: (heroName) => `${heroName}은(는) 마을 어귀 장승에 새겨진 신탁을 따라 신목 들판으로 나섰다. 떠돌이 도깨비가 훔쳐 간 곡식의 혼을 되찾아야 마을의 불씨가 꺼지지 않는다.`,
   },
   deep_forest: {
     title: '둘째 장: 산군의 푸른 불씨',
-    text: (heroName) => `${heroName}은(는) 조선 평야의 장승이 가리킨 길을 따라 깊은 숲에 들었다. 산군이 품은 푸른 불씨에는 마을과 저승을 잇는 오래된 약속이 잠들어 있다.`,
+    text: (heroName) => `${heroName}은(는) 신목 들판의 장승이 가리킨 길을 따라 깊은 숲에 들었다. 산군이 품은 푸른 불씨에는 마을과 저승을 잇는 오래된 약속이 잠들어 있다.`,
   },
   underworld: {
     title: '셋째 장: 황천의 문',
@@ -45,7 +45,7 @@ const REALM_INTROS: Record<RealmId, { title: string; text: (heroName: string) =>
 };
 
 const REALM_VICTORIES: Record<RealmId, { title: string; text: (heroName: string) => string }> = {
-  joseon_plains: {
+  sacred_fields: {
     title: '첫 승리: 장승이 기억한 이름',
     text: (heroName) => `${heroName}은(는) 장승 수문장을 넘어 도깨비가 훔친 곡식의 혼을 돌려놓았다. 장승은 영웅의 이름을 기억하고 깊은 숲으로 향하는 길을 열었다.`,
   },

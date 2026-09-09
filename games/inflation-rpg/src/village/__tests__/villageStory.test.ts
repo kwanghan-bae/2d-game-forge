@@ -23,12 +23,12 @@ function withSaga(save: ReturnType<typeof createInitialVillageSave>, entry: Saga
 describe('Village story catalog', () => {
   it('explains each realm entrance and victory through the Joseon folklore arc', () => {
     const introFixtures = [
-      ['joseon_plains', '도깨비'] as const,
+      ['sacred_fields', '도깨비'] as const,
       ['deep_forest', '산군'] as const,
       ['underworld', '저승'] as const,
     ];
     const victoryFixtures = [
-      ['joseon_plains', '장승'] as const,
+      ['sacred_fields', '장승'] as const,
       ['deep_forest', '흑송 산군'] as const,
       ['underworld', '염라'] as const,
     ];
@@ -64,7 +64,7 @@ describe('Village story catalog', () => {
     });
   });
 
-  it.each(['joseon_plains', 'deep_forest', 'underworld'] as const)(
+  it.each(['sacred_fields', 'deep_forest', 'underworld'] as const)(
     'uses the provided hero name in the %s entrance and victory text',
     (realmId) => {
       expect(getRealmIntroEntry(realmId, '무진', STORY_NOW).text).toContain('무진');
@@ -169,7 +169,7 @@ describe('Village deep forest story choice', () => {
     const selected = chooseStoryChoice(source, 'protect_flame', STORY_NOW);
     expect(selected.ok).toBe(true);
     if (!selected.ok) return;
-    expect(selected.save.schemaVersion).toBe(1);
+    expect(selected.save.schemaVersion).toBe(2);
     expect(selected.save.meta.unlockedRealms).toContain('underworld');
     expect(selected.save.meta.currencies.rift).toBe(1);
     expect(selected.save.meta.agents.find((agent) => agent.id === 'mudang')?.trust).toBe(35);

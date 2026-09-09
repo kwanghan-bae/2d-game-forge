@@ -41,7 +41,7 @@ export const FACILITY_DEFINITIONS: Record<FacilityId, FacilityDefinition> = {
     id: 'blacksmith', nameKR: '대장간', icon: '⚒️',
     description: '재료를 장비와 금화로 바꿉니다.', taskLabelKR: '철검 제작',
     baseDurationSeconds: 45, input: { gold: 20, materials: 3 }, output: { materials: 2 },
-    outputEquipmentIds: ['v4_iron_sword'],
+    outputEquipmentIds: ['iron_sword'],
   },
   training: {
     id: 'training', nameKR: '훈련소', icon: '🎯',
@@ -97,15 +97,15 @@ export interface RealmDefinition {
 }
 
 export const REALM_DEFINITIONS: Record<RealmId, RealmDefinition> = {
-  joseon_plains: {
-    id: 'joseon_plains', nameKR: '조선 평야', icon: '🌾',
+  sacred_fields: {
+    id: 'sacred_fields', nameKR: '신목 들판', icon: '🌾',
     description: '첫 원정지. 떠돌이 도깨비와 맞서 마을의 이름을 알립니다.', risk: 0.08, offlineSafe: true,
     durationSeconds: 45, recommendedPower: 120, cost: { spirit: 12 }, reward: { gold: 55, materials: 4 },
     enemies: ['도깨비', '들개', '부적 까마귀'], boss: '장승 수문장',
     encounters: [
-      { id: 'joseon-plains-normal', tier: 'normal', nameKR: '들판 순찰', durationSeconds: 10, risk: 0.04, recommendedPower: 80, enemyHpMultiplier: 1.5, enemyAtkMultiplier: 0.45 },
-      { id: 'joseon-plains-elite', tier: 'elite', nameKR: '도깨비 무리', durationSeconds: 25, risk: 0.08, recommendedPower: 105, enemyHpMultiplier: 2.5, enemyAtkMultiplier: 0.65 },
-      { id: 'joseon-plains-boss', tier: 'boss', nameKR: '장승 수문장', durationSeconds: 45, risk: 0.12, recommendedPower: 120, enemyHpMultiplier: 4, enemyAtkMultiplier: 0.8 },
+      { id: 'sacred-fields-normal', tier: 'normal', nameKR: '들판 순찰', durationSeconds: 10, risk: 0.04, recommendedPower: 80, enemyHpMultiplier: 1.5, enemyAtkMultiplier: 0.45 },
+      { id: 'sacred-fields-elite', tier: 'elite', nameKR: '도깨비 무리', durationSeconds: 25, risk: 0.08, recommendedPower: 105, enemyHpMultiplier: 2.5, enemyAtkMultiplier: 0.65 },
+      { id: 'sacred-fields-boss', tier: 'boss', nameKR: '장승 수문장', durationSeconds: 45, risk: 0.12, recommendedPower: 120, enemyHpMultiplier: 4, enemyAtkMultiplier: 0.8 },
     ],
   },
   deep_forest: {

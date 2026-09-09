@@ -7,6 +7,7 @@ import {
 import { Village_HERO_AUTONOMY_DELAY_MS, Village_MAX_INTERVENTION_CHARGES, Village_MAX_SAGA_ENTRIES } from './types';
 import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition, getVillageEquipmentName } from './equipment';
 import { createVillageHeroRuntime } from './heroRuntime';
+import { stableLegacyVillageRollKey } from './legacyCompatibility';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import {
   applyAgentTrustGain,
@@ -82,9 +83,9 @@ const MAX_HERO_EXP_SETTLEMENT = 100_000;
 const MAX_LEVELS_PER_SETTLEMENT = 1_000;
 const MAX_ECONOMY_VALUE = Number.MAX_SAFE_INTEGER;
 const BLACKSMITH_EQUIPMENT_UNLOCKS = [
-  { id: 'v4_iron_sword', facilityLevel: 1 },
-  { id: 'v4_guardian_armor', facilityLevel: 2 },
-  { id: 'v4_spirit_talisman', facilityLevel: 3 },
+  { id: 'iron_sword', facilityLevel: 1 },
+  { id: 'guardian_armor', facilityLevel: 2 },
+  { id: 'spirit_talisman', facilityLevel: 3 },
 ] as const;
 
 function positiveFiniteLevel(value: number | undefined): number {
@@ -931,7 +932,9 @@ export function getExpeditionForecast(
     ? getExpeditionSuccessChance(source, realmId, normalizedIndex, 'guide')
     : 0;
   const successChance = assignedAgentId === 'guide' ? guideSuccessChance : soloSuccessChance;
-  const rollKey = expeditionId ?? source.run.expedition?.id ?? `forecast:${realmId}:${normalizedIndex}`;
+  const rollKey = stableLegacyVillageRollKey(
+    expeditionId ?? source.run.expedition?.id ?? `forecast:${realmId}:${normalizedIndex}`,
+  );
   return {
     realmId,
     encounterIndex: normalizedIndex,
@@ -939,12 +942,12 @@ export function getExpeditionForecast(
     successChance,
     soloSuccessChance,
     guideSuccessChance,
-    roll: deterministicRoll(`${rollKey}:${encounter.id}`),
+    roll: deterministicRoll(`${rollKey}:${stableLegacyVillageRollKey(encounter.id)}`),
   };
 }
 
 export function getNextRealmId(realmId: RealmId): RealmId | null {
-  return realmId === 'joseon_plains' ? 'deep_forest' : realmId === 'deep_forest' ? 'underworld' : null;
+  return realmId === 'sacred_fields' ? 'deep_forest' : realmId === 'deep_forest' ? 'underworld' : null;
 }
 
 function deterministicRoll(key: string): number {

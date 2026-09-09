@@ -166,7 +166,7 @@ function TelemetryHarness() {
     <>
       <button type="button" onClick={() => game.startTask('temple')}>start facility</button>
       <button type="button" onClick={() => game.changePolicy('training')}>change policy</button>
-      <button type="button" onClick={() => game.startRun('joseon_plains')}>start expedition</button>
+      <button type="button" onClick={() => game.startRun('sacred_fields')}>start expedition</button>
       <button type="button" onClick={() => game.chooseStoryChoice('protect_flame')}>choose story</button>
     </>
   );
@@ -305,8 +305,8 @@ describe('useVillageGame monetization actions', () => {
     vi.useFakeTimers();
     vi.setSystemTime(10_000);
     const base = createInitialVillageSave(113);
-    base.run.hero.equipmentIds = ['v4_iron_sword'];
-    base.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    base.run.hero.equipmentIds = ['iron_sword'];
+    base.run.hero.equipmentLevels = { iron_sword: 1 };
     const started = startFacilityTask(base, 'blacksmith', base.updatedAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
@@ -508,7 +508,7 @@ describe('useVillageGame monetization actions', () => {
 
   it('blocks a stale V3 import callback while an expedition is active', () => {
     const base = createInitialVillageSave(120);
-    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    const started = startExpedition(base, 'sacred_fields', base.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     persistVillageSave(started.save);
@@ -952,7 +952,7 @@ describe('useVillageGame save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'fresh' }));
     await waitFor(() => expect(screen.getByTestId('storage-status')).toHaveTextContent('valid'));
     expect(localStorage.getItem(Village_RECOVERY_BACKUP_KEY)).toBe(raw);
-    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
+    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(2);
   });
 
   it('continues offline settlement after recovery creates a fresh save', () => {
@@ -1044,8 +1044,8 @@ describe('useVillageGame save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'protect' }));
 
     expect(screen.getByTestId('story-choice')).toHaveTextContent('none');
-    expect(screen.getByTestId('story-realms')).toHaveTextContent('joseon_plains,deep_forest,underworld');
-    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
+    expect(screen.getByTestId('story-realms')).toHaveTextContent('sacred_fields,deep_forest,underworld');
+    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(2);
     expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').meta.storyChoice).toBeUndefined();
   });
 
@@ -1074,7 +1074,7 @@ describe('useVillageGame save recovery', () => {
 
   it('does not report a risky expedition confirmation before its completion time', async () => {
     const base = createInitialVillageSave(104);
-    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    const started = startExpedition(base, 'sacred_fields', base.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.status = 'awaiting_confirmation';
@@ -1117,7 +1117,7 @@ describe('useVillageGame save recovery', () => {
       'policy_changed',
       'expedition_started',
     ]);
-    expect(metrics.map((metric) => metric.detail)).toEqual(['temple', 'training', 'joseon_plains']);
+    expect(metrics.map((metric) => metric.detail)).toEqual(['temple', 'training', 'sacred_fields']);
   });
 
   it('records a successful story choice but not a failed choice', () => {
@@ -1141,7 +1141,7 @@ describe('useVillageGame save recovery', () => {
     const base = createInitialVillageSave(117);
     const startedAt = Date.now() - 1_000;
     setFixtureTimeline(base, startedAt);
-    const started = startExpedition(base, 'joseon_plains', base.updatedAt, 'aggression', null);
+    const started = startExpedition(base, 'sacred_fields', base.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.encounterIndex = 2;

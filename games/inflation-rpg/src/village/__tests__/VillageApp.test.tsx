@@ -64,6 +64,20 @@ describe('Village app resume handling', () => {
     localStorage.clear();
   });
 
+  it('renders the approved folklore identity and hides generation-era player copy', () => {
+    vi.mocked(useVillageGame).mockReturnValue(mockGame(vi.fn(), vi.fn()));
+
+    render(<VillageApp config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
+
+    expect(screen.getByTestId('village-app')).toHaveTextContent('한국 설화 마을 판타지');
+    expect(screen.getByTestId('village-app')).toHaveTextContent('신목 들판');
+    expect(screen.getByTestId('village-app')).not.toHaveTextContent(/V3|V4|조선/);
+
+    fireEvent.click(within(screen.getByRole('navigation', { name: '주요 메뉴' })).getByRole('button', { name: /영웅/ }));
+    expect(screen.getByRole('button', { name: '기존 영웅 기록 가져오기' })).toBeInTheDocument();
+    expect(screen.getByTestId('village-app')).not.toHaveTextContent(/V3|V4|조선/);
+  });
+
   it('clears global legacy audio when the Village root enters and leaves', () => {
     const refresh = vi.fn();
     const settleOffline = vi.fn();
@@ -154,9 +168,9 @@ describe('Village app resume handling', () => {
     render(<VillageApp config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
 
     const header = screen.getByTestId('village-app').querySelector('.village-header');
-    expect(header).toHaveTextContent('조선 설화 후원 RPG');
+    expect(header).toHaveTextContent('한국 설화 마을 판타지');
     expect(header).not.toHaveTextContent('LOCAL-FIRST');
-    expect(header).not.toHaveTextContent('V4');
+    expect(header).not.toHaveTextContent('현재 게임');
   });
 
   it('keeps the Korean product label in the recovery header', () => {
@@ -167,9 +181,9 @@ describe('Village app resume handling', () => {
     render(<VillageApp config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
 
     const header = screen.getByTestId('village-app').querySelector('.village-header');
-    expect(header).toHaveTextContent('조선 설화 후원 RPG');
+    expect(header).toHaveTextContent('한국 설화 마을 판타지');
     expect(header).not.toHaveTextContent('LOCAL-FIRST');
-    expect(header).not.toHaveTextContent('V4');
+    expect(header).not.toHaveTextContent('현재 게임');
   });
 
   it('exposes the existing warrior sheet as the Village hero sprite token', () => {
@@ -178,7 +192,7 @@ describe('Village app resume handling', () => {
     render(<VillageApp config={{ parent: 'game-container', assetsBasePath: '/assets', exposeTestHooks: false }} />);
 
     expect(screen.getByTestId('village-app').style.getPropertyValue('--village-hero-sprite'))
-      .toBe('url(/assets/images/joseon_warrior_sheet.png)');
+      .toBe('url(/assets/images/village_guardian_sheet.png)');
   });
 
   it('marks the active primary navigation item for assistive technology', () => {

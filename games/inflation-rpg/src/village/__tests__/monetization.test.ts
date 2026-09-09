@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createNativeVillageMonetization, createVillageMonetizationAdapter, hasVillageAdFreeEntitlement, Village_DAILY_REWARDED_LIMIT, Village_MONETIZATION_TIMEOUT_MS, VillageMonetizationAdapter } from '../monetization';
+import { createLocalVillageRewardedUsageStore, createNativeVillageMonetization, createVillageMonetizationAdapter, hasVillageAdFreeEntitlement, Village_DAILY_REWARDED_LIMIT, Village_MONETIZATION_TIMEOUT_MS, VillageMonetizationAdapter } from '../monetization';
 
 const nativeBridge = vi.hoisted(() => ({
   onAdFreeChanged: null as ((owned: boolean) => void) | null,
@@ -24,6 +24,29 @@ vi.mock('../../services/MonetizationService', () => ({
 }));
 
 describe('Village monetization adapter', () => {
+  it('migrates valid legacy rewarded usage into the canonical key without changing the old key', () => {
+    const legacyKey = 'shin-ui-eternal-sponsor-v4-rewarded-usage-v1';
+    const canonicalKey = 'shin-ui-eternal-sponsor-rewarded-usage-v1';
+    const legacyRaw = JSON.stringify({ day: '2026-9-6', count: 2 });
+    localStorage.setItem(legacyKey, legacyRaw);
+
+    const store = createLocalVillageRewardedUsageStore();
+
+    expect(store.read('2026-9-6')).toBe(2);
+    expect(localStorage.getItem(legacyKey)).toBe(legacyRaw);
+    expect(localStorage.getItem(canonicalKey)).toBe(legacyRaw);
+  });
+
+  it('does not revive legacy rewarded usage when canonical data is malformed', () => {
+    localStorage.setItem('shin-ui-eternal-sponsor-rewarded-usage-v1', '{not-json');
+    localStorage.setItem('shin-ui-eternal-sponsor-v4-rewarded-usage-v1', JSON.stringify({ day: '2026-9-6', count: 2 }));
+
+    const store = createLocalVillageRewardedUsageStore();
+
+    expect(store.read('2026-9-6')).toBe(0);
+    expect(localStorage.getItem('shin-ui-eternal-sponsor-rewarded-usage-v1')).toBe('{not-json');
+  });
+
   it('recognizes only the ad-free product during purchase restoration', () => {
     expect(hasVillageAdFreeEntitlement([])).toBe(false);
     expect(hasVillageAdFreeEntitlement([{ productId: 'crack_stones' }])).toBe(false);

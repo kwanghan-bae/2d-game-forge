@@ -18,7 +18,7 @@ describe('Village settings screen', () => {
 
     expect(onChange).toHaveBeenNthCalledWith(1, { music: 0.4 });
     expect(onChange).toHaveBeenNthCalledWith(2, { muted: true });
-    expect(screen.getByText('V4 전용 저장')).toBeInTheDocument();
+    expect(screen.getByText('현재 게임 전용 저장')).toBeInTheDocument();
   });
 
   it('exposes purchase restoration only when the native bridge provides it', async () => {

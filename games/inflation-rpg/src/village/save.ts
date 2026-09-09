@@ -3,6 +3,7 @@ import { HeroLifecycle } from '../hero/HeroLifecycle';
 import { FACILITY_IDS, AGENT_DEFINITIONS, getVillageRealmDefinition, REALM_IDS } from './data';
 import { completeFacilityTasks } from './domain';
 import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition } from './equipment';
+import { LEGACY_CURRENT_SAVE_KEY, normalizeLegacyVillageSave } from './legacyCompatibility';
 import type {
   FacilityState,
   OfflineSummary,
@@ -15,8 +16,9 @@ import { Village_MAX_INTERVENTION_CHARGES, Village_MAX_SAGA_ENTRIES } from './ty
 
 export { Village_MAX_INTERVENTION_CHARGES } from './types';
 
-export const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-v4-save-v1';
-export const Village_SCHEMA_VERSION = 1 as const;
+export const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-save-v2';
+export { LEGACY_CURRENT_SAVE_KEY } from './legacyCompatibility';
+export const Village_SCHEMA_VERSION = 2 as const;
 export const Village_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 // A normal visible tick runs every second. A larger gap is treated like a
 // background resume so live refresh cannot bypass the offline safety rules.
@@ -213,7 +215,7 @@ function isVillageSaveEnvelope(value: unknown): value is VillageSaveEnvelope {
     && (task.startedAt < createdAt || task.startedAt > updatedAt))) return false;
   if (meta.unlockedRealms.length === 0
     || new Set(meta.unlockedRealms).size !== meta.unlockedRealms.length
-    || !meta.unlockedRealms.includes('joseon_plains')
+    || !meta.unlockedRealms.includes('sacred_fields')
     || !meta.unlockedRealms.every((id) => typeof id === 'string' && REALM_IDS.includes(id as typeof REALM_IDS[number]))) return false;
 
   const settings = meta.settings;
@@ -398,7 +400,7 @@ function initialHero(seed: number): VillageHeroSnapshot {
     def: 80,
     defBase: 80,
     critRateBase: 0.05,
-    realmId: 'joseon_plains',
+    realmId: 'sacred_fields',
     equipmentIds: [],
     equipmentLevels: {},
     actionCount: HeroLifecycle.actionsForAge(17),
@@ -419,7 +421,7 @@ export function createInitialVillageSave(seed: number): VillageSaveEnvelope {
       facilities: emptyFacilities(),
       tasks: {},
       agents: initialAgents(),
-      unlockedRealms: ['joseon_plains'],
+      unlockedRealms: ['sacred_fields'],
       sagaEntries: [{
         id: `saga-birth-${now}`,
         kind: 'birth',
@@ -439,7 +441,7 @@ export function createInitialVillageSave(seed: number): VillageSaveEnvelope {
   };
 }
 
-export function migrateV3HeroSnapshot(input: HeroSnapshot): VillageHeroSnapshot {
+export function migrateLegacyHeroSnapshot(input: HeroSnapshot): VillageHeroSnapshot {
   const snapshot = input && typeof input === 'object' ? input : {} as HeroSnapshot;
   const legacyEquipment = Array.isArray(snapshot.equipment)
     ? snapshot.equipment.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
@@ -476,7 +478,7 @@ export function migrateV3HeroSnapshot(input: HeroSnapshot): VillageHeroSnapshot 
     def,
     defBase,
     critRateBase: Math.min(1, finiteNonNegativeOr(snapshot.critRateBase, 0.05)),
-    realmId: 'joseon_plains',
+    realmId: 'sacred_fields',
     equipmentIds,
     equipmentLevels,
     actionCount,
@@ -526,7 +528,7 @@ function destinationHeroAction(source: VillageSaveEnvelope): VillageHeroSnapshot
 }
 
 /** Explicit user-triggered import. Village never calls this during normal loading. */
-export function importV3HeroSnapshot(
+export function importLegacyHeroSnapshot(
   source: VillageSaveEnvelope,
   input: HeroSnapshot,
   now: number,
@@ -539,9 +541,9 @@ export function importV3HeroSnapshot(
   const next = cloneVillageSave(source);
   const destinationRealmId = source.meta.unlockedRealms.includes(source.run.hero.realmId)
     ? source.run.hero.realmId
-    : 'joseon_plains';
+    : 'sacred_fields';
   const hero = {
-    ...migrateV3HeroSnapshot(input),
+    ...migrateLegacyHeroSnapshot(input),
     realmId: destinationRealmId,
     currentAction: destinationHeroAction(source),
   };
@@ -551,8 +553,8 @@ export function importV3HeroSnapshot(
     id: nextSagaId(next, `saga-import-${eventAt}`),
     kind: 'milestone' as const,
     createdAt: eventAt,
-    title: 'V3 영웅 가져오기',
-    text: `${hero.name}의 기록을 v4 영웅으로 가져왔습니다.`,
+    title: '기존 영웅 기록 가져오기',
+    text: `${hero.name}의 기록을 현재 영웅으로 가져왔습니다.`,
   }, ...next.meta.sagaEntries].slice(0, Village_MAX_SAGA_ENTRIES);
   return next;
 }
@@ -714,7 +716,15 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
   } catch {
     return { status: 'unavailable' };
   }
-  if (raw === null) return { status: 'missing' };
+  const isCanonical = raw !== null;
+  if (raw === null) {
+    try {
+      raw = storage.getItem(LEGACY_CURRENT_SAVE_KEY);
+    } catch {
+      return { status: 'unavailable' };
+    }
+    if (raw === null) return { status: 'missing' };
+  }
 
   let parsed: unknown;
   try {
@@ -723,9 +733,17 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
     return { status: 'invalid', reason: 'malformed_json' };
   }
 
-  return isVillageSaveEnvelope(parsed)
-    ? { status: 'valid', save: hydrateEquipmentStats(parsed) }
-    : { status: 'invalid', reason: 'invalid_schema' };
+  const candidate = isCanonical ? parsed : normalizeLegacyVillageSave(parsed);
+  if (!isVillageSaveEnvelope(candidate)) return { status: 'invalid', reason: 'invalid_schema' };
+  const save = hydrateEquipmentStats(candidate);
+  if (!isCanonical) {
+    try {
+      storage.setItem(Village_SAVE_KEY, JSON.stringify(save));
+    } catch {
+      // A valid legacy save remains playable when canonical persistence fails.
+    }
+  }
+  return { status: 'valid', save };
 }
 
 /**
@@ -741,7 +759,7 @@ export function startFreshVillageSave(
 
   if (current.status === 'invalid' && storage) {
     try {
-      const raw = storage.getItem(Village_SAVE_KEY);
+      const raw = storage.getItem(Village_SAVE_KEY) ?? storage.getItem(LEGACY_CURRENT_SAVE_KEY);
       if (raw !== null) storage.setItem(Village_RECOVERY_BACKUP_KEY, raw);
     } catch {
       // The new game can still start when the best-effort recovery copy fails.

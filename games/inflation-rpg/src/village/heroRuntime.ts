@@ -79,8 +79,8 @@ function addBattleDamage(total: number, amount: number): number {
 }
 
 /**
- * Village boundary around the V3 pure hero decisions/lifecycle rules.
- * It deliberately does not import CycleControllerV2 or mutate the V3 store.
+ * Village boundary around the legacy pure hero decisions/lifecycle rules.
+ * It deliberately does not import CycleControllerV2 or mutate the legacy store.
  */
 export function createVillageHeroRuntime(source: VillageHeroSnapshot): VillageHeroRuntime {
   let snapshot = cloneSnapshot(source);
@@ -94,7 +94,7 @@ export function createVillageHeroRuntime(source: VillageHeroSnapshot): VillageHe
       if (context.policy === 'aggression' && context.expeditionAvailable) return 'expedition';
       if (context.policy === 'hoarding' && context.expeditionAvailable) return 'expedition';
       if (context.policy === 'training') return 'train';
-      // Call the V3 pure AI boundary for the safe/default branch. The V3 AI
+      // Call the legacy pure AI boundary for the safe/default branch. The legacy AI
       // currently returns the first available node, which maps to resting in
       // the Village town loop.
       decisionAI.chooseEncounterNode([]);

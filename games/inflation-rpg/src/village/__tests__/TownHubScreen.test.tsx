@@ -134,7 +134,7 @@ describe('Village town hub support assignment', () => {
     const hero = screen.getByTestId('village-town-hub').querySelector('.village-hero-card');
     expect(objective).toHaveAttribute('aria-label', '가장 가까운 목표');
     expect(objective).toHaveTextContent('다음 목표');
-    expect(objective).toHaveTextContent('조선 평야에서 승리하면 깊은 숲이 열립니다.');
+    expect(objective).toHaveTextContent('신목 들판에서 승리하면 깊은 숲이 열립니다.');
     expect(hero).not.toBeNull();
     expect(hero!.compareDocumentPosition(objective) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -169,7 +169,7 @@ describe('Village town hub support assignment', () => {
 
   it('explains that a policy change during an expedition applies to the next departure', () => {
     const initial = createInitialVillageSave(103);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
@@ -182,7 +182,7 @@ describe('Village town hub support assignment', () => {
 
   it('keeps an unknown active expedition policy readable', () => {
     const initial = createInitialVillageSave(128);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.policy = 'constructor' as never;
@@ -198,14 +198,14 @@ describe('Village town hub support assignment', () => {
 
     const town = screen.getByTestId('village-town-hub');
     expect(town).toHaveTextContent('장비 마을의 철검');
-    expect(town.textContent).not.toContain('v4_iron_sword');
+    expect(town.textContent).not.toContain('iron_sword');
   });
 
   it('labels the next blacksmith task with the newly unlocked equipment', () => {
     const save = createInitialVillageSave(104);
     save.meta.facilities.blacksmith.level = 3;
-    save.run.hero.equipmentIds = ['v4_iron_sword'];
-    save.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    save.run.hero.equipmentIds = ['iron_sword'];
+    save.run.hero.equipmentLevels = { iron_sword: 1 };
     renderHub({ save });
 
     const blacksmith = screen.getByText('대장간').closest('article');
@@ -226,7 +226,7 @@ describe('Village town hub support assignment', () => {
 
   it('updates the closest objective as realms are unlocked', () => {
     const save = createInitialVillageSave(97);
-    save.meta.unlockedRealms = ['joseon_plains', 'deep_forest'];
+    save.meta.unlockedRealms = ['sacred_fields', 'deep_forest'];
     renderHub({ save });
 
     expect(screen.getByText('가장 가까운 목표').parentElement).toHaveTextContent('깊은 숲에서 승리하면 저승이 열립니다.');
@@ -236,7 +236,7 @@ describe('Village town hub support assignment', () => {
     const save = createInitialVillageSave(97);
     save.run.lastExpeditionResult = {
       id: 'defeat-objective',
-      realmId: 'joseon_plains',
+      realmId: 'sacred_fields',
       outcome: 'defeat',
       completedAt: save.createdAt,
       reward: {},
@@ -248,7 +248,7 @@ describe('Village town hub support assignment', () => {
       heroRemainingHp: 0,
       weaknessKR: '전투력이 부족했습니다. 대장간에서 장비를 준비하세요.',
       recommendedFacilityId: 'blacksmith',
-      recommendedEquipmentId: 'v4_iron_sword',
+      recommendedEquipmentId: 'iron_sword',
       retryAfterSeconds: 45,
     };
     renderHub({ save });
@@ -262,7 +262,7 @@ describe('Village town hub support assignment', () => {
     const save = createInitialVillageSave(102);
     save.run.lastExpeditionResult = {
       id: 'pending-unlock-objective',
-      realmId: 'joseon_plains',
+      realmId: 'sacred_fields',
       outcome: 'victory',
       completedAt: save.createdAt,
       reward: { gold: 55 },
@@ -281,14 +281,14 @@ describe('Village town hub support assignment', () => {
 
     const objective = screen.getByText('가장 가까운 목표').parentElement;
     expect(objective).toHaveTextContent('깊은 숲 기록을 먼저 확정하세요.');
-    expect(objective).not.toHaveTextContent('조선 평야에서 승리하면');
+    expect(objective).not.toHaveTextContent('신목 들판에서 승리하면');
   });
 
   it('points to the active expedition instead of repeating an outdated unlock goal', () => {
     const save = createInitialVillageSave(98);
     save.run.expedition = {
       id: 'objective-expedition',
-      realmId: 'joseon_plains',
+      realmId: 'sacred_fields',
       policy: 'aggression',
       assignedAgentId: null,
       startedAt: save.createdAt,
@@ -350,7 +350,7 @@ describe('Village town hub support assignment', () => {
     const save = createInitialVillageSave(104);
     save.run.lastExpeditionResult = {
       id: 'malformed-weakness-result',
-      realmId: 'joseon_plains',
+      realmId: 'sacred_fields',
       outcome: 'defeat',
       completedAt: save.createdAt,
       reward: {},

@@ -19,6 +19,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { TownHubScreen } from './screens/TownHubScreen';
 import { VillageSaveRecoveryScreen } from './screens/VillageSaveRecoveryScreen';
 import { readVillageMetricEvents, recordVillageMetric, summarizeVillageOnboarding } from './telemetry';
+import { PRODUCT_GENRE, PRODUCT_TITLE, VILLAGE_GUARDIAN_SHEET_FILENAME, VILLAGE_TITLE_BACKGROUND_FILENAME } from './identity';
 import './styles.css';
 
 type VillageScreen = 'town' | 'hero' | 'expedition' | 'saga' | 'settings';
@@ -162,7 +163,7 @@ export function VillageApp({ config }: Props) {
   }, [game.save.meta.settings.music, game.save.meta.settings.sfx, game.save.meta.settings.muted]);
 
   useEffect(() => {
-    // The V3 legacy root and Phaser battle scenes share the global sound
+    // The legacy root and Phaser battle scenes share the global sound
     // manager. Clear those tracks at the Village boundary so SPA navigation cannot
     // leave legacy music or ambient audio playing over the new product.
     claimSoundOwner(soundOwner);
@@ -205,15 +206,15 @@ export function VillageApp({ config }: Props) {
         data-assets-base={config.assetsBasePath}
         data-testid="village-app"
         style={{
-          '--village-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)`,
-          '--village-hero-sprite': `url(${config.assetsBasePath}/images/joseon_warrior_sheet.png)`,
+          '--village-world-bg': `url(${config.assetsBasePath}/images/${VILLAGE_TITLE_BACKGROUND_FILENAME})`,
+          '--village-hero-sprite': `url(${config.assetsBasePath}/images/${VILLAGE_GUARDIAN_SHEET_FILENAME})`,
         } as CSSProperties}
       >
         <div className="village-container">
           <header className="village-header">
             <div>
-              <div className="village-kicker">조선 설화 후원 RPG</div>
-              <h1 className="village-title">신의 마을: 영원의 후원자</h1>
+              <div className="village-kicker">{PRODUCT_GENRE}</div>
+              <h1 className="village-title">{PRODUCT_TITLE}</h1>
             </div>
           </header>
           <VillageSaveRecoveryScreen reason={game.storageIssue ?? 'invalid_schema'} onStartFresh={game.startFreshSave} />
@@ -228,13 +229,13 @@ export function VillageApp({ config }: Props) {
       data-assets-base={config.assetsBasePath}
       data-testid="village-app"
       style={{
-        '--village-world-bg': `url(${config.assetsBasePath}/images/title_bg.png)`,
-        '--village-hero-sprite': `url(${config.assetsBasePath}/images/joseon_warrior_sheet.png)`,
+        '--village-world-bg': `url(${config.assetsBasePath}/images/${VILLAGE_TITLE_BACKGROUND_FILENAME})`,
+        '--village-hero-sprite': `url(${config.assetsBasePath}/images/${VILLAGE_GUARDIAN_SHEET_FILENAME})`,
       } as CSSProperties}
     >
       <div className="village-container">
         <header className="village-header">
-          <div><div className="village-kicker">조선 설화 후원 RPG</div><h1 className="village-title">신의 마을: 영원의 후원자</h1><p className="village-subtitle">한 명의 영웅, 일곱 시설, 끝나지 않는 사가</p></div>
+          <div><div className="village-kicker">{PRODUCT_GENRE}</div><h1 className="village-title">{PRODUCT_TITLE}</h1><p className="village-subtitle">한 명의 영웅, 일곱 시설, 끝나지 않는 사가</p></div>
           <div className="village-header-actions">
             <div className="village-action">{getVillagePolicyName(game.save.run.policy)}</div>
             <button type="button" className="village-btn village-btn--quiet" onClick={() => setScreen('settings')}>⚙ 설정</button>

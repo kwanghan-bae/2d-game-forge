@@ -1,4 +1,6 @@
-export const Village_METRICS_STORAGE_KEY = 'shin-ui-eternal-sponsor-v4-metrics-v1';
+import { LEGACY_METRICS_STORAGE_KEY } from './legacyCompatibility';
+
+export const Village_METRICS_STORAGE_KEY = 'shin-ui-eternal-sponsor-metrics-v1';
 export const Village_METRICS_CAP = 500;
 
 export const Village_METRIC_NAMES = [
@@ -71,34 +73,57 @@ function normalizeMetric(value: unknown): VillageMetricEvent | null {
   };
 }
 
+function parseStoredMetrics(raw: string): VillageMetricEvent[] | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed
+      .map(normalizeMetric)
+      .filter((metric): metric is VillageMetricEvent => metric !== null);
+  } catch {
+    return null;
+  }
+}
+
 function readStoredMetrics(storage: Storage | undefined): VillageMetricEvent[] {
   if (!storage) return [];
-  let raw: string | null;
+  let canonicalRaw: string | null;
   try {
-    raw = storage.getItem(Village_METRICS_STORAGE_KEY);
+    canonicalRaw = storage.getItem(Village_METRICS_STORAGE_KEY);
   } catch {
     return [];
+  }
+  let raw = canonicalRaw;
+  let fromLegacy = false;
+  if (raw === null) {
+    try {
+      raw = storage.getItem(LEGACY_METRICS_STORAGE_KEY);
+    } catch {
+      return [];
+    }
+    fromLegacy = raw !== null;
   }
   if (raw === null) return [];
 
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    const normalized = parsed
-      .map(normalizeMetric)
-      .filter((metric): metric is VillageMetricEvent => metric !== null);
-    const newestUnique: VillageMetricEvent[] = [];
-    const seenIds = new Set<string>();
-    for (let index = normalized.length - 1; index >= 0 && newestUnique.length < Village_METRICS_CAP; index -= 1) {
-      const metric = normalized[index];
-      if (!metric || seenIds.has(metric.id)) continue;
-      seenIds.add(metric.id);
-      newestUnique.push(metric);
-    }
-    return newestUnique.reverse();
-  } catch {
-    return [];
+  const parsed = parseStoredMetrics(raw);
+  if (!parsed) return [];
+  const newestUnique: VillageMetricEvent[] = [];
+  const seenIds = new Set<string>();
+  for (let index = parsed.length - 1; index >= 0 && newestUnique.length < Village_METRICS_CAP; index -= 1) {
+    const metric = parsed[index];
+    if (!metric || seenIds.has(metric.id)) continue;
+    seenIds.add(metric.id);
+    newestUnique.push(metric);
   }
+  const normalized = newestUnique.reverse();
+  if (fromLegacy) {
+    try {
+      storage.setItem(Village_METRICS_STORAGE_KEY, JSON.stringify(normalized));
+    } catch {
+      // A valid legacy payload remains readable when canonical persistence fails.
+    }
+  }
+  return normalized;
 }
 
 export function readVillageMetricEvents(storage: Storage | undefined = defaultStorage()): VillageMetricEvent[] {

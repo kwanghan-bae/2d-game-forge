@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const GAME_URL = '/games/inflation-rpg';
-const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-v4-save-v1';
+const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-save-v2';
 const Village_RECOVERY_BACKUP_KEY = `${Village_SAVE_KEY}-recovery-backup`;
 const V3_SAVE_KEY = 'korea_inflation_rpg_save';
 
@@ -48,7 +48,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
 
     await page.getByRole('button', { name: /설정/ }).click();
     await expect(page.getByRole('checkbox', { name: '모든 소리 음소거' })).toBeChecked();
-    await expect(page.getByText('V4 전용 저장')).toBeVisible();
+    await expect(page.getByText('현재 게임 전용 저장')).toBeVisible();
   });
 
   test('주요 Village 화면 이동 후 제목으로 포커스를 안내한다', async ({ page }) => {
@@ -135,10 +135,10 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await expect(page.getByTestId('village-save-recovery')).toContainText('기존 저장을 덮어쓰지 않았습니다');
     expect(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY)).toBe(raw);
 
-    await page.getByRole('button', { name: '새 V4 저장 시작' }).click();
+    await page.getByRole('button', { name: '새 현재 게임 저장 시작' }).click();
     await expect(page.getByTestId('village-town-hub')).toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), Village_RECOVERY_BACKUP_KEY)).toBe(raw);
-    expect(JSON.parse(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(1);
+    expect(JSON.parse(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(2);
   });
 
   test('Village 부팅은 V3 저장 키를 변경하지 않는다', async ({ page }) => {
@@ -146,7 +146,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     const legacyRaw = JSON.stringify({ version: 27, marker: 'legacy-preserved' });
     await page.evaluate(([key, value]) => {
       localStorage.setItem(key, value);
-      localStorage.removeItem('shin-ui-eternal-sponsor-v4-save-v1');
+      localStorage.removeItem('shin-ui-eternal-sponsor-save-v2');
     }, [V3_SAVE_KEY, legacyRaw]);
     await page.reload();
 
@@ -378,7 +378,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '보스 결과 확인' }).click();
     await expect(page.getByTestId('village-expedition-result')).toContainText('원정 성공');
     await expect(page.getByRole('button', { name: '깊은 숲 기록하기' })).toBeVisible();
-    await expect(page.locator('.village-realm-card').filter({ hasText: '조선 평야' }).getByRole('button', { name: '기록 먼저 확정' }).first()).toBeDisabled();
+    await expect(page.locator('.village-realm-card').filter({ hasText: '신목 들판' }).getByRole('button', { name: '기록 먼저 확정' }).first()).toBeDisabled();
     await page.getByRole('button', { name: '깊은 숲 기록하기' }).click();
     await expect(page.locator('.village-realm-card').filter({ hasText: '깊은 숲' }).getByRole('button', { name: '길잡이와 출발' })).toBeEnabled();
   });

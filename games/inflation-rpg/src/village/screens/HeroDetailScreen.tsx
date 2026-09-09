@@ -54,10 +54,10 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
       <section className="village-panel">
         <h2>기록 가져오기</h2>
         <p>{expeditionActive
-          ? '원정 중에는 영웅 기록을 바꿀 수 없습니다. 귀환한 뒤 V3 기록을 가져오세요.'
-          : 'V3 영웅 저장은 자동으로 섞이지 않습니다. 버튼을 눌렀을 때만 현재 V3 영웅 기록을 v4 형식으로 복사합니다.'}</p>
+          ? '원정 중에는 영웅 기록을 바꿀 수 없습니다. 귀환한 뒤 기존 기록을 가져오세요.'
+          : '기존 영웅 기록은 자동으로 섞이지 않습니다. 버튼을 눌렀을 때만 현재 게임으로 복사합니다.'}</p>
         <button type="button" className="village-btn village-btn--quiet" disabled={expeditionActive} onClick={onImportLegacy}>
-          {expeditionActive ? '원정 귀환 후 V3 영웅 가져오기' : 'V3 영웅 가져오기'}
+          {expeditionActive ? '원정 귀환 후 기존 영웅 기록 가져오기' : '기존 영웅 기록 가져오기'}
         </button>
       </section>
       <section className="village-panel">

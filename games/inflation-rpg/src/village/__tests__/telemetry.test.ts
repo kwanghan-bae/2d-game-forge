@@ -21,6 +21,28 @@ function event(
 describe('Village local launch telemetry', () => {
   afterEach(() => localStorage.clear());
 
+  it('migrates valid legacy telemetry into the canonical key without changing the old key', () => {
+    const legacyKey = 'shin-ui-eternal-sponsor-v4-metrics-v1';
+    const canonicalKey = 'shin-ui-eternal-sponsor-metrics-v1';
+    const stored = [event('legacy-metric', 'save_created', saveCreatedAt)];
+    const legacyRaw = JSON.stringify(stored);
+    localStorage.setItem(legacyKey, legacyRaw);
+
+    expect(readVillageMetricEvents()).toEqual(stored);
+    expect(localStorage.getItem(legacyKey)).toBe(legacyRaw);
+    expect(localStorage.getItem(canonicalKey)).toBe(legacyRaw);
+  });
+
+  it('does not fall back to legacy telemetry when canonical data is malformed', () => {
+    localStorage.setItem('shin-ui-eternal-sponsor-metrics-v1', '{not-json');
+    localStorage.setItem('shin-ui-eternal-sponsor-v4-metrics-v1', JSON.stringify([
+      event('stale', 'save_created', saveCreatedAt),
+    ]));
+
+    expect(readVillageMetricEvents()).toEqual([]);
+    expect(localStorage.getItem('shin-ui-eternal-sponsor-metrics-v1')).toBe('{not-json');
+  });
+
   it('fails open when metric storage is corrupt', () => {
     localStorage.setItem(Village_METRICS_STORAGE_KEY, '{not-json');
 

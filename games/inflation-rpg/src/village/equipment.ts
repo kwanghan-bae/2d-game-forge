@@ -21,18 +21,18 @@ export interface VillageEquipmentBonuses {
 }
 
 export const Village_EQUIPMENT_DEFINITIONS: Record<string, VillageEquipmentDefinition> = {
-  v4_iron_sword: {
-    id: 'v4_iron_sword', nameKR: '마을의 철검', slot: 'weapon',
+  iron_sword: {
+    id: 'iron_sword', nameKR: '마을의 철검', slot: 'weapon',
     description: '대장간에서 반복 제작·강화할 수 있는 첫 무기입니다.',
     atk: 80, def: 0, hpMax: 0, critRate: 0,
   },
-  v4_guardian_armor: {
-    id: 'v4_guardian_armor', nameKR: '수호 갑옷', slot: 'armor',
+  guardian_armor: {
+    id: 'guardian_armor', nameKR: '수호 갑옷', slot: 'armor',
     description: '회복과 안전한 원정을 돕는 방어 장비입니다.',
     atk: 0, def: 60, hpMax: 150, critRate: 0,
   },
-  v4_spirit_talisman: {
-    id: 'v4_spirit_talisman', nameKR: '영혼 부적', slot: 'talisman',
+  spirit_talisman: {
+    id: 'spirit_talisman', nameKR: '영혼 부적', slot: 'talisman',
     description: '신력의 흐름을 읽어 치명타 기회를 높입니다.',
     atk: 20, def: 20, hpMax: 80, critRate: 0.03,
   },

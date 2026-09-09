@@ -3,9 +3,9 @@ import type { HeroSnapshot } from '../../hero/HeroEntity';
 import { HeroLifecycle } from '../../hero/HeroLifecycle';
 import {
   createInitialVillageSave,
-  importV3HeroSnapshot,
+  importLegacyHeroSnapshot,
   loadVillageSave,
-  migrateV3HeroSnapshot,
+  migrateLegacyHeroSnapshot,
   persistVillageSave,
   simulateOfflineProgress,
 } from '../save';
@@ -47,14 +47,14 @@ describe('Village save and domain', () => {
     vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
     const save = createInitialVillageSave(42);
 
-    expect(save.schemaVersion).toBe(1);
+    expect(save.schemaVersion).toBe(2);
     expect(save.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
     expect(Object.keys(save.meta.facilities)).toHaveLength(7);
     expect(save.meta.agents.map((agent) => agent.id)).toEqual(['blacksmith', 'mudang', 'guide']);
-    expect(save.meta.unlockedRealms).toEqual(['joseon_plains']);
+    expect(save.meta.unlockedRealms).toEqual(['sacred_fields']);
     expect(save.run.expedition).toBeNull();
     expect(save.run.lastExpeditionResult).toBeNull();
-    expect(save.run.hero.realmId).toBe('joseon_plains');
+    expect(save.run.hero.realmId).toBe('sacred_fields');
     expect(save.run.hero.actionCount).toBe(185);
   });
 
@@ -84,34 +84,34 @@ describe('Village save and domain', () => {
     } as unknown as Storage;
 
     persistVillageSave(save, fakeStorage);
-    expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: 1, run: { hero: { name: save.run.hero.name } } });
+    expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: 2, run: { hero: { name: save.run.hero.name } } });
 
     const { lastExpeditionResult: _legacyResult, ...legacyRun } = save.run;
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({ ...save, run: legacyRun }));
-    expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: 1, run: { expedition: null } });
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({ ...save, run: legacyRun }));
+    expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: 2, run: { expedition: null } });
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({ ...save, meta: { ...save.meta, currencies: { ...save.meta.currencies, gold: 'broken' } } }));
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({ ...save, meta: { ...save.meta, currencies: { ...save.meta.currencies, gold: 'broken' } } }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: { ...save.meta, currencies: { ...save.meta.currencies, gold: Number.MAX_SAFE_INTEGER + 1 } },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: { ...save.meta, currencies: { ...save.meta.currencies, cheat: 1 } },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: { ...save.meta, sagaEntries: [save.meta.sagaEntries[0], save.meta.sagaEntries[0]] },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: {
         ...save.meta,
@@ -120,7 +120,7 @@ describe('Village save and domain', () => {
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: {
         ...save.meta,
@@ -129,20 +129,20 @@ describe('Village save and domain', () => {
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       run: {
         ...save.run,
         hero: {
           ...save.run.hero,
-          equipmentIds: ['v4_iron_sword', 'v4_iron_sword'],
-          equipmentLevels: { v4_iron_sword: 1 },
+          equipmentIds: ['iron_sword', 'iron_sword'],
+          equipmentLevels: { iron_sword: 1 },
         },
       },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       run: (() => {
         const { expedition: _expedition, ...runWithoutExpedition } = save.run;
@@ -155,13 +155,13 @@ describe('Village save and domain', () => {
     expect(taskSave.ok).toBe(true);
     if (!taskSave.ok) return;
     taskSave.save.meta.tasks[taskSave.task.id].outputEquipmentIds = ['unknown-village-equipment'];
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(taskSave.save));
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify(taskSave.save));
     expect(loadVillageSave(fakeStorage)).toBeNull();
     const settledMalformedTask = completeFacilityTasks(taskSave.save, taskSave.task.completesAt);
     expect(settledMalformedTask.run.hero.equipmentIds).not.toContain('unknown-village-equipment');
 
     const expeditionSave = createInitialVillageSave(132);
-    const expedition = startExpedition(expeditionSave, 'joseon_plains', expeditionSave.updatedAt, 'aggression', null);
+    const expedition = startExpedition(expeditionSave, 'sacred_fields', expeditionSave.updatedAt, 'aggression', null);
     expect(expedition.ok).toBe(true);
     if (!expedition.ok) return;
     expedition.save.run.expedition!.encounterIndex = 2;
@@ -169,17 +169,17 @@ describe('Village save and domain', () => {
     const settledExpedition = completeFacilityTasks(expedition.save, expedition.save.run.expedition!.completesAt);
     expect(settledExpedition.run.lastExpeditionResult).not.toBeNull();
     if (!settledExpedition.run.lastExpeditionResult) return;
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(settledExpedition));
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify(settledExpedition));
     expect(loadVillageSave(fakeStorage)).not.toBeNull();
     settledExpedition.run.lastExpeditionResult.recommendedEquipmentId = 'unknown-village-equipment';
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(settledExpedition));
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify(settledExpedition));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
   });
 
   it('rejects an expedition result newer than the save watermark', () => {
     const initial = createInitialVillageSave(130);
-    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.id = 'e2e-victory-4';
@@ -193,7 +193,7 @@ describe('Village save and domain', () => {
       getItem: (key: string) => storage.get(key) ?? null,
       setItem: (key: string, value: string) => storage.set(key, value),
     } as unknown as Storage;
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...settled,
       run: {
         ...settled.run,
@@ -206,7 +206,7 @@ describe('Village save and domain', () => {
 
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...settled,
       run: {
         ...settled.run,
@@ -222,7 +222,7 @@ describe('Village save and domain', () => {
 
   it('rejects an expedition result for a locked Realm', () => {
     const initial = createInitialVillageSave(131);
-    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.id = 'e2e-victory-4';
@@ -236,9 +236,9 @@ describe('Village save and domain', () => {
       getItem: (key: string) => storage.get(key) ?? null,
       setItem: (key: string, value: string) => storage.set(key, value),
     } as unknown as Storage;
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...settled,
-      meta: { ...settled.meta, unlockedRealms: ['joseon_plains'] },
+      meta: { ...settled.meta, unlockedRealms: ['sacred_fields'] },
       run: {
         ...settled.run,
         lastExpeditionResult: {
@@ -284,7 +284,7 @@ describe('Village save and domain', () => {
       setItem: (key: string, value: string) => storage.set(key, value),
     } as unknown as Storage;
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: {
         ...save.meta,
@@ -293,31 +293,31 @@ describe('Village save and domain', () => {
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       run: { ...save.run, expedition: { id: 'broken', realmId: 'unknown', status: 'traveling' } },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       run: { ...save.run, hero: { ...save.run.hero, level: 0 } },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       run: { ...save.run, hero: { ...save.run.hero, hp: save.run.hero.hpMax + 1 } },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       run: { ...save.run, interventionCharges: 99 },
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: {
         ...save.meta,
@@ -328,7 +328,7 @@ describe('Village save and domain', () => {
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...save,
       meta: {
         ...save.meta,
@@ -346,7 +346,7 @@ describe('Village save and domain', () => {
       setItem: (key: string, value: string) => storage.set(key, value),
     } as unknown as Storage;
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...initial,
       meta: {
         ...initial.meta,
@@ -357,7 +357,7 @@ describe('Village save and domain', () => {
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...initial,
       run: {
         ...initial.run,
@@ -396,7 +396,7 @@ describe('Village save and domain', () => {
         },
       },
     };
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(broken));
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify(broken));
 
     expect(loadVillageSave(fakeStorage)).toBeNull();
   });
@@ -413,7 +413,7 @@ describe('Village save and domain', () => {
     } as unknown as Storage;
     const task = started.save.meta.tasks[started.task.id];
     task.completesAt = task.startedAt - 1;
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(started.save));
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify(started.save));
 
     expect(loadVillageSave(fakeStorage)).toBeNull();
   });
@@ -430,7 +430,7 @@ describe('Village save and domain', () => {
     expect(taskStart.ok).toBe(true);
     if (!taskStart.ok) return;
     const task = taskStart.save.meta.tasks[taskStart.task.id];
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...taskStart.save,
       meta: {
         ...taskStart.save.meta,
@@ -439,13 +439,13 @@ describe('Village save and domain', () => {
     }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
 
-    const expeditionStart = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const expeditionStart = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(expeditionStart.ok).toBe(true);
     if (!expeditionStart.ok) return;
     const expedition = expeditionStart.save.run.expedition;
     expect(expedition).not.toBeNull();
     if (!expedition) return;
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify({
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({
       ...expeditionStart.save,
       run: {
         ...expeditionStart.save.run,
@@ -458,7 +458,7 @@ describe('Village save and domain', () => {
   it('rejects zero-duration active tasks and expeditions before they reach the UI', () => {
     const initial = createInitialVillageSave(22);
     const taskStart = startFacilityTask(initial, 'temple', initial.createdAt, null);
-    const expeditionStart = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const expeditionStart = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(taskStart.ok).toBe(true);
     expect(expeditionStart.ok).toBe(true);
     if (!taskStart.ok || !expeditionStart.ok) return;
@@ -479,7 +479,7 @@ describe('Village save and domain', () => {
 
   it('rejects saves whose expedition and guide links are inconsistent', () => {
     const initial = createInitialVillageSave(18);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     const storage = new Map<string, string>();
@@ -496,7 +496,7 @@ describe('Village save and domain', () => {
           : agent),
       },
     };
-    storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(broken));
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify(broken));
 
     expect(loadVillageSave(fakeStorage)).toBeNull();
   });
@@ -504,7 +504,7 @@ describe('Village save and domain', () => {
   it('rejects saves that combine hero training with an expedition or stale action state', () => {
     const initial = createInitialVillageSave(16);
     const training = startFacilityTask(initial, 'training', initial.createdAt);
-    const expedition = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const expedition = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(training.ok).toBe(true);
     expect(expedition.ok).toBe(true);
     if (!training.ok || !expedition.ok) return;
@@ -534,7 +534,7 @@ describe('Village save and domain', () => {
       setItem: (key: string, value: string) => storage.set(key, value),
     } as unknown as Storage;
     const put = (save: typeof initial) => {
-      storage.set('shin-ui-eternal-sponsor-v4-save-v1', JSON.stringify(save));
+      storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify(save));
       expect(loadVillageSave(fakeStorage)).toBeNull();
     };
 
@@ -543,7 +543,7 @@ describe('Village save and domain', () => {
     put({ ...initial, updatedAt: initial.createdAt, lastProcessedAt: initial.createdAt + 1 });
     put({
       ...initial,
-      meta: { ...initial.meta, unlockedRealms: ['joseon_plains', 'joseon_plains'] },
+      meta: { ...initial.meta, unlockedRealms: ['sacred_fields', 'sacred_fields'] },
     });
     put({
       ...initial,
@@ -575,7 +575,7 @@ describe('Village save and domain', () => {
     });
   });
 
-  it('maps a V3 hero snapshot without sharing the V3 store shape', () => {
+  it('maps a legacy hero snapshot without sharing the legacy store shape', () => {
     const source = {
       name: '홍길동', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,
       exp: 4, hp: 900, hpMax: 1000, atk: 250, atkBase: 200, hpBase: 800,
@@ -585,22 +585,22 @@ describe('Village save and domain', () => {
       def: 80, defBase: 70, critRateBase: 0.08,
     } as unknown as HeroSnapshot;
 
-    const hero = migrateV3HeroSnapshot(source);
+    const hero = migrateLegacyHeroSnapshot(source);
     expect(hero).toMatchObject({
       name: '홍길동', age: 37, level: 12, hp: 900, atk: 250, def: 80,
-      defBase: 70, critRateBase: 0.08, realmId: 'joseon_plains',
+      defBase: 70, critRateBase: 0.08, realmId: 'sacred_fields',
     });
     expect(hero).not.toHaveProperty('personality');
 
-    const sanitized = migrateV3HeroSnapshot({ ...source, name: '   ', emoji: '  ' });
+    const sanitized = migrateLegacyHeroSnapshot({ ...source, name: '   ', emoji: '  ' });
     expect(sanitized.name).toBe('이름 없는 영웅');
     expect(sanitized.emoji).toBe('⚔️');
 
     const destination = createInitialVillageSave(1);
-    const imported = importV3HeroSnapshot(destination, source, 1234);
+    const imported = importLegacyHeroSnapshot(destination, source, 1234);
     expect(imported.run.hero.name).toBe('홍길동');
-    expect(imported.meta.sagaEntries[0]?.title).toBe('V3 영웅 가져오기');
-    const importedAgain = importV3HeroSnapshot(imported, source, 1234);
+    expect(imported.meta.sagaEntries[0]?.title).toBe('기존 영웅 기록 가져오기');
+    const importedAgain = importLegacyHeroSnapshot(imported, source, 1234);
     expect(importedAgain.meta.sagaEntries[0]?.id).not.toBe(imported.meta.sagaEntries[0]?.id);
     imported.meta.currencies.gold = 0;
     expect(importedAgain.meta.currencies.gold).toBe(100);
@@ -611,11 +611,11 @@ describe('Village save and domain', () => {
     const staleDestination = createInitialVillageSave(2);
     staleDestination.lastProcessedAt = staleDestination.createdAt + HOUR;
     staleDestination.updatedAt = staleDestination.lastProcessedAt;
-    const importedAfterClockRollback = importV3HeroSnapshot(staleDestination, source, staleDestination.createdAt + 1_000);
+    const importedAfterClockRollback = importLegacyHeroSnapshot(staleDestination, source, staleDestination.createdAt + 1_000);
     expect(importedAfterClockRollback.updatedAt).toBe(staleDestination.lastProcessedAt);
     expect(importedAfterClockRollback.meta.sagaEntries[0]?.createdAt).toBe(staleDestination.lastProcessedAt);
 
-    const importedWithUnsafeClock = importV3HeroSnapshot(destination, source, Number.MAX_VALUE);
+    const importedWithUnsafeClock = importLegacyHeroSnapshot(destination, source, Number.MAX_VALUE);
     expect(importedWithUnsafeClock.updatedAt).toBe(destination.updatedAt);
     expect(importedWithUnsafeClock.meta.sagaEntries[0]?.createdAt).toBe(destination.updatedAt);
 
@@ -625,13 +625,13 @@ describe('Village save and domain', () => {
       id: `existing-${index}`,
       title: `기존 기록 ${index}`,
     }));
-    const boundedImport = importV3HeroSnapshot(fullSagaDestination, source, fullSagaDestination.updatedAt + 1_000);
+    const boundedImport = importLegacyHeroSnapshot(fullSagaDestination, source, fullSagaDestination.updatedAt + 1_000);
     expect(boundedImport.meta.sagaEntries).toHaveLength(Village_MAX_SAGA_ENTRIES);
-    expect(boundedImport.meta.sagaEntries[0]?.title).toBe('V3 영웅 가져오기');
+    expect(boundedImport.meta.sagaEntries[0]?.title).toBe('기존 영웅 기록 가져오기');
     expect(boundedImport.meta.sagaEntries.at(-1)?.id).toBe(`existing-${Village_MAX_SAGA_ENTRIES - 2}`);
   });
 
-  it('preserves the destination hero action while explicitly importing a V3 hero', () => {
+  it('preserves the destination hero action while explicitly importing a legacy hero', () => {
     const destination = createInitialVillageSave(118);
     destination.meta.unlockedRealms.push('deep_forest');
     destination.run.hero.realmId = 'deep_forest';
@@ -639,7 +639,7 @@ describe('Village save and domain', () => {
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
-    const imported = importV3HeroSnapshot(started.save, {
+    const imported = importLegacyHeroSnapshot(started.save, {
       name: '훈련 중인 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
       exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
       actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
@@ -668,7 +668,7 @@ describe('Village save and domain', () => {
     started.save.meta.tasks[collidingId] = task;
     started.save.meta.facilities.temple.activeTaskId = collidingId;
 
-    const imported = importV3HeroSnapshot(started.save, {} as HeroSnapshot, importAt);
+    const imported = importLegacyHeroSnapshot(started.save, {} as HeroSnapshot, importAt);
 
     expect(imported.meta.sagaEntries[0]?.id).toBe(`${collidingId}-2`);
     const storage = new Map<string, string>();
@@ -681,11 +681,11 @@ describe('Village save and domain', () => {
 
   it('does not replace the battle hero while an expedition is active', () => {
     const destination = createInitialVillageSave(119);
-    const started = startExpedition(destination, 'joseon_plains', destination.updatedAt, 'aggression', null);
+    const started = startExpedition(destination, 'sacred_fields', destination.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
-    const imported = importV3HeroSnapshot(started.save, {
+    const imported = importLegacyHeroSnapshot(started.save, {
       name: '교체 시도 영웅', emoji: '🛡️', age: 17, chapter: '청년기', job: '검객', level: 1,
       exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
       actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
@@ -708,7 +708,7 @@ describe('Village save and domain', () => {
       def: 80, defBase: 70, critRateBase: 0.08,
     } as unknown as HeroSnapshot;
 
-    const hero = migrateV3HeroSnapshot(source);
+    const hero = migrateLegacyHeroSnapshot(source);
 
     expect(hero.equipmentIds).toEqual(['w-knife']);
     expect(hero.equipmentLevels).toEqual({ 'w-knife': 20 });
@@ -724,7 +724,7 @@ describe('Village save and domain', () => {
       def: Number.NaN, defBase: 'broken', critRateBase: Number.POSITIVE_INFINITY,
     } as unknown as HeroSnapshot;
 
-    const hero = migrateV3HeroSnapshot(source);
+    const hero = migrateLegacyHeroSnapshot(source);
 
     expect(hero.def).toBe(100);
     expect(hero.defBase).toBe(100);
@@ -741,7 +741,7 @@ describe('Village save and domain', () => {
       unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
     } as unknown as HeroSnapshot;
 
-    const hero = migrateV3HeroSnapshot(source);
+    const hero = migrateLegacyHeroSnapshot(source);
 
     expect(hero.equipmentIds).toEqual(['w-knife']);
     expect(hero.equipmentLevels).toEqual({ 'w-knife': 1 });
@@ -757,7 +757,7 @@ describe('Village save and domain', () => {
       unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
     } as unknown as HeroSnapshot;
 
-    const hero = migrateV3HeroSnapshot(source);
+    const hero = migrateLegacyHeroSnapshot(source);
 
     expect(hero.equipmentIds).toEqual(['legacy-knife']);
     expect(hero.equipmentLevels).toEqual({ 'legacy-knife': 2 });
@@ -773,7 +773,7 @@ describe('Village save and domain', () => {
       unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
     } as unknown as HeroSnapshot;
 
-    const hero = migrateV3HeroSnapshot(source);
+    const hero = migrateLegacyHeroSnapshot(source);
 
     expect(hero).toMatchObject({
       name: '이름 없는 영웅', emoji: '⚔️', age: 17, level: 1, exp: 0,
@@ -781,8 +781,8 @@ describe('Village save and domain', () => {
       rejuvenationCount: 0, currentAction: 'rest',
     });
 
-    expect(() => migrateV3HeroSnapshot(null as never)).not.toThrow();
-    expect(migrateV3HeroSnapshot(null as never)).toMatchObject({
+    expect(() => migrateLegacyHeroSnapshot(null as never)).not.toThrow();
+    expect(migrateLegacyHeroSnapshot(null as never)).toMatchObject({
       name: '이름 없는 영웅', emoji: '⚔️', age: 17, level: 1,
     });
   });
@@ -796,7 +796,7 @@ describe('Village save and domain', () => {
       unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
     } as unknown as HeroSnapshot;
 
-    const hero = migrateV3HeroSnapshot(source);
+    const hero = migrateLegacyHeroSnapshot(source);
 
     expect(hero.actionCount).toBe(Number.MAX_SAFE_INTEGER);
     expect(Number.isSafeInteger(hero.actionCount)).toBe(true);
@@ -814,8 +814,8 @@ describe('Village save and domain', () => {
     expect(offline.summary.efficiency).toBe(0.7);
     expect(offline.save.meta.facilities.blacksmith.activeTaskId).toBeNull();
     expect(offline.summary.completedTaskIds).toEqual([started.task.id]);
-    expect(offline.summary.equipmentGained).toEqual(['v4_iron_sword']);
-    expect(offline.save.run.hero.equipmentIds).toContain('v4_iron_sword');
+    expect(offline.summary.equipmentGained).toEqual(['iron_sword']);
+    expect(offline.save.run.hero.equipmentIds).toContain('iron_sword');
 
     const replay = simulateOfflineProgress(offline.save, initial.createdAt + HOUR);
     expect(replay.summary.processedSeconds).toBe(0);
@@ -826,8 +826,8 @@ describe('Village save and domain', () => {
 
   it('reports an offline equipment upgrade separately from a new equipment gain', () => {
     const initial = createInitialVillageSave(708);
-    initial.run.hero.equipmentIds = ['v4_iron_sword'];
-    initial.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    initial.run.hero.equipmentIds = ['iron_sword'];
+    initial.run.hero.equipmentLevels = { iron_sword: 1 };
     const started = startFacilityTask(initial, 'blacksmith', initial.createdAt);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
@@ -835,8 +835,8 @@ describe('Village save and domain', () => {
     const offline = simulateOfflineProgress(started.save, initial.createdAt + HOUR);
 
     expect(offline.summary.equipmentGained).toEqual([]);
-    expect(offline.summary.equipmentUpgraded).toEqual(['v4_iron_sword']);
-    expect(offline.save.run.hero.equipmentLevels).toEqual({ v4_iron_sword: 2 });
+    expect(offline.summary.equipmentUpgraded).toEqual(['iron_sword']);
+    expect(offline.save.run.hero.equipmentLevels).toEqual({ iron_sword: 2 });
   });
 
   it('does not create a second save when a resume has no newly due work', () => {
@@ -880,7 +880,7 @@ describe('Village save and domain', () => {
 
   it('does not settle an expedition that falls beyond the capped window', () => {
     const initial = createInitialVillageSave(119);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
@@ -1070,7 +1070,7 @@ describe('Village save and domain', () => {
       : agent);
 
     const task = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt + 1_000, 'blacksmith');
-    const expedition = startExpedition(malformed, 'joseon_plains', malformed.updatedAt + 1_000, 'aggression', 'guide');
+    const expedition = startExpedition(malformed, 'sacred_fields', malformed.updatedAt + 1_000, 'aggression', 'guide');
 
     expect(task.ok).toBe(false);
     expect(task.save).toBe(malformed);
@@ -1094,7 +1094,7 @@ describe('Village save and domain', () => {
     });
 
     const task = startFacilityTask(malformed, 'blacksmith', malformed.updatedAt + 1_000, 'blacksmith');
-    const expedition = startExpedition(malformed, 'joseon_plains', malformed.updatedAt + 1_000, 'aggression', 'guide');
+    const expedition = startExpedition(malformed, 'sacred_fields', malformed.updatedAt + 1_000, 'aggression', 'guide');
 
     expect(task.ok).toBe(false);
     expect(task.save).toBe(malformed);
@@ -1122,7 +1122,7 @@ describe('Village save and domain', () => {
 
   it('does not settle a guide expedition when agent level is malformed', () => {
     const initial = createInitialVillageSave(137);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     const guide = started.save.meta.agents.find((item) => item.id === 'guide');
@@ -1242,10 +1242,10 @@ describe('Village save and domain', () => {
     expect(training.ok).toBe(true);
     if (!training.ok) return;
 
-    const expeditionWhileTraining = startExpedition(training.save, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const expeditionWhileTraining = startExpedition(training.save, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(expeditionWhileTraining.ok).toBe(false);
 
-    const expedition = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const expedition = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(expedition.ok).toBe(true);
     if (!expedition.ok) return;
     const trainingDuringExpedition = startFacilityTask(expedition.save, 'training', initial.createdAt, null);
@@ -1283,7 +1283,7 @@ describe('Village save and domain', () => {
       durationSeconds: 45,
       input: { gold: 20, materials: 3 },
       output: { materials: 2 },
-      outputEquipmentIds: ['v4_iron_sword'],
+      outputEquipmentIds: ['iron_sword'],
       assignedAgentId: 'blacksmith',
       canStart: true,
       error: null,
@@ -1316,10 +1316,10 @@ describe('Village save and domain', () => {
     const initial = createInitialVillageSave(120);
     const preview = getFacilityTaskPreview(initial, 'blacksmith', '' as never);
     const task = startFacilityTask(initial, 'blacksmith', initial.updatedAt, '' as never);
-    const expedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', '' as never);
+    const expedition = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', '' as never);
     const undefinedPreview = getFacilityTaskPreview(initial, 'blacksmith', undefined);
     const undefinedTask = startFacilityTask(initial, 'blacksmith', initial.updatedAt, undefined);
-    const undefinedExpedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', undefined as never);
+    const undefinedExpedition = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', undefined as never);
     const omittedPreview = getFacilityTaskPreview(initial, 'temple');
     const nullTask = startFacilityTask(initial, 'temple', initial.updatedAt, null);
     const specialistPreview = getFacilityTaskPreview(initial, 'mudang', 'mudang');
@@ -1350,8 +1350,8 @@ describe('Village save and domain', () => {
     const upgradedTraining = getFacilityTaskPreview(upgraded, 'training', null);
     expect(upgradedTraining.heroExpGain).toBeGreaterThan(baseTraining.heroExpGain);
 
-    const baseExpedition = startExpedition(base, 'joseon_plains', base.createdAt, 'aggression', null);
-    const upgradedExpedition = startExpedition(upgraded, 'joseon_plains', upgraded.createdAt, 'aggression', null);
+    const baseExpedition = startExpedition(base, 'sacred_fields', base.createdAt, 'aggression', null);
+    const upgradedExpedition = startExpedition(upgraded, 'sacred_fields', upgraded.createdAt, 'aggression', null);
     expect(baseExpedition.ok).toBe(true);
     expect(upgradedExpedition.ok).toBe(true);
     if (!baseExpedition.ok || !upgradedExpedition.ok) return;
@@ -1429,7 +1429,7 @@ describe('Village save and domain', () => {
     if (!archive.ok) return;
     archive.save.meta.tasks[archive.task.id]!.completesAt = initial.updatedAt + 500;
 
-    const expedition = startExpedition(archive.save, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const expedition = startExpedition(archive.save, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(expedition.ok).toBe(true);
     if (!expedition.ok) return;
     expedition.save.run.expedition!.completesAt = initial.updatedAt + 500;
@@ -1477,7 +1477,7 @@ describe('Village save and domain', () => {
 
   it('uses an intervention to retreat safely and releases the guide', () => {
     const initial = createInitialVillageSave(74);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
@@ -1649,7 +1649,7 @@ describe('Village save and domain', () => {
 
   it('does not resolve an expedition whose persisted completion clock is NaN', () => {
     const initial = createInitialVillageSave(292);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     const expedition = started.save.run.expedition;
@@ -1766,7 +1766,7 @@ describe('Village save and domain', () => {
     const staleExpeditionSave = createInitialVillageSave(32);
     staleExpeditionSave.lastProcessedAt += HOUR;
     staleExpeditionSave.updatedAt = staleExpeditionSave.lastProcessedAt;
-    const expedition = startExpedition(staleExpeditionSave, 'joseon_plains', staleExpeditionSave.createdAt, 'aggression', null);
+    const expedition = startExpedition(staleExpeditionSave, 'sacred_fields', staleExpeditionSave.createdAt, 'aggression', null);
     expect(expedition.ok).toBe(true);
     if (!expedition.ok) return;
     expect(expedition.save.run.expedition?.startedAt).toBe(staleExpeditionSave.updatedAt);
@@ -1805,13 +1805,13 @@ describe('Village save and domain', () => {
     expect(confirmed.run.expedition).toBeNull();
     expect(confirmed.run.lastExpeditionResult?.realmId).toBe('deep_forest');
     expect(confirmed.run.lastExpeditionResult?.outcome).toBe('victory');
-    expect(confirmed.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
+    expect(confirmed.meta.unlockedRealms).toEqual(['sacred_fields', 'deep_forest']);
     const blockedUnlock = confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000);
     expect(blockedUnlock).toBe(confirmed);
     const choice = chooseStoryChoice(confirmed, 'protect_flame', confirmed.updatedAt + 1_000);
     expect(choice.ok).toBe(true);
     if (!choice.ok) return;
-    expect(choice.save.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest', 'underworld']);
+    expect(choice.save.meta.unlockedRealms).toEqual(['sacred_fields', 'deep_forest', 'underworld']);
     expect(confirmPendingExpedition(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
 
@@ -1853,7 +1853,7 @@ describe('Village save and domain', () => {
 
   it('requires explicit confirmation before an offline victory unlocks the next Realm', () => {
     const initial = createInitialVillageSave(93);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.id = 'e2e-victory-4';
@@ -1864,15 +1864,15 @@ describe('Village save and domain', () => {
     expect(offline.save.run.expedition?.status).toBe('awaiting_confirmation');
     expect(offline.save.run.lastExpeditionResult).toBeNull();
     expect(offline.summary.completedExpedition).toBe(false);
-    expect(offline.save.meta.unlockedRealms).toEqual(['joseon_plains']);
+    expect(offline.save.meta.unlockedRealms).toEqual(['sacred_fields']);
 
     const victory = confirmPendingExpedition(offline.save, offline.save.updatedAt + 1_000);
     expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
     expect(victory.run.expedition).toBeNull();
-    expect(victory.meta.unlockedRealms).toEqual(['joseon_plains']);
+    expect(victory.meta.unlockedRealms).toEqual(['sacred_fields']);
 
     const confirmed = confirmNextRealmUnlock(victory, victory.updatedAt + 1_000);
-    expect(confirmed.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
+    expect(confirmed.meta.unlockedRealms).toEqual(['sacred_fields', 'deep_forest']);
     expect(confirmed.meta.sagaEntries[0]?.title).toContain('깊은 숲');
     expect(confirmNextRealmUnlock(confirmed, confirmed.updatedAt + 1_000)).toBe(confirmed);
   });
@@ -1908,12 +1908,12 @@ describe('Village save and domain', () => {
     const confirmed = confirmNextRealmUnlock(source, source.updatedAt + 1_000);
 
     expect(confirmed).toBe(source);
-    expect(source.meta.unlockedRealms).toEqual(['joseon_plains', 'deep_forest']);
+    expect(source.meta.unlockedRealms).toEqual(['sacred_fields', 'deep_forest']);
   });
 
   it('keeps a pending Realm record from being lost by starting another expedition', () => {
     const initial = createInitialVillageSave(94);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.id = 'e2e-victory-4';
@@ -1924,9 +1924,9 @@ describe('Village save and domain', () => {
     expect(pending.run.expedition?.status).toBe('awaiting_confirmation');
     const victory = confirmPendingExpedition(pending, pending.updatedAt + 1_000);
     expect(victory.run.lastExpeditionResult?.outcome).toBe('victory');
-    expect(victory.meta.unlockedRealms).toEqual(['joseon_plains']);
+    expect(victory.meta.unlockedRealms).toEqual(['sacred_fields']);
 
-    const retry = startExpedition(victory, 'joseon_plains', victory.updatedAt + 1_000, 'aggression', null);
+    const retry = startExpedition(victory, 'sacred_fields', victory.updatedAt + 1_000, 'aggression', null);
     expect(retry.ok).toBe(false);
     expect(retry.save).toBe(victory);
     if (retry.ok) return;
@@ -1936,7 +1936,7 @@ describe('Village save and domain', () => {
 
   it('does not unlock a Realm when the confirmation clock is invalid or stale', () => {
     const initial = createInitialVillageSave(95);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.id = 'e2e-victory-clock-guard';
@@ -1950,20 +1950,20 @@ describe('Village save and domain', () => {
 
     expect(confirmNextRealmUnlock(victory, Number.NaN)).toBe(victory);
     expect(confirmNextRealmUnlock(victory, victory.updatedAt - 1)).toBe(victory);
-    expect(victory.meta.unlockedRealms).toEqual(['joseon_plains']);
+    expect(victory.meta.unlockedRealms).toEqual(['sacred_fields']);
   });
 
   it('allows one expedition and resolves it into rewards', () => {
     const initial = createInitialVillageSave(9);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
     expect(started.ok).toBe(true);
     if (!started.ok) return;
-    expect(started.save.run.expedition?.realmId).toBe('joseon_plains');
+    expect(started.save.run.expedition?.realmId).toBe('sacred_fields');
 
-    const second = startExpedition(started.save, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    const second = startExpedition(started.save, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
     expect(second.ok).toBe(false);
 
-    const invalidAgent = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'blacksmith');
+    const invalidAgent = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', 'blacksmith');
     expect(invalidAgent.ok).toBe(false);
 
     let completed = started.save;
@@ -1973,11 +1973,11 @@ describe('Village save and domain', () => {
     expect(completed.run.expedition).toBeNull();
     expect(completed.meta.sagaEntries[0]?.kind).toBe('expedition');
     expect(completed.meta.sagaEntries[0]).toMatchObject({
-      title: '조선 평야 원정 성공',
+      title: '신목 들판 원정 성공',
       text: expect.stringContaining('마을로 돌아왔다'),
     });
     expect(completed.run.lastExpeditionResult).toMatchObject({
-      realmId: 'joseon_plains', outcome: 'victory', retryAfterSeconds: 0,
+      realmId: 'sacred_fields', outcome: 'victory', retryAfterSeconds: 0,
     });
   });
 
@@ -1987,7 +1987,7 @@ describe('Village save and domain', () => {
       ? { ...agent, fatigue: 100 }
       : agent);
 
-    const result = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', 'guide');
+    const result = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -2010,14 +2010,14 @@ describe('Village save and domain', () => {
 
   it('does not reuse an expedition id after same-clock intervention retreat', () => {
     const initial = createInitialVillageSave(102);
-    const first = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const first = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(first.ok).toBe(true);
     if (!first.ok) return;
 
     const retreated = useIntervention(first.save, 'retreat', initial.createdAt);
     expect(retreated.ok).toBe(true);
     if (!retreated.ok) return;
-    const second = startExpedition(retreated.save, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const second = startExpedition(retreated.save, 'sacred_fields', initial.createdAt, 'aggression', null);
 
     expect(second.ok).toBe(true);
     if (!second.ok) return;
@@ -2026,7 +2026,7 @@ describe('Village save and domain', () => {
 
   it('advances a new expedition through normal, elite, and boss encounters', () => {
     const initial = createInitialVillageSave(90);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     expect(started.save.run.expedition).toMatchObject({ encounterIndex: 0 });
@@ -2051,7 +2051,7 @@ describe('Village save and domain', () => {
     initial.run.hero.atk = 1;
     initial.run.hero.hp = 1;
     initial.run.hero.hpMax = 1;
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
@@ -2063,9 +2063,9 @@ describe('Village save and domain', () => {
   it('forecasts target success bands and makes support policy effects visible', () => {
     const atRecommendedPower = createInitialVillageSave(92);
     atRecommendedPower.run.hero.atk = 30;
-    const normal = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 0, null);
-    const elite = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 1, null);
-    const boss = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 2, null);
+    const normal = getExpeditionSuccessChance(atRecommendedPower, 'sacred_fields', 0, null);
+    const elite = getExpeditionSuccessChance(atRecommendedPower, 'sacred_fields', 1, null);
+    const boss = getExpeditionSuccessChance(atRecommendedPower, 'sacred_fields', 2, null);
 
     expect(getVillageHeroPower(atRecommendedPower)).toBe(120);
     expect(normal).toBeGreaterThanOrEqual(0.9);
@@ -2075,12 +2075,12 @@ describe('Village save and domain', () => {
     expect(boss).toBeGreaterThanOrEqual(0.45);
     expect(boss).toBeLessThanOrEqual(0.65);
 
-    const guide = getExpeditionSuccessChance(atRecommendedPower, 'joseon_plains', 2, 'guide');
-    const hoarding = getExpeditionSuccessChance(setVillagePolicy(atRecommendedPower, 'hoarding', atRecommendedPower.createdAt + 1), 'joseon_plains', 2, null);
+    const guide = getExpeditionSuccessChance(atRecommendedPower, 'sacred_fields', 2, 'guide');
+    const hoarding = getExpeditionSuccessChance(setVillagePolicy(atRecommendedPower, 'hoarding', atRecommendedPower.createdAt + 1), 'sacred_fields', 2, null);
     const blessedSave = createInitialVillageSave(97);
     blessedSave.run.hero.atk = 30;
     blessedSave.meta.facilities.mudang.level = 3;
-    const blessed = getExpeditionSuccessChance(blessedSave, 'joseon_plains', 2, null);
+    const blessed = getExpeditionSuccessChance(blessedSave, 'sacred_fields', 2, null);
     expect(guide).toBeGreaterThan(boss);
     expect(hoarding).toBeGreaterThan(boss);
     expect(blessed).toBeGreaterThan(boss);
@@ -2089,40 +2089,40 @@ describe('Village save and domain', () => {
   it('does not forecast a guide bonus when the guide is unavailable', () => {
     const baselineSave = createInitialVillageSave(98);
     baselineSave.run.hero.atk = 30;
-    const baseline = getExpeditionSuccessChance(baselineSave, 'joseon_plains', 2, null);
+    const baseline = getExpeditionSuccessChance(baselineSave, 'sacred_fields', 2, null);
 
     const tiredSave = createInitialVillageSave(99);
     tiredSave.run.hero.atk = 30;
     tiredSave.meta.agents = tiredSave.meta.agents.map((agent) => agent.id === 'guide'
       ? { ...agent, fatigue: 100 }
       : agent);
-    expect(getExpeditionSuccessChance(tiredSave, 'joseon_plains', 2, 'guide')).toBe(baseline);
+    expect(getExpeditionSuccessChance(tiredSave, 'sacred_fields', 2, 'guide')).toBe(baseline);
 
     const busySave = createInitialVillageSave(100);
     busySave.run.hero.atk = 30;
     busySave.meta.agents = busySave.meta.agents.map((agent) => agent.id === 'guide'
       ? { ...agent, activeTaskId: 'unrelated-task' }
       : agent);
-    expect(getExpeditionSuccessChance(busySave, 'joseon_plains', 2, 'guide')).toBe(baseline);
+    expect(getExpeditionSuccessChance(busySave, 'sacred_fields', 2, 'guide')).toBe(baseline);
 
     const activeSave = createInitialVillageSave(101);
     activeSave.run.hero.atk = 30;
-    const started = startExpedition(activeSave, 'joseon_plains', activeSave.createdAt, 'aggression', 'guide');
+    const started = startExpedition(activeSave, 'sacred_fields', activeSave.createdAt, 'aggression', 'guide');
     expect(started.ok).toBe(true);
     if (started.ok) {
-      expect(getExpeditionSuccessChance(started.save, 'joseon_plains', 2, 'guide')).toBeGreaterThan(baseline);
+      expect(getExpeditionSuccessChance(started.save, 'sacred_fields', 2, 'guide')).toBeGreaterThan(baseline);
     }
   });
 
   it('keeps an active expedition forecast on the policy chosen at departure', () => {
     const initial = createInitialVillageSave(93);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
-    const beforePolicyChange = getExpeditionSuccessChance(started.save, 'joseon_plains', 2, null);
+    const beforePolicyChange = getExpeditionSuccessChance(started.save, 'sacred_fields', 2, null);
     const changed = setVillagePolicy(started.save, 'hoarding', started.save.updatedAt + 1);
-    const afterPolicyChange = getExpeditionSuccessChance(changed, 'joseon_plains', 2, null);
+    const afterPolicyChange = getExpeditionSuccessChance(changed, 'sacred_fields', 2, null);
 
     expect(changed.run.policy).toBe('hoarding');
     expect(changed.run.expedition?.policy).toBe('aggression');
@@ -2133,28 +2133,28 @@ describe('Village save and domain', () => {
     const initial = createInitialVillageSave(11);
     initial.run.hero.atk = 300;
     initial.run.hero.hp = 1;
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.encounterIndex = 2;
     started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
 
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
-    expect(completed.meta.sagaEntries[0]?.title).toBe('조선 평야 원정 중단');
+    expect(completed.meta.sagaEntries[0]?.title).toBe('신목 들판 원정 중단');
     expect(completed.meta.currencies.gold).toBe(initial.meta.currencies.gold);
     expect(completed.meta.currencies.spirit).toBe(initial.meta.currencies.spirit);
     expect(completed.run.lastExpeditionResult).toMatchObject({
-      outcome: 'defeat', recommendedFacilityId: 'recovery', recommendedEquipmentId: 'v4_iron_sword',
+      outcome: 'defeat', recommendedFacilityId: 'recovery', recommendedEquipmentId: 'iron_sword',
     });
   });
 
   it('recommends the next unlocked blacksmith equipment after a defeat', () => {
     const initial = createInitialVillageSave(124);
     initial.meta.facilities.blacksmith.level = 3;
-    initial.run.hero.equipmentIds = ['v4_iron_sword'];
-    initial.run.hero.equipmentLevels = { v4_iron_sword: 1 };
+    initial.run.hero.equipmentIds = ['iron_sword'];
+    initial.run.hero.equipmentLevels = { iron_sword: 1 };
     initial.run.hero.hp = 1;
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.encounterIndex = 2;
@@ -2163,7 +2163,7 @@ describe('Village save and domain', () => {
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
 
     expect(completed.run.lastExpeditionResult).toMatchObject({
-      outcome: 'defeat', recommendedFacilityId: 'recovery', recommendedEquipmentId: 'v4_guardian_armor',
+      outcome: 'defeat', recommendedFacilityId: 'recovery', recommendedEquipmentId: 'guardian_armor',
     });
   });
 
@@ -2171,7 +2171,7 @@ describe('Village save and domain', () => {
     const initial = createInitialVillageSave(20);
     initial.run.hero.hp = 0;
 
-    const result = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const result = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -2187,7 +2187,7 @@ describe('Village save and domain', () => {
     const malformed = createInitialVillageSave(201);
     malformed.run.hero.hp = hp as never;
 
-    const result = startExpedition(malformed, 'joseon_plains', malformed.updatedAt, 'aggression', null);
+    const result = startExpedition(malformed, 'sacred_fields', malformed.updatedAt, 'aggression', null);
 
     expect(result.ok).toBe(false);
     expect(result.save).toBe(malformed);
@@ -2238,7 +2238,7 @@ describe('Village save and domain', () => {
     expect(malformed.meta.currencies.gold).toBe(gold);
   });
 
-  it('keeps Village hero decisions and battle independent from the V3 cycle controller', () => {
+  it('keeps Village hero decisions and battle independent from the legacy cycle controller', () => {
     const save = createInitialVillageSave(10);
     const runtime = createVillageHeroRuntime(save.run.hero);
     expect(runtime.chooseAction({ hp: 1_000, hpMax: 1_000, policy: 'aggression', expeditionAvailable: true })).toBe('expedition');
@@ -2367,7 +2367,7 @@ describe('Village save and domain', () => {
     save.run.hero.hp = Number.NaN;
 
     expect(getVillageHeroPower(save)).toBe(0);
-    expect(Number.isFinite(getExpeditionSuccessChance(save, 'joseon_plains', 2, null))).toBe(true);
+    expect(Number.isFinite(getExpeditionSuccessChance(save, 'sacred_fields', 2, null))).toBe(true);
   });
 
   it('keeps malformed HP and support stats from poisoning the expedition forecast', () => {
@@ -2386,8 +2386,8 @@ describe('Village save and domain', () => {
       ? { ...agent, trust: 0 }
       : agent);
 
-    expect(getExpeditionSuccessChance(malformed, 'joseon_plains', 2, 'guide'))
-      .toBe(getExpeditionSuccessChance(safeEquivalent, 'joseon_plains', 2, 'guide'));
+    expect(getExpeditionSuccessChance(malformed, 'sacred_fields', 2, 'guide'))
+      .toBe(getExpeditionSuccessChance(safeEquivalent, 'sacred_fields', 2, 'guide'));
   });
 
   it('treats missing hero power fields as zero instead of maximum power', () => {
@@ -2461,7 +2461,7 @@ describe('Village save and domain', () => {
     const aggression = advanceHeroAutonomy(initial, initial.updatedAt + 15_000);
     expect(aggression.started).toBe(true);
     expect(aggression.save.run.expedition).toMatchObject({
-      realmId: 'joseon_plains',
+      realmId: 'sacred_fields',
       policy: 'aggression',
       assignedAgentId: null,
     });
@@ -2472,7 +2472,7 @@ describe('Village save and domain', () => {
     hoarding.meta.unlockedRealms.push('deep_forest', 'underworld');
     const safest = advanceHeroAutonomy(hoarding, hoarding.updatedAt + 15_000);
     expect(safest.started).toBe(true);
-    expect(safest.save.run.expedition?.realmId).toBe('joseon_plains');
+    expect(safest.save.run.expedition?.realmId).toBe('sacred_fields');
 
     const training = createInitialVillageSave(892);
     training.run.policy = 'training';
@@ -2502,7 +2502,7 @@ describe('Village save and domain', () => {
 
     const withResult = createInitialVillageSave(895);
     withResult.run.lastExpeditionResult = {
-      id: 'pending-result', realmId: 'joseon_plains', outcome: 'victory', completedAt: withResult.updatedAt,
+      id: 'pending-result', realmId: 'sacred_fields', outcome: 'victory', completedAt: withResult.updatedAt,
       reward: {}, heroPower: 120, recommendedPower: 120, turns: 1, totalDamageDealt: 1,
       totalDamageTaken: 0, heroRemainingHp: 1_000, weaknessKR: '없음', recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: null, retryAfterSeconds: 0,
@@ -2520,7 +2520,7 @@ describe('Village save and domain', () => {
     impossible.run.hero.def = 0;
     impossible.run.hero.hp = 1;
 
-    const blocked = getExpeditionForecast(impossible, 'joseon_plains', 2, null, 'forecast-impossible');
+    const blocked = getExpeditionForecast(impossible, 'sacred_fields', 2, null, 'forecast-impossible');
     expect(blocked.battle.won).toBe(false);
     expect(blocked.successChance).toBe(0);
     expect(blocked.soloSuccessChance).toBe(0);
@@ -2528,8 +2528,8 @@ describe('Village save and domain', () => {
 
     const ready = createInitialVillageSave(898);
     ready.run.hero.atk = 100;
-    const solo = getExpeditionForecast(ready, 'joseon_plains', 2, null, 'forecast-ready');
-    const guide = getExpeditionForecast(ready, 'joseon_plains', 2, 'guide', 'forecast-ready');
+    const solo = getExpeditionForecast(ready, 'sacred_fields', 2, null, 'forecast-ready');
+    const guide = getExpeditionForecast(ready, 'sacred_fields', 2, 'guide', 'forecast-ready');
     expect(solo.battle.won).toBe(true);
     expect(guide.successChance).toBeGreaterThan(solo.successChance);
     expect(guide.soloSuccessChance).toBe(solo.successChance);
@@ -2569,7 +2569,7 @@ describe('Village save and domain', () => {
 
   it('rejects an unknown expedition policy before charging or dispatching', () => {
     const initial = createInitialVillageSave(107);
-    const result = startExpedition(initial, 'joseon_plains', initial.updatedAt + 1_000, 'unsafe' as never, null);
+    const result = startExpedition(initial, 'sacred_fields', initial.updatedAt + 1_000, 'unsafe' as never, null);
 
     expect(result.ok).toBe(false);
     expect(result.save).toBe(initial);
@@ -2605,7 +2605,7 @@ describe('Village save and domain', () => {
 
   it('rejects an unknown intervention before consuming a charge or retreating', () => {
     const initial = createInitialVillageSave(108);
-    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt + 1_000, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.updatedAt + 1_000, 'aggression', null);
     if (!started.ok) throw new Error(started.error);
 
     const result = useIntervention(started.save, 'teleport' as never, started.save.updatedAt + 1_000);
@@ -2686,7 +2686,7 @@ describe('Village save and domain', () => {
     const canceled = cancelFacilityTask(startedTask.save, 'recovery', startedTask.save.updatedAt + 1_000);
 
     const expeditionSource = createInitialVillageSave(137);
-    const startedExpedition = startExpedition(expeditionSource, 'joseon_plains', expeditionSource.updatedAt, 'aggression', null);
+    const startedExpedition = startExpedition(expeditionSource, 'sacred_fields', expeditionSource.updatedAt, 'aggression', null);
     expect(startedExpedition.ok).toBe(true);
     if (!startedExpedition.ok) return;
     startedExpedition.save.meta.currencies.spirit = spirit;
@@ -2736,7 +2736,7 @@ describe('Village save and domain', () => {
     ['unsafe', Number.MAX_VALUE],
   ])('does not settle an expedition reward over a malformed %s balance', (_label, gold) => {
     const malformed = createInitialVillageSave(139);
-    const started = startExpedition(malformed, 'joseon_plains', malformed.updatedAt, 'aggression', null);
+    const started = startExpedition(malformed, 'sacred_fields', malformed.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.id = 'e2e-victory-4';
@@ -2827,7 +2827,7 @@ describe('Village save and domain', () => {
     if (instant.ok) return;
     expect(instant.save).toBe(startedTask.save);
 
-    const startedExpedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const startedExpedition = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(startedExpedition.ok).toBe(true);
     if (!startedExpedition.ok) return;
     const pending = startedExpedition.save.run.expedition!;
@@ -2843,7 +2843,7 @@ describe('Village save and domain', () => {
     initial.updatedAt = Number.MAX_SAFE_INTEGER;
 
     const task = startFacilityTask(initial, 'temple', initial.updatedAt, null);
-    const expedition = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const expedition = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
 
     expect(task.ok).toBe(false);
     expect(task.save).toBe(initial);
@@ -2853,7 +2853,7 @@ describe('Village save and domain', () => {
 
   it('does not overflow the clock when a staged expedition reaches the next encounter', () => {
     const initial = createInitialVillageSave(127);
-    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
@@ -2885,7 +2885,7 @@ describe('Village save and domain', () => {
 
   it('saturates malformed expedition totals before writing a result save', () => {
     const initial = createInitialVillageSave(128);
-    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
@@ -2919,7 +2919,7 @@ describe('Village save and domain', () => {
 
   it('saturates malformed expedition rewards before writing a result save', () => {
     const initial = createInitialVillageSave(129);
-    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
 
@@ -2929,7 +2929,7 @@ describe('Village save and domain', () => {
     expedition.encounterIndex = 2;
     expedition.completesAt = expedition.startedAt;
 
-    const realm = REALM_DEFINITIONS.joseon_plains;
+    const realm = REALM_DEFINITIONS.sacred_fields;
     const originalReward = realm.reward;
     realm.reward = { gold: Number.MAX_VALUE };
     try {
@@ -2958,10 +2958,10 @@ describe('Village save and domain', () => {
 
   it('records one deterministic realm entrance and victory beat for each realm', () => {
     const initial = createInitialVillageSave(130);
-    const started = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
-    expect(started.save.meta.sagaEntries.some((entry) => entry.id === 'saga-realm-intro-joseon_plains')).toBe(true);
+    expect(started.save.meta.sagaEntries.some((entry) => entry.id === 'saga-realm-intro-sacred_fields')).toBe(true);
 
     started.save.run.hero.atk = 10_000;
     started.save.run.hero.def = 10_000;
@@ -2971,9 +2971,9 @@ describe('Village save and domain', () => {
     started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;
     const completed = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
 
-    expect(completed.meta.sagaEntries.some((entry) => entry.id === 'saga-realm-victory-joseon_plains')).toBe(true);
-    expect(completed.meta.sagaEntries.filter((entry) => entry.id === 'saga-realm-intro-joseon_plains')).toHaveLength(1);
-    expect(completed.meta.sagaEntries.filter((entry) => entry.id === 'saga-realm-victory-joseon_plains')).toHaveLength(1);
+    expect(completed.meta.sagaEntries.some((entry) => entry.id === 'saga-realm-victory-sacred_fields')).toBe(true);
+    expect(completed.meta.sagaEntries.filter((entry) => entry.id === 'saga-realm-intro-sacred_fields')).toHaveLength(1);
+    expect(completed.meta.sagaEntries.filter((entry) => entry.id === 'saga-realm-victory-sacred_fields')).toHaveLength(1);
   });
 
   it('records the underworld epilogue once while allowing another expedition afterward', () => {
@@ -3032,7 +3032,7 @@ describe('Village save and domain', () => {
     guide.trust = 49;
     guide.level = 1;
 
-    const first = startExpedition(initial, 'joseon_plains', initial.updatedAt, 'aggression', 'guide');
+    const first = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', 'guide');
     expect(first.ok).toBe(true);
     if (!first.ok) return;
     first.save.run.expedition!.encounterIndex = 2;
@@ -3045,7 +3045,7 @@ describe('Village save and domain', () => {
     });
     expect(firstCompleted.meta.sagaEntries.filter((entry) => entry.id === 'saga-agent-trust-guide-50')).toHaveLength(1);
 
-    const second = startExpedition(firstCompleted, 'joseon_plains', firstCompleted.updatedAt + 1_000, 'aggression', 'guide');
+    const second = startExpedition(firstCompleted, 'sacred_fields', firstCompleted.updatedAt + 1_000, 'aggression', 'guide');
     expect(second.ok).toBe(true);
     if (!second.ok) return;
     second.save.run.expedition!.encounterIndex = 2;

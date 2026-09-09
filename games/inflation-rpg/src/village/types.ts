@@ -10,7 +10,7 @@ export type FacilityId =
   | 'expedition'
   | 'archive';
 export type SupportAgentId = 'blacksmith' | 'mudang' | 'guide';
-export type RealmId = 'joseon_plains' | 'deep_forest' | 'underworld';
+export type RealmId = 'sacred_fields' | 'deep_forest' | 'underworld';
 export type EncounterTier = 'normal' | 'elite' | 'boss';
 export type StoryChoiceOptionId = 'protect_flame' | 'release_goblin';
 
@@ -165,7 +165,7 @@ export interface VillageRunState {
 }
 
 export interface VillageSaveEnvelope {
-  schemaVersion: 1;
+  schemaVersion: 2;
   createdAt: number;
   updatedAt: number;
   lastProcessedAt: number;

@@ -1,3 +1,5 @@
+import { LEGACY_REWARDED_USAGE_KEY } from './legacyCompatibility';
+
 export type VillageRewardedPlacement = 'offline_double' | 'instant_task' | 'intervention_charge';
 
 export interface VillageAdProvider {
@@ -28,7 +30,7 @@ export interface VillageMonetizationResult {
 }
 
 export const Village_DAILY_REWARDED_LIMIT = 5;
-export const Village_REWARDED_USAGE_KEY = 'shin-ui-eternal-sponsor-v4-rewarded-usage-v1';
+export const Village_REWARDED_USAGE_KEY = 'shin-ui-eternal-sponsor-rewarded-usage-v1';
 /** A broken native bridge must not leave a player action pending forever. */
 export const Village_MONETIZATION_TIMEOUT_MS = 60_000;
 
@@ -105,8 +107,15 @@ export function createLocalVillageRewardedUsageStore(
     read(day) {
       if (!storage) return 0;
       try {
-        const parsed = JSON.parse(storage.getItem(Village_REWARDED_USAGE_KEY) ?? '{}') as { day?: string; count?: number };
-        return parsed.day === day ? normalizeDailyUsage(parsed.count ?? 0) : 0;
+        const canonicalRaw = storage.getItem(Village_REWARDED_USAGE_KEY);
+        const fromLegacy = canonicalRaw === null;
+        const raw = canonicalRaw ?? storage.getItem(LEGACY_REWARDED_USAGE_KEY);
+        const parsed = JSON.parse(raw ?? '{}') as { day?: string; count?: number };
+        const count = parsed.day === day ? normalizeDailyUsage(parsed.count ?? 0) : 0;
+        if (fromLegacy && raw !== null) {
+          storage.setItem(Village_REWARDED_USAGE_KEY, JSON.stringify({ day: parsed.day, count: normalizeDailyUsage(parsed.count ?? 0) }));
+        }
+        return count;
       } catch {
         return 0;
       }

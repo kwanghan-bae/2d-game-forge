@@ -77,7 +77,7 @@ function runRandomizedSaveSequence(seed: number): VillageSaveEnvelope {
         save = completeFacilityTasks(save, now);
         break;
       case 4: {
-        const started = startExpedition(save, 'joseon_plains', now, policy, null);
+        const started = startExpedition(save, 'sacred_fields', now, policy, null);
         if (started.ok) save = started.save;
         break;
       }
@@ -115,7 +115,7 @@ describe('Village save state-machine invariants', () => {
     for (const seed of [11, 29, 47, 83, 101, 137, 211, 307]) {
       const save = runRandomizedSaveSequence(seed);
 
-      expect(save.schemaVersion).toBe(1);
+      expect(save.schemaVersion).toBe(2);
       expect(save.updatedAt).toBeGreaterThanOrEqual(save.createdAt);
       expect(save.lastProcessedAt).toBeGreaterThanOrEqual(save.createdAt);
       expect(save.lastProcessedAt).toBeLessThanOrEqual(save.updatedAt);

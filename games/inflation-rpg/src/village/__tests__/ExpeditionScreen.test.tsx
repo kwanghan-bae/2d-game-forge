@@ -25,7 +25,7 @@ function renderResult(result: ExpeditionResult) {
 function baseResult(overrides: Partial<ExpeditionResult> = {}): ExpeditionResult {
   return {
     id: 'result-1',
-    realmId: 'joseon_plains',
+    realmId: 'sacred_fields',
     outcome: 'victory',
     completedAt: 1_000,
     reward: { gold: 55, materials: 4 },
@@ -59,7 +59,7 @@ describe('Village expedition result screen', () => {
 
     render(<ExpeditionScreen {...props} />);
 
-    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    const plains = screen.getByRole('heading', { name: /신목 들판/ }).closest('article');
     expect(plains).not.toBeNull();
     if (!plains) return;
     expect(plains).toHaveTextContent('예상 보상 · 금화 +55 · 재료 +4');
@@ -107,7 +107,7 @@ describe('Village expedition result screen', () => {
 
     render(<ExpeditionScreen {...props} />);
 
-    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    const plains = screen.getByRole('heading', { name: /신목 들판/ }).closest('article');
     expect(plains).not.toBeNull();
     if (!plains) return;
     expect(plains).toHaveTextContent('출발 비용 부족 · 신력 12 필요');
@@ -145,7 +145,7 @@ describe('Village expedition result screen', () => {
 
   it('shows the departure policy while an expedition is active', () => {
     const save = createInitialVillageSave(102);
-    const started = startExpedition(save, 'joseon_plains', save.createdAt, 'aggression', null);
+    const started = startExpedition(save, 'sacred_fields', save.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.policy = 'hoarding';
@@ -168,12 +168,12 @@ describe('Village expedition result screen', () => {
   it('renders the Korean name of a recommended equipment item', () => {
     renderResult(baseResult({
       outcome: 'defeat',
-      recommendedEquipmentId: 'v4_guardian_armor',
+      recommendedEquipmentId: 'guardian_armor',
     }));
 
     const result = screen.getByTestId('village-expedition-result');
     expect(result).toHaveTextContent('추천 장비 · 수호 갑옷');
-    expect(result.textContent).not.toContain('v4_guardian_armor');
+    expect(result.textContent).not.toContain('guardian_armor');
   });
 
   it('explains the no-reward outcome instead of leaving an empty victory card', () => {
@@ -364,14 +364,14 @@ describe('Village expedition result screen', () => {
     } satisfies React.ComponentProps<typeof ExpeditionScreen>;
     render(<ExpeditionScreen {...props} />);
 
-    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    const plains = screen.getByRole('heading', { name: /신목 들판/ }).closest('article');
     expect(plains).not.toBeNull();
     if (!plains) return;
     const guideButton = within(plains).getByRole('button', { name: '길잡이 휴식 필요' });
     expect(guideButton).toBeDisabled();
-    expect(plains).toHaveTextContent(`혼자 ${Math.round(getExpeditionForecast(save, 'joseon_plains', 2, null).successChance * 100)}%`);
+    expect(plains).toHaveTextContent(`혼자 ${Math.round(getExpeditionForecast(save, 'sacred_fields', 2, null).successChance * 100)}%`);
     fireEvent.click(within(plains).getByRole('button', { name: '혼자 출발' }));
-    expect(onStart).toHaveBeenCalledWith('joseon_plains', null);
+    expect(onStart).toHaveBeenCalledWith('sacred_fields', null);
   });
 
   it('shows separate solo and guide chances and does not overstate an impossible battle', () => {
@@ -391,7 +391,7 @@ describe('Village expedition result screen', () => {
       onBack={vi.fn()}
     />);
 
-    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    const plains = screen.getByRole('heading', { name: /신목 들판/ }).closest('article');
     expect(plains).not.toBeNull();
     if (!plains) return;
     expect(plains).toHaveTextContent('혼자 0%');
@@ -414,7 +414,7 @@ describe('Village expedition result screen', () => {
 
     render(<ExpeditionScreen {...props} />);
 
-    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    const plains = screen.getByRole('heading', { name: /신목 들판/ }).closest('article');
     expect(plains).not.toBeNull();
     if (!plains) return;
     expect(within(plains).getByRole('button', { name: '길잡이 정보 확인 필요' })).toBeDisabled();
@@ -439,7 +439,7 @@ describe('Village expedition result screen', () => {
 
     render(<ExpeditionScreen {...props} />);
 
-    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    const plains = screen.getByRole('heading', { name: /신목 들판/ }).closest('article');
     expect(plains).not.toBeNull();
     if (!plains) return;
     expect(within(plains).getByRole('button', { name: '길잡이 정보 확인 필요' })).toBeDisabled();
@@ -464,7 +464,7 @@ describe('Village expedition result screen', () => {
 
     render(<ExpeditionScreen {...props} />);
 
-    const plains = screen.getByRole('heading', { name: /조선 평야/ }).closest('article');
+    const plains = screen.getByRole('heading', { name: /신목 들판/ }).closest('article');
     expect(plains).not.toBeNull();
     if (!plains) return;
     expect(within(plains).getByRole('button', { name: '길잡이 정보 확인 필요' })).toBeDisabled();
@@ -474,7 +474,7 @@ describe('Village expedition result screen', () => {
 
   it('keeps active expedition progress finite when its clock data is malformed', () => {
     const initial = createInitialVillageSave(103);
-    const started = startExpedition(initial, 'joseon_plains', initial.createdAt, 'aggression', null);
+    const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
     started.save.run.expedition!.completesAt = started.save.run.expedition!.startedAt;

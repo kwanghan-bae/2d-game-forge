@@ -1744,6 +1744,7 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'korea_inflation_rpg_save',
       version: 27,  // cycle 10 — bestiary kill count tracking
+      skipHydration: true,
       migrate: runStoreMigration,
       partialize: (state) => ({ meta: state.meta, run: state.run }),
     }

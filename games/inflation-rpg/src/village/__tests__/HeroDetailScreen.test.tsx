@@ -27,8 +27,8 @@ describe('Village hero detail screen', () => {
     const save = createInitialVillageSave(125);
     const hero = {
       ...save.run.hero,
-      equipmentIds: ['v4_spirit_talisman'],
-      equipmentLevels: { v4_spirit_talisman: 2 },
+      equipmentIds: ['spirit_talisman'],
+      equipmentLevels: { spirit_talisman: 2 },
     };
 
     render(
@@ -45,7 +45,7 @@ describe('Village hero detail screen', () => {
     expect(screen.getByText(/치명타 \+6%/)).toBeInTheDocument();
   });
 
-  it('blocks V3 hero import while an expedition is active', () => {
+  it('blocks legacy hero import while an expedition is active', () => {
     const save = createInitialVillageSave(126);
 
     render(
@@ -59,7 +59,7 @@ describe('Village hero detail screen', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: '원정 귀환 후 V3 영웅 가져오기' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '원정 귀환 후 기존 영웅 기록 가져오기' })).toBeDisabled();
   });
 
   it('moves focus to the hero heading when the screen opens', () => {
@@ -92,8 +92,8 @@ describe('Village hero detail screen', () => {
       critRateBase: Number.POSITIVE_INFINITY,
       actionCount: Number.NaN,
       rejuvenationCount: Number.POSITIVE_INFINITY,
-      equipmentIds: ['v4_iron_sword'],
-      equipmentLevels: { v4_iron_sword: Number.POSITIVE_INFINITY },
+      equipmentIds: ['iron_sword'],
+      equipmentLevels: { iron_sword: Number.POSITIVE_INFINITY },
     };
 
     render(
@@ -122,8 +122,8 @@ describe('Village hero detail screen', () => {
       def: -2,
       actionCount: -1,
       rejuvenationCount: -4,
-      equipmentIds: ['v4_iron_sword'],
-      equipmentLevels: { v4_iron_sword: -2 },
+      equipmentIds: ['iron_sword'],
+      equipmentLevels: { iron_sword: -2 },
     };
 
     render(
