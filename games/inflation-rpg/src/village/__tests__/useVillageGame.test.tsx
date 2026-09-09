@@ -534,6 +534,43 @@ describe('useVillageGame monetization actions', () => {
     useGameStore.setState((state) => ({ ...state, run: { ...state.run, heroSnapshot: null } }));
   });
 
+  it('hydrates the legacy store only when importing from a cold current-product boot', async () => {
+    const state = useGameStore.getState();
+    const snapshot = {
+      name: 'cold boot hero', emoji: '🛡️', age: 19, chapter: '청년기', job: '검객', level: 4,
+      exp: 12, hp: 1_200, hpMax: 1_500, atk: 190, atkBase: 190, hpBase: 1_500,
+      actionCount: 185, rejuvenationCount: 1, gridX: 0, gridY: 0, equipment: [],
+      personality: { courage: 1, curiosity: 2, greed: 0, compassion: 3, discipline: 2 },
+      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 777,
+    } as unknown as HeroSnapshot;
+    useGameStore.setState((current) => ({
+      ...current,
+      run: { ...current.run, heroSnapshot: null },
+    }));
+    const legacyRaw = JSON.stringify({
+      state: {
+        meta: state.meta,
+        run: { ...state.run, heroSnapshot: snapshot },
+      },
+      version: 27,
+    });
+    localStorage.setItem('korea_inflation_rpg_save', legacyRaw);
+    const rehydrateSpy = vi.spyOn(useGameStore.persist, 'rehydrate');
+
+    render(<ImportHarness />);
+    expect(rehydrateSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'import' }));
+    });
+
+    await waitFor(() => expect(screen.getByTestId('import-hero')).toHaveTextContent('cold boot hero'));
+    expect(rehydrateSpy).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('korea_inflation_rpg_save')).toBe(legacyRaw);
+    rehydrateSpy.mockRestore();
+    useGameStore.setState((current) => ({ ...current, run: { ...current.run, heroSnapshot: null } }));
+  });
+
   it('only requests one instant-task ad when the same action is clicked concurrently', async () => {
     const base = createInitialVillageSave(105);
     const started = startFacilityTask(base, 'temple', base.updatedAt);

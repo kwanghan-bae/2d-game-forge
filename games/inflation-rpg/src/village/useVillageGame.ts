@@ -116,6 +116,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
   const offlineRewardClaimInFlight = useRef(false);
   const instantTaskInFlight = useRef(new Set<FacilityId>());
   const interventionChargeInFlight = useRef(false);
+  const legacyImportInFlight = useRef<Promise<void> | null>(null);
   const adFreePurchaseInFlight = useRef(false);
   const [adFreePurchasePending, setAdFreePurchasePending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -503,17 +504,36 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
   }, [commit]);
 
   const importLegacyHero = useCallback(() => {
-    if (saveRef.current.run.expedition) {
-      setMessage('원정 중에는 영웅 기록을 바꿀 수 없습니다. 귀환 후 다시 시도해 주세요.');
-      return;
-    }
-    const legacySnapshot = useGameStore.getState().run?.heroSnapshot;
-    if (!legacySnapshot) {
-      setMessage('가져올 기존 영웅 기록이 없습니다. 이전 모험에서 영웅을 먼저 후원하세요.');
-      return;
-    }
-    const next = importLegacyHeroSnapshot(saveRef.current, legacySnapshot as HeroSnapshot, Date.now());
-    commit(next, '기존 영웅 기록을 명시적으로 가져왔습니다.');
+    if (legacyImportInFlight.current) return legacyImportInFlight.current;
+    const importPromise = (async () => {
+      if (saveRef.current.run.expedition) {
+        setMessage('원정 중에는 영웅 기록을 바꿀 수 없습니다. 귀환 후 다시 시도해 주세요.');
+        return;
+      }
+      try {
+        await useGameStore.persist?.rehydrate?.();
+      } catch {
+        // A broken legacy store behaves like an unavailable import source.
+      }
+      if (!mountedRef.current) return;
+      const legacySnapshot = useGameStore.getState().run?.heroSnapshot;
+      if (!legacySnapshot) {
+        setMessage('가져올 기존 영웅 기록이 없습니다. 이전 모험에서 영웅을 먼저 후원하세요.');
+        return;
+      }
+      const next = importLegacyHeroSnapshot(saveRef.current, legacySnapshot as HeroSnapshot, Date.now());
+      commit(next, '기존 영웅 기록을 명시적으로 가져왔습니다.');
+    })();
+    legacyImportInFlight.current = importPromise;
+    void importPromise.then(
+      () => {
+        if (legacyImportInFlight.current === importPromise) legacyImportInFlight.current = null;
+      },
+      () => {
+        if (legacyImportInFlight.current === importPromise) legacyImportInFlight.current = null;
+      },
+    );
+    return importPromise;
   }, [commit]);
 
   const startFreshSave = useCallback(() => {

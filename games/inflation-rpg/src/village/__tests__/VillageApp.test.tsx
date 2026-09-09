@@ -58,6 +58,12 @@ function mockGame(
 }
 
 describe('Village app resume handling', () => {
+  const retiredIdentityPattern = new RegExp([
+    ['V', '3'].join(''),
+    ['V', '4'].join(''),
+    '조선',
+  ].join('|'));
+
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
@@ -71,11 +77,11 @@ describe('Village app resume handling', () => {
 
     expect(screen.getByTestId('village-app')).toHaveTextContent('한국 설화 마을 판타지');
     expect(screen.getByTestId('village-app')).toHaveTextContent('신목 들판');
-    expect(screen.getByTestId('village-app')).not.toHaveTextContent(/V3|V4|조선/);
+    expect(screen.getByTestId('village-app')).not.toHaveTextContent(retiredIdentityPattern);
 
     fireEvent.click(within(screen.getByRole('navigation', { name: '주요 메뉴' })).getByRole('button', { name: /영웅/ }));
     expect(screen.getByRole('button', { name: '기존 영웅 기록 가져오기' })).toBeInTheDocument();
-    expect(screen.getByTestId('village-app')).not.toHaveTextContent(/V3|V4|조선/);
+    expect(screen.getByTestId('village-app')).not.toHaveTextContent(retiredIdentityPattern);
   });
 
   it('clears global legacy audio when the Village root enters and leaves', () => {

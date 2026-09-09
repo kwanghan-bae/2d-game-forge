@@ -95,7 +95,7 @@ export function SettingsScreen({ settings, onChange, onBack, onRestorePurchases,
 
       <section className="village-panel">
         <h2>저장 안내</h2>
-        <p>이 기기의 현재 게임 저장은 자동으로 기록됩니다. 기존 기록 기록은 명시적으로 가져오기를 선택하기 전까지 변경되지 않습니다.</p>
+        <p>이 기기의 현재 게임 저장은 자동으로 기록됩니다. 기존 기록은 명시적으로 가져오기를 선택하기 전까지 변경되지 않습니다.</p>
         <div className="village-alert">현재 게임 전용 저장</div>
       </section>
 
