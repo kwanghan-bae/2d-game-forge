@@ -5,7 +5,7 @@ import type { StartGameConfig } from './types';
 import { App } from './App';
 import { useGameStore } from './store/gameStore';
 import { useCycleStoreV2 } from './overworld/cycleSliceV2';
-import { V4App } from './v4/V4App';
+import { VillageApp } from './village/VillageApp';
 import './styles/game.css';
 
 export type { StartGameConfig };
@@ -13,7 +13,7 @@ export type { StartGameConfig };
 const TEST_HOOK_OWNER_KEY = '__inflation_rpg_game_config_owner__';
 
 export function StartGame(config: StartGameConfig): ForgeGameInstance {
-  return mount(config, V4App);
+  return mount(config, VillageApp);
 }
 
 /** Explicit V3 entry point. It keeps the legacy store and save key untouched. */
@@ -23,7 +23,7 @@ export function StartLegacyGame(config: StartGameConfig): ForgeGameInstance {
 
 function mount(
   config: StartGameConfig,
-  Screen: typeof App | typeof V4App,
+  Screen: typeof App | typeof VillageApp,
 ): ForgeGameInstance {
   const container = document.getElementById(config.parent);
   if (!container) throw new Error(`#${config.parent} not found`);
@@ -34,10 +34,10 @@ function mount(
 
   if (config.exposeTestHooks) {
     const w = window as unknown as Record<string, unknown>;
-    // A route transition can resolve an older legacy import after the V4
+    // A route transition can resolve an older legacy import after the Village
     // root has already mounted. Do not leave its dev-only stores available to
     // the next route's browser tests.
-    if (Screen === V4App) {
+    if (Screen === VillageApp) {
       delete w['__zustand_inflation_rpg_store__'];
       delete w['__cycle_store_v2__'];
     }

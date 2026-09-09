@@ -19,7 +19,7 @@ test.describe('Phase V1a vertical slice', () => {
     test.setTimeout(60_000);
 
     // V3 regression coverage must use the preserved legacy entrypoint now
-    // that the product's default route mounts the V4 town hub.
+    // that the product's default route mounts the Village town hub.
     await page.goto('/games/inflation-rpg-legacy');
     await page.evaluate(() => localStorage.removeItem('korea_inflation_rpg_save'));
     await page.reload();

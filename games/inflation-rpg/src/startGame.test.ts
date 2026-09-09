@@ -13,7 +13,7 @@ vi.mock('react-dom/client', () => ({
   createRoot: vi.fn(() => mocks.root),
 }));
 vi.mock('./App', () => ({ App: () => null }));
-vi.mock('./v4/V4App', () => ({ V4App: () => null }));
+vi.mock('./village/VillageApp', () => ({ VillageApp: () => null }));
 vi.mock('./store/gameStore', () => ({ useGameStore: mocks.legacyStore }));
 vi.mock('./overworld/cycleSliceV2', () => ({ useCycleStoreV2: mocks.cycleStore }));
 
@@ -59,7 +59,7 @@ describe('game entrypoint lifecycle', () => {
     expect(testWindow().__cycle_store_v2__).toBeUndefined();
   });
 
-  it('clears the V4 test config when the V4 game instance is destroyed', () => {
+  it('clears the Village test config when the Village game instance is destroyed', () => {
     const instance = StartGame(config);
 
     expect(testWindow().gameConfig).toBe(config);
@@ -69,25 +69,25 @@ describe('game entrypoint lifecycle', () => {
     expect(testWindow().gameConfig).toBeUndefined();
   });
 
-  it('does not let a late legacy destroy clear a newer V4 hook owner', () => {
+  it('does not let a late legacy destroy clear a newer Village hook owner', () => {
     const legacy = StartLegacyGame(config);
-    const v4Config = { ...config };
-    const v4 = StartGame(v4Config);
+    const villageConfig = { ...config };
+    const village = StartGame(villageConfig);
 
-    expect(testWindow().gameConfig).toBe(v4Config);
+    expect(testWindow().gameConfig).toBe(villageConfig);
     expect(testWindow().__zustand_inflation_rpg_store__).toBeUndefined();
     expect(testWindow().__cycle_store_v2__).toBeUndefined();
 
     legacy.destroy();
-    expect(testWindow().gameConfig).toBe(v4Config);
+    expect(testWindow().gameConfig).toBe(villageConfig);
 
-    v4.destroy();
+    village.destroy();
     expect(testWindow().gameConfig).toBeUndefined();
   });
 
-  it('keeps V4 hooks owned correctly when a route reuses the same config object', () => {
+  it('keeps Village hooks owned correctly when a route reuses the same config object', () => {
     const legacy = StartLegacyGame(config);
-    const v4 = StartGame(config);
+    const village = StartGame(config);
 
     expect(testWindow().gameConfig).toBe(config);
     expect(testWindow().__zustand_inflation_rpg_store__).toBeUndefined();
@@ -96,7 +96,7 @@ describe('game entrypoint lifecycle', () => {
     legacy.destroy();
 
     expect(testWindow().gameConfig).toBe(config);
-    v4.destroy();
+    village.destroy();
     expect(testWindow().gameConfig).toBeUndefined();
   });
 });

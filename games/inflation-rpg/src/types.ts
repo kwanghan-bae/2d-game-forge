@@ -1,7 +1,7 @@
 import type { CycleHistoryEntry } from './cycle/cycleEvents';
 import type { TraitId } from './cycle/traits';
 import type { CycleSaga } from './saga/SagaTypes';
-import type { V4MonetizationAdapter } from './v4/monetization';
+import type { VillageMonetizationAdapter } from './village/monetization';
 import type { IapProductId } from './services/IapTypes';
 
 // Endgame identifiers are data-only contracts. Runtime systems re-export
@@ -548,7 +548,7 @@ export interface StartGameConfig {
   assetsBasePath: string;
   exposeTestHooks: boolean;
   /** Optional native bridge. Web/dev-shell runs without ads or IAP. */
-  v4Monetization?: V4MonetizationAdapter;
+  villageMonetization?: VillageMonetizationAdapter;
 }
 
 // ── Phase B (300h redesign) — Dungeon/Floor 모델 ──

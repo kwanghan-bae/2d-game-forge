@@ -1,0 +1,404 @@
+export type VillageRewardedPlacement = 'offline_double' | 'instant_task' | 'intervention_charge';
+
+export interface VillageAdProvider {
+  showRewarded(placement: VillageRewardedPlacement): Promise<boolean>;
+}
+
+export interface VillagePurchaseProvider {
+  purchase(productId: 'ad_free'): Promise<'purchased' | 'cancelled' | 'failed'>;
+}
+
+/** The smallest surface needed from the existing MonetizationService. */
+export interface VillageMonetizationServiceBridge {
+  showRewardedAd(): Promise<boolean>;
+  purchase(productId: 'ad_free'): Promise<boolean>;
+  isAdFreeOwned?: () => boolean;
+}
+
+export type VillageRestorePurchasesProvider = () => Promise<boolean>;
+
+export interface VillageRewardedUsageStore {
+  read(day: string): number;
+  write(day: string, count: number): void;
+}
+
+export interface VillageMonetizationResult {
+  granted: boolean;
+  reason: 'granted' | 'daily_limit' | 'provider_failed' | 'not_purchased';
+}
+
+export const Village_DAILY_REWARDED_LIMIT = 5;
+export const Village_REWARDED_USAGE_KEY = 'shin-ui-eternal-sponsor-v4-rewarded-usage-v1';
+/** A broken native bridge must not leave a player action pending forever. */
+export const Village_MONETIZATION_TIMEOUT_MS = 60_000;
+
+function isRewardedPlacement(value: unknown): value is VillageRewardedPlacement {
+  return value === 'offline_double' || value === 'instant_task' || value === 'intervention_charge';
+}
+
+export function hasVillageAdFreeEntitlement(
+  purchases: readonly {
+    productId?: unknown;
+    purchaseToken?: unknown;
+    purchaseTime?: unknown;
+    acknowledged?: unknown;
+  }[],
+): boolean {
+  return purchases.some((purchase) => purchase?.productId === 'ad_free'
+    && typeof purchase.purchaseToken === 'string'
+    && purchase.purchaseToken.trim().length > 0
+    && typeof purchase.purchaseTime === 'number'
+    && Number.isFinite(purchase.purchaseTime)
+    && purchase.purchaseTime >= 0
+    && typeof purchase.acknowledged === 'boolean');
+}
+
+function normalizeDailyUsage(count: number): number {
+  return Number.isFinite(count)
+    ? Math.min(Village_DAILY_REWARDED_LIMIT, Math.max(0, Math.floor(count)))
+    : 0;
+}
+
+interface ProviderOutcome<T> {
+  value: T;
+  failed: boolean;
+}
+
+function withProviderTimeout<T>(operation: Promise<T>, fallback: T): Promise<ProviderOutcome<T>> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      settled = true;
+      resolve({ value: fallback, failed: true });
+    }, Village_MONETIZATION_TIMEOUT_MS);
+    Promise.resolve(operation).then((value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      resolve({ value, failed: false });
+    }, () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      resolve({ value: fallback, failed: true });
+    });
+  });
+}
+
+function defaultStorage(): Storage | undefined {
+  try {
+    return typeof window === 'undefined' ? undefined : window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+function localDayKey(timestamp = Date.now()): string {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+export function createLocalVillageRewardedUsageStore(
+  storage: Storage | undefined = defaultStorage(),
+): VillageRewardedUsageStore {
+  return {
+    read(day) {
+      if (!storage) return 0;
+      try {
+        const parsed = JSON.parse(storage.getItem(Village_REWARDED_USAGE_KEY) ?? '{}') as { day?: string; count?: number };
+        return parsed.day === day ? normalizeDailyUsage(parsed.count ?? 0) : 0;
+      } catch {
+        return 0;
+      }
+    },
+    write(day, count) {
+      if (!storage) return;
+      try {
+        storage.setItem(Village_REWARDED_USAGE_KEY, JSON.stringify({ day, count: normalizeDailyUsage(count) }));
+      } catch {
+        // A storage quota/private-mode failure must never block gameplay.
+      }
+    },
+  };
+}
+
+/**
+ * Converts the existing AdMob/IAP service contract into the Village provider
+ * boundary. Village screens only depend on the adapter and remain playable when
+ * the native service is unavailable.
+ */
+export function createVillageMonetizationAdapter(
+  service: VillageMonetizationServiceBridge,
+  usageStore: VillageRewardedUsageStore = createLocalVillageRewardedUsageStore(),
+  restorePurchases?: VillageRestorePurchasesProvider,
+): VillageMonetizationAdapter {
+  const adapter = new VillageMonetizationAdapter(
+    { showRewarded: () => service.showRewardedAd() },
+    { purchase: async () => (await service.purchase('ad_free')) === true ? 'purchased' : 'failed' },
+    usageStore,
+    restorePurchases,
+  );
+  try {
+    if (service.isAdFreeOwned?.() === true) adapter.setAdFreeOwned(true);
+  } catch {
+    // Entitlement restoration is optional; a broken bridge must not block play.
+  }
+  return adapter;
+}
+
+export interface NativeVillageMonetizationOptions {
+  adFreeOwned?: boolean;
+  usageStore?: VillageRewardedUsageStore;
+  onAdFreeChanged?: (owned: boolean) => void;
+  onCrackStonesAwarded?: (amount: number) => void;
+}
+
+export interface NativeVillageMonetizationHandle {
+  adapter: VillageMonetizationAdapter;
+  initialize(): Promise<boolean>;
+  restorePurchases(): Promise<boolean>;
+  dispose?(): Promise<void>;
+}
+
+/**
+ * Lazily wires Village to the existing Capacitor AdMob/OneStore service. The
+ * dynamic imports keep web tests and the dev-shell free from native startup
+ * side effects; the returned boolean makes provider failure non-fatal.
+ */
+export async function createNativeVillageMonetization(
+  options: NativeVillageMonetizationOptions = {},
+): Promise<NativeVillageMonetizationHandle> {
+  const [{ MonetizationService }, { ADMOB_CONFIG }] = await Promise.all([
+    import('../services/MonetizationService'),
+    import('../config/monetization.config'),
+  ]);
+  let adFreeOwned = options.adFreeOwned === true;
+  let updateAdapterEntitlement: ((owned: boolean) => void) | undefined;
+  const service = new MonetizationService({
+    adFreeOwned,
+    onAdFreeChanged: (owned) => {
+      const normalized = owned === true;
+      adFreeOwned = normalized;
+      updateAdapterEntitlement?.(normalized);
+      options.onAdFreeChanged?.(normalized);
+    },
+    onCrackStonesAwarded: (amount) => options.onCrackStonesAwarded?.(amount),
+    licenseKey: ADMOB_CONFIG.iapLicenseKey,
+    rewardedUnitId: ADMOB_CONFIG.rewarded.android,
+    bannerUnitId: ADMOB_CONFIG.banner.android,
+  });
+  const adapter = createVillageMonetizationAdapter(service, options.usageStore, async () => {
+    const restored = await service.restorePurchasesManually();
+    return hasVillageAdFreeEntitlement(restored);
+  });
+  updateAdapterEntitlement = (owned) => adapter.setAdFreeOwned(owned);
+  adapter.setAdFreeOwned(adFreeOwned);
+  const syncEntitlement = () => {
+    const owned = service.isAdFreeOwned();
+    adapter.setAdFreeOwned(owned);
+    return owned;
+  };
+
+  return {
+    adapter,
+    async initialize() {
+      try {
+        const outcome = await withProviderTimeout(
+          (async () => {
+            await service.initialize();
+            return true;
+          })(),
+          false,
+        );
+        if (outcome.failed || outcome.value !== true) return false;
+        syncEntitlement();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    async restorePurchases() {
+      try {
+        const outcome = await withProviderTimeout(service.restorePurchasesManually(), []);
+        if (outcome.failed) return false;
+        const restored = outcome.value;
+        syncEntitlement();
+        return hasVillageAdFreeEntitlement(restored);
+      } catch {
+        return false;
+      }
+    },
+    async dispose() {
+      await service.dispose?.();
+    },
+  };
+}
+
+/**
+ * Thin adapter for AdMob/IAP. The game remains playable when either provider
+ * is unavailable; callers only apply rewards when `granted` is true.
+ */
+export class VillageMonetizationAdapter {
+  private adsToday = 0;
+  private adFree = false;
+  private entitlementRevision = 0;
+  private readonly listeners = new Set<() => void>();
+  private rewardedDay = localDayKey();
+  private rewardedInFlightByDay = new Map<string, number>();
+  private adFreePurchaseInFlight: Promise<VillageMonetizationResult> | null = null;
+  private restorePurchasesInFlight: Promise<VillageMonetizationResult> | null = null;
+  private readonly restorePurchasesProvider: VillageRestorePurchasesProvider | null;
+
+  constructor(
+    private readonly ads: VillageAdProvider | null,
+    private readonly purchases: VillagePurchaseProvider | null,
+    private readonly usageStore: VillageRewardedUsageStore | null = null,
+    restorePurchasesProvider: VillageRestorePurchasesProvider | null = null,
+  ) {
+    this.restorePurchasesProvider = restorePurchasesProvider;
+    this.adsToday = this.readStoredUsage(this.rewardedDay);
+  }
+
+  private readStoredUsage(day: string): number {
+    try {
+      const count = this.usageStore?.read(day) ?? 0;
+      return normalizeDailyUsage(count);
+    } catch {
+      return 0;
+    }
+  }
+
+  private resetForCurrentDay(): void {
+    const currentDay = localDayKey();
+    if (currentDay === this.rewardedDay) return;
+    this.rewardedDay = currentDay;
+    this.adsToday = this.readStoredUsage(currentDay);
+  }
+
+  getAdsToday(): number {
+    this.resetForCurrentDay();
+    return this.adsToday;
+  }
+  isAdFree(): boolean { return this.adFree; }
+  canRestorePurchases(): boolean { return this.restorePurchasesProvider !== null; }
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => { this.listeners.delete(listener); };
+  }
+  setAdFreeOwned(owned: boolean): void {
+    const normalized = owned === true;
+    if (this.adFree === normalized) return;
+    this.adFree = normalized;
+    this.entitlementRevision += 1;
+    for (const listener of this.listeners) {
+      try {
+        listener();
+      } catch {
+        // A UI observer must never interrupt entitlement state updates.
+      }
+    }
+  }
+
+  async restorePurchases(): Promise<VillageMonetizationResult> {
+    if (this.restorePurchasesInFlight) return this.restorePurchasesInFlight;
+    const restore = this.restorePurchasesProvider;
+    if (!restore) return { granted: false, reason: 'provider_failed' };
+    const restoreRevision = this.entitlementRevision;
+    const pending = (async (): Promise<VillageMonetizationResult> => {
+      try {
+        const outcome = await withProviderTimeout(restore(), false);
+        if (outcome.failed) return { granted: false, reason: 'provider_failed' };
+        const owned = outcome.value;
+        if (this.entitlementRevision !== restoreRevision) {
+          return this.adFree
+            ? { granted: true, reason: 'granted' }
+            : { granted: false, reason: 'not_purchased' };
+        }
+        // A confirmed non-consumable entitlement is permanent for this
+        // session. An empty/false restore result can be a transient store
+        // response, so it may add ownership but never revoke it.
+        if (owned === true) this.setAdFreeOwned(true);
+        return this.adFree
+          ? { granted: true, reason: 'granted' }
+          : { granted: false, reason: 'not_purchased' };
+      } catch {
+        return { granted: false, reason: 'provider_failed' };
+      }
+    })();
+    this.restorePurchasesInFlight = pending;
+    try {
+      return await pending;
+    } finally {
+      if (this.restorePurchasesInFlight === pending) this.restorePurchasesInFlight = null;
+    }
+  }
+
+  async watchRewarded(placement: VillageRewardedPlacement): Promise<VillageMonetizationResult> {
+    if (!isRewardedPlacement(placement)) return { granted: false, reason: 'provider_failed' };
+    this.resetForCurrentDay();
+    if (this.adFree) return { granted: true, reason: 'granted' };
+    const requestDay = this.rewardedDay;
+    const inFlightForDay = this.rewardedInFlightByDay.get(requestDay) ?? 0;
+    if (this.adsToday + inFlightForDay >= Village_DAILY_REWARDED_LIMIT) {
+      return { granted: false, reason: 'daily_limit' };
+    }
+    if (!this.ads) return { granted: false, reason: 'provider_failed' };
+    this.rewardedInFlightByDay.set(requestDay, inFlightForDay + 1);
+    try {
+      const { value: watched } = await withProviderTimeout(this.ads.showRewarded(placement), false);
+      // The entitlement may be confirmed while the native ad UI is open. In
+      // that case the ad result is stale: ad-free users receive the benefit
+      // without consuming a daily ad slot, even if the provider reports a
+      // cancellation or failure.
+      if (this.adFree) return { granted: true, reason: 'granted' };
+      if (watched !== true) return { granted: false, reason: 'provider_failed' };
+      const usage = requestDay === this.rewardedDay
+        ? normalizeDailyUsage(this.adsToday + 1)
+        : normalizeDailyUsage(this.readStoredUsage(requestDay) + 1);
+      if (requestDay === this.rewardedDay) this.adsToday = usage;
+      try {
+        this.usageStore?.write(requestDay, usage);
+      } catch {
+        // Reward delivery remains successful when local usage persistence is unavailable.
+      }
+      return { granted: true, reason: 'granted' };
+    } catch {
+      return this.adFree
+        ? { granted: true, reason: 'granted' }
+        : { granted: false, reason: 'provider_failed' };
+    } finally {
+      const remaining = (this.rewardedInFlightByDay.get(requestDay) ?? 1) - 1;
+      if (remaining > 0) this.rewardedInFlightByDay.set(requestDay, remaining);
+      else this.rewardedInFlightByDay.delete(requestDay);
+    }
+  }
+
+  async buyAdFree(): Promise<VillageMonetizationResult> {
+    if (this.adFree) return { granted: true, reason: 'granted' };
+    if (this.adFreePurchaseInFlight) return this.adFreePurchaseInFlight;
+    const purchases = this.purchases;
+    if (!purchases) return { granted: false, reason: 'provider_failed' };
+    const pending = (async (): Promise<VillageMonetizationResult> => {
+      try {
+        const { value: result } = await withProviderTimeout(purchases.purchase('ad_free'), 'failed');
+        // A native entitlement callback can complete while the purchase UI is
+        // still pending. Preserve that authoritative grant even when the
+        // older purchase promise resolves as cancelled or failed.
+        if (this.adFree) return { granted: true, reason: 'granted' };
+        if (result === 'purchased') {
+          this.setAdFreeOwned(true);
+          return { granted: true, reason: 'granted' };
+        }
+        return { granted: false, reason: result === 'cancelled' ? 'not_purchased' : 'provider_failed' };
+      } catch {
+        return { granted: false, reason: 'provider_failed' };
+      }
+    })();
+    this.adFreePurchaseInFlight = pending;
+    try {
+      return await pending;
+    } finally {
+      if (this.adFreePurchaseInFlight === pending) this.adFreePurchaseInFlight = null;
+    }
+  }
+}
