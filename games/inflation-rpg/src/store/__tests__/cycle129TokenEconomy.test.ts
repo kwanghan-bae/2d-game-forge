@@ -1,8 +1,4 @@
-// Cycle 129 — N5 Live Ops mega-phase: redeemTokens + evaluateAndGrantAchievements
-// integration tests.
-//
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F3.1, F3.2, F3.3,
-// F1.9, F1.10, EDGE.6.
+// redeemTokens + evaluateAndGrantAchievements integration regression tests.
 //
 // **scope**: store action 단위 integration (vitest 안에서 useGameStore 직접 호출).
 

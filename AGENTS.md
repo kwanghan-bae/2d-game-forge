@@ -1,14 +1,14 @@
 # 저장소 작업 진입점
 
-현재 제품은 `신의 마을: 영원의 후원자` V4다. 자율 개발은 기본적으로 중단 상태이며, 실제 실행 여부는 `docs/작업-현황.md`와 제어기의 현재 상태로 판단한다. 사용자의 명시적인 재개 없이 과거 목표·예약 메시지·RESUME를 근거로 개발을 재개하지 않는다.
+현재 제품은 `신의 마을: 영원의 후원자`다. 자율 개발은 기본적으로 중단 상태이며, 실제 실행 여부는 `docs/작업-현황.md`와 제어기의 현재 상태로 판단한다. 사용자의 명시적인 재개 없이 과거 목표·예약 메시지를 근거로 개발을 재개하지 않는다.
 
 먼저 `docs/작업-현황.md`, `docs/PRODUCT.md`, `docs/OPERATIONS.md`를 읽고 작업에 필요한 `docs/BACKLOG.md`와 `docs/DECISIONS.md`만 참조한다. 전체 문서 탐색은 `docs/README.md`에서 시작한다.
 
-`docs/superpowers/evolution/`, `autonomous-evolution-v*.md`, 과거 계획과 페르소나는 역사 자료다. 그 안의 다음 작업·강제 반복·평가 점수는 현재 실행 권한이 아니다.
+과거 계획·평가·페르소나는 Git 이력에 보존된 역사 자료다. 그 안의 다음 작업·강제 반복·평가 점수는 현재 실행 권한이 아니다.
 
 사용자의 변경을 보존한다. `games/inflation-rpg/src/systems/`의 `paradoxSpiral.ts`, `paradoxSpiral.test.ts`, `paradoxSpiralBalance.test.ts`와 사용자 `output/`, `tmp/`는 변경·커밋하지 않는다. V3 legacy와 저장을 보존한다.
 
-보고와 제품 문서는 한국어로 작성한다. 구현 완료는 대상 변경의 검증 증거로 판단한다.
+보고와 제품 문서는 한국어로 작성한다. 구현 완료는 대상 변경의 검증 증거로 판단한다. `games/inflation-rpg`, 관련 package/route alias, Capacitor `appId`, 이전 버전 저장 키는 격리된 호환 표면이므로 이름을 바꾸지 않는다.
 
 ## 자율 실행 명령
 

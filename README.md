@@ -13,11 +13,11 @@
 
 ## 현재 상태
 
-현재 제품은 **신의 마을: 영원의 후원자 V4**이며 V3는 legacy로 보존한다.
+현재 제품은 **신의 마을: 영원의 후원자**이며 이전 버전은 legacy 호환 경로로 보존한다.
 자율 개발은 기본 중단이며, 실제 실행 범위와 검증 상태는 현재 상태 문서와 실행 제어기에서 확인한다.
 
 [문서 안내](docs/README.md)에서 시작한다. [현재 상태](docs/작업-현황.md)에 검증 한계를 기록한다.
-이전 Phase·cycle은 [역사 기록](docs/archive/2026-09-08-readme-status.md)에서 필요할 때만 읽는다.
+이전 계획·cycle은 현재 실행 지시가 아니며 Git 이력에서 필요할 때만 확인한다.
 
 ## 빠른 시작
 
@@ -33,8 +33,8 @@ pnpm dev
 ```
 
 브라우저에서 `http://localhost:3000` 을 열면 게임 셀렉터가 보인다.
-기본 제품인 **신의 마을: 영원의 후원자**를 누르면 V4가 부팅된다.
-기존 V3는 **조선 인플레이션 RPG**의 `inflation-rpg-legacy` 경로로 별도 실행할 수 있다.
+기본 제품인 **신의 마을: 영원의 후원자**를 누르면 현재 게임이 부팅된다.
+이전 버전은 **조선 인플레이션 RPG**의 `inflation-rpg-legacy` 경로로 별도 실행할 수 있다.
 
 추가 명령:
 
@@ -107,7 +107,7 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
 ├── docs/
 │   ├── ARCHITECTURE.md       # 시스템 설계와 의존성 규칙
 │   ├── CONTRIBUTING.md       # 새 게임 추가 절차
-│   └── superpowers/          # spec 과 plan 기록
+│   └── privacy-policy/       # 개인정보처리방침
 ├── pnpm-workspace.yaml
 ├── turbo.json
 └── tsconfig.base.json
@@ -129,8 +129,15 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
   현재 공개 API 와 성장 정책.
 - [games/inflation-rpg/README.md](games/inflation-rpg/README.md) — inflation-rpg
   게임 빌드·디버그.
-- [docs/superpowers/specs/2026-04-17-2d-game-forge-initial-design.md](docs/superpowers/specs/2026-04-17-2d-game-forge-initial-design.md)
-  — 초기 설계 스펙 (변경되지 않는 시점-스냅샷).
+
+## 격리된 호환 표면
+
+제품 언어와 현재 namespace는 중립화했지만, 배포·저장 호환을 위해 다음 식별자는 유지한다.
+
+- 게임 workspace/package와 공개 경로: `games/inflation-rpg`, `@forge/game-inflation-rpg`, `/games/inflation-rpg`
+- 이전 버전 경로: `/games/inflation-rpg-legacy`, `StartLegacyGame()`
+- Capacitor `appId`: `com.korea.inflationrpg`
+- 이전 버전 저장 키와 현재 게임의 legacy migration 키: 기존 문자열을 읽기 전용으로 보존한다.
 
 ## 라이선스
 

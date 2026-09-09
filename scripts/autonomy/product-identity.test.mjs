@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { test } from 'node:test';
@@ -8,6 +9,30 @@ const SOURCE_ROOT = join(ROOT, 'games', 'inflation-rpg', 'src');
 const CURRENT_ROOT = join(SOURCE_ROOT, 'village');
 const LEGACY_CURRENT_ROOT = join(SOURCE_ROOT, 'v4');
 const ENTRYPOINTS = ['startGame.ts', 'index.ts', 'types.ts'];
+const CORE_DOCUMENTS = [
+  'AGENTS.md',
+  'CLAUDE.md',
+  'README.md',
+  'docs/README.md',
+  'docs/PRODUCT.md',
+  'docs/BACKLOG.md',
+  'docs/작업-현황.md',
+  'docs/OPERATIONS.md',
+  'docs/DECISIONS.md',
+  'docs/ARCHITECTURE.md',
+  'docs/CONTRIBUTING.md',
+  'docs/CREDITS.md',
+  'games/inflation-rpg/README.md',
+  'docs/privacy-policy/ko/index.html',
+  'games/inflation-rpg/public/privacy-policy.html',
+];
+const HISTORICAL_PREFIXES = ['docs/superpowers/', 'docs/archive/', 'docs/personas/', '.claude/agents/'];
+const REQUIRED_CURRENT_FACTS = [
+  '6be98aad',
+  '34317655778',
+  '34317655047',
+  '402개 파일·3,703개 테스트',
+];
 
 function walkFiles(directory) {
   if (!existsSync(directory)) return [];
@@ -73,6 +98,75 @@ function findIdentityViolations() {
   return [...new Set(violations)];
 }
 
+function trackedFiles() {
+  return execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' })
+    .split('\n')
+    .filter(Boolean);
+}
+
+function currentTrackedFiles() {
+  return trackedFiles().filter((path) => existsSync(join(ROOT, path)));
+}
+
+function findDocumentationViolations() {
+  const violations = [];
+  const canonicalText = CORE_DOCUMENTS.map((path) => {
+    const absolutePath = join(ROOT, path);
+    return { path, source: existsSync(absolutePath) ? readFileSync(absolutePath, 'utf8') : '' };
+  });
+
+  for (const { path, source } of canonicalText) {
+    if (!source) {
+      violations.push(`${path}: missing canonical document`);
+      continue;
+    }
+
+    for (const [lineNumber, line] of source.split('\n').entries()) {
+      if (/\bV4\b|\bv4(?:[-_]|\b)/.test(line) && !/(호환|격리|legacy|레거시|이전|저장 키|appId|alias)/i.test(line)) {
+        violations.push(`${path}:${lineNumber + 1}: current-product generation label remains`);
+      }
+      if (/아직 push하지 않았|GitHub Actions 결과가 없다|원격 실행은 push 전이라 미측정|CI.*미검증/i.test(line)) {
+        violations.push(`${path}:${lineNumber + 1}: stale CI verification claim remains`);
+      }
+      for (const prefix of HISTORICAL_PREFIXES) {
+        if (line.includes(prefix)) violations.push(`${path}:${lineNumber + 1}: deleted historical path remains: ${prefix}`);
+      }
+    }
+  }
+
+  const statusFiles = currentTrackedFiles().filter((path) => /^STATUS-[^/]+\.md$/.test(path));
+  for (const path of statusFiles) violations.push(`tracked root status file remains: ${path}`);
+
+  for (const prefix of HISTORICAL_PREFIXES) {
+    for (const path of currentTrackedFiles()) {
+      if (path.startsWith(prefix)) violations.push(`tracked historical file remains: ${path}`);
+    }
+  }
+
+  const gitignore = readFileSync(join(ROOT, '.gitignore'), 'utf8');
+  for (const entry of ['/output/', '/tmp/']) {
+    if (!gitignore.split('\n').includes(entry)) violations.push(`.gitignore is missing ${entry}`);
+  }
+
+  for (const fact of REQUIRED_CURRENT_FACTS) {
+    if (!readFileSync(join(ROOT, 'docs/작업-현황.md'), 'utf8').includes(fact)) {
+      violations.push(`docs/작업-현황.md: missing required current fact ${fact}`);
+    }
+  }
+
+  const deletedPathReferences = HISTORICAL_PREFIXES.map((prefix) => prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const referencePattern = new RegExp(`(?:${deletedPathReferences})`);
+  for (const path of currentTrackedFiles()) {
+    if (path === 'scripts/autonomy/product-identity.test.mjs' || HISTORICAL_PREFIXES.some((prefix) => path.startsWith(prefix))) continue;
+    if (/^(?:output|tmp)(?:\/|$)/.test(path)) continue;
+    if (!/\.(?:md|html|mjs|ts|tsx|js|jsx|json)$/.test(path)) continue;
+    const source = readFileSync(join(ROOT, path), 'utf8');
+    if (referencePattern.test(source)) violations.push(`${path}: stale deleted-document reference remains`);
+  }
+
+  return [...new Set(violations)];
+}
+
 test('current-product runtime uses the village namespace', () => {
   const violations = findIdentityViolations();
   assert.deepEqual(violations, [], `identity violations:\n${violations.join('\n')}`);
@@ -97,4 +191,9 @@ test('scanner rejects exact V4 player-facing JSX text', () => {
     'export function Fixture() { return <div>V4</div>; }',
   );
   assert.ok(violations.some((violation) => violation.includes('identifier V4')), 'expected exact V4 JSX text violation');
+});
+
+test('canonical documents preserve current facts and isolate historical material', () => {
+  const violations = findDocumentationViolations();
+  assert.deepEqual(violations, [], `documentation identity violations:\n${violations.join('\n')}`);
 });

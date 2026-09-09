@@ -1,8 +1,7 @@
 # CREDITS — 무료 에셋 출처 매니페스트
 
 이 파일은 `2d-game-forge` 모노레포의 모든 게임이 사용하는 외부 무료 에셋의 출처와
-라이선스를 모은다. cycle 164 (2026-05-27) 자율진화 시스템의 asset-investigator
-권고 #1 (`docs/superpowers/evolution/cycle-156-assets.md`) 으로 신설.
+라이선스를 모은다.
 
 ## 게임별 사용 현황
 
@@ -26,17 +25,15 @@ best-effort 수준 (cycle 156 asset-investigator 권고 #1). 신규 에셋 추�
 
 | 파일 | 라이선스 | 출처 | 비고 |
 |---|---|---|---|
-| `joseon_*.png` | 불명 (best-effort 회복 필요) | inflation-rpg 의 phase-1 이식 시점 도입 | cycle 164 시점 출처 미상. cycle 170+ 시각화 변경 시 교체 권장. |
+| `village_guardian_sheet.png` | 불명 (best-effort 회복 필요) | 현재 게임 정체성 정리에서 이름을 중립화한 기존 픽셀 자산 | 출처 회복 필요. 신규 에셋 추가 시 출처를 함께 기록한다. |
 | `chosun_battle_bg.png` | 동상 | 동상 | 동상 |
 | `pixel_battle_bg.png`, `pixel_tileset.png` | 동상 | 동상 | 동상 |
 | `monster_*.png` | 동상 | 동상 | 동상 |
-| `item_joseon.png` | 동상 | 동상 | 동상 |
+| `item_joseon.png` | 동상 | 기존 호환 자산 | 파일명은 저장·배포 호환을 위해 유지한다. |
 | `UI/*` (icon set) | 동상 | 동상 | cycle 170+ Lucide icon 으로 교체 검토 (asset-investigator 권고). |
 
-**리스크**: 출처 불명 이미지는 라이선스 추적 불가. 본 레포의 라이선스 정책 (
-`README.md` 의 MIT 또는 별도 명시) 과 호환되는지 case-by-case 검증 필요.
-cycle 170+ 의 점진 교체 또는 대체 다운로드를 권장 (asset-investigator 권고
-참조).
+**리스크**: 출처 불명 이미지는 라이선스 추적 불가. 본 레포의 라이선스 정책과
+호환되는지 자산별로 검증해야 한다.
 
 #### React 의존성 라이선스
 
@@ -58,12 +55,9 @@ cycle 170+ 의 점진 교체 또는 대체 다운로드를 권장 (asset-investi
   monetized — 자동 incompat).
 - **GPL / AGPL**: 코드 라이선스가 게임 전체로 전염 — `2d-game-forge` 의 모노레포
   정책과 충돌.
-- **출처 불명 / non-attributed**: 본 파일의 첫 finding (joseon_*.png 군집).
-  신규 도입 시점에 manifest 누락 부 분을 절대 0 으로 유지.
+- **출처 불명 / non-attributed**: `village_guardian_sheet.png`와 일부 기존 픽셀
+  자산. 신규 도입 시점에 manifest 누락을 만들지 않는다.
 
 ## 변경 이력
 
-- 2026-05-27 — Cycle 164 신설 (asset-investigator 권고 #1, surface = cycle 156).
-- 2026-05-28 — Cycle 208 minor: cycle 177 SeasonalModifier cosmetic wire 완성 후
-  attribution 관점에서 catalog 의 12 SeasonModifier 모두 *디자인 자산* 으로
-  분류 (이미지/오디오 외 가시화 axis). 라이선스 영향 0.
+에셋 출처가 확인되거나 파일명이 변경될 때 이 문서의 표를 갱신한다.

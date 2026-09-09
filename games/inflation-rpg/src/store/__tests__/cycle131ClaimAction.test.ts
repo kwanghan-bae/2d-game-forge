@@ -1,6 +1,4 @@
-// Cycle 131 — N5 manual claim 액션 단위 테스트.
-// PRD: docs/superpowers/evolution/cycle-131-prd.md F1.1 ~ F1.9 중 cycle129 회귀
-// 갱신본이 다루지 않는 좁은 케이스 (locked/unknown-id/immutable invariant) 만.
+// Manual claim action regression tests for locked, unknown-id, and immutable cases.
 
 import { describe, expect, it, beforeEach } from 'vitest';
 import { useGameStore, INITIAL_META } from '../gameStore';

@@ -1,8 +1,4 @@
-// Cycle 129 — N5 Live Ops mega-phase F2: 5 starter SeasonalModifier catalog
-//
-// PRD: docs/superpowers/evolution/cycle-125-prd.md §F2 의 5 modifier spec 직접
-// 회수. 모두 *data only* — cycle 129 시점에서 runtime consumer 0 (cycle 131
-// telemetry 에서 HeroDecisionAI / narrationVariants / SeasonPassScreen 에 wire).
+// Five starter SeasonalModifier catalog. Data-only definitions remain immutable.
 //
 // **cycle 17 atk-bound 봉인 회피 invariant**:
 //   - atk / hp / MAX_ARRIVALS / fieldLevelRange 어느 field 도 mutation 0
