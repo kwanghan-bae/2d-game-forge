@@ -176,6 +176,7 @@ export function getV4EpilogueEntry(heroName: string, now: number): SagaEntry {
 export function getAvailableStoryChoice(save: V4SaveEnvelope): StoryChoiceDefinition | null {
   const result = save.run.lastExpeditionResult;
   if (save.meta.unlockedRealms.includes('underworld')
+    || !save.meta.unlockedRealms.includes('deep_forest')
     || result?.realmId !== 'deep_forest'
     || result.outcome !== 'victory') return null;
   return {

@@ -101,6 +101,7 @@ describe('V4 deep forest story choice', () => {
     initial.createdAt = STORY_NOW;
     initial.updatedAt = STORY_NOW;
     initial.lastProcessedAt = STORY_NOW;
+    initial.meta.unlockedRealms.push('deep_forest');
     initial.run.lastExpeditionResult = deepForestVictoryResult();
     return withSaga(initial, getRealmVictoryEntry('deep_forest', initial.run.hero.name, STORY_NOW));
   }
@@ -117,6 +118,14 @@ describe('V4 deep forest story choice', () => {
 
     expect(getAvailableStoryChoice(forgedLog)).toBeNull();
     expect(chooseStoryChoice(forgedLog, 'protect_flame', STORY_NOW)).toMatchObject({ ok: false });
+  });
+
+  it('rejects a durable victory result when the deep forest was never unlocked', () => {
+    const inconsistent = createInitialV4Save(404);
+    inconsistent.run.lastExpeditionResult = deepForestVictoryResult();
+
+    expect(getAvailableStoryChoice(inconsistent)).toBeNull();
+    expect(chooseStoryChoice(inconsistent, 'protect_flame', STORY_NOW)).toMatchObject({ ok: false });
   });
 
   it('keeps the choice available after the victory saga entry is evicted and preserves the saga cap', () => {
