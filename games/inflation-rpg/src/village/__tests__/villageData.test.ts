@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AGENT_DEFINITIONS, FACILITY_DEFINITIONS, getVillageRealmName, REALM_DEFINITIONS } from '../data';
 
-describe('v4 launch data contract', () => {
+describe('Village launch data contract', () => {
   it('keeps the launch boundary at seven facilities, three agents, and three realms', () => {
     expect(Object.keys(FACILITY_DEFINITIONS)).toHaveLength(7);
     expect(Object.keys(AGENT_DEFINITIONS)).toEqual(['blacksmith', 'mudang', 'guide']);

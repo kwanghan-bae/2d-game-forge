@@ -23,7 +23,7 @@ vi.mock('../../services/MonetizationService', () => ({
   },
 }));
 
-describe('v4 monetization adapter', () => {
+describe('Village monetization adapter', () => {
   it('recognizes only the ad-free product during purchase restoration', () => {
     expect(hasVillageAdFreeEntitlement([])).toBe(false);
     expect(hasVillageAdFreeEntitlement([{ productId: 'crack_stones' }])).toBe(false);

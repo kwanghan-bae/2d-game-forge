@@ -3,7 +3,7 @@ import { completeFacilityTasks, startFacilityTask } from '../domain';
 import { createInitialVillageSave, loadVillageSave, persistVillageSave } from '../save';
 import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition, getVillageEquipmentName } from '../equipment';
 
-describe('v4 equipment progression', () => {
+describe('Village equipment progression', () => {
   it('applies equipment bonuses to the eternal hero and upgrades repeated crafts', () => {
     const initial = createInitialVillageSave(101);
     const first = startFacilityTask(initial, 'blacksmith', initial.createdAt, 'blacksmith');

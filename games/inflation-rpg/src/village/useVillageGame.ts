@@ -525,7 +525,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     setStorageStatus(persistVillageSave(next) ? 'valid' : 'unavailable');
     setOfflineSummary(null);
     setOfflineRewardDoubled(false);
-    setMessage('새 Village 저장을 시작했습니다. 기존 손상 저장은 복구 백업으로 보존되었습니다.');
+    setMessage('새 V4 저장을 시작했습니다. 기존 손상 저장은 복구 백업으로 보존되었습니다.');
   }, [storageStatus]);
 
   const closeOffline = useCallback(() => {

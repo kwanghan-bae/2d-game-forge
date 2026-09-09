@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { test } from 'node:test';
 
@@ -19,9 +19,37 @@ function walkFiles(directory) {
 
 function stripIdentifiers(text) {
   return text
-    .replace(/\/\/.*$/gm, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, '');
+    .replace(/\/\/.*$/gm, (match) => ' '.repeat(match.length))
+    .replace(/\/\*[\s\S]*?\*\//g, (match) => ' '.repeat(match.length))
+    .replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, (match) => ' '.repeat(match.length));
+}
+
+function isJsxTextToken(source, index) {
+  const lastOpen = source.lastIndexOf('<', index);
+  const lastClose = source.lastIndexOf('>', index);
+  if (lastClose <= lastOpen) return false;
+  const nextOpen = source.indexOf('<', index);
+  return nextOpen !== -1 && !source.slice(lastClose + 1, index).includes('{');
+}
+
+function findSourceIdentityViolations(relativePath, source) {
+  const violations = [];
+  const identifiers = stripIdentifiers(source);
+  const identityPattern = /\b(?:V4[A-Za-z0-9_]*|useV4[A-Za-z0-9_]*|v4[A-Z][A-Za-z0-9_]*)\b/g;
+  for (const match of identifiers.matchAll(identityPattern)) {
+    if (match[0] === 'V4' && isJsxTextToken(source, match.index)) continue;
+    violations.push(`${relativePath}: current-product identifier ${match[0]}`);
+  }
+
+  const sourceWithoutCompatibilityValues = source.replace(
+    /shin-ui-eternal-sponsor-v4-(?:save|metrics|rewarded-usage)-v1/g,
+    '',
+  );
+  for (const match of sourceWithoutCompatibilityValues.matchAll(/\bv4-[A-Za-z0-9_-]+/g)) {
+    violations.push(`${relativePath}: current-product CSS/test id or token ${match[0]}`);
+  }
+
+  return violations;
 }
 
 function findIdentityViolations() {
@@ -48,17 +76,7 @@ function findIdentityViolations() {
     if (file.endsWith('legacyCompatibility.ts')) continue;
 
     const source = readFileSync(file, 'utf8');
-    const identifiers = stripIdentifiers(source);
-    const identityPattern = /\b(?:V4[A-Za-z0-9_]+|useV4[A-Za-z0-9_]*|v4[A-Z][A-Za-z0-9_]*)\b/g;
-    for (const match of identifiers.matchAll(identityPattern)) {
-      violations.push(`${relativePath}: current-product identifier ${match[0]}`);
-    }
-
-    for (const match of source.matchAll(/(?:data-testid|className|class|--)(?:\s*[:=]\s*|\s+)[^\n'"`]*/g)) {
-      if (/\bv4-/.test(match[0])) {
-        violations.push(`${relativePath}: current-product CSS/test id ${match[0].trim()}`);
-      }
-    }
+    violations.push(...findSourceIdentityViolations(relativePath, source));
   }
 
   return [...new Set(violations)];
@@ -67,4 +85,17 @@ function findIdentityViolations() {
 test('current-product runtime uses the village namespace', () => {
   const violations = findIdentityViolations();
   assert.deepEqual(violations, [], `identity violations:\n${violations.join('\n')}`);
+});
+
+test('scanner rejects JSX identity strings and exact V4 identifiers', () => {
+  const violations = findSourceIdentityViolations(
+    'games/inflation-rpg/src/village/scanner-fixture.tsx',
+    `export const V4 = 'temporary fixture';
+     export function Fixture() {
+       return <div className="v4-shell" data-testid="v4-app" />;
+     }`,
+  );
+  assert.ok(violations.some((violation) => violation.includes('v4-shell')), 'expected v4-shell violation');
+  assert.ok(violations.some((violation) => violation.includes('v4-app')), 'expected v4-app violation');
+  assert.ok(violations.some((violation) => violation.includes('identifier V4')), 'expected exact V4 identifier violation');
 });

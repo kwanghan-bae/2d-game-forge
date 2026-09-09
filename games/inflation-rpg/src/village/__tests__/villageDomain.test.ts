@@ -42,7 +42,7 @@ import type { FacilityId, RealmId } from '../types';
 
 const HOUR = 60 * 60 * 1000;
 
-describe('v4 save and domain', () => {
+describe('Village save and domain', () => {
   it('creates an isolated launch save with the fixed content boundary', () => {
     vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
     const save = createInitialVillageSave(42);
