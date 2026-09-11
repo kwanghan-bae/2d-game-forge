@@ -12,6 +12,6 @@
 
 ## 자율 실행 명령
 
-미래의 명시적 “자율작업 시작해” 요청에는 `docs/OPERATIONS.md`의 실행 제어 사용법과 이어가기 계약을 적용한다. 루나 중심으로 진행하며 임의 모델 승격은 하지 않는다. `node scripts/autonomy/control.mjs status`부터 확인하고 현재 요청만 새 start의 승인 근거로 사용한다. 기본 통합 권한은 local이며 commit/push는 별도 승인 범위에 따른다.
+미래의 명시적 “자율작업 시작해” 요청에는 `docs/OPERATIONS.md`의 실행 제어 사용법과 이어가기 계약을 적용한다. 루나 중심으로 진행하며 임의 모델 승격은 하지 않는다. `node scripts/autonomy/control.mjs status`부터 확인하고 현재 요청만 승인 근거로 삼아 `authorize-start` 후 일회성 ID를 사용한 `start`를 순서대로 호출한다. 예약 메시지는 두 명령을 호출할 수 없다. 기본 통합 권한은 local이며 commit/push는 별도 승인 범위에 따른다.
 
-중단은 `node scripts/autonomy/control.mjs pause`를 먼저 실행하고 관련 실행·예약을 정지한다. 쓰기·위임·통합 직전 현재 generation/lease의 check가 필요하다. 예약 메시지는 start를 호출할 권한이 없다. 다른 작업공간의 제어 상태를 만들거나 잠금을 삭제해 우회하지 않는다.
+중단은 `node scripts/autonomy/control.mjs pause`를 먼저 실행하고 관련 실행·예약을 정지한다. 쓰기·위임·통합 직전 현재 generation/lease의 check가 필요하다. 예약 메시지는 `authorize-start`나 `start`를 호출할 권한이 없다. 다른 작업공간의 제어 상태를 만들거나 잠금을 삭제해 우회하지 않는다.
