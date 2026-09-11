@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
  */
 export const metadata: Metadata = {
   title: "신의 마을: 영원의 후원자",
-  description: "영원한 영웅을 후원하고 조선의 마을을 성장시키는 방치형 RPG",
+  description: "한국 설화 마을 판타지에서 영웅을 후원하고 신목 들판의 마을을 성장시키는 방치형 RPG",
 };
 
 /**

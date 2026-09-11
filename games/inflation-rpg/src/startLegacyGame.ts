@@ -5,8 +5,9 @@ import { useGameStore } from './store/gameStore';
 import { useCycleStoreV2 } from './overworld/cycleSliceV2';
 import { mountGame } from './mountGame';
 
-/** Explicit V3 entry point. It keeps the legacy store and save key untouched. */
+/** Explicit previous-version entry point. It keeps the legacy store and save key untouched. */
 export function StartLegacyGame(config: StartGameConfig): ForgeGameInstance {
+  void useGameStore.persist?.rehydrate?.();
   return mountGame(config, App, {
     legacyStore: useGameStore,
     cycleStore: useCycleStoreV2,

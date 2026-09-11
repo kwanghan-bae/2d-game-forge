@@ -13,7 +13,7 @@
     "test:autonomy": "node --test scripts/autonomy/*.test.mjs",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
-    "e2e": "turbo run e2e",
+    "e2e": "pnpm --filter @forge/dev-shell e2e && pnpm --filter @forge/game-inflation-rpg e2e",
     "circular": "madge --circular --extensions ts,tsx --ts-config tsconfig.madge.json apps packages games",
     "clean": "turbo run clean && rm -rf node_modules"
   },

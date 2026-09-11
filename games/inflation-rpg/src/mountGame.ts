@@ -27,7 +27,7 @@ export function mountGame(
 
   if (config.exposeTestHooks) {
     const w = window as unknown as Record<string, unknown>;
-    // A route transition can resolve an older legacy import after the V4
+    // A route transition can resolve an older legacy import after the current
     // root has already mounted. Do not leave its dev-only stores available to
     // the next route's browser tests.
     if (legacyTestHooks) {

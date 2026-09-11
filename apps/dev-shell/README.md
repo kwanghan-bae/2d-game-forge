@@ -18,7 +18,7 @@ hot-swap 으로 띄울 수 있다. 외부 출시되지 않는다 — 로컬 개�
 |---|---|
 | `src/lib/registry.shared.ts` | server/client가 함께 쓰는 data-only manifest 원본. slug·제목·asset 경로의 단일 출처 |
 | `src/lib/registry.server.ts` | server component가 사용. shared manifest만 복사해 Phaser가 server bundle로 끌려 들어가지 않도록 격리 |
-| `src/lib/registry.ts` | client component가 사용. shared manifest에 V4/legacy package subpath를 가리키는 `load` 동적 import 콜백을 연결 |
+| `src/lib/registry.ts` | client component가 사용. shared manifest에 current/legacy package subpath를 가리키는 `load` 동적 import 콜백을 연결 |
 
 추가로 `next.config.ts` 의 `transpilePackages` 에 게임 패키지명을 추가하고,
 `pnpm --filter @forge/dev-shell add @forge/game-<slug>@workspace:*` 로
@@ -40,8 +40,10 @@ hot-swap 으로 띄울 수 있다. 외부 출시되지 않는다 — 로컬 개�
 `exposeTestHooks: process.env.NODE_ENV !== 'production'` 으로 게이트한다.
 
 - 개발 모드 (`pnpm dev`): hook 노출. 공통 설정은 `window.gameConfig`로,
-  V3 legacy 회귀 테스트는 `window.__zustand_inflation_rpg_store__`와
-  `window.__cycle_store_v2__`로 검증한다. V4 경로에서는 legacy store를 지운다.
+  현재 게임 E2E는 `window.gameState`, `window.phaserGame` 등 전용 경계를
+  사용하고, 이전 버전 회귀 테스트는
+  `window.__zustand_inflation_rpg_store__`와 `window.__cycle_store_v2__`로
+  검증한다. 현재 게임 경로에서는 이전 버전 store를 지운다.
 - 프로덕션 빌드 (`next build`): hook 노출 안 함. 만약 dev-shell 을 외부
   배포하게 되면 (의도된 시나리오 아님) globals 가 노출되지 않는다.
 

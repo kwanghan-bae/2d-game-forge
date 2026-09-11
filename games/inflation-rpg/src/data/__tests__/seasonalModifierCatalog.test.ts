@@ -1,7 +1,4 @@
-// Cycle 129 — N5 Live Ops mega-phase F2: SeasonalModifier catalog test
-//
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F2.5 (atk/hp
-// 무변동 invariant 의 *data-level positive grep* 형식).
+// SeasonalModifier catalog regression test.
 
 import { describe, expect, it } from 'vitest';
 import {

@@ -1,7 +1,4 @@
-// Cycle 129 — N5 Live Ops mega-phase F2: deterministic seasonId 산출
-//
-// PRD: docs/superpowers/evolution/cycle-125-prd.md §F2 의 "동작" 직접 회수.
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F2.1, F2.2, EDGE.1, EDGE.5
+// Deterministic seasonId 산출.
 //
 // **server-less 정체성 (PRD §"컨셉 가드")**:
 //   - server fetch / sync 0

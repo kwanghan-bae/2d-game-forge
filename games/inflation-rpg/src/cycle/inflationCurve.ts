@@ -1,9 +1,8 @@
 /**
- * Sim-G — V1a inflation curve parametric exponents.
+ * Inflation curve parametric exponents.
  *
  * All level-dependent stat formulas live here so balance tuning touches one
- * file. See docs/superpowers/reports/2026-05-21-sim-g-v1a-report.md for
- * methodology, success bar, and tuning round history.
+ * file. Historical tuning details are preserved in Git history.
  */
 
 export const CURVE = {

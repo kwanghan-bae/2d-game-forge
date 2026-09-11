@@ -458,8 +458,8 @@ pnpm --filter @forge/game-<slug> exec cap sync
 ## 14. Canonical forge-app 디렉토리 구조
 
 새 게임 워크스페이스 (`games/<new-game>/`) 는 반드시 다음 최소 구조를 가진다.
-이 계약은 [Forge-UI Opus 재설계 스펙](./superpowers/specs/2026-04-22-forge-ui-opus-redesign-spec.md) Layer C 가 정의하며,
-`@forge/create-game` CLI (미구현) 가 장래에 이 구조를 자동 생성한다.
+이 구조는 현재 CONTRIBUTING 계약으로 관리하며, `@forge/create-game` CLI
+(미구현)가 장래에 자동 생성할 수 있다.
 
 ```
 games/<new-game>/
@@ -577,8 +577,8 @@ inflation-rpg uses three monetization channels:
 - **원스토어 IAP** (한국 마켓): **local Capacitor plugin** at
   `games/inflation-rpg/native/onestore-iap/` (3-rule: never promoted to
   `packages/*` until a 2nd game uses 원스토어). Kotlin currently ships as a
-  **compile-only stub** — real V21 PurchaseClient wire deferred to Phase 5a-1
-  (`docs/superpowers/specs/2026-05-16-phase-5a-1-onestore-native-wire-design.md`).
+  **compile-only stub** — real V21 PurchaseClient wire is deferred until a separately
+  approved native implementation task.
 
 - **개인정보처리방침**: GitHub Pages at `docs/privacy-policy/` (host:
   `https://kwanghan-bae.github.io/2d-game-forge/privacy-policy/ko/`). Edit
@@ -589,8 +589,8 @@ For new games using monetization, **copy the plugin scaffolding pattern locally
 to the game's `native/` dir** — do NOT promote `onestore-iap/` to a shared
 package. The 3-rule applies.
 
-For Google Play / App Store cuts (Phase 5b/5c), see future specs at
-`docs/superpowers/specs/2026-*-phase-5b-*.md` / `phase-5c-*.md`.
+For Google Play / App Store work, add an approved task with current acceptance
+criteria and verification evidence before changing the native release flow.
 
 ## §16 한글 우선 작업 기록
 

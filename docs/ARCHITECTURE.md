@@ -3,9 +3,8 @@
 이 문서는 2d-game-forge 의 구조 결정과 그 이유를 설명한다. "왜 이렇게
 나누었는가"를 알아야 새 코드를 어디에 두어야 할지 판단할 수 있다.
 
-상세 설계 의도와 토론 흐름은
-[설계 스펙](superpowers/specs/2026-04-17-2d-game-forge-initial-design.md)에
-박제되어 있다. 이 문서는 그 결과를 압축한 운영 가이드다.
+상세 설계 의도와 토론 흐름은 Git 이력에 보존되어 있다. 이 문서는 현재 구조를
+압축한 운영 가이드다.
 
 forge 는 **2D 게임 프레임워크**다. 특정 장르나 테마에 묶이지 않는다. 4계층
 케이크의 각 슬롯은 새 패키지를 추가하는 방식으로 확장된다 — 새 장르 코어
@@ -121,15 +120,15 @@ pnpm dev
 apps/dev-shell (Next.js, http://localhost:3000)
   ↓
 /                       → 게임 셀렉터
-/games/inflation-rpg    → 신의 마을: 영원의 후원자 V4 동적 로드
-/games/inflation-rpg-legacy → 조선 인플레이션 RPG V3 legacy 동적 로드
+/games/inflation-rpg    → 신의 마을: 영원의 후원자 동적 로드
+/games/inflation-rpg-legacy → 신의 마을: 옛 모험 동적 로드 (내부 호환 식별자: 조선 인플레이션 RPG V3)
 /games/<future-slug>    → 추가 게임
 ```
 
 - 한 개의 dev 서버가 모든 게임을 hot-swap 한다.
 - 게임 인스턴스는 라우트 이동 시 `destroy(true)`로 정리된다.
-- E2E hook은 entrypoint별로 필요한 경우에만 활성화된다. V3 legacy의 cycle store
-  hook과 V4의 DOM/localStorage 검증 모두 `exposeTestHooks` 게이트를 따른다.
+- E2E hook은 entrypoint별로 필요한 경우에만 활성화된다. 이전 버전의 cycle store
+  hook과 현재 게임의 DOM/localStorage 검증 모두 `exposeTestHooks` 게이트를 따른다.
 - `process.env.NODE_ENV !== 'production'` 일 때만 hook 노출.
 
 ### 릴리스 모드 (게임별 독립 앱)
@@ -169,9 +168,10 @@ export function StartLegacyGame(config: StartGameConfig): ForgeGameInstance { ..
 
 1. 게임 코드는 `window.location` 같은 전역 경로를 가정하지 않는다.
 2. 모든 에셋 경로는 `config.assetsBasePath` 로부터 계산한다.
-3. entrypoint별 저장 키도 고유해야 한다. `inflation-rpg` V4는
-   `'shin-ui-eternal-sponsor-v4-save-v1'`, V3 legacy는 upstream 키
-   `'korea_inflation_rpg_save'`를 사용하며 서로 자동 import·overwrite하지 않는다.
+3. entrypoint별 저장 키도 고유해야 한다. 현재 게임은
+   `'shin-ui-eternal-sponsor-save-v2'`를 사용하고, 격리된 호환 계층만
+   격리된 호환 키 `'shin-ui-eternal-sponsor-v4-save-v1'`와 upstream 키 `'korea_inflation_rpg_save'`를
+   읽는다. 서로 자동 import·overwrite하지 않는다.
 4. E2E hook 은 `config.exposeTestHooks` 플래그 아래에서만 활성화된다.
 
 ## 5. assetsBasePath 흐름
@@ -180,7 +180,7 @@ export function StartLegacyGame(config: StartGameConfig): ForgeGameInstance { ..
 
 | 모드 | URL 패턴 | 어떻게 서빙되나 |
 |---|---|---|
-| 포털(V4/legacy) | `/games/inflation-rpg/assets/...` | `apps/dev-shell/public/games/inflation-rpg/assets` 가 `games/inflation-rpg/public/assets` 로 symlink |
+| 포털(현재 게임/legacy) | `/games/inflation-rpg/assets/...` | `apps/dev-shell/public/games/inflation-rpg/assets` 가 `games/inflation-rpg/public/assets` 로 symlink |
 | 릴리스 | `/assets/...` | `games/inflation-rpg/public/assets` 를 Next 가 그대로 정적 서빙 |
 
 이 차이를 게임 코드가 알 필요 없도록, 다음 흐름이 만들어진다:
@@ -228,15 +228,16 @@ SSR 단계에서 실패한다.
 
 ## 8. 알려진 호환성 제약
 
-- **V3 upstream 호환 키** — legacy entrypoint의 `'korea_inflation_rpg_save'`
-  localStorage 키와 `com.korea.inflationrpg` Capacitor appId가 그대로 살아있다.
-  V4는 `'shin-ui-eternal-sponsor-v4-save-v1'`로 분리되어 있다. 이는 삭제할
-  잔재가 아니라 V3 업데이트 호환을 위한 고정 계약이며, 변경 시 migration과
-  native 앱 업데이트 경로를 함께 설계해야 한다.
+- **격리된 이전 버전 호환 표면** — legacy entrypoint의
+  `'korea_inflation_rpg_save'` localStorage 키와 `com.korea.inflationrpg`
+  Capacitor appId가 그대로 살아있다. 현재 게임의 canonical 저장은
+  `'shin-ui-eternal-sponsor-save-v2'`이며, 이전 세대의
+  이전 저장 키 `'shin-ui-eternal-sponsor-v4-save-v1'`와 upstream 키는
+  `legacyCompatibility.ts`에서만 읽기 전용으로 격리한다. 이 호환 계약을
+  바꾸려면 migration과 native 앱 업데이트 경로를 함께 설계해야 한다.
 
-## 9. 더 자세한 의도
+## 9. 더 자세한 운영 기준
 
-- 초기 설계 스펙: `docs/superpowers/specs/2026-04-17-2d-game-forge-initial-design.md`
-- Phase 0 구현 plan: `docs/superpowers/plans/2026-04-17-phase0-bootstrap.md`
-- Phase 1 구현 plan: `docs/superpowers/plans/2026-04-17-phase1-inflation-rpg-port.md`
+- 제품 범위: [PRODUCT.md](PRODUCT.md)
+- 현재 상태와 검증 한계: [작업-현황.md](작업-현황.md)
 - 새 게임 추가 가이드: [CONTRIBUTING.md](CONTRIBUTING.md)

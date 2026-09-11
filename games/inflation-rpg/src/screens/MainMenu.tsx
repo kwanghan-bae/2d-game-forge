@@ -51,7 +51,7 @@ export function MainMenu() {
           [data-testid="mm-claim-pulse-dot"] { animation: none !important; }
         }
       `}</style>
-      <h1 style={{ marginBottom: 8 }}>조선 인플레이션 RPG</h1>
+      <h1 style={{ marginBottom: 8 }}>신의 마을: 옛 모험</h1>
       <p style={{ opacity: 0.7, marginBottom: 8 }}>신이 되어 용사의 일대기를 후원하라</p>
       {musing && (
         <p data-testid="idle-musing" style={{ fontSize: 12, opacity: 0.6, fontStyle: 'italic', marginBottom: 12, minHeight: 18, transition: 'opacity 0.5s' }}>

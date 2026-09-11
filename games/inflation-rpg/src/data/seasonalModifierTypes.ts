@@ -1,7 +1,4 @@
-// Cycle 129 — N5 Live Ops mega-phase F2: SeasonalModifier 자료구조
-//
-// PRD: docs/superpowers/evolution/cycle-125-prd.md §F2
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F2
+// SeasonalModifier 자료구조.
 //
 // 본 cycle scope = 자료 catalog + seasonId pure 산출 + 5 modifier def + tests.
 // 실제 HeroDecisionAI / narrative engine wire 는 cycle 131+ (telemetry) carry-over.

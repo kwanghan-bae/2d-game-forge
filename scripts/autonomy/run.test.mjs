@@ -12,7 +12,15 @@ const runner = fileURLToPath(new URL('./run.mjs', import.meta.url));
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'forge-autonomy-run-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const state = control(dir, 'start', { approval: 'test-user-command', expected: 'initial' });
+  const authorization = control(dir, 'authorize-start', {
+    approval: 'test-user-command',
+    expected: 'initial',
+  });
+  const state = control(dir, 'start', {
+    approval: 'test-user-command',
+    authorization: authorization.startAuthorization.id,
+    expected: 'initial',
+  });
   const claimed = control(dir, 'claim', {
     generation: state.generation,
     owner: 'test-owner',

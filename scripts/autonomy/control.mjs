@@ -17,6 +17,7 @@ import { parseArgs } from 'node:util';
 const statuses = ['paused', 'running', 'draining', 'blocked', 'completed'];
 const permissions = ['local', 'commit', 'push'];
 const leaseMs = 30 * 60 * 1000;
+const startAuthorizationMs = 10 * 60 * 1000;
 const nonEmpty = (value) => typeof value === 'string' && value.trim().length > 0;
 
 function requireValue(value, name) {
@@ -47,10 +48,15 @@ export function readState(dir) {
       finishedTasks: 0,
       nonImproving: 0,
       lease: null,
+      startAuthorization: null,
       lastResult: null,
       reason: 'Explicit user start required',
     };
-  const state = JSON.parse(readFileSync(path, 'utf8'));
+  const stored = JSON.parse(readFileSync(path, 'utf8'));
+  const state = {
+    ...stored,
+    startAuthorization: stored.startAuthorization === undefined ? null : stored.startAuthorization,
+  };
   if (
     !state ||
     state.schemaVersion !== 1 ||
@@ -64,6 +70,16 @@ export function readState(dir) {
     !(state.maxTasks === null || (Number.isSafeInteger(state.maxTasks) && state.maxTasks > 0)) ||
     !(state.approval === null || nonEmpty(state.approval)) ||
     (['running', 'draining'].includes(state.status) && !nonEmpty(state.approval)) ||
+    !(
+      state.startAuthorization === null ||
+      (state.startAuthorization &&
+        !Array.isArray(state.startAuthorization) &&
+        nonEmpty(state.startAuthorization.id) &&
+        nonEmpty(state.startAuthorization.approval) &&
+        nonEmpty(state.startAuthorization.generation) &&
+        Number.isSafeInteger(state.startAuthorization.expiresAt) &&
+        state.startAuthorization.expiresAt > 0)
+    ) ||
     !(
       state.lease === null ||
       (state.lease &&
@@ -101,11 +117,36 @@ function stop(state, status, reason) {
 }
 
 function transition(state, command, options) {
-  if (command === 'start') {
+  if (command === 'authorize-start') {
     requireValue(options.approval, 'approval reference');
     if (options.expected !== state.generation)
       throw new Error('Expected generation does not match');
+    if (['running', 'draining'].includes(state.status))
+      throw new Error('Cannot authorize start while execution is active');
+    return {
+      ...state,
+      startAuthorization: {
+        id: randomUUID(),
+        approval: options.approval,
+        generation: state.generation,
+        expiresAt: Date.now() + startAuthorizationMs,
+      },
+    };
+  }
+  if (command === 'start') {
+    requireValue(options.approval, 'approval reference');
+    const authorization = requireValue(options.authorization, 'start authorization');
+    if (options.expected !== state.generation)
+      throw new Error('Expected generation does not match');
     if (['running', 'draining'].includes(state.status)) throw new Error('Run already active');
+    if (!state.startAuthorization || authorization !== state.startAuthorization.id)
+      throw new Error('Start authorization is invalid or already consumed');
+    if (state.startAuthorization.generation !== state.generation)
+      throw new Error('Start authorization generation is stale');
+    if (state.startAuthorization.approval !== options.approval)
+      throw new Error('Start approval does not match authorization');
+    if (Date.now() >= state.startAuthorization.expiresAt)
+      throw new Error('Start authorization expired');
     const integration = options.integration ?? 'local';
     if (!permissions.includes(integration)) throw new Error('Unknown integration permission');
     const maxTasks = options['max-tasks'] === undefined ? null : Number(options['max-tasks']);
@@ -121,6 +162,7 @@ function transition(state, command, options) {
       finishedTasks: 0,
       nonImproving: 0,
       lease: null,
+      startAuthorization: null,
       reason: 'User-approved run',
       lastResult: null,
     };
@@ -189,8 +231,8 @@ function transition(state, command, options) {
 export function control(dir, command, options = {}) {
   if (command === 'status') return readState(dir);
   if (command === 'check') return checkState(readState(dir), options);
-  if (!['start', 'pause', 'claim', 'renew', 'finish', 'block'].includes(command))
-    throw new Error('Unknown command');
+  if (!['authorize-start', 'start', 'pause', 'claim', 'renew', 'finish', 'block'].includes(command))
+    throw new Error('Unknown command; use --help for commands and options');
   mkdirSync(dir, { recursive: true });
   const lockPath = join(dir, 'state.lock');
   // No automatic stale-lock removal: an uncertain writer must not be duplicated.
@@ -210,9 +252,14 @@ export function control(dir, command, options = {}) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
+    const usage =
+      'Usage: control.mjs status|authorize-start|start|pause|claim|check|renew|finish|block [options]\n' +
+      'Options: --state-dir --approval --authorization --expected --generation --owner --lease --task\n' +
+      '         --integration --max-tasks --mode --action --outcome --evidence --reason';
     const names = [
       'state-dir',
       'approval',
+      'authorization',
       'expected',
       'generation',
       'owner',
@@ -228,12 +275,18 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     ];
     const { values, positionals } = parseArgs({
       allowPositionals: true,
-      options: Object.fromEntries(names.map((name) => [name, { type: 'string' }])),
+      options: {
+        ...Object.fromEntries(names.map((name) => [name, { type: 'string' }])),
+        help: { type: 'boolean', short: 'h' },
+      },
     });
-    if (positionals.length !== 1)
-      throw new Error('Use status|start|pause|claim|check|renew|finish|block');
-    const state = control(values['state-dir'] ?? stateDirectory(), positionals[0], values);
-    process.stdout.write(JSON.stringify({ ok: true, state }) + '\n');
+    if (values.help) {
+      process.stdout.write(`${usage}\n`);
+    } else {
+      if (positionals.length !== 1) throw new Error(usage);
+      const state = control(values['state-dir'] ?? stateDirectory(), positionals[0], values);
+      process.stdout.write(JSON.stringify({ ok: true, state }) + '\n');
+    }
   } catch (error) {
     process.stdout.write(JSON.stringify({ ok: false, error: error.message }) + '\n');
     process.exitCode = 1;
