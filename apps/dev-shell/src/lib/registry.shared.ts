@@ -13,9 +13,4 @@ export const GAME_MANIFESTS: readonly GameManifestValue[] = [
     title: '신의 마을: 영원의 후원자',
     assetsBasePath: '/games/inflation-rpg/assets',
   },
-  {
-    slug: 'inflation-rpg-legacy',
-    title: '신의 마을: 옛 모험',
-    assetsBasePath: '/games/inflation-rpg/assets',
-  },
 ];

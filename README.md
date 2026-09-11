@@ -13,8 +13,9 @@
 
 ## 현재 상태
 
-현재 제품은 **신의 마을: 영원의 후원자**이며 이전 제품 **신의 마을: 옛 모험**은 legacy 호환 경로로 보존한다.
-자율 개발은 기본 중단이며, 실제 실행 범위와 검증 상태는 현재 상태 문서와 실행 제어기에서 확인한다.
+현재 제품은 출시 전인 **신의 마을: 영원의 후원자** 하나다. 외부 사용자 저장
+호환 계약은 아직 없으며, 자율 개발은 기본 중단이다. 실제 실행 범위와 검증
+상태는 현재 상태 문서와 실행 제어기에서 확인한다.
 
 [문서 안내](docs/README.md)에서 시작한다. [현재 상태](docs/작업-현황.md)에 검증 한계를 기록한다.
 이전 계획·cycle은 현재 실행 지시가 아니며 Git 이력에서 필요할 때만 확인한다.
@@ -33,8 +34,7 @@ pnpm dev
 ```
 
 브라우저에서 `http://localhost:3000` 을 열면 게임 셀렉터가 보인다.
-기본 제품인 **신의 마을: 영원의 후원자**를 누르면 현재 게임이 부팅된다.
-이전 버전은 **신의 마을: 옛 모험**의 `inflation-rpg-legacy` 경로로 별도 실행할 수 있다.
+**신의 마을: 영원의 후원자**를 누르면 현재 게임이 부팅된다.
 
 추가 명령:
 
@@ -101,7 +101,7 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
 ├── apps/
 │   └── dev-shell/            # Next.js 포털. /games/[slug] 라우트로 게임 로드
 ├── games/
-│   └── inflation-rpg/        # 첫 번째 게임 (korea-inflation-rpg 이식)
+│   └── inflation-rpg/        # 현재 게임 워크스페이스
 ├── packages/
 │   └── 2d-core/              # 공용 게임 계약·세이브 envelope·test hooks·UI token
 ├── docs/
@@ -130,15 +130,13 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
 - [games/inflation-rpg/README.md](games/inflation-rpg/README.md) — inflation-rpg
   게임 빌드·디버그.
 
-## 격리된 호환 표면
+## 제품 식별자
 
-제품 언어와 현재 namespace는 중립화했지만, 배포·저장 호환을 위해 다음 식별자는 유지한다.
-
-- 게임 workspace/package와 공개 경로: `games/inflation-rpg`, `@forge/game-inflation-rpg`, `/games/inflation-rpg`
-- 이전 버전 경로: `/games/inflation-rpg-legacy`, `StartLegacyGame()`
-- 이전 버전의 내부 호환 식별자 `조선 인플레이션 RPG V3`는 표시 제품명이 아니다. 표시명은 `신의 마을: 옛 모험`이다.
-- Capacitor `appId`: `com.korea.inflationrpg`
-- 이전 버전 저장 키와 현재 게임의 legacy migration 키: 기존 문자열을 읽기 전용으로 보존한다.
+- 게임 workspace/package와 공개 경로: `games/inflation-rpg`,
+  `@forge/game-inflation-rpg`, `/games/inflation-rpg`
+- Capacitor Android `appId`: `com.shinui.eternalsponsor`
+- 현재 canonical 저장 키: `shin-ui-eternal-sponsor-save-v2`
+- 출시 전이므로 과거 제품 경로·저장 키·세대명은 실행·문서 계약으로 제공하지 않는다.
 
 ## 라이선스
 

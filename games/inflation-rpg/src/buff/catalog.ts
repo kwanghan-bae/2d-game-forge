@@ -11,7 +11,7 @@ export interface BuffDef {
   isOneShot?: boolean;
 }
 
-/** Master V3 spec §5.2. Magnitude 는 V3-G balance pass 까지 placeholder. */
+/** Master balance spec §5.2. Magnitude 는 balance pass 까지 placeholder. */
 export const BUFF_CATALOG: BuffDef[] = [
   { id: 'move_speed',     nameKR: '이동의 가호', descKR: '이동속도 +0.5%',                      baseCost: 100,  costMul: 1.15, perLevel:  0.005 },
   { id: 'drop_chance',    nameKR: '풍요의 손길', descKR: '장비획득 확률 +0.3%',                 baseCost: 150,  costMul: 1.15, perLevel:  0.003 },

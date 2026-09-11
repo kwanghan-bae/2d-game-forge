@@ -7,8 +7,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./game": "./src/startGame.ts",
-    "./legacy": "./src/startLegacyGame.ts"
+    "./game": "./src/startGame.ts"
   },
   "scripts": {
     "dev": "next dev --port 3100",
@@ -20,10 +19,7 @@
     "e2e": "playwright test",
     "cap:sync": "cap sync",
     "build:ios": "next build && cap sync ios && cap open ios",
-    "build:android": "next build && cap sync android && cap open android",
-    "balance:sweep": "tsx tools/balance-sweep-cli.ts",
-    "sim:cycle": "tsx scripts/sim-cycle.ts",
-    "sim:v3": "tsx scripts/sim-cycle-v2.ts"
+    "build:android": "next build && cap sync android && cap open android"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.0.0",
@@ -32,18 +28,10 @@
     "@capacitor/ios": "^8.0.2",
     "@forge/core": "workspace:^",
     "@forge/inflation-rpg-native-onestore-iap": "workspace:*",
-    "@preact/signals-react": "^3.10.0",
-    "bignumber.js": "^9.3.1",
-    "clsx": "^2.1.1",
-    "easystarjs": "^0.4.4",
     "galmuri": "^2.40.3",
-    "lucide-react": "^0.400.0",
     "next": "16.1.1",
-    "phaser": "^3.90.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "zod": "^4.3.6",
-    "zustand": "^5.0.0"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",
@@ -55,8 +43,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^4.0.0",
-    "@vitejs/plugin-react-oxc": "^0.4.3",
+    "@vitejs/plugin-react": "^6.1.1",
     "@vitest/coverage-v8": "^4.0.16",
     "happy-dom": "^20.9.0",
     "jsdom": "^27.4.0",

@@ -13,7 +13,7 @@
 
 승인된 제품 범위 안의 구현·재현 가능한 버그·밸런스 실험은 매번 사용자에게 묻지 않는다. 보수적이고 되돌릴 수 있는 선택은 이유를 남기고 진행한다. 제품 방향 확대, 비용·외부 서비스 도입, 저장 호환성 파괴, 데이터 삭제, 보호 파일 변경은 별도 승인이 필요하다. commit·push·merge도 해당 실행에 부여된 권한 안에서만 한다.
 
-보호 대상: `games/inflation-rpg/src/systems/paradoxSpiral.ts`, `paradoxSpiral.test.ts`, `paradoxSpiralBalance.test.ts`(모두 같은 디렉터리). V3 기존 변경과 테스트를 보존하고, 사용자 `output/`, `tmp/`를 수정·커밋하지 않는다.
+보호 대상: `games/inflation-rpg/src/systems/paradoxSpiral.ts`, `paradoxSpiral.test.ts`, `paradoxSpiralBalance.test.ts`(모두 같은 디렉터리). 이 세 파일의 기존 변경과 테스트를 보존하고, 사용자 `output/`, `tmp/`를 수정·커밋하지 않는다.
 
 ## 루나 중심 역할 계약
 

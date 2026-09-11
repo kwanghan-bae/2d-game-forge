@@ -20,15 +20,12 @@ import {
 } from './domain';
 import {
   createInitialVillageSave,
-  importLegacyHeroSnapshot,
   persistVillageSave,
   readVillageSave,
   simulateOfflineProgress,
   startFreshVillageSave,
   Village_LIVE_REFRESH_GAP_MS,
 } from './save';
-import { useGameStore } from '../store/gameStore';
-import type { HeroSnapshot } from '../hero/HeroEntity';
 import { Village_DAILY_REWARDED_LIMIT, type VillageMonetizationAdapter, type VillageRewardedPlacement } from './monetization';
 import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, VillagePolicy, VillageSaveEnvelope, VillageSettings } from './types';
 import { Village_MAX_INTERVENTION_CHARGES, type StoryChoiceOptionId } from './types';
@@ -116,7 +113,6 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
   const offlineRewardClaimInFlight = useRef(false);
   const instantTaskInFlight = useRef(new Set<FacilityId>());
   const interventionChargeInFlight = useRef(false);
-  const legacyImportInFlight = useRef<Promise<void> | null>(null);
   const adFreePurchaseInFlight = useRef(false);
   const [adFreePurchasePending, setAdFreePurchasePending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -503,39 +499,6 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     else setMessage(result.error);
   }, [commit]);
 
-  const importLegacyHero = useCallback(() => {
-    if (legacyImportInFlight.current) return legacyImportInFlight.current;
-    const importPromise = (async () => {
-      if (saveRef.current.run.expedition) {
-        setMessage('원정 중에는 영웅 기록을 바꿀 수 없습니다. 귀환 후 다시 시도해 주세요.');
-        return;
-      }
-      try {
-        await useGameStore.persist?.rehydrate?.();
-      } catch {
-        // A broken legacy store behaves like an unavailable import source.
-      }
-      if (!mountedRef.current) return;
-      const legacySnapshot = useGameStore.getState().run?.heroSnapshot;
-      if (!legacySnapshot) {
-        setMessage('가져올 기존 영웅 기록이 없습니다. 이전 모험에서 영웅을 먼저 후원하세요.');
-        return;
-      }
-      const next = importLegacyHeroSnapshot(saveRef.current, legacySnapshot as HeroSnapshot, Date.now());
-      commit(next, '기존 영웅 기록을 명시적으로 가져왔습니다.');
-    })();
-    legacyImportInFlight.current = importPromise;
-    void importPromise.then(
-      () => {
-        if (legacyImportInFlight.current === importPromise) legacyImportInFlight.current = null;
-      },
-      () => {
-        if (legacyImportInFlight.current === importPromise) legacyImportInFlight.current = null;
-      },
-    );
-    return importPromise;
-  }, [commit]);
-
   const startFreshSave = useCallback(() => {
     if (storageStatus !== 'invalid') return;
     const next = startFreshVillageSave(undefined, Date.now());
@@ -545,7 +508,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     setStorageStatus(persistVillageSave(next) ? 'valid' : 'unavailable');
     setOfflineSummary(null);
     setOfflineRewardDoubled(false);
-    setMessage('새 현재 게임 저장을 시작했습니다. 기존 손상 저장은 복구 백업으로 보존되었습니다.');
+    setMessage('새 현재 게임 저장을 시작했습니다. 손상된 현재 게임 데이터는 복구 백업으로 보존되었습니다.');
   }, [storageStatus]);
 
   const closeOffline = useCallback(() => {
@@ -592,7 +555,6 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     confirmRun,
     confirmUnlock,
     upgrade,
-    importLegacyHero,
     startFreshSave,
     closeOffline,
     closeMessage,

@@ -1,11 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { HeroSnapshot } from '../../hero/HeroEntity';
 import { HeroLifecycle } from '../../hero/HeroLifecycle';
 import {
   createInitialVillageSave,
-  importLegacyHeroSnapshot,
   loadVillageSave,
-  migrateLegacyHeroSnapshot,
   persistVillageSave,
   simulateOfflineProgress,
 } from '../save';
@@ -86,9 +83,10 @@ describe('Village save and domain', () => {
     persistVillageSave(save, fakeStorage);
     expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: 2, run: { hero: { name: save.run.hero.name } } });
 
-    const { lastExpeditionResult: _legacyResult, ...legacyRun } = save.run;
-    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({ ...save, run: legacyRun }));
-    expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: 2, run: { expedition: null } });
+    const { lastExpeditionResult: _removedResult, ...withoutCurrentResult } = save.run;
+    void _removedResult;
+    storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({ ...save, run: withoutCurrentResult }));
+    expect(loadVillageSave(fakeStorage)).toBeNull();
 
     storage.set('shin-ui-eternal-sponsor-save-v2', JSON.stringify({ ...save, meta: { ...save.meta, currencies: { ...save.meta.currencies, gold: 'broken' } } }));
     expect(loadVillageSave(fakeStorage)).toBeNull();
@@ -573,233 +571,6 @@ describe('Village save and domain', () => {
         }),
       },
     });
-  });
-
-  it('maps a legacy hero snapshot without sharing the legacy store shape', () => {
-    const source = {
-      name: '홍길동', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,
-      exp: 4, hp: 900, hpMax: 1000, atk: 250, atkBase: 200, hpBase: 800,
-      actionCount: 492, rejuvenationCount: 1, gridX: 2, gridY: 3, equipment: ['w-knife'],
-      personality: { courage: 1, curiosity: 0, greed: -1, compassion: 1, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 99,
-      def: 80, defBase: 70, critRateBase: 0.08,
-    } as unknown as HeroSnapshot;
-
-    const hero = migrateLegacyHeroSnapshot(source);
-    expect(hero).toMatchObject({
-      name: '홍길동', age: 37, level: 12, hp: 900, atk: 250, def: 80,
-      defBase: 70, critRateBase: 0.08, realmId: 'sacred_fields',
-    });
-    expect(hero).not.toHaveProperty('personality');
-
-    const sanitized = migrateLegacyHeroSnapshot({ ...source, name: '   ', emoji: '  ' });
-    expect(sanitized.name).toBe('이름 없는 영웅');
-    expect(sanitized.emoji).toBe('⚔️');
-
-    const destination = createInitialVillageSave(1);
-    const imported = importLegacyHeroSnapshot(destination, source, 1234);
-    expect(imported.run.hero.name).toBe('홍길동');
-    expect(imported.meta.sagaEntries[0]?.title).toBe('기존 영웅 기록 가져오기');
-    const importedAgain = importLegacyHeroSnapshot(imported, source, 1234);
-    expect(importedAgain.meta.sagaEntries[0]?.id).not.toBe(imported.meta.sagaEntries[0]?.id);
-    imported.meta.currencies.gold = 0;
-    expect(importedAgain.meta.currencies.gold).toBe(100);
-    expect(imported.meta.currencies.gold).not.toBe(destination.meta.currencies.gold);
-    expect(destination.meta.currencies.gold).toBe(100);
-    expect(imported.meta.currencies.gold).not.toBe(importedAgain.meta.currencies.gold);
-
-    const staleDestination = createInitialVillageSave(2);
-    staleDestination.lastProcessedAt = staleDestination.createdAt + HOUR;
-    staleDestination.updatedAt = staleDestination.lastProcessedAt;
-    const importedAfterClockRollback = importLegacyHeroSnapshot(staleDestination, source, staleDestination.createdAt + 1_000);
-    expect(importedAfterClockRollback.updatedAt).toBe(staleDestination.lastProcessedAt);
-    expect(importedAfterClockRollback.meta.sagaEntries[0]?.createdAt).toBe(staleDestination.lastProcessedAt);
-
-    const importedWithUnsafeClock = importLegacyHeroSnapshot(destination, source, Number.MAX_VALUE);
-    expect(importedWithUnsafeClock.updatedAt).toBe(destination.updatedAt);
-    expect(importedWithUnsafeClock.meta.sagaEntries[0]?.createdAt).toBe(destination.updatedAt);
-
-    const fullSagaDestination = createInitialVillageSave(3);
-    fullSagaDestination.meta.sagaEntries = Array.from({ length: Village_MAX_SAGA_ENTRIES }, (_, index) => ({
-      ...fullSagaDestination.meta.sagaEntries[0]!,
-      id: `existing-${index}`,
-      title: `기존 기록 ${index}`,
-    }));
-    const boundedImport = importLegacyHeroSnapshot(fullSagaDestination, source, fullSagaDestination.updatedAt + 1_000);
-    expect(boundedImport.meta.sagaEntries).toHaveLength(Village_MAX_SAGA_ENTRIES);
-    expect(boundedImport.meta.sagaEntries[0]?.title).toBe('기존 영웅 기록 가져오기');
-    expect(boundedImport.meta.sagaEntries.at(-1)?.id).toBe(`existing-${Village_MAX_SAGA_ENTRIES - 2}`);
-  });
-
-  it('preserves the destination hero action while explicitly importing a legacy hero', () => {
-    const destination = createInitialVillageSave(118);
-    destination.meta.unlockedRealms.push('deep_forest');
-    destination.run.hero.realmId = 'deep_forest';
-    const started = startFacilityTask(destination, 'training', destination.createdAt, null);
-    expect(started.ok).toBe(true);
-    if (!started.ok) return;
-
-    const imported = importLegacyHeroSnapshot(started.save, {
-      name: '훈련 중인 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
-      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
-      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
-      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
-    } as unknown as HeroSnapshot, destination.createdAt + 1_000);
-
-    expect(imported.run.hero.currentAction).toBe('train');
-    expect(imported.run.hero.realmId).toBe('deep_forest');
-  });
-
-  it('avoids a saga ID collision with an active facility task during explicit import', () => {
-    const destination = createInitialVillageSave(1201);
-    const started = startFacilityTask(destination, 'temple', destination.createdAt);
-    expect(started.ok).toBe(true);
-    if (!started.ok) return;
-
-    const importAt = destination.createdAt + 1_000;
-    const collidingId = `saga-import-${importAt}`;
-    const task = started.save.meta.tasks[started.task.id];
-    expect(task).toBeDefined();
-    if (!task) return;
-
-    delete started.save.meta.tasks[started.task.id];
-    task.id = collidingId;
-    started.save.meta.tasks[collidingId] = task;
-    started.save.meta.facilities.temple.activeTaskId = collidingId;
-
-    const imported = importLegacyHeroSnapshot(started.save, {} as HeroSnapshot, importAt);
-
-    expect(imported.meta.sagaEntries[0]?.id).toBe(`${collidingId}-2`);
-    const storage = new Map<string, string>();
-    const fakeStorage = {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value),
-    } as unknown as Storage;
-    expect(persistVillageSave(imported, fakeStorage)).toBe(true);
-  });
-
-  it('does not replace the battle hero while an expedition is active', () => {
-    const destination = createInitialVillageSave(119);
-    const started = startExpedition(destination, 'sacred_fields', destination.updatedAt, 'aggression', null);
-    expect(started.ok).toBe(true);
-    if (!started.ok) return;
-
-    const imported = importLegacyHeroSnapshot(started.save, {
-      name: '교체 시도 영웅', emoji: '🛡️', age: 17, chapter: '청년기', job: '검객', level: 1,
-      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
-      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
-      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 119,
-    } as unknown as HeroSnapshot, destination.updatedAt + 1_000);
-
-    expect(imported).toBe(started.save);
-    expect(imported.run.hero.name).not.toBe('교체 시도 영웅');
-  });
-
-  it('normalizes duplicate V3 equipment records during explicit import', () => {
-    const source = {
-      name: '중복 장비 영웅', emoji: '⚔️', age: 37, chapter: '장년기', job: '검객', level: 12,
-      exp: 4, hp: 900, hpMax: 1000, atk: 250, atkBase: 200, hpBase: 800,
-      actionCount: 492, rejuvenationCount: 1, gridX: 2, gridY: 3,
-      equipment: Array.from({ length: 21 }, () => 'w-knife'),
-      personality: { courage: 1, curiosity: 0, greed: -1, compassion: 1, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 99,
-      def: 80, defBase: 70, critRateBase: 0.08,
-    } as unknown as HeroSnapshot;
-
-    const hero = migrateLegacyHeroSnapshot(source);
-
-    expect(hero.equipmentIds).toEqual(['w-knife']);
-    expect(hero.equipmentLevels).toEqual({ 'w-knife': 20 });
-  });
-
-  it('falls back when optional V3 defensive stats are malformed', () => {
-    const source = {
-      name: '손상된 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
-      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
-      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
-      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
-      def: Number.NaN, defBase: 'broken', critRateBase: Number.POSITIVE_INFINITY,
-    } as unknown as HeroSnapshot;
-
-    const hero = migrateLegacyHeroSnapshot(source);
-
-    expect(hero.def).toBe(100);
-    expect(hero.defBase).toBe(100);
-    expect(hero.critRateBase).toBe(0.05);
-  });
-
-  it('filters non-string V3 equipment entries during explicit import', () => {
-    const source = {
-      name: '손상된 장비 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
-      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
-      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0,
-      equipment: ['w-knife', 42, null] as never,
-      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
-    } as unknown as HeroSnapshot;
-
-    const hero = migrateLegacyHeroSnapshot(source);
-
-    expect(hero.equipmentIds).toEqual(['w-knife']);
-    expect(hero.equipmentLevels).toEqual({ 'w-knife': 1 });
-  });
-
-  it('filters blank V3 equipment identifiers during explicit import', () => {
-    const source = {
-      name: '빈 장비 영웅', emoji: '⚔️', age: 17, chapter: '청년기', job: '검객', level: 1,
-      exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
-      actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0,
-      equipment: ['', '  ', '\t', 'legacy-knife', 'legacy-knife'] as never,
-      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
-    } as unknown as HeroSnapshot;
-
-    const hero = migrateLegacyHeroSnapshot(source);
-
-    expect(hero.equipmentIds).toEqual(['legacy-knife']);
-    expect(hero.equipmentLevels).toEqual({ 'legacy-knife': 2 });
-  });
-
-  it('normalizes malformed V3 core stats into a valid Village hero snapshot', () => {
-    const source = {
-      name: 42, emoji: null, age: Number.MAX_VALUE, chapter: '청년기', job: '검객', level: Number.MAX_VALUE,
-      exp: Number.POSITIVE_INFINITY, hp: Number.MAX_VALUE, hpMax: Number.MAX_VALUE,
-      atk: Number.MAX_VALUE, atkBase: 160, hpBase: 1_000, actionCount: Number.MAX_VALUE,
-      rejuvenationCount: Number.NaN, gridX: 0, gridY: 0, equipment: [],
-      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
-    } as unknown as HeroSnapshot;
-
-    const hero = migrateLegacyHeroSnapshot(source);
-
-    expect(hero).toMatchObject({
-      name: '이름 없는 영웅', emoji: '⚔️', age: 17, level: 1, exp: 0,
-      hp: 1_000, hpMax: 1_000, atk: 160, actionCount: HeroLifecycle.actionsForAge(17),
-      rejuvenationCount: 0, currentAction: 'rest',
-    });
-
-    expect(() => migrateLegacyHeroSnapshot(null as never)).not.toThrow();
-    expect(migrateLegacyHeroSnapshot(null as never)).toMatchObject({
-      name: '이름 없는 영웅', emoji: '⚔️', age: 17, level: 1,
-    });
-  });
-
-  it('bounds derived hero action clocks when an imported age is extremely large', () => {
-    const source = {
-      name: '극한 영웅', emoji: '⚔️', age: Number.MAX_SAFE_INTEGER, chapter: '마지막', job: '검객',
-      level: 1, exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
-      actionCount: Number.NaN, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
-      personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 1,
-    } as unknown as HeroSnapshot;
-
-    const hero = migrateLegacyHeroSnapshot(source);
-
-    expect(hero.actionCount).toBe(Number.MAX_SAFE_INTEGER);
-    expect(Number.isSafeInteger(hero.actionCount)).toBe(true);
   });
 
   it('settles completed facility work once and applies the 70% offline efficiency', () => {
@@ -1896,6 +1667,9 @@ describe('Village save and domain', () => {
       recommendedFacilityId: 'training',
       recommendedEquipmentId: null,
       retryAfterSeconds: 0,
+      successChance: 0.9,
+      encountersCleared: 3,
+      totalEncounterCount: 3,
     };
     source.meta.sagaEntries = Array.from({ length: Village_MAX_SAGA_ENTRIES }, (_, index) => ({
       id: `old-saga-${index}`,
@@ -1958,6 +1732,7 @@ describe('Village save and domain', () => {
     const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
     expect(started.ok).toBe(true);
     if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
     expect(started.save.run.expedition?.realmId).toBe('sacred_fields');
 
     const second = startExpedition(started.save, 'sacred_fields', initial.createdAt, 'aggression', 'guide');
@@ -2029,6 +1804,7 @@ describe('Village save and domain', () => {
     const started = startExpedition(initial, 'sacred_fields', initial.createdAt, 'aggression', null);
     expect(started.ok).toBe(true);
     if (!started.ok) return;
+    started.save.run.expedition!.id = 'e2e-victory-4';
     expect(started.save.run.expedition).toMatchObject({ encounterIndex: 0 });
 
     const normal = completeFacilityTasks(started.save, started.save.run.expedition!.completesAt);
@@ -2238,7 +2014,7 @@ describe('Village save and domain', () => {
     expect(malformed.meta.currencies.gold).toBe(gold);
   });
 
-  it('keeps Village hero decisions and battle independent from the legacy cycle controller', () => {
+  it('keeps Village hero decisions and battle independent from the retired cycle controller', () => {
     const save = createInitialVillageSave(10);
     const runtime = createVillageHeroRuntime(save.run.hero);
     expect(runtime.chooseAction({ hp: 1_000, hpMax: 1_000, policy: 'aggression', expeditionAvailable: true })).toBe('expedition');
@@ -2313,7 +2089,7 @@ describe('Village save and domain', () => {
     });
 
     expect(runtime.getSnapshot().equipmentIds).toEqual([]);
-    expect(runtime.getSnapshot().equipmentLevels).toBeUndefined();
+    expect(runtime.getSnapshot().equipmentLevels).toEqual({});
   });
 
   it('keeps battle results finite for malformed runtime input', () => {
@@ -2425,7 +2201,7 @@ describe('Village save and domain', () => {
     expect(getVillageHeroPower(save)).toBe(Number.MAX_SAFE_INTEGER);
   });
 
-  it('carries V3 hit variance, crits, and defense mitigation into Village battles', () => {
+  it('carries hit variance, crits, and defense mitigation into Village battles', () => {
     const critical = createInitialVillageSave(11);
     critical.run.hero.critRateBase = 1;
     const criticalResult = createVillageHeroRuntime(critical.run.hero).resolveBattle({
@@ -2506,6 +2282,7 @@ describe('Village save and domain', () => {
       reward: {}, heroPower: 120, recommendedPower: 120, turns: 1, totalDamageDealt: 1,
       totalDamageTaken: 0, heroRemainingHp: 1_000, weaknessKR: '없음', recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: null, retryAfterSeconds: 0,
+      successChance: 0.9, encountersCleared: 3, totalEncounterCount: 3,
     };
     expect(advanceHeroAutonomy(withResult, withResult.updatedAt + 15_000).started).toBe(false);
 
@@ -2963,6 +2740,7 @@ describe('Village save and domain', () => {
     if (!started.ok) return;
     expect(started.save.meta.sagaEntries.some((entry) => entry.id === 'saga-realm-intro-sacred_fields')).toBe(true);
 
+    started.save.run.expedition!.id = 'e2e-victory-4';
     started.save.run.hero.atk = 10_000;
     started.save.run.hero.def = 10_000;
     started.save.run.hero.defBase = 10_000;
@@ -2987,6 +2765,7 @@ describe('Village save and domain', () => {
     const first = startExpedition(initial, 'underworld', initial.updatedAt, 'aggression', null);
     expect(first.ok).toBe(true);
     if (!first.ok) return;
+    first.save.run.expedition!.id = 'e2e-victory-4';
     first.save.run.expedition!.encounterIndex = 2;
     first.save.run.expedition!.completesAt = first.save.run.expedition!.startedAt;
     const firstCompleted = completeFacilityTasks(first.save, first.save.run.expedition!.completesAt);
@@ -3035,6 +2814,7 @@ describe('Village save and domain', () => {
     const first = startExpedition(initial, 'sacred_fields', initial.updatedAt, 'aggression', 'guide');
     expect(first.ok).toBe(true);
     if (!first.ok) return;
+    first.save.run.expedition!.id = 'e2e-victory-4';
     first.save.run.expedition!.encounterIndex = 2;
     first.save.run.expedition!.completesAt = first.save.run.expedition!.startedAt;
     const firstCompleted = completeFacilityTasks(first.save, first.save.run.expedition!.completesAt);

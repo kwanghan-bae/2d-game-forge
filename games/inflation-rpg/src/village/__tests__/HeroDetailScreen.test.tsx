@@ -14,7 +14,6 @@ describe('Village hero detail screen', () => {
         gold={100}
         expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     );
@@ -37,7 +36,6 @@ describe('Village hero detail screen', () => {
         gold={100}
         expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     );
@@ -45,21 +43,20 @@ describe('Village hero detail screen', () => {
     expect(screen.getByText(/치명타 \+6%/)).toBeInTheDocument();
   });
 
-  it('blocks legacy hero import while an expedition is active', () => {
+  it('does not expose an old-save hero import control', () => {
     const save = createInitialVillageSave(126);
 
     render(
       <HeroDetailScreen
         hero={save.run.hero}
         gold={100}
-        expeditionActive
+        expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole('button', { name: '원정 귀환 후 기존 영웅 기록 가져오기' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /기록 가져오기/ })).not.toBeInTheDocument();
   });
 
   it('moves focus to the hero heading when the screen opens', () => {
@@ -71,7 +68,6 @@ describe('Village hero detail screen', () => {
         gold={100}
         expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     );
@@ -102,7 +98,6 @@ describe('Village hero detail screen', () => {
         gold={100}
         expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     );
@@ -132,7 +127,6 @@ describe('Village hero detail screen', () => {
         gold={100}
         expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     );
@@ -154,7 +148,6 @@ describe('Village hero detail screen', () => {
         gold={100}
         expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     )).not.toThrow();
@@ -172,7 +165,6 @@ describe('Village hero detail screen', () => {
         gold={100}
         expeditionActive={false}
         onBack={vi.fn()}
-        onImportLegacy={vi.fn()}
         onRejuvenate={vi.fn()}
       />,
     );

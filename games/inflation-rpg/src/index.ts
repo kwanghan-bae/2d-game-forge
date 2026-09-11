@@ -8,7 +8,6 @@ export const gameManifest: GameManifestValue = parseGameManifest({
 });
 
 export { StartGame } from './startGame';
-export { StartLegacyGame } from './startLegacyGame';
 export type { StartGameConfig } from './startGame';
 export { createNativeVillageMonetization } from './village/monetization';
 export type {

@@ -24,22 +24,22 @@ vi.mock('../../services/MonetizationService', () => ({
 }));
 
 describe('Village monetization adapter', () => {
-  it('migrates valid legacy rewarded usage into the canonical key without changing the old key', () => {
-    const legacyKey = 'shin-ui-eternal-sponsor-v4-rewarded-usage-v1';
-    const canonicalKey = 'shin-ui-eternal-sponsor-rewarded-usage-v1';
-    const legacyRaw = JSON.stringify({ day: '2026-9-6', count: 2 });
-    localStorage.setItem(legacyKey, legacyRaw);
+  it('reads rewarded usage only from the canonical key', () => {
+    const getItemSpy = vi.spyOn(localStorage, 'getItem').mockReturnValue(null);
+    try {
+      const store = createLocalVillageRewardedUsageStore();
 
-    const store = createLocalVillageRewardedUsageStore();
-
-    expect(store.read('2026-9-6')).toBe(2);
-    expect(localStorage.getItem(legacyKey)).toBe(legacyRaw);
-    expect(localStorage.getItem(canonicalKey)).toBe(legacyRaw);
+      expect(store.read('2026-9-6')).toBe(0);
+      expect(getItemSpy).toHaveBeenCalledTimes(1);
+      expect(getItemSpy).toHaveBeenCalledWith('shin-ui-eternal-sponsor-rewarded-usage-v1');
+    } finally {
+      getItemSpy.mockRestore();
+    }
   });
 
-  it('does not revive legacy rewarded usage when canonical data is malformed', () => {
+  it('does not revive unrelated rewarded usage when canonical data is malformed', () => {
     localStorage.setItem('shin-ui-eternal-sponsor-rewarded-usage-v1', '{not-json');
-    localStorage.setItem('shin-ui-eternal-sponsor-v4-rewarded-usage-v1', JSON.stringify({ day: '2026-9-6', count: 2 }));
+    localStorage.setItem('unrelated-rewarded-usage-v1', JSON.stringify({ day: '2026-9-6', count: 2 }));
 
     const store = createLocalVillageRewardedUsageStore();
 

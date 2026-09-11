@@ -29,7 +29,7 @@ export function getAgingSpeedMul(meta: MetaState): number {
   return Math.max(0.50, 1.0 - lvOf(meta, 'aging_slow') * 0.01);
 }
 
-/** 1 * lv. V3-C 에서는 unwired (V3-D 의 zone field level damping 이 consume). */
+/** 1 * lv. 현재 실행 경로에서는 field damping이 소비한다. */
 export function getFieldDiffThreshold(meta: MetaState): number {
   return lvOf(meta, 'field_diff');
 }

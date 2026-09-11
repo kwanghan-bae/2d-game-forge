@@ -1,100 +1,57 @@
 # @forge/game-inflation-rpg
 
-forge의 첫 번째 게임인 **신의 마을: 영원의 후원자**를 제공한다. 이전 제품
-**신의 마을: 옛 모험**은 `inflation-rpg-legacy` 경로와 `StartLegacyGame()`으로 보존한다.
+**신의 마을: 영원의 후원자**의 현재 게임 패키지다. 출시 전 개발 중이며,
+Android를 우선 대상으로 한다. 웹은 동일한 로직을 빠르게 검증하는 개발
+표면으로 사용한다.
 
-## 플랫폼
+## 플랫폼과 명령
 
-- 웹 (dev-shell 포털 또는 standalone Next export)
-- iOS / Android (Capacitor 8)
+- 웹 포털: 루트에서 `pnpm dev` 후 `/games/inflation-rpg`
+- standalone 웹: `pnpm --filter @forge/game-inflation-rpg dev`
+- 단위 테스트: `pnpm --filter @forge/game-inflation-rpg test`
+- 타입체크: `pnpm --filter @forge/game-inflation-rpg typecheck`
+- 웹 E2E: `pnpm --filter @forge/game-inflation-rpg e2e`
+- Android: `pnpm --filter @forge/game-inflation-rpg build:android`
+- iOS: `pnpm --filter @forge/game-inflation-rpg build:ios`
 
-## 주요 스크립트
+Playwright는 로직·입력·레이아웃 검증용이다. 실기기 조작, 백그라운드 복귀,
+광고와 결제 동작을 대신하지 않는다.
 
-- `pnpm --filter @forge/game-inflation-rpg dev` — standalone Next dev 서버
-  (`:3100`). 포털 통합 개발은 레포 루트에서 `pnpm dev` 후
-  `http://localhost:3000/games/inflation-rpg`를 사용한다.
-- `pnpm turbo run build --filter=@forge/game-inflation-rpg...` — native plugin
-  build를 먼저 포함한 Next 정적 export → `out/`.
-- `pnpm --filter @forge/game-inflation-rpg build:ios` — Next build + Capacitor
-  sync + Xcode 열기.
-- `pnpm --filter @forge/game-inflation-rpg build:android` — 동등하게 Android
-  Studio 열기.
-- `pnpm --filter @forge/game-inflation-rpg test` — Vitest. 최신 실행 수치는
-  [현재 상태](../../docs/작업-현황.md)의 검증 기록을 기준으로 한다.
-- `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright. 현재 게임과 이전
-   버전 회귀를 함께 검증한다.
-- `pnpm --filter @forge/dev-shell e2e` — 포털의 현재 게임·신의 마을: 옛 모험 경로를 확인한다.
+## 공개 경계
 
-## 모바일 UI 확인
+- `StartGame(config)` — 포털과 standalone/native가 공유하는 단일 부팅 엔트리
+- `@forge/game-inflation-rpg/game` — 부팅 엔트리 package subpath
+- `gameManifest` — dev-shell이 소비하는 매니페스트
 
-모바일 레이아웃 개발·테스트는 **로컬 브라우저**에서 한다. Capacitor 빌드는
-실기기 배포용이다.
+`StartGameConfig`는 `parent`, `assetsBasePath`, `exposeTestHooks`를 받는다.
+테스트 hook은 개발 환경에서만 활성화한다.
 
-```bash
-pnpm dev  # http://localhost:3000 포털 실행
-```
+## 현재 구조
 
-Chrome DevTools → Toggle device toolbar (⌘⇧M) → iPhone 14 (390×844) 선택.
-
-Playwright 프로필은 입력·레이아웃 검증용이며 실기기, native 결제, 백그라운드
-복귀 증거를 대신하지 않는다.
-
-## 공개 export
-
-- `StartGame(config: StartGameConfig): ForgeGameInstance` — 현재 게임 부팅 엔트리.
-- `StartLegacyGame(config: StartGameConfig): ForgeGameInstance` — 이전 버전 부팅 엔트리.
-- `@forge/game-inflation-rpg/game` — 현재 게임 전용 package subpath.
-- `@forge/game-inflation-rpg/legacy` — 이전 버전 전용 package subpath.
-- `gameManifest: GameManifestValue` — dev-shell registry가 소비할 매니페스트.
-
-`StartGameConfig`의 필드:
-
-```ts
-interface StartGameConfig {
-  parent: string;            // DOM 컨테이너 id
-  assetsBasePath: string;    // 에셋 URL prefix
-  exposeTestHooks: boolean;  // window.* hook 노출 여부
-}
-```
-
-## 디렉터리
-
-```
+```text
 games/inflation-rpg/
 ├── src/
-│   ├── index.ts                 # gameManifest + current/legacy entry export
-│   ├── startGame.ts             # 현재 게임 부팅 엔트리
-│   ├── startLegacyGame.ts       # 명시적 이전 버전 부팅 엔트리
-│   ├── mountGame.ts             # 두 entry가 공유하는 생명주기·test hook 경계
-│   ├── types.ts                 # 공용 타입
-│   ├── village/                 # 현재 게임 제품 모듈
-│   │   ├── VillageApp.tsx
-│   │   ├── domain.ts             # 시설·원정·정산 순수 도메인
-│   │   ├── save.ts               # canonical schema·offline·legacy import
-│   │   ├── legacyCompatibility.ts # 이전 저장·계측 키의 읽기 전용 경계
-│   │   └── screens/              # 마을·영웅·원정·사가·설정 화면
-│   ├── app/                     # release 모드 Next 셸
-│   ├── components/              # PhaserGame.tsx 등 공용 컴포넌트
-│   ├── screens/                 # 이전 버전 React UI 화면
-│   ├── store/                   # 이전 버전 Zustand store
-│   ├── battle/                  # Phaser 전투 씬
-│   ├── systems/                 # 순수 계산 로직
-│   ├── data/                    # 정적 데이터
-│   └── styles/                  # 공용 스타일
-├── public/assets/               # 큐레이션된 에셋
-└── tests/e2e/                   # 현재 게임·이전 버전 Playwright spec
+│   ├── index.ts              # 매니페스트와 공개 export
+│   ├── startGame.ts          # 단일 게임 부팅
+│   ├── mountGame.ts          # React root 생명주기와 테스트 hook 경계
+│   ├── village/              # 현재 마을·영웅·원정·사가 도메인과 화면
+│   ├── app/                  # standalone Next 셸
+│   ├── data/                 # 게임 데이터와 서사
+│   ├── hero/                 # 영웅 생명주기·순수 규칙
+│   ├── battle/               # 현재 원정에서 사용하는 전투 계산
+│   ├── systems/              # 공유 가능한 순수 계산 시스템
+│   └── styles/               # 공통 스타일
+├── public/assets/            # 현재 화면 이미지
+├── public/sounds/            # 현재 오디오
+└── tests/e2e/                # 현재 게임 Playwright 흐름
 ```
 
-## 격리된 호환 표면
+## 저장과 Android 식별자
 
-runtime: `@forge/core`(workspace), Phaser, React, Next, Capacitor, Zod,
-Zustand, BigNumber.js를 사용하며, 다른 게임은 import하지 않는다.
+- canonical 저장 키: `shin-ui-eternal-sponsor-save-v2`
+- Android `applicationId`/namespace: `com.shinui.eternalsponsor`
+- 표시 앱 이름: `신의 마을: 영원의 후원자`
 
-workspace/package와 route alias인 `inflation-rpg`, Capacitor `appId`
-`com.korea.inflationrpg`, 이전 버전 localStorage 키
-`korea_inflation_rpg_save`는 배포 호환을 위해 변경하지 않는다. 현재 게임의
-canonical 저장은 `shin-ui-eternal-sponsor-save-v2`이고, 이전 세대의
-`shin-ui-eternal-sponsor-v4-save-v1`는 `legacyCompatibility.ts`에서만 읽는다.
-
-자세한 구조와 호환성 제약은 [아키텍처 문서](../../docs/ARCHITECTURE.md), 새 게임
-추가 절차는 [기여 가이드](../../docs/CONTRIBUTING.md)를 참조한다.
+출시 전 제품이므로 과거 실행 경로, 저장 키, 세대별 호환 계층을 제공하지
+않는다. 저장 계약을 바꿀 때는 [제품 기준서](../../docs/PRODUCT.md)와
+[현재 상태](../../docs/작업-현황.md)를 함께 갱신한다.

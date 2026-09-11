@@ -49,7 +49,6 @@ function mockGame(
     confirmRun: vi.fn(),
     confirmUnlock: vi.fn(),
     upgrade: vi.fn(),
-    importLegacyHero: vi.fn(),
     startFreshSave: vi.fn(),
     closeOffline: vi.fn(),
     closeMessage: vi.fn(),
@@ -80,11 +79,11 @@ describe('Village app resume handling', () => {
     expect(screen.getByTestId('village-app')).not.toHaveTextContent(retiredIdentityPattern);
 
     fireEvent.click(within(screen.getByRole('navigation', { name: '주요 메뉴' })).getByRole('button', { name: /영웅/ }));
-    expect(screen.getByRole('button', { name: '기존 영웅 기록 가져오기' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /기록 가져오기/ })).not.toBeInTheDocument();
     expect(screen.getByTestId('village-app')).not.toHaveTextContent(retiredIdentityPattern);
   });
 
-  it('clears global legacy audio when the Village root enters and leaves', () => {
+  it('clears the shared audio state when the Village root enters and leaves', () => {
     const refresh = vi.fn();
     const settleOffline = vi.fn();
     vi.mocked(useVillageGame).mockReturnValue(mockGame(refresh, settleOffline));

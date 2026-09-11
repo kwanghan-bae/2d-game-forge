@@ -244,11 +244,11 @@ export interface RunState {
   dungeonRunMonstersDefeated: number;
   featherUsed: number;               // Phase E — revive count used this run (feather_of_fate + phoenix_feather)
   playerHp: number | null;           // [Phase Realms] null = hydrate to maxHp on next battle entry
-  /** V3-D — 현재 hero 가 있는 realm. 초기 'base'. */
+  /** 현재 hero 가 있는 realm. 초기 'base'. */
   currentRealmId: RealmId;
-  /** V3-E — 현재 run 의 NPC roster. */
+  /** 현재 run 의 NPC roster. */
   npcs: NpcEntity[];
-  /** V3-H B2 — 마지막 저장 시점의 hero snapshot. null = 새 cycle 시작 필요. */
+  /** 마지막 저장 시점의 hero snapshot. null = 새 cycle 시작 필요. */
   heroSnapshot: import('./hero/HeroEntity').HeroSnapshot | null;
   /** C1008 — chosen sponsor directive for current cycle. null = no directive. */
   directive?: SponsorDirective | null;
@@ -367,16 +367,16 @@ export interface MetaState {
   hpBaseBonus: number;
   /** C998: 크리티컬 확률 보너스 (0.5% per point). */
   luckBaseBonus: number;
-  // Phase V3-B — 빛 (Eternal Hero 회춘 비용 에너지 자원)
+  // 빛 (Eternal Hero 회춘 비용 에너지 자원)
   /** 빛 에너지. 회춘(rejuvenation) 비용으로 소비. v19 migration 에서 0 으로 초기화. */
   light: number;
-  /** V3-C — buff catalog 의 누적 Lv. oneshot_rejuv 은 저장 안 함. */
+  /** buff catalog 의 누적 Lv. oneshot_rejuv 은 저장 안 함. */
   buffLevels: Partial<Record<BuffId, number>>;
-  /** V3-D — 해금된 realm 목록. 초기 ['base']. */
+  /** 해금된 realm 목록. 초기 ['base']. */
   unlockedRealms: RealmId[];
-  /** V3-F — 무한 saga (재생 chapter 누적). */
+  /** 무한 saga (재생 chapter 누적). */
   eternalSaga: EternalSagaState;
-  /** V3-H — 현재 계절 (cycle 기반, hero age 0/15/30/45 마다 전환). */
+  /** 현재 계절 (cycle 기반, hero age 0/15/30/45 마다 전환). */
   season: SeasonState;
   /** Cycle 112-113 — Hall of Sagas (영구 leaderboard, local only). v25 추가. */
   hall: import('./data/hallTypes').HallState;
@@ -390,11 +390,11 @@ export interface MetaState {
   /** 시즌 전환 시 자동 환전된 누적량 (telemetry / UI 표시용). v26 추가. */
   tokensRedeemed: number;
   /** Cycle 129 N5 — live-ops 시즌 시작 시점 snapshot (mid-cycle clock change 면역).
-   *  meta.season (V3-H age-based env tint) 과는 *완전 분리* — 본 field 는
+   *  meta.season 의 age-based 환경 tint 와는 *완전 분리* — 본 field 는
    *  live-ops 30-day rotation 의 cycle 시작 timestamp. v26 추가. */
   seasonStartedAt: number;
   /** Cycle 139 N5 — claim 액션 누적 카운터. telemetry / UI badge 의 진원지.
-   *  optional — legacy save (v26 이전 또는 v26 새 init) 는 undefined → 0 으로 해석. */
+   *  optional — 값이 없으면 0 으로 해석. */
   totalClaimsCount?: number;
   /** Cycle 33 — 전투 속도 배율. 1 = 기본, 2 = 2배속. */
   battleSpeed: 1 | 2;
@@ -516,33 +516,6 @@ export interface IapTransaction {
   purchaseToken: string;
 }
 
-export interface TutorialStep {
-  id: string;
-  screen: Screen;
-  textKR: string;
-  ctaKR: string;
-}
-
-export type Screen =
-  | 'main-menu'
-  | 'cycle-prep-v2'
-  | 'overworld'
-  | 'cycle-result-v2'
-  | 'settings'
-  | 'saga-gallery'
-  | 'bestiary'
-  | 'stats';
-
-export type StoryType = 'region_enter' | 'boss_defeat';
-
-export interface Story {
-  id: string;
-  type: StoryType;
-  refId: string;     // regionId or bossId
-  textKR: string;
-  reactions?: Partial<Record<string, string>>;  // characterId → reaction text
-}
-
 export interface StartGameConfig {
   parent: string;
   assetsBasePath: string;
@@ -550,8 +523,6 @@ export interface StartGameConfig {
   /** Optional native bridge. Web/dev-shell runs without ads or IAP. */
   villageMonetization?: VillageMonetizationAdapter;
 }
-
-// ── Phase B (300h redesign) — Dungeon/Floor 모델 ──
 
 export type DungeonUnlock =
   | { type: 'start' }

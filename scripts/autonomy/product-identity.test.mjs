@@ -7,8 +7,7 @@ import { test } from 'node:test';
 const ROOT = join(import.meta.dirname, '..', '..');
 const SOURCE_ROOT = join(ROOT, 'games', 'inflation-rpg', 'src');
 const CURRENT_ROOT = join(SOURCE_ROOT, 'village');
-const LEGACY_CURRENT_ROOT = join(SOURCE_ROOT, 'v4');
-const ENTRYPOINTS = ['startGame.ts', 'index.ts', 'types.ts'];
+const ENTRYPOINTS = ['startGame.ts', 'mountGame.ts', 'index.ts', 'types.ts'];
 const CORE_DOCUMENTS = [
   'AGENTS.md',
   'CLAUDE.md',
@@ -27,11 +26,22 @@ const CORE_DOCUMENTS = [
   'games/inflation-rpg/public/privacy-policy.html',
 ];
 const HISTORICAL_PREFIXES = ['docs/superpowers/', 'docs/archive/', 'docs/personas/', '.claude/agents/'];
+const RETIRED_GENERATIONS = [['V', '3'].join(''), ['V', '4'].join('')];
+const RETIRED_IDENTITIES = [
+  ...RETIRED_GENERATIONS,
+  ['신의 마을: ', '옛 모험'].join(''),
+  ['inflation-rpg', '-legacy'].join(''),
+  ['korea_', 'inflation_rpg_save'].join(''),
+  ['com.korea.', 'inflationrpg'].join(''),
+  ['Korea', 'InflationRPG'].join(''),
+  ['Start', 'LegacyGame'].join(''),
+  ['legacy', 'Compatibility'].join(''),
+  ['shin-ui-eternal-sponsor-', 'v4-'].join(''),
+];
 const REQUIRED_CURRENT_FACTS = [
-  '6be98aad',
-  '34317655778',
-  '34317655047',
-  '402개 파일·3,703개 테스트',
+  '출시 전 현재 게임',
+  'com.shinui.eternalsponsor',
+  'shin-ui-eternal-sponsor-save-v2',
 ];
 
 function walkFiles(directory) {
@@ -42,37 +52,28 @@ function walkFiles(directory) {
   });
 }
 
-function stripIdentifiers(text) {
-  return text
-    .replace(/\/\/.*$/gm, (match) => ' '.repeat(match.length))
-    .replace(/\/\*[\s\S]*?\*\//g, (match) => ' '.repeat(match.length))
-    .replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g, (match) => ' '.repeat(match.length));
+function escapedPattern(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function findSourceIdentityViolations(relativePath, source) {
   const violations = [];
-  const identifiers = stripIdentifiers(source);
-  const identityPattern = /\b(?:V4[A-Za-z0-9_]*|useV4[A-Za-z0-9_]*|v4[A-Z][A-Za-z0-9_]*)\b/g;
-  for (const match of identifiers.matchAll(identityPattern)) {
-    violations.push(`${relativePath}: current-product identifier ${match[0]}`);
+  const generationPattern = /\bv[34](?:[-_a-z0-9]*)?\b/gi;
+  for (const match of source.matchAll(generationPattern)) {
+    violations.push(`${relativePath}: retired generation label ${match[0]}`);
   }
 
-  const sourceWithoutCompatibilityValues = source.replace(
-    /shin-ui-eternal-sponsor-v4-(?:save|metrics|rewarded-usage)-v1/g,
-    '',
-  ).replace(/\bv4_(?:iron_sword|guardian_armor|spirit_talisman)\b/g, '');
-  for (const match of sourceWithoutCompatibilityValues.matchAll(/\bv4[-_][A-Za-z0-9_-]+/g)) {
-    violations.push(`${relativePath}: current-product CSS/test id or token ${match[0]}`);
-  }
-
-  const stringLiterals = sourceWithoutCompatibilityValues.match(/(['"`])(?:\\.|(?!\1)[^\\])*\1/g) ?? [];
-  for (const literal of stringLiterals) {
-    if (/\bV4\b|\bv4\b|\bv4[-_][A-Za-z0-9_-]+/.test(literal)) {
-      violations.push(`${relativePath}: current-product string ${literal}`);
+  for (const token of RETIRED_IDENTITIES) {
+    if (new RegExp(escapedPattern(token), 'i').test(source)) {
+      violations.push(`${relativePath}: retired product identity ${token}`);
     }
   }
 
-  return violations;
+  if (/\blegacy\b/i.test(source)) {
+    violations.push(`${relativePath}: retired compatibility wording remains`);
+  }
+
+  return [...new Set(violations)];
 }
 
 function findIdentityViolations() {
@@ -82,24 +83,16 @@ function findIdentityViolations() {
   ];
   const violations = [];
 
-  if (existsSync(LEGACY_CURRENT_ROOT)) {
-    violations.push(`obsolete current-product source path: ${relative(ROOT, LEGACY_CURRENT_ROOT)}`);
-    files.push(...walkFiles(LEGACY_CURRENT_ROOT));
-  }
   if (!existsSync(CURRENT_ROOT)) {
     violations.push(`missing current-product source path: ${relative(ROOT, CURRENT_ROOT)}`);
   }
 
   for (const file of files) {
     const relativePath = relative(ROOT, file).split(sep).join('/');
-    if (/(^|\/)v4(?:\/|$)|(?:^|\/)(?:V4|v4)[^/]*\./.test(relativePath)) {
-      violations.push(`${relativePath}: current-product path uses v4/V4`);
+    if (/(^|\/)v[34](?:\/|$)/i.test(relativePath)) {
+      violations.push(`${relativePath}: current-product path uses a retired generation label`);
     }
-
-    if (file.endsWith('legacyCompatibility.ts')) continue;
-
-    const source = readFileSync(file, 'utf8');
-    violations.push(...findSourceIdentityViolations(relativePath, source));
+    violations.push(...findSourceIdentityViolations(relativePath, readFileSync(file, 'utf8')));
   }
 
   return [...new Set(violations)];
@@ -170,12 +163,10 @@ function findDocumentationViolations() {
       continue;
     }
 
+    violations.push(...findSourceIdentityViolations(path, source));
     violations.push(...findDocumentSourceViolations(path, source));
 
     for (const [lineNumber, line] of source.split('\n').entries()) {
-      if (/\bV4\b|\bv4(?:[-_]|\b)/.test(line) && !/(호환|격리|legacy|레거시|이전|저장 키|appId|alias)/i.test(line)) {
-        violations.push(`${path}:${lineNumber + 1}: current-product generation label remains`);
-      }
       if (/아직 push하지 않았|GitHub Actions 결과가 없다|원격 실행은 push 전이라 미측정|CI.*미검증/i.test(line)) {
         violations.push(`${path}:${lineNumber + 1}: stale CI verification claim remains`);
       }
@@ -198,13 +189,12 @@ function findDocumentationViolations() {
     if (!gitignore.split('\n').includes(entry)) violations.push(`.gitignore is missing ${entry}`);
   }
 
+  const status = readFileSync(join(ROOT, 'docs/작업-현황.md'), 'utf8');
   for (const fact of REQUIRED_CURRENT_FACTS) {
-    if (!readFileSync(join(ROOT, 'docs/작업-현황.md'), 'utf8').includes(fact)) {
-      violations.push(`docs/작업-현황.md: missing required current fact ${fact}`);
-    }
+    if (!status.includes(fact)) violations.push(`docs/작업-현황.md: missing required current fact ${fact}`);
   }
 
-  const deletedPathReferences = HISTORICAL_PREFIXES.map((prefix) => prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const deletedPathReferences = HISTORICAL_PREFIXES.map((prefix) => escapedPattern(prefix)).join('|');
   const referencePattern = new RegExp(`(?:${deletedPathReferences})`);
   for (const path of currentTrackedFiles()) {
     if (path === 'scripts/autonomy/product-identity.test.mjs' || HISTORICAL_PREFIXES.some((prefix) => path.startsWith(prefix))) continue;
@@ -217,40 +207,52 @@ function findDocumentationViolations() {
   return [...new Set(violations)];
 }
 
-test('current-product runtime uses the village namespace', () => {
+test('current runtime uses only the current product surface', () => {
   const violations = findIdentityViolations();
   assert.deepEqual(violations, [], `identity violations:\n${violations.join('\n')}`);
 });
 
-test('scanner rejects JSX identity strings and exact V4 identifiers', () => {
+test('scanner rejects retired generation labels in JSX and identifiers', () => {
+  const retiredGeneration = RETIRED_GENERATIONS[1];
+  const retiredLower = retiredGeneration.toLowerCase();
   const violations = findSourceIdentityViolations(
     'games/inflation-rpg/src/village/scanner-fixture.tsx',
-    `export const V4 = 'temporary fixture';
+    `export const ${retiredGeneration} = 'temporary fixture';
      export function Fixture() {
-       return <div className="v4-shell" data-testid="v4-app" />;
+       return <div className="${retiredLower}-shell" data-testid="${retiredLower}-app" />;
      }`,
   );
-  assert.ok(violations.some((violation) => violation.includes('v4-shell')), 'expected v4-shell violation');
-  assert.ok(violations.some((violation) => violation.includes('v4-app')), 'expected v4-app violation');
-  assert.ok(violations.some((violation) => violation.includes('identifier V4')), 'expected exact V4 identifier violation');
+  assert.ok(violations.some((violation) => violation.includes(`${retiredLower}-shell`)), 'expected retired shell violation');
+  assert.ok(violations.some((violation) => violation.includes(`${retiredLower}-app`)), 'expected retired app violation');
+  assert.ok(violations.some((violation) => violation.includes('retired generation label')), 'expected generation violation');
 });
 
-test('scanner rejects exact V4 player-facing JSX text', () => {
+test('scanner rejects retired player-facing JSX text and old product identities', () => {
+  const retiredGeneration = RETIRED_GENERATIONS[1];
+  const retiredProduct = ['신의 마을: ', '옛 모험'].join('');
+  const retiredRoute = ['inflation-rpg', '-legacy'].join('');
+  const retiredKey = ['korea_', 'inflation_rpg_save'].join('');
+  const retiredPackage = ['com.korea.', 'inflationrpg'].join('');
   const violations = findSourceIdentityViolations(
     'games/inflation-rpg/src/village/scanner-jsx-text-fixture.tsx',
-    'export function Fixture() { return <div>V4</div>; }',
+    `<div>${retiredGeneration} ${retiredProduct} ${retiredRoute} ${retiredKey} ${retiredPackage}</div>`,
   );
-  assert.ok(violations.some((violation) => violation.includes('identifier V4')), 'expected exact V4 JSX text violation');
+  assert.ok(violations.some((violation) => violation.includes('retired generation label')), 'expected text generation violation');
+  assert.ok(violations.some((violation) => violation.includes(retiredProduct)), 'expected old product violation');
+  assert.ok(violations.some((violation) => violation.includes(retiredRoute)), 'expected old route violation');
+  assert.ok(violations.some((violation) => violation.includes(retiredKey)), 'expected old save key violation');
+  assert.ok(violations.some((violation) => violation.includes(retiredPackage)), 'expected old package violation');
 });
 
-test('scanner rejects quoted V4 and v4_ player-facing strings', () => {
-  const violations = findSourceIdentityViolations(
-    'games/inflation-rpg/src/village/screens/Fixture.tsx',
-    "const title = 'V4'; const testId = 'v4-player-card'; const legacyToken = 'v4_legacy';",
+test('scanner rejects broken relative Markdown links and skips external links', () => {
+  const violations = documentFixtureViolations(
+    'docs/fixture.md',
+    '[broken](missing-target.md) [web](https://example.com) [anchor](#section) [mail](mailto:test@example.com)',
   );
-  assert.ok(violations.some((violation) => violation.includes("string 'V4'")), 'expected quoted V4 violation');
-  assert.ok(violations.some((violation) => violation.includes('v4-player-card')), 'expected v4 test-id violation');
-  assert.ok(violations.some((violation) => violation.includes('v4_legacy')), 'expected v4_ string violation');
+  assert.ok(violations.some((violation) => violation.includes('missing-target.md')), 'expected broken link violation');
+  assert.equal(violations.some((violation) => violation.includes('example.com')), false, 'external links must be skipped');
+  assert.equal(violations.some((violation) => violation.includes('#section')), false, 'anchors must be skipped');
+  assert.equal(violations.some((violation) => violation.includes('mailto:')), false, 'mailto links must be skipped');
 });
 
 test('scanner rejects STATUS references in canonical document fixtures', () => {
@@ -267,22 +269,7 @@ test('scanner rejects tracked root STATUS files', () => {
   assert.equal(violations.some((violation) => violation.includes('docs/작업-현황.md')), false, 'nested status-like docs are not root snapshots');
 });
 
-test('scanner rejects broken relative Markdown links and skips external links', () => {
-  const violations = documentFixtureViolations(
-    'docs/fixture.md',
-    '[broken](missing-target.md) [web](https://example.com) [anchor](#section) [mail](mailto:test@example.com)',
-  );
-  assert.ok(violations.some((violation) => violation.includes('missing-target.md')), 'expected broken link violation');
-  assert.equal(violations.some((violation) => violation.includes('example.com')), false, 'external links must be skipped');
-  assert.equal(violations.some((violation) => violation.includes('#section')), false, 'anchors must be skipped');
-  assert.equal(violations.some((violation) => violation.includes('mailto:')), false, 'mailto links must be skipped');
-});
-
-test('scanner preserves the legacy compatibility escape hatch', () => {
-  assert.deepEqual(findIdentityViolations(), [], 'legacyCompatibility.ts and approved migration fixtures must remain allowed');
-});
-
-test('canonical documents preserve current facts and isolate historical material', () => {
+test('canonical documents describe one current product and keep history out of the active tree', () => {
   const violations = findDocumentationViolations();
   assert.deepEqual(violations, [], `documentation identity violations:\n${violations.join('\n')}`);
 });

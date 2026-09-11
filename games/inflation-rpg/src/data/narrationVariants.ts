@@ -322,8 +322,8 @@ const SEASON_CHANGE_VARIANTS: Record<SeasonId, Array<(c: { age: number; prefix: 
  * cycle 256 forNpcDeath 와 같은 패턴 답습. 직전 3 kind (mentor/rival/passerby)
  * 가 NpcEntity['kind'] 6 union 과 불일치 — friend/family_* 조우 시 callsite
  * 가 passerby 로 축소 변환했음. 본 cycle 에서 정합화.
- * legacy 3 kind 의 variant pool 보존 + 3 신규 kind 의 풀 신규.
- * 'passerby' 줄은 union 외 (legacy text), friend kind 에 재배치.
+ * 기존 3 kind 의 variant pool을 유지하고 3 kind를 추가한다.
+ * 'passerby' 줄은 현재 union에 맞춰 friend kind에 배치한다.
  */
 const NPC_ENCOUNTER_VARIANTS: Record<NpcEntity['kind'], Array<(c: { age: number }) => string>> = {
   mentor: [
@@ -339,7 +339,7 @@ const NPC_ENCOUNTER_VARIANTS: Record<NpcEntity['kind'], Array<(c: { age: number 
     (c) => `${c.age}세에 라이벌과 처음으로 같은 별 아래 잠들었다 — 적인 채로.`,
   ],
   friend: [
-    // legacy passerby 3 줄 재배치 (어휘 자체 보존)
+    // 기존 passerby 3줄 재배치 (어휘 자체 보존)
     (c) => `${c.age}세에 한 행인이 지나쳤다, 그러나 그의 얼굴은 오래 남았다.`,
     (c) => `${c.age}세에 짧은 인사가 길의 끝까지 따라왔다.`,
     (c) => `${c.age}세에 친구가 손을 내밀었다 — 이름은 끝내 묻지 않았다.`,
@@ -360,9 +360,9 @@ const NPC_ENCOUNTER_VARIANTS: Record<NpcEntity['kind'], Array<(c: { age: number 
 
 /* ─────────────────── naturalDeath (Cycle 258) ────────────────
  * 자연사 1줄 hardcoded → 5 variant + composition (`pick → ageTone → realmTone`).
- * V3 정체성 = eternal hero. 자연사 = idle saga 의 클라이맥스. emotional-peak
+ * Eternal hero의 자연사는 idle saga의 클라이맥스다. emotional-peak
  * pool 의 역경제 회수 (story-critic #1 — claim 600+ vs 자연사 1줄).
- * legacy 1줄 ("안식을 맞아 잠들었다") = entry 0 보존 (seed=0 backward compat).
+ * 기본 1줄 ("안식을 맞아 잠들었다")은 entry 0에 둔다.
  */
 const NATURAL_DEATH_VARIANTS: Array<(c: { age: number }) => string> = [
   (c) => `${c.age}세에 안식을 맞아 잠들었다.`,
@@ -373,7 +373,7 @@ const NATURAL_DEATH_VARIANTS: Array<(c: { age: number }) => string> = [
 ];
 
 /* ─────────────────────── npcDeath (F3) — Cycle 256 ─────────────
- * NPC kind 별 분기. legacy 3 줄 (mentor / rival / friend) 보존 + 신규
+ * NPC kind별 분기. 기존 3줄 (mentor / rival / friend)을 유지하고 신규
  * 11 줄 = 총 14 variant. NpcEntity['kind'] union 6 kind 모두 production
  * spawn 확인 (CycleControllerV2.ts:1206/1214/1220/1226/1241).
  * fallback (kind 누락) = friend 풀 — typecheck 가 강제하므로 defensive.

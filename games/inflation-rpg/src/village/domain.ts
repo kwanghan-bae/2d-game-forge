@@ -7,7 +7,6 @@ import {
 import { Village_HERO_AUTONOMY_DELAY_MS, Village_MAX_INTERVENTION_CHARGES, Village_MAX_SAGA_ENTRIES } from './types';
 import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition, getVillageEquipmentName } from './equipment';
 import { createVillageHeroRuntime } from './heroRuntime';
-import { stableLegacyVillageRollKey } from './legacyCompatibility';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import {
   applyAgentTrustGain,
@@ -460,7 +459,7 @@ export function advanceHeroAutonomy(source: VillageSaveEnvelope, now: number): H
 }
 
 function savedEquipmentLevel(source: VillageSaveEnvelope, equipmentId: string): number {
-  const savedLevel = source.run.hero.equipmentLevels?.[equipmentId];
+  const savedLevel = source.run.hero.equipmentLevels[equipmentId];
   if (typeof savedLevel === 'number' && Number.isFinite(savedLevel)) {
     return Math.min(20, Math.max(0, Math.floor(savedLevel)));
   }
@@ -629,7 +628,7 @@ function applyHeroExperience(save: VillageSaveEnvelope, amount: number): number 
 function grantEquipmentLevel(save: VillageSaveEnvelope, equipmentId: string): void {
   if (!getVillageEquipmentDefinition(equipmentId)) return;
   const hero = save.run.hero;
-  const equipmentLevels = hero.equipmentLevels ?? {};
+  const equipmentLevels = hero.equipmentLevels;
   const savedLevel = equipmentLevels[equipmentId] ?? 0;
   const currentLevel = Number.isFinite(savedLevel) ? Math.max(0, Math.floor(savedLevel)) : 0;
   if (currentLevel >= 20) return;
@@ -932,9 +931,7 @@ export function getExpeditionForecast(
     ? getExpeditionSuccessChance(source, realmId, normalizedIndex, 'guide')
     : 0;
   const successChance = assignedAgentId === 'guide' ? guideSuccessChance : soloSuccessChance;
-  const rollKey = stableLegacyVillageRollKey(
-    expeditionId ?? source.run.expedition?.id ?? `forecast:${realmId}:${normalizedIndex}`,
-  );
+  const rollKey = expeditionId ?? source.run.expedition?.id ?? `forecast:${realmId}:${normalizedIndex}`;
   return {
     realmId,
     encounterIndex: normalizedIndex,
@@ -942,7 +939,7 @@ export function getExpeditionForecast(
     successChance,
     soloSuccessChance,
     guideSuccessChance,
-    roll: deterministicRoll(`${rollKey}:${stableLegacyVillageRollKey(encounter.id)}`),
+    roll: deterministicRoll(`${rollKey}:${encounter.id}`),
   };
 }
 
@@ -981,15 +978,10 @@ function resolveExpedition(
 
     const realm = getVillageRealmDefinition(expedition.realmId);
     if (!realm) return;
-    // Saves created before staged expeditions have no encounterIndex. Treat
-    // them as already at the boss so schema 1 resumes without replaying work.
-    const isLegacySingleEncounter = expedition.encounterIndex === undefined;
-    const encounterIndex = isLegacySingleEncounter
-      ? realm.encounters.length - 1
-      : Math.min(realm.encounters.length - 1, Math.max(0, Math.floor(expedition.encounterIndex ?? 0)));
-    const encounter = realm.encounters[encounterIndex] ?? realm.encounters[realm.encounters.length - 1];
+    const encounterIndex = Math.min(realm.encounters.length - 1, Math.max(0, Math.floor(expedition.encounterIndex)));
+    const encounter = realm.encounters[encounterIndex];
     if (!encounter) return;
-    const isBoss = isLegacySingleEncounter || encounter.tier === 'boss';
+    const isBoss = encounter.tier === 'boss';
     if (!allowRiskyBossConfirmation && !allowPermanentUnlock && isBoss) {
       expedition.status = 'awaiting_confirmation';
       return;
@@ -1039,10 +1031,10 @@ function resolveExpedition(
 
     const policyBonus = expedition.policy === 'aggression' ? 1.1 : expedition.policy === 'hoarding' ? 0.9 : 1;
     const reward = won ? scaleResources(realm.reward, policyBonus * efficiency) : {};
-    const totalTurns = expedition.totalTurns ?? battle.turns;
-    const totalDamageDealt = expedition.totalDamageDealt ?? battle.totalDamageDealt;
-    const totalDamageTaken = expedition.totalDamageTaken ?? battle.totalDamageTaken;
-    const encountersCleared = expedition.encountersCleared ?? (won ? 1 : 0);
+    const totalTurns = expedition.totalTurns;
+    const totalDamageDealt = expedition.totalDamageDealt;
+    const totalDamageTaken = expedition.totalDamageTaken;
+    const encountersCleared = expedition.encountersCleared;
     const totalEncounterCount = realm.encounters.length;
     const lowHp = save.run.hero.hpMax > 0 && save.run.hero.hp / save.run.hero.hpMax < 0.35;
     const recommendedFacilityId = lowHp

@@ -19,6 +19,8 @@ describe('Village settings screen', () => {
     expect(onChange).toHaveBeenNthCalledWith(1, { music: 0.4 });
     expect(onChange).toHaveBeenNthCalledWith(2, { muted: true });
     expect(screen.getByText('현재 게임 전용 저장')).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain('기존 기록');
+    expect(document.body.textContent).not.toContain('가져오기');
   });
 
   it('exposes purchase restoration only when the native bridge provides it', async () => {

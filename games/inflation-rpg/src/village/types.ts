@@ -44,7 +44,7 @@ export interface VillageHeroSnapshot {
   realmId: RealmId;
   equipmentIds: string[];
   /** Village equipment is a compact equipped loadout; repeated crafts increase its level. */
-  equipmentLevels?: Record<string, number>;
+  equipmentLevels: Record<string, number>;
   actionCount: number;
   rejuvenationCount: number;
   currentAction: 'rest' | 'train' | 'expedition';
@@ -88,12 +88,12 @@ export interface ExpeditionState {
   startedAt: number;
   completesAt: number;
   status: 'traveling' | 'awaiting_confirmation';
-  /** New Village expeditions traverse normal → elite → boss. Omitted means a legacy single-boss save. */
-  encounterIndex?: number;
-  encountersCleared?: number;
-  totalTurns?: number;
-  totalDamageDealt?: number;
-  totalDamageTaken?: number;
+  /** Every expedition traverses normal → elite → boss in this order. */
+  encounterIndex: number;
+  encountersCleared: number;
+  totalTurns: number;
+  totalDamageDealt: number;
+  totalDamageTaken: number;
 }
 
 export interface ExpeditionResult {
@@ -113,9 +113,9 @@ export interface ExpeditionResult {
   recommendedEquipmentId: string | null;
   retryAfterSeconds: number;
   /** Deterministic forecast shown before the encounter is resolved. */
-  successChance?: number;
-  encountersCleared?: number;
-  totalEncounterCount?: number;
+  successChance: number;
+  encountersCleared: number;
+  totalEncounterCount: number;
 }
 
 export interface SagaEntry {
@@ -159,8 +159,7 @@ export interface VillageRunState {
   hero: VillageHeroSnapshot;
   policy: VillagePolicy;
   expedition: ExpeditionState | null;
-  /** Optional so schema 1 saves created before result cards remain loadable. */
-  lastExpeditionResult?: ExpeditionResult | null;
+  lastExpeditionResult: ExpeditionResult | null;
   interventionCharges: number;
 }
 

@@ -3,7 +3,6 @@ import {
   setVolumes,
   playSfx,
   playBgm,
-  bgmIdForScreen,
   claimSoundOwner,
   releaseSoundOwner,
   _resetSoundForTest,
@@ -12,18 +11,6 @@ import {
 describe('sound system', () => {
   beforeEach(() => {
     _resetSoundForTest();
-  });
-
-  it('bgmIdForScreen maps known v1a screens', () => {
-    expect(bgmIdForScreen('main-menu')).toBe('lobby');
-    expect(bgmIdForScreen('cycle-prep-v2')).toBe('lobby');
-    expect(bgmIdForScreen('overworld')).toBe('field');
-    expect(bgmIdForScreen('cycle-result-v2')).toBe('lobby');
-  });
-
-  it('bgmIdForScreen returns null for unmapped screens', () => {
-    expect(bgmIdForScreen('settings')).toBeNull();
-    expect(bgmIdForScreen('saga-gallery')).toBeNull();
   });
 
   it('setVolumes clamps to [0, 1]', () => {

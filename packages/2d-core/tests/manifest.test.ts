@@ -5,12 +5,12 @@ describe('parseGameManifest', () => {
   it('accepts a minimal valid manifest', () => {
     const input = {
       slug: 'inflation-rpg',
-      title: '신의 마을: 옛 모험',
+      title: '신의 마을: 영원의 후원자',
       assetsBasePath: '/games/inflation-rpg/assets',
     };
     const result = parseGameManifest(input);
     expect(result.slug).toBe('inflation-rpg');
-    expect(result.title).toBe('신의 마을: 옛 모험');
+    expect(result.title).toBe('신의 마을: 영원의 후원자');
     expect(result.assetsBasePath).toBe('/games/inflation-rpg/assets');
   });
 

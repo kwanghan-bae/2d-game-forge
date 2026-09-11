@@ -1,5 +1,3 @@
-import { LEGACY_REWARDED_USAGE_KEY } from './legacyCompatibility';
-
 export type VillageRewardedPlacement = 'offline_double' | 'instant_task' | 'intervention_charge';
 
 export interface VillageAdProvider {
@@ -107,14 +105,9 @@ export function createLocalVillageRewardedUsageStore(
     read(day) {
       if (!storage) return 0;
       try {
-        const canonicalRaw = storage.getItem(Village_REWARDED_USAGE_KEY);
-        const fromLegacy = canonicalRaw === null;
-        const raw = canonicalRaw ?? storage.getItem(LEGACY_REWARDED_USAGE_KEY);
+        const raw = storage.getItem(Village_REWARDED_USAGE_KEY);
         const parsed = JSON.parse(raw ?? '{}') as { day?: string; count?: number };
         const count = parsed.day === day ? normalizeDailyUsage(parsed.count ?? 0) : 0;
-        if (fromLegacy && raw !== null) {
-          storage.setItem(Village_REWARDED_USAGE_KEY, JSON.stringify({ day: parsed.day, count: normalizeDailyUsage(parsed.count ?? 0) }));
-        }
         return count;
       } catch {
         return 0;

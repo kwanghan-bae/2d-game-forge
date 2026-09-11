@@ -84,7 +84,7 @@ export function isTraitSeason(seasonStartedAt: number, nowMs?: number): boolean 
 
 /**
  * 현재 active SeasonModifier 의 id. seasonStartedAt = 0 이면 epoch 기준
- * (legacy save 의 default). nowMs 미지정 시 Date.now().
+ * (기본 저장값). nowMs 미지정 시 Date.now().
  *
  * 30 일마다 카탈로그 순서대로 회전. 카탈로그 변경 시 회전 위치 보존되도록
  * id 가 아닌 index modulo 로 결정.

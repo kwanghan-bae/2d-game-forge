@@ -39,6 +39,9 @@ function baseResult(overrides: Partial<ExpeditionResult> = {}): ExpeditionResult
     recommendedFacilityId: 'blacksmith',
     recommendedEquipmentId: null,
     retryAfterSeconds: 20,
+    successChance: 0.9,
+    encountersCleared: 3,
+    totalEncounterCount: 3,
     ...overrides,
   };
 }
@@ -303,6 +306,10 @@ describe('Village expedition result screen', () => {
       completesAt: save.createdAt + 30_000,
       status: 'traveling',
       encounterIndex: 0,
+      encountersCleared: 0,
+      totalTurns: 0,
+      totalDamageDealt: 0,
+      totalDamageTaken: 0,
     };
     const props = {
       save,

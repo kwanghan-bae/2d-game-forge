@@ -250,6 +250,9 @@ describe('Village town hub support assignment', () => {
       recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: 'iron_sword',
       retryAfterSeconds: 45,
+      successChance: 0.05,
+      encountersCleared: 0,
+      totalEncounterCount: 3,
     };
     renderHub({ save });
 
@@ -276,6 +279,9 @@ describe('Village town hub support assignment', () => {
       recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: null,
       retryAfterSeconds: 0,
+      successChance: 0.9,
+      encountersCleared: 3,
+      totalEncounterCount: 3,
     };
     renderHub({ save });
 
@@ -295,6 +301,10 @@ describe('Village town hub support assignment', () => {
       completesAt: save.createdAt + 30_000,
       status: 'traveling',
       encounterIndex: 0,
+      encountersCleared: 0,
+      totalTurns: 0,
+      totalDamageDealt: 0,
+      totalDamageTaken: 0,
     };
     renderHub({ save });
 
@@ -312,6 +322,10 @@ describe('Village town hub support assignment', () => {
       completesAt: save.createdAt + 30_000,
       status: 'awaiting_confirmation',
       encounterIndex: 2,
+      encountersCleared: 2,
+      totalTurns: 8,
+      totalDamageDealt: 500,
+      totalDamageTaken: 40,
     };
 
     renderHub({ save });
@@ -338,6 +352,9 @@ describe('Village town hub support assignment', () => {
       recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: null,
       retryAfterSeconds: 45,
+      successChance: 0.05,
+      encountersCleared: 0,
+      totalEncounterCount: 3,
     };
 
     expect(() => renderHub({ save })).not.toThrow();
@@ -364,6 +381,9 @@ describe('Village town hub support assignment', () => {
       recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: null,
       retryAfterSeconds: 45,
+      successChance: 0.05,
+      encountersCleared: 0,
+      totalEncounterCount: 3,
     };
 
     expect(() => renderHub({ save })).not.toThrow();

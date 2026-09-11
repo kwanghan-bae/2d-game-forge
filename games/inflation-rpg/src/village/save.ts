@@ -1,9 +1,7 @@
-import type { HeroSnapshot } from '../hero/HeroEntity';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import { FACILITY_IDS, AGENT_DEFINITIONS, getVillageRealmDefinition, REALM_IDS } from './data';
 import { completeFacilityTasks } from './domain';
-import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition } from './equipment';
-import { LEGACY_CURRENT_SAVE_KEY, normalizeLegacyVillageSave } from './legacyCompatibility';
+import { getVillageEquipmentDefinition } from './equipment';
 import type {
   FacilityState,
   OfflineSummary,
@@ -17,7 +15,6 @@ import { Village_MAX_INTERVENTION_CHARGES, Village_MAX_SAGA_ENTRIES } from './ty
 export { Village_MAX_INTERVENTION_CHARGES } from './types';
 
 export const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-save-v2';
-export { LEGACY_CURRENT_SAVE_KEY } from './legacyCompatibility';
 export const Village_SCHEMA_VERSION = 2 as const;
 export const Village_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 // A normal visible tick runs every second. A larger gap is treated like a
@@ -68,39 +65,6 @@ function isPersistableNonNegativeNumber(value: unknown): value is number {
   return isPersistableNumber(value) && value >= 0;
 }
 
-function finiteNonNegativeOr(value: unknown, fallback: number): number {
-  return isNonNegativeNumber(value) && value <= MAX_PERSISTED_NUMBER ? value : fallback;
-}
-
-function finitePositiveOr(value: unknown, fallback: number): number {
-  return isFiniteNumber(value) && value > 0 && value <= MAX_PERSISTED_NUMBER ? value : fallback;
-}
-
-function finiteStringOr(value: unknown, fallback: string): string {
-  if (typeof value !== 'string') return fallback;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : fallback;
-}
-
-function positiveIntegerOr(value: unknown, fallback: number): number {
-  return isFiniteNumber(value) && Number.isInteger(value) && value >= 1 && value <= MAX_PERSISTED_NUMBER
-    ? value
-    : fallback;
-}
-
-function nonNegativeIntegerOr(value: unknown, fallback: number): number {
-  return isNonNegativeNumber(value) && Number.isInteger(value) && value <= MAX_PERSISTED_NUMBER
-    ? value
-    : fallback;
-}
-
-function safeActionCountForAge(age: number): number {
-  const derived = HeroLifecycle.actionsForAge(age);
-  return Number.isFinite(derived)
-    ? Math.min(MAX_PERSISTED_NUMBER, Math.max(0, Math.floor(derived)))
-    : MAX_PERSISTED_NUMBER;
-}
-
 function isCurrencyRecord(value: unknown): value is Partial<Record<VillageCurrencyKey, number>> {
   return isRecord(value) && Object.entries(value).every(([key, amount]) =>
     CURRENCY_KEYS.includes(key as VillageCurrencyKey)
@@ -132,13 +96,11 @@ function isExpeditionRecord(value: unknown): value is Record<string, unknown> {
     && isPersistableNonNegativeNumber(value.startedAt) && isPersistableNonNegativeNumber(value.completesAt)
     && value.completesAt > value.startedAt
     && (value.status === 'traveling' || value.status === 'awaiting_confirmation')
-    && (value.encounterIndex === undefined
-      || (isPersistableNonNegativeNumber(value.encounterIndex) && Number.isInteger(value.encounterIndex) && value.encounterIndex <= 2))
-    && (value.encountersCleared === undefined
-      || (isPersistableNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
-    && (value.totalTurns === undefined || isPersistableNonNegativeNumber(value.totalTurns))
-    && (value.totalDamageDealt === undefined || isPersistableNonNegativeNumber(value.totalDamageDealt))
-    && (value.totalDamageTaken === undefined || isPersistableNonNegativeNumber(value.totalDamageTaken));
+    && isPersistableNonNegativeNumber(value.encounterIndex) && Number.isInteger(value.encounterIndex) && value.encounterIndex <= 2
+    && isPersistableNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3
+    && isPersistableNonNegativeNumber(value.totalTurns)
+    && isPersistableNonNegativeNumber(value.totalDamageDealt)
+    && isPersistableNonNegativeNumber(value.totalDamageTaken);
 }
 
 function isExpeditionResultRecord(value: unknown): value is Record<string, unknown> {
@@ -162,11 +124,11 @@ function isExpeditionResultRecord(value: unknown): value is Record<string, unkno
       || (typeof value.recommendedEquipmentId === 'string'
         && getVillageEquipmentDefinition(value.recommendedEquipmentId) !== undefined))
     && isPersistableNonNegativeNumber(value.retryAfterSeconds)
-    && (value.successChance === undefined || (isPersistableNonNegativeNumber(value.successChance) && value.successChance <= 1))
-    && (value.encountersCleared === undefined
-      || (isPersistableNonNegativeNumber(value.encountersCleared) && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3))
-    && (value.totalEncounterCount === undefined
-      || (isPersistableNonNegativeNumber(value.totalEncounterCount) && Number.isInteger(value.totalEncounterCount) && value.totalEncounterCount >= 1 && value.totalEncounterCount <= 3));
+    && isPersistableNonNegativeNumber(value.successChance) && value.successChance <= 1
+    && isPersistableNonNegativeNumber(value.encountersCleared)
+    && Number.isInteger(value.encountersCleared) && value.encountersCleared <= 3
+    && isPersistableNonNegativeNumber(value.totalEncounterCount)
+    && Number.isInteger(value.totalEncounterCount) && value.totalEncounterCount >= 1 && value.totalEncounterCount <= 3;
 }
 
 function isSagaEntryRecord(value: unknown): boolean {
@@ -246,13 +208,14 @@ function isVillageSaveEnvelope(value: unknown): value is VillageSaveEnvelope {
   if (expedition !== null && !meta.unlockedRealms.includes(expedition.realmId as typeof REALM_IDS[number])) return false;
   const hasTrainingTask = Object.values(tasks).some((task) => isRecord(task) && task.facilityId === 'training');
   if (expedition !== null && hasTrainingTask) return false;
+  if (!Object.prototype.hasOwnProperty.call(run, 'lastExpeditionResult')) return false;
   const lastExpeditionResult = run.lastExpeditionResult;
   // A new expedition clears the previous result before charging its cost.
   // Keeping both records would let a partially-written save expose a stale
   // result while a different run is active, so quarantine the contradiction
   // instead of guessing which side should win during hydration.
-  if (expedition !== null && lastExpeditionResult !== undefined && lastExpeditionResult !== null) return false;
-  if (lastExpeditionResult !== undefined && lastExpeditionResult !== null) {
+  if (expedition !== null && lastExpeditionResult !== null) return false;
+  if (lastExpeditionResult !== null) {
     if (!isExpeditionResultRecord(lastExpeditionResult)
       || typeof lastExpeditionResult.completedAt !== 'number'
       || lastExpeditionResult.completedAt < value.createdAt
@@ -322,16 +285,14 @@ function isVillageSaveEnvelope(value: unknown): value is VillageSaveEnvelope {
     || !['rest', 'train', 'expedition'].includes(hero.currentAction as string)
     || !Array.isArray(hero.equipmentIds)
     || !hero.equipmentIds.every((id) => typeof id === 'string' && id.trim().length > 0)
-    || (hero.equipmentLevels !== undefined && (!isRecord(hero.equipmentLevels)
-      || !Object.entries(hero.equipmentLevels).every(([id, level]) => id.trim().length > 0
-        && isPersistableNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)))) return false;
+    || !isRecord(hero.equipmentLevels)
+    || !Object.entries(hero.equipmentLevels).every(([id, level]) => id.trim().length > 0
+      && isPersistableNonNegativeNumber(level) && Number.isInteger(level) && level >= 1 && level <= 20)) return false;
   const equipmentIds = hero.equipmentIds as string[];
-  if (hero.equipmentLevels !== undefined) {
-    const equipmentLevels = hero.equipmentLevels as Record<string, unknown>;
-    if (new Set(equipmentIds).size !== equipmentIds.length
-      || Object.keys(equipmentLevels).length !== equipmentIds.length
-      || !equipmentIds.every((id) => Object.prototype.hasOwnProperty.call(equipmentLevels, id))) return false;
-  }
+  const equipmentLevels = hero.equipmentLevels as Record<string, unknown>;
+  if (new Set(equipmentIds).size !== equipmentIds.length
+    || Object.keys(equipmentLevels).length !== equipmentIds.length
+    || !equipmentIds.every((id) => Object.prototype.hasOwnProperty.call(equipmentLevels, id))) return false;
   if (!meta.unlockedRealms.includes(hero.realmId as typeof REALM_IDS[number])) return false;
   const heroAge = hero.age;
   const heroLevel = hero.level;
@@ -441,121 +402,10 @@ export function createInitialVillageSave(seed: number): VillageSaveEnvelope {
   };
 }
 
-export function migrateLegacyHeroSnapshot(input: HeroSnapshot): VillageHeroSnapshot {
-  const snapshot = input && typeof input === 'object' ? input : {} as HeroSnapshot;
-  const legacyEquipment = Array.isArray(snapshot.equipment)
-    ? snapshot.equipment.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
-    : [];
-  const equipmentIds = [...new Set(legacyEquipment)];
-  const equipmentLevels = Object.fromEntries(
-    equipmentIds.map((id) => [id, Math.min(20, Math.max(1, legacyEquipment.filter((candidate) => candidate === id).length))]),
-  );
-  const name = finiteStringOr(snapshot.name, '이름 없는 영웅');
-  const emoji = finiteStringOr(snapshot.emoji, '⚔️');
-  const age = Math.max(5, positiveIntegerOr(snapshot.age, 17));
-  const level = positiveIntegerOr(snapshot.level, 1);
-  const expLimit = level * 100;
-  const rawExp = finiteNonNegativeOr(snapshot.exp, 0);
-  const exp = Number.isFinite(expLimit) ? Math.min(rawExp, Math.max(0, expLimit - 1)) : rawExp;
-  const hpMax = finitePositiveOr(snapshot.hpMax, 1_000);
-  const hp = Math.min(hpMax, finiteNonNegativeOr(snapshot.hp, hpMax));
-  const atk = finiteNonNegativeOr(snapshot.atk, finiteNonNegativeOr(snapshot.atkBase, 160));
-  const fallbackDefBase = Math.round(finiteNonNegativeOr(snapshot.hpBase, hpMax) * 0.1);
-  const defBase = finiteNonNegativeOr(snapshot.defBase, fallbackDefBase);
-  const fallbackDef = Math.round(hpMax * 0.1);
-  const def = finiteNonNegativeOr(snapshot.def, finiteNonNegativeOr(snapshot.defBase, fallbackDef));
-  const actionCount = nonNegativeIntegerOr(snapshot.actionCount, safeActionCountForAge(age));
-  const rejuvenationCount = nonNegativeIntegerOr(snapshot.rejuvenationCount, 0);
-  return {
-    name,
-    emoji,
-    age,
-    level,
-    exp,
-    hp,
-    hpMax,
-    atk,
-    def,
-    defBase,
-    critRateBase: Math.min(1, finiteNonNegativeOr(snapshot.critRateBase, 0.05)),
-    realmId: 'sacred_fields',
-    equipmentIds,
-    equipmentLevels,
-    actionCount,
-    rejuvenationCount,
-    currentAction: 'rest',
-  };
-}
-
-function hydrateEquipmentStats(save: VillageSaveEnvelope): VillageSaveEnvelope {
-  let next = save;
-  if (save.run.hero.equipmentLevels === undefined) {
-    const equipmentIds = [...new Set(save.run.hero.equipmentIds)];
-    const equipmentLevels = Object.fromEntries(
-      equipmentIds.map((id) => [id, Math.min(20, save.run.hero.equipmentIds.filter((candidate) => candidate === id).length)]),
-    );
-    next = JSON.parse(JSON.stringify(save)) as VillageSaveEnvelope;
-    next.run.hero.equipmentIds = equipmentIds;
-    next.run.hero.equipmentLevels = equipmentLevels;
-    applyVillageEquipmentBonuses(next.run.hero, getVillageEquipmentBonuses(equipmentIds, equipmentLevels));
-    next.run.hero.hp = Math.min(next.run.hero.hpMax, next.run.hero.hp);
-  }
-  if (next.meta.sagaEntries.length > Village_MAX_SAGA_ENTRIES) {
-    if (next === save) next = JSON.parse(JSON.stringify(save)) as VillageSaveEnvelope;
-    next.meta.sagaEntries = next.meta.sagaEntries.slice(0, Village_MAX_SAGA_ENTRIES);
-  }
-  return next;
-}
-
-function nextSagaId(source: VillageSaveEnvelope, base: string): string {
-  const isUsed = (id: string): boolean => Object.prototype.hasOwnProperty.call(source.meta.tasks, id)
-    || source.run.expedition?.id === id
-    || source.run.lastExpeditionResult?.id === id
-    || source.meta.sagaEntries.some((entry) => entry.id === id);
-  if (!isUsed(base)) return base;
-  let suffix = 2;
-  while (isUsed(`${base}-${suffix}`)) suffix += 1;
-  return `${base}-${suffix}`;
-}
-
-function cloneVillageSave(source: VillageSaveEnvelope): VillageSaveEnvelope {
-  return JSON.parse(JSON.stringify(source)) as VillageSaveEnvelope;
-}
-
-function destinationHeroAction(source: VillageSaveEnvelope): VillageHeroSnapshot['currentAction'] {
-  if (source.run.expedition) return 'expedition';
-  return Object.values(source.meta.tasks).some((task) => task.facilityId === 'training') ? 'train' : 'rest';
-}
-
-/** Explicit user-triggered import. Village never calls this during normal loading. */
-export function importLegacyHeroSnapshot(
-  source: VillageSaveEnvelope,
-  input: HeroSnapshot,
-  now: number,
-): VillageSaveEnvelope {
-  if (source.run.expedition) return source;
-  const eventAt = isPersistableNonNegativeNumber(now)
-    ? Math.max(source.updatedAt, now)
-    : source.updatedAt;
-  const updatedAt = Math.min(MAX_PERSISTED_NUMBER, Math.max(source.updatedAt, source.lastProcessedAt, eventAt));
-  const next = cloneVillageSave(source);
-  const destinationRealmId = source.meta.unlockedRealms.includes(source.run.hero.realmId)
-    ? source.run.hero.realmId
-    : 'sacred_fields';
-  const hero = {
-    ...migrateLegacyHeroSnapshot(input),
-    realmId: destinationRealmId,
-    currentAction: destinationHeroAction(source),
-  };
-  next.updatedAt = updatedAt;
-  next.run.hero = hero;
-  next.meta.sagaEntries = [{
-    id: nextSagaId(next, `saga-import-${eventAt}`),
-    kind: 'milestone' as const,
-    createdAt: eventAt,
-    title: '기존 영웅 기록 가져오기',
-    text: `${hero.name}의 기록을 현재 영웅으로 가져왔습니다.`,
-  }, ...next.meta.sagaEntries].slice(0, Village_MAX_SAGA_ENTRIES);
+function normalizeLoadedVillageSave(save: VillageSaveEnvelope): VillageSaveEnvelope {
+  if (save.meta.sagaEntries.length <= Village_MAX_SAGA_ENTRIES) return save;
+  const next = JSON.parse(JSON.stringify(save)) as VillageSaveEnvelope;
+  next.meta.sagaEntries = next.meta.sagaEntries.slice(0, Village_MAX_SAGA_ENTRIES);
   return next;
 }
 
@@ -693,8 +543,8 @@ export function simulateOfflineProgress(
       resourcesGained: resourceDelta(beforeCurrencies, nextSave.meta.currencies),
       equipmentGained: nextSave.run.hero.equipmentIds.filter((id) => !beforeEquipment.includes(id)),
       equipmentUpgraded: nextSave.run.hero.equipmentIds.filter((id) => beforeEquipment.includes(id)
-        && summaryEquipmentLevel(nextSave.run.hero.equipmentLevels?.[id])
-          > summaryEquipmentLevel(save.run.hero.equipmentLevels?.[id])),
+        && summaryEquipmentLevel(nextSave.run.hero.equipmentLevels[id])
+          > summaryEquipmentLevel(save.run.hero.equipmentLevels[id])),
       wasClamped: rawElapsed > Village_OFFLINE_CAP_MS,
       clockAnomaly: null,
       notes: rawElapsed === 0 ? [] : ['안전한 시설 작업과 원정만 오프라인으로 정산했습니다.'],
@@ -716,15 +566,7 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
   } catch {
     return { status: 'unavailable' };
   }
-  const isCanonical = raw !== null;
-  if (raw === null) {
-    try {
-      raw = storage.getItem(LEGACY_CURRENT_SAVE_KEY);
-    } catch {
-      return { status: 'unavailable' };
-    }
-    if (raw === null) return { status: 'missing' };
-  }
+  if (raw === null) return { status: 'missing' };
 
   let parsed: unknown;
   try {
@@ -733,16 +575,8 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
     return { status: 'invalid', reason: 'malformed_json' };
   }
 
-  const candidate = isCanonical ? parsed : normalizeLegacyVillageSave(parsed);
-  if (!isVillageSaveEnvelope(candidate)) return { status: 'invalid', reason: 'invalid_schema' };
-  const save = hydrateEquipmentStats(candidate);
-  if (!isCanonical) {
-    try {
-      storage.setItem(Village_SAVE_KEY, JSON.stringify(save));
-    } catch {
-      // A valid legacy save remains playable when canonical persistence fails.
-    }
-  }
+  if (!isVillageSaveEnvelope(parsed)) return { status: 'invalid', reason: 'invalid_schema' };
+  const save = normalizeLoadedVillageSave(parsed);
   return { status: 'valid', save };
 }
 
@@ -759,7 +593,7 @@ export function startFreshVillageSave(
 
   if (current.status === 'invalid' && storage) {
     try {
-      const raw = storage.getItem(Village_SAVE_KEY) ?? storage.getItem(LEGACY_CURRENT_SAVE_KEY);
+      const raw = storage.getItem(Village_SAVE_KEY);
       if (raw !== null) storage.setItem(Village_RECOVERY_BACKUP_KEY, raw);
     } catch {
       // The new game can still start when the best-effort recovery copy fails.

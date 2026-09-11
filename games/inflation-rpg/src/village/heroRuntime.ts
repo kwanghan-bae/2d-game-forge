@@ -24,7 +24,7 @@ function cloneSnapshot(snapshot: VillageHeroSnapshot): VillageHeroSnapshot {
       Object.entries(snapshot.equipmentLevels)
         .filter(([, level]) => typeof level === 'number' && Number.isFinite(level)),
     )
-    : undefined;
+    : {};
   return {
     ...snapshot,
     equipmentIds,
@@ -78,8 +78,8 @@ function addBattleDamage(total: number, amount: number): number {
 }
 
 /**
- * Village boundary around the legacy pure hero decisions/lifecycle rules.
- * It deliberately does not import CycleControllerV2 or mutate the legacy store.
+ * Village boundary around the pure hero decisions and lifecycle rules.
+ * It does not import the retired cycle controller or mutate a global store.
  */
 export function createVillageHeroRuntime(source: VillageHeroSnapshot): VillageHeroRuntime {
   let snapshot = cloneSnapshot(source);

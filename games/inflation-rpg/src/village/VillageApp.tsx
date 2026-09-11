@@ -163,9 +163,8 @@ export function VillageApp({ config }: Props) {
   }, [game.save.meta.settings.music, game.save.meta.settings.sfx, game.save.meta.settings.muted]);
 
   useEffect(() => {
-    // The legacy root and Phaser battle scenes share the global sound
-    // manager. Clear those tracks at the Village boundary so SPA navigation cannot
-    // leave legacy music or ambient audio playing over the new product.
+    // Claim the shared audio manager so a late unmount cannot silence a newer
+    // game root during SPA navigation.
     claimSoundOwner(soundOwner);
     playBgm(null);
     stopAmbient();
@@ -253,7 +252,7 @@ export function VillageApp({ config }: Props) {
       </div>
 
       {screen === 'town' && <TownHubScreen save={game.save} now={game.now} onPolicyChange={game.changePolicy} onStartTask={game.startTask} onCancelTask={game.cancelTask} onRestAgent={game.restSupportAgent} onInstantTask={game.monetizationAvailable ? game.instantTask : undefined} instantTaskPendingFacilities={game.instantTaskPendingFacilities} onRefresh={game.refresh} onUpgrade={game.upgrade} onNavigate={setScreen} onIntervention={game.intervene} monetizationAvailable={game.monetizationAvailable} adFree={game.adFree} adsToday={game.adsToday} adFreePurchasePending={game.adFreePurchasePending} interventionChargePending={game.interventionChargePending} onInterventionCharge={game.addInterventionCharge} onBuyAdFree={game.buyAdFree} />}
-      {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} gold={game.save.meta.currencies.gold} expeditionActive={Boolean(game.save.run.expedition)} onBack={() => setScreen('town')} onImportLegacy={game.importLegacyHero} onRejuvenate={game.rejuvenate} />}
+      {screen === 'hero' && <HeroDetailScreen hero={game.save.run.hero} gold={game.save.meta.currencies.gold} expeditionActive={Boolean(game.save.run.expedition)} onBack={() => setScreen('town')} onRejuvenate={game.rejuvenate} />}
       {screen === 'expedition' && <ExpeditionScreen save={game.save} now={game.now} onStart={game.startRun} onConfirm={game.confirmRun} onConfirmUnlock={game.confirmUnlock} onRefresh={game.refresh} onIntervention={game.intervene} onOpenSaga={() => setScreen('saga')} onBack={() => setScreen('town')} />}
       {screen === 'saga' && <SagaScreen entries={game.save.meta.sagaEntries} storyChoice={game.storyChoice} onChooseStoryChoice={game.chooseStoryChoice} onBack={() => setScreen('town')} />}
       {screen === 'settings' && <SettingsScreen settings={game.save.meta.settings} onChange={game.updateSettings} onBack={() => setScreen('town')} onRestorePurchases={game.restorePurchasesAvailable ? game.restorePurchases : undefined} onboardingSummary={onboardingSummary} />}

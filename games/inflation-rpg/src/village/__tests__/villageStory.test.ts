@@ -93,6 +93,9 @@ describe('Village deep forest story choice', () => {
       recommendedFacilityId: 'training',
       recommendedEquipmentId: null,
       retryAfterSeconds: 0,
+      successChance: 0.9,
+      encountersCleared: 3,
+      totalEncounterCount: 3,
     };
   }
 

@@ -21,7 +21,7 @@ export function VillageSaveRecoveryScreen({ reason, onStartFresh }: Props) {
         <h2 ref={titleRef} tabIndex={-1}>현재 게임 저장을 확인할 수 없습니다</h2>
         <p>{REASON_COPY[reason]}</p>
         <div className="village-alert">
-          기존 저장을 덮어쓰지 않았습니다. 새 저장을 시작하기 전까지 원본 데이터는 그대로 보존됩니다.
+          손상된 현재 게임 데이터는 별도 복구 사본으로 보존됩니다. 새 저장을 시작하기 전까지 원본은 변경되지 않습니다.
         </div>
         <div className="village-button-row">
           <button type="button" className="village-btn village-btn--primary" onClick={onStartFresh}>

@@ -6,9 +6,7 @@ import { completeFacilityTasks, startExpedition, startFacilityTask } from '../do
 import { getRealmVictoryEntry } from '../story';
 import { VillageMonetizationAdapter } from '../monetization';
 import { useVillageGame } from '../useVillageGame';
-import { useGameStore } from '../../store/gameStore';
 import { readVillageMetricEvents } from '../telemetry';
-import type { HeroSnapshot } from '../../hero/HeroEntity';
 import type { ExpeditionResult, VillageSaveEnvelope } from '../types';
 
 const HOUR = 60 * 60 * 1000;
@@ -44,6 +42,9 @@ function setDeepForestVictory(save: VillageSaveEnvelope): void {
     recommendedFacilityId: 'training',
     recommendedEquipmentId: null,
     retryAfterSeconds: 0,
+    successChance: 0.9,
+    encountersCleared: 3,
+    totalEncounterCount: 3,
   };
   save.run.lastExpeditionResult = result;
   save.meta.sagaEntries.unshift(getRealmVictoryEntry('deep_forest', save.run.hero.name, save.updatedAt));
@@ -168,17 +169,6 @@ function TelemetryHarness() {
       <button type="button" onClick={() => game.changePolicy('training')}>change policy</button>
       <button type="button" onClick={() => game.startRun('sacred_fields')}>start expedition</button>
       <button type="button" onClick={() => game.chooseStoryChoice('protect_flame')}>choose story</button>
-    </>
-  );
-}
-
-function ImportHarness() {
-  const game = useVillageGame();
-  return (
-    <>
-      <div data-testid="import-hero">{game.save.run.hero.name}</div>
-      <div data-testid="import-message">{game.message ?? ''}</div>
-      <button type="button" onClick={game.importLegacyHero}>import</button>
     </>
   );
 }
@@ -504,71 +494,6 @@ describe('useVillageGame monetization actions', () => {
 
     expect(providerCalls).toBe(0);
     expect(screen.getByTestId('spirit')).toHaveTextContent('100');
-  });
-
-  it('blocks a stale V3 import callback while an expedition is active', () => {
-    const base = createInitialVillageSave(120);
-    const started = startExpedition(base, 'sacred_fields', base.updatedAt, 'aggression', null);
-    expect(started.ok).toBe(true);
-    if (!started.ok) return;
-    persistVillageSave(started.save);
-    useGameStore.setState((state) => ({
-      ...state,
-      run: {
-        ...state.run,
-        heroSnapshot: {
-          name: 'stale import', emoji: '🛡️', age: 17, chapter: '청년기', job: '검객', level: 1,
-          exp: 0, hp: 1_000, hpMax: 1_000, atk: 160, atkBase: 160, hpBase: 1_000,
-          actionCount: 185, rejuvenationCount: 0, gridX: 0, gridY: 0, equipment: [],
-          personality: { courage: 0, curiosity: 0, greed: 0, compassion: 0, discipline: 0 },
-          unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 120,
-        } as unknown as HeroSnapshot,
-      },
-    }));
-
-    render(<ImportHarness />);
-    fireEvent.click(screen.getByRole('button', { name: 'import' }));
-
-    expect(screen.getByTestId('import-hero')).toHaveTextContent(base.run.hero.name);
-    expect(screen.getByTestId('import-message')).toHaveTextContent('원정 중에는 영웅 기록을 바꿀 수 없습니다');
-    useGameStore.setState((state) => ({ ...state, run: { ...state.run, heroSnapshot: null } }));
-  });
-
-  it('hydrates the legacy store only when importing from a cold current-product boot', async () => {
-    const state = useGameStore.getState();
-    const snapshot = {
-      name: 'cold boot hero', emoji: '🛡️', age: 19, chapter: '청년기', job: '검객', level: 4,
-      exp: 12, hp: 1_200, hpMax: 1_500, atk: 190, atkBase: 190, hpBase: 1_500,
-      actionCount: 185, rejuvenationCount: 1, gridX: 0, gridY: 0, equipment: [],
-      personality: { courage: 1, curiosity: 2, greed: 0, compassion: 3, discipline: 2 },
-      unlockedJobId: null, unlockedMilestones: [], learnedSkillIds: [], seed: 777,
-    } as unknown as HeroSnapshot;
-    useGameStore.setState((current) => ({
-      ...current,
-      run: { ...current.run, heroSnapshot: null },
-    }));
-    const legacyRaw = JSON.stringify({
-      state: {
-        meta: state.meta,
-        run: { ...state.run, heroSnapshot: snapshot },
-      },
-      version: 27,
-    });
-    localStorage.setItem('korea_inflation_rpg_save', legacyRaw);
-    const rehydrateSpy = vi.spyOn(useGameStore.persist, 'rehydrate');
-
-    render(<ImportHarness />);
-    expect(rehydrateSpy).not.toHaveBeenCalled();
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'import' }));
-    });
-
-    await waitFor(() => expect(screen.getByTestId('import-hero')).toHaveTextContent('cold boot hero'));
-    expect(rehydrateSpy).toHaveBeenCalledTimes(1);
-    expect(localStorage.getItem('korea_inflation_rpg_save')).toBe(legacyRaw);
-    rehydrateSpy.mockRestore();
-    useGameStore.setState((current) => ({ ...current, run: { ...current.run, heroSnapshot: null } }));
   });
 
   it('only requests one instant-task ad when the same action is clicked concurrently', async () => {

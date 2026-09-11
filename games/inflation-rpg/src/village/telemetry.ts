@@ -1,5 +1,3 @@
-import { LEGACY_METRICS_STORAGE_KEY } from './legacyCompatibility';
-
 export const Village_METRICS_STORAGE_KEY = 'shin-ui-eternal-sponsor-metrics-v1';
 export const Village_METRICS_CAP = 500;
 
@@ -87,21 +85,11 @@ function parseStoredMetrics(raw: string): VillageMetricEvent[] | null {
 
 function readStoredMetrics(storage: Storage | undefined): VillageMetricEvent[] {
   if (!storage) return [];
-  let canonicalRaw: string | null;
+  let raw: string | null;
   try {
-    canonicalRaw = storage.getItem(Village_METRICS_STORAGE_KEY);
+    raw = storage.getItem(Village_METRICS_STORAGE_KEY);
   } catch {
     return [];
-  }
-  let raw = canonicalRaw;
-  let fromLegacy = false;
-  if (raw === null) {
-    try {
-      raw = storage.getItem(LEGACY_METRICS_STORAGE_KEY);
-    } catch {
-      return [];
-    }
-    fromLegacy = raw !== null;
   }
   if (raw === null) return [];
 
@@ -116,13 +104,6 @@ function readStoredMetrics(storage: Storage | undefined): VillageMetricEvent[] {
     newestUnique.push(metric);
   }
   const normalized = newestUnique.reverse();
-  if (fromLegacy) {
-    try {
-      storage.setItem(Village_METRICS_STORAGE_KEY, JSON.stringify(normalized));
-    } catch {
-      // A valid legacy payload remains readable when canonical persistence fails.
-    }
-  }
   return normalized;
 }
 

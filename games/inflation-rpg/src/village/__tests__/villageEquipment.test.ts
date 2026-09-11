@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { completeFacilityTasks, startFacilityTask } from '../domain';
-import { createInitialVillageSave, loadVillageSave, persistVillageSave } from '../save';
+import { createInitialVillageSave, loadVillageSave, Village_SAVE_KEY } from '../save';
 import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition, getVillageEquipmentName } from '../equipment';
 
 describe('Village equipment progression', () => {
@@ -52,44 +52,27 @@ describe('Village equipment progression', () => {
     ]);
   });
 
-  it('hydrates equipment stats from a pre-upgrade Village save exactly once', () => {
-    const oldSave = createInitialVillageSave(102);
-    oldSave.run.hero.equipmentIds = ['iron_sword'];
-    delete oldSave.run.hero.equipmentLevels;
+  it('rejects a saved hero without the current equipment level map', () => {
+    const invalid = createInitialVillageSave(102);
+    invalid.run.hero.equipmentIds = ['iron_sword'];
+    const payload = JSON.parse(JSON.stringify(invalid)) as { run: { hero: Record<string, unknown> } };
+    delete payload.run.hero.equipmentLevels;
     const storage = new Map<string, string>();
-    const fakeStorage = {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value),
-    } as unknown as Storage;
+    const fakeStorage = { getItem: (key: string) => storage.get(key) ?? null } as unknown as Storage;
+    storage.set(Village_SAVE_KEY, JSON.stringify(payload));
 
-    persistVillageSave(oldSave, fakeStorage);
-    const hydrated = loadVillageSave(fakeStorage);
-    expect(hydrated?.run.hero.equipmentLevels).toEqual({ iron_sword: 1 });
-    expect(hydrated?.run.hero.atk).toBe(oldSave.run.hero.atk + 80);
-
-    if (!hydrated) return;
-    persistVillageSave(hydrated, fakeStorage);
-    expect(loadVillageSave(fakeStorage)?.run.hero.atk).toBe(oldSave.run.hero.atk + 80);
+    expect(loadVillageSave(fakeStorage)).toBeNull();
   });
 
-  it('caps duplicate legacy equipment records while hydrating old saves', () => {
-    const oldSave = createInitialVillageSave(104);
-    oldSave.run.hero.equipmentIds = Array.from({ length: 21 }, () => 'iron_sword');
-    delete oldSave.run.hero.equipmentLevels;
+  it('rejects duplicate equipment records instead of normalizing them on load', () => {
+    const invalid = createInitialVillageSave(104);
+    invalid.run.hero.equipmentIds = ['iron_sword', 'iron_sword'];
+    invalid.run.hero.equipmentLevels = { iron_sword: 2 };
     const storage = new Map<string, string>();
-    const fakeStorage = {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value),
-    } as unknown as Storage;
+    const fakeStorage = { getItem: (key: string) => storage.get(key) ?? null } as unknown as Storage;
+    storage.set(Village_SAVE_KEY, JSON.stringify(invalid));
 
-    persistVillageSave(oldSave, fakeStorage);
-    const hydrated = loadVillageSave(fakeStorage);
-    expect(hydrated?.run.hero.equipmentIds).toEqual(['iron_sword']);
-    expect(hydrated?.run.hero.equipmentLevels).toEqual({ iron_sword: 20 });
-
-    if (!hydrated) return;
-    persistVillageSave(hydrated, fakeStorage);
-    expect(loadVillageSave(fakeStorage)).not.toBeNull();
+    expect(loadVillageSave(fakeStorage)).toBeNull();
   });
 
   it('keeps equipment bonuses explicit and bounded by the saved level', () => {
@@ -156,8 +139,8 @@ describe('Village equipment progression', () => {
     expect(crafted.run.hero.atk).toBe(capped.run.hero.atk);
   });
 
-  it('does not leak an unknown legacy equipment id into player-facing text', () => {
-    expect(getVillageEquipmentName('legacy-knife-id')).toBe('기록된 장비');
+  it('does not leak an unknown equipment id into player-facing text', () => {
+    expect(getVillageEquipmentName('unknown-equipment-id')).toBe('기록된 장비');
   });
 
   it('does not treat inherited object keys as equipment definitions', () => {

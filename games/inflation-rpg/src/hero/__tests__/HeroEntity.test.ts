@@ -121,7 +121,7 @@ describe('HeroEntity action-time aging', () => {
   });
 });
 
-describe('tickAge with agingMul (V3-C aging_slow buff)', () => {
+describe('tickAge with agingMul (aging_slow buff)', () => {
   it('agingMul 1.0 (default) advances actionCount by 1 per tick', () => {
     const h = HeroEntity.create({ seed: 42, heroHpMax: 100, heroAtkBase: 100 });
     const start = h.actionCount;
@@ -178,12 +178,12 @@ describe('HeroEntity staggered serialization (cycle 20)', () => {
     expect(restored.staggered).toBe(false);
   });
 
-  it('restore handles legacy snapshot without staggered field', () => {
+  it('restore handles a snapshot without staggered field', () => {
     const h = mk();
     const snap = h.serialize(7);
-    const { staggered: _, ...legacy } = snap;
+    const { staggered: _, ...withoutStaggered } = snap;
     void _;
-    const restored = HeroEntity.restore(legacy as typeof snap);
+    const restored = HeroEntity.restore(withoutStaggered as typeof snap);
     expect(restored.staggered).toBe(false);
   });
 
@@ -210,12 +210,12 @@ describe('HeroEntity staggered serialization (cycle 20)', () => {
       expect(restored.getTraits()).toEqual(['t_challenge', 't_swift']);
     });
 
-    it('restore handles legacy snapshot without traits field', () => {
+    it('restore handles a snapshot without traits field', () => {
       const h = mk();
       const snap = h.serialize(7);
-      const { traits: _, ...legacy } = snap;
+      const { traits: _, ...withoutTraits } = snap;
       void _;
-      const restored = HeroEntity.restore(legacy as typeof snap);
+      const restored = HeroEntity.restore(withoutTraits as typeof snap);
       expect(restored.getTraits()).toEqual([]);
     });
 

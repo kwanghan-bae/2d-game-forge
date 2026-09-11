@@ -14,7 +14,6 @@ export interface RegisteredGame {
 
 const loaders: Record<string, RegisteredGame['load']> = {
   'inflation-rpg': () => import('@forge/game-inflation-rpg/game'),
-  'inflation-rpg-legacy': () => import('@forge/game-inflation-rpg/legacy').then((mod) => ({ StartGame: mod.StartLegacyGame })),
 };
 
 export const registeredGames: RegisteredGame[] = GAME_MANIFESTS.map((manifest) => {

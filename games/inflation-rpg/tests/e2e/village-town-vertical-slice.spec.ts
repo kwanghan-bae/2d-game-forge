@@ -3,7 +3,6 @@ import { expect, test } from '@playwright/test';
 const GAME_URL = '/games/inflation-rpg';
 const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-save-v2';
 const Village_RECOVERY_BACKUP_KEY = `${Village_SAVE_KEY}-recovery-backup`;
-const V3_SAVE_KEY = 'korea_inflation_rpg_save';
 
 test.describe('Village — 신의 마을 vertical slice', () => {
   test('신규 저장에서 시설 작업과 첫 원정을 시작한다', async ({ page }) => {
@@ -79,7 +78,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), Village_SAVE_KEY);
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as { createdAt: number; lastProcessedAt: number };
       save.createdAt = Date.now() - 9 * 60 * 60 * 1000;
       save.lastProcessedAt = save.createdAt;
@@ -101,7 +100,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '길잡이와 출발' }).click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as {
         meta: { agents: Array<{ id: string; activeTaskId: string | null }> };
         run: { expedition: { id: string; completesAt: number; encounterIndex: number } | null };
@@ -132,7 +131,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.evaluate(([key, value]) => localStorage.setItem(key, value), [Village_SAVE_KEY, raw]);
     await page.reload();
 
-    await expect(page.getByTestId('village-save-recovery')).toContainText('기존 저장을 덮어쓰지 않았습니다');
+    await expect(page.getByTestId('village-save-recovery')).toContainText('손상된 현재 게임 데이터는 별도 복구 사본으로 보존됩니다');
     expect(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY)).toBe(raw);
 
     await page.getByRole('button', { name: '새 현재 게임 저장 시작' }).click();
@@ -141,17 +140,19 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     expect(JSON.parse(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(2);
   });
 
-  test('Village 부팅은 V3 저장 키를 변경하지 않는다', async ({ page }) => {
+  test('Village 부팅은 관련 없는 저장 데이터를 읽지 않는다', async ({ page }) => {
     await page.goto(GAME_URL);
-    const legacyRaw = JSON.stringify({ version: 27, marker: 'legacy-preserved' });
+    const unrelatedKey = 'unrelated-save-record';
+    const unrelatedRaw = JSON.stringify({ version: 1, marker: 'unrelated' });
     await page.evaluate(([key, value]) => {
       localStorage.setItem(key, value);
       localStorage.removeItem('shin-ui-eternal-sponsor-save-v2');
-    }, [V3_SAVE_KEY, legacyRaw]);
+    }, [unrelatedKey, unrelatedRaw]);
     await page.reload();
 
     await expect(page.getByTestId('village-town-hub')).toBeVisible();
-    expect(await page.evaluate((key) => localStorage.getItem(key), V3_SAVE_KEY)).toBe(legacyRaw);
+    expect(await page.evaluate((key) => localStorage.getItem(key), unrelatedKey)).toBe(unrelatedRaw);
+    expect(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY)).toContain('"schemaVersion":2');
   });
 
   test('신의 개입으로 영웅을 즉시 회복하고 충전을 소비한다', async ({ page }) => {
@@ -161,7 +162,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), Village_SAVE_KEY);
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as { run: { hero: { hp: number }; interventionCharges: number } };
       save.run.hero.hp = 1;
       save.run.interventionCharges = 1;
@@ -184,7 +185,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '길잡이와 출발' }).click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as {
         meta: { agents: Array<{ id: string; activeTaskId: string | null }> };
         run: { expedition: { id: string; completesAt: number; encounterIndex: number } | null };
@@ -219,7 +220,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '혼자 출발' }).first().click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as {
         createdAt: number;
         updatedAt: number;
@@ -261,7 +262,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '혼자 출발' }).first().click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as {
         createdAt: number;
         updatedAt: number;
@@ -303,7 +304,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '혼자 출발' }).first().click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as {
         createdAt: number;
         meta: { unlockedRealms: string[] };
@@ -352,7 +353,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '길잡이와 출발' }).click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as {
         createdAt: number;
         lastProcessedAt: number;
@@ -390,7 +391,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), Village_SAVE_KEY);
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as { meta: { agents: Array<{ id: string; fatigue: number }> } };
       const agent = save.meta.agents.find((candidate) => candidate.id === 'blacksmith');
       if (!agent) throw new Error('blacksmith was not created');
@@ -410,7 +411,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), Village_SAVE_KEY);
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as { run: { hero: { exp: number } } };
       save.run.hero.exp = 80;
       localStorage.setItem(key, JSON.stringify(save));
@@ -421,7 +422,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await training.getByRole('button', { name: '작업 시작' }).click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as { meta: { tasks: Record<string, { facilityId: string; completesAt: number }> } };
       const task = Object.values(save.meta.tasks).find((candidate) => candidate.facilityId === 'training');
       if (!task) throw new Error('training task was not started');
@@ -444,7 +445,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await blacksmith.getByRole('button', { name: '작업 시작' }).click();
     await page.evaluate((key) => {
       const raw = localStorage.getItem(key);
-      if (!raw) throw new Error('v4 save was not created');
+      if (!raw) throw new Error('save was not created');
       const save = JSON.parse(raw) as { meta: { tasks: Record<string, { facilityId: string; completesAt: number }> } };
       const task = Object.values(save.meta.tasks).find((candidate) => candidate.facilityId === 'blacksmith');
       if (!task) throw new Error('blacksmith task was not started');

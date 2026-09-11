@@ -8,7 +8,7 @@ describe('Village save recovery screen', () => {
     render(<VillageSaveRecoveryScreen reason="invalid_schema" onStartFresh={onStartFresh} />);
 
     expect(screen.getByTestId('village-save-recovery')).toHaveTextContent('저장 복구 필요');
-    expect(screen.getByTestId('village-save-recovery')).toHaveTextContent('기존 저장을 덮어쓰지 않았습니다');
+    expect(screen.getByTestId('village-save-recovery')).toHaveTextContent('손상된 현재 게임 데이터는 별도 복구 사본으로 보존됩니다');
     expect(screen.getByTestId('village-save-recovery')).toHaveTextContent('구조 검증에 실패했습니다');
     fireEvent.click(screen.getByRole('button', { name: '새 현재 게임 저장 시작' }));
     expect(onStartFresh).toHaveBeenCalledOnce();

@@ -5,7 +5,7 @@ import { VillageApp } from './village/VillageApp';
 
 export type { StartGameConfig };
 
-/** Current product entry point. Legacy remains available from the explicit subpath. */
+/** The single product entry point exposed to the portal and native shell. */
 export function StartGame(config: StartGameConfig): ForgeGameInstance {
   return mountGame(config, VillageApp);
 }

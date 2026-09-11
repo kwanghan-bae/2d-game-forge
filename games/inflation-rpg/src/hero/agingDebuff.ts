@@ -12,7 +12,7 @@ const ONE: AgingDebuff = { atkMul: 1, hpMul: 1, moveMul: 1 };
  *  - 70-99: medium (-5% → -45%)
  *  - 100-199: severe (-45% → -90%)
  *  - 200+ : near-frozen, asymptotic to 0 but never zero (영원 hero).
- *  V3-G balance pass 에서 magnitude tune 가능. */
+ *  balance pass 에서 magnitude tune 가능. */
 export function getAgingDebuff(age: number): AgingDebuff {
   if (age < 50) return { ...ONE };
   if (age < 70) {

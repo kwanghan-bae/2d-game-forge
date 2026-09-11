@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createInitialVillageSave,
   loadVillageSave,
@@ -22,66 +22,17 @@ function memoryStorage(initial: Record<string, string> = {}) {
 }
 
 describe('Village save recovery boundary', () => {
-  it('migrates a schema-1 current-product save from the legacy key without mutating it', () => {
-    const source = createInitialVillageSave(9876) as unknown as Record<string, any>;
-    source.schemaVersion = 1;
-    source.meta.unlockedRealms = ['joseon_plains', 'deep_forest'];
-    source.meta.sagaEntries[0].id = 'saga-realm-intro-joseon_plains';
-    source.meta.sagaEntries[0].text = '조선 평야에서 v4_iron_sword를 들었다.';
-    source.run.hero.realmId = 'joseon_plains';
-    source.run.hero.equipmentIds = ['v4_iron_sword'];
-    source.run.hero.equipmentLevels = { v4_iron_sword: 3 };
-    source.run.lastExpeditionResult = {
-      id: 'result-joseon_plains',
-      realmId: 'joseon_plains',
-      outcome: 'victory',
-      completedAt: source.updatedAt,
-      reward: { gold: 1 },
-      heroPower: 120,
-      recommendedPower: 120,
-      turns: 1,
-      totalDamageDealt: 1,
-      totalDamageTaken: 1,
-      heroRemainingHp: source.run.hero.hp,
-      weaknessKR: '기록',
-      recommendedFacilityId: 'training',
-      recommendedEquipmentId: 'v4_guardian_armor',
-      retryAfterSeconds: 0,
-    };
-    const legacyKey = 'shin-ui-eternal-sponsor-v4-save-v1';
-    const canonicalKey = 'shin-ui-eternal-sponsor-save-v2';
-    const legacyRaw = JSON.stringify(source);
-    const storage = memoryStorage({ [legacyKey]: legacyRaw });
+  it('reads only the canonical save key', () => {
+    const getItem = vi.fn(() => null);
+    const storage = {
+      getItem,
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    } as unknown as Storage;
 
-    const result = readVillageSave(storage);
-
-    expect(result.status).toBe('valid');
-    if (result.status !== 'valid') return;
-    expect(result.save.schemaVersion).toBe(2);
-    expect(result.save.meta.unlockedRealms).toEqual(['sacred_fields', 'deep_forest']);
-    expect(result.save.run.hero.realmId).toBe('sacred_fields');
-    expect(result.save.run.hero.equipmentIds).toEqual(['iron_sword']);
-    expect(result.save.run.hero.equipmentLevels).toEqual({ iron_sword: 3 });
-    expect(result.save.run.lastExpeditionResult?.realmId).toBe('sacred_fields');
-    expect(result.save.run.lastExpeditionResult?.recommendedEquipmentId).toBe('guardian_armor');
-    expect(result.save.meta.sagaEntries[0]?.id).toBe('saga-realm-intro-sacred_fields');
-    expect(result.save.meta.sagaEntries[0]?.text).toContain('신목 들판');
-    expect(storage.dump(legacyKey)).toBe(legacyRaw);
-    expect(storage.dump(canonicalKey)).toBeTruthy();
-    expect(source.run.hero.realmId).toBe('joseon_plains');
-    expect(source.run.hero.equipmentIds).toEqual(['v4_iron_sword']);
-  });
-
-  it('does not revive legacy data when the canonical save is malformed', () => {
-    const legacyKey = 'shin-ui-eternal-sponsor-v4-save-v1';
-    const canonicalKey = 'shin-ui-eternal-sponsor-save-v2';
-    const legacyRaw = JSON.stringify(createInitialVillageSave(456));
-    const canonicalRaw = '{not-json';
-    const storage = memoryStorage({ [canonicalKey]: canonicalRaw, [legacyKey]: legacyRaw });
-
-    expect(readVillageSave(storage)).toEqual({ status: 'invalid', reason: 'malformed_json' });
-    expect(storage.dump(canonicalKey)).toBe(canonicalRaw);
-    expect(storage.dump(legacyKey)).toBe(legacyRaw);
+    expect(readVillageSave(storage)).toEqual({ status: 'missing' });
+    expect(getItem).toHaveBeenCalledTimes(1);
+    expect(getItem).toHaveBeenCalledWith(Village_SAVE_KEY);
   });
 
   it('distinguishes an absent save from a malformed save', () => {
@@ -249,6 +200,9 @@ describe('Village save recovery boundary', () => {
       recommendedFacilityId: 'blacksmith',
       recommendedEquipmentId: null,
       retryAfterSeconds: 45,
+      successChance: 0.05,
+      encountersCleared: 0,
+      totalEncounterCount: 3,
     };
     const storage = memoryStorage({ [Village_SAVE_KEY]: JSON.stringify(invalid) });
 
@@ -266,16 +220,15 @@ describe('Village save recovery boundary', () => {
     expect(fresh.meta.sagaEntries[0]?.title).toBe('영원한 후원자의 탄생');
   });
 
-  it('backs up an invalid legacy payload before starting a fresh canonical save', () => {
-    const legacyKey = 'shin-ui-eternal-sponsor-v4-save-v1';
-    const legacyRaw = JSON.stringify({ schemaVersion: 1, broken: true });
-    const storage = memoryStorage({ [legacyKey]: legacyRaw });
+  it('does not back up an unrelated stored payload when starting fresh', () => {
+    const unrelatedRaw = JSON.stringify({ schemaVersion: 1, broken: true });
+    const storage = memoryStorage({ 'unrelated-save-record': unrelatedRaw });
 
     startFreshVillageSave(storage, 124);
 
-    expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBe(legacyRaw);
-    expect(storage.dump(legacyKey)).toBe(legacyRaw);
-    expect(storage.dump('shin-ui-eternal-sponsor-save-v2')).toContain('"schemaVersion":2');
+    expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBeUndefined();
+    expect(storage.dump('unrelated-save-record')).toBe(unrelatedRaw);
+    expect(storage.dump(Village_SAVE_KEY)).toContain('"schemaVersion":2');
   });
 
   it('does not alter a valid save when recovery is not needed', () => {
@@ -310,12 +263,12 @@ describe('Village save recovery boundary', () => {
     expect(loadVillageSave(storage)).toBeNull();
   });
 
-  it('trims oversized saga history while hydrating an older valid save', () => {
+  it('trims oversized saga history when loading a current save', () => {
     const save = createInitialVillageSave(654);
     save.updatedAt = save.createdAt + Village_MAX_SAGA_ENTRIES + 4;
     save.lastProcessedAt = save.updatedAt;
     save.meta.sagaEntries = Array.from({ length: Village_MAX_SAGA_ENTRIES + 5 }, (_, index) => ({
-      id: `legacy-saga-${index}`,
+      id: `saga-entry-${index}`,
       kind: 'milestone' as const,
       createdAt: save.createdAt + index,
       title: `기록 ${index}`,
@@ -326,11 +279,11 @@ describe('Village save recovery boundary', () => {
     const loaded = loadVillageSave(storage);
 
     expect(loaded?.meta.sagaEntries).toHaveLength(Village_MAX_SAGA_ENTRIES);
-    expect(loaded?.meta.sagaEntries[0]?.id).toBe(`legacy-saga-${Village_MAX_SAGA_ENTRIES + 4}`);
-    expect(loaded?.meta.sagaEntries.at(-1)?.id).toBe('legacy-saga-5');
+    expect(loaded?.meta.sagaEntries[0]?.id).toBe(`saga-entry-${Village_MAX_SAGA_ENTRIES + 4}`);
+    expect(loaded?.meta.sagaEntries.at(-1)?.id).toBe('saga-entry-5');
   });
 
-  it('loads a schema-1 save with an arbitrary non-empty historical saga id', () => {
+  it('loads a current save with an arbitrary non-empty saga id', () => {
     const save = createInitialVillageSave(655);
     save.meta.sagaEntries[0]!.id = 'historic-choice-without-prefix';
     const storage = memoryStorage({ [Village_SAVE_KEY]: JSON.stringify(save) });

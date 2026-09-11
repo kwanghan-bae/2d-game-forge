@@ -7,7 +7,6 @@ interface Props {
   gold: number;
   expeditionActive: boolean;
   onBack: () => void;
-  onImportLegacy: () => void;
   onRejuvenate: () => void;
 }
 
@@ -31,7 +30,7 @@ function equipmentLevel(value: unknown): number {
     : 1;
 }
 
-export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImportLegacy, onRejuvenate }: Props) {
+export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onRejuvenate }: Props) {
   const titleRef = useVillageScreenHeadingFocus();
   const age = Math.min(Number.MAX_SAFE_INTEGER, Math.max(5, Math.floor(finiteHeroValue(hero.age, 17))));
   const level = Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, Math.floor(finiteHeroValue(hero.level, 1))));
@@ -52,15 +51,6 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
         </div>
       </section>
       <section className="village-panel">
-        <h2>기록 가져오기</h2>
-        <p>{expeditionActive
-          ? '원정 중에는 영웅 기록을 바꿀 수 없습니다. 귀환한 뒤 기존 기록을 가져오세요.'
-          : '기존 영웅 기록은 자동으로 섞이지 않습니다. 버튼을 눌렀을 때만 현재 게임으로 복사합니다.'}</p>
-        <button type="button" className="village-btn village-btn--quiet" disabled={expeditionActive} onClick={onImportLegacy}>
-          {expeditionActive ? '원정 귀환 후 기존 영웅 기록 가져오기' : '기존 영웅 기록 가져오기'}
-        </button>
-      </section>
-      <section className="village-panel">
         <h2>능력치</h2>
         <div className="village-detail-grid">
           <div className="village-detail-stat"><small>HP</small><strong>{finiteHeroNumber(hero.hp)}</strong><span className="village-muted">/ {finiteHeroNumber(hero.hpMax)}</span></div>
@@ -73,7 +63,7 @@ export function HeroDetailScreen({ hero, gold, expeditionActive, onBack, onImpor
         <h2>장비</h2>
         {equipmentIds.length > 0 ? equipmentIds.map((equipmentId) => {
           const definition = getVillageEquipmentDefinition(equipmentId);
-          const level = equipmentLevel(hero.equipmentLevels?.[equipmentId]);
+          const level = equipmentLevel(hero.equipmentLevels[equipmentId]);
           const bonuses = definition
             ? [
               `공격 +${definition.atk * level}`,

@@ -3,8 +3,6 @@
  * 사운드 파일 누락 시 silent fallback (warn 로그). Phaser 외부에서도 재생 가능.
  */
 
-import type { Screen } from '../types';
-
 export const SOUNDS_BASE = '/sounds';
 
 let currentBgm: HTMLAudioElement | null = null;
@@ -122,17 +120,6 @@ export function playBgm(id: string | null): void {
   } catch {
     /* silent */
   }
-}
-
-const SCREEN_BGM: Partial<Record<Screen, string>> = {
-  'main-menu': 'lobby',
-  'cycle-prep-v2': 'lobby',
-  'overworld': 'field',
-  'cycle-result-v2': 'lobby',
-};
-
-export function bgmIdForScreen(screen: Screen): string | null {
-  return SCREEN_BGM[screen] ?? null;
 }
 
 // Test helpers (vitest 환경에서 audio pool/state 리셋)

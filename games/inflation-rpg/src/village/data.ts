@@ -158,8 +158,8 @@ export function getVillageRealmName(id: string): string {
 
 /**
  * Returns the player-facing duration for the complete staged route. The
- * legacy `durationSeconds` field remains as a fallback for old single-stage
- * saves, while new Village routes are resolved encounter by encounter.
+ * aggregate field remains part of the data contract for balancing, while
+ * routes are resolved encounter by encounter.
  */
 export function getVillageRealmRouteDurationSeconds(realm: RealmDefinition): number {
   const stagedDuration = realm.encounters.reduce((total, encounter) => {

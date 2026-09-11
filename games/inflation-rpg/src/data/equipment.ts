@@ -88,6 +88,3 @@ export function createInstance(baseId: string): EquipmentInstance {
     modifiers: [],
   };
 }
-
-/** @deprecated — use getEquipmentBase. Kept for one task to ease migration of consumers. */
-export const getEquipmentById = getEquipmentBase;

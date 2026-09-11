@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   Village_METRICS_STORAGE_KEY,
   readVillageMetricEvents,
@@ -21,21 +21,20 @@ function event(
 describe('Village local launch telemetry', () => {
   afterEach(() => localStorage.clear());
 
-  it('migrates valid legacy telemetry into the canonical key without changing the old key', () => {
-    const legacyKey = 'shin-ui-eternal-sponsor-v4-metrics-v1';
-    const canonicalKey = 'shin-ui-eternal-sponsor-metrics-v1';
-    const stored = [event('legacy-metric', 'save_created', saveCreatedAt)];
-    const legacyRaw = JSON.stringify(stored);
-    localStorage.setItem(legacyKey, legacyRaw);
-
-    expect(readVillageMetricEvents()).toEqual(stored);
-    expect(localStorage.getItem(legacyKey)).toBe(legacyRaw);
-    expect(localStorage.getItem(canonicalKey)).toBe(legacyRaw);
+  it('reads telemetry only from the canonical key', () => {
+    const getItemSpy = vi.spyOn(localStorage, 'getItem').mockReturnValue(null);
+    try {
+      expect(readVillageMetricEvents()).toEqual([]);
+      expect(getItemSpy).toHaveBeenCalledTimes(1);
+      expect(getItemSpy).toHaveBeenCalledWith(Village_METRICS_STORAGE_KEY);
+    } finally {
+      getItemSpy.mockRestore();
+    }
   });
 
-  it('does not fall back to legacy telemetry when canonical data is malformed', () => {
+  it('does not read unrelated telemetry when canonical data is malformed', () => {
     localStorage.setItem('shin-ui-eternal-sponsor-metrics-v1', '{not-json');
-    localStorage.setItem('shin-ui-eternal-sponsor-v4-metrics-v1', JSON.stringify([
+    localStorage.setItem('unrelated-metrics-v1', JSON.stringify([
       event('stale', 'save_created', saveCreatedAt),
     ]));
 

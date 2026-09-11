@@ -4,7 +4,7 @@ import {
   resolveEnemyMaxHp, resolveEnemyAtk, resolvePlayerHit, resolveDamageTaken,
 } from './resolver';
 
-describe('battle resolver — pre-refactor BattleScene parity', () => {
+describe('battle resolver — known cases', () => {
   it.each(FIXTURES)('$name: enemyMaxHP', (f) => {
     const expected = f.isBoss
       ? Math.floor(f.monsterLevel * 50 * f.hpMult)

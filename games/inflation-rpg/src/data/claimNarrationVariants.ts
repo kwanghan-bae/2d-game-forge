@@ -1,6 +1,6 @@
 // Cycle 134/142/147 — claim 시 표시될 신의 어조 한 줄 variant 풀.
 // 사용처: SeasonPassScreen 의 handleClaim 성공 path. feedback 영역에 표시.
-// V3 정체성: 후원자 (player) 가 hero 의 노고를 인정하는 짧은 비트.
+// 후원자 (player)가 hero의 노고를 인정하는 짧은 비트.
 //
 // Cycle 148 — story-writer #2 권고: ClaimerTier 별 후원자 호칭 prefix.
 //   같은 base narration 에 tier-specific prefix 가 붙어 12 base × 5 tier =
@@ -133,12 +133,12 @@ export const CLAIM_NARRATION_BY_REALM_TONED: Readonly<Partial<Record<string, rea
  * test 에서는 seed 명시로 결정성 확보.
  *
  * tier 인자 (cycle 148) 가 주어지면 tier-specific prefix 가 base 앞에 붙음.
- * undefined 시 prefix 없는 base 만 반환 (legacy 호출 호환).
+ * undefined 시 prefix 없는 base만 반환한다.
  *
  * Cycle 165 — realm 인자 추가. realm 이 `CLAIM_NARRATION_BY_REALM` 의 key 와
  * 매칭하면 해당 realm 의 sub-pool 이 *추가 후보로 합류* (general + realm
  * union). seed 가 union 길이로 modulo. realm undefined 또는 매칭 부재 시
- * legacy general pool 만 사용 — backward compat 100%.
+ * realm이 없으면 general pool만 사용한다.
  */
 export function pickClaimNarration(
   seed?: number,

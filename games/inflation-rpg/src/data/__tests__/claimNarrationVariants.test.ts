@@ -52,7 +52,7 @@ describe('Cycle 134 — claimNarrationVariants', () => {
     expect(pickClaimNarration(1, '전설')).toBe(`${TIER_VOCATIVE_PREFIX['전설']}, ${CLAIM_NARRATION_VARIANTS[1]}`);
   });
 
-  it('cycle 148 — tier undefined 시 prefix 없음 (legacy 호환)', () => {
+  it('tier undefined 시 prefix 없음', () => {
     expect(pickClaimNarration(0)).toBe(CLAIM_NARRATION_VARIANTS[0]);
     expect(pickClaimNarration(0, undefined)).toBe(CLAIM_NARRATION_VARIANTS[0]);
   });

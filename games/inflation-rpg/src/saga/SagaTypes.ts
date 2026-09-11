@@ -13,7 +13,7 @@ export type SagaEventType =
   | 'moralChoice'
   | 'rejuvenation'
   | 'death'
-  // V3-H F3/F4/F5: new event types
+  // 확장 이벤트 유형
   | 'sightseeing'
   | 'meditation'
   | 'trial'

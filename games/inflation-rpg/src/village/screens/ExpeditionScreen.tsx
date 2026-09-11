@@ -128,11 +128,11 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const guideAvailability = getGuideAvailability(guide);
   const guideName = guide ? getVillageAgentDefinition(guide.id)?.nameKR ?? '기록되지 않은 에이전트' : '없음';
   const activeRealm = expedition ? getVillageRealmDefinition(expedition.realmId) ?? null : null;
-  const activeEncounter = activeRealm
-    ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition?.encounterIndex ?? activeRealm.encounters.length - 1))]
+  const activeEncounter = activeRealm && expedition
+    ? activeRealm.encounters[Math.min(activeRealm.encounters.length - 1, Math.max(0, expedition.encounterIndex))]
     : null;
   const activeForecast = activeRealm && activeEncounter && expedition
-    ? getExpeditionForecast(save, expedition.realmId, expedition.encounterIndex ?? activeRealm.encounters.length - 1, expedition.assignedAgentId, expedition.id)
+    ? getExpeditionForecast(save, expedition.realmId, expedition.encounterIndex, expedition.assignedAgentId, expedition.id)
     : null;
   const waitingForBoss = activeEncounter?.tier === 'boss';
   const nextRealmId = result?.outcome === 'victory' ? getNextRealmId(result.realmId) : null;
@@ -193,7 +193,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
         <section className="village-panel" data-testid="village-active-expedition">
           <h2>{expedition.status === 'awaiting_confirmation' ? '원정 결과 확인 필요' : '원정 진행 중'}</h2>
           <p>{activeRealm?.icon} {getVillageRealmName(expedition.realmId)} · {activeEncounter?.nameKR ?? activeRealm?.boss ?? '기록 확인 필요'}</p>
-          {activeEncounter && <div className="village-stat-line"><span className="village-chip">현재 단계 {activeEncounter.tier === 'normal' ? '일반' : activeEncounter.tier === 'elite' ? '정예' : '보스'}</span><span className="village-chip">{(expedition.encounterIndex ?? activeRealm!.encounters.length - 1) + 1}/{activeRealm!.encounters.length}</span><span className="village-chip">권장 {activeEncounter.recommendedPower}</span></div>}
+          {activeEncounter && <div className="village-stat-line"><span className="village-chip">현재 단계 {activeEncounter.tier === 'normal' ? '일반' : activeEncounter.tier === 'elite' ? '정예' : '보스'}</span><span className="village-chip">{expedition.encounterIndex + 1}/{activeRealm!.encounters.length}</span><span className="village-chip">권장 {activeEncounter.recommendedPower}</span></div>}
           {activeEncounter && activeForecast && <p className="village-muted">현재 전투력 {getVillageHeroPower(save).toLocaleString('ko-KR')} · 예상 승률 {Math.round(activeForecast.successChance * 100)}%</p>}
           {expedition.status === 'awaiting_confirmation' && <div className="village-alert">오프라인 동안 위험 구간에 도착했습니다. {waitingForBoss ? '보스 결과와 보상을' : '원정 결과와 보상을'} 확인한 뒤 귀환을 확정하세요.</div>}
           <div className="village-progress"><span style={{ width: `${getExpeditionProgressPercent(now, expedition.startedAt, expedition.completesAt)}%` }} /></div>

@@ -12,7 +12,7 @@ export default function Page() {
     containerRef.current.id = 'game-container';
     let cancelled = false;
 
-    // Dynamic import keeps Phaser out of the SSR bundle — effects never run server-side
+    // Dynamic import keeps the browser-only game mount out of the SSR bundle.
     void import('../startGame').then(({ StartGame }) => {
       if (cancelled || !containerRef.current) return;
       gameRef.current = StartGame({

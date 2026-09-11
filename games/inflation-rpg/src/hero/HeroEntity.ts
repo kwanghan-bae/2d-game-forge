@@ -32,7 +32,7 @@ export interface HeroCreateOpts {
   heroCritRateBase?: number;
 }
 
-/** V3-H B2 — 직렬화 가능한 hero state snapshot. persist v22 의 run.heroSnapshot 에 저장됨. */
+/** 직렬화 가능한 hero state snapshot. */
 export interface HeroSnapshot {
   name: string;
   emoji: string;
@@ -84,7 +84,7 @@ export class HeroEntity {
   actionCount: number;
   rejuvenationCount: number;
   staggered: boolean = false;
-  /** V3-D — current grid column. Updated by OverworldScene movement tween. */
+  /** 현재 grid column. */
   public gridX: number = 0;
   public gridY: number = 0;
   equipment: string[] = [];
@@ -199,7 +199,7 @@ export class HeroEntity {
     if (this.hp > this.hpMax) this.hp = this.hpMax;
   }
 
-  /** V3-B aging mechanic + V3-C aging_slow buff.
+  /** Aging mechanic and aging_slow buff.
    *  agingMul (default 1.0) 가 < 1.0 이면 fractional accumulator 로 늦춤.
    *  >= 1.0 이면 while-loop 으로 다중 tick 처리. */
   tickAge(agingMul: number = 1.0): void {
@@ -263,7 +263,7 @@ export class HeroEntity {
     return out;
   }
 
-  /** V3-H B2 — Snapshot for persist. Serialize all mutable hero state to a plain object. */
+  /** Snapshot for persistence. Serialize all mutable hero state to a plain object. */
   serialize(seed: number): HeroSnapshot {
     return {
       name: this.name,
@@ -297,7 +297,7 @@ export class HeroEntity {
     };
   }
 
-  /** V3-H B2 — Restore a HeroEntity from a snapshot. Derived stats are
+  /** Restore a HeroEntity from a snapshot. Derived stats are
    *  re-computed via recomputeStats() so aging debuff is applied correctly. */
   static restore(snap: HeroSnapshot): HeroEntity {
     const h = new HeroEntity();
@@ -339,7 +339,7 @@ export class HeroEntity {
     if (this.hp <= 0) this.staggered = true;
   }
 
-  /** V3-H E1: 패배 시 -10% 레벨 패널티.
+  /** 패배 시 -10% 레벨 패널티.
    *  staggered=true 를 설정하고 level 을 floor(level × 0.90) 으로 감소 (최소 1).
    *  recomputeStats() 를 호출해 새 level 에 맞게 hpMax/atk 을 갱신한다.
    *  oldLevel / newLevel 을 반환해 호출자가 saga narration 에 사용할 수 있게 한다. */

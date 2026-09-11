@@ -5,8 +5,6 @@
     "paths": {
       "@forge/core/*": ["packages/2d-core/src/*"],
       "@forge/game-inflation-rpg/game": ["games/inflation-rpg/src/startGame.ts"],
-      "@forge/game-inflation-rpg/legacy": ["games/inflation-rpg/src/startLegacyGame.ts"],
-      "@/components/ui/*": ["games/inflation-rpg/src/components/ui/*"],
       "@/components/*": ["apps/dev-shell/src/components/*"],
       "@/lib/registry.server": ["apps/dev-shell/src/lib/registry.server.ts"],
       "@/lib/registry": ["apps/dev-shell/src/lib/registry.ts"],

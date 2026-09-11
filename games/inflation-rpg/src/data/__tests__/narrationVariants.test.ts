@@ -160,7 +160,7 @@ describe('Cycle 101 F2 — NarrationVariants ctx.realm wiring', () => {
   });
 
   it('regression: 기존 호출자 (ctx 에 realm 없음) — battle 호출이 throw 0', () => {
-    // 회귀 보호: legacy test fixture 가 realm 없이 호출해도 동작.
+    // 회귀 보호: 기본 fixture가 realm 없이 호출해도 동작.
     expect(() => NarrationVariants.battle({ age: 5, enemyNameKR: '늑대' }, 0)).not.toThrow();
     expect(() => NarrationVariants.battle({ age: 5, enemyNameKR: '늑대' }, 7)).not.toThrow();
     expect(() => NarrationVariants.drop({ age: 5, itemNameKR: '검' }, 7)).not.toThrow();
@@ -393,7 +393,7 @@ describe('Cycle 275 — naturalDeath pool size invariant (cycle 258 wire 보강)
 });
 
 describe('Cycle 258 — NarrationVariants.naturalDeath (5 variant + composition)', () => {
-  it('seed=0 → legacy 1줄 "안식을 맞아 잠들었다" preserved', () => {
+  it('seed=0 → 기본 1줄 "안식을 맞아 잠들었다" preserved', () => {
     const r = NarrationVariants.naturalDeath({ age: 70, realm: null }, 0);
     expect(r).toMatch(/안식을 맞아 잠들었다/);
   });

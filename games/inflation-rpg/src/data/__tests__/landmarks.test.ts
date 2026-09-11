@@ -10,7 +10,7 @@ describe('LANDMARK_TYPES', () => {
     const ALL_KINDS = [
       'enemy', 'boss', 'village', 'shrine', 'cave', 'market', 'ruin', 'exit', 'rival',
       'watchtower', 'treasure_cave', 'holy_ruin', 'crossroads',
-      // V3-H F3/F5: 절경 + 시련
+      // 절경 + 시련
       'sightseeing', 'trial',
     ];
     for (const l of LANDMARK_TYPES) {

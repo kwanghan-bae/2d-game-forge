@@ -6,7 +6,7 @@
 // invariant 가 자동 보장.
 //
 // **R1 (PRD §리스크)** — naming 충돌 회피:
-//   기존 `season/SeasonState.ts` = age-based 환경 tint (V3-H, 봄/여름/가을/겨울).
+//   기존 `season/SeasonState.ts` = age-based 환경 tint (봄/여름/가을/겨울).
 //   본 file 의 `SeasonalModifier` = live-ops 30-day rotation 의 catalog item.
 //   둘은 namespace 자체가 분리 (`season/` vs `data/`) 이며 field 이름도
 //   `meta.season` (env tint) vs `meta.seasonStartedAt` (live-ops timestamp) 으로
