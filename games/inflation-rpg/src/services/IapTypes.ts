@@ -1,4 +1,4 @@
-/** Shared purchase identifiers used by the legacy service and V4 bridge. */
+/** Shared purchase identifiers used by the legacy service and Village bridge. */
 export type IapProductId =
   | 'ad_free'
   | 'crack_stone_pack_small'

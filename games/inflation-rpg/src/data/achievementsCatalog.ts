@@ -1,7 +1,4 @@
-// Cycle 128 — N5 Live Ops mega-phase F1: 5 starter achievement catalog
-//
-// PRD: docs/superpowers/evolution/cycle-125-prd.md §F1 의 *trivial 재정의 form*
-// 직접 회수. 산술충돌 사전 검증 (룰 8) 의 결과 반영:
+// Five starter achievement catalog. Historical balance rationale is preserved in Git history.
 //
 // 1. lv-10m-in-3-cycles    — baseline p50 6.98M → 10M = +43%. 단일 cycle p10-20.
 //                            *연속 3 cycle 의 1 회 이상* 으로 정의 (trivial reject).

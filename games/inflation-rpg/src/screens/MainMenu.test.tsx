@@ -9,10 +9,10 @@ beforeEach(() => {
   useGameStore.setState({ screen: 'main-menu', run: INITIAL_RUN, meta: INITIAL_META });
 });
 
-describe('MainMenu (V1a)', () => {
+describe('MainMenu (이전 버전)', () => {
   it('renders game title', () => {
     render(<MainMenu />);
-    expect(screen.getByText(/조선 인플레이션 RPG/)).toBeInTheDocument();
+    expect(screen.getByText('신의 마을: 옛 모험')).toBeInTheDocument();
   });
 
   it('사이클 시작 navigates to cycle-prep-v2', async () => {

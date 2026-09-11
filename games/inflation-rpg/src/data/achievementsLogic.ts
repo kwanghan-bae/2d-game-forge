@@ -1,9 +1,4 @@
-// Cycle 128 — N5 Live Ops mega-phase F1: AchievementSystem pure evaluator
-//
-// PRD: docs/superpowers/evolution/cycle-125-prd.md §F1
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F1 (F1.1~F1.6, F1.8)
-// Advisor: rolling window 해석, side-channel aux state, saga-only input,
-//          claim 스킵 (cycle 129 carry-over), gameStore wiring 스킵.
+// AchievementSystem pure evaluator.
 //
 // 핵심 invariant:
 // - hero state mutation 0: evaluator 는 saga 의 finalLevel / finalAge / deathCause /

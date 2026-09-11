@@ -1,7 +1,4 @@
-// Cycle 128 — N5 Live Ops mega-phase F1: AchievementSystem 자료구조
-//
-// PRD: docs/superpowers/evolution/cycle-125-prd.md §F1
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F1
+// AchievementSystem 자료구조.
 //
 // 본 cycle scope = F1 catalog + logic + 7 test 만. F3 의 token economy (claimAchievement,
 // seasonToken) 는 cycle 129 carry-over. gameStore wiring 도 cycle 129. 본 file 은

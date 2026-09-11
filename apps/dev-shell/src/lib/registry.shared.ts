@@ -15,7 +15,7 @@ export const GAME_MANIFESTS: readonly GameManifestValue[] = [
   },
   {
     slug: 'inflation-rpg-legacy',
-    title: '조선 인플레이션 RPG',
+    title: '신의 마을: 옛 모험',
     assetsBasePath: '/games/inflation-rpg/assets',
   },
 ];

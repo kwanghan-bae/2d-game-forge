@@ -1,6 +1,4 @@
-// Cycle 129 — N5 Live Ops mega-phase F2: seasonId deterministic 산출 test
-//
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F2.1, F2.2, EDGE.1, EDGE.5
+// seasonId deterministic 산출 regression test.
 
 import { describe, expect, it } from 'vitest';
 import {

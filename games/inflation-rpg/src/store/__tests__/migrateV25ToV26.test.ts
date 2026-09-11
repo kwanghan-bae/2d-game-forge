@@ -1,7 +1,4 @@
-// Cycle 129 — v25 → v26 migration test (N5 F1+F3)
-//
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F1.7, F3.4, F3.5,
-// EDGE.2, EDGE.3
+// v25 → v26 migration regression test.
 
 import { describe, expect, it } from 'vitest';
 import { runStoreMigration } from '../gameStore';

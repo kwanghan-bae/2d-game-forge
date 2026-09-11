@@ -40,7 +40,7 @@ hot-swap 으로 띄울 수 있다. 외부 출시되지 않는다 — 로컬 개�
 `exposeTestHooks: process.env.NODE_ENV !== 'production'` 으로 게이트한다.
 
 - 개발 모드 (`pnpm dev`): hook 노출. E2E 가 `window.gameState`,
-  `window.phaserGame` 등 legacy hook과 V4 전용 검증 경계를 사용할 수 있다.
+  `window.phaserGame` 등 legacy hook과 Village 전용 검증 경계를 사용할 수 있다.
 - 프로덕션 빌드 (`next build`): hook 노출 안 함. 만약 dev-shell 을 외부
   배포하게 되면 (의도된 시나리오 아님) globals 가 노출되지 않는다.
 

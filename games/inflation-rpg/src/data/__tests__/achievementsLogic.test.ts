@@ -1,6 +1,4 @@
-// Cycle 128 — N5 Live Ops mega-phase F1: AchievementSystem evaluator tests
-//
-// Test plan: docs/superpowers/evolution/cycle-127-test-plan.md §F1
+// AchievementSystem evaluator regression tests.
 // 본 cycle scope: F1.1, F1.2, F1.3, F1.4, F1.5, F1.6, F1.8 + F1.11 (hero state
 // mutation 0 invariant). 8 case ship — F1.7 (persist) + F1.9/F1.10 (claim) +
 // F1.12 (sim driver) + F1.13 (e2e) + F1.14 (multi-seed sim) 는 cycle 129+ carry-over.

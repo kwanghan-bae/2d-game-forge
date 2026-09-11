@@ -85,13 +85,17 @@ pnpm circular
 node scripts/autonomy/control.mjs status
 ```
 
-명시적인 시작 요청을 받은 루나는 위 응답의 generation을 `--expected`에 그대로 넣는다. `--approval`은 현재 사용자 요청을 추적할 메시지 식별자 또는 날짜와 요청 요약이다. 아래 대문자 값은 실제 응답값으로 치환한다. 자동 예약 프롬프트가 이 start 명령을 호출해서는 안 된다.
+명시적인 시작 요청을 받은 루나는 위 응답의 generation을 `--expected`에 그대로 넣는다. `--approval`은 현재 사용자 요청을 추적할 메시지 식별자 또는 날짜와 요청 요약이다. 아래 대문자 값은 실제 응답값으로 치환한다. 자동 예약 프롬프트가 `authorize-start` 또는 `start`를 호출해서는 안 된다.
 
 ```bash
-node scripts/autonomy/control.mjs start --approval USER_REQUEST_REF --expected CURRENT_GENERATION
+node scripts/autonomy/control.mjs authorize-start --approval USER_REQUEST_REF --expected CURRENT_GENERATION
+# 위 응답의 state.startAuthorization.id를 START_AUTHORIZATION_ID로 보관한다.
+node scripts/autonomy/control.mjs start --authorization START_AUTHORIZATION_ID --approval USER_REQUEST_REF --expected CURRENT_GENERATION
 node scripts/autonomy/control.mjs claim --generation RUN_GENERATION --owner COORDINATOR_ID --task GAME-01
 node scripts/autonomy/control.mjs check --generation RUN_GENERATION --owner COORDINATOR_ID --lease LEASE_ID --action edit
 ```
+
+`authorize-start`는 명시적인 사용자 재개 요청을 확인한 신뢰된 coordinator 경계에서만 호출한다. authorization은 현재 generation에 묶인 일회성 ID이며 10분 뒤 만료된다. `start`는 그 ID·승인 reference·`--expected`가 모두 일치할 때만 실행하고 성공 즉시 authorization을 소비한다. `status`의 pending authorization은 조정·감사를 위한 메타데이터일 뿐이다. 저장소 제어기는 호출자가 사람인지 암호학적으로 판별할 수 없으므로, nonempty approval reference는 인증 증명이 아니다. 예약 메시지는 `authorize-start`와 `start`를 모두 호출할 수 없으며, 고정 generation의 `status`를 확인하고 불일치하면 비활성화한다.
 
 작업 선택 후 `claim`의 lease ID를 보관한다. 수정·위임·검증·통합 직전 `check`를 실행하며, 실패하면 쓰기를 중단한다. lease는 30분이며 현재 작업 중 10분마다 `renew`로 연장한다. 만료는 자동 재배정하지 않는다. 작업자를 확인하고 중단한 뒤 명시적 재승인으로 복구한다.
 
@@ -114,7 +118,7 @@ node scripts/autonomy/control.mjs pause
 
 예약 실행이 필요하면 기존 동일 목적 예약을 먼저 찾고, 현재 작업의 heartbeat 하나만 유지한다. 새 작업을 계속 생성하지 않는다. 예약 프롬프트에는 실제 RUN_GENERATION을 고정하고 다음 계약을 넣는다:
 
-> 이 저장소의 control status와 고정 generation을 확인한다. 상태가 running이 아니거나 generation이 다르면 개발하지 않고 이 예약을 비활성화한다. start를 호출하거나 현재 generation을 새로 받아 재승인으로 취급하지 않는다. lease가 있으면 중복 구현하지 않는다. 유효한 경우 운영 문서와 백로그에서 한 작업을 claim하여 루나 역할 계약으로 실행·검증한다. 변경 없는 상태 알림은 생략하고 의미 있는 결과·실패·필수 결정만 알린다.
+> 이 저장소의 control status와 고정 generation을 확인한다. 상태가 running이 아니거나 generation이 다르면 개발하지 않고 이 예약을 비활성화한다. `authorize-start` 또는 `start`를 호출하거나 현재 generation을 새로 받아 재승인으로 취급하지 않는다. lease가 있으면 중복 구현하지 않는다. 유효한 경우 운영 문서와 백로그에서 한 작업을 claim하여 루나 역할 계약으로 실행·검증한다. 변경 없는 상태 알림은 생략하고 의미 있는 결과·실패·필수 결정만 알린다.
 
 중단 시 저장소 pause를 먼저 적용하고 해당 heartbeat를 비활성화한다. 다시 시작할 때만 새 generation으로 기존 예약을 명시적으로 갱신한다. 앱 예약 연결 자체는 이번에 활성화하지 않았고 실제 루나 장기 실행 E2E는 미검증이다.
 
