@@ -14,16 +14,16 @@ forge 의 첫 번째 게임. 조선 시대 배경의 영웅 후원·마을 경�
 - `pnpm --filter @forge/game-inflation-rpg dev` — standalone Next dev 서버
   (`:3100`). 포털 통합 개발은 레포 루트에서 `pnpm dev` 후
   `http://localhost:3000/games/inflation-rpg` 사용.
-- `pnpm --filter @forge/game-inflation-rpg build` — Next 정적 export → `out/`.
+- `pnpm turbo run build --filter=@forge/game-inflation-rpg...` — native plugin
+  build를 먼저 포함한 Next 정적 export → `out/`.
 - `pnpm --filter @forge/game-inflation-rpg build:ios` — Next build + Capacitor
   sync + Xcode 열기.
 - `pnpm --filter @forge/game-inflation-rpg build:android` — 동등하게 Android
   Studio 열기.
-- `pnpm --filter @forge/game-inflation-rpg test` — Vitest (400개 파일,
-  3,638개 테스트).
-- `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright. V4 vertical slice는
-  iPhone 14 / Desktop Chrome 두 프로파일에서 16개 시나리오(32/32)를 검증하며,
-  V3 legacy 회귀를 포함한 전체 실행은 46/46을 통과한다.
+- `pnpm --filter @forge/game-inflation-rpg test` — Vitest. 최신 실행 수치는
+  [현재 상태](../../docs/작업-현황.md)의 검증 기록을 기준으로 한다.
+- `pnpm --filter @forge/game-inflation-rpg e2e` — Playwright. V4와 V3 legacy
+  회귀 범위 및 최신 통과 수치는 [현재 상태](../../docs/작업-현황.md)에 기록한다.
 - `pnpm --filter @forge/dev-shell e2e` — 포털에서 V4 기본 경로와 V3 Legacy 경로를
   함께 확인한다(현재 5/5).
 
@@ -72,6 +72,8 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
 - `StartGame(config: StartGameConfig): ForgeGameInstance` — v4 기본 부팅 엔트리.
 - `StartLegacyGame(config: StartGameConfig): ForgeGameInstance` — 기존 V3
   부팅 엔트리. dev-shell의 `/games/inflation-rpg-legacy`가 사용한다.
+- `@forge/game-inflation-rpg/game` — V4 전용 package subpath.
+- `@forge/game-inflation-rpg/legacy` — V3 legacy 전용 package subpath.
 - `gameManifest: GameManifestValue` — dev-shell 의 registry 가 소비할
   매니페스트.
 
@@ -90,8 +92,10 @@ interface StartGameConfig {
 ```
 games/inflation-rpg/
 ├── src/
-│   ├── index.ts                 # gameManifest + StartGame export
-│   ├── startGame.ts             # v4 / legacy 부팅 엔트리
+│   ├── index.ts                 # gameManifest + V4/V3 entry export
+│   ├── startGame.ts             # V4 부팅 엔트리
+│   ├── startLegacyGame.ts       # 명시적 V3 legacy 부팅 엔트리
+│   ├── mountGame.ts             # 두 entry가 공유하는 생명주기·test hook 경계
 │   ├── types.ts                 # 공용 타입 (MetaState, RunState 등)
 │   ├── App.tsx                  # React 최상위 컴포넌트
 │   ├── v4/                      # 신의 마을 v4 제품 모듈
@@ -102,15 +106,7 @@ games/inflation-rpg/
 │   │   └── screens/             # 마을·영웅·원정·사가·설정 화면
 │   ├── app/                     # release 모드 Next 셸
 │   ├── components/              # PhaserGame.tsx 등 공용 컴포넌트
-│   ├── screens/                 # React UI 화면
-│   │   ├── MainMenu.tsx
-│   │   ├── ClassSelect.tsx
-│   │   ├── WorldMap.tsx
-│   │   ├── Battle.tsx           # Phaser 캔버스 래퍼
-│   │   ├── Inventory.tsx
-│   │   ├── Shop.tsx
-│   │   ├── StatAlloc.tsx
-│   │   └── GameOver.tsx
+│   ├── screens/                 # V3 legacy React UI 화면
 │   ├── store/
 │   │   └── gameStore.ts         # Zustand 스토어 (MetaState + RunState)
 │   ├── battle/
@@ -152,10 +148,8 @@ games/inflation-rpg/
 - **strict TypeScript opt-out**: `tsconfig.json` 에서
   `noUncheckedIndexedAccess`, `noImplicitOverride` 를 끄고 있다. upstream
   레거시 코드와의 호환 때문. 점진적으로 코드 수정 후 base 로 되돌릴 수 있음.
-- **`@/game/*` cross-workspace alias**: dev-shell 의 tsconfig 와
-  `next.config.ts` 에서 inflation-rpg 의 `src/` 로 alias 가 걸려 있다.
-  신규 게임은 동일한 alias 를 만들지 말고 내부에 상대 경로를 사용한다
-  (CONTRIBUTING §11 참조).
+- **V3 native identity 유지**: `localStorage` key와 Capacitor appId는 기존
+  설치·저장 호환을 위해 유지한다. V4 저장은 별도 namespace를 사용한다.
 
 ## 더 읽을 것
 

@@ -8,7 +8,6 @@
     "noImplicitOverride": false,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/game/*": ["../../games/inflation-rpg/src/game/*"],
       "@/components/ui/*": ["../../games/inflation-rpg/src/components/ui/*"],
       "@/lib/*": ["../../games/inflation-rpg/src/lib/*", "./src/lib/*"],
       "@/*": ["./src/*"]

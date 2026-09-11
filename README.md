@@ -49,7 +49,7 @@ pnpm e2e         # 모든 워크스페이스 Playwright
 특정 게임만 빌드:
 
 ```bash
-pnpm --filter @forge/game-inflation-rpg build:web      # 정적 export → out/
+pnpm turbo run build --filter=@forge/game-inflation-rpg... # native plugin + game dependency chain
 pnpm --filter @forge/game-inflation-rpg build:ios      # Capacitor sync + Xcode
 pnpm --filter @forge/game-inflation-rpg build:android  # Capacitor sync + Android Studio
 ```
@@ -103,7 +103,7 @@ pnpm --filter @forge/game-inflation-rpg build:android  # → Android Studio 에�
 ├── games/
 │   └── inflation-rpg/        # 첫 번째 게임 (korea-inflation-rpg 이식)
 ├── packages/
-│   └── 2d-core/              # 모든 게임이 공유할 베이스. 현재는 GameManifest 만
+│   └── 2d-core/              # 공용 게임 계약·세이브 envelope·test hooks·UI token
 ├── docs/
 │   ├── ARCHITECTURE.md       # 시스템 설계와 의존성 규칙
 │   ├── CONTRIBUTING.md       # 새 게임 추가 절차

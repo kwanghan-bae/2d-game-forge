@@ -14,7 +14,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "e2e": "turbo run e2e",
-    "circular": "madge --circular --extensions ts,tsx apps packages games",
+    "circular": "madge --circular --extensions ts,tsx --ts-config tsconfig.madge.json apps packages games",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

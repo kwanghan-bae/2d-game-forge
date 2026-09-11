@@ -7,7 +7,8 @@ export const gameManifest: GameManifestValue = parseGameManifest({
   assetsBasePath: '/games/inflation-rpg/assets',
 });
 
-export { StartGame, StartLegacyGame } from './startGame';
+export { StartGame } from './startGame';
+export { StartLegacyGame } from './startLegacyGame';
 export type { StartGameConfig } from './startGame';
 export { createNativeV4Monetization } from './v4/monetization';
 export type {

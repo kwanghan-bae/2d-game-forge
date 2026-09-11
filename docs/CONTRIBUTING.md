@@ -400,13 +400,12 @@ pnpm --filter @forge/game-<slug> exec cap sync
   server bundle 로 끌려 들어가 SSR 단계에서 `window` 부재로 실패한다.
   server component 는 반드시 `registry.server.ts` 만 사용한다.
 - **`exposeTestHooks: true` 를 릴리스 모드에서 켬** — 프로덕션 빌드에
-  `window.gameState` 같은 globals 가 노출된다. dev-shell 은
+  `window.gameConfig`나 legacy store globals가 노출된다. dev-shell 은
   `process.env.NODE_ENV !== 'production'` 으로 게이트하고, React wrapper 의
   기본값은 `false` 다.
-- **`@/game/*` alias 를 새 게임에서 사용** — 게임 내부에서 `@/game/...` 를
-  쓰면 dev-shell 의 tsconfig 와 Turbopack alias 에 cross-workspace 경로
-  추가가 강제된다. **신규 게임은 내부 import 에 상대 경로를 사용한다**
-  (inflation-rpg 만 grandfathered exception).
+- **게임별 cross-workspace alias를 새로 추가** — 포털의 `@/` 경로는 공용
+  UI/helper 호환용으로만 유지한다. **신규 게임은 내부 import 에 상대 경로를
+  사용한다.**
 - **upstream 호환 키를 그대로 둠** — 두 번째 게임이 같은 SaveManager 를
   쓰게 되는 순간 충돌한다. SaveManager 를 `@forge/core` 로 승격할 때
   namespace 를 도입한다.

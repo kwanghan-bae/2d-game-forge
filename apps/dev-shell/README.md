@@ -18,7 +18,7 @@ hot-swap 으로 띄울 수 있다. 외부 출시되지 않는다 — 로컬 개�
 |---|---|
 | `src/lib/registry.shared.ts` | server/client가 함께 쓰는 data-only manifest 원본. slug·제목·asset 경로의 단일 출처 |
 | `src/lib/registry.server.ts` | server component가 사용. shared manifest만 복사해 Phaser가 server bundle로 끌려 들어가지 않도록 격리 |
-| `src/lib/registry.ts` | client component가 사용. shared manifest에 `load: () => import('@forge/game-...')` 동적 import 콜백을 연결 |
+| `src/lib/registry.ts` | client component가 사용. shared manifest에 V4/legacy package subpath를 가리키는 `load` 동적 import 콜백을 연결 |
 
 추가로 `next.config.ts` 의 `transpilePackages` 에 게임 패키지명을 추가하고,
 `pnpm --filter @forge/dev-shell add @forge/game-<slug>@workspace:*` 로
@@ -39,8 +39,9 @@ hot-swap 으로 띄울 수 있다. 외부 출시되지 않는다 — 로컬 개�
 `GameMountInner.tsx` 가 `StartGame` 을 호출할 때
 `exposeTestHooks: process.env.NODE_ENV !== 'production'` 으로 게이트한다.
 
-- 개발 모드 (`pnpm dev`): hook 노출. E2E 가 `window.gameState`,
-  `window.phaserGame` 등 legacy hook과 V4 전용 검증 경계를 사용할 수 있다.
+- 개발 모드 (`pnpm dev`): hook 노출. 공통 설정은 `window.gameConfig`로,
+  V3 legacy 회귀 테스트는 `window.__zustand_inflation_rpg_store__`와
+  `window.__cycle_store_v2__`로 검증한다. V4 경로에서는 legacy store를 지운다.
 - 프로덕션 빌드 (`next build`): hook 노출 안 함. 만약 dev-shell 을 외부
   배포하게 되면 (의도된 시나리오 아님) globals 가 노출되지 않는다.
 
@@ -69,13 +70,11 @@ pnpm e2e          # Playwright. 포털 자체 smoke 만 돌림
 
 게임의 E2E (`full-game-flow` 등) 는 게임 워크스페이스에서 실행한다.
 
-## 의존성 부채
+## 호환성 메모
 
-- `tsconfig.json` 과 `next.config.ts` 에 cross-workspace `@/game/*` alias 가
-  걸려 있다. inflation-rpg 의 upstream 코드가 `@/game/...` 형태 import 를
-  쓰기 때문에 dev-shell 의 transpile 단계에서 해소가 필요하다.
-- 신규 게임은 [CONTRIBUTING.md](../../docs/CONTRIBUTING.md) §11 의 "자주 하는
-  실수" 에 따라 내부 import 에 상대 경로를 쓴다. inflation-rpg 만
-  grandfathered exception.
-- `tsconfig.json` 의 `noUncheckedIndexedAccess: false`, `noImplicitOverride:
-  false` 도 같은 이유로 완화되어 있다. 부채 해소 시 base 로 되돌린다.
+- `@/components/ui/*`와 `@/lib/*`는 게임 패키지의 공용 UI/helper를 포털에서
+  해석하기 위한 제한된 cross-workspace alias다. 게임별 모듈에는 상대 경로를
+  사용하고 새 게임 전용 alias는 추가하지 않는다.
+- `tsconfig.json`의 `noUncheckedIndexedAccess: false`,
+  `noImplicitOverride: false`는 현재 레거시 코드 호환을 위해 완화되어 있다.
+  관련 코드를 정리한 뒤 base 설정으로 되돌린다.

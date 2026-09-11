@@ -26,7 +26,7 @@ forge 는 **2D 게임 프레임워크**다. 특정 장르나 테마에 묶이지
 │ genre cores       (2d-rpg-core, 2d-idle-core)
 │ + plugins         (economy-inflation, karma, …)
 ├─────────────────────────────────────────────────────┤
-│ 2d-core           (부트·세이브·i18n·EventBus·Capacitor·E2E)
+│ 2d-core           (공용 타입·세이브 envelope·test hooks·UI token)
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -38,7 +38,7 @@ forge 는 **2D 게임 프레임워크**다. 특정 장르나 테마에 묶이지
 | 콘텐츠 팩 | `@forge/content-*` | 테마(스프라이트·BGM·폰트·인물 데이터·i18n)를 게임 간 공유. **언제든 새 테마 팩 추가 가능** (예: `content-korean-folklore`, `content-roma`, `content-fantasy`) | 미존재. 첫 한국 테마 콘텐츠는 inflation-rpg 내부에 있음 |
 | 장르 코어 | `@forge/{genre}-core` | RPG·idle·플랫포머·퍼즐처럼 같은 장르의 게임들이 공유할 시스템 (전투·스킬·인벤토리 등). **장르가 늘어나면 새 패키지 추가** | 미존재 |
 | 플러그인 | `@forge/{plugin-name}` (예: `economy-inflation`) | 장르 독립적이지만 모든 게임이 쓰지 않는 기능. 코어보다 옵션 성격 | 미존재 |
-| 코어 | `@forge/core` | 모든 2D 게임의 바닥 — 부팅, EventBus, SaveManager, i18n, Capacitor 헬퍼, E2E hook | 1개. 현재는 `GameManifest` 스키마만 |
+| 코어 | `@forge/core` | 모든 2D 게임의 바닥 — 게임 인스턴스 계약, 세이브 envelope, test hooks, 공용 UI/theme 계약 | 1개. 구현 승격 후보는 아직 게임 내부에 둠 |
 
 게임 외 부속:
 
@@ -226,16 +226,13 @@ SSR 단계에서 실패한다.
   inflation-rpg 와 dev-shell 은 upstream 레거시 코드 호환을 위해 두 strict
   플래그를 opt-out 했다. 신규 패키지는 base 를 그대로 따른다.
 
-## 8. 알려진 부채 (Phase 2 전 처리 권장)
+## 8. 알려진 호환성 제약
 
-- **cross-workspace `@/game/*` alias** — `apps/dev-shell/tsconfig.json` 과
-  `next.config.ts` 가 `games/inflation-rpg/src/game/*` 로 직접 별칭을 건다.
-  새 게임 추가 시 별칭이 늘어난다. 정책 옵션: 신규 게임은 내부에서 상대
-  경로를 쓰고, inflation-rpg 만 grandfathered.
 - **V3 upstream 호환 키** — legacy entrypoint의 `'korea_inflation_rpg_save'`
   localStorage 키와 `com.korea.inflationrpg` Capacitor appId가 그대로 살아있다.
-  V4는 `'shin-ui-eternal-sponsor-v4-save-v1'`로 분리되어 있다. `SaveManager`
-  를 `@forge/core`로 승격할 때 legacy namespace 패턴을 정리한다.
+  V4는 `'shin-ui-eternal-sponsor-v4-save-v1'`로 분리되어 있다. 이는 삭제할
+  잔재가 아니라 V3 업데이트 호환을 위한 고정 계약이며, 변경 시 migration과
+  native 앱 업데이트 경로를 함께 설계해야 한다.
 
 ## 9. 더 자세한 의도
 

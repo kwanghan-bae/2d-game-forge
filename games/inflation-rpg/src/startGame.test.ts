@@ -17,7 +17,8 @@ vi.mock('./v4/V4App', () => ({ V4App: () => null }));
 vi.mock('./store/gameStore', () => ({ useGameStore: mocks.legacyStore }));
 vi.mock('./overworld/cycleSliceV2', () => ({ useCycleStoreV2: mocks.cycleStore }));
 
-import { StartGame, StartLegacyGame } from './startGame';
+import { StartGame } from './startGame';
+import { StartLegacyGame } from './startLegacyGame';
 
 const config = {
   parent: 'game-container',

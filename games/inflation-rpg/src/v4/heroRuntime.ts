@@ -1,4 +1,3 @@
-import { HeroDecisionAI } from '../cycle/HeroDecisionAI';
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import { resolveDamageTaken, resolvePlayerHit } from '../battle/resolver';
 import type {
@@ -84,7 +83,6 @@ function addBattleDamage(total: number, amount: number): number {
  */
 export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
   let snapshot = cloneSnapshot(source);
-  const decisionAI = new HeroDecisionAI([]);
 
   return {
     getSnapshot: () => cloneSnapshot(snapshot),
@@ -94,10 +92,6 @@ export function createV4HeroRuntime(source: V4HeroSnapshot): V4HeroRuntime {
       if (context.policy === 'aggression' && context.expeditionAvailable) return 'expedition';
       if (context.policy === 'hoarding' && context.expeditionAvailable) return 'expedition';
       if (context.policy === 'training') return 'train';
-      // Call the V3 pure AI boundary for the safe/default branch. The V3 AI
-      // currently returns the first available node, which maps to resting in
-      // the V4 town loop.
-      decisionAI.chooseEncounterNode([]);
       return 'rest';
     },
 

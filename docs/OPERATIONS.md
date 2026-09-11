@@ -48,7 +48,7 @@
 pnpm --filter @forge/game-inflation-rpg typecheck
 pnpm --filter @forge/game-inflation-rpg test
 pnpm --filter @forge/game-inflation-rpg e2e
-pnpm --filter @forge/game-inflation-rpg build
+pnpm turbo run build --filter=@forge/game-inflation-rpg...
 pnpm typecheck
 pnpm lint
 pnpm circular
