@@ -13,6 +13,46 @@
 - 출처: [Kenney assets](https://kenney.nl/assets/), [iwenzhou/kenney mirror](https://github.com/iwenzhou/kenney).
 - `games/inflation-rpg/scripts/fetch-sounds.sh`는 위 mirror에서 가져오는 자동화 경로다.
 
+`games/inflation-rpg/public/assets/sounds/`는 위 `public/sounds/` 매니페스트와
+별개의 자산 경로다. 현재 추적된 27개 파일을 감사했지만, 이 경로에는 출처·원작자·
+라이선스를 증명하는 tracked README, manifest, fetch script 또는 embedded metadata가
+없다. `file`이 보고하는 Xiph.Org libVorbis 정보는 인코더 정보일 뿐 원본 자산의
+출처·라이선스 증거가 아니다. 따라서 다음 27개는 모두 **출처·라이선스 미확인,
+출시 차단(release-blocking)** 으로 남긴다. Kenney/CC0로 추정하거나
+`public/sounds/`의 attribution을 이 경로에 적용하지 않는다.
+
+완전한 현재 파일 목록:
+
+```text
+impact_heavy_metal.ogg
+impact_metal.ogg
+impact_punch.ogg
+impact_soft.ogg
+impact_wood.ogg
+notify_major.ogg
+step_grass_0.ogg
+step_grass_1.ogg
+step_grass_2.ogg
+step_grass_3.ogg
+step_grass_4.ogg
+step_snow_0.ogg
+step_snow_1.ogg
+step_snow_2.ogg
+step_snow_3.ogg
+step_snow_4.ogg
+step_stone_0.ogg
+step_stone_1.ogg
+step_stone_2.ogg
+step_stone_3.ogg
+step_stone_4.ogg
+step_wood_0.ogg
+step_wood_1.ogg
+step_wood_2.ogg
+step_wood_3.ogg
+step_wood_4.ogg
+ui_click.ogg
+```
+
 ### 이미지 — 확인된 CC0 그룹
 
 | 파일 그룹 | 라이선스 | 출처 | 비고 |
