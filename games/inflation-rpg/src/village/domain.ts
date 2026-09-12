@@ -1,3 +1,4 @@
+// Compatibility façade for callers outside the village domain. Production domain modules import direct modules.
 export {
   AGENT_REST_RECOVERY,
   MAX_INTERVENTION_CHARGES,
