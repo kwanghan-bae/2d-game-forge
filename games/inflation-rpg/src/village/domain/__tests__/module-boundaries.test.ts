@@ -13,6 +13,21 @@ import {
 } from '../facility/preview';
 import { cancelFacilityTask, restAgent, startFacilityTask } from '../facility/tasks';
 import { getFacilityUpgradeCost, upgradeFacility } from '../facility/upgrade';
+import {
+  getExpeditionForecast,
+  getExpeditionSuccessChance,
+  getNextRealmId,
+} from '../expedition/forecast';
+import {
+  confirmNextRealmUnlock,
+  confirmPendingExpedition,
+  startExpedition,
+} from '../expedition/commands';
+import {
+  completeFacilityTaskNow,
+  completeFacilityTasks,
+} from '../expedition/settlement';
+import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
 
 describe('Village domain module boundaries', () => {
   it('keeps public result constants available through the façade', () => {
@@ -36,5 +51,18 @@ describe('Village domain module boundaries', () => {
     expect(facade.restAgent).toBe(restAgent);
     expect(facade.getFacilityUpgradeCost).toBe(getFacilityUpgradeCost);
     expect(facade.upgradeFacility).toBe(upgradeFacility);
+  });
+
+  it('exposes expedition operations through the façade without wrappers', () => {
+    expect(facade.getExpeditionForecast).toBe(getExpeditionForecast);
+    expect(facade.getExpeditionSuccessChance).toBe(getExpeditionSuccessChance);
+    expect(facade.getNextRealmId).toBe(getNextRealmId);
+    expect(facade.startExpedition).toBe(startExpedition);
+    expect(facade.confirmPendingExpedition).toBe(confirmPendingExpedition);
+    expect(facade.confirmNextRealmUnlock).toBe(confirmNextRealmUnlock);
+    expect(facade.completeFacilityTasks).toBe(completeFacilityTasks);
+    expect(facade.completeFacilityTaskNow).toBe(completeFacilityTaskNow);
+    expect(facade.advanceHeroAutonomy).toBe(advanceHeroAutonomy);
+    expect(facade.decideHeroAction).toBe(decideHeroAction);
   });
 });
