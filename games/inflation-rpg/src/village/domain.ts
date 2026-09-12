@@ -4,17 +4,15 @@ import {
   getVillageRealmDefinition,
   REALM_DEFINITIONS,
 } from './data';
-import { Village_HERO_AUTONOMY_DELAY_MS, Village_MAX_INTERVENTION_CHARGES, Village_MAX_SAGA_ENTRIES } from './types';
+import { Village_HERO_AUTONOMY_DELAY_MS, Village_MAX_INTERVENTION_CHARGES } from './types';
 import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition, getVillageEquipmentName } from './equipment';
 import { createVillageHeroRuntime } from './heroRuntime';
-import { HeroLifecycle } from '../hero/HeroLifecycle';
 import {
   applyAgentTrustGain,
   chooseStoryChoice as chooseStoryChoiceEntry,
   getAvailableStoryChoice,
   getRealmIntroEntry,
   getRealmVictoryEntry,
-  getRejuvenationStoryEntry,
   getVillageEpilogueEntry,
   hasVillageEpilogue,
 } from './story';
@@ -24,7 +22,6 @@ import type {
   BattleResult,
   ExpeditionForecast,
   ExpeditionResult,
-  HeroAction,
   HeroAutonomyDecision,
   HeroAutonomyReason,
   HeroAutonomyResult,
@@ -32,11 +29,9 @@ import type {
   RealmId,
   SupportAgentId,
   VillageCurrencyKey,
-  RejuvenationResult,
   VillagePolicy,
   VillageSaveEnvelope,
   VillageSettings,
-  SupportAgent,
   StoryChoiceOptionId,
 } from './types';
 
@@ -48,9 +43,37 @@ import type {
   DomainResult,
   FacilityTaskPreview,
   FacilityUpgradeCost,
-  HeroDomainResult,
   InterventionDomainResult,
 } from './domain/contracts';
+import { advanceHeroActionsInPlace } from './domain/hero/autonomy';
+import { getVillageHeroPower, saturatingAdd } from './domain/hero/progression';
+import {
+  MAX_ECONOMY_VALUE,
+  isActionClockValid,
+  isPersistableClock,
+  isPersistableFiniteNumber,
+  isValidAgentState,
+  isValidCompletionWindow,
+  isValidCurrencyBalance,
+  isVillagePolicy,
+  positiveFiniteLevel,
+  safeCompletionTimestamp,
+} from './domain/shared/guards';
+import { nextSaveId, nextTaskId } from './domain/shared/ids';
+import {
+  canApplyCurrencyOutput,
+  canPay,
+  give,
+  pay,
+  safeScaledEconomyAmount,
+} from './domain/shared/resourceMath';
+import {
+  addUniqueStoryEntry,
+  cloneSave,
+  eventTimestamp,
+  syncHeroAction,
+  touchSave,
+} from './domain/shared/saveMutation';
 
 export {
   AGENT_REST_RECOVERY,
@@ -65,6 +88,12 @@ export type {
   InterventionDomainResult,
 } from './domain/contracts';
 
+export {
+  advanceHeroActions,
+  getHeroNextAction,
+} from './domain/hero/autonomy';
+export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
+
 export { getAvailableStoryChoice, hasVillageEpilogue } from './story';
 
 const FACILITY_OUTPUT_PER_LEVEL = 0.18;
@@ -73,38 +102,20 @@ const AGENT_OUTPUT_PER_LEVEL = 0.08;
 const AGENT_SPEED_PER_LEVEL = 0.03;
 const MAX_HERO_EXP_SETTLEMENT = 100_000;
 const MAX_LEVELS_PER_SETTLEMENT = 1_000;
-const MAX_ECONOMY_VALUE = Number.MAX_SAFE_INTEGER;
 const BLACKSMITH_EQUIPMENT_UNLOCKS = [
   { id: 'iron_sword', facilityLevel: 1 },
   { id: 'guardian_armor', facilityLevel: 2 },
   { id: 'spirit_talisman', facilityLevel: 3 },
 ] as const;
 
-function positiveFiniteLevel(value: number | undefined): number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 1 ? value : 1;
-}
-
 function boundedMultiplier(value: number): number {
   if (Number.isNaN(value) || value < 0) return 1;
   return Number.isFinite(value) ? Math.min(MAX_ECONOMY_VALUE, value) : MAX_ECONOMY_VALUE;
 }
 
-function safeScaledEconomyAmount(value: number | undefined, multiplier: number): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0 || multiplier <= 0) return 0;
-  const scaled = value * multiplier;
-  return Number.isFinite(scaled)
-    ? Math.min(MAX_ECONOMY_VALUE, Math.max(0, Math.floor(scaled)))
-    : MAX_ECONOMY_VALUE;
-}
-
 function safeDurationSeconds(value: number): number {
   if (!Number.isFinite(value)) return 10;
   return Math.min(MAX_ECONOMY_VALUE, Math.max(10, Math.round(value)));
-}
-
-function saturatingAdd(value: number, amount: number): number {
-  const base = Number.isFinite(value) && value >= 0 ? Math.min(MAX_ECONOMY_VALUE, value) : 0;
-  return Math.min(MAX_ECONOMY_VALUE, base + amount);
 }
 
 function saturatingCounterAdd(value: number | undefined, amount: number, cap = MAX_ECONOMY_VALUE): number {
@@ -113,51 +124,6 @@ function saturatingCounterAdd(value: number | undefined, amount: number, cap = M
     : 0;
   const increment = Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : 0;
   return Math.min(cap, base + increment);
-}
-
-function cloneSave(save: VillageSaveEnvelope): VillageSaveEnvelope {
-  return JSON.parse(JSON.stringify(save)) as VillageSaveEnvelope;
-}
-
-function isPersistableClock(value: number): boolean {
-  return Number.isFinite(value) && value >= 0 && value <= MAX_ECONOMY_VALUE;
-}
-
-function isValidCompletionWindow(startedAt: unknown, completesAt: unknown): boolean {
-  return typeof startedAt === 'number'
-    && typeof completesAt === 'number'
-    && isPersistableClock(startedAt)
-    && isPersistableClock(completesAt);
-}
-
-function eventTimestamp(save: VillageSaveEnvelope, now: number): number {
-  const requested = isPersistableClock(now)
-    ? now
-    : save.updatedAt;
-  return Math.min(MAX_ECONOMY_VALUE, Math.max(save.updatedAt, requested));
-}
-
-function safeCompletionTimestamp(startedAt: number, durationSeconds: number): number | null {
-  if (!isPersistableClock(startedAt) || !Number.isFinite(durationSeconds) || durationSeconds <= 0) return null;
-  const durationMs = durationSeconds * 1000;
-  if (!Number.isFinite(durationMs) || durationMs > MAX_ECONOMY_VALUE - startedAt) return null;
-  return startedAt + durationMs;
-}
-
-function touchSave(save: VillageSaveEnvelope, now: number): void {
-  const requested = eventTimestamp(save, now);
-  save.updatedAt = Math.min(MAX_ECONOMY_VALUE, Math.max(save.updatedAt, save.lastProcessedAt, requested));
-  if (save.meta.sagaEntries.length > Village_MAX_SAGA_ENTRIES) {
-    save.meta.sagaEntries.length = Village_MAX_SAGA_ENTRIES;
-  }
-}
-
-function isActionClockValid(save: VillageSaveEnvelope, now: number): boolean {
-  return isPersistableClock(now) && now >= save.updatedAt;
-}
-
-function isVillagePolicy(value: unknown): value is VillagePolicy {
-  return value === 'aggression' || value === 'hoarding' || value === 'training';
 }
 
 function isInterventionType(value: unknown): value is InterventionType {
@@ -169,85 +135,6 @@ function isValidInterventionCharges(value: number): boolean {
     && Number.isInteger(value)
     && value >= 0
     && value <= Village_MAX_INTERVENTION_CHARGES;
-}
-
-function isValidAgentFatigue(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
-}
-
-function isValidAgentLevel(value: unknown): value is number {
-  return typeof value === 'number'
-    && Number.isFinite(value)
-    && Number.isInteger(value)
-    && value >= 1
-    && value <= 3;
-}
-
-function isValidAgentTrust(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
-}
-
-function isValidAgentState(agent: SupportAgent | undefined): agent is SupportAgent {
-  const definition = agent ? getVillageAgentDefinition(agent.id) : undefined;
-  return Boolean(agent
-    && definition
-    && agent.nameKR === definition.nameKR
-    && agent.roleKR === definition.roleKR
-    && agent.trait === definition.trait
-    && isValidAgentLevel(agent.level)
-    && isValidAgentTrust(agent.trust)
-    && isValidAgentFatigue(agent.fatigue));
-}
-
-function isValidCurrencyBalance(value: unknown): value is number {
-  return isPersistableFiniteNumber(value) && Number.isSafeInteger(value) && value >= 0;
-}
-
-function isPersistableFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number'
-    && Number.isFinite(value)
-    && Math.abs(value) <= MAX_ECONOMY_VALUE;
-}
-
-function canPay(save: VillageSaveEnvelope, input: Partial<Record<VillageCurrencyKey, number>>): boolean {
-  return Object.entries(input).every(([key, value]) => {
-    const balance = save.meta.currencies[key as VillageCurrencyKey];
-    return isValidCurrencyBalance(balance)
-      && isValidCurrencyBalance(value)
-      && balance >= value;
-  });
-}
-
-function canApplyCurrencyOutput(
-  save: VillageSaveEnvelope,
-  output: Partial<Record<VillageCurrencyKey, number>>,
-): boolean {
-  return Object.entries(output).every(([key, value]) => {
-    if (!Object.prototype.hasOwnProperty.call(save.meta.currencies, key)
-      || typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return true;
-    return isValidCurrencyBalance(save.meta.currencies[key as VillageCurrencyKey]);
-  });
-}
-
-function pay(save: VillageSaveEnvelope, input: Partial<Record<VillageCurrencyKey, number>>): void {
-  for (const [key, value] of Object.entries(input)) {
-    const currency = key as VillageCurrencyKey;
-    save.meta.currencies[currency] -= value ?? 0;
-  }
-}
-
-function give(save: VillageSaveEnvelope, output: Partial<Record<VillageCurrencyKey, number>>, multiplier = 1): void {
-  for (const [key, value] of Object.entries(output)) {
-    const currency = key as VillageCurrencyKey;
-    if (!Object.prototype.hasOwnProperty.call(save.meta.currencies, currency)
-      || !Number.isFinite(value) || !Number.isFinite(multiplier) || value <= 0 || multiplier <= 0) continue;
-    const amount = Math.floor(value * multiplier);
-    const current = save.meta.currencies[currency];
-    if (!Number.isFinite(amount) || !Number.isFinite(current) || current < 0
-      || current > MAX_ECONOMY_VALUE) continue;
-    const boundedAmount = Math.min(MAX_ECONOMY_VALUE, amount);
-    save.meta.currencies[currency] = Math.min(MAX_ECONOMY_VALUE, current + boundedAmount);
-  }
 }
 
 function normalizeSettlementEfficiency(value: number): number {
@@ -262,83 +149,6 @@ function scaleResources(
   return Object.fromEntries(
     Object.entries(output).map(([key, value]) => [key, safeScaledEconomyAmount(value, multiplier)]),
   ) as Partial<Record<VillageCurrencyKey, number>>;
-}
-
-function isSaveIdUsed(save: VillageSaveEnvelope, id: string): boolean {
-  if (Object.prototype.hasOwnProperty.call(save.meta.tasks, id)) return true;
-  if (save.run.expedition?.id === id || save.run.lastExpeditionResult?.id === id) return true;
-  return save.meta.sagaEntries.some((entry) => entry.id === id || entry.id.endsWith(`-${id}`));
-}
-
-function addUniqueStoryEntry(save: VillageSaveEnvelope, entry: ReturnType<typeof getRealmIntroEntry>): void {
-  if (!save.meta.sagaEntries.some((candidate) => candidate.id === entry.id)) {
-    save.meta.sagaEntries.unshift(entry);
-  }
-}
-
-function nextSaveId(save: VillageSaveEnvelope, base: string): string {
-  if (!isSaveIdUsed(save, base)) return base;
-  let suffix = 2;
-  while (isSaveIdUsed(save, `${base}-${suffix}`)) suffix += 1;
-  return `${base}-${suffix}`;
-}
-
-function nextTaskId(save: VillageSaveEnvelope, prefix: string, now: number): string {
-  const timestamp = eventTimestamp(save, now);
-  return nextSaveId(save, `${prefix}-${timestamp}-${Object.keys(save.meta.tasks).length + 1}`);
-}
-
-function advanceHeroActionsInPlace(save: VillageSaveEnvelope, actions: number, now: number): void {
-  const amount = Math.floor(actions);
-  if (!Number.isFinite(actions) || amount <= 0) return;
-
-  const eventAt = eventTimestamp(save, now);
-  const hero = save.run.hero;
-  const previousAge = hero.age;
-  const currentActions = Number.isFinite(hero.actionCount) && Number.isInteger(hero.actionCount) && hero.actionCount >= 0
-    ? Math.min(MAX_ECONOMY_VALUE, hero.actionCount)
-    : 0;
-  const nextActions = Math.min(MAX_ECONOMY_VALUE, currentActions + amount);
-  const effectiveActions = nextActions - currentActions;
-  if (effectiveActions <= 0) return;
-  hero.actionCount = nextActions;
-  hero.age = Math.max(previousAge, HeroLifecycle.ageFromActions(hero.actionCount));
-  if (hero.age > previousAge) {
-    save.meta.sagaEntries.unshift({
-      id: nextSaveId(save, `saga-aging-${eventAt}-${hero.actionCount}`),
-      kind: 'milestone',
-      createdAt: eventAt,
-      title: '영웅의 시간',
-      text: `${hero.name}이(가) ${previousAge}세에서 ${hero.age}세로 한 걸음 나아갔다.`,
-    });
-  }
-}
-
-/** Advances the Village hero's action clock without mutating the source save. */
-export function advanceHeroActions(source: VillageSaveEnvelope, actions: number, now: number): VillageSaveEnvelope {
-  const amount = Math.floor(actions);
-  if (!Number.isFinite(actions) || amount <= 0) return source;
-  const save = cloneSave(source);
-  advanceHeroActionsInPlace(save, amount, now);
-  touchSave(save, now);
-  return save;
-}
-
-/**
- * Exposes the same next-action decision used by the hero runtime to the hub.
- * It is a read-only forecast; starting a task or expedition remains an
- * explicit player action and therefore cannot be triggered by rendering.
- */
-export function getHeroNextAction(source: VillageSaveEnvelope): HeroAction {
-  const hero = source.run.hero;
-  if (source.run.expedition) return 'expedition';
-  if (Object.values(source.meta.tasks).some((task) => task.facilityId === 'training')) return 'train';
-  return createVillageHeroRuntime(hero).chooseAction({
-    hp: hero.hp,
-    hpMax: hero.hpMax,
-    policy: source.run.policy,
-    expeditionAvailable: source.meta.unlockedRealms.length > 0,
-  });
 }
 
 function blockedAutonomyDecision(reason: HeroAutonomyReason): HeroAutonomyDecision {
@@ -581,16 +391,6 @@ export function getFacilityTaskPreview(
   };
 }
 
-function syncHeroAction(save: VillageSaveEnvelope): void {
-  if (save.run.expedition) {
-    save.run.hero.currentAction = 'expedition';
-    return;
-  }
-  save.run.hero.currentAction = Object.values(save.meta.tasks).some((task) => task.facilityId === 'training')
-    ? 'train'
-    : 'rest';
-}
-
 function applyHeroExperience(save: VillageSaveEnvelope, amount: number): number {
   const hero = save.run.hero;
   hero.level = Number.isFinite(hero.level) && Number.isInteger(hero.level) && hero.level >= 1 ? hero.level : 1;
@@ -747,63 +547,6 @@ export function restAgent(
   });
   touchSave(save, now);
   return { ok: true, save };
-}
-
-export function rejuvenateHero(source: VillageSaveEnvelope, years: number, now: number): HeroDomainResult {
-  if (!Number.isFinite(years) || years <= 0) {
-    return { ok: false, save: source, error: '회춘할 기간을 확인해 주세요.' };
-  }
-  if (source.run.expedition) {
-    return { ok: false, save: source, error: '원정 중에는 회춘 의식을 진행할 수 없습니다.' };
-  }
-
-  const gold = source.meta.currencies.gold;
-  if (!isValidCurrencyBalance(gold)) {
-    return { ok: false, save: source, error: '금화 잔액을 확인할 수 없어 회춘하지 않았습니다.' };
-  }
-
-  const eventAt = eventTimestamp(source, now);
-  const runtime = createVillageHeroRuntime(source.run.hero);
-  const result = runtime.rejuvenate(years);
-  if (result.yearsReduced <= 0) {
-    return { ok: false, save: source, error: '영웅은 이미 가장 젊은 상태입니다.' };
-  }
-  if (gold < result.cost) {
-    return { ok: false, save: source, error: `회춘 비용 ${result.cost} 금화가 부족합니다.` };
-  }
-
-  const save = cloneSave(source);
-  save.meta.currencies.gold = gold;
-  save.meta.currencies.gold -= result.cost;
-  save.run.hero = result.snapshot;
-  addUniqueStoryEntry(save, getRejuvenationStoryEntry(save.run.hero.name, result.yearsReduced, eventAt));
-  touchSave(save, now);
-  return { ok: true, save, result };
-}
-
-export function getVillageHeroPower(save: VillageSaveEnvelope): number {
-  const hero = save.run.hero;
-  const rawParts = [hero.atk, hero.def, hero.hpMax];
-  // A present numeric NaN indicates a corrupted stat snapshot. Preserve the
-  // existing fail-closed behavior for that case, while treating an omitted
-  // field as zero instead of allowing derived arithmetic to poison every
-  // otherwise valid combat stat.
-  if (rawParts.some((part) => typeof part === 'number' && Number.isNaN(part))) return 0;
-  const parts = rawParts.map((part, index) => {
-    if (typeof part !== 'number') return 0;
-    return index === 2 ? part / 100 : part;
-  });
-  let power = 0;
-  for (const part of parts) {
-    if (typeof part !== 'number') continue;
-    if (part < 0) continue;
-    const safePart = Number.isFinite(part)
-      ? Math.min(MAX_ECONOMY_VALUE, Math.floor(part))
-      : MAX_ECONOMY_VALUE;
-    if (power >= MAX_ECONOMY_VALUE - safePart) return MAX_ECONOMY_VALUE;
-    power += safePart;
-  }
-  return power;
 }
 
 const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
