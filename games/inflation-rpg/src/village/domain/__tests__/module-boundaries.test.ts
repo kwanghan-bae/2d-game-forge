@@ -28,6 +28,10 @@ import {
   completeFacilityTasks,
 } from '../expedition/settlement';
 import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
+import { chooseStoryChoice } from '../story/choices';
+import { grantInterventionCharge, useIntervention } from '../intervention/commands';
+import { grantOfflineResourceBonus } from '../rewards/offline';
+import { setVillagePolicy, updateVillageSettings } from '../settings/commands';
 
 describe('Village domain module boundaries', () => {
   it('keeps public result constants available through the façade', () => {
@@ -64,5 +68,14 @@ describe('Village domain module boundaries', () => {
     expect(facade.completeFacilityTaskNow).toBe(completeFacilityTaskNow);
     expect(facade.advanceHeroAutonomy).toBe(advanceHeroAutonomy);
     expect(facade.decideHeroAction).toBe(decideHeroAction);
+  });
+
+  it('exposes the remaining commands through the façade without wrappers', () => {
+    expect(facade.chooseStoryChoice).toBe(chooseStoryChoice);
+    expect(facade.grantInterventionCharge).toBe(grantInterventionCharge);
+    expect(facade.useIntervention).toBe(useIntervention);
+    expect(facade.grantOfflineResourceBonus).toBe(grantOfflineResourceBonus);
+    expect(facade.setVillagePolicy).toBe(setVillagePolicy);
+    expect(facade.updateVillageSettings).toBe(updateVillageSettings);
   });
 });
