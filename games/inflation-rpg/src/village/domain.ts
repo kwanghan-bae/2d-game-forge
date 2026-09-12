@@ -40,40 +40,33 @@ import type {
   StoryChoiceOptionId,
 } from './types';
 
+import {
+  AGENT_REST_RECOVERY,
+} from './domain/contracts';
+import type {
+  AgentDomainResult,
+  DomainResult,
+  FacilityTaskPreview,
+  FacilityUpgradeCost,
+  HeroDomainResult,
+  InterventionDomainResult,
+} from './domain/contracts';
+
+export {
+  AGENT_REST_RECOVERY,
+  MAX_INTERVENTION_CHARGES,
+} from './domain/contracts';
+export type {
+  AgentDomainResult,
+  DomainResult,
+  FacilityTaskPreview,
+  FacilityUpgradeCost,
+  HeroDomainResult,
+  InterventionDomainResult,
+} from './domain/contracts';
+
 export { getAvailableStoryChoice, hasVillageEpilogue } from './story';
 
-export type DomainResult<T extends VillageSaveEnvelope = VillageSaveEnvelope> =
-  | { ok: true; save: T; task: FacilityTask }
-  | { ok: false; save: VillageSaveEnvelope; error: string };
-
-export type HeroDomainResult =
-  | { ok: true; save: VillageSaveEnvelope; result: RejuvenationResult }
-  | { ok: false; save: VillageSaveEnvelope; error: string };
-
-export type AgentDomainResult =
-  | { ok: true; save: VillageSaveEnvelope }
-  | { ok: false; save: VillageSaveEnvelope; error: string };
-
-export type InterventionDomainResult =
-  | { ok: true; save: VillageSaveEnvelope; intervention: InterventionType }
-  | { ok: false; save: VillageSaveEnvelope; error: string };
-
-export interface FacilityTaskPreview {
-  facilityId: FacilityId;
-  durationSeconds: number;
-  input: Partial<Record<VillageCurrencyKey, number>>;
-  output: Partial<Record<VillageCurrencyKey, number>>;
-  outputEquipmentIds: string[];
-  heroExpGain: number;
-  assignedAgentId: SupportAgentId | null;
-  canStart: boolean;
-  error: string | null;
-}
-
-export type FacilityUpgradeCost = { gold: number; materials: number };
-
-export { Village_MAX_INTERVENTION_CHARGES as MAX_INTERVENTION_CHARGES } from './types';
-export const AGENT_REST_RECOVERY = 25;
 const FACILITY_OUTPUT_PER_LEVEL = 0.18;
 const FACILITY_UPGRADE_GROWTH = 1.35;
 const AGENT_OUTPUT_PER_LEVEL = 0.08;
