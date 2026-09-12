@@ -6,6 +6,13 @@ import {
   getHeroNextAction,
 } from '../hero/autonomy';
 import { getVillageHeroPower, rejuvenateHero } from '../hero/progression';
+import {
+  getBlacksmithEquipmentOutput,
+  getBlacksmithEquipmentRecommendation,
+  getFacilityTaskPreview,
+} from '../facility/preview';
+import { cancelFacilityTask, restAgent, startFacilityTask } from '../facility/tasks';
+import { getFacilityUpgradeCost, upgradeFacility } from '../facility/upgrade';
 
 describe('Village domain module boundaries', () => {
   it('keeps public result constants available through the façade', () => {
@@ -18,5 +25,16 @@ describe('Village domain module boundaries', () => {
     expect(facade.getHeroNextAction).toBe(getHeroNextAction);
     expect(facade.getVillageHeroPower).toBe(getVillageHeroPower);
     expect(facade.rejuvenateHero).toBe(rejuvenateHero);
+  });
+
+  it('exposes facility operations through the façade without wrappers', () => {
+    expect(facade.getBlacksmithEquipmentOutput).toBe(getBlacksmithEquipmentOutput);
+    expect(facade.getBlacksmithEquipmentRecommendation).toBe(getBlacksmithEquipmentRecommendation);
+    expect(facade.getFacilityTaskPreview).toBe(getFacilityTaskPreview);
+    expect(facade.startFacilityTask).toBe(startFacilityTask);
+    expect(facade.cancelFacilityTask).toBe(cancelFacilityTask);
+    expect(facade.restAgent).toBe(restAgent);
+    expect(facade.getFacilityUpgradeCost).toBe(getFacilityUpgradeCost);
+    expect(facade.upgradeFacility).toBe(upgradeFacility);
   });
 });

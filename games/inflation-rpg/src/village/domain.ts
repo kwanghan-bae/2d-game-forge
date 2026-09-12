@@ -1,11 +1,10 @@
 import {
-  getVillageAgentDefinition,
   getVillageFacilityDefinition,
   getVillageRealmDefinition,
   REALM_DEFINITIONS,
 } from './data';
 import { Village_HERO_AUTONOMY_DELAY_MS, Village_MAX_INTERVENTION_CHARGES } from './types';
-import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition, getVillageEquipmentName } from './equipment';
+import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition } from './equipment';
 import { createVillageHeroRuntime } from './heroRuntime';
 import {
   applyAgentTrustGain,
@@ -18,7 +17,6 @@ import {
 } from './story';
 import type {
   FacilityId,
-  FacilityTask,
   BattleResult,
   ExpeditionForecast,
   ExpeditionResult,
@@ -35,16 +33,12 @@ import type {
   StoryChoiceOptionId,
 } from './types';
 
-import {
-  AGENT_REST_RECOVERY,
-} from './domain/contracts';
 import type {
-  AgentDomainResult,
   DomainResult,
-  FacilityTaskPreview,
-  FacilityUpgradeCost,
   InterventionDomainResult,
 } from './domain/contracts';
+import { getBlacksmithEquipmentRecommendation } from './domain/facility/preview';
+import { startFacilityTask } from './domain/facility/tasks';
 import { advanceHeroActionsInPlace } from './domain/hero/autonomy';
 import { getVillageHeroPower, saturatingAdd } from './domain/hero/progression';
 import {
@@ -59,7 +53,7 @@ import {
   positiveFiniteLevel,
   safeCompletionTimestamp,
 } from './domain/shared/guards';
-import { nextSaveId, nextTaskId } from './domain/shared/ids';
+import { nextSaveId } from './domain/shared/ids';
 import {
   canApplyCurrencyOutput,
   canPay,
@@ -93,30 +87,18 @@ export {
   getHeroNextAction,
 } from './domain/hero/autonomy';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
+export {
+  getBlacksmithEquipmentOutput,
+  getBlacksmithEquipmentRecommendation,
+  getFacilityTaskPreview,
+} from './domain/facility/preview';
+export { cancelFacilityTask, restAgent, startFacilityTask } from './domain/facility/tasks';
+export { getFacilityUpgradeCost, upgradeFacility } from './domain/facility/upgrade';
 
 export { getAvailableStoryChoice, hasVillageEpilogue } from './story';
 
-const FACILITY_OUTPUT_PER_LEVEL = 0.18;
-const FACILITY_UPGRADE_GROWTH = 1.35;
-const AGENT_OUTPUT_PER_LEVEL = 0.08;
-const AGENT_SPEED_PER_LEVEL = 0.03;
 const MAX_HERO_EXP_SETTLEMENT = 100_000;
 const MAX_LEVELS_PER_SETTLEMENT = 1_000;
-const BLACKSMITH_EQUIPMENT_UNLOCKS = [
-  { id: 'iron_sword', facilityLevel: 1 },
-  { id: 'guardian_armor', facilityLevel: 2 },
-  { id: 'spirit_talisman', facilityLevel: 3 },
-] as const;
-
-function boundedMultiplier(value: number): number {
-  if (Number.isNaN(value) || value < 0) return 1;
-  return Number.isFinite(value) ? Math.min(MAX_ECONOMY_VALUE, value) : MAX_ECONOMY_VALUE;
-}
-
-function safeDurationSeconds(value: number): number {
-  if (!Number.isFinite(value)) return 10;
-  return Math.min(MAX_ECONOMY_VALUE, Math.max(10, Math.round(value)));
-}
 
 function saturatingCounterAdd(value: number | undefined, amount: number, cap = MAX_ECONOMY_VALUE): number {
   const base = Number.isFinite(value) && (value ?? 0) >= 0
@@ -261,136 +243,6 @@ export function advanceHeroAutonomy(source: VillageSaveEnvelope, now: number): H
   return { save: source, decision, started: false };
 }
 
-function savedEquipmentLevel(source: VillageSaveEnvelope, equipmentId: string): number {
-  const savedLevel = source.run.hero.equipmentLevels[equipmentId];
-  if (typeof savedLevel === 'number' && Number.isFinite(savedLevel)) {
-    return Math.min(20, Math.max(0, Math.floor(savedLevel)));
-  }
-  return source.run.hero.equipmentIds.includes(equipmentId) ? 1 : 0;
-}
-
-/**
- * Selects the next equipment reward for blacksmith work.
- *
- * Newly unlocked equipment takes priority over upgrades so a levelled-up
- * blacksmith reveals the full three-slot loadout before returning to the
- * weapon upgrade loop. Once every available item exists, the lowest-level
- * item is upgraded to keep the task useful without making higher-tier items
- * permanently unreachable.
- */
-export function getBlacksmithEquipmentOutput(source: VillageSaveEnvelope): string {
-  const facilityLevel = positiveFiniteLevel(source.meta.facilities.blacksmith?.level);
-  const available = BLACKSMITH_EQUIPMENT_UNLOCKS.filter(
-    (equipment) => equipment.facilityLevel <= facilityLevel,
-  );
-  const nextMissing = available.find((equipment) => savedEquipmentLevel(source, equipment.id) < 1);
-  if (nextMissing) return nextMissing.id;
-
-  const nextUpgrade = available.reduce((selected, equipment) => {
-    if (!selected) return equipment;
-    return savedEquipmentLevel(source, equipment.id) < savedEquipmentLevel(source, selected.id)
-      ? equipment
-      : selected;
-  }, available[0]);
-  return nextUpgrade?.id ?? BLACKSMITH_EQUIPMENT_UNLOCKS[0].id;
-}
-
-/** Returns only a missing item so defeat guidance does not suggest re-crafting equipped gear. */
-export function getBlacksmithEquipmentRecommendation(source: VillageSaveEnvelope): string | null {
-  const facilityLevel = positiveFiniteLevel(source.meta.facilities.blacksmith?.level);
-  return BLACKSMITH_EQUIPMENT_UNLOCKS.find(
-    (equipment) => equipment.facilityLevel <= facilityLevel && savedEquipmentLevel(source, equipment.id) < 1,
-  )?.id ?? null;
-}
-
-function facilityTaskEconomy(
-  save: VillageSaveEnvelope,
-  facilityId: FacilityId,
-  assignedAgentId: SupportAgentId | null,
-): Pick<FacilityTaskPreview, 'durationSeconds' | 'input' | 'output' | 'outputEquipmentIds' | 'heroExpGain'> {
-  const facility = save.meta.facilities[facilityId];
-  const definition = getVillageFacilityDefinition(facilityId);
-  const agent = assignedAgentId ? save.meta.agents.find((item) => item.id === assignedAgentId) : undefined;
-  const facilityLevel = positiveFiniteLevel(facility?.level);
-  const agentLevel = positiveFiniteLevel(agent?.level);
-  const specialty = Boolean(
-    agent && agent.trust >= 50 && getVillageAgentDefinition(agent.id)?.specialty === facilityId,
-  );
-  const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
-  const agentSpeedMultiplier = agent ? Math.pow(1 - AGENT_SPEED_PER_LEVEL, Math.max(0, agentLevel - 1)) : 1;
-  const durationSeconds = safeDurationSeconds(
-    (definition?.baseDurationSeconds ?? 0) * Math.pow(0.94, facilityLevel - 1)
-      * (specialty ? 0.85 : 1) * agentSpeedMultiplier * fatigueMultiplier,
-  );
-  const outputMultiplier = boundedMultiplier((specialty ? 1.2 : 1)
-    * (1 + FACILITY_OUTPUT_PER_LEVEL * (facilityLevel - 1))
-    * (agent ? 1 + AGENT_OUTPUT_PER_LEVEL * Math.max(0, agentLevel - 1) : 1));
-  return {
-    durationSeconds,
-    input: { ...(definition?.input ?? {}) },
-    output: Object.fromEntries(
-      Object.entries(definition?.output ?? {}).map(([key, value]) => [key, safeScaledEconomyAmount(value, outputMultiplier)]),
-    ) as Partial<Record<VillageCurrencyKey, number>>,
-    outputEquipmentIds: facilityId === 'blacksmith'
-      ? [getBlacksmithEquipmentOutput(save)]
-      : definition?.outputEquipmentIds ? [...definition.outputEquipmentIds] : [],
-    heroExpGain: safeScaledEconomyAmount(definition?.heroExpGain, outputMultiplier),
-  };
-}
-
-/**
- * Returns the exact economy shown by the hub before a task is committed.
- * Keeping this beside startFacilityTask prevents UI previews from drifting
- * away from the actual duration, cost, and output rules.
- */
-export function getFacilityTaskPreview(
-  source: VillageSaveEnvelope,
-  facilityId: FacilityId,
-  assignedAgentId?: SupportAgentId | null,
-): FacilityTaskPreview {
-  const hasAssignedAgentArgument = arguments.length >= 3;
-  const requestedAgentId = hasAssignedAgentArgument ? assignedAgentId : null;
-  const facility = source.meta.facilities[facilityId];
-  const definition = getVillageFacilityDefinition(facilityId);
-  const agent = requestedAgentId ? source.meta.agents.find((item) => item.id === requestedAgentId) : undefined;
-  const economy = facilityTaskEconomy(source, facilityId, requestedAgentId ?? null);
-  let error: string | null = null;
-
-  if (!facility || !definition
-    || typeof facility.level !== 'number'
-    || !Number.isFinite(facility.level)
-    || !Number.isInteger(facility.level)
-    || facility.level < 1) {
-    error = '아직 사용할 수 없는 시설입니다.';
-  } else if (hasAssignedAgentArgument && requestedAgentId === undefined) {
-    error = '지원 에이전트를 찾을 수 없습니다.';
-  } else if (facility.activeTaskId) {
-    error = '이 시설에는 이미 진행 중인 작업이 있습니다.';
-  } else if (facilityId === 'training' && source.run.expedition) {
-    error = '원정 중인 영웅은 훈련소 작업을 시작할 수 없습니다.';
-  } else if (requestedAgentId !== null && !agent) {
-    error = '지원 에이전트를 찾을 수 없습니다.';
-  } else if (requestedAgentId !== null && agent?.activeTaskId) {
-    error = '해당 지원 에이전트가 다른 작업 중입니다.';
-  } else if (requestedAgentId && agent && getVillageAgentDefinition(agent.id)?.specialty !== facilityId) {
-    error = '해당 지원 에이전트는 이 시설의 전문 담당자가 아닙니다.';
-  } else if (agent && !isValidAgentState(agent)) {
-    error = '지원 에이전트 정보를 확인할 수 없습니다.';
-  } else if (agent && agent.fatigue >= 100) {
-    error = '지원 에이전트가 너무 피로합니다. 휴식 후 다시 배정하세요.';
-  } else if (!canPay(source, economy.input)) {
-    error = '작업에 필요한 재화가 부족합니다.';
-  }
-
-  return {
-    facilityId,
-    ...economy,
-    assignedAgentId: requestedAgentId ?? null,
-    canStart: error === null,
-    error,
-  };
-}
-
 function applyHeroExperience(save: VillageSaveEnvelope, amount: number): number {
   const hero = save.run.hero;
   hero.level = Number.isFinite(hero.level) && Number.isInteger(hero.level) && hero.level >= 1 ? hero.level : 1;
@@ -429,124 +281,6 @@ function grantEquipmentLevel(save: VillageSaveEnvelope, equipmentId: string): vo
   equipmentLevels[equipmentId] = Math.min(20, currentLevel + 1);
   hero.equipmentLevels = equipmentLevels;
   applyVillageEquipmentBonuses(hero, getVillageEquipmentBonuses([equipmentId], { [equipmentId]: 1 }));
-}
-
-export function startFacilityTask(
-  source: VillageSaveEnvelope,
-  facilityId: FacilityId,
-  now: number,
-  assignedAgentId?: SupportAgentId | null,
-): DomainResult {
-  const hasAssignedAgentArgument = arguments.length >= 4;
-  const requestedAgentId = hasAssignedAgentArgument ? assignedAgentId : null;
-  const preview = getFacilityTaskPreview(
-    source,
-    facilityId,
-    hasAssignedAgentArgument ? assignedAgentId : null,
-  );
-  if (!preview.canStart) {
-    return { ok: false, save: source, error: preview.error ?? '작업을 시작할 수 없습니다.' };
-  }
-
-  const save = cloneSave(source);
-  const eventAt = eventTimestamp(save, now);
-  const facility = save.meta.facilities[facilityId];
-  const definition = getVillageFacilityDefinition(facilityId);
-  const agent = requestedAgentId ? save.meta.agents.find((item) => item.id === requestedAgentId) : undefined;
-  if (!facility || !definition) return { ok: false, save: source, error: '아직 사용할 수 없는 시설입니다.' };
-  const completesAt = safeCompletionTimestamp(eventAt, preview.durationSeconds);
-  if (completesAt === null) return { ok: false, save: source, error: '작업 시각 범위를 확인할 수 없어 시작하지 않았습니다.' };
-
-  pay(save, preview.input);
-  const taskLabel = facilityId === 'blacksmith' && preview.outputEquipmentIds[0]
-    ? `${getVillageEquipmentName(preview.outputEquipmentIds[0])} 제작`
-    : definition.taskLabelKR;
-  const task: FacilityTask = {
-    id: nextTaskId(save, facilityId, eventAt),
-    facilityId,
-    type: taskLabel,
-    startedAt: eventAt,
-    completesAt,
-    input: preview.input,
-    outputPreview: preview.output,
-    outputEquipmentIds: preview.outputEquipmentIds.length > 0 ? preview.outputEquipmentIds : undefined,
-    heroExpGain: preview.heroExpGain > 0 ? preview.heroExpGain : undefined,
-    assignedAgentId: requestedAgentId ?? null,
-  };
-  save.meta.tasks[task.id] = task;
-  facility.activeTaskId = task.id;
-  if (agent) agent.activeTaskId = task.id;
-  syncHeroAction(save);
-  touchSave(save, now);
-  return { ok: true, save, task };
-}
-
-export function cancelFacilityTask(
-  source: VillageSaveEnvelope,
-  facilityId: FacilityId,
-  now: number,
-): DomainResult {
-  const save = cloneSave(source);
-  const facility = save.meta.facilities[facilityId];
-  const taskId = facility?.activeTaskId;
-  const task = taskId ? save.meta.tasks[taskId] : undefined;
-  if (!facility || !task) {
-    return { ok: false, save: source, error: '취소할 작업이 없습니다.' };
-  }
-
-  if (!isValidCompletionWindow(task.startedAt, task.completesAt)) {
-    return { ok: false, save: source, error: '작업 시각 범위를 확인할 수 없습니다.' };
-  }
-  if (task.completesAt <= eventTimestamp(save, now)) {
-    return {
-      ok: false,
-      save: source,
-      error: '이미 완료된 작업입니다. 진행 확인으로 결과를 정산해 주세요.',
-    };
-  }
-  if (!canApplyCurrencyOutput(source, task.input)) {
-    return { ok: false, save: source, error: '환불할 재화 잔액을 확인할 수 없습니다.' };
-  }
-
-  give(save, task.input, 0.8);
-  facility.activeTaskId = null;
-  delete save.meta.tasks[task.id];
-  if (task.assignedAgentId) {
-    const agent = save.meta.agents.find((item) => item.id === task.assignedAgentId);
-    if (agent) agent.activeTaskId = null;
-  }
-  syncHeroAction(save);
-  touchSave(save, now);
-  return { ok: true, save, task };
-}
-
-export function restAgent(
-  source: VillageSaveEnvelope,
-  agentId: SupportAgentId,
-  now: number,
-): AgentDomainResult {
-  const sourceAgent = source.meta.agents.find((agent) => agent.id === agentId);
-  if (!sourceAgent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
-  if (sourceAgent.activeTaskId) return { ok: false, save: source, error: '작업 중인 에이전트는 휴식할 수 없습니다.' };
-  if (!isValidAgentState(sourceAgent)) {
-    return { ok: false, save: source, error: '에이전트 정보를 확인할 수 없습니다.' };
-  }
-  if (sourceAgent.fatigue <= 0) return { ok: false, save: source, error: '에이전트의 피로도가 이미 0입니다.' };
-
-  const save = cloneSave(source);
-  const eventAt = eventTimestamp(save, now);
-  const agent = save.meta.agents.find((candidate) => candidate.id === agentId);
-  if (!agent) return { ok: false, save: source, error: '지원 에이전트를 찾을 수 없습니다.' };
-  agent.fatigue = Math.max(0, agent.fatigue - AGENT_REST_RECOVERY);
-  save.meta.sagaEntries.unshift({
-    id: nextSaveId(save, `saga-agent-rest-${agentId}-${eventAt}`),
-    kind: 'facility',
-    createdAt: eventAt,
-    title: `${agent.nameKR} 휴식`,
-    text: `${agent.nameKR}이(가) 잠시 숨을 고르고 피로를 ${AGENT_REST_RECOVERY} 낮췄다.`,
-  });
-  touchSave(save, now);
-  return { ok: true, save };
 }
 
 const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
@@ -1310,51 +1044,4 @@ export function updateVillageSettings(
   };
   touchSave(save, now);
   return save;
-}
-
-export function upgradeFacility(source: VillageSaveEnvelope, facilityId: FacilityId, now: number): DomainResult {
-  const save = cloneSave(source);
-  const eventAt = eventTimestamp(save, now);
-  const facility = save.meta.facilities[facilityId];
-  if (!facility) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
-  if (facility.activeTaskId) return { ok: false, save: source, error: '작업 중인 시설은 강화할 수 없습니다.' };
-  if (!Number.isFinite(facility.level) || !Number.isInteger(facility.level) || facility.level < 1) {
-    return { ok: false, save: source, error: '시설 레벨을 확인할 수 없습니다.' };
-  }
-  if (facility.level >= MAX_ECONOMY_VALUE) {
-    return { ok: false, save: source, error: '시설 레벨이 더 이상 오르지 않습니다.' };
-  }
-  const cost = getFacilityUpgradeCost(source, facilityId);
-  if (!cost) return { ok: false, save: source, error: '시설을 찾을 수 없습니다.' };
-  if (!canPay(save, cost)) return { ok: false, save: source, error: '시설 강화 재료가 부족합니다.' };
-  pay(save, cost);
-  facility.level += 1;
-  touchSave(save, now);
-  return {
-    ok: true,
-    save,
-    task: {
-      id: nextSaveId(save, `upgrade-${facilityId}-${eventAt}`),
-      facilityId,
-      type: '시설 강화',
-      startedAt: eventAt,
-      completesAt: eventAt,
-      input: cost,
-      outputPreview: {},
-      assignedAgentId: null,
-    },
-  };
-}
-
-export function getFacilityUpgradeCost(
-  source: VillageSaveEnvelope,
-  facilityId: FacilityId,
-): FacilityUpgradeCost | null {
-  const facility = source.meta.facilities[facilityId];
-  if (!facility || !getVillageFacilityDefinition(facilityId)) return null;
-  const growth = Math.pow(FACILITY_UPGRADE_GROWTH, positiveFiniteLevel(facility.level) - 1);
-  return {
-    gold: safeScaledEconomyAmount(80, growth),
-    materials: safeScaledEconomyAmount(4, growth),
-  };
 }
