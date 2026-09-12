@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as facade from '../../domain';
+import * as story from '../../story';
 import * as contracts from '../contracts';
 import {
   advanceHeroActions,
@@ -77,5 +78,9 @@ describe('Village domain module boundaries', () => {
     expect(facade.grantOfflineResourceBonus).toBe(grantOfflineResourceBonus);
     expect(facade.setVillagePolicy).toBe(setVillagePolicy);
     expect(facade.updateVillageSettings).toBe(updateVillageSettings);
+  });
+
+  it('keeps chooseStoryChoice out of the read-only story module', () => {
+    expect(story).not.toHaveProperty('chooseStoryChoice');
   });
 });

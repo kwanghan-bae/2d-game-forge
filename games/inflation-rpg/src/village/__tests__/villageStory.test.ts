@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { chooseStoryChoice } from '../domain/story/choices';
 import {
-  chooseStoryChoice,
   getAvailableStoryChoice,
   getRealmIntroEntry,
   getRealmVictoryEntry,
