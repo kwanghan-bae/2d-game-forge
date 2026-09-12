@@ -42,6 +42,7 @@ sub-project 계획으로 작성한다. 따라서 이 계획만 완료해도 현�
 - `games/inflation-rpg/src/village/domain/shared/saveMutation.ts` — save 복제·timestamp·touch·사가 entry 보조를 담당한다.
 - `games/inflation-rpg/src/village/domain/shared/resourceMath.ts` — 지불·지급·배율·포화 산술을 담당한다.
 - `games/inflation-rpg/src/village/domain/shared/ids.ts` — save/task id 충돌 회피를 담당한다.
+- `games/inflation-rpg/src/village/domain/shared/heroActionClock.ts` — hero action clock의 in-place 상태 변경을 담당한다.
 - `games/inflation-rpg/src/village/domain/hero/autonomy.ts` — hero action 결정·진행·autonomy를 담당한다.
 - `games/inflation-rpg/src/village/domain/hero/progression.ts` — hero 경험치·회춘·power를 담당한다.
 - `games/inflation-rpg/src/village/domain/facility/preview.ts` — facility task와 blacksmith preview를 담당한다.
@@ -309,7 +310,7 @@ ids.ts            isSaveIdUsed, nextSaveId, nextTaskId
 ```
 
 Keep feature-private helpers with their only responsibility: hero autonomy keeps
-`advanceHeroActionsInPlace`, `blockedAutonomyDecision`, and `getAutonomyRealmId`;
+`blockedAutonomyDecision` and `getAutonomyRealmId`;
 hero progression keeps `saturatingAdd`; facility preview keeps
 `boundedMultiplier`, `safeDurationSeconds`, `savedEquipmentLevel`, and
 `facilityTaskEconomy`; expedition forecast keeps `emptyBattleResult`,
@@ -325,14 +326,18 @@ of duplicating it.
 
 `emptyBattleResult` is forecast-only in the current source and therefore remains
 private to `expedition/forecast.ts`; `syncHeroAction` is shared because facility
-commands and settlement both call it. Do not export either helper through the
-façade.
+commands and settlement both call it. `advanceHeroActionsInPlace` is shared by
+hero autonomy and settlement, so Task 4 moves it to `shared/heroActionClock.ts`
+before autonomy imports the expedition commands. Do not export these helpers
+through the façade.
 
 - [ ] **Step 4: Move hero operations and wire direct imports**
 
-Move the implementation ranges currently containing `advanceHeroActions`
-and its in-place helper `advanceHeroActionsInPlace`, `getHeroNextAction`,
-`rejuvenateHero`, and `getVillageHeroPower` into the two hero files. Leave
+Move the implementation ranges currently containing `advanceHeroActions`,
+`getHeroNextAction`, `rejuvenateHero`, and `getVillageHeroPower` into the two hero
+files. Keep `advanceHeroActionsInPlace` in `hero/autonomy.ts` temporarily for the
+Task 2 checkpoint; Task 4 moves it to `shared/heroActionClock.ts` before wiring
+the deferred autonomy commands. Leave
 `decideHeroAction` and `advanceHeroAutonomy` in `domain.ts` until Task 4, when
 `getNextRealmId`, `startFacilityTask`, and `startExpedition` have direct modules.
 Replace same-file helper calls
@@ -453,6 +458,7 @@ Expected: focused tests pass and Madge reports no circular dependency.
 - Create: `games/inflation-rpg/src/village/domain/expedition/forecast.ts`
 - Create: `games/inflation-rpg/src/village/domain/expedition/commands.ts`
 - Create: `games/inflation-rpg/src/village/domain/expedition/settlement.ts`
+- Create: `games/inflation-rpg/src/village/domain/shared/heroActionClock.ts`
 - Modify: `games/inflation-rpg/src/village/domain.ts`
 - Modify: `games/inflation-rpg/src/village/domain/__tests__/module-boundaries.test.ts`
 - Test: `games/inflation-rpg/src/village/__tests__/villageDomain.test.ts`
@@ -521,7 +527,11 @@ Move `startExpedition`, `confirmPendingExpedition`, and `confirmNextRealmUnlock`
 After those direct dependencies exist, move the deferred `decideHeroAction` and
 `advanceHeroAutonomy` implementations into the existing `hero/autonomy.ts`. Replace
 their calls to `getNextRealmId`, `startFacilityTask`, and `startExpedition` with
-direct module imports. Add their façade re-exports alongside the Task 2 hero exports.
+direct module imports. Before adding those imports, move
+`advanceHeroActionsInPlace` from `hero/autonomy.ts` to `shared/heroActionClock.ts`
+and update both hero autonomy and settlement to import it from there; this keeps
+`hero/autonomy → expedition/commands → expedition/settlement` acyclic. Add the
+deferred functions' façade re-exports alongside the Task 2 hero exports.
 
 `settlement.ts` is the only expedition module allowed to orchestrate facility task
 completion, battle resolution, hero experience, equipment rewards, story entries,
