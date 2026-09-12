@@ -262,7 +262,7 @@ git commit -m "refactor: define village domain module contracts"
 
 **Interfaces:**
 - Consumes: `domain/contracts.ts`, existing village `types.ts`, `data.ts`, `equipment.ts`, `heroRuntime.ts`, `HeroLifecycle`, and story entries.
-- Produces: `advanceHeroActions`, `getHeroNextAction`, `decideHeroAction`, `advanceHeroAutonomy`, `rejuvenateHero`, and `getVillageHeroPower` from their respective direct modules.
+- Produces: `advanceHeroActions`, `getHeroNextAction`, `rejuvenateHero`, and `getVillageHeroPower` from their respective direct modules. `decideHeroAction` and `advanceHeroAutonomy` remain in the façade until Task 4 supplies their direct facility/expedition dependencies, then move into the same `hero/autonomy.ts` module.
 
 - [ ] **Step 1: Extend the failing boundary test for hero exports**
 
@@ -271,16 +271,12 @@ Add these imports and assertions before moving implementation:
 ```ts
 import {
   advanceHeroActions,
-  advanceHeroAutonomy,
-  decideHeroAction,
   getHeroNextAction,
 } from '../hero/autonomy';
 import { getVillageHeroPower, rejuvenateHero } from '../hero/progression';
 
 it('exposes hero operations through the façade without wrapping them', () => {
   expect(facade.advanceHeroActions).toBe(advanceHeroActions);
-  expect(facade.advanceHeroAutonomy).toBe(advanceHeroAutonomy);
-  expect(facade.decideHeroAction).toBe(decideHeroAction);
   expect(facade.getHeroNextAction).toBe(getHeroNextAction);
   expect(facade.getVillageHeroPower).toBe(getVillageHeroPower);
   expect(facade.rejuvenateHero).toBe(rejuvenateHero);
@@ -335,9 +331,11 @@ façade.
 - [ ] **Step 4: Move hero operations and wire direct imports**
 
 Move the implementation ranges currently containing `advanceHeroActions`
-and its in-place helper `advanceHeroActionsInPlace`,
-`getHeroNextAction`, `decideHeroAction`, `advanceHeroAutonomy`, `rejuvenateHero`,
-and `getVillageHeroPower` into the two hero files. Replace same-file helper calls
+and its in-place helper `advanceHeroActionsInPlace`, `getHeroNextAction`,
+`rejuvenateHero`, and `getVillageHeroPower` into the two hero files. Leave
+`decideHeroAction` and `advanceHeroAutonomy` in `domain.ts` until Task 4, when
+`getNextRealmId`, `startFacilityTask`, and `startExpedition` have direct modules.
+Replace same-file helper calls
 with imports from `shared/` and `domain/contracts.ts`. Do not change function bodies
 beyond import paths and removing code now owned by shared modules.
 
@@ -346,8 +344,6 @@ Add the façade re-exports:
 ```ts
 export {
   advanceHeroActions,
-  advanceHeroAutonomy,
-  decideHeroAction,
   getHeroNextAction,
 } from './domain/hero/autonomy';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
@@ -464,7 +460,7 @@ Expected: focused tests pass and Madge reports no circular dependency.
 
 **Interfaces:**
 - Consumes: Tasks 1–3 contracts/shared helpers, facility task functions, current battle resolver, realm data, hero runtime, and story entries.
-- Produces: deterministic forecast, expedition commands, and settlement functions with the exact signatures fixed above.
+- Produces: deterministic forecast, expedition commands, and settlement functions with the exact signatures fixed above. It also completes the deferred move of `decideHeroAction` and `advanceHeroAutonomy` into `hero/autonomy.ts` once their direct dependencies exist.
 
 - [ ] **Step 1: Add expedition boundary assertions before moving implementation**
 
@@ -483,6 +479,7 @@ import {
   completeFacilityTaskNow,
   completeFacilityTasks,
 } from '../expedition/settlement';
+import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
 
 it('exposes expedition operations through the façade without wrappers', () => {
   expect(facade.getExpeditionForecast).toBe(getExpeditionForecast);
@@ -493,6 +490,8 @@ it('exposes expedition operations through the façade without wrappers', () => {
   expect(facade.confirmNextRealmUnlock).toBe(confirmNextRealmUnlock);
   expect(facade.completeFacilityTasks).toBe(completeFacilityTasks);
   expect(facade.completeFacilityTaskNow).toBe(completeFacilityTaskNow);
+  expect(facade.advanceHeroAutonomy).toBe(advanceHeroAutonomy);
+  expect(facade.decideHeroAction).toBe(decideHeroAction);
 });
 ```
 
@@ -518,6 +517,11 @@ exactly. Do not introduce a random source or change the forecast roll key.
 Move `startExpedition`, `confirmPendingExpedition`, and `confirmNextRealmUnlock` to
 `commands.ts`. Move `resolveExpedition`, `settleFacilityTasks`,
 `completeFacilityTasks`, and `completeFacilityTaskNow` to `settlement.ts`.
+
+After those direct dependencies exist, move the deferred `decideHeroAction` and
+`advanceHeroAutonomy` implementations into the existing `hero/autonomy.ts`. Replace
+their calls to `getNextRealmId`, `startFacilityTask`, and `startExpedition` with
+direct module imports. Add their façade re-exports alongside the Task 2 hero exports.
 
 `settlement.ts` is the only expedition module allowed to orchestrate facility task
 completion, battle resolution, hero experience, equipment rewards, story entries,
