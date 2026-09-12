@@ -45,16 +45,34 @@ server component가 client loader를 직접 import하지 않도록 유지한다.
 ## 게임 내부 경계
 
 - `village/`: 현재 제품의 상태·저장·원정·시설·사가·화면
+- `village/domain.ts`: 기존 호출자를 위한 47줄 compatibility façade. 구현 없이
+  아래 direct module의 공개 연산과 타입만 re-export한다.
+- `village/domain/contracts.ts`: 공개 결과·preview·cost 계약과 상수
+- `village/domain/hero/`: 영웅 자율 행동과 성장·회춘
+- `village/domain/facility/`: 시설 preview, 작업, 업그레이드
+- `village/domain/expedition/`: 원정 forecast, 명령, 정산
+- `village/domain/story/`, `intervention/`, `rewards/`, `settings/`: 남은 공개 명령
+- `village/domain/shared/`: `agentTrust`, `guards`, `heroActionClock`, `ids`,
+  `resourceMath`, `saveMutation`처럼 책임을 이름으로 드러낸 공용 helper
 - `hero/`: 영웅 생명주기와 순수 규칙
 - `battle/`: 원정에서 사용하는 전투 계산
 - `data/`: 시설·영역·장비·서사 데이터
 - `systems/`: 재화·장비·진행 등 독립적인 순수 계산
 - `app/`: standalone Next 진입점
 
+게임 외부 호출자는 필요하면 `village/domain.ts` façade를 계속 사용할 수 있다.
+production domain module끼리는 direct module을 import하며 façade를 역참조하지
+않는다. `utils`나 `common` 같은 범용 dumping-ground module은 두지 않는다.
+책임별 회귀 테스트는 `village/domain/__tests__/`의 hero, facility, expedition,
+commands, module-boundaries 파일에 둔다.
+
 저장 경계는 `village/save.ts` 하나로 모은다. 현재 canonical key는
 `shin-ui-eternal-sponsor-save-v2`이며, 유효하지 않은 저장은 복구 사본을
 남긴 뒤 새 저장을 만들 수 있다. 다른 제품이나 과거 키를 자동으로 읽거나
-가져오지 않는다.
+가져오지 않으며 schema 2, clone semantics, 오류와 결과 shape를 유지한다.
+
+RPG 고유 계약은 현재 게임 workspace에 남긴다. 별도 두 번째 게임에서 같은
+계약이 실제로 필요하다는 증거가 생기기 전에는 `@forge/core`로 승격하지 않는다.
 
 ## 자산과 Android
 
@@ -73,6 +91,18 @@ pnpm lint
 pnpm circular
 pnpm build
 ```
+
+2026-09-12 domain 분해 검증에서 façade는 47줄이었고 구현 선언 검색 결과가
+없었다. 게임 typecheck와 233개 파일·2,093개 unit test, root E2E 36개,
+production build 3/3 task, workspace typecheck 5/5, lint 4/4가 통과했다.
+Madge 직접 실행은 522개 파일, root `pnpm circular`은 build 뒤 527개 파일을
+검사해 모두 순환 의존성이 없었다. 기준 `4fd30c10`부터의 diff와 현재 status에서
+보호된 Paradox 파일 및 `output/`, `tmp/` 변경은 없었다.
+
+필수 제품 정체성 검사는 7개 중 6개가 통과하고 1개가 실패했다. 현재 제품
+식별자 자체가 아니라 active tree에 추적된 계획·설계 문서 두 개를 역사 파일로
+판정한 결과다. 이 충돌이 해결되기 전에는 최종 검증 전체를 통과했다고 기록하지
+않는다.
 
 웹 Playwright는 로직·입력·레이아웃을 검증한다. Android 실기기 조작·복귀와
 스토어 기능은 별도 장비 검증으로 구분한다.
