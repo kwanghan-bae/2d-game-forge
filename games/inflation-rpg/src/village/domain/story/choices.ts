@@ -1,6 +1,5 @@
 import { getVillageAgentDefinition } from '../../data';
 import {
-  applyAgentTrustGain,
   getAvailableStoryChoice,
   getStoryChoiceEntry,
 } from '../../story';
@@ -14,6 +13,7 @@ import type {
   VillageCurrencyKey,
   VillageSaveEnvelope,
 } from '../../types';
+import { applyAgentTrustGain } from '../shared/agentTrust';
 import { cloneSave } from '../shared/saveMutation';
 
 function addUniqueEntry(save: VillageSaveEnvelope, entry: SagaEntry): void {

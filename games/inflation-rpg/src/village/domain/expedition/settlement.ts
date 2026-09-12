@@ -1,7 +1,6 @@
 import { getVillageFacilityDefinition, getVillageRealmDefinition } from '../../data';
 import { applyVillageEquipmentBonuses, getVillageEquipmentBonuses, getVillageEquipmentDefinition } from '../../equipment';
 import {
-  applyAgentTrustGain,
   getRealmVictoryEntry,
   getVillageEpilogueEntry,
   hasVillageEpilogue,
@@ -15,6 +14,7 @@ import type {
 import type { DomainResult } from '../contracts';
 import { getBlacksmithEquipmentRecommendation } from '../facility/preview';
 import { getVillageHeroPower, saturatingAdd } from '../hero/progression';
+import { applyAgentTrustGain } from '../shared/agentTrust';
 import {
   MAX_ECONOMY_VALUE,
   isPersistableClock,

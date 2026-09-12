@@ -1,5 +1,4 @@
 import { getVillageRealmDefinition } from './data';
-import { Village_MAX_SAGA_ENTRIES } from './types';
 import type { RealmId, SagaEntry, StoryChoiceDefinition, StoryChoiceOptionId, SupportAgentId, VillageSaveEnvelope } from './types';
 
 export type { StoryChoiceDefinition, StoryChoiceOptionId } from './types';
@@ -69,31 +68,6 @@ function storyEntry(id: string, kind: SagaEntry['kind'], createdAt: number, titl
 
 function hasEntry(save: VillageSaveEnvelope, id: string): boolean {
   return save.meta.sagaEntries.some((entry) => entry.id === id);
-}
-
-function addUniqueEntry(save: VillageSaveEnvelope, entry: SagaEntry): void {
-  if (hasEntry(save, entry.id)) return;
-  save.meta.sagaEntries.unshift(entry);
-  if (save.meta.sagaEntries.length > Village_MAX_SAGA_ENTRIES) {
-    save.meta.sagaEntries.length = Village_MAX_SAGA_ENTRIES;
-  }
-}
-
-export function applyAgentTrustGain(
-  save: VillageSaveEnvelope,
-  agentId: SupportAgentId,
-  amount: number,
-  now: number,
-): void {
-  if (!Number.isSafeInteger(amount) || amount <= 0) return;
-  const agent = save.meta.agents.find((candidate) => candidate.id === agentId);
-  if (!agent) return;
-  const previousTrust = agent.trust;
-  agent.trust = Math.min(100, previousTrust + amount);
-  agent.level = Math.max(agent.level, Math.min(3, 1 + Math.floor(agent.trust / 50)));
-  if (previousTrust < 50 && agent.trust >= 50) {
-    addUniqueEntry(save, getAgentTrustMilestoneEntry(agent.id, agent.nameKR, now));
-  }
 }
 
 export function getRealmIntroEntry(realmId: RealmId, heroName: string, now: number): SagaEntry {
