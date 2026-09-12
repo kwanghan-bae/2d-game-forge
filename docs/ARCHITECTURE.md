@@ -45,6 +45,8 @@ server component가 client loader를 직접 import하지 않도록 유지한다.
 ## 게임 내부 경계
 
 - `village/`: 현재 제품의 상태·저장·원정·시설·사가·화면
+- `village/useVillagePersistence.ts`: 저장 부팅·커밋·오프라인 정산·표시 시계
+- `village/useVillageGame.ts`: 도메인 명령과 선택형 수익화 동작을 화면 계약으로 조합
 - `village/domain.ts`: 기존 호출자를 위한 47줄 compatibility façade. 구현 없이
   아래 direct module의 공개 연산과 타입만 re-export한다.
 - `village/domain/contracts.ts`: 공개 결과·preview·cost 계약과 상수

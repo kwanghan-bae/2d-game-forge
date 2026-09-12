@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   cancelFacilityTask,
-  advanceHeroAutonomy,
   confirmPendingExpedition,
-  completeFacilityTasks,
   completeFacilityTaskNow,
   confirmNextRealmUnlock,
   chooseStoryChoice as chooseStoryChoiceDomain,
@@ -18,19 +16,12 @@ import {
   upgradeFacility,
   useIntervention,
 } from './domain';
-import {
-  createInitialVillageSave,
-  persistVillageSave,
-  readVillageSave,
-  simulateOfflineProgress,
-  startFreshVillageSave,
-  Village_LIVE_REFRESH_GAP_MS,
-} from './save';
 import { Village_DAILY_REWARDED_LIMIT, type VillageMonetizationAdapter, type VillageRewardedPlacement } from './monetization';
-import type { FacilityId, InterventionType, OfflineSummary, RealmId, SupportAgentId, VillagePolicy, VillageSaveEnvelope, VillageSettings } from './types';
+import type { FacilityId, InterventionType, RealmId, SupportAgentId, VillagePolicy, VillageSaveEnvelope, VillageSettings } from './types';
 import { Village_MAX_INTERVENTION_CHARGES, type StoryChoiceOptionId } from './types';
 import { getAvailableStoryChoice } from './domain';
-import { recordVillageMetric, type VillageMetricName } from './telemetry';
+import { recordVillageSaveMetric } from './telemetry';
+import { useVillagePersistence } from './useVillagePersistence';
 
 function monotonicActionTimestamp(
   save: VillageSaveEnvelope,
@@ -71,41 +62,24 @@ function canRestorePurchases(monetization: VillageMonetizationAdapter | undefine
   }
 }
 
-function recordMetric(
-  save: VillageSaveEnvelope,
-  name: VillageMetricName,
-  id: string,
-  occurredAt = save.updatedAt,
-  detail?: string,
-): void {
-  if (!Number.isFinite(occurredAt) || !Number.isFinite(save.createdAt)) return;
-  recordVillageMetric({ id, name, occurredAt: Math.max(save.createdAt, occurredAt), saveCreatedAt: save.createdAt, ...(detail ? { detail } : {}) });
-}
-
-function recordFinishedExpedition(previous: VillageSaveEnvelope, next: VillageSaveEnvelope): void {
-  const result = next.run.lastExpeditionResult;
-  if (!result || result.id === previous.run.lastExpeditionResult?.id) return;
-  recordMetric(next, 'expedition_finished', `expedition_finished:${result.id}`, result.completedAt, result.outcome);
-}
-
 export function useVillageGame(monetization?: VillageMonetizationAdapter) {
-  const [boot] = useState(() => {
-    const loaded = readVillageSave();
-    return {
-      loaded,
-      save: loaded.status === 'valid' ? loaded.save : createInitialVillageSave(Date.now()),
-    };
-  });
-  const [save, setSave] = useState<VillageSaveEnvelope>(() => boot.save);
-  const saveRef = useRef(save);
-  const mountedRef = useRef(true);
-  const initialOfflineSettlementDone = useRef(false);
-  const [storageStatus, setStorageStatus] = useState(() => boot.loaded.status);
-  const [storageIssue] = useState(() => boot.loaded.status === 'invalid' ? boot.loaded.reason : null);
-  const [clock, setClock] = useState(() => Date.now());
-  const [offlineSummary, setOfflineSummary] = useState<OfflineSummary | null>(null);
-  const offlineSummaryRef = useRef<OfflineSummary | null>(null);
   const [offlineRewardDoubled, setOfflineRewardDoubled] = useState(false);
+  const resetOfflineReward = useCallback(() => setOfflineRewardDoubled(false), []);
+  const {
+    save,
+    saveRef,
+    storageStatus,
+    storageIssue,
+    now,
+    offlineSummary,
+    offlineSummaryRef,
+    commit: persistCommit,
+    refresh,
+    settleOffline,
+    startFreshSave: replaceInvalidSave,
+    closeOffline,
+  } = useVillagePersistence({ onOfflineResult: resetOfflineReward });
+  const mountedRef = useRef(true);
   const [offlineRewardPending, setOfflineRewardPending] = useState(false);
   const [instantTaskPendingFacilities, setInstantTaskPendingFacilities] = useState<FacilityId[]>([]);
   const [interventionChargePending, setInterventionChargePending] = useState(false);
@@ -117,23 +91,10 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
   const [adFreePurchasePending, setAdFreePurchasePending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const updatePresentationClock = useCallback((timestamp: number) => {
-    if (!Number.isFinite(timestamp)) return;
-    setClock((previous) => Number.isFinite(previous)
-      ? Math.max(previous, timestamp)
-      : timestamp);
-  }, []);
-
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
-
-  useEffect(() => {
-    if (boot.loaded.status === 'missing' || boot.loaded.status === 'unavailable') {
-      recordMetric(boot.save, 'save_created', `save_created:${boot.save.createdAt}`, boot.save.createdAt);
-    }
-  }, [boot.loaded.status, boot.save]);
 
   useEffect(() => {
     if (!monetization) return;
@@ -143,85 +104,16 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
   }, [monetization]);
 
   const commit = useCallback((next: VillageSaveEnvelope, nextMessage?: string) => {
-    recordFinishedExpedition(saveRef.current, next);
-    saveRef.current = next;
-    setSave(next);
-    const persisted = persistVillageSave(next);
-    setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
+    persistCommit(next);
     if (nextMessage) setMessage(nextMessage);
-  }, []);
-
-  const settleOffline = useCallback(() => {
-    if (storageStatus === 'invalid') return;
-    const timestamp = Date.now();
-    updatePresentationClock(timestamp);
-    const current = saveRef.current;
-    const result = simulateOfflineProgress(current, timestamp);
-    recordFinishedExpedition(current, result.save);
-    const shouldPersist = result.save !== current || storageStatus !== 'valid';
-    if (shouldPersist) {
-      saveRef.current = result.save;
-      setSave(result.save);
-      const persisted = persistVillageSave(result.save);
-      setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
-    }
-    const parkedRiskyExpedition = result.save.run.expedition?.status === 'awaiting_confirmation'
-      && current.run.expedition?.status !== 'awaiting_confirmation';
-    const hasOfflineResult = result.summary.processedSeconds > 0
-      || result.summary.clockAnomaly !== null
-      || result.summary.completedTaskIds.length > 0
-      || result.summary.completedExpedition
-      || parkedRiskyExpedition
-      || result.summary.equipmentGained.length > 0
-      || result.summary.equipmentUpgraded.length > 0
-      || Object.values(result.summary.resourcesGained).some(
-        (value) => typeof value === 'number' && Number.isFinite(value) && value > 0,
-      );
-    if (hasOfflineResult) {
-      offlineSummaryRef.current = result.summary;
-      setOfflineSummary(result.summary);
-      setOfflineRewardDoubled(false);
-    }
-  }, [storageStatus, updatePresentationClock]);
-
-  useEffect(() => {
-    if (initialOfflineSettlementDone.current) return;
-    initialOfflineSettlementDone.current = true;
-    settleOffline();
-    // The initial state is intentionally processed once on mount. Subsequent
-    // mutations use commit() and do not replay this effect.
-  }, [settleOffline]);
-
-  const now = clock;
-  const refresh = useCallback(() => {
-    const timestamp = Date.now();
-    const current = saveRef.current;
-    updatePresentationClock(timestamp);
-    if (!Number.isFinite(timestamp) || timestamp < current.updatedAt) return;
-    if (timestamp - current.updatedAt > Village_LIVE_REFRESH_GAP_MS) {
-      settleOffline();
-      return;
-    }
-    const hasDueWork = Object.values(current.meta.tasks).some((task) => task.completesAt <= timestamp)
-      || Boolean(current.run.expedition
-        && current.run.expedition.status === 'traveling'
-        && current.run.expedition.completesAt <= timestamp);
-    if (hasDueWork) {
-      const settled = completeFacilityTasks(current, timestamp, 1, false, false, false);
-      const autonomous = advanceHeroAutonomy(settled, timestamp);
-      commit(autonomous.save);
-      return;
-    }
-    const autonomous = advanceHeroAutonomy(current, timestamp);
-    if (autonomous.started) commit(autonomous.save);
-  }, [commit, settleOffline, updatePresentationClock]);
+  }, [persistCommit]);
 
   const changePolicy = useCallback((policy: VillagePolicy) => {
     const current = saveRef.current;
     const next = setVillagePolicy(current, policy, Date.now());
     commit(next);
     if (next.run.policy !== current.run.policy) {
-      recordMetric(next, 'policy_changed', `policy_changed:${next.createdAt}:${next.updatedAt}:${next.run.policy}`, next.updatedAt, next.run.policy);
+      recordVillageSaveMetric(next, 'policy_changed', `policy_changed:${next.createdAt}:${next.updatedAt}:${next.run.policy}`, next.updatedAt, next.run.policy);
     }
   }, [commit]);
 
@@ -233,7 +125,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     const result = startFacilityTask(saveRef.current, facilityId, Date.now(), agentId);
     if (result.ok) {
       commit(result.save, `${result.task.type} 작업을 시작했습니다.`);
-      recordMetric(result.save, 'facility_task_started', `facility_task_started:${result.task.id}`, result.task.startedAt, result.task.facilityId);
+      recordVillageSaveMetric(result.save, 'facility_task_started', `facility_task_started:${result.task.id}`, result.task.startedAt, result.task.facilityId);
     }
     else setMessage(result.error);
   }, [commit]);
@@ -458,7 +350,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     const result = startExpedition(current, realmId, Date.now(), current.run.policy, agentId);
     if (result.ok) {
       commit(result.save, '원정을 출발시켰습니다.');
-      recordMetric(result.save, 'expedition_started', `expedition_started:${result.task.id}`, result.task.startedAt, result.save.run.expedition?.realmId ?? realmId);
+      recordVillageSaveMetric(result.save, 'expedition_started', `expedition_started:${result.task.id}`, result.task.startedAt, result.save.run.expedition?.realmId ?? realmId);
     }
     else setMessage(result.error);
   }, [commit]);
@@ -467,7 +359,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     const result = chooseStoryChoiceDomain(saveRef.current, choice, Date.now());
     if (result.ok) {
       commit(result.save, '깊은 숲의 선택을 사가에 기록했습니다. 저승의 길이 열렸습니다.');
-      recordMetric(result.save, 'story_choice_made', `story_choice_made:${result.save.createdAt}:${result.save.updatedAt}`, result.save.updatedAt, choice);
+      recordVillageSaveMetric(result.save, 'story_choice_made', `story_choice_made:${result.save.createdAt}:${result.save.updatedAt}`, result.save.updatedAt, choice);
     }
     else setMessage(result.error);
   }, [commit]);
@@ -500,21 +392,10 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
   }, [commit]);
 
   const startFreshSave = useCallback(() => {
-    if (storageStatus !== 'invalid') return;
-    const next = startFreshVillageSave(undefined, Date.now());
-    recordMetric(next, 'save_created', `save_created:${next.createdAt}`, next.createdAt);
-    saveRef.current = next;
-    setSave(next);
-    setStorageStatus(persistVillageSave(next) ? 'valid' : 'unavailable');
-    setOfflineSummary(null);
+    if (!replaceInvalidSave()) return;
     setOfflineRewardDoubled(false);
     setMessage('새 현재 게임 저장을 시작했습니다. 손상된 현재 게임 데이터는 복구 백업으로 보존되었습니다.');
-  }, [storageStatus]);
-
-  const closeOffline = useCallback(() => {
-    offlineSummaryRef.current = null;
-    setOfflineSummary(null);
-  }, []);
+  }, [replaceInvalidSave]);
   const closeMessage = useCallback(() => setMessage(null), []);
   const activeTasks = useMemo(() => Object.values(save.meta.tasks), [save.meta.tasks]);
 

@@ -1,3 +1,5 @@
+import type { VillageSaveEnvelope } from './types';
+
 export const Village_METRICS_STORAGE_KEY = 'shin-ui-eternal-sponsor-metrics-v1';
 export const Village_METRICS_CAP = 500;
 
@@ -127,6 +129,32 @@ export function recordVillageMetric(
   } catch {
     return false;
   }
+}
+
+export function recordVillageSaveMetric(
+  save: VillageSaveEnvelope,
+  name: VillageMetricName,
+  id: string,
+  occurredAt = save.updatedAt,
+  detail?: string,
+): void {
+  if (!Number.isFinite(occurredAt) || !Number.isFinite(save.createdAt)) return;
+  recordVillageMetric({
+    id,
+    name,
+    occurredAt: Math.max(save.createdAt, occurredAt),
+    saveCreatedAt: save.createdAt,
+    ...(detail ? { detail } : {}),
+  });
+}
+
+export function recordFinishedVillageExpedition(
+  previous: VillageSaveEnvelope,
+  next: VillageSaveEnvelope,
+): void {
+  const result = next.run.lastExpeditionResult;
+  if (!result || result.id === previous.run.lastExpeditionResult?.id) return;
+  recordVillageSaveMetric(next, 'expedition_finished', `expedition_finished:${result.id}`, result.completedAt, result.outcome);
 }
 
 function emptySummary(): VillageOnboardingSummary {
