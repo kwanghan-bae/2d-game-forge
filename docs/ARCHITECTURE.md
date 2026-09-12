@@ -92,15 +92,17 @@ pnpm circular
 pnpm build
 ```
 
-2026-09-12 최종 domain 분해 검증 범위는 기준
-`be0b1bcae8bb804bd2f57f6040d44e1a3c5ca081`부터 최종 HEAD
-`7808cfbd7492502a0b557b441304485203f5672f`까지다. `4fd30c10`은 설계 기준이고
-`dfa32ed4`는 이전 검증의 구현 HEAD로, 최종 범위와 구분한다. façade는 47줄이며
+2026-09-12 domain 분해 검증 대상 구현 범위는 기준
+`be0b1bcae8bb804bd2f57f6040d44e1a3c5ca081`부터 구현·문서화 본문이 완성된
+`fc41a055c228e052eec088de4f53ac905b0cf618`까지다. 이 범위에 대한 diff check는
+`git diff --check be0b1bcae8bb804bd2f57f6040d44e1a3c5ca081..fc41a055c228e052eec088de4f53ac905b0cf618`다.
+이후 `fb51e945`와 같은 문서-only SHA 정정 커밋은 검증 대상 구현 범위를
+변경하지 않는다. `4fd30c10`은 설계 기준이고 `dfa32ed4`는 이전 검증의 구현
+기준으로 구분한다. façade는 47줄이며
 구현 선언 검색 결과가 없었다. 게임 typecheck와 233개 파일·2,093개 unit test, root E2E 36개,
 production build 3/3 task, workspace typecheck 5/5, lint 4/4가 통과했다.
 Madge 직접 실행은 522개 파일, root `pnpm circular`은 build 뒤 527개 파일을
-검사해 모두 순환 의존성이 없었다. `git diff --check be0b1bcae8bb804bd2f57f6040d44e1a3c5ca081..7808cfbd7492502a0b557b441304485203f5672f`와
-현재 status에서
+검사해 모두 순환 의존성이 없었고 위 구현 범위의 diff check도 종료 0이었다. 현재 status에서
 보호된 Paradox 파일 및 `output/`, `tmp/` 변경은 없었다.
 
 active tree의 금지된 역사 자료 경로에서 추적 계획·설계 문서 두 개를 제거한 뒤
