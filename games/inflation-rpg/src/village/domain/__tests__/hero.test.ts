@@ -10,6 +10,7 @@ import { createInitialVillageSave } from '../../save';
 import {
   advanceHeroActions,
   advanceHeroAutonomy,
+  decideHeroAction,
   getHeroNextAction,
 } from '../hero/autonomy';
 import { getVillageHeroPower, rejuvenateHero } from '../hero/progression';
@@ -240,14 +241,30 @@ describe('Village hero domain', () => {
 
   it('turns the sponsor policy and hero condition into a visible next-action decision', () => {
     const initial = createInitialVillageSave(89);
+    const training = setVillagePolicy(initial, 'training', initial.createdAt + 1_000);
     expect(getHeroNextAction(initial)).toBe('expedition');
-    expect(getHeroNextAction(setVillagePolicy(initial, 'training', initial.createdAt + 1_000))).toBe('train');
+    expect(getHeroNextAction(training)).toBe('train');
+    expect(decideHeroAction(initial)).toMatchObject({
+      action: 'expedition',
+      realmId: 'sacred_fields',
+      reason: 'aggression_policy',
+    });
+    expect(decideHeroAction(training)).toMatchObject({
+      action: 'train',
+      facilityId: 'training',
+      reason: 'training_policy',
+    });
 
     const wounded = {
       ...initial,
       run: { ...initial.run, hero: { ...initial.run.hero, hp: 300 } },
     };
     expect(getHeroNextAction(wounded)).toBe('rest');
+    expect(decideHeroAction(wounded)).toMatchObject({
+      action: 'rest',
+      facilityId: 'recovery',
+      reason: 'low_hp',
+    });
   });
 
   it('waits fifteen seconds and then starts exactly one policy-directed action', () => {

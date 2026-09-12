@@ -332,23 +332,6 @@ describe('Village expedition and settlement domain', () => {
     expect(result.error).toContain('미래');
   });
 
-  it('keeps the save chronology valid when an explicit action sees a backwards clock', () => {
-    const initial = createInitialVillageSave(24);
-    initial.lastProcessedAt = initial.createdAt + HOUR;
-    initial.updatedAt = initial.lastProcessedAt;
-
-    const changed = setVillagePolicy(initial, 'training', initial.createdAt + 1_000);
-    expect(changed.updatedAt).toBe(initial.lastProcessedAt);
-
-    const storage = new Map<string, string>();
-    const fakeStorage = {
-      getItem: (key: string) => storage.get(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value),
-    } as unknown as Storage;
-    persistVillageSave(changed, fakeStorage);
-    expect(loadVillageSave(fakeStorage)).not.toBeNull();
-  });
-
   it('normalizes backwards task and expedition action clocks to the last saved time', () => {
     const staleTaskSave = createInitialVillageSave(31);
     staleTaskSave.lastProcessedAt += HOUR;

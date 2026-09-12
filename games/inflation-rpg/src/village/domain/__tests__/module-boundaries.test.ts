@@ -7,6 +7,8 @@ import * as facade from '../../domain';
 import * as contracts from '../contracts';
 import {
   advanceHeroActions,
+  advanceHeroAutonomy,
+  decideHeroAction,
   getHeroNextAction,
 } from '../hero/autonomy';
 import { getVillageHeroPower, rejuvenateHero } from '../hero/progression';
@@ -31,7 +33,6 @@ import {
   completeFacilityTaskNow,
   completeFacilityTasks,
 } from '../expedition/settlement';
-import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
 import { chooseStoryChoice } from '../story/choices';
 import { grantInterventionCharge, useIntervention } from '../intervention/commands';
 import { grantOfflineResourceBonus } from '../rewards/offline';

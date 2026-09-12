@@ -9,18 +9,24 @@ import {
   it,
   vi,
 } from 'vitest';
-import { createInitialVillageSave } from '../../save';
+import {
+  createInitialVillageSave,
+  loadVillageSave,
+  persistVillageSave,
+} from '../../save';
 import { cancelFacilityTask, startFacilityTask } from '../facility/tasks';
 import { startExpedition } from '../expedition/commands';
 import { completeFacilityTaskNow } from '../expedition/settlement';
 import { grantInterventionCharge, useIntervention } from '../intervention/commands';
 import { grantOfflineResourceBonus } from '../rewards/offline';
 import { setVillagePolicy, updateVillageSettings } from '../settings/commands';
+import { Village_MAX_SAGA_ENTRIES } from '../../types';
 
 const STORY_FILE = 'src/village/story.ts';
 const STORY_PATH = fileURLToPath(new URL('../../story.ts', import.meta.url));
 const CHOICES_FILE = 'src/village/domain/story/choices.ts';
 const CHOICES_PATH = fileURLToPath(new URL('../story/choices.ts', import.meta.url));
+const HOUR = 60 * 60 * 1000;
 const ASSIGNMENT_OPERATORS = new Set<ts.SyntaxKind>([
   ts.SyntaxKind.EqualsToken,
   ts.SyntaxKind.PlusEqualsToken,
@@ -127,6 +133,40 @@ beforeAll(() => {
 });
 
 describe('Village commands domain', () => {
+  it('keeps the saga history bounded to the newest records', () => {
+    const initial = createInitialVillageSave(43);
+    initial.meta.sagaEntries = Array.from({ length: Village_MAX_SAGA_ENTRIES + 5 }, (_, index) => ({
+      id: `saga-${index}`,
+      kind: 'milestone' as const,
+      createdAt: initial.createdAt + index,
+      title: `기록 ${index}`,
+      text: `내용 ${index}`,
+    })).reverse();
+
+    const updated = setVillagePolicy(initial, 'training', initial.updatedAt + 1_000);
+
+    expect(updated.meta.sagaEntries).toHaveLength(Village_MAX_SAGA_ENTRIES);
+    expect(updated.meta.sagaEntries[0]?.id).toBe(`saga-${Village_MAX_SAGA_ENTRIES + 4}`);
+    expect(updated.meta.sagaEntries.at(-1)?.id).toBe('saga-5');
+  });
+
+  it('keeps the save chronology valid when an explicit action sees a backwards clock', () => {
+    const initial = createInitialVillageSave(24);
+    initial.lastProcessedAt = initial.createdAt + HOUR;
+    initial.updatedAt = initial.lastProcessedAt;
+
+    const changed = setVillagePolicy(initial, 'training', initial.createdAt + 1_000);
+    expect(changed.updatedAt).toBe(initial.lastProcessedAt);
+
+    const storage = new Map<string, string>();
+    const fakeStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    } as unknown as Storage;
+    persistVillageSave(changed, fakeStorage);
+    expect(loadVillageSave(fakeStorage)).not.toBeNull();
+  });
+
   it('applies monetization effects through pure Village domain helpers', () => {
     const initial = createInitialVillageSave(72);
     const started = startFacilityTask(initial, 'temple', initial.createdAt, null);

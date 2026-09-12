@@ -7,11 +7,9 @@ import {
 } from '../save';
 import {
   completeFacilityTasks,
-  setVillagePolicy,
   startExpedition,
   startFacilityTask,
 } from '../domain';
-import { Village_MAX_SAGA_ENTRIES } from '../types';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -29,23 +27,6 @@ describe('Village save and domain façade', () => {
     expect(save.run.lastExpeditionResult).toBeNull();
     expect(save.run.hero.realmId).toBe('sacred_fields');
     expect(save.run.hero.actionCount).toBe(185);
-  });
-
-  it('keeps the saga history bounded to the newest records', () => {
-    const initial = createInitialVillageSave(43);
-    initial.meta.sagaEntries = Array.from({ length: Village_MAX_SAGA_ENTRIES + 5 }, (_, index) => ({
-      id: `saga-${index}`,
-      kind: 'milestone' as const,
-      createdAt: initial.createdAt + index,
-      title: `기록 ${index}`,
-      text: `내용 ${index}`,
-    })).reverse();
-
-    const updated = setVillagePolicy(initial, 'training', initial.updatedAt + 1_000);
-
-    expect(updated.meta.sagaEntries).toHaveLength(Village_MAX_SAGA_ENTRIES);
-    expect(updated.meta.sagaEntries[0]?.id).toBe(`saga-${Village_MAX_SAGA_ENTRIES + 4}`);
-    expect(updated.meta.sagaEntries.at(-1)?.id).toBe('saga-5');
   });
 
   it('round-trips valid Village saves and rejects malformed schema data', () => {
