@@ -45,6 +45,10 @@ server component가 client loader를 직접 import하지 않도록 유지한다.
 ## 게임 내부 경계
 
 - `village/`: 현재 제품의 상태·저장·원정·시설·사가·화면
+- `village/VillageApp.tsx`: 게임 루트 수명주기와 화면 상태를 조합하는 진입 컴포넌트
+- `village/useNativeVillageMonetization.ts`: 선택적인 Capacitor 수익화 bridge의 부팅·정리 수명주기
+- `village/VillageChrome.tsx`: 공통 shell, 헤더, 재화 바, 알림, 하단 메뉴 렌더링
+- `village/VillageScreenRouter.tsx`: 현재 화면과 `useVillageGame` 계약을 각 화면 컴포넌트에 연결
 - `village/useVillagePersistence.ts`: 저장 부팅·커밋·오프라인 정산·표시 시계
 - `village/useVillageGame.ts`: 도메인 명령과 선택형 수익화 동작을 화면 계약으로 조합
 - `village/domain.ts`: 기존 호출자를 위한 47줄 compatibility façade. 구현 없이
