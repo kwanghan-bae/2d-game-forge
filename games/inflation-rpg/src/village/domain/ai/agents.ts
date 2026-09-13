@@ -24,6 +24,7 @@ import {
   getVillageAgentAIState,
   getVillageAgentCognitionState,
   getVillageAIState,
+  getVillageSimulationState,
   deterministicUnit,
   recordVillageSimulationDecision,
   VILLAGE_SUPPORT_AGENT_IDS,
@@ -31,10 +32,25 @@ import {
 
 export type VillageAgentDuty = Extract<FacilityId, 'blacksmith' | 'mudang' | 'expedition'>;
 
+export type VillageAgentMode = 'specialty' | 'recovery' | 'relationship' | 'crisis';
+
+export const VILLAGE_AGENT_MODE_LABELS: Record<VillageAgentMode, string> = {
+  specialty: '전문 역할 유지',
+  recovery: '회복 우선',
+  relationship: '동료 관계 회복',
+  crisis: '위기 조율',
+};
+
+const VILLAGE_AGENT_CRISIS_PRESSURE_THRESHOLD = 0.72;
+const VILLAGE_AGENT_PLAN_SWITCH_MARGIN = 12;
+const VILLAGE_AGENT_MIN_HOLD_TICKS = 2;
+
 export interface VillageAgentPlan {
   agentId: SupportAgentId;
   goal: VillageAgentGoal;
   goalLabel: string;
+  mode: VillageAgentMode;
+  modeLabel: string;
   score: number;
   reason: VillageAgentDecisionReason;
   rationale: string;
@@ -137,6 +153,23 @@ function safeTick(value: unknown, fallback = 0): number {
     : fallback;
 }
 
+function crisisPressure(worldPressure: number): number {
+  return clamp(
+    (worldPressure - VILLAGE_AGENT_CRISIS_PRESSURE_THRESHOLD)
+      / (1 - VILLAGE_AGENT_CRISIS_PRESSURE_THRESHOLD),
+    0,
+    1,
+  );
+}
+
+function modeForGoal(goal: VillageAgentGoal, worldPressure: number): VillageAgentMode {
+  if (goal === 'recover') return 'recovery';
+  if (goal === 'bond') {
+    return worldPressure >= VILLAGE_AGENT_CRISIS_PRESSURE_THRESHOLD ? 'crisis' : 'relationship';
+  }
+  return 'specialty';
+}
+
 function createPlanState(
   source: VillageSaveEnvelope,
   agentId: SupportAgentId,
@@ -201,6 +234,19 @@ function averagePeerRelationship(source: VillageSaveEnvelope, agentId: SupportAg
   return peers.reduce((total, peerId) => total + safeNumber(brain.relationships[peerId]), 0) / peers.length;
 }
 
+function lastAgentGoalChangeTick(source: VillageSaveEnvelope, agentId: SupportAgentId): number | null {
+  const decisions = getVillageSimulationState(source).decisionHistory ?? [];
+  let previousGoal = SPECIALTY_GOAL_BY_AGENT[agentId];
+  let changedAt: number | null = null;
+  for (const decision of decisions) {
+    if (decision.actor !== agentId || decision.kind !== 'agent_goal') continue;
+    const nextGoal = decision.value as VillageAgentGoal;
+    if (nextGoal !== previousGoal) changedAt = decision.day;
+    previousGoal = nextGoal;
+  }
+  return changedAt;
+}
+
 function weatherAffinity(agentId: SupportAgentId, source: VillageSaveEnvelope): number {
   const weather = getVillageAIState(source).world.weather;
   if (agentId === 'guide' && weather === 'fog') return 22;
@@ -217,7 +263,10 @@ function goalReason(
   worldPressure = 0,
 ): VillageAgentDecisionReason {
   if (goal === 'recover') return fatigue >= 55 ? 'fatigue' : 'routine';
-  if (goal === 'bond') return relation < -0.2 ? 'conflict' : 'relationship';
+  if (goal === 'bond') {
+    if (worldPressure >= VILLAGE_AGENT_CRISIS_PRESSURE_THRESHOLD) return 'world_pressure';
+    return relation < -0.2 ? 'conflict' : 'relationship';
+  }
   if (worldPressure >= 0.62) return 'world_pressure';
   if (weatherBonus > 0) return 'weather';
   return 'specialty';
@@ -314,6 +363,7 @@ function calculatePlan(
     : 0;
   const factionContext = `${FACTION_LABELS[faction.factionId]} 세력 신뢰 ${Math.round(faction.trust * 100)}%, 긴장 ${Math.round(faction.tension * 100)}%`
     + (faction.chainStep === null ? '' : `, ${faction.chainStep + 1}단계 연쇄 압력`);
+  const coordinationPressure = crisisPressure(worldPressure);
   const activePlanBias = (goal: VillageAgentGoal): number => getVillageAgentCognitionState(source, agentId).plan?.goal === goal ? 7 : 0;
   const specialtyGoal = SPECIALTY_GOAL_BY_AGENT[agentId];
   const available = Boolean(agent && !agent.activeTaskId && fatigue < 100);
@@ -322,6 +372,8 @@ function calculatePlan(
       agentId,
       goal: 'recover',
       goalLabel: VILLAGE_AGENT_GOAL_LABELS.recover,
+      mode: modeForGoal('recover', worldPressure),
+      modeLabel: VILLAGE_AGENT_MODE_LABELS[modeForGoal('recover', worldPressure)],
       score: 22 + fatigue * 1.15 + brain.stress * 0.3 + failureMemory * 4 + worldPressure * 5 + activePlanBias('recover'),
       reason: goalReason('recover', fatigue, relation, 0, worldPressure),
       rationale: `피로 ${Math.round(fatigue)}%와 긴장 ${Math.round(brain.stress)}%, ${factionContext}${failureMemory > 0.4 ? ', 최근 실패 기억' : ''}를 반영해 숨을 고른다.`,
@@ -333,6 +385,8 @@ function calculatePlan(
       agentId,
       goal: specialtyGoal,
       goalLabel: VILLAGE_AGENT_GOAL_LABELS[specialtyGoal],
+      mode: modeForGoal(specialtyGoal, worldPressure),
+      modeLabel: VILLAGE_AGENT_MODE_LABELS[modeForGoal(specialtyGoal, worldPressure)],
       // Each specialty reads a different part of the same world. A planner
       // may therefore keep the role while changing its confidence in the
       // next step instead of behaving as if it had perfect information.
@@ -359,28 +413,59 @@ function calculatePlan(
       agentId,
       goal: 'bond',
       goalLabel: VILLAGE_AGENT_GOAL_LABELS.bond,
+      mode: modeForGoal('bond', worldPressure),
+      modeLabel: VILLAGE_AGENT_MODE_LABELS[modeForGoal('bond', worldPressure)],
       score: 20
         + (100 - trust) * 0.42
         + Math.max(0, -relation) * 22
         + conflictMemory * 18
         + (1 - averageBelief(source, agentId, 'peer_trust')) * 12
         + (faction.factionId === 'village' ? worldPressure * 8 : 0)
+        + coordinationPressure * 100
         + (brain.stress >= 60 ? 8 : 0),
-      reason: goalReason('bond', fatigue, relation, 0),
-      rationale: relation < -0.2
-        ? `동료 관계가 ${relation.toFixed(2)}로 긴장되어 먼저 대화를 회복하려 한다.`
-        : `영웅 신뢰 ${Math.round(trust)}%와 동료 관계를 살피며 유대를 쌓으려 한다.`,
-      schedule: makeSchedule(source, agentId, 'bond', goalReason('bond', fatigue, relation, 0), tick),
+      reason: goalReason('bond', fatigue, relation, 0, worldPressure),
+      rationale: worldPressure >= VILLAGE_AGENT_CRISIS_PRESSURE_THRESHOLD
+        ? `${factionContext}가 높아 전문 일을 잠시 늦추고 동료와 역할을 조율하려 한다.`
+        : relation < -0.2
+          ? `동료 관계가 ${relation.toFixed(2)}로 긴장되어 먼저 대화를 회복하려 한다.`
+          : `영웅 신뢰 ${Math.round(trust)}%와 동료 관계를 살피며 유대를 쌓으려 한다.`,
+      schedule: makeSchedule(source, agentId, 'bond', goalReason('bond', fatigue, relation, 0, worldPressure), tick),
       plan: planForGoal(source, agentId, 'bond', tick),
       available,
     },
   ];
-  const selected = [...candidates].sort((left, right) => {
+  const rankedCandidates = [...candidates].sort((left, right) => {
     const scoreDifference = right.score - left.score;
     if (Math.abs(scoreDifference) > 0.0001) return scoreDifference;
     return deterministicUnit(`${ai.seed}:agent-tie:${agentId}:${tick}:${left.goal}`)
       - deterministicUnit(`${ai.seed}:agent-tie:${agentId}:${tick}:${right.goal}`);
-  })[0] ?? candidates[0];
+  });
+  const topCandidate = rankedCandidates[0] ?? candidates[0];
+  const activePlan = getVillageAgentCognitionState(source, agentId).plan;
+  const currentGoal = activePlan?.goal ?? brain.goal;
+  const currentCandidate = candidates.find((candidate) => candidate.goal === currentGoal);
+  const activePlanCurrent = Boolean(
+    activePlan
+      && activePlan.goal === currentGoal
+      && tick < activePlan.expiresAtTick,
+  );
+  const activePlanAge = activePlan ? Math.max(0, tick - activePlan.createdAtTick) : Number.MAX_SAFE_INTEGER;
+  const goalChangeTick = lastAgentGoalChangeTick(source, agentId);
+  const goalHoldAge = goalChangeTick === null
+    ? activePlanAge
+    : Math.max(0, tick - goalChangeTick);
+  const crisisEscalation = topCandidate.mode === 'crisis' && currentCandidate?.mode !== 'crisis';
+  const shouldHoldCurrent = Boolean(
+    activePlanCurrent
+      && currentCandidate
+      && topCandidate.goal !== currentGoal
+      && !crisisEscalation
+      && (
+        goalHoldAge < VILLAGE_AGENT_MIN_HOLD_TICKS
+        || topCandidate.score < currentCandidate.score + VILLAGE_AGENT_PLAN_SWITCH_MARGIN
+      ),
+  );
+  const selected = shouldHoldCurrent && currentCandidate ? currentCandidate : topCandidate;
   return { selected, candidates };
 }
 
@@ -408,7 +493,13 @@ export function getVillageAgentAssignmentAnalysis(
     const agent = source.meta.agents.find((candidate) => candidate.id === agentId);
     const plan = getVillageAgentPlan(source, agentId);
     const available = agentId === requiredAgentId
-      && Boolean(agent && !agent.activeTaskId && safeNumber(agent.fatigue) < 100 && plan.goal !== 'recover');
+      && Boolean(
+        agent
+          && !agent.activeTaskId
+          && safeNumber(agent.fatigue) < 100
+          && plan.goal !== 'recover'
+          && plan.mode !== 'crisis',
+      );
     const score = available
       ? plan.score + (plan.goal === SPECIALTY_GOAL_BY_AGENT[agentId] ? 18 : 0)
         + safeNumber(agent?.trust) * 0.16
@@ -423,7 +514,9 @@ export function getVillageAgentAssignmentAnalysis(
         : agentId === requiredAgentId
           ? plan.goal === 'recover'
             ? '현재 휴식 계획이 우선이라 자동 배정하지 않는다.'
-            : '현재 작업 중이거나 피로가 한계에 도달했다.'
+            : plan.mode === 'crisis'
+              ? '위기 조율 계획이 우선이라 자동 원정 지원을 미룬다.'
+              : '현재 작업 중이거나 피로가 한계에 도달했다.'
           : '이 역할의 전문 담당자가 아니다.',
     };
   });

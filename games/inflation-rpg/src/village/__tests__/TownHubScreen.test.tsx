@@ -86,6 +86,8 @@ describe('Village town hub support assignment', () => {
     expect(panel).toHaveTextContent('정밀 제작');
     expect(panel).toHaveTextContent('안전한 축원');
     expect(panel).toHaveTextContent('위험 경로 감지');
+    expect(panel).toHaveTextContent('행동 모드');
+    expect(panel).toHaveTextContent('전문 역할 유지');
   });
 
   it('uses static support-agent metadata when an in-memory card is tampered', () => {

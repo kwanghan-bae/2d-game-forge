@@ -152,6 +152,144 @@ describe('Village human-like AI slice', () => {
     expect(afterCraft?.reason).toBe('world_pressure');
   });
 
+  it('switches a pressured specialist into a deterministic crisis coordination mode', () => {
+    const pressured = createInitialVillageSave(218);
+    const factions = pressured.meta.ai?.world.factions;
+    if (!factions) return;
+    factions.merchants.trust = 0;
+    factions.merchants.tension = 1;
+    factions.merchants.influence = 1;
+    pressured.meta.ai!.world.chains = [{
+      id: 'chain-crisis-mode',
+      kind: 'supply_social',
+      factionId: 'merchants',
+      step: 1,
+      momentum: 0.9,
+      nextDay: 1,
+      pendingEventId: null,
+      lastEventId: 'event-crisis-mode',
+    }];
+
+    advanceVillageAgentScheduler(pressured, 1);
+    const plan = getVillageAgentPlan(pressured, 'blacksmith');
+
+    expect(plan.goal).toBe('bond');
+    expect(plan.mode).toBe('crisis');
+    expect(plan.modeLabel).toBe('위기 조율');
+    expect(plan.reason).toBe('world_pressure');
+  });
+
+  it('holds a crisis plan briefly and returns to specialty after pressure resolves', () => {
+    const pressured = createInitialVillageSave(219);
+    const factions = pressured.meta.ai?.world.factions;
+    if (!factions) return;
+    factions.merchants.trust = 0;
+    factions.merchants.tension = 1;
+    factions.merchants.influence = 1;
+    pressured.meta.ai!.world.chains = [{
+      id: 'chain-crisis-hysteresis',
+      kind: 'supply_social',
+      factionId: 'merchants',
+      step: 1,
+      momentum: 0.9,
+      nextDay: 1,
+      pendingEventId: null,
+      lastEventId: 'event-crisis-hysteresis',
+    }];
+
+    advanceVillageAgentScheduler(pressured, 1);
+    expect(pressured.meta.ai!.agentBrains!.blacksmith.goal).toBe('bond');
+
+    const relieved = structuredClone(pressured);
+    relieved.meta.ai!.world.factions!.merchants.trust = 1;
+    relieved.meta.ai!.world.factions!.merchants.tension = 0;
+    relieved.meta.ai!.world.factions!.merchants.influence = 0;
+    relieved.meta.ai!.world.chains = [];
+
+    advanceVillageAgentScheduler(relieved, 2);
+    expect(relieved.meta.ai!.agentBrains!.blacksmith.goal).toBe('bond');
+    advanceVillageAgentScheduler(relieved, 10);
+    expect(relieved.meta.ai!.agentBrains!.blacksmith.goal).toBe('craft');
+  });
+
+  it('returns from crisis after resolved pressure even when each world tick creates an event', () => {
+    const pressured = createInitialVillageSave(221);
+    const factions = pressured.meta.ai?.world.factions;
+    if (!factions) return;
+    factions.merchants.trust = 0;
+    factions.merchants.tension = 1;
+    factions.merchants.influence = 1;
+    pressured.meta.ai!.world.chains = [{
+      id: 'chain-crisis-runtime',
+      kind: 'supply_social',
+      factionId: 'merchants',
+      step: 1,
+      momentum: 0.9,
+      nextDay: 1,
+      pendingEventId: null,
+      lastEventId: 'event-crisis-runtime',
+    }];
+
+    let current = advanceVillageWorld(pressured, pressured.createdAt + Village_WORLD_DAY_MS).save;
+    expect(current.meta.ai!.agentBrains!.blacksmith.goal).toBe('bond');
+    while (getPendingVillageWorldEvents(current).length > 0) {
+      const event = getPendingVillageWorldEvents(current)[0];
+      if (!event) break;
+      const resolved = resolveVillageWorldEvent(current, event.id, event.choices[0].id, current.updatedAt + 1);
+      if (!resolved.ok) break;
+      current = resolved.save;
+    }
+
+    current.meta.ai!.world.factions!.merchants.trust = 1;
+    current.meta.ai!.world.factions!.merchants.tension = 0;
+    current.meta.ai!.world.factions!.merchants.influence = 0;
+    current.meta.ai!.world.chains = [];
+    current.meta.ai!.agentBrains!.blacksmith.relationships = {
+      blacksmith: 0,
+      mudang: 0,
+      guide: 0,
+    };
+    for (let day = 2; day <= 8; day += 1) {
+      current = advanceVillageWorld(current, pressured.createdAt + Village_WORLD_DAY_MS * day).save;
+      while (getPendingVillageWorldEvents(current).length > 0) {
+        const event = getPendingVillageWorldEvents(current)[0];
+        if (!event) break;
+        const resolved = resolveVillageWorldEvent(current, event.id, event.choices[0].id, current.updatedAt + 1);
+        if (!resolved.ok) break;
+        current = resolved.save;
+      }
+    }
+
+    expect(current.meta.ai!.agentBrains!.blacksmith.goal).toBe('craft');
+  });
+
+  it('withholds automatic expedition support while the guide is in crisis coordination', () => {
+    const pressured = createInitialVillageSave(220);
+    const factions = pressured.meta.ai?.world.factions;
+    if (!factions) return;
+    factions.village.trust = 0;
+    factions.village.tension = 1;
+    factions.village.influence = 1;
+    pressured.meta.ai!.world.chains = [{
+      id: 'chain-guide-crisis',
+      kind: 'social_omen',
+      factionId: 'village',
+      step: 1,
+      momentum: 0.9,
+      nextDay: 1,
+      pendingEventId: null,
+      lastEventId: 'event-guide-crisis',
+    }];
+
+    advanceVillageAgentScheduler(pressured, 1);
+    const assignment = getVillageAgentAssignmentAnalysis(pressured, 'expedition');
+
+    expect(getVillageAgentPlan(pressured, 'guide').mode).toBe('crisis');
+    expect(assignment.selected).toBeNull();
+    expect(assignment.candidates.find((candidate) => candidate.agentId === 'guide')?.rationale)
+      .toContain('위기 조율');
+  });
+
   it('retains salient experience, advances plans, and counts event interruptions', () => {
     const initial = createInitialVillageSave(210);
     initial.meta.agents.find((agent) => agent.id === 'guide')!.fatigue = 88;
@@ -397,7 +535,7 @@ describe('Village human-like AI slice', () => {
     expect(result.serializedSize).toBeGreaterThan(0);
   });
 
-  it('counts pressure-driven decisions during a sustained faction crisis', () => {
+  it('counts crisis mode entries and goal switches in a sustained faction crisis', () => {
     const pressured = createInitialVillageSave(217);
     const factions = pressured.meta.ai?.world.factions;
     if (!factions) return;
@@ -408,5 +546,7 @@ describe('Village human-like AI slice', () => {
     const result = runVillageAIScenario(pressured, { days: 7, choicePolicy: 'first' });
 
     expect(result.pressureDecisionCount).toBeGreaterThan(0);
+    expect(result.agentGoalSwitchCount).toBeGreaterThan(0);
+    expect(result.crisisModeDecisionCount).toBeGreaterThan(0);
   });
 });

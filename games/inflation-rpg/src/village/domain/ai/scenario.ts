@@ -1,4 +1,6 @@
 import type {
+  SupportAgentId,
+  VillageAgentGoal,
   VillageSaveEnvelope,
   VillageWorldEvent,
 } from '../../types';
@@ -17,6 +19,7 @@ import {
   ensureVillageAIState,
   getVillageAIState,
   getVillageSimulationState,
+  VILLAGE_SUPPORT_AGENT_IDS,
   Village_WORLD_DAY_MS,
 } from './state';
 import { cloneSave } from '../shared/saveMutation';
@@ -42,6 +45,8 @@ export interface VillageAIScenarioResult {
   expiredEventCount: number;
   decisionCount: number;
   pressureDecisionCount: number;
+  agentGoalSwitchCount: number;
+  crisisModeDecisionCount: number;
   replayFingerprint: string;
   behaviorDiversity: VillageAIBehaviorDiversity;
   /** UTF-16 code-unit length of the JSON save snapshot. */
@@ -53,6 +58,8 @@ interface ScenarioCounters {
   expiredEventCount: number;
   decisionCount: number;
   pressureDecisionCount: number;
+  agentGoalSwitchCount: number;
+  crisisModeDecisionCount: number;
 }
 
 function normalizeDays(days: number | undefined): number {
@@ -109,6 +116,7 @@ function collectNewSimulationRecords(
   knownEventIds: Set<string>,
   knownDecisionIds: Set<string>,
   counters: ScenarioCounters,
+  lastAgentGoals: Map<SupportAgentId, VillageAgentGoal>,
 ): void {
   const simulation = getVillageSimulationState(save);
   for (const record of simulation.eventHistory) {
@@ -122,6 +130,13 @@ function collectNewSimulationRecords(
     knownDecisionIds.add(record.id);
     counters.decisionCount += 1;
     if (record.reason === 'world_pressure') counters.pressureDecisionCount += 1;
+    if (record.actor !== 'hero' && record.kind === 'agent_goal') {
+      const nextGoal = record.value as VillageAgentGoal;
+      const previousGoal = lastAgentGoals.get(record.actor);
+      if (previousGoal !== undefined && previousGoal !== nextGoal) counters.agentGoalSwitchCount += 1;
+      if (record.reason === 'world_pressure' && nextGoal === 'bond') counters.crisisModeDecisionCount += 1;
+      lastAgentGoals.set(record.actor, nextGoal);
+    }
   }
 }
 
@@ -166,11 +181,18 @@ export function runVillageAIScenario(
   const choicePolicy = options.choicePolicy ?? 'balanced';
   const knownEventIds = new Set(getVillageSimulationState(save).eventHistory.map((record) => record.eventId));
   const knownDecisionIds = new Set((getVillageSimulationState(save).decisionHistory ?? []).map((record) => record.id));
+  const lastAgentGoals = new Map<SupportAgentId, VillageAgentGoal>();
+  for (const agentId of VILLAGE_SUPPORT_AGENT_IDS) {
+    const goal = getVillageAIState(save).agentBrains?.[agentId]?.goal;
+    if (goal) lastAgentGoals.set(agentId, goal);
+  }
   const counters: ScenarioCounters = {
     chosenEventCount: 0,
     expiredEventCount: 0,
     decisionCount: 0,
     pressureDecisionCount: 0,
+    agentGoalSwitchCount: 0,
+    crisisModeDecisionCount: 0,
   };
   const startDay = ai.world.lastSimulatedDay;
   let generatedEventCount = 0;
@@ -180,10 +202,10 @@ export function runVillageAIScenario(
     const advanced = advanceVillageWorld(save, scenarioTimestamp(save, targetDay));
     save = advanced.save;
     generatedEventCount += advanced.generatedEvents.length;
-    collectNewSimulationRecords(save, knownEventIds, knownDecisionIds, counters);
+    collectNewSimulationRecords(save, knownEventIds, knownDecisionIds, counters, lastAgentGoals);
 
     save = resolveScenarioEvents(save, ai.seed, choicePolicy);
-    collectNewSimulationRecords(save, knownEventIds, knownDecisionIds, counters);
+    collectNewSimulationRecords(save, knownEventIds, knownDecisionIds, counters, lastAgentGoals);
   }
 
   const serializedSize = JSON.stringify(save).length;
@@ -196,6 +218,8 @@ export function runVillageAIScenario(
     expiredEventCount: counters.expiredEventCount,
     decisionCount: counters.decisionCount,
     pressureDecisionCount: counters.pressureDecisionCount,
+    agentGoalSwitchCount: counters.agentGoalSwitchCount,
+    crisisModeDecisionCount: counters.crisisModeDecisionCount,
     replayFingerprint: getVillageAIReplayFingerprint(save),
     behaviorDiversity: getVillageAIBehaviorDiversity(save),
     serializedSize,

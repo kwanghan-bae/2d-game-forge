@@ -1,6 +1,6 @@
 # 우선순위 백로그
 
-상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력, AI-03C replay·행동 다양성 계측, AI-03D 세력 인식·행동 연결, AI-03E 장기 시나리오 평가를 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
+상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력, AI-03C replay·행동 다양성 계측, AI-03D 세력 인식·행동 연결, AI-03E 장기 시나리오 평가, AI-04 상황 적응형 위기 대응을 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
 
 | ID / 우선순위 | 해결할 문제 | 합격 조건 | 현재 증거·상태 |
 |---|---|---|---|
@@ -18,6 +18,7 @@
 | AI-03C / 구현됨 | deterministic replay를 눈으로 확인하기 어렵고 행동 다양성을 장기 비교할 기록이 없음 | 결정 journal·replay fingerprint·차이 섹션·행동 다양성 점수와 벽시계 noise 제외 비교 제공 | `meta.simulation.decisionHistory` bounded additive 확장과 순수 `ai/evaluation` 분석기를 구현. 영웅·에이전트 결정을 기록하고 replay·migration 회귀 통과 |
 | AI-03D / 구현됨 | 세계 세력 상태가 사건 생성에만 머물고 지원 에이전트의 판단·플레이어 설명으로 이어지지 않음 | 세력별 신뢰·긴장도 인식, 역할별 utility 연결, 사건 선택 직후 재계획, Town Hub 원인·연쇄 표시, 기존 저장 migration 회귀 | `faction_trust`·`faction_tension` 신념을 추가하고 대장장이·무당·길잡이의 담당 세력 압력을 목표 점수·판단 이유에 반영. 선택 직후 scheduler를 갱신하고 화면에 세력·연쇄 상태를 표시. 234개 파일·2,113개 game unit과 typecheck/lint/E2E/build 통과 |
 | AI-03E / 구현됨 | 장기 시나리오에서 결정 재현성·행동 다양성·세력 압력·저장 크기를 한 번에 검증하기 어려움 | 7/30일 bounded 로컬 실행, 동일 시드·정책 fingerprint 일치, 선택·만료·결정·world pressure 집계, 행동 다양성·저장 크기 반환 | `runVillageAIScenario`가 저장 복사본을 최대 30일 진행하고 `first`·`last`·`balanced` 정책, 자원 실패 fallback, replay fingerprint·diversity·JSON size를 반환. 234개 파일·2,113개 game unit, game typecheck/lint 통과. LLM·외부 모델·서버는 제외 |
+| AI-04 / 구현됨 | 세계 압력이 판단 이유만 바꾸고 실제 지원 에이전트 행동은 전문 역할에 고정됨 | 위기 모드 진입·자동 원정 지원 보류·최소 유지·압력 해소 후 전문 복귀, 결정형 replay, headless 전환 계측, Town Hub 설명 | `bond` 기반 `위기 조율` 파생 모드, 2 tick hold·12점 hysteresis, crisis 길잡이 자동 배정 보류, scenario의 goal switch/crisis metric과 Town Hub 행동 모드 표시를 구현. LLM·외부 모델·서버는 제외 |
 | AI-03 / 장기 | 장기 사건 연쇄가 실제 행동 다양성과 설명 이해도로 이어지는지 측정하기 어려움 | 실사용 표본의 deterministic replay, 행동 다양성·설명 이해도 평가, 장기 저장 크기·성능 기준 | AI-03D 이후 평가·튜닝 단계. LLM·외부 모델·서버를 제품 범위에 도입하지 않는 경계 유지 |
 | DEVICE-01 / 차단 | 실기기 출시 검증 | iOS/Android 조작·복귀·광고 실패·결제 취소/복원/환불 결과 | 장비·스토어 계정이 필요하며 브라우저 에뮬레이션으로 대체할 수 없음 |
 

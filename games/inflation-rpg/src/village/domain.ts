@@ -29,6 +29,7 @@ export {
   getVillageAgentAssignmentAnalysis,
   getVillageAgentPlan,
   getVillageAgentPlanAnalysis,
+  VILLAGE_AGENT_MODE_LABELS,
   VILLAGE_AGENT_GOAL_LABELS,
 } from './domain/ai/agents';
 export {
@@ -56,6 +57,7 @@ export type {
   VillageAgentPlan,
   VillageAgentPlanAnalysis,
   VillageAgentPlanCandidate,
+  VillageAgentMode,
 } from './domain/ai/agents';
 export type { VillageAIBehaviorDiversity, VillageAIReplayAudit } from './domain/ai/evaluation';
 export type {
