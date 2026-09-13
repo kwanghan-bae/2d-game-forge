@@ -31,6 +31,14 @@ export {
   getVillageAgentPlanAnalysis,
   VILLAGE_AGENT_GOAL_LABELS,
 } from './domain/ai/agents';
+export {
+  getVillageAgentBelief,
+  getVillageAgentBeliefValue,
+  observeVillageAgentWorld,
+  recordVillageAgentBelief,
+  recordVillageAgentMemory,
+} from './domain/ai/cognition';
+export { getVillageAgentCognitionState } from './domain/ai/state';
 export type {
   VillageAgentAssignmentAnalysis,
   VillageAgentAssignmentCandidate,

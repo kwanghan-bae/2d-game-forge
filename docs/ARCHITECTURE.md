@@ -84,6 +84,11 @@ commands, module-boundaries 파일에 둔다.
 `meta.ai.agentBrains`는 지원 에이전트별 목표·긴장도·동료 관계·다음 일정의
 additive schema 3 확장이다. 이전 유효 schema 3 저장에 이 필드가 없으면
 seed 기반 기본값을 한 번 채우며, scheduler는 세계 tick에서만 재계획한다.
+`agentBrains.<agent>.cognition`은 bounded 기억·역할 편향 신념·다단계 계획을
+추가로 보관한다. 실제 세계 상태와 에이전트의 인식을 분리하고, 관찰 노이즈와
+신뢰도는 seed로 재현한다. 기억·신념·계획은 상한을 넘지 않으며 기존 schema 3
+저장에는 결정형 기본값을 한 번 채운다. 제품은 LLM·외부 모델·서버·네트워크를
+사용하지 않고 로컬 결정형 규칙만으로 행동을 판정한다.
 
 RPG 고유 계약은 현재 게임 workspace에 남긴다. 별도 두 번째 게임에서 같은
 계약이 실제로 필요하다는 증거가 생기기 전에는 `@forge/core`로 승격하지 않는다.

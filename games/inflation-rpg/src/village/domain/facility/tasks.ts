@@ -1,6 +1,7 @@
 import { getVillageFacilityDefinition } from '../../data';
 import { getVillageEquipmentName } from '../../equipment';
 import type { FacilityId, FacilityTask, SupportAgentId, VillageSaveEnvelope } from '../../types';
+import { recordVillageAgentMemory } from '../ai/cognition';
 import { AGENT_REST_RECOVERY } from '../contracts';
 import type { AgentDomainResult, DomainResult } from '../contracts';
 import { isValidAgentState, isValidCompletionWindow, safeCompletionTimestamp } from '../shared/guards';
@@ -53,7 +54,18 @@ export function startFacilityTask(
   };
   save.meta.tasks[task.id] = task;
   facility.activeTaskId = task.id;
-  if (agent) agent.activeTaskId = task.id;
+  if (agent) {
+    agent.activeTaskId = task.id;
+    recordVillageAgentMemory(
+      save,
+      agent.id,
+      'choice',
+      `${taskLabel} 작업을 맡았다.`,
+      0.25,
+      0.58,
+      eventAt,
+    );
+  }
   syncHeroAction(save);
   touchSave(save, now);
   return { ok: true, save, task };

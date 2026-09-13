@@ -6,8 +6,17 @@ import type {
   SupportAgentId,
   RealmId,
   VillageAgentAIState,
+  VillageAgentBelief,
+  VillageAgentBeliefKind,
+  VillageAgentBeliefSource,
+  VillageAgentCognitionState,
   VillageAgentDecisionReason,
   VillageAgentGoal,
+  VillageAgentMemory,
+  VillageAgentMemoryTag,
+  VillageAgentPlanState,
+  VillageAgentPlanStep,
+  VillageAgentPlanStepKind,
   VillageAIState,
   VillageHeroGoal,
   VillageHeroPersonality,
@@ -25,6 +34,8 @@ import type {
 } from '../../types';
 import {
   Village_MAX_AI_MEMORIES,
+  Village_MAX_AGENT_BELIEFS,
+  Village_MAX_AGENT_MEMORIES,
   Village_MAX_PENDING_WORLD_EVENTS,
   Village_MAX_RESOLVED_WORLD_EVENTS,
   Village_MAX_WORLD_EVENT_HISTORY,
@@ -44,6 +55,35 @@ const EVENT_TYPES: readonly VillageWorldEvent['type'][] = ['weather', 'social', 
 const EVENT_OUTCOMES: readonly VillageWorldEventOutcome[] = ['chosen', 'expired'];
 export const VILLAGE_SUPPORT_AGENT_IDS: readonly SupportAgentId[] = ['blacksmith', 'mudang', 'guide'];
 const AGENT_GOALS: readonly VillageAgentGoal[] = ['recover', 'craft', 'ward', 'guide', 'bond'];
+const AGENT_MEMORY_TAGS: readonly VillageAgentMemoryTag[] = [
+  'observation',
+  'choice',
+  'success',
+  'failure',
+  'support',
+  'conflict',
+];
+const AGENT_BELIEF_KINDS: readonly VillageAgentBeliefKind[] = [
+  'hero_trust',
+  'peer_trust',
+  'supply_security',
+  'weather_safety',
+  'realm_threat',
+];
+const AGENT_BELIEF_SOURCES: readonly VillageAgentBeliefSource[] = ['observation', 'rumor', 'outcome'];
+const AGENT_PLAN_STEP_KINDS: readonly VillageAgentPlanStepKind[] = [
+  'observe',
+  'prepare',
+  'act',
+  'recover',
+  'reconcile',
+];
+const AGENT_BELIEF_SUBJECTS: readonly VillageAgentBelief['subject'][] = [
+  'hero',
+  'village',
+  ...VILLAGE_SUPPORT_AGENT_IDS,
+  ...REALM_IDS,
+];
 const AGENT_DECISION_REASONS: readonly VillageAgentDecisionReason[] = [
   'fatigue',
   'specialty',
@@ -150,6 +190,78 @@ function defaultAgentRelationships(seed: number, agentId: SupportAgentId): Recor
   ) as Record<SupportAgentId, number>;
 }
 
+function defaultWeatherSafety(weather: VillageWeather): number {
+  return weather === 'clear' ? 0.92 : weather === 'rain' ? 0.66 : weather === 'wind' ? 0.58 : 0.44;
+}
+
+function defaultAgentBeliefValue(
+  seed: number,
+  agentId: SupportAgentId,
+  kind: VillageAgentBeliefKind,
+  subject: VillageAgentBelief['subject'],
+  value: number,
+): number {
+  const roleBias = kind === 'weather_safety'
+    ? agentId === 'guide' ? -0.08 : agentId === 'mudang' ? 0.04 : 0
+    : kind === 'realm_threat'
+      ? agentId === 'guide' ? 0.06 : agentId === 'mudang' ? 0.04 : 0.02
+      : kind === 'supply_security' && agentId === 'blacksmith' ? -0.05 : 0;
+  const noise = (deterministicUnit(`${seed}:agent-belief:${agentId}:${kind}:${subject}`) - 0.5) * 0.1;
+  return Math.min(1, Math.max(0, value + roleBias + noise));
+}
+
+function createAgentBelief(
+  seed: number,
+  agentId: SupportAgentId,
+  kind: VillageAgentBeliefKind,
+  subject: VillageAgentBelief['subject'],
+  value: number,
+  tick: number,
+): VillageAgentBelief {
+  return {
+    id: `belief-${kind}-${subject}`,
+    kind,
+    subject,
+    value: defaultAgentBeliefValue(seed, agentId, kind, subject, value),
+    confidence: 0.52 + deterministicUnit(`${seed}:agent-belief-confidence:${agentId}:${kind}:${subject}`) * 0.28,
+    source: 'observation',
+    updatedAt: tick,
+  };
+}
+
+export function createVillageAgentCognitionState(
+  seed: number,
+  agentId: SupportAgentId,
+  tick = 0,
+  relationships = defaultAgentRelationships(seed, agentId),
+): VillageAgentCognitionState {
+  const world = defaultWorld();
+  const beliefs: VillageAgentBelief[] = [
+    createAgentBelief(seed, agentId, 'hero_trust', 'hero', 0.3, tick),
+    createAgentBelief(seed, agentId, 'supply_security', 'village', 0.7, tick),
+    createAgentBelief(seed, agentId, 'weather_safety', 'village', defaultWeatherSafety(world.weather), tick),
+    ...VILLAGE_SUPPORT_AGENT_IDS
+      .filter((targetId) => targetId !== agentId)
+      .map((targetId) => createAgentBelief(
+        seed,
+        agentId,
+        'peer_trust',
+        targetId,
+        (relationships[targetId] + 1) / 2,
+        tick,
+      )),
+    ...REALM_IDS.map((realmId) => createAgentBelief(
+      seed,
+      agentId,
+      'realm_threat',
+      realmId,
+      world.threatByRealm[realmId],
+      tick,
+    )),
+  ];
+  return { memories: [], beliefs, plan: null };
+}
+
 export function createVillageAgentAIState(
   seed: number,
   agentId: SupportAgentId,
@@ -158,11 +270,12 @@ export function createVillageAgentAIState(
   const safeSeed = isPersistedNumber(seed) ? Math.floor(Math.abs(seed)) : 0;
   const safeTick = safeAgentTick(tick);
   const goal = AGENT_SPECIALTY_GOALS[agentId];
+  const relationships = defaultAgentRelationships(safeSeed, agentId);
   return {
     goal,
     goalProgress: 25 + Math.floor(deterministicUnit(`${safeSeed}:agent-progress:${agentId}`) * 36),
     stress: 0,
-    relationships: defaultAgentRelationships(safeSeed, agentId),
+    relationships,
     schedule: {
       goal,
       startTick: safeTick,
@@ -170,6 +283,7 @@ export function createVillageAgentAIState(
       reason: 'routine',
     },
     lastDecisionTick: safeTick,
+    cognition: createVillageAgentCognitionState(safeSeed, agentId, safeTick, relationships),
   };
 }
 
@@ -324,6 +438,78 @@ function isValidVillageWorldEventRecord(value: unknown): value is VillageWorldEv
     : isNonEmptyString(value.choiceId);
 }
 
+function isValidVillageAgentMemory(value: unknown): value is VillageAgentMemory {
+  return isRecord(value)
+    && isNonEmptyString(value.id)
+    && isOneOf(AGENT_MEMORY_TAGS, value.tag)
+    && isNonEmptyString(value.summary)
+    && isBoundedNumber(value.valence, -1, 1)
+    && isBoundedNumber(value.salience, 0, 1)
+    && isPersistedNumber(value.createdAt)
+    && (value.relatedAgentId === null || isOneOf(VILLAGE_SUPPORT_AGENT_IDS, value.relatedAgentId));
+}
+
+function isValidVillageAgentBelief(value: unknown): value is VillageAgentBelief {
+  if (!isRecord(value)
+    || !isNonEmptyString(value.id)
+    || !isOneOf(AGENT_BELIEF_KINDS, value.kind)
+    || !isOneOf(AGENT_BELIEF_SUBJECTS, value.subject)
+    || !isBoundedNumber(value.value, 0, 1)
+    || !isBoundedNumber(value.confidence, 0, 1)
+    || !isOneOf(AGENT_BELIEF_SOURCES, value.source)
+    || !isPersistedNumber(value.updatedAt)) return false;
+  if (value.kind === 'hero_trust' && value.subject !== 'hero') return false;
+  if (value.kind === 'peer_trust' && !isOneOf(VILLAGE_SUPPORT_AGENT_IDS, value.subject)) return false;
+  if (value.kind === 'supply_security' && value.subject !== 'village') return false;
+  if (value.kind === 'weather_safety' && value.subject !== 'village') return false;
+  return value.kind !== 'realm_threat' || REALM_IDS.includes(value.subject as RealmId);
+}
+
+function isValidVillageAgentPlanStep(value: unknown): value is VillageAgentPlanStep {
+  return isRecord(value)
+    && isOneOf(AGENT_PLAN_STEP_KINDS, value.kind)
+    && isNonEmptyString(value.labelKR);
+}
+
+function isValidVillageAgentPlan(value: unknown): value is VillageAgentPlanState {
+  return isRecord(value)
+    && isOneOf(AGENT_GOALS, value.goal)
+    && Array.isArray(value.steps)
+    && value.steps.length >= 2
+    && value.steps.length <= 5
+    && value.steps.every(isValidVillageAgentPlanStep)
+    && isPersistedNumber(value.currentStep)
+    && Number.isInteger(value.currentStep)
+    && value.currentStep >= 0
+    && value.currentStep < value.steps.length
+    && isPersistedNumber(value.createdAtTick)
+    && Number.isInteger(value.createdAtTick)
+    && value.createdAtTick >= 0
+    && isPersistedNumber(value.expiresAtTick)
+    && Number.isInteger(value.expiresAtTick)
+    && value.expiresAtTick > value.createdAtTick
+    && isPersistedNumber(value.interruptionCount)
+    && Number.isInteger(value.interruptionCount)
+    && value.interruptionCount >= 0
+    && isPersistedNumber(value.lastReplannedTick)
+    && Number.isInteger(value.lastReplannedTick)
+    && value.lastReplannedTick >= value.createdAtTick
+    && value.lastReplannedTick <= value.expiresAtTick;
+}
+
+export function isValidVillageAgentCognitionState(value: unknown): value is VillageAgentCognitionState {
+  return isRecord(value)
+    && Array.isArray(value.memories)
+    && value.memories.length <= Village_MAX_AGENT_MEMORIES
+    && value.memories.every(isValidVillageAgentMemory)
+    && new Set(value.memories.map((memory) => memory.id)).size === value.memories.length
+    && Array.isArray(value.beliefs)
+    && value.beliefs.length <= Village_MAX_AGENT_BELIEFS
+    && value.beliefs.every(isValidVillageAgentBelief)
+    && new Set(value.beliefs.map((belief) => belief.id)).size === value.beliefs.length
+    && (value.plan === null || isValidVillageAgentPlan(value.plan));
+}
+
 function isValidVillageAgentSchedule(value: unknown): value is VillageAgentAIState['schedule'] {
   return isRecord(value)
     && isOneOf(AGENT_GOALS, value.goal)
@@ -355,7 +541,8 @@ function isValidVillageAgentAIState(
     && VILLAGE_SUPPORT_AGENT_IDS.every((targetId) => (
       isBoundedNumber(relationships[targetId], -1, 1)
     ))
-    && relationships[agentId] === 0;
+    && relationships[agentId] === 0
+    && (value.cognition === undefined || isValidVillageAgentCognitionState(value.cognition));
 }
 
 function isValidVillageAgentBrains(
@@ -454,6 +641,17 @@ export function getVillageAgentAIState(
     : createVillageAgentAIState(ai.seed, agentId, ai.world.lastSimulatedDay);
 }
 
+export function getVillageAgentCognitionState(
+  source: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+): VillageAgentCognitionState {
+  const ai = getVillageAIState(source);
+  const brain = getVillageAgentAIState(source, agentId);
+  return brain.cognition && isValidVillageAgentCognitionState(brain.cognition)
+    ? brain.cognition
+    : createVillageAgentCognitionState(ai.seed, agentId, ai.world.lastSimulatedDay, brain.relationships);
+}
+
 export function ensureVillageAgentBrains(
   save: VillageSaveEnvelope,
 ): Record<SupportAgentId, VillageAgentAIState> {
@@ -461,7 +659,41 @@ export function ensureVillageAgentBrains(
   if (!ai.agentBrains || !isValidVillageAgentBrains(ai.agentBrains)) {
     ai.agentBrains = createVillageAgentAIStates(ai.seed, ai.world.lastSimulatedDay);
   }
+  for (const agentId of VILLAGE_SUPPORT_AGENT_IDS) {
+    const brain = ai.agentBrains[agentId];
+    if (brain && !brain.cognition) {
+      brain.cognition = createVillageAgentCognitionState(
+        ai.seed,
+        agentId,
+        ai.world.lastSimulatedDay,
+        brain.relationships,
+      );
+    }
+  }
   return ai.agentBrains;
+}
+
+export function ensureVillageAgentCognition(
+  save: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+): VillageAgentCognitionState {
+  const ai = ensureVillageAIState(save);
+  const brains = ensureVillageAgentBrains(save);
+  const brain = brains[agentId];
+  if (!brain) {
+    const fallback = createVillageAgentAIState(ai.seed, agentId, ai.world.lastSimulatedDay);
+    brains[agentId] = fallback;
+    return fallback.cognition ?? createVillageAgentCognitionState(ai.seed, agentId, ai.world.lastSimulatedDay);
+  }
+  if (!brain.cognition || !isValidVillageAgentCognitionState(brain.cognition)) {
+    brain.cognition = createVillageAgentCognitionState(
+      ai.seed,
+      agentId,
+      ai.world.lastSimulatedDay,
+      brain.relationships,
+    );
+  }
+  return brain.cognition;
 }
 
 export function ensureVillageAIState(save: VillageSaveEnvelope): VillageAIState {
@@ -472,6 +704,18 @@ export function ensureVillageAIState(save: VillageSaveEnvelope): VillageAIState 
       save.meta.ai.seed,
       save.meta.ai.world.lastSimulatedDay,
     );
+  } else {
+    for (const agentId of VILLAGE_SUPPORT_AGENT_IDS) {
+      const brain = save.meta.ai.agentBrains[agentId];
+      if (brain && !brain.cognition) {
+        brain.cognition = createVillageAgentCognitionState(
+          save.meta.ai.seed,
+          agentId,
+          save.meta.ai.world.lastSimulatedDay,
+          brain.relationships,
+        );
+      }
+    }
   }
   return save.meta.ai;
 }

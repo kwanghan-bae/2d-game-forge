@@ -7,6 +7,7 @@ import {
   ensureVillageAIState,
   isValidVillageAIState,
   isValidVillageSimulationState,
+  VILLAGE_SUPPORT_AGENT_IDS,
 } from './domain/ai/state';
 import { getVillageEquipmentDefinition } from './equipment';
 import type {
@@ -628,7 +629,9 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
 
   if (isVillageSaveEnvelope(parsed)) {
     const save = normalizeLoadedVillageSave(parsed);
-    if (!save.meta.ai.agentBrains) {
+    const hasAgentCognition = Boolean(save.meta.ai.agentBrains)
+      && VILLAGE_SUPPORT_AGENT_IDS.every((agentId) => Boolean(save.meta.ai.agentBrains?.[agentId]?.cognition));
+    if (!hasAgentCognition) {
       ensureVillageAIState(save);
       if (!isVillageSaveEnvelope(save)) return { status: 'invalid', reason: 'invalid_schema' };
       try {

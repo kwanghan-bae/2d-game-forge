@@ -1,15 +1,27 @@
 import type {
   FacilityId,
   SupportAgentId,
+  VillageAgentBeliefKind,
   VillageAgentDecisionReason,
   VillageAgentGoal,
+  VillageAgentPlanState,
+  VillageAgentPlanStep,
   VillageAgentSchedule,
   VillageSaveEnvelope,
 } from '../../types';
 import {
+  decayVillageAgentCognition,
+  getVillageAgentBeliefValue,
+  observeVillageAgentWorld,
+  recordVillageAgentBelief,
+  recordVillageAgentMemory,
+} from './cognition';
+import {
   ensureVillageAIState,
+  ensureVillageAgentCognition,
   ensureVillageAgentBrains,
   getVillageAgentAIState,
+  getVillageAgentCognitionState,
   getVillageAIState,
   deterministicUnit,
   VILLAGE_SUPPORT_AGENT_IDS,
@@ -25,6 +37,7 @@ export interface VillageAgentPlan {
   reason: VillageAgentDecisionReason;
   rationale: string;
   schedule: VillageAgentSchedule;
+  plan: VillageAgentPlanState;
 }
 
 export interface VillageAgentPlanCandidate extends VillageAgentPlan {
@@ -69,6 +82,33 @@ const DUTY_AGENT_BY_FACILITY: Record<VillageAgentDuty, SupportAgentId> = {
   expedition: 'guide',
 };
 
+const PLAN_STEPS_BY_GOAL: Record<VillageAgentGoal, readonly VillageAgentPlanStep[]> = {
+  recover: [
+    { kind: 'observe', labelKR: '피로와 긴장을 확인한다' },
+    { kind: 'recover', labelKR: '숨을 고르고 다음 일을 미룬다' },
+  ],
+  craft: [
+    { kind: 'observe', labelKR: '재료와 장비 상태를 확인한다' },
+    { kind: 'prepare', labelKR: '필요한 재료를 골라낸다' },
+    { kind: 'act', labelKR: '장비를 정밀하게 손본다' },
+  ],
+  ward: [
+    { kind: 'observe', labelKR: '마을의 불안과 징조를 살핀다' },
+    { kind: 'prepare', labelKR: '정화와 축원의 순서를 준비한다' },
+    { kind: 'act', labelKR: '경계와 축원을 실행한다' },
+  ],
+  guide: [
+    { kind: 'observe', labelKR: '날씨와 영역의 위험을 읽는다' },
+    { kind: 'prepare', labelKR: '안전한 경로와 우회로를 표시한다' },
+    { kind: 'act', labelKR: '영웅의 원정 경로를 이끈다' },
+  ],
+  bond: [
+    { kind: 'observe', labelKR: '동료의 말과 표정을 살핀다' },
+    { kind: 'reconcile', labelKR: '엇갈린 감정을 풀어 본다' },
+    { kind: 'act', labelKR: '작은 공동 작업으로 신뢰를 확인한다' },
+  ],
+};
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -81,6 +121,63 @@ function safeTick(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
     ? value
     : fallback;
+}
+
+function createPlanState(
+  source: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+  goal: VillageAgentGoal,
+  tick: number,
+  interruptionCount = 0,
+): VillageAgentPlanState {
+  const ai = getVillageAIState(source);
+  const steps = PLAN_STEPS_BY_GOAL[goal].map((step) => ({ ...step }));
+  const duration = steps.length + 1 + Math.floor(deterministicUnit(`${ai.seed}:agent-plan:${agentId}:${goal}:${tick}`) * 2);
+  return {
+    goal,
+    steps,
+    currentStep: 0,
+    createdAtTick: tick,
+    expiresAtTick: tick + duration,
+    interruptionCount: clamp(Math.floor(interruptionCount), 0, 1_000),
+    lastReplannedTick: tick,
+  };
+}
+
+function planForGoal(
+  source: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+  goal: VillageAgentGoal,
+  tick: number,
+): VillageAgentPlanState {
+  const cognition = getVillageAgentCognitionState(source, agentId);
+  const activePlan = cognition.plan;
+  if (activePlan
+    && activePlan.goal === goal
+    && activePlan.currentStep < activePlan.steps.length
+    && tick < activePlan.expiresAtTick) return activePlan;
+  return createPlanState(source, agentId, goal, tick, activePlan?.interruptionCount ?? 0);
+}
+
+function averageBelief(
+  source: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+  kind: VillageAgentBeliefKind,
+): number {
+  const cognition = getVillageAgentCognitionState(source, agentId);
+  const beliefs = cognition.beliefs.filter((belief) => belief.kind === kind);
+  if (beliefs.length === 0) return 0.5;
+  return beliefs.reduce((total, belief) => total + belief.value, 0) / beliefs.length;
+}
+
+function salientMemoryScore(
+  source: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+  tag: 'success' | 'failure' | 'conflict' | 'support',
+): number {
+  return getVillageAgentCognitionState(source, agentId).memories
+    .filter((memory) => memory.tag === tag)
+    .reduce((total, memory) => total + memory.salience, 0);
 }
 
 function averagePeerRelationship(source: VillageSaveEnvelope, agentId: SupportAgentId): number {
@@ -134,6 +231,13 @@ function calculatePlan(
   const trust = clamp(safeNumber(agent?.trust), 0, 100);
   const relation = clamp(averagePeerRelationship(source, agentId), -1, 1);
   const weatherBonus = weatherAffinity(agentId, source);
+  const weatherSafety = getVillageAgentBeliefValue(source, agentId, 'weather_safety', 'village', 0.5);
+  const supplySecurity = getVillageAgentBeliefValue(source, agentId, 'supply_security', 'village', 0.5);
+  const heroTrustBelief = getVillageAgentBeliefValue(source, agentId, 'hero_trust', 'hero', trust / 100);
+  const realmThreat = averageBelief(source, agentId, 'realm_threat');
+  const conflictMemory = salientMemoryScore(source, agentId, 'conflict');
+  const failureMemory = salientMemoryScore(source, agentId, 'failure');
+  const activePlanBias = (goal: VillageAgentGoal): number => getVillageAgentCognitionState(source, agentId).plan?.goal === goal ? 7 : 0;
   const specialtyGoal = SPECIALTY_GOAL_BY_AGENT[agentId];
   const available = Boolean(agent && !agent.activeTaskId && fatigue < 100);
   const candidates: VillageAgentPlanCandidate[] = [
@@ -141,25 +245,35 @@ function calculatePlan(
       agentId,
       goal: 'recover',
       goalLabel: VILLAGE_AGENT_GOAL_LABELS.recover,
-      score: 22 + fatigue * 1.15 + brain.stress * 0.3,
+      score: 22 + fatigue * 1.15 + brain.stress * 0.3 + failureMemory * 4 + activePlanBias('recover'),
       reason: goalReason('recover', fatigue, relation, 0),
-      rationale: `피로 ${Math.round(fatigue)}%와 긴장 ${Math.round(brain.stress)}%를 낮추기 위해 숨을 고른다.`,
+      rationale: `피로 ${Math.round(fatigue)}%와 긴장 ${Math.round(brain.stress)}%${failureMemory > 0.4 ? ', 최근 실패 기억' : ''}를 반영해 숨을 고른다.`,
       schedule: makeSchedule(source, agentId, 'recover', goalReason('recover', fatigue, relation, 0), tick),
+      plan: planForGoal(source, agentId, 'recover', tick),
       available,
     },
     {
       agentId,
       goal: specialtyGoal,
       goalLabel: VILLAGE_AGENT_GOAL_LABELS[specialtyGoal],
+      // Each specialty reads a different part of the same world. A planner
+      // may therefore keep the role while changing its confidence in the
+      // next step instead of behaving as if it had perfect information.
       score: 32
         + (100 - fatigue) * 0.2
         + trust * 0.28
         + brain.goalProgress * 0.18
         + relation * 16
-        + weatherBonus,
+        + weatherBonus
+        + (specialtyGoal === 'craft' ? supplySecurity * 10 : 0)
+        + (specialtyGoal === 'ward' ? realmThreat * 18 + (1 - weatherSafety) * 10 : 0)
+        + (specialtyGoal === 'guide' ? (1 - weatherSafety) * 12 + realmThreat * 12 : 0)
+        + heroTrustBelief * 5
+        + activePlanBias(specialtyGoal),
       reason: goalReason(specialtyGoal, fatigue, relation, weatherBonus),
-      rationale: `${VILLAGE_AGENT_GOAL_LABELS[specialtyGoal]}에 대한 준비도 ${Math.round(brain.goalProgress)}%, 영웅 신뢰 ${Math.round(trust)}%를 반영했다.${weatherBonus > 0 ? ' 현재 날씨가 이 역할을 돕는다.' : ''}`,
+      rationale: `${VILLAGE_AGENT_GOAL_LABELS[specialtyGoal]}에 대한 준비도 ${Math.round(brain.goalProgress)}%, 영웅 신뢰 ${Math.round(trust)}%, 개인 판단 신뢰 ${Math.round(heroTrustBelief * 100)}%를 반영했다.${weatherBonus > 0 ? ' 현재 날씨가 이 역할을 돕는다.' : ''}`,
       schedule: makeSchedule(source, agentId, specialtyGoal, goalReason(specialtyGoal, fatigue, relation, weatherBonus), tick),
+      plan: planForGoal(source, agentId, specialtyGoal, tick),
       available,
     },
     {
@@ -169,12 +283,15 @@ function calculatePlan(
       score: 20
         + (100 - trust) * 0.42
         + Math.max(0, -relation) * 22
+        + conflictMemory * 18
+        + (1 - averageBelief(source, agentId, 'peer_trust')) * 12
         + (brain.stress >= 60 ? 8 : 0),
       reason: goalReason('bond', fatigue, relation, 0),
       rationale: relation < -0.2
         ? `동료 관계가 ${relation.toFixed(2)}로 긴장되어 먼저 대화를 회복하려 한다.`
         : `영웅 신뢰 ${Math.round(trust)}%와 동료 관계를 살피며 유대를 쌓으려 한다.`,
       schedule: makeSchedule(source, agentId, 'bond', goalReason('bond', fatigue, relation, 0), tick),
+      plan: planForGoal(source, agentId, 'bond', tick),
       available,
     },
   ];
@@ -241,13 +358,34 @@ export function advanceVillageAgentScheduler(save: VillageSaveEnvelope, targetTi
   const ai = ensureVillageAIState(save);
   const tick = safeTick(targetTick, ai.world.lastSimulatedDay);
   const brains = ensureVillageAgentBrains(save);
+  const elapsedWorldTicks = Math.max(0, tick - ai.world.lastSimulatedDay);
+  decayVillageAgentCognition(save, elapsedWorldTicks);
   for (const agentId of VILLAGE_SUPPORT_AGENT_IDS) {
     const brain = brains[agentId];
     const agent = save.meta.agents.find((candidate) => candidate.id === agentId);
     if (!brain) continue;
+    const cognition = observeVillageAgentWorld(save, agentId, tick);
     const plan = calculatePlan(save, agentId, tick).selected;
     const previousGoal = brain.goal;
     const elapsedTicks = Math.max(1, tick - brain.lastDecisionTick);
+    const activePlan = cognition.plan;
+    const planExpired = !activePlan || tick >= activePlan.expiresAtTick;
+    const goalChanged = activePlan?.goal !== plan.goal;
+    const interrupted = ai.pendingEvents.length > 0;
+    if (planExpired || goalChanged || interrupted) {
+      cognition.plan = createPlanState(
+        save,
+        agentId,
+        plan.goal,
+        tick,
+        (activePlan?.interruptionCount ?? 0) + (interrupted ? 1 : 0),
+      );
+    } else if (activePlan) {
+      activePlan.currentStep = Math.min(
+        activePlan.steps.length - 1,
+        activePlan.currentStep + Math.min(1, Math.floor(elapsedTicks / 2)),
+      );
+    }
     brain.goal = plan.goal;
     brain.goalProgress = clamp(
       brain.goalProgress + (previousGoal === plan.goal ? elapsedTicks * 5 : -4),
@@ -284,6 +422,24 @@ export function recordVillageAgentRelationship(
   const safeDelta = clamp(delta, -0.2, 0.2);
   left.relationships[rightAgentId] = clamp(left.relationships[rightAgentId] + safeDelta, -1, 1);
   right.relationships[leftAgentId] = clamp(right.relationships[leftAgentId] + safeDelta, -1, 1);
+  const updatedAt = save.updatedAt;
+  recordVillageAgentBelief(save, leftAgentId, 'peer_trust', rightAgentId, (left.relationships[rightAgentId] + 1) / 2, 'outcome', updatedAt);
+  recordVillageAgentBelief(save, rightAgentId, 'peer_trust', leftAgentId, (right.relationships[leftAgentId] + 1) / 2, 'outcome', updatedAt);
+  const tag = safeDelta >= 0 ? 'support' : 'conflict';
+  const summary = safeDelta >= 0
+    ? `${rightAgentId}와의 협력이 조금 나아졌다.`
+    : `${rightAgentId}와의 의견 충돌이 남았다.`;
+  recordVillageAgentMemory(save, leftAgentId, tag, summary, safeDelta, 0.58, updatedAt, rightAgentId);
+  recordVillageAgentMemory(
+    save,
+    rightAgentId,
+    tag,
+    safeDelta >= 0 ? `${leftAgentId}와의 협력이 조금 나아졌다.` : `${leftAgentId}와의 의견 충돌이 남았다.`,
+    safeDelta,
+    0.58,
+    updatedAt,
+    leftAgentId,
+  );
 }
 
 export type VillageAgentOutcome = 'success' | 'failure' | 'support';
@@ -302,5 +458,29 @@ export function recordVillageAgentOutcome(
   const stressDelta = outcome === 'success' ? -5 : outcome === 'failure' ? 10 : -2;
   brain.goalProgress = clamp(brain.goalProgress + progressDelta, 0, 100);
   brain.stress = clamp(brain.stress + stressDelta, 0, 100);
+  const tag = outcome === 'success' ? 'success' : outcome === 'failure' ? 'failure' : 'support';
+  const summary = outcome === 'success'
+    ? '맡은 역할을 끝까지 수행했다.'
+    : outcome === 'failure'
+      ? '맡은 역할에서 기대한 결과를 내지 못했다.'
+      : '마을의 선택을 돕고 동료의 신뢰를 확인했다.';
+  recordVillageAgentMemory(
+    save,
+    agentId,
+    tag,
+    summary,
+    outcome === 'success' ? 0.7 : outcome === 'failure' ? -0.7 : 0.25,
+    outcome === 'failure' ? 0.82 : 0.68,
+    save.updatedAt,
+  );
+  const cognition = ensureVillageAgentCognition(save, agentId);
+  if (cognition.plan) {
+    if (outcome === 'failure') {
+      cognition.plan.interruptionCount = Math.min(1_000, cognition.plan.interruptionCount + 1);
+      cognition.plan.currentStep = 0;
+    } else {
+      cognition.plan.currentStep = Math.min(cognition.plan.steps.length - 1, cognition.plan.currentStep + 1);
+    }
+  }
   brain.lastDecisionTick = Math.max(brain.lastDecisionTick, safeTickValue);
 }

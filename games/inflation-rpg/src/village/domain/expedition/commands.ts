@@ -1,5 +1,6 @@
 import { getVillageRealmDefinition } from '../../data';
 import { getRealmIntroEntry } from '../../story';
+import { recordVillageAgentMemory } from '../ai/cognition';
 import type {
   RealmId,
   SupportAgentId,
@@ -113,7 +114,18 @@ export function startExpedition(
   save.run.hero.currentAction = 'expedition';
   if (assignedAgentId) {
     const agent = save.meta.agents.find((item) => item.id === assignedAgentId);
-    if (agent) agent.activeTaskId = id;
+    if (agent) {
+      agent.activeTaskId = id;
+      recordVillageAgentMemory(
+        save,
+        agent.id,
+        'choice',
+        `${realm.nameKR} 원정의 길잡이를 맡았다.`,
+        0.35,
+        0.62,
+        eventAt,
+      );
+    }
   }
   addUniqueStoryEntry(save, getRealmIntroEntry(realmId, save.run.hero.name, eventAt));
   touchSave(save, now);

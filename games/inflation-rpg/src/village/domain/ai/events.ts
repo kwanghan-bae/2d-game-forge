@@ -22,6 +22,7 @@ import {
   recordVillageAIMemory,
   recordVillageSimulationEvent,
   ensureVillageSimulationState,
+  VILLAGE_SUPPORT_AGENT_IDS,
   Village_WORLD_DAY_MS,
 } from './state';
 import {
@@ -250,8 +251,9 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
   const sourceAI = getVillageAIState(source);
   const targetDay = getVillageWorldDay(source.createdAt, now);
   const hasExpiredEvents = sourceAI.pendingEvents.some((event) => event.expiresAt <= now);
-  const needsAgentBrains = !sourceAI.agentBrains;
-  if (targetDay <= sourceAI.world.lastSimulatedDay && !hasExpiredEvents && !needsAgentBrains) {
+  const needsAgentCognition = !sourceAI.agentBrains
+    || VILLAGE_SUPPORT_AGENT_IDS.some((agentId) => !sourceAI.agentBrains?.[agentId]?.cognition);
+  if (targetDay <= sourceAI.world.lastSimulatedDay && !hasExpiredEvents && !needsAgentCognition) {
     return { save: source, generatedEvents: [] };
   }
 
@@ -260,7 +262,7 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
   const generatedEvents: VillageWorldEvent[] = [];
   const expiredEvents = expirePendingWorldEvents(save, now);
   if (targetDay <= sourceAI.world.lastSimulatedDay) {
-    if (!expiredEvents && !needsAgentBrains) return { save: source, generatedEvents: [] };
+    if (!expiredEvents && !needsAgentCognition) return { save: source, generatedEvents: [] };
     advanceVillageAgentScheduler(save, targetDay);
     touchSave(save, now);
     return { save, generatedEvents };

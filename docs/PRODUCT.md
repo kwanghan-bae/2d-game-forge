@@ -29,6 +29,7 @@ Android를 우선 대상으로 하며, 웹은 같은 도메인 로직과 입력 
 - 영역별 일반·정예·보스 원정과 결과 확인
 - 프롤로그, 영역 진입·승리 기록, 깊은 숲 선택 사건, 저승 승리 에필로그
 - 성격·욕구·기억 및 지원 에이전트별 목표·관계를 반영하는 결정형 AI와 마을 사건
+- 지원 에이전트별 기억·신념·다단계 계획·중단 후 재계획을 반영하는 순수 코드 AI
 - 오프라인 최대 8시간, 온라인 효율 70%
 - 보스·선택 사건·회춘·영구 해금의 자동 확정 금지
 - 패배 시 영구 장비·재화 손실 없음
@@ -51,8 +52,8 @@ Android를 우선 대상으로 하며, 웹은 같은 도메인 로직과 입력 
 - canonical 저장 키: `shin-ui-eternal-sponsor-save-v2`
 - 현재 저장 schema: 3. canonical key는 제품 식별자이므로 유지하며, 유효한 현재
   schema 2 저장만 같은 슬롯에서 한 번 schema 3으로 승격한다. `meta.ai`에는
-  영웅 AI와 지원 에이전트 brain, `meta.simulation`에는 세계 tick·사건 저널을
-  보관한다.
+  영웅 AI와 지원 에이전트 brain·cognition, `meta.simulation`에는 세계 tick·사건
+  저널을 보관한다. LLM·외부 모델·서버·네트워크는 제품 범위에 포함하지 않는다.
 - 과거 제품·과거 키로의 자동 복구나 import는 없다. 손상된 저장은 원본을 보존한
   복구 화면으로 보낸다.
 - Android `applicationId`/namespace: `com.shinui.eternalsponsor`

@@ -98,6 +98,26 @@ describe('Village save recovery boundary', () => {
     expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.ai.agentBrains).toBeDefined();
   });
 
+  it('adds deterministic cognition to an older AI-02 brain once', () => {
+    const current = createInitialVillageSave(65401);
+    const legacyAI = JSON.parse(JSON.stringify(current.meta.ai)) as Record<string, unknown>;
+    const legacyBrains = legacyAI.agentBrains as Record<string, Record<string, unknown>>;
+    delete legacyBrains.guide.cognition;
+    const legacy = {
+      ...current,
+      meta: { ...current.meta, ai: legacyAI },
+    } as unknown;
+    const storage = memoryStorage({ [Village_SAVE_KEY]: JSON.stringify(legacy) });
+
+    const loaded = readVillageSave(storage);
+
+    expect(loaded.status).toBe('valid');
+    if (loaded.status !== 'valid') return;
+    expect(loaded.save.meta.ai.agentBrains?.guide.cognition).toBeDefined();
+    expect(loaded.save.meta.ai.agentBrains?.guide.cognition?.beliefs).toHaveLength(8);
+    expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.ai.agentBrains.guide.cognition).toBeDefined();
+  });
+
   it('isolates arbitrary JSON payloads without throwing during recovery', () => {
     const payloads: unknown[] = [
       null,

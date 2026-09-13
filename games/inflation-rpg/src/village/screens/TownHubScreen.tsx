@@ -314,13 +314,14 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
               const display = getAgentDisplay(agent);
               const usable = isUsableAgentState(agent);
               const plan = getVillageAgentPlan(save, agent.id);
+              const currentStep = plan.plan.steps[plan.plan.currentStep]?.labelKR ?? '다음 판단을 준비 중';
               return (
                 <div key={agent.id} className="village-agent">
                   <span>
                     <span className="village-agent-role">{display.role}</span> {display.name} · Lv.{formatNumber(agent.level)}
                     <br /><span className="village-agent-trait">특성 · {display.trait}</span>
                   </span>
-                  <span className="village-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br /><span title={plan.rationale}>다음 목표 · {plan.goalLabel}</span><br />{!usable ? '에이전트 정보 확인 필요' : agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="village-btn village-btn--quiet" disabled={!usable || Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
+                  <span className="village-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br /><span title={plan.rationale}>다음 목표 · {plan.goalLabel}</span><br /><span title={plan.rationale}>현재 단계 · {currentStep}</span><br />{!usable ? '에이전트 정보 확인 필요' : agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="village-btn village-btn--quiet" disabled={!usable || Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
                 </div>
               );
             })}

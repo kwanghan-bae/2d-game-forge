@@ -7,6 +7,10 @@ export type VillageHeroPersonalityKey = 'courage' | 'caution' | 'compassion' | '
 export type VillageHeroGoal = 'recover' | 'prepare' | 'explore' | 'support';
 export type VillageAgentGoal = 'recover' | 'craft' | 'ward' | 'guide' | 'bond';
 export type VillageAgentDecisionReason = 'fatigue' | 'specialty' | 'relationship' | 'weather' | 'routine' | 'conflict';
+export type VillageAgentMemoryTag = 'observation' | 'choice' | 'success' | 'failure' | 'support' | 'conflict';
+export type VillageAgentBeliefKind = 'hero_trust' | 'peer_trust' | 'supply_security' | 'weather_safety' | 'realm_threat';
+export type VillageAgentBeliefSource = 'observation' | 'rumor' | 'outcome';
+export type VillageAgentPlanStepKind = 'observe' | 'prepare' | 'act' | 'recover' | 'reconcile';
 export type VillageMemoryTag = 'victory' | 'defeat' | 'support' | 'event' | 'choice';
 export type VillageWorldEventType = 'weather' | 'social' | 'supply' | 'omen';
 export type VillageWorldEventOutcome = 'chosen' | 'expired';
@@ -27,6 +31,8 @@ export const Village_MAX_SAGA_ENTRIES = 200;
 export const Village_MAX_INTERVENTION_CHARGES = 3;
 export const Village_HERO_AUTONOMY_DELAY_MS = 15_000;
 export const Village_MAX_AI_MEMORIES = 50;
+export const Village_MAX_AGENT_MEMORIES = 24;
+export const Village_MAX_AGENT_BELIEFS = 18;
 export const Village_MAX_PENDING_WORLD_EVENTS = 3;
 export const Village_MAX_RESOLVED_WORLD_EVENTS = 120;
 export const Village_MAX_WORLD_EVENT_HISTORY = 120;
@@ -85,6 +91,48 @@ export interface VillageAgentSchedule {
   reason: VillageAgentDecisionReason;
 }
 
+export interface VillageAgentMemory {
+  id: string;
+  tag: VillageAgentMemoryTag;
+  summary: string;
+  valence: number;
+  salience: number;
+  createdAt: number;
+  relatedAgentId: SupportAgentId | null;
+}
+
+export interface VillageAgentBelief {
+  id: string;
+  kind: VillageAgentBeliefKind;
+  subject: 'hero' | 'village' | SupportAgentId | RealmId;
+  /** Beliefs are normalized to 0..1; meaning depends on `kind`. */
+  value: number;
+  confidence: number;
+  source: VillageAgentBeliefSource;
+  updatedAt: number;
+}
+
+export interface VillageAgentPlanStep {
+  kind: VillageAgentPlanStepKind;
+  labelKR: string;
+}
+
+export interface VillageAgentPlanState {
+  goal: VillageAgentGoal;
+  steps: VillageAgentPlanStep[];
+  currentStep: number;
+  createdAtTick: number;
+  expiresAtTick: number;
+  interruptionCount: number;
+  lastReplannedTick: number;
+}
+
+export interface VillageAgentCognitionState {
+  memories: VillageAgentMemory[];
+  beliefs: VillageAgentBelief[];
+  plan: VillageAgentPlanState | null;
+}
+
 export interface VillageAgentAIState {
   goal: VillageAgentGoal;
   goalProgress: number;
@@ -93,6 +141,8 @@ export interface VillageAgentAIState {
   relationships: Record<SupportAgentId, number>;
   schedule: VillageAgentSchedule;
   lastDecisionTick: number;
+  /** Optional only for reading pre-AI-03A schema 3 saves. */
+  cognition?: VillageAgentCognitionState;
 }
 
 export interface VillageWorldEventEffects {

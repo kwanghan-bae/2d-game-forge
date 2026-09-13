@@ -2,11 +2,13 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createInitialVillageSave } from '../../save';
 import {
+  advanceVillageAgentScheduler,
   getVillageAgentAssignmentAnalysis,
   getVillageAgentPlan,
   getVillageAgentPlanAnalysis,
   recordVillageAgentRelationship,
 } from '../ai/agents';
+import { getVillageAgentBelief, recordVillageAgentMemory } from '../ai/cognition';
 import { getHeroDecisionAnalysis } from '../ai/decision';
 import {
   advanceVillageWorld,
@@ -15,6 +17,7 @@ import {
 } from '../ai/events';
 import {
   getVillageAgentAIState,
+  getVillageAgentCognitionState,
   getVillageAIState,
   Village_WORLD_DAY_MS,
 } from '../ai/state';
@@ -84,6 +87,58 @@ describe('Village human-like AI slice', () => {
     const plan = getVillageAgentPlanAnalysis(initial, 'blacksmith');
     expect(plan.selected.goal).toBe('bond');
     expect(plan.selected.reason).toBe('conflict');
+  });
+
+  it('keeps role-biased beliefs and a replayable multi-step plan per agent', () => {
+    const initial = createInitialVillageSave(209);
+    initial.meta.agents.find((agent) => agent.id === 'blacksmith')!.trust = 10;
+    initial.meta.agents.find((agent) => agent.id === 'guide')!.trust = 90;
+    const now = initial.createdAt + Village_WORLD_DAY_MS;
+    const first = advanceVillageWorld(initial, now).save;
+    const replay = advanceVillageWorld(initial, now).save;
+
+    for (const agentId of ['blacksmith', 'mudang', 'guide'] as const) {
+      const cognition = getVillageAgentCognitionState(first, agentId);
+      expect(cognition).toEqual(getVillageAgentCognitionState(replay, agentId));
+      expect(cognition.beliefs).toHaveLength(8);
+      expect(cognition.plan?.steps.length).toBeGreaterThanOrEqual(2);
+      expect(cognition.plan?.currentStep).toBeGreaterThanOrEqual(0);
+    }
+
+    const blacksmithTrust = getVillageAgentBelief(first, 'blacksmith', 'hero_trust', 'hero');
+    const guideTrust = getVillageAgentBelief(first, 'guide', 'hero_trust', 'hero');
+    expect(blacksmithTrust?.value).not.toBe(guideTrust?.value);
+  });
+
+  it('retains salient experience, advances plans, and counts event interruptions', () => {
+    const initial = createInitialVillageSave(210);
+    initial.meta.agents.find((agent) => agent.id === 'guide')!.fatigue = 88;
+    recordVillageAgentMemory(
+      initial,
+      'guide',
+      'failure',
+      '지난 경로 판단이 원정을 위험하게 만들었다.',
+      -0.9,
+      1,
+      initial.updatedAt,
+    );
+
+    const firstAnalysis = getVillageAgentPlanAnalysis(initial, 'guide');
+    expect(firstAnalysis.selected.goal).toBe('recover');
+
+    const first = advanceVillageWorld(initial, initial.createdAt + Village_WORLD_DAY_MS).save;
+    const firstPlan = getVillageAgentCognitionState(first, 'guide').plan;
+    expect(firstPlan).not.toBeNull();
+    if (!firstPlan) return;
+
+    const second = advanceVillageWorld(first, initial.createdAt + Village_WORLD_DAY_MS * 2).save;
+    const secondPlan = getVillageAgentCognitionState(second, 'guide').plan;
+    expect(secondPlan?.interruptionCount).toBeGreaterThan(firstPlan.interruptionCount);
+
+    const replay = advanceVillageWorld(first, initial.createdAt + Village_WORLD_DAY_MS * 2).save;
+    expect(getVillageAgentCognitionState(second, 'guide')).toEqual(getVillageAgentCognitionState(replay, 'guide'));
+    advanceVillageAgentScheduler(second, 2);
+    expect(getVillageAgentCognitionState(second, 'guide').memories.length).toBeGreaterThan(0);
   });
 
   it('generates one deterministic event when the in-game day advances', () => {
