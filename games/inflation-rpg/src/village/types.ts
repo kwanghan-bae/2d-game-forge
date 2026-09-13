@@ -21,12 +21,19 @@ export const VILLAGE_CONTENT_ARC_KINDS = [
   'spirit_embers',
 ] as const;
 export type VillageContentArcKind = typeof VILLAGE_CONTENT_ARC_KINDS[number];
+export const VILLAGE_LIFE_ARC_KINDS = [
+  'blacksmith_apprentice',
+  'mudang_memorial',
+  'guide_waystone',
+] as const;
+export type VillageLifeArcKind = typeof VILLAGE_LIFE_ARC_KINDS[number];
 export type VillageWorldChainKind =
   | 'weather_supply'
   | 'supply_social'
   | 'social_omen'
   | 'omen_weather'
-  | VillageContentArcKind;
+  | VillageContentArcKind
+  | VillageLifeArcKind;
 export type VillageAIDecisionKind = 'hero_action' | 'agent_goal';
 export type FacilityId =
   | 'temple'
@@ -195,6 +202,8 @@ export interface VillageWorldEventEffects {
   heroPurposeDelta?: number;
   agentTrustDelta?: Partial<Record<SupportAgentId, number>>;
   agentFatigueDelta?: Partial<Record<SupportAgentId, number>>;
+  /** Optional story-specific memory written for an agent when the choice resolves. */
+  agentMemory?: Partial<Record<SupportAgentId, VillageAgentMemoryEffect>>;
   realmThreatDelta?: Partial<Record<RealmId, number>>;
   factionTrustDelta?: Partial<Record<VillageFactionId, number>>;
   factionInfluenceDelta?: Partial<Record<VillageFactionId, number>>;
@@ -207,6 +216,14 @@ export interface VillageWorldEventChoice {
   title: string;
   text: string;
   effects: VillageWorldEventEffects;
+}
+
+export interface VillageAgentMemoryEffect {
+  tag: VillageAgentMemoryTag;
+  summary: string;
+  valence: number;
+  salience: number;
+  relatedAgentId?: SupportAgentId | null;
 }
 
 export interface VillageWorldEvent {

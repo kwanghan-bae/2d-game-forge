@@ -14,6 +14,11 @@ import {
   isVillageContentArcKind,
   selectVillageContentArcKind,
 } from '../ai/content';
+import {
+  createVillageLifeArcEvent,
+  isVillageLifeArcKind,
+  selectVillageLifeArcKind,
+} from '../ai/lifeContent';
 import { getHeroDecisionAnalysis } from '../ai/decision';
 import {
   compareVillageAIReplay,
@@ -38,7 +43,7 @@ import {
   Village_WORLD_DAY_MS,
 } from '../ai/state';
 import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
-import { VILLAGE_CONTENT_ARC_KINDS } from '../../types';
+import { VILLAGE_CONTENT_ARC_KINDS, VILLAGE_LIFE_ARC_KINDS } from '../../types';
 
 beforeAll(() => {
   vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
@@ -439,6 +444,94 @@ describe('Village human-like AI slice', () => {
       .toEqual([2, 1, 0]);
   });
 
+  it('opens a two-act personal arc from agent pressure and records its branch memory', () => {
+    const initial = createInitialVillageSave(321);
+    const blacksmith = initial.meta.agents.find((agent) => agent.id === 'blacksmith');
+    const blacksmithBrain = initial.meta.ai?.agentBrains?.blacksmith;
+    if (!blacksmith || !blacksmithBrain) return;
+    blacksmith.trust = 18;
+    blacksmith.fatigue = 88;
+    blacksmithBrain.stress = 92;
+    blacksmithBrain.relationships.mudang = -1;
+    blacksmithBrain.relationships.guide = -1;
+
+    const lifeKind = selectVillageLifeArcKind(initial, 10);
+    expect(lifeKind).toBe('blacksmith_apprentice');
+    if (!lifeKind) return;
+    const firstEvent = createVillageLifeArcEvent(
+      initial,
+      10,
+      initial.createdAt + Village_WORLD_DAY_MS * 10,
+      lifeKind,
+    );
+    expect(firstEvent).toMatchObject({ chainStep: 0, factionId: 'merchants' });
+    if (!firstEvent || !firstEvent.chainId) return;
+
+    const isolated = structuredClone(initial);
+    isolated.updatedAt = firstEvent.createdAt;
+    isolated.lastProcessedAt = firstEvent.createdAt;
+    isolated.meta.ai!.world.day = 10;
+    isolated.meta.ai!.world.lastSimulatedDay = 10;
+    isolated.meta.simulation.tick = 10;
+    isolated.meta.simulation.lastSimulatedAt = firstEvent.createdAt;
+    isolated.meta.ai!.pendingEvents = [firstEvent];
+    isolated.meta.ai!.world.chains = [];
+    expect(isValidVillageAIState(isolated.meta.ai)).toBe(true);
+
+    const firstResolved = resolveVillageWorldEvent(
+      isolated,
+      firstEvent.id,
+      firstEvent.choices[0].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(firstResolved.ok).toBe(true);
+    if (!firstResolved.ok) return;
+    expect(getVillageAgentCognitionState(firstResolved.save, 'blacksmith').memories
+      .some((memory) => memory.summary.includes('작업대') || memory.summary.includes('제자'))).toBe(true);
+
+    const firstChain = firstResolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    expect(firstChain).toMatchObject({ step: 0, kind: 'blacksmith_apprentice' });
+    if (!firstChain) return;
+    const firstContinuation = advanceVillageWorld(
+      firstResolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * firstChain.nextDay,
+    );
+    const firstFollowup = firstContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(firstFollowup).toMatchObject({ chainStep: 1, parentEventId: firstEvent.id });
+    if (!firstFollowup) return;
+    expect(firstFollowup.title).not.toBe(firstEvent.title);
+
+    const completed = resolveVillageWorldEvent(
+      firstContinuation.save,
+      firstFollowup.id,
+      firstFollowup.choices[0].id,
+      firstFollowup.createdAt + 1,
+    );
+    expect(completed.ok).toBe(true);
+    if (!completed.ok) return;
+    expect(completed.save.meta.ai!.world.chains?.some((chain) => chain.id === firstEvent.chainId)).toBe(false);
+    expect(isValidVillageAIState(completed.save.meta.ai)).toBe(true);
+
+    const alternate = structuredClone(isolated);
+    const alternateResolved = resolveVillageWorldEvent(
+      alternate,
+      firstEvent.id,
+      firstEvent.choices[1].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(alternateResolved.ok).toBe(true);
+    if (!alternateResolved.ok) return;
+    const alternateChain = alternateResolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    if (!alternateChain) return;
+    const alternateContinuation = advanceVillageWorld(
+      alternateResolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * alternateChain.nextDay,
+    );
+    const alternateFollowup = alternateContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(alternateFollowup).toBeDefined();
+    expect(alternateFollowup?.title).not.toBe(firstFollowup.title);
+  });
+
   it('expires an unanswered event into memory instead of blocking the village forever', () => {
     const initial = createInitialVillageSave(206);
     const advanced = advanceVillageWorld(initial, initial.createdAt + Village_WORLD_DAY_MS).save;
@@ -746,5 +839,9 @@ describe('Village human-like AI slice', () => {
       .map((record) => record.chainKind)
       .filter(isVillageContentArcKind)));
     expect([...contentKinds]).toEqual(expect.arrayContaining([...VILLAGE_CONTENT_ARC_KINDS]));
+    const lifeKinds = new Set(first.flatMap(({ result }) => result.save.meta.simulation.eventHistory
+      .map((record) => record.chainKind)
+      .filter(isVillageLifeArcKind)));
+    expect([...lifeKinds]).toEqual(expect.arrayContaining([...VILLAGE_LIFE_ARC_KINDS]));
   }, 30_000);
 });

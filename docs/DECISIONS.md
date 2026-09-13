@@ -1,5 +1,25 @@
 # 결정 기록
 
+## 2026-09-13 — CONTENT-02 에이전트 생활 사건팩
+
+- 승인: 사용자가 AI-05 커밋 후 콘텐츠를 더 확장하도록 승인했으며, LLM은 제품에서
+  영구 배제한다.
+- 결정: 세력 중심의 3막 사가와 겹치지 않도록 대장장이·무당·길잡이 각각의 2막 개인
+  생활 arc를 `world.chains`에 additive로 연결한다. `blacksmith_apprentice`,
+  `mudang_memorial`, `guide_waystone`은 기존 world event·journal·bounded chain을
+  재사용하고 개인 arc만 2막에서 종료한다.
+- 개인성: 피로·스트레스·영웅 신뢰·동료 관계·실패/갈등 기억을 결정형 압력으로 읽어
+  생활 arc를 선택한다. 선택 결과는 agent memory effect로 기록하고, 기존 agent outcome·
+  relationship·scheduler가 다음 계획과 관계를 갱신한다. 영웅의 morale·purpose·fatigue와
+  세력 신뢰·긴장·영향력도 기존 상한 안에서 반영한다.
+- 재현·저장 경계: 새 저장 키와 schema migration은 만들지 않는다. 새 chain kind는
+  기존 schema 3 validator에 포함하고, 개인 arc의 terminal step만 1로 제한한다.
+  due faction chain이 개인 사건을 계속 미루지 않도록 결정형 생활 기회가 유효할 때
+  생활 arc를 먼저 큐에 넣되 개인 arc가 활성화되면 중복 생성하지 않는다.
+- 재검토: 3 seed × 3 선택 정책 × 30일 headless에서 세 개인 arc의 출현·선택/만료·
+  replay fingerprint·저장 상한을 확인한다. 실제 관계 체감·설명 이해도·실기기 성능은
+  별도 검증으로 남긴다.
+
 ## 2026-09-13 — AI-05 분기형 마을 사가 콘텐츠 확장
 
 - 승인: 사용자가 실기기 검증보다 콘텐츠 부족 해소를 우선하도록 방향을 바꾸고,

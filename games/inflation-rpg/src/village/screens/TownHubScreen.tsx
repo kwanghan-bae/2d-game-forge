@@ -48,6 +48,9 @@ const VILLAGE_CHAIN_LABELS: Record<VillageWorldChainKind, string> = {
   village_refuge: '마을 → 피난 행렬',
   merchant_ledger: '상단 → 사라진 장부',
   spirit_embers: '정령 → 푸른 불씨',
+  blacksmith_apprentice: '담철 → 금 간 모루의 제자',
+  mudang_memorial: '월령 → 기억되지 못한 이름',
+  guide_waystone: '솔바람 → 돌아오지 않는 이정표',
 };
 
 const formatNumber = (value: unknown): string => {

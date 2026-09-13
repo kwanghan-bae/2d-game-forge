@@ -13,6 +13,7 @@ import type {
   VillageAgentDecisionReason,
   VillageAgentGoal,
   VillageAgentMemory,
+  VillageAgentMemoryEffect,
   VillageAgentMemoryTag,
   VillageAgentPlanState,
   VillageAgentPlanStep,
@@ -50,6 +51,7 @@ import {
   Village_MAX_WORLD_EVENT_HISTORY,
   Village_SIMULATION_VERSION,
   VILLAGE_CONTENT_ARC_KINDS,
+  VILLAGE_LIFE_ARC_KINDS,
 } from '../../types';
 
 export const Village_WORLD_DAY_MS = 10 * 60 * 1000;
@@ -71,6 +73,7 @@ const WORLD_CHAIN_KINDS: readonly VillageWorldChainKind[] = [
   'social_omen',
   'omen_weather',
   ...VILLAGE_CONTENT_ARC_KINDS,
+  ...VILLAGE_LIFE_ARC_KINDS,
 ];
 const AGENT_GOALS: readonly VillageAgentGoal[] = ['recover', 'craft', 'ward', 'guide', 'bond'];
 const AGENT_MEMORY_TAGS: readonly VillageAgentMemoryTag[] = [
@@ -443,6 +446,25 @@ function isValidFactionDelta(value: unknown): boolean {
     )));
 }
 
+function isValidAgentMemoryEffect(value: unknown): value is VillageAgentMemoryEffect {
+  return isRecord(value)
+    && isOneOf(AGENT_MEMORY_TAGS, value.tag)
+    && isNonEmptyString(value.summary)
+    && value.summary.length <= 160
+    && isBoundedNumber(value.valence, -1, 1)
+    && isBoundedNumber(value.salience, 0, 1)
+    && (value.relatedAgentId === undefined
+      || value.relatedAgentId === null
+      || isOneOf(VILLAGE_SUPPORT_AGENT_IDS, value.relatedAgentId));
+}
+
+function isValidAgentMemoryEffects(value: unknown): boolean {
+  return value === undefined || (isRecord(value)
+    && Object.entries(value).every(([key, effect]) => (
+      isOneOf(VILLAGE_SUPPORT_AGENT_IDS, key) && isValidAgentMemoryEffect(effect)
+    )));
+}
+
 function isValidWorldChainMetadata(value: Record<string, unknown>): boolean {
   const fields = ['chainId', 'chainKind', 'chainStep', 'factionId', 'parentEventId'];
   const hasMetadata = fields.some((field) => value[field] !== undefined);
@@ -480,6 +502,7 @@ function isValidEventEffects(value: unknown): value is VillageWorldEventEffects 
       || !isPersistedNumber(amount)
       || Math.abs(amount) > 100
     )))) return false;
+  if (!isValidAgentMemoryEffects(value.agentMemory)) return false;
   const realmThreatDelta = value.realmThreatDelta;
   if (realmThreatDelta !== undefined && (!isRecord(realmThreatDelta)
     || Object.entries(realmThreatDelta).some(([key, amount]) => (

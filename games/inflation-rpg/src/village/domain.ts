@@ -80,6 +80,17 @@ export type {
   VillageAIScenarioResult,
 } from './domain/ai/scenario';
 export type { VillageContentArcDefinition } from './domain/ai/content';
+export {
+  createVillageLifeArcEvent,
+  getVillageLifeArcAgent,
+  getVillageLifeArcFactionLabel,
+  getVillageLifeArcLabel,
+  isVillageLifeArcKind,
+  selectVillageLifeArcKind,
+  VILLAGE_LIFE_ARC_DEFINITIONS,
+  VILLAGE_LIFE_ARC_FINAL_STEP,
+} from './domain/ai/lifeContent';
+export type { VillageLifeArcDefinition } from './domain/ai/lifeContent';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
 export {
   getBlacksmithEquipmentOutput,

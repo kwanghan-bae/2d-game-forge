@@ -211,6 +211,32 @@ describe('Village town hub support assignment', () => {
     expect(screen.getByTestId('village-world-events')).toHaveTextContent('상단의 붉은 장부');
   });
 
+  it('names the personal life arc and its agent when it is waiting for a choice', () => {
+    const save = createInitialVillageSave(117);
+    const event: VillageWorldEvent = {
+      id: 'ui-life-event',
+      type: 'weather',
+      day: 10,
+      createdAt: save.createdAt,
+      expiresAt: save.createdAt + 60_000,
+      title: '길목의 이정표가 집이 아닌 곳을 가리켰다',
+      cause: '솔바람이 오래된 표식을 발견했습니다.',
+      prompt: '어떻게 대응할까요?',
+      chainId: 'ui-life-chain',
+      chainKind: 'guide_waystone',
+      chainStep: 0,
+      factionId: 'village',
+      choices: [
+        { id: 'follow', title: '표식을 따라간다', text: '길을 확인합니다.', effects: {} },
+        { id: 'mark', title: '안전한 길을 표시한다', text: '돌아오는 길을 남깁니다.', effects: {} },
+      ],
+    };
+
+    renderHub({ save, pendingWorldEvents: [event] });
+
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('솔바람 → 돌아오지 않는 이정표');
+  });
+
   it('renders the Joseon warrior sheet as the memorable town hero portrait', () => {
     renderHub();
 

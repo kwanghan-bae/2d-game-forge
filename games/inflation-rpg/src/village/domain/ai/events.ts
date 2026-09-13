@@ -36,6 +36,7 @@ import {
   recordVillageAgentOutcome,
   recordVillageAgentRelationship,
 } from './agents';
+import { recordVillageAgentMemory } from './cognition';
 import { isActionClockValid, isValidCurrencyBalance } from '../shared/guards';
 import { nextSaveId } from '../shared/ids';
 import { cloneSave, touchSave } from '../shared/saveMutation';
@@ -44,6 +45,12 @@ import {
   isVillageContentArcKind,
   selectVillageContentArcKind,
 } from './content';
+import {
+  createVillageLifeArcEvent,
+  isVillageLifeArcKind,
+  selectVillageLifeArcKind,
+  VILLAGE_LIFE_ARC_FINAL_STEP,
+} from './lifeContent';
 
 export interface VillageWorldAdvanceResult {
   save: VillageSaveEnvelope;
@@ -64,6 +71,10 @@ function safeNumber(value: unknown, fallback = 0): number {
 
 function isSafeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value);
+}
+
+function maxChainStep(kind: VillageWorldChainKind): number {
+  return isVillageLifeArcKind(kind) ? VILLAGE_LIFE_ARC_FINAL_STEP : Village_MAX_WORLD_CHAIN_STEP;
 }
 
 function eventCreatedAt(save: VillageSaveEnvelope, day: number): number | null {
@@ -274,6 +285,13 @@ function createOmenEvent(save: VillageSaveEnvelope, day: number, createdAt: numb
   };
 }
 
+function createLifeOpportunityEvent(save: VillageSaveEnvelope, day: number): VillageWorldEvent | null {
+  const kind = selectVillageLifeArcKind(save, day);
+  const createdAt = eventCreatedAt(save, day);
+  if (!kind || createdAt === null) return null;
+  return createVillageLifeArcEvent(save, day, createdAt, kind);
+}
+
 function createWorldChainEvent(
   save: VillageSaveEnvelope,
   day: number,
@@ -281,12 +299,15 @@ function createWorldChainEvent(
 ): VillageWorldEvent | null {
   const createdAt = eventCreatedAt(save, day);
   const nextStep = chain.step + 1;
-  if (createdAt === null || nextStep > Village_MAX_WORLD_CHAIN_STEP) return null;
+  if (createdAt === null || nextStep > maxChainStep(chain.kind)) return null;
   const expiresAt = createdAt + Village_WORLD_DAY_MS * 2;
   const id = `${chain.id}-step-${nextStep}-day-${day}`;
   const parentEventId = chain.lastEventId;
   if (isVillageContentArcKind(chain.kind)) {
     return createVillageContentArcEvent(save, day, createdAt, chain.kind, nextStep, chain.id, parentEventId);
+  }
+  if (isVillageLifeArcKind(chain.kind)) {
+    return createVillageLifeArcEvent(save, day, createdAt, chain.kind, nextStep, chain.id, parentEventId);
   }
   const realmId: RealmId = save.meta.unlockedRealms.includes('underworld') ? 'underworld' : 'sacred_fields';
   const realm = getVillageRealmDefinition(realmId);
@@ -491,6 +512,11 @@ function createWorldEvent(save: VillageSaveEnvelope, day: number): VillageWorldE
     const contentEvent = createVillageContentArcEvent(save, day, createdAt, contentKind);
     if (contentEvent) return contentEvent;
   }
+  const lifeKind = selectVillageLifeArcKind(save, day);
+  if (lifeKind) {
+    const lifeEvent = createVillageLifeArcEvent(save, day, createdAt, lifeKind);
+    if (lifeEvent) return lifeEvent;
+  }
   if (fatigue >= 75 || roll < 0.22 || (villageTension >= 0.72 && roll < 0.5)) {
     return decorateBaseWorldEvent(createSocialEvent(save, day, createdAt));
   }
@@ -525,7 +551,7 @@ function hasDueWorldChain(source: VillageSaveEnvelope, day: number): boolean {
   const chains = getVillageAIState(source).world.chains ?? [];
   return chains.some((chain) => (
     chain.pendingEventId === null
-    && chain.step < Village_MAX_WORLD_CHAIN_STEP
+    && chain.step < maxChainStep(chain.kind)
     && chain.nextDay <= day
   ));
 }
@@ -535,7 +561,7 @@ function createDueWorldChainEvent(save: VillageSaveEnvelope, day: number): Villa
   const chain = (ai.world.chains ?? [])
     .filter((candidate) => (
       candidate.pendingEventId === null
-      && candidate.step < Village_MAX_WORLD_CHAIN_STEP
+      && candidate.step < maxChainStep(candidate.kind)
       && candidate.nextDay <= day
     ))
     .sort((left, right) => {
@@ -576,7 +602,7 @@ function updateWorldChain(
     lastEventId: event.id,
   };
 
-  if (event.chainStep >= Village_MAX_WORLD_CHAIN_STEP) {
+  if (event.chainStep >= maxChainStep(event.chainKind)) {
     ai.world.chains = chains.filter((candidate) => candidate.id !== event.chainId);
     return;
   }
@@ -685,7 +711,9 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
     ai.world.season = getVillageSeason(day);
     ai.world.weather = getVillageWeather(ai.seed, day);
     if (ai.pendingEvents.length >= Village_MAX_PENDING_WORLD_EVENTS) continue;
-    const event = createDueWorldChainEvent(save, day) ?? createWorldEvent(save, day);
+    const event = createLifeOpportunityEvent(save, day)
+      ?? createDueWorldChainEvent(save, day)
+      ?? createWorldEvent(save, day);
     if (!event || event.expiresAt <= now) continue;
     if (ai.pendingEvents.some((candidate) => candidate.id === event.id) || hasResolvedEvent(save, event.id)) continue;
     ai.pendingEvents = [event, ...ai.pendingEvents].slice(0, Village_MAX_PENDING_WORLD_EVENTS);
@@ -781,6 +809,24 @@ function applyWorldEventEffects(
   if (!applyCurrencyDelta(save, effects.currencyDelta ?? {})) return false;
   if (!applyAgentDelta(save, 'trust', effects.agentTrustDelta)) return false;
   if (!applyAgentDelta(save, 'fatigue', effects.agentFatigueDelta)) return false;
+  for (const [agentId, memory] of Object.entries(effects.agentMemory ?? {})) {
+    if (!memory
+      || !VILLAGE_SUPPORT_AGENT_IDS.includes(agentId as SupportAgentId)
+      || typeof memory.summary !== 'string'
+      || !memory.summary.trim()
+      || !Number.isFinite(memory.valence)
+      || !Number.isFinite(memory.salience)) return false;
+    recordVillageAgentMemory(
+      save,
+      agentId as SupportAgentId,
+      memory.tag,
+      memory.summary,
+      memory.valence,
+      memory.salience,
+      save.updatedAt,
+      memory.relatedAgentId ?? null,
+    );
+  }
   if (!applyFactionDelta(save, 'trust', effects.factionTrustDelta, actionDay)
     || !applyFactionDelta(save, 'influence', effects.factionInfluenceDelta, actionDay)
     || !applyFactionDelta(save, 'tension', effects.factionTensionDelta, actionDay)) return false;
