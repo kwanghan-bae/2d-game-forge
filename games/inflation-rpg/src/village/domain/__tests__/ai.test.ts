@@ -16,6 +16,10 @@ import {
   getVillageAIReplayFingerprint,
 } from '../ai/evaluation';
 import {
+  runVillageAIScenario,
+  Village_AI_EVALUATION_MAX_DAYS,
+} from '../ai/scenario';
+import {
   advanceVillageWorld,
   getPendingVillageWorldEvents,
   resolveVillageWorldEvent,
@@ -363,5 +367,46 @@ describe('Village human-like AI slice', () => {
     const mismatch = compareVillageAIReplay(first, changed);
     expect(mismatch.matches).toBe(false);
     expect(mismatch.differences).toContain('world');
+  });
+
+  it('runs a deterministic bounded scenario and exposes long-run behavior metrics', () => {
+    const initial = createInitialVillageSave(215);
+    const first = runVillageAIScenario(initial, { days: 7, choicePolicy: 'balanced' });
+    const replay = runVillageAIScenario(initial, { days: 7, choicePolicy: 'balanced' });
+
+    expect(first.daysSimulated).toBe(7);
+    expect(first.seed).toBe(215);
+    expect(first.generatedEventCount).toBeGreaterThan(0);
+    expect(first.chosenEventCount).toBe(first.generatedEventCount);
+    expect(first.decisionCount).toBeGreaterThanOrEqual(21);
+    expect(first.serializedSize).toBeGreaterThan(0);
+    expect(first.replayFingerprint).toBe(replay.replayFingerprint);
+    expect(compareVillageAIReplay(first.save, replay.save)).toMatchObject({
+      matches: true,
+      differences: [],
+    });
+    expect(first.behaviorDiversity.diversityScore).toBeGreaterThanOrEqual(0);
+    expect(first.behaviorDiversity.diversityScore).toBeLessThanOrEqual(1);
+  });
+
+  it('caps the evaluation horizon at 30 days', () => {
+    const result = runVillageAIScenario(createInitialVillageSave(216), { days: 999 });
+
+    expect(result.daysSimulated).toBe(Village_AI_EVALUATION_MAX_DAYS);
+    expect(result.decisionCount).toBeGreaterThanOrEqual(Village_AI_EVALUATION_MAX_DAYS * 3);
+    expect(result.serializedSize).toBeGreaterThan(0);
+  });
+
+  it('counts pressure-driven decisions during a sustained faction crisis', () => {
+    const pressured = createInitialVillageSave(217);
+    const factions = pressured.meta.ai?.world.factions;
+    if (!factions) return;
+    factions.merchants.trust = 0;
+    factions.merchants.tension = 1;
+    factions.merchants.influence = 1;
+
+    const result = runVillageAIScenario(pressured, { days: 7, choicePolicy: 'first' });
+
+    expect(result.pressureDecisionCount).toBeGreaterThan(0);
   });
 });

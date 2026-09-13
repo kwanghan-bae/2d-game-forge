@@ -44,6 +44,11 @@ export {
   getVillageAIBehaviorDiversity,
   getVillageAIReplayFingerprint,
 } from './domain/ai/evaluation';
+export {
+  runVillageAIScenario,
+  Village_AI_EVALUATION_DEFAULT_DAYS,
+  Village_AI_EVALUATION_MAX_DAYS,
+} from './domain/ai/scenario';
 export type {
   VillageAgentAssignmentAnalysis,
   VillageAgentAssignmentCandidate,
@@ -53,6 +58,11 @@ export type {
   VillageAgentPlanCandidate,
 } from './domain/ai/agents';
 export type { VillageAIBehaviorDiversity, VillageAIReplayAudit } from './domain/ai/evaluation';
+export type {
+  VillageAIScenarioChoicePolicy,
+  VillageAIScenarioOptions,
+  VillageAIScenarioResult,
+} from './domain/ai/scenario';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
 export {
   getBlacksmithEquipmentOutput,
