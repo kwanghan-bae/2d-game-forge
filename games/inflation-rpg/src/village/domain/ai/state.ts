@@ -18,6 +18,8 @@ import type {
   VillageAgentPlanStep,
   VillageAgentPlanStepKind,
   VillageAIState,
+  VillageFactionId,
+  VillageFactionState,
   VillageHeroGoal,
   VillageHeroPersonality,
   VillageMemory,
@@ -31,6 +33,8 @@ import type {
   VillageWorldEventEffects,
   VillageWorldEventOutcome,
   VillageWorldEventRecord,
+  VillageWorldChainKind,
+  VillageWorldChainState,
 } from '../../types';
 import {
   Village_MAX_AI_MEMORIES,
@@ -38,6 +42,8 @@ import {
   Village_MAX_AGENT_MEMORIES,
   Village_MAX_PENDING_WORLD_EVENTS,
   Village_MAX_RESOLVED_WORLD_EVENTS,
+  Village_MAX_WORLD_CHAINS,
+  Village_MAX_WORLD_CHAIN_STEP,
   Village_MAX_WORLD_EVENT_HISTORY,
   Village_SIMULATION_VERSION,
 } from '../../types';
@@ -54,6 +60,13 @@ const HERO_ACTIONS: readonly HeroAction[] = ['rest', 'train', 'expedition'];
 const EVENT_TYPES: readonly VillageWorldEvent['type'][] = ['weather', 'social', 'supply', 'omen'];
 const EVENT_OUTCOMES: readonly VillageWorldEventOutcome[] = ['chosen', 'expired'];
 export const VILLAGE_SUPPORT_AGENT_IDS: readonly SupportAgentId[] = ['blacksmith', 'mudang', 'guide'];
+export const VILLAGE_FACTION_IDS: readonly VillageFactionId[] = ['village', 'merchants', 'spirits'];
+const WORLD_CHAIN_KINDS: readonly VillageWorldChainKind[] = [
+  'weather_supply',
+  'supply_social',
+  'social_omen',
+  'omen_weather',
+];
 const AGENT_GOALS: readonly VillageAgentGoal[] = ['recover', 'craft', 'ward', 'guide', 'bond'];
 const AGENT_MEMORY_TAGS: readonly VillageAgentMemoryTag[] = [
   'observation',
@@ -160,7 +173,35 @@ function defaultPersonality(seed: number): VillageHeroPersonality {
   };
 }
 
-function defaultWorld(): VillageAIState['world'] {
+function defaultFactionValue(seed: number, key: string, base: number, spread: number): number {
+  const noise = (deterministicUnit(`${seed}:faction:${key}`) - 0.5) * spread;
+  return Math.min(1, Math.max(0, base + noise));
+}
+
+function createDefaultFactionStates(seed: number): Record<VillageFactionId, VillageFactionState> {
+  return {
+    village: {
+      trust: defaultFactionValue(seed, 'village', 0.72, 0.06),
+      influence: defaultFactionValue(seed, 'village-influence', 0.72, 0.06),
+      tension: defaultFactionValue(seed, 'village-tension', 0.18, 0.05),
+      lastActionDay: 0,
+    },
+    merchants: {
+      trust: defaultFactionValue(seed, 'merchants', 0.52, 0.08),
+      influence: defaultFactionValue(seed, 'merchants-influence', 0.58, 0.08),
+      tension: defaultFactionValue(seed, 'merchants-tension', 0.28, 0.07),
+      lastActionDay: 0,
+    },
+    spirits: {
+      trust: defaultFactionValue(seed, 'spirits', 0.44, 0.1),
+      influence: defaultFactionValue(seed, 'spirits-influence', 0.46, 0.1),
+      tension: defaultFactionValue(seed, 'spirits-tension', 0.36, 0.08),
+      lastActionDay: 0,
+    },
+  };
+}
+
+function defaultWorld(seed = 0): VillageAIState['world'] {
   return {
     day: 0,
     season: 'spring',
@@ -172,6 +213,8 @@ function defaultWorld(): VillageAIState['world'] {
       underworld: 0.45,
     },
     lastSimulatedDay: 0,
+    factions: createDefaultFactionStates(seed),
+    chains: [],
   };
 }
 
@@ -235,7 +278,7 @@ export function createVillageAgentCognitionState(
   tick = 0,
   relationships = defaultAgentRelationships(seed, agentId),
 ): VillageAgentCognitionState {
-  const world = defaultWorld();
+  const world = defaultWorld(seed);
   const beliefs: VillageAgentBelief[] = [
     createAgentBelief(seed, agentId, 'hero_trust', 'hero', 0.3, tick),
     createAgentBelief(seed, agentId, 'supply_security', 'village', 0.7, tick),
@@ -304,7 +347,7 @@ export function createVillageAIState(seed: number, createdAt: number): VillageAI
   return {
     version: 1,
     seed: safeSeed,
-    world: defaultWorld(),
+    world: defaultWorld(safeSeed),
     hero: {
       personality,
       needs: { fatigue: 0, morale: 60, purpose: 55 },
@@ -363,6 +406,29 @@ function isValidMemory(value: unknown): value is VillageMemory {
     && isPersistedNumber(value.createdAt);
 }
 
+function isValidFactionDelta(value: unknown): boolean {
+  return value === undefined || (isRecord(value)
+    && Object.entries(value).every(([key, amount]) => (
+      VILLAGE_FACTION_IDS.includes(key as VillageFactionId)
+      && isFiniteNumber(amount)
+      && Math.abs(amount) <= 0.35
+    )));
+}
+
+function isValidWorldChainMetadata(value: Record<string, unknown>): boolean {
+  const fields = ['chainId', 'chainKind', 'chainStep', 'factionId', 'parentEventId'];
+  const hasMetadata = fields.some((field) => value[field] !== undefined);
+  if (!hasMetadata) return true;
+  return isNonEmptyString(value.chainId)
+    && isOneOf(WORLD_CHAIN_KINDS, value.chainKind)
+    && isPersistedNumber(value.chainStep)
+    && Number.isInteger(value.chainStep)
+    && value.chainStep >= 0
+    && value.chainStep <= Village_MAX_WORLD_CHAIN_STEP
+    && isOneOf(VILLAGE_FACTION_IDS, value.factionId)
+    && (value.parentEventId === undefined || isNonEmptyString(value.parentEventId));
+}
+
 function isValidEventEffects(value: unknown): value is VillageWorldEventEffects {
   if (!isRecord(value)) return false;
   const currencyDelta = value.currencyDelta;
@@ -393,6 +459,9 @@ function isValidEventEffects(value: unknown): value is VillageWorldEventEffects 
       || !isPersistedNumber(amount)
       || Math.abs(amount) > 1
     )))) return false;
+  if (!isValidFactionDelta(value.factionTrustDelta)
+    || !isValidFactionDelta(value.factionInfluenceDelta)
+    || !isValidFactionDelta(value.factionTensionDelta)) return false;
   return [value.heroMoraleDelta, value.heroFatigueDelta, value.heroPurposeDelta, value.prosperityDelta]
     .every((item) => item === undefined || (isPersistedNumber(item) && Math.abs(item) <= 100));
 }
@@ -421,7 +490,8 @@ export function isValidVillageWorldEvent(value: unknown): value is VillageWorldE
     && value.choices.length >= 2
     && value.choices.length <= 3
     && value.choices.every(isValidEventChoice)
-    && new Set(value.choices.map((choice) => choice.id)).size === value.choices.length;
+    && new Set(value.choices.map((choice) => choice.id)).size === value.choices.length
+    && isValidWorldChainMetadata(value);
 }
 
 function isValidVillageWorldEventRecord(value: unknown): value is VillageWorldEventRecord {
@@ -433,9 +503,51 @@ function isValidVillageWorldEventRecord(value: unknown): value is VillageWorldEv
     || value.day < 0
     || !isOneOf(EVENT_OUTCOMES, value.outcome)
     || !isPersistedNumber(value.resolvedAt)) return false;
+  if (!isValidWorldChainMetadata(value)) return false;
   return value.outcome === 'expired'
     ? value.choiceId === null
     : isNonEmptyString(value.choiceId);
+}
+
+function isValidVillageFactionState(value: unknown): value is VillageFactionState {
+  return isRecord(value)
+    && isBoundedNumber(value.trust, 0, 1)
+    && isBoundedNumber(value.influence, 0, 1)
+    && isBoundedNumber(value.tension, 0, 1)
+    && isPersistedNumber(value.lastActionDay)
+    && Number.isInteger(value.lastActionDay)
+    && value.lastActionDay >= 0;
+}
+
+function isValidVillageFactions(value: unknown): value is Record<VillageFactionId, VillageFactionState> {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length === VILLAGE_FACTION_IDS.length
+    && VILLAGE_FACTION_IDS.every((factionId) => isValidVillageFactionState(value[factionId]));
+}
+
+function isValidVillageWorldChain(value: unknown): value is VillageWorldChainState {
+  return isRecord(value)
+    && isNonEmptyString(value.id)
+    && isOneOf(WORLD_CHAIN_KINDS, value.kind)
+    && isOneOf(VILLAGE_FACTION_IDS, value.factionId)
+    && isPersistedNumber(value.step)
+    && Number.isInteger(value.step)
+    && value.step >= 0
+    && value.step <= Village_MAX_WORLD_CHAIN_STEP
+    && isBoundedNumber(value.momentum, -1, 1)
+    && isPersistedNumber(value.nextDay)
+    && Number.isInteger(value.nextDay)
+    && value.nextDay >= 0
+    && (value.pendingEventId === null || isNonEmptyString(value.pendingEventId))
+    && isNonEmptyString(value.lastEventId);
+}
+
+function isValidVillageWorldChains(value: unknown): value is VillageWorldChainState[] {
+  return Array.isArray(value)
+    && value.length <= Village_MAX_WORLD_CHAINS
+    && value.every(isValidVillageWorldChain)
+    && new Set(value.map((chain) => chain.id)).size === value.length;
 }
 
 function isValidVillageAgentMemory(value: unknown): value is VillageAgentMemory {
@@ -585,6 +697,8 @@ export function isValidVillageAIState(value: unknown): value is VillageAIState {
     || world.lastSimulatedDay < 0
     || !isRecord(threatByRealm)
     || !REALM_IDS.every((id) => isBoundedNumber(threatByRealm[id], 0, 1))) return false;
+  if (world.factions !== undefined && !isValidVillageFactions(world.factions)) return false;
+  if (world.chains !== undefined && !isValidVillageWorldChains(world.chains)) return false;
 
   const hero = value.hero;
   if (!isRecord(hero) || !isRecord(hero.personality) || !isRecord(hero.needs)
@@ -697,27 +811,34 @@ export function ensureVillageAgentCognition(
 }
 
 export function ensureVillageAIState(save: VillageSaveEnvelope): VillageAIState {
+  let ai: VillageAIState;
   if (!save.meta.ai || !isValidVillageAIState(save.meta.ai)) {
-    save.meta.ai = createVillageAIState(save.createdAt, save.createdAt);
-  } else if (!save.meta.ai.agentBrains || !isValidVillageAgentBrains(save.meta.ai.agentBrains)) {
-    save.meta.ai.agentBrains = createVillageAgentAIStates(
-      save.meta.ai.seed,
-      save.meta.ai.world.lastSimulatedDay,
-    );
+    ai = createVillageAIState(save.createdAt, save.createdAt);
+    save.meta.ai = ai;
   } else {
-    for (const agentId of VILLAGE_SUPPORT_AGENT_IDS) {
-      const brain = save.meta.ai.agentBrains[agentId];
-      if (brain && !brain.cognition) {
-        brain.cognition = createVillageAgentCognitionState(
-          save.meta.ai.seed,
-          agentId,
-          save.meta.ai.world.lastSimulatedDay,
-          brain.relationships,
-        );
-      }
+    ai = save.meta.ai;
+  }
+  if (!ai.agentBrains || !isValidVillageAgentBrains(ai.agentBrains)) {
+    ai.agentBrains = createVillageAgentAIStates(ai.seed, ai.world.lastSimulatedDay);
+  }
+  if (!ai.world.factions || !isValidVillageFactions(ai.world.factions)) {
+    ai.world.factions = createDefaultFactionStates(ai.seed);
+  }
+  if (!ai.world.chains || !isValidVillageWorldChains(ai.world.chains)) {
+    ai.world.chains = [];
+  }
+  for (const agentId of VILLAGE_SUPPORT_AGENT_IDS) {
+    const brain = ai.agentBrains[agentId];
+    if (brain && !brain.cognition) {
+      brain.cognition = createVillageAgentCognitionState(
+        ai.seed,
+        agentId,
+        ai.world.lastSimulatedDay,
+        brain.relationships,
+      );
     }
   }
-  return save.meta.ai;
+  return ai;
 }
 
 export function getVillageSimulationState(source: VillageSaveEnvelope): VillageSimulationState {

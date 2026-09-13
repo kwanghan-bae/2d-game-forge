@@ -631,7 +631,9 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
     const save = normalizeLoadedVillageSave(parsed);
     const hasAgentCognition = Boolean(save.meta.ai.agentBrains)
       && VILLAGE_SUPPORT_AGENT_IDS.every((agentId) => Boolean(save.meta.ai.agentBrains?.[agentId]?.cognition));
-    if (!hasAgentCognition) {
+    const hasWorldDynamics = Boolean(save.meta.ai.world.factions)
+      && Array.isArray(save.meta.ai.world.chains);
+    if (!hasAgentCognition || !hasWorldDynamics) {
       ensureVillageAIState(save);
       if (!isVillageSaveEnvelope(save)) return { status: 'invalid', reason: 'invalid_schema' };
       try {
@@ -647,6 +649,7 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
     return { status: 'invalid', reason: 'invalid_schema' };
   }
   const save = normalizeLoadedVillageSave(migrateVillageSaveV2ToV3(parsed));
+  ensureVillageAIState(save);
   if (!isVillageSaveEnvelope(save)) return { status: 'invalid', reason: 'invalid_schema' };
   try {
     storage.setItem(Village_SAVE_KEY, JSON.stringify(save));

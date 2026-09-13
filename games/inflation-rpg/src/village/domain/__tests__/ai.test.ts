@@ -222,4 +222,77 @@ describe('Village human-like AI slice', () => {
     expect(result.save).toBe(advanced);
     expect(advanced.meta.ai?.pendingEvents).toHaveLength(1);
   });
+
+  it('continues a resolved event as a deterministic causal chain and updates faction state', () => {
+    const initial = createInitialVillageSave(211);
+    const first = advanceVillageWorld(initial, initial.createdAt + Village_WORLD_DAY_MS).save;
+    const event = getPendingVillageWorldEvents(first)[0];
+    expect(event?.chainStep).toBe(0);
+    expect(event?.chainId).toBeTruthy();
+    if (!event) return;
+
+    const resolved = resolveVillageWorldEvent(first, event.id, event.choices[event.choices.length - 1].id, first.updatedAt + 1);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.save.meta.ai?.world.chains).toHaveLength(1);
+    expect(resolved.save.meta.ai?.world.chains?.[0]).toMatchObject({
+      id: event.chainId,
+      step: 0,
+      pendingEventId: null,
+      lastEventId: event.id,
+    });
+    expect(resolved.save.meta.simulation.eventHistory[0]).toMatchObject({
+      chainId: event.chainId,
+      chainStep: 0,
+      factionId: event.factionId,
+    });
+
+    const continuation = advanceVillageWorld(
+      resolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * 3,
+    );
+    const followup = continuation.generatedEvents.find((candidate) => candidate.chainId === event.chainId);
+    expect(followup?.chainStep).toBe(1);
+    expect(followup?.parentEventId).toBe(event.id);
+    expect(continuation.save.meta.ai?.world.chains?.[0]?.pendingEventId).toBe(followup?.id);
+    expect(continuation.generatedEvents).toEqual(
+      advanceVillageWorld(resolved.save, initial.createdAt + Village_WORLD_DAY_MS * 3).generatedEvents,
+    );
+    if (!followup || !followup.factionId) return;
+
+    const beforeTrust = continuation.save.meta.ai?.world.factions?.[followup.factionId]?.trust;
+    const followupResult = resolveVillageWorldEvent(
+      continuation.save,
+      followup.id,
+      followup.choices[0].id,
+      continuation.save.updatedAt + 1,
+    );
+    expect(followupResult.ok).toBe(true);
+    if (!followupResult.ok) return;
+    expect(followupResult.save.meta.ai?.world.factions?.[followup.factionId]?.trust).not.toBe(beforeTrust);
+    expect(followupResult.save.meta.ai?.world.chains?.[0]).toMatchObject({
+      step: 1,
+      pendingEventId: null,
+      lastEventId: followup.id,
+    });
+  });
+
+  it('keeps an expired chain alive with slower momentum and bounded world state', () => {
+    const initial = createInitialVillageSave(212);
+    const first = advanceVillageWorld(initial, initial.createdAt + Village_WORLD_DAY_MS).save;
+    const event = getPendingVillageWorldEvents(first)[0];
+    expect(event).toBeDefined();
+    if (!event) return;
+
+    const expired = advanceVillageWorld(first, event.expiresAt + 1).save;
+    const chain = expired.meta.ai?.world.chains?.find((candidate) => candidate.id === event.chainId);
+    expect(chain).toMatchObject({ step: 0, lastEventId: event.id });
+    expect(chain?.nextDay).toBeGreaterThan(event.day + 1);
+    const followup = getPendingVillageWorldEvents(expired).find((candidate) => candidate.chainId === event.chainId);
+    expect(followup).toMatchObject({ chainStep: 1, parentEventId: event.id });
+
+    const later = advanceVillageWorld(expired, initial.createdAt + Village_WORLD_DAY_MS * 4);
+    expect(later.save.meta.ai?.resolvedEventIds).toContain(event.id);
+    expect(later.save.meta.ai?.world.chains?.length).toBeLessThanOrEqual(3);
+  });
 });

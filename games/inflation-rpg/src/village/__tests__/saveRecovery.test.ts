@@ -118,6 +118,27 @@ describe('Village save recovery boundary', () => {
     expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.ai.agentBrains.guide.cognition).toBeDefined();
   });
 
+  it('adds deterministic faction and chain state to an older schema 3 world once', () => {
+    const current = createInitialVillageSave(65402);
+    const legacyAI = JSON.parse(JSON.stringify(current.meta.ai)) as Record<string, unknown>;
+    const legacyWorld = legacyAI.world as Record<string, unknown>;
+    delete legacyWorld.factions;
+    delete legacyWorld.chains;
+    const legacy = {
+      ...current,
+      meta: { ...current.meta, ai: legacyAI },
+    } as unknown;
+    const storage = memoryStorage({ [Village_SAVE_KEY]: JSON.stringify(legacy) });
+
+    const loaded = readVillageSave(storage);
+
+    expect(loaded.status).toBe('valid');
+    if (loaded.status !== 'valid') return;
+    expect(Object.keys(loaded.save.meta.ai.world.factions ?? {})).toEqual(['village', 'merchants', 'spirits']);
+    expect(loaded.save.meta.ai.world.chains).toEqual([]);
+    expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.ai.world.factions).toBeDefined();
+  });
+
   it('isolates arbitrary JSON payloads without throwing during recovery', () => {
     const payloads: unknown[] = [
       null,

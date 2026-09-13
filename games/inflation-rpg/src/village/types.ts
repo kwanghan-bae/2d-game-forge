@@ -14,6 +14,8 @@ export type VillageAgentPlanStepKind = 'observe' | 'prepare' | 'act' | 'recover'
 export type VillageMemoryTag = 'victory' | 'defeat' | 'support' | 'event' | 'choice';
 export type VillageWorldEventType = 'weather' | 'social' | 'supply' | 'omen';
 export type VillageWorldEventOutcome = 'chosen' | 'expired';
+export type VillageFactionId = 'village' | 'merchants' | 'spirits';
+export type VillageWorldChainKind = 'weather_supply' | 'supply_social' | 'social_omen' | 'omen_weather';
 export type FacilityId =
   | 'temple'
   | 'recovery'
@@ -36,6 +38,8 @@ export const Village_MAX_AGENT_BELIEFS = 18;
 export const Village_MAX_PENDING_WORLD_EVENTS = 3;
 export const Village_MAX_RESOLVED_WORLD_EVENTS = 120;
 export const Village_MAX_WORLD_EVENT_HISTORY = 120;
+export const Village_MAX_WORLD_CHAINS = 3;
+export const Village_MAX_WORLD_CHAIN_STEP = 2;
 export const Village_SIMULATION_VERSION = 1 as const;
 
 export interface VillageHeroPersonality {
@@ -67,6 +71,32 @@ export interface VillageAIWorldState {
   prosperity: number;
   threatByRealm: Record<RealmId, number>;
   lastSimulatedDay: number;
+  /** Additive schema 3 world-dynamics extension; old saves omit these fields. */
+  factions?: Record<VillageFactionId, VillageFactionState>;
+  chains?: VillageWorldChainState[];
+}
+
+export interface VillageFactionState {
+  /** Normalized relationship between the faction and the village. */
+  trust: number;
+  /** Normalized ability to shape the next world event. */
+  influence: number;
+  /** Normalized internal pressure that makes escalation more likely. */
+  tension: number;
+  lastActionDay: number;
+}
+
+export interface VillageWorldChainState {
+  id: string;
+  kind: VillageWorldChainKind;
+  factionId: VillageFactionId;
+  /** The last resolved step. The next generated event increments this value. */
+  step: number;
+  /** Causal momentum in the -1..1 range; it changes delay and outcome tone. */
+  momentum: number;
+  nextDay: number;
+  pendingEventId: string | null;
+  lastEventId: string;
 }
 
 export interface VillageAILastDecision {
@@ -153,6 +183,9 @@ export interface VillageWorldEventEffects {
   agentTrustDelta?: Partial<Record<SupportAgentId, number>>;
   agentFatigueDelta?: Partial<Record<SupportAgentId, number>>;
   realmThreatDelta?: Partial<Record<RealmId, number>>;
+  factionTrustDelta?: Partial<Record<VillageFactionId, number>>;
+  factionInfluenceDelta?: Partial<Record<VillageFactionId, number>>;
+  factionTensionDelta?: Partial<Record<VillageFactionId, number>>;
   prosperityDelta?: number;
 }
 
@@ -173,6 +206,12 @@ export interface VillageWorldEvent {
   cause: string;
   prompt: string;
   choices: VillageWorldEventChoice[];
+  /** Optional causal metadata; base events from older schema 3 saves omit it. */
+  chainId?: string;
+  chainKind?: VillageWorldChainKind;
+  chainStep?: number;
+  factionId?: VillageFactionId;
+  parentEventId?: string;
 }
 
 export interface VillageWorldEventRecord {
@@ -182,6 +221,11 @@ export interface VillageWorldEventRecord {
   choiceId: string | null;
   outcome: VillageWorldEventOutcome;
   resolvedAt: number;
+  chainId?: string;
+  chainKind?: VillageWorldChainKind;
+  chainStep?: number;
+  factionId?: VillageFactionId;
+  parentEventId?: string;
 }
 
 export interface VillageSimulationState {
