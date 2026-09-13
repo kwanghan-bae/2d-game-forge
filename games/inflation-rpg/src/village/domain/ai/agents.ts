@@ -7,6 +7,7 @@ import type {
   VillageAgentPlanState,
   VillageAgentPlanStep,
   VillageAgentSchedule,
+  VillageFactionId,
   VillageSaveEnvelope,
 } from '../../types';
 import {
@@ -75,6 +76,18 @@ const SPECIALTY_GOAL_BY_AGENT: Record<SupportAgentId, VillageAgentGoal> = {
   blacksmith: 'craft',
   mudang: 'ward',
   guide: 'guide',
+};
+
+const FACTION_BY_AGENT: Record<SupportAgentId, VillageFactionId> = {
+  blacksmith: 'merchants',
+  mudang: 'spirits',
+  guide: 'village',
+};
+
+const FACTION_LABELS: Record<VillageFactionId, string> = {
+  village: '마을',
+  merchants: '상단',
+  spirits: '정령',
 };
 
 const DUTY_AGENT_BY_FACILITY: Record<VillageAgentDuty, SupportAgentId> = {
@@ -201,11 +214,61 @@ function goalReason(
   fatigue: number,
   relation: number,
   weatherBonus: number,
+  worldPressure = 0,
 ): VillageAgentDecisionReason {
   if (goal === 'recover') return fatigue >= 55 ? 'fatigue' : 'routine';
   if (goal === 'bond') return relation < -0.2 ? 'conflict' : 'relationship';
+  if (worldPressure >= 0.62) return 'world_pressure';
   if (weatherBonus > 0) return 'weather';
   return 'specialty';
+}
+
+interface VillageAgentFactionPressure {
+  factionId: VillageFactionId;
+  trust: number;
+  tension: number;
+  influence: number;
+  chainStep: number | null;
+  chainPressure: number;
+}
+
+function factionPressure(
+  source: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+): VillageAgentFactionPressure {
+  const ai = getVillageAIState(source);
+  const factionId = FACTION_BY_AGENT[agentId];
+  const faction = ai.world.factions?.[factionId];
+  const chains = (ai.world.chains ?? [])
+    .filter((chain) => chain.factionId === factionId)
+    .sort((left, right) => right.step - left.step || right.nextDay - left.nextDay || left.id.localeCompare(right.id));
+  const chain = chains[0];
+  const trust = clamp(getVillageAgentBeliefValue(
+    source,
+    agentId,
+    'faction_trust',
+    factionId,
+    safeNumber(faction?.trust, 0.5),
+  ), 0, 1);
+  const tension = clamp(getVillageAgentBeliefValue(
+    source,
+    agentId,
+    'faction_tension',
+    factionId,
+    safeNumber(faction?.tension, 0.5),
+  ), 0, 1);
+  const influence = clamp(safeNumber(faction?.influence, 0.5), 0, 1);
+  const chainPressure = chain
+    ? 0.08 + chain.step * 0.06 + Math.max(0, chain.momentum) * 0.1 + influence * 0.06
+    : 0;
+  return {
+    factionId,
+    trust,
+    tension,
+    influence,
+    chainStep: chain?.step ?? null,
+    chainPressure,
+  };
 }
 
 function makeSchedule(
@@ -238,6 +301,19 @@ function calculatePlan(
   const realmThreat = averageBelief(source, agentId, 'realm_threat');
   const conflictMemory = salientMemoryScore(source, agentId, 'conflict');
   const failureMemory = salientMemoryScore(source, agentId, 'failure');
+  const faction = factionPressure(source, agentId);
+  const worldDynamicsActive = ai.world.lastSimulatedDay > 0
+    || (ai.world.chains ?? []).length > 0
+    || Object.values(ai.world.factions ?? {}).some((state) => state.lastActionDay > 0);
+  const worldPressure = worldDynamicsActive
+    ? clamp(
+      faction.tension * 0.72 + (1 - faction.trust) * 0.18 + faction.chainPressure,
+      0,
+      1,
+    )
+    : 0;
+  const factionContext = `${FACTION_LABELS[faction.factionId]} 세력 신뢰 ${Math.round(faction.trust * 100)}%, 긴장 ${Math.round(faction.tension * 100)}%`
+    + (faction.chainStep === null ? '' : `, ${faction.chainStep + 1}단계 연쇄 압력`);
   const activePlanBias = (goal: VillageAgentGoal): number => getVillageAgentCognitionState(source, agentId).plan?.goal === goal ? 7 : 0;
   const specialtyGoal = SPECIALTY_GOAL_BY_AGENT[agentId];
   const available = Boolean(agent && !agent.activeTaskId && fatigue < 100);
@@ -246,10 +322,10 @@ function calculatePlan(
       agentId,
       goal: 'recover',
       goalLabel: VILLAGE_AGENT_GOAL_LABELS.recover,
-      score: 22 + fatigue * 1.15 + brain.stress * 0.3 + failureMemory * 4 + activePlanBias('recover'),
-      reason: goalReason('recover', fatigue, relation, 0),
-      rationale: `피로 ${Math.round(fatigue)}%와 긴장 ${Math.round(brain.stress)}%${failureMemory > 0.4 ? ', 최근 실패 기억' : ''}를 반영해 숨을 고른다.`,
-      schedule: makeSchedule(source, agentId, 'recover', goalReason('recover', fatigue, relation, 0), tick),
+      score: 22 + fatigue * 1.15 + brain.stress * 0.3 + failureMemory * 4 + worldPressure * 5 + activePlanBias('recover'),
+      reason: goalReason('recover', fatigue, relation, 0, worldPressure),
+      rationale: `피로 ${Math.round(fatigue)}%와 긴장 ${Math.round(brain.stress)}%, ${factionContext}${failureMemory > 0.4 ? ', 최근 실패 기억' : ''}를 반영해 숨을 고른다.`,
+      schedule: makeSchedule(source, agentId, 'recover', goalReason('recover', fatigue, relation, 0, worldPressure), tick),
       plan: planForGoal(source, agentId, 'recover', tick),
       available,
     },
@@ -269,11 +345,13 @@ function calculatePlan(
         + (specialtyGoal === 'craft' ? supplySecurity * 10 : 0)
         + (specialtyGoal === 'ward' ? realmThreat * 18 + (1 - weatherSafety) * 10 : 0)
         + (specialtyGoal === 'guide' ? (1 - weatherSafety) * 12 + realmThreat * 12 : 0)
+        + worldPressure * 8
+        + (worldDynamicsActive ? faction.influence * 2 : 0)
         + heroTrustBelief * 5
         + activePlanBias(specialtyGoal),
-      reason: goalReason(specialtyGoal, fatigue, relation, weatherBonus),
-      rationale: `${VILLAGE_AGENT_GOAL_LABELS[specialtyGoal]}에 대한 준비도 ${Math.round(brain.goalProgress)}%, 영웅 신뢰 ${Math.round(trust)}%, 개인 판단 신뢰 ${Math.round(heroTrustBelief * 100)}%를 반영했다.${weatherBonus > 0 ? ' 현재 날씨가 이 역할을 돕는다.' : ''}`,
-      schedule: makeSchedule(source, agentId, specialtyGoal, goalReason(specialtyGoal, fatigue, relation, weatherBonus), tick),
+      reason: goalReason(specialtyGoal, fatigue, relation, weatherBonus, worldPressure),
+      rationale: `${VILLAGE_AGENT_GOAL_LABELS[specialtyGoal]}에 대한 준비도 ${Math.round(brain.goalProgress)}%, 영웅 신뢰 ${Math.round(trust)}%, 개인 판단 신뢰 ${Math.round(heroTrustBelief * 100)}%, ${factionContext}를 반영했다.${worldPressure >= 0.62 ? ' 세력 압력이 높아 전문 역할을 앞당긴다.' : ''}${weatherBonus > 0 ? ' 현재 날씨가 이 역할을 돕는다.' : ''}`,
+      schedule: makeSchedule(source, agentId, specialtyGoal, goalReason(specialtyGoal, fatigue, relation, weatherBonus, worldPressure), tick),
       plan: planForGoal(source, agentId, specialtyGoal, tick),
       available,
     },
@@ -286,6 +364,7 @@ function calculatePlan(
         + Math.max(0, -relation) * 22
         + conflictMemory * 18
         + (1 - averageBelief(source, agentId, 'peer_trust')) * 12
+        + (faction.factionId === 'village' ? worldPressure * 8 : 0)
         + (brain.stress >= 60 ? 8 : 0),
       reason: goalReason('bond', fatigue, relation, 0),
       rationale: relation < -0.2

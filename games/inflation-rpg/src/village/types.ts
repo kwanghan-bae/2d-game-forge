@@ -6,9 +6,9 @@ export type VillageWeather = 'clear' | 'rain' | 'fog' | 'wind';
 export type VillageHeroPersonalityKey = 'courage' | 'caution' | 'compassion' | 'curiosity';
 export type VillageHeroGoal = 'recover' | 'prepare' | 'explore' | 'support';
 export type VillageAgentGoal = 'recover' | 'craft' | 'ward' | 'guide' | 'bond';
-export type VillageAgentDecisionReason = 'fatigue' | 'specialty' | 'relationship' | 'weather' | 'routine' | 'conflict';
+export type VillageAgentDecisionReason = 'fatigue' | 'specialty' | 'relationship' | 'weather' | 'routine' | 'conflict' | 'world_pressure';
 export type VillageAgentMemoryTag = 'observation' | 'choice' | 'success' | 'failure' | 'support' | 'conflict';
-export type VillageAgentBeliefKind = 'hero_trust' | 'peer_trust' | 'supply_security' | 'weather_safety' | 'realm_threat';
+export type VillageAgentBeliefKind = 'hero_trust' | 'peer_trust' | 'supply_security' | 'weather_safety' | 'realm_threat' | 'faction_trust' | 'faction_tension';
 export type VillageAgentBeliefSource = 'observation' | 'rumor' | 'outcome';
 export type VillageAgentPlanStepKind = 'observe' | 'prepare' | 'act' | 'recover' | 'reconcile';
 export type VillageMemoryTag = 'victory' | 'defeat' | 'support' | 'event' | 'choice';
@@ -136,7 +136,7 @@ export interface VillageAgentMemory {
 export interface VillageAgentBelief {
   id: string;
   kind: VillageAgentBeliefKind;
-  subject: 'hero' | 'village' | SupportAgentId | RealmId;
+  subject: 'hero' | VillageFactionId | SupportAgentId | RealmId;
   /** Beliefs are normalized to 0..1; meaning depends on `kind`. */
   value: number;
   confidence: number;

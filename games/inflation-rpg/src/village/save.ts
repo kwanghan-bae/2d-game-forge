@@ -6,6 +6,7 @@ import {
   createVillageSimulationState,
   ensureVillageAIState,
   ensureVillageSimulationState,
+  hasVillageAgentFactionBeliefs,
   isValidVillageAIState,
   isValidVillageSimulationState,
   VILLAGE_SUPPORT_AGENT_IDS,
@@ -632,10 +633,12 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
     const save = normalizeLoadedVillageSave(parsed);
     const hasAgentCognition = Boolean(save.meta.ai.agentBrains)
       && VILLAGE_SUPPORT_AGENT_IDS.every((agentId) => Boolean(save.meta.ai.agentBrains?.[agentId]?.cognition));
+    const hasAgentFactionBeliefs = Boolean(save.meta.ai.agentBrains)
+      && VILLAGE_SUPPORT_AGENT_IDS.every((agentId) => hasVillageAgentFactionBeliefs(save.meta.ai.agentBrains?.[agentId]?.cognition));
     const hasWorldDynamics = Boolean(save.meta.ai.world.factions)
       && Array.isArray(save.meta.ai.world.chains);
     const hasDecisionHistory = Array.isArray(save.meta.simulation.decisionHistory);
-    if (!hasAgentCognition || !hasWorldDynamics || !hasDecisionHistory) {
+    if (!hasAgentCognition || !hasAgentFactionBeliefs || !hasWorldDynamics || !hasDecisionHistory) {
       ensureVillageAIState(save);
       ensureVillageSimulationState(save);
       if (!isVillageSaveEnvelope(save)) return { status: 'invalid', reason: 'invalid_schema' };

@@ -105,7 +105,7 @@ describe('Village human-like AI slice', () => {
     for (const agentId of ['blacksmith', 'mudang', 'guide'] as const) {
       const cognition = getVillageAgentCognitionState(first, agentId);
       expect(cognition).toEqual(getVillageAgentCognitionState(replay, agentId));
-      expect(cognition.beliefs).toHaveLength(8);
+      expect(cognition.beliefs).toHaveLength(14);
       expect(cognition.plan?.steps.length).toBeGreaterThanOrEqual(2);
       expect(cognition.plan?.currentStep).toBeGreaterThanOrEqual(0);
     }
@@ -113,6 +113,39 @@ describe('Village human-like AI slice', () => {
     const blacksmithTrust = getVillageAgentBelief(first, 'blacksmith', 'hero_trust', 'hero');
     const guideTrust = getVillageAgentBelief(first, 'guide', 'hero_trust', 'hero');
     expect(blacksmithTrust?.value).not.toBe(guideTrust?.value);
+  });
+
+  it('lets faction pressure change role beliefs, plan scores, and decision reasons', () => {
+    const initial = createInitialVillageSave(214);
+    const pressured = structuredClone(initial);
+    const factions = pressured.meta.ai?.world.factions;
+    if (!factions) return;
+    factions.merchants.trust = 0.18;
+    factions.merchants.tension = 0.96;
+    factions.merchants.influence = 0.9;
+    pressured.meta.ai!.world.chains = [{
+      id: 'chain-pressure-test',
+      kind: 'supply_social',
+      factionId: 'merchants',
+      step: 1,
+      momentum: 0.8,
+      nextDay: 2,
+      pendingEventId: null,
+      lastEventId: 'event-pressure-test',
+    }];
+
+    const before = getVillageAgentPlanAnalysis(initial, 'blacksmith');
+    advanceVillageAgentScheduler(pressured, 1);
+    const after = getVillageAgentPlanAnalysis(pressured, 'blacksmith');
+    const beforeCraft = before.candidates.find((candidate) => candidate.goal === 'craft');
+    const afterCraft = after.candidates.find((candidate) => candidate.goal === 'craft');
+    const merchantTension = getVillageAgentBelief(pressured, 'blacksmith', 'faction_tension', 'merchants');
+
+    expect(merchantTension?.value).toBeGreaterThan(0.5);
+    expect(afterCraft?.score).toBeGreaterThan(beforeCraft?.score ?? 0);
+    expect(afterCraft?.rationale).toContain('상단 세력');
+    expect(afterCraft?.rationale).toContain('연쇄 압력');
+    expect(afterCraft?.reason).toBe('world_pressure');
   });
 
   it('retains salient experience, advances plans, and counts event interruptions', () => {

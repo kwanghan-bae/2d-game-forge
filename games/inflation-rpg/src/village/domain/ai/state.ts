@@ -85,6 +85,8 @@ const AGENT_BELIEF_KINDS: readonly VillageAgentBeliefKind[] = [
   'supply_security',
   'weather_safety',
   'realm_threat',
+  'faction_trust',
+  'faction_tension',
 ];
 const AGENT_BELIEF_SOURCES: readonly VillageAgentBeliefSource[] = ['observation', 'rumor', 'outcome'];
 const AGENT_PLAN_STEP_KINDS: readonly VillageAgentPlanStepKind[] = [
@@ -96,7 +98,7 @@ const AGENT_PLAN_STEP_KINDS: readonly VillageAgentPlanStepKind[] = [
 ];
 const AGENT_BELIEF_SUBJECTS: readonly VillageAgentBelief['subject'][] = [
   'hero',
-  'village',
+  ...VILLAGE_FACTION_IDS,
   ...VILLAGE_SUPPORT_AGENT_IDS,
   ...REALM_IDS,
 ];
@@ -107,6 +109,7 @@ const AGENT_DECISION_REASONS: readonly VillageAgentDecisionReason[] = [
   'weather',
   'routine',
   'conflict',
+  'world_pressure',
 ];
 const AGENT_SPECIALTY_GOALS: Record<SupportAgentId, VillageAgentGoal> = {
   blacksmith: 'craft',
@@ -252,7 +255,18 @@ function defaultAgentBeliefValue(
     ? agentId === 'guide' ? -0.08 : agentId === 'mudang' ? 0.04 : 0
     : kind === 'realm_threat'
       ? agentId === 'guide' ? 0.06 : agentId === 'mudang' ? 0.04 : 0.02
-      : kind === 'supply_security' && agentId === 'blacksmith' ? -0.05 : 0;
+      : kind === 'supply_security' && agentId === 'blacksmith' ? -0.05
+        : kind === 'faction_trust'
+          ? agentId === 'blacksmith' && subject === 'merchants' ? 0.05
+            : agentId === 'mudang' && subject === 'spirits' ? 0.06
+              : agentId === 'guide' && subject === 'village' ? 0.04
+                : 0
+          : kind === 'faction_tension'
+            ? agentId === 'blacksmith' && subject === 'merchants' ? 0.04
+              : agentId === 'mudang' && subject === 'spirits' ? 0.06
+                : agentId === 'guide' && subject === 'village' ? 0.03
+                  : 0
+            : 0;
   const noise = (deterministicUnit(`${seed}:agent-belief:${agentId}:${kind}:${subject}`) - 0.5) * 0.1;
   return Math.min(1, Math.max(0, value + roleBias + noise));
 }
@@ -287,6 +301,13 @@ export function createVillageAgentCognitionState(
     createAgentBelief(seed, agentId, 'hero_trust', 'hero', 0.3, tick),
     createAgentBelief(seed, agentId, 'supply_security', 'village', 0.7, tick),
     createAgentBelief(seed, agentId, 'weather_safety', 'village', defaultWeatherSafety(world.weather), tick),
+    ...VILLAGE_FACTION_IDS.flatMap((factionId) => {
+      const faction = world.factions?.[factionId];
+      return [
+        createAgentBelief(seed, agentId, 'faction_trust', factionId, faction?.trust ?? 0.5, tick),
+        createAgentBelief(seed, agentId, 'faction_tension', factionId, faction?.tension ?? 0.5, tick),
+      ];
+    }),
     ...VILLAGE_SUPPORT_AGENT_IDS
       .filter((targetId) => targetId !== agentId)
       .map((targetId) => createAgentBelief(
@@ -598,7 +619,11 @@ function isValidVillageAgentBelief(value: unknown): value is VillageAgentBelief 
   if (value.kind === 'peer_trust' && !isOneOf(VILLAGE_SUPPORT_AGENT_IDS, value.subject)) return false;
   if (value.kind === 'supply_security' && value.subject !== 'village') return false;
   if (value.kind === 'weather_safety' && value.subject !== 'village') return false;
-  return value.kind !== 'realm_threat' || REALM_IDS.includes(value.subject as RealmId);
+  if (value.kind === 'realm_threat') return REALM_IDS.includes(value.subject as RealmId);
+  if (value.kind === 'faction_trust' || value.kind === 'faction_tension') {
+    return VILLAGE_FACTION_IDS.includes(value.subject as VillageFactionId);
+  }
+  return true;
 }
 
 function isValidVillageAgentPlanStep(value: unknown): value is VillageAgentPlanStep {
@@ -644,6 +669,38 @@ export function isValidVillageAgentCognitionState(value: unknown): value is Vill
     && value.beliefs.every(isValidVillageAgentBelief)
     && new Set(value.beliefs.map((belief) => belief.id)).size === value.beliefs.length
     && (value.plan === null || isValidVillageAgentPlan(value.plan));
+}
+
+export function hasVillageAgentFactionBeliefs(
+  cognition: VillageAgentCognitionState | undefined,
+): boolean {
+  return Boolean(cognition && VILLAGE_FACTION_IDS.every((factionId) => (
+    (['faction_trust', 'faction_tension'] as const).every((kind) => (
+      cognition.beliefs.some((belief) => belief.kind === kind && belief.subject === factionId)
+    ))
+  )));
+}
+
+function ensureVillageAgentFactionBeliefs(
+  cognition: VillageAgentCognitionState,
+  seed: number,
+  agentId: SupportAgentId,
+  tick: number,
+  factions: Record<VillageFactionId, VillageFactionState>,
+): void {
+  const missing = VILLAGE_FACTION_IDS.flatMap((factionId) => {
+    const faction = factions[factionId];
+    const beliefs: VillageAgentBelief[] = [];
+    if (!cognition.beliefs.some((belief) => belief.kind === 'faction_trust' && belief.subject === factionId)) {
+      beliefs.push(createAgentBelief(seed, agentId, 'faction_trust', factionId, faction.trust, tick));
+    }
+    if (!cognition.beliefs.some((belief) => belief.kind === 'faction_tension' && belief.subject === factionId)) {
+      beliefs.push(createAgentBelief(seed, agentId, 'faction_tension', factionId, faction.tension, tick));
+    }
+    return beliefs;
+  });
+  if (missing.length === 0) return;
+  cognition.beliefs = [...cognition.beliefs, ...missing].slice(-Village_MAX_AGENT_BELIEFS);
 }
 
 function isValidVillageAgentSchedule(value: unknown): value is VillageAgentAIState['schedule'] {
@@ -812,6 +869,15 @@ export function ensureVillageAgentBrains(
         brain.relationships,
       );
     }
+    if (brain?.cognition && isValidVillageAgentCognitionState(brain.cognition)) {
+      ensureVillageAgentFactionBeliefs(
+        brain.cognition,
+        ai.seed,
+        agentId,
+        ai.world.lastSimulatedDay,
+        ai.world.factions as Record<VillageFactionId, VillageFactionState>,
+      );
+    }
   }
   return ai.agentBrains;
 }
@@ -864,6 +930,15 @@ export function ensureVillageAIState(save: VillageSaveEnvelope): VillageAIState 
         agentId,
         ai.world.lastSimulatedDay,
         brain.relationships,
+      );
+    }
+    if (brain?.cognition && isValidVillageAgentCognitionState(brain.cognition)) {
+      ensureVillageAgentFactionBeliefs(
+        brain.cognition,
+        ai.seed,
+        agentId,
+        ai.world.lastSimulatedDay,
+        ai.world.factions as Record<VillageFactionId, VillageFactionState>,
       );
     }
   }

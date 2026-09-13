@@ -3,8 +3,8 @@ import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getN
 import { getVillageEquipmentDefinition, getVillageEquipmentName } from '../equipment';
 import { Village_DAILY_REWARDED_LIMIT } from '../monetization';
 import { useVillageScreenHeadingFocus } from '../useVillageScreenHeadingFocus';
-import type { FacilityId, FacilityTask, InterventionType, RealmId, SupportAgentId, VillagePolicy, VillageSaveEnvelope, VillageWorldEvent } from '../types';
-import { Village_MAX_INTERVENTION_CHARGES } from '../types';
+import type { FacilityId, FacilityTask, InterventionType, RealmId, SupportAgentId, VillageFactionId, VillagePolicy, VillageSaveEnvelope, VillageWorldChainKind, VillageWorldEvent } from '../types';
+import { Village_MAX_INTERVENTION_CHARGES, Village_MAX_WORLD_CHAIN_STEP } from '../types';
 
 interface Props {
   save: VillageSaveEnvelope;
@@ -34,6 +34,19 @@ const AGENT_BY_FACILITY: Partial<Record<FacilityId, SupportAgentId>> = {
   blacksmith: 'blacksmith', mudang: 'mudang', expedition: 'guide',
 };
 
+const VILLAGE_FACTION_IDS: readonly VillageFactionId[] = ['village', 'merchants', 'spirits'];
+const VILLAGE_FACTION_LABELS: Record<VillageFactionId, string> = {
+  village: '마을',
+  merchants: '상단',
+  spirits: '정령',
+};
+const VILLAGE_CHAIN_LABELS: Record<VillageWorldChainKind, string> = {
+  weather_supply: '날씨 → 물자',
+  supply_social: '물자 → 민심',
+  social_omen: '민심 → 징조',
+  omen_weather: '징조 → 날씨',
+};
+
 const formatNumber = (value: unknown): string => {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '0';
   return Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value))).toLocaleString('ko-KR');
@@ -52,6 +65,11 @@ function formatResources(resources: Partial<Record<string, number>>): string {
 function formatUpgradeCost(cost: { gold: number; materials: number } | null): string {
   if (!cost) return '강화 비용 확인 필요';
   return `강화 비용 · 금화 ${formatNumber(cost.gold)} · 재료 ${formatNumber(cost.materials)}`;
+}
+
+function formatNormalized(value: unknown): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '확인 필요';
+  return `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`;
 }
 
 function getFacilityTaskLabel(facilityId: FacilityId, fallback: string, outputEquipmentIds: string[]): string {
@@ -162,6 +180,8 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
   const interventionFull = interventionCharges >= Village_MAX_INTERVENTION_CHARGES;
   const hasInterventionCharge = interventionCharges > 0;
   const objective = getTownObjective(save);
+  const worldFactions = save.meta.ai.world.factions;
+  const worldChains = save.meta.ai.world.chains ?? [];
   return (
     <main className="village-container" data-testid="village-town-hub">
       <div className="village-town-overview" data-testid="village-town-overview">
@@ -191,6 +211,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         </div>
         {pendingWorldEvents.map((event) => <article key={event.id} className="village-task village-task--blocked">
           <strong>{event.title}</strong>
+          {event.factionId && <p className="village-muted">원인 축 · {VILLAGE_FACTION_LABELS[event.factionId]}{event.chainStep === undefined ? '' : ` · 사건 연쇄 ${event.chainStep + 1}/${Village_MAX_WORLD_CHAIN_STEP + 1}단계`}</p>}
           <p>{event.cause}</p>
           <p>{event.prompt}</p>
           <div className="village-button-row">
@@ -204,6 +225,31 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         </article>)}
         <p className="village-muted">사건을 선택하기 전에는 영웅이 다음 행동을 결정하지 않습니다.</p>
       </section>}
+
+      <section className="village-panel" data-testid="village-world-dynamics" aria-labelledby="village-world-dynamics-title">
+        <div className="village-panel-head">
+          <h2 id="village-world-dynamics-title">마을의 흐름</h2>
+          <span className="village-action">세계 {formatNumber(save.meta.ai.world.lastSimulatedDay)}일차</span>
+        </div>
+        <div className="village-agent-list">
+          {VILLAGE_FACTION_IDS.map((factionId) => {
+            const faction = worldFactions?.[factionId];
+            return (
+              <div key={factionId} className="village-agent">
+                <span>
+                  <span className="village-agent-role">{VILLAGE_FACTION_LABELS[factionId]}</span> 세력
+                  <br /><span className="village-agent-trait">영향력 · {formatNormalized(faction?.influence)}</span>
+                </span>
+                <span className="village-agent-state">신뢰 {formatNormalized(faction?.trust)} · 긴장 {formatNormalized(faction?.tension)}</span>
+              </div>
+            );
+          })}
+        </div>
+        {worldChains.length > 0
+          ? <p className="village-muted">진행 중인 원인 연쇄 · {worldChains.map((chain) => `${VILLAGE_CHAIN_LABELS[chain.kind]} ${chain.step + 1}/${Village_MAX_WORLD_CHAIN_STEP + 1}단계 · ${chain.momentum >= 0.35 ? '확대' : chain.momentum <= -0.35 ? '완화' : '유지'}`).join(' · ')}</p>
+          : <p className="village-muted">아직 이어지는 사건 연쇄가 없습니다. 선택과 시간이 다음 흐름을 만듭니다.</p>}
+        <p className="village-muted">지원 에이전트는 담당 세력의 신뢰·긴장도와 사건 연쇄를 각자의 경험으로 해석해 다음 목표를 정합니다.</p>
+      </section>
 
       <section className="village-panel">
         <h2>후원 정책</h2>

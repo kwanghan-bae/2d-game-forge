@@ -4,6 +4,7 @@ import { startExpedition, startFacilityTask } from '../domain';
 import { Village_DAILY_REWARDED_LIMIT } from '../monetization';
 import { createInitialVillageSave } from '../save';
 import { TownHubScreen } from '../screens/TownHubScreen';
+import type { VillageWorldEvent } from '../types';
 
 function renderHub(overrides: Partial<React.ComponentProps<typeof TownHubScreen>> = {}) {
   const save = overrides.save ?? createInitialVillageSave(95);
@@ -150,6 +151,35 @@ describe('Village town hub support assignment', () => {
     expect(overview).toContainElement(screen.getByTestId('village-top-objective'));
     expect(management).toContainElement(screen.getByRole('heading', { name: '마을 시설' }));
     expect(management).toContainElement(screen.getByRole('heading', { name: '지원 에이전트' }));
+  });
+
+  it('explains faction pressure and causal chain context in the town hub', () => {
+    const save = createInitialVillageSave(115);
+    const event: VillageWorldEvent = {
+      id: 'ui-chain-event',
+      type: 'omen',
+      day: 1,
+      createdAt: save.createdAt,
+      expiresAt: save.createdAt + 60_000,
+      title: '정령의 불빛',
+      cause: '사당의 불빛이 흔들립니다.',
+      prompt: '어떻게 대응할까요?',
+      chainId: 'ui-chain',
+      chainKind: 'social_omen',
+      chainStep: 0,
+      factionId: 'spirits',
+      choices: [
+        { id: 'listen', title: '귀 기울인다', text: '징조를 듣습니다.', effects: {} },
+        { id: 'wait', title: '기다린다', text: '조용히 기다립니다.', effects: {} },
+      ],
+    };
+
+    renderHub({ save, pendingWorldEvents: [event] });
+
+    expect(screen.getByTestId('village-world-dynamics')).toHaveTextContent('상단 세력');
+    expect(screen.getByTestId('village-world-dynamics')).toHaveTextContent('지원 에이전트는 담당 세력');
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('원인 축 · 정령');
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('사건 연쇄 1/3단계');
   });
 
   it('renders the Joseon warrior sheet as the memorable town hero portrait', () => {

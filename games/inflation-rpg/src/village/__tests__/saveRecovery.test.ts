@@ -114,7 +114,7 @@ describe('Village save recovery boundary', () => {
     expect(loaded.status).toBe('valid');
     if (loaded.status !== 'valid') return;
     expect(loaded.save.meta.ai.agentBrains?.guide.cognition).toBeDefined();
-    expect(loaded.save.meta.ai.agentBrains?.guide.cognition?.beliefs).toHaveLength(8);
+    expect(loaded.save.meta.ai.agentBrains?.guide.cognition?.beliefs).toHaveLength(14);
     expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.ai.agentBrains.guide.cognition).toBeDefined();
   });
 
@@ -124,6 +124,18 @@ describe('Village save recovery boundary', () => {
     const legacyWorld = legacyAI.world as Record<string, unknown>;
     delete legacyWorld.factions;
     delete legacyWorld.chains;
+    const legacyBrains = legacyAI.agentBrains as Record<string, Record<string, unknown>>;
+    for (const brain of Object.values(legacyBrains)) {
+      const cognition = brain.cognition;
+      if (!cognition || typeof cognition !== 'object' || Array.isArray(cognition)) continue;
+      const cognitionRecord = cognition as Record<string, unknown>;
+      if (!Array.isArray(cognitionRecord.beliefs)) continue;
+      cognitionRecord.beliefs = cognitionRecord.beliefs.filter((belief) => {
+        if (!belief || typeof belief !== 'object' || Array.isArray(belief)) return true;
+        const kind = (belief as Record<string, unknown>).kind;
+        return kind !== 'faction_trust' && kind !== 'faction_tension';
+      });
+    }
     const legacySimulation = JSON.parse(JSON.stringify(current.meta.simulation)) as Record<string, unknown>;
     delete legacySimulation.decisionHistory;
     const legacy = {
@@ -138,6 +150,7 @@ describe('Village save recovery boundary', () => {
     if (loaded.status !== 'valid') return;
     expect(Object.keys(loaded.save.meta.ai.world.factions ?? {})).toEqual(['village', 'merchants', 'spirits']);
     expect(loaded.save.meta.ai.world.chains).toEqual([]);
+    expect(loaded.save.meta.ai.agentBrains?.blacksmith.cognition?.beliefs).toHaveLength(14);
     expect(loaded.save.meta.simulation.decisionHistory).toEqual([]);
     expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.ai.world.factions).toBeDefined();
     expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.simulation.decisionHistory).toEqual([]);

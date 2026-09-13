@@ -869,6 +869,10 @@ export function resolveVillageWorldEvent(
     title: event.title,
     text: `${selected.text} 선택의 결과가 마을과 영웅의 기억에 남았다.`,
   });
+  // A faction choice changes what support agents believe immediately. The
+  // next plan therefore reacts in the same world tick instead of waiting for
+  // the next calendar day.
+  advanceVillageAgentScheduler(save, ai.world.lastSimulatedDay);
   touchSave(save, now);
   return { ok: true, save, event, choice: selected };
 }
