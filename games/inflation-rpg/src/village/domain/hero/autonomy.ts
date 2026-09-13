@@ -1,15 +1,13 @@
-import { REALM_DEFINITIONS } from '../../data';
-import { createVillageHeroRuntime } from '../../heroRuntime';
 import { Village_HERO_AUTONOMY_DELAY_MS } from '../../types';
 import type {
   HeroAction,
   HeroAutonomyDecision,
   HeroAutonomyReason,
   HeroAutonomyResult,
-  RealmId,
-  VillagePolicy,
   VillageSaveEnvelope,
 } from '../../types';
+import { getHeroDecisionAnalysis } from '../ai/decision';
+import { getVillageAIState, recordVillageAIDecision } from '../ai/state';
 import { startExpedition } from '../expedition/commands';
 import { getNextRealmId } from '../expedition/forecast';
 import { startFacilityTask } from '../facility/tasks';
@@ -32,15 +30,10 @@ export function advanceHeroActions(source: VillageSaveEnvelope, actions: number,
  * explicit player action and therefore cannot be triggered by rendering.
  */
 export function getHeroNextAction(source: VillageSaveEnvelope): HeroAction {
-  const hero = source.run.hero;
   if (source.run.expedition) return 'expedition';
   if (Object.values(source.meta.tasks).some((task) => task.facilityId === 'training')) return 'train';
-  return createVillageHeroRuntime(hero).chooseAction({
-    hp: hero.hp,
-    hpMax: hero.hpMax,
-    policy: source.run.policy,
-    expeditionAvailable: source.meta.unlockedRealms.length > 0,
-  });
+  if (getVillageAIState(source).pendingEvents.length > 0) return 'rest';
+  return getHeroDecisionAnalysis(source).selected.action;
 }
 
 function blockedAutonomyDecision(reason: HeroAutonomyReason): HeroAutonomyDecision {
@@ -51,13 +44,6 @@ function blockedAutonomyDecision(reason: HeroAutonomyReason): HeroAutonomyDecisi
     assignedAgentId: null,
     reason,
   };
-}
-
-function getAutonomyRealmId(source: VillageSaveEnvelope, policy: VillagePolicy): RealmId | null {
-  const unlocked = Object.values(REALM_DEFINITIONS).filter((realm) => source.meta.unlockedRealms.includes(realm.id));
-  if (unlocked.length === 0) return null;
-  if (policy === 'aggression') return unlocked[unlocked.length - 1]?.id ?? null;
-  return unlocked.reduce((safest, realm) => realm.risk < safest.risk ? realm : safest, unlocked[0]).id;
 }
 
 /** Selects the one action the autonomous hero may start after the grace period. */
@@ -76,36 +62,10 @@ export function decideHeroAction(source: VillageSaveEnvelope): HeroAutonomyDecis
   if (Object.keys(source.meta.tasks).length > 0) {
     return blockedAutonomyDecision('active_work');
   }
-
-  const hero = source.run.hero;
-  if (hero.hpMax > 0 && hero.hp / hero.hpMax < 0.35) {
-    return {
-      action: 'rest',
-      facilityId: 'recovery',
-      realmId: null,
-      assignedAgentId: null,
-      reason: 'low_hp',
-    };
+  if (getVillageAIState(source).pendingEvents.length > 0) {
+    return blockedAutonomyDecision('world_event');
   }
-  if (source.run.policy === 'training') {
-    return {
-      action: 'train',
-      facilityId: 'training',
-      realmId: null,
-      assignedAgentId: null,
-      reason: 'training_policy',
-    };
-  }
-
-  const realmId = getAutonomyRealmId(source, source.run.policy);
-  if (!realmId) return blockedAutonomyDecision('no_action');
-  return {
-    action: 'expedition',
-    facilityId: null,
-    realmId,
-    assignedAgentId: null,
-    reason: source.run.policy === 'aggression' ? 'aggression_policy' : 'hoarding_policy',
-  };
+  return getHeroDecisionAnalysis(source).selected;
 }
 
 /**
@@ -132,7 +92,11 @@ export function advanceHeroAutonomy(source: VillageSaveEnvelope, now: number): H
   const decision = decideHeroAction(source);
   if (decision.facilityId) {
     const result = startFacilityTask(source, decision.facilityId, now, decision.assignedAgentId);
-    if (result.ok) return { save: result.save, decision, started: true };
+    if (result.ok) {
+      recordVillageAIDecision(result.save, decision, now, decision.confidence);
+      touchSave(result.save, now);
+      return { save: result.save, decision, started: true };
+    }
     return {
       save: source,
       decision: { ...decision, reason: result.error.includes('부족') ? 'insufficient_resources' : decision.reason },
@@ -142,7 +106,11 @@ export function advanceHeroAutonomy(source: VillageSaveEnvelope, now: number): H
   }
   if (decision.realmId) {
     const result = startExpedition(source, decision.realmId, now, source.run.policy, decision.assignedAgentId);
-    if (result.ok) return { save: result.save, decision, started: true };
+    if (result.ok) {
+      recordVillageAIDecision(result.save, decision, now, decision.confidence);
+      touchSave(result.save, now);
+      return { save: result.save, decision, started: true };
+    }
     return {
       save: source,
       decision: { ...decision, reason: result.error.includes('부족') ? 'insufficient_resources' : decision.reason },

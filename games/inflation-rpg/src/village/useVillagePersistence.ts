@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   advanceHeroAutonomy,
+  advanceVillageWorld,
   completeFacilityTasks,
 } from './domain';
 import {
@@ -66,15 +67,19 @@ export function useVillagePersistence({ onOfflineResult }: VillagePersistenceOpt
     updatePresentationClock(timestamp);
     const current = saveRef.current;
     const result = simulateOfflineProgress(current, timestamp);
-    recordFinishedVillageExpedition(current, result.save);
-    const shouldPersist = result.save !== current || storageStatus !== 'valid';
+    const world = advanceVillageWorld(result.save, timestamp);
+    for (const event of world.generatedEvents) {
+      recordVillageSaveMetric(world.save, 'world_event_generated', `world_event_generated:${event.id}`, event.createdAt, event.type);
+    }
+    recordFinishedVillageExpedition(current, world.save);
+    const shouldPersist = world.save !== current || storageStatus !== 'valid';
     if (shouldPersist) {
-      saveRef.current = result.save;
-      setSave(result.save);
-      const persisted = persistVillageSave(result.save);
+      saveRef.current = world.save;
+      setSave(world.save);
+      const persisted = persistVillageSave(world.save);
       setStorageStatus((previous) => previous === 'invalid' ? previous : persisted ? 'valid' : 'unavailable');
     }
-    const parkedRiskyExpedition = result.save.run.expedition?.status === 'awaiting_confirmation'
+    const parkedRiskyExpedition = world.save.run.expedition?.status === 'awaiting_confirmation'
       && current.run.expedition?.status !== 'awaiting_confirmation';
     const hasOfflineResult = result.summary.processedSeconds > 0
       || result.summary.clockAnomaly !== null
@@ -114,14 +119,38 @@ export function useVillagePersistence({ onOfflineResult }: VillagePersistenceOpt
       || Boolean(current.run.expedition
         && current.run.expedition.status === 'traveling'
         && current.run.expedition.completesAt <= timestamp);
-    if (hasDueWork) {
-      const settled = completeFacilityTasks(current, timestamp, 1, false, false, false);
-      const autonomous = advanceHeroAutonomy(settled, timestamp);
+    const settled = hasDueWork
+      ? completeFacilityTasks(current, timestamp, 1, false, false, false)
+      : current;
+    const world = advanceVillageWorld(settled, timestamp);
+    for (const event of world.generatedEvents) {
+      recordVillageSaveMetric(world.save, 'world_event_generated', `world_event_generated:${event.id}`, event.createdAt, event.type);
+    }
+    if (hasDueWork || world.save !== settled) {
+      const autonomous = advanceHeroAutonomy(world.save, timestamp);
+      if (autonomous.started) {
+        recordVillageSaveMetric(
+          autonomous.save,
+          'hero_ai_action_started',
+          `hero_ai_action_started:${autonomous.save.updatedAt}:${autonomous.decision.action}:${autonomous.decision.realmId ?? autonomous.decision.facilityId ?? 'rest'}`,
+          autonomous.save.updatedAt,
+          autonomous.decision.reason,
+        );
+      }
       commit(autonomous.save);
       return;
     }
-    const autonomous = advanceHeroAutonomy(current, timestamp);
-    if (autonomous.started) commit(autonomous.save);
+    const autonomous = advanceHeroAutonomy(world.save, timestamp);
+    if (autonomous.started) {
+      recordVillageSaveMetric(
+        autonomous.save,
+        'hero_ai_action_started',
+        `hero_ai_action_started:${autonomous.save.updatedAt}:${autonomous.decision.action}:${autonomous.decision.realmId ?? autonomous.decision.facilityId ?? 'rest'}`,
+        autonomous.save.updatedAt,
+        autonomous.decision.reason,
+      );
+      commit(autonomous.save);
+    }
   }, [commit, settleOffline, updatePresentationClock]);
 
   const startFreshSave = useCallback((): boolean => {

@@ -18,6 +18,13 @@ export {
   decideHeroAction,
   getHeroNextAction,
 } from './domain/hero/autonomy';
+export {
+  advanceVillageWorld,
+  getPendingVillageWorldEvents,
+  resolveVillageWorldEvent,
+} from './domain/ai/events';
+export type { VillageWorldAdvanceResult, WorldEventDomainResult } from './domain/ai/events';
+export { getHeroDecisionAnalysis } from './domain/ai/decision';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
 export {
   getBlacksmithEquipmentOutput,

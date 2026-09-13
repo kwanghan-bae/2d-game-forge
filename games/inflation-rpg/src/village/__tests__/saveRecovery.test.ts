@@ -7,6 +7,7 @@ import {
   startFreshVillageSave,
   Village_RECOVERY_BACKUP_KEY,
   Village_SAVE_KEY,
+  Village_SCHEMA_VERSION,
 } from '../save';
 import { startExpedition, startFacilityTask } from '../domain';
 import { Village_MAX_SAGA_ENTRIES } from '../types';
@@ -50,6 +51,32 @@ describe('Village save recovery boundary', () => {
     expect(readVillageSave(storage)).toEqual({ status: 'invalid', reason: 'invalid_schema' });
     expect(storage.dump(Village_SAVE_KEY)).toBe(raw);
     expect(loadVillageSave(storage)).toBeNull();
+  });
+
+  it('upgrades a valid schema 2 save in the canonical slot to schema 3 once', () => {
+    const current = createInitialVillageSave(6540);
+    const { simulation: _simulation, ai: _ai, ...legacyMeta } = current.meta;
+    void _simulation;
+    void _ai;
+    const legacy = JSON.parse(JSON.stringify({
+      ...current,
+      schemaVersion: 2,
+      meta: legacyMeta,
+    })) as unknown;
+    const storage = memoryStorage({ [Village_SAVE_KEY]: JSON.stringify(legacy) });
+
+    const loaded = readVillageSave(storage);
+
+    expect(loaded.status).toBe('valid');
+    if (loaded.status !== 'valid') return;
+    expect(loaded.save.schemaVersion).toBe(Village_SCHEMA_VERSION);
+    expect(loaded.save.meta.ai).toBeDefined();
+    expect(loaded.save.meta.simulation).toMatchObject({
+      seed: loaded.save.meta.ai.seed,
+      tick: 0,
+      eventHistory: [],
+    });
+    expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(Village_SCHEMA_VERSION);
   });
 
   it('isolates arbitrary JSON payloads without throwing during recovery', () => {
@@ -216,7 +243,7 @@ describe('Village save recovery boundary', () => {
     const fresh = startFreshVillageSave(storage, 123);
 
     expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBe(raw);
-    expect(loadVillageSave(storage)).toMatchObject({ schemaVersion: 2, run: { hero: { name: fresh.run.hero.name } } });
+    expect(loadVillageSave(storage)).toMatchObject({ schemaVersion: Village_SCHEMA_VERSION, run: { hero: { name: fresh.run.hero.name } } });
     expect(fresh.meta.sagaEntries[0]?.title).toBe('영원한 후원자의 탄생');
   });
 
@@ -228,7 +255,7 @@ describe('Village save recovery boundary', () => {
 
     expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBeUndefined();
     expect(storage.dump('unrelated-save-record')).toBe(unrelatedRaw);
-    expect(storage.dump(Village_SAVE_KEY)).toContain('"schemaVersion":2');
+    expect(storage.dump(Village_SAVE_KEY)).toContain(`"schemaVersion":${Village_SCHEMA_VERSION}`);
   });
 
   it('does not alter a valid save when recovery is not needed', () => {
@@ -236,7 +263,7 @@ describe('Village save recovery boundary', () => {
     const raw = JSON.stringify(valid);
     const storage = memoryStorage({ [Village_SAVE_KEY]: raw });
 
-    expect(startFreshVillageSave(storage, 789)).toMatchObject({ schemaVersion: 2 });
+    expect(startFreshVillageSave(storage, 789)).toMatchObject({ schemaVersion: Village_SCHEMA_VERSION });
     expect(storage.dump(Village_RECOVERY_BACKUP_KEY)).toBeUndefined();
     expect(loadVillageSave(storage)?.run.hero.name).toBe(valid.run.hero.name);
   });

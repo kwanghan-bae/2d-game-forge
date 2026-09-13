@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createInitialVillageSave, persistVillageSave, Village_RECOVERY_BACKUP_KEY, Village_SAVE_KEY } from '../save';
+import { createInitialVillageSave, persistVillageSave, Village_RECOVERY_BACKUP_KEY, Village_SAVE_KEY, Village_SCHEMA_VERSION } from '../save';
 import { completeFacilityTasks, startExpedition, startFacilityTask } from '../domain';
 import { getRealmVictoryEntry } from '../story';
 import { VillageMonetizationAdapter } from '../monetization';
@@ -914,7 +914,7 @@ describe('useVillageGame save recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'fresh' }));
     await waitFor(() => expect(screen.getByTestId('storage-status')).toHaveTextContent('valid'));
     expect(localStorage.getItem(Village_RECOVERY_BACKUP_KEY)).toBe(raw);
-    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(2);
+    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(Village_SCHEMA_VERSION);
   });
 
   it('continues offline settlement after recovery creates a fresh save', () => {
@@ -1007,7 +1007,7 @@ describe('useVillageGame save recovery', () => {
 
     expect(screen.getByTestId('story-choice')).toHaveTextContent('none');
     expect(screen.getByTestId('story-realms')).toHaveTextContent('sacred_fields,deep_forest,underworld');
-    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(2);
+    expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(Village_SCHEMA_VERSION);
     expect(JSON.parse(localStorage.getItem(Village_SAVE_KEY) ?? '{}').meta.storyChoice).toBeUndefined();
   });
 

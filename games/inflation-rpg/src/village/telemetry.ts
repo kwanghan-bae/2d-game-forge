@@ -11,6 +11,9 @@ export const Village_METRIC_NAMES = [
   'expedition_finished',
   'offline_summary_opened',
   'story_choice_made',
+  'hero_ai_action_started',
+  'world_event_generated',
+  'world_event_resolved',
 ] as const;
 
 export type VillageMetricName = typeof Village_METRIC_NAMES[number];

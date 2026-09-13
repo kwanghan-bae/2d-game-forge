@@ -9,6 +9,7 @@ import type {
 } from '../../types';
 import { getVillageHeroPower } from '../hero/progression';
 import { MAX_ECONOMY_VALUE, positiveFiniteLevel } from '../shared/guards';
+import { getVillageAIState } from '../ai/state';
 
 const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
 
@@ -59,6 +60,8 @@ export function getExpeditionSuccessChance(
       : 0;
   const mudangLevel = positiveFiniteLevel(source.meta.facilities.mudang?.level);
   const mudangBlessing = Math.min(0.06, Math.max(0, mudangLevel - 1) * 0.02);
+  const worldThreat = getVillageAIState(source).world.threatByRealm[realmId];
+  const worldThreatPenalty = Math.max(0, worldThreat - realm.risk) * 0.15;
   const heroHpMax = typeof source.run.hero.hpMax === 'number'
     && Number.isFinite(source.run.hero.hpMax)
     && source.run.hero.hpMax > 0
@@ -70,7 +73,7 @@ export function getExpeditionSuccessChance(
   const healthPenalty = heroHp / heroHpMax < 0.35 ? 0.15 : 0;
   return clampSuccessChance(
     SUCCESS_BASE_BY_TIER[encounter.tier] + readinessBonus + guideBonus + policyBonus
-      + mudangBlessing - encounter.risk * 0.05 - healthPenalty,
+      + mudangBlessing - encounter.risk * 0.05 - worldThreatPenalty - healthPenalty,
   );
 }
 

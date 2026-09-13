@@ -1,6 +1,12 @@
 import { HeroLifecycle } from '../hero/HeroLifecycle';
 import { FACILITY_IDS, AGENT_DEFINITIONS, getVillageRealmDefinition, REALM_IDS } from './data';
 import { completeFacilityTasks } from './domain';
+import {
+  createVillageAIState,
+  createVillageSimulationState,
+  isValidVillageAIState,
+  isValidVillageSimulationState,
+} from './domain/ai/state';
 import { getVillageEquipmentDefinition } from './equipment';
 import type {
   FacilityState,
@@ -10,12 +16,17 @@ import type {
   VillageHeroSnapshot,
   VillageSaveEnvelope,
 } from './types';
-import { Village_MAX_INTERVENTION_CHARGES, Village_MAX_SAGA_ENTRIES } from './types';
+import {
+  Village_MAX_INTERVENTION_CHARGES,
+  Village_MAX_SAGA_ENTRIES,
+  Village_MAX_WORLD_EVENT_HISTORY,
+} from './types';
 
 export { Village_MAX_INTERVENTION_CHARGES } from './types';
 
 export const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-save-v2';
-export const Village_SCHEMA_VERSION = 2 as const;
+export const Village_SCHEMA_VERSION = 3 as const;
+const Village_PREVIOUS_SCHEMA_VERSION = 2 as const;
 export const Village_OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
 // A normal visible tick runs every second. A larger gap is treated like a
 // background resume so live refresh cannot bypass the offline safety rules.
@@ -137,8 +148,11 @@ function isSagaEntryRecord(value: unknown): boolean {
     && ['birth', 'facility', 'expedition', 'rejuvenation', 'milestone'].includes(value.kind as string);
 }
 
-function isVillageSaveEnvelope(value: unknown): value is VillageSaveEnvelope {
-  if (!isRecord(value) || value.schemaVersion !== Village_SCHEMA_VERSION) return false;
+function isVillageSaveEnvelope(
+  value: unknown,
+  expectedSchemaVersion: typeof Village_SCHEMA_VERSION | typeof Village_PREVIOUS_SCHEMA_VERSION = Village_SCHEMA_VERSION,
+): value is VillageSaveEnvelope {
+  if (!isRecord(value) || value.schemaVersion !== expectedSchemaVersion) return false;
   if (!isPersistableNonNegativeNumber(value.createdAt) || !isPersistableNonNegativeNumber(value.updatedAt) || !isPersistableNonNegativeNumber(value.lastProcessedAt)
     || value.updatedAt < value.createdAt
     || value.lastProcessedAt < value.createdAt
@@ -183,6 +197,13 @@ function isVillageSaveEnvelope(value: unknown): value is VillageSaveEnvelope {
   const settings = meta.settings;
   if (!isRecord(settings) || !isPersistableNonNegativeNumber(settings.music) || settings.music > 1
     || !isPersistableNonNegativeNumber(settings.sfx) || settings.sfx > 1 || typeof settings.muted !== 'boolean') return false;
+  if (expectedSchemaVersion === Village_SCHEMA_VERSION
+    && (!isValidVillageAIState(meta.ai)
+      || !isValidVillageSimulationState(meta.simulation)
+      || meta.ai.seed !== meta.simulation.seed
+      || meta.ai.world.lastSimulatedDay !== meta.simulation.tick)) return false;
+  if (expectedSchemaVersion === Village_PREVIOUS_SCHEMA_VERSION
+    && meta.ai !== undefined && !isValidVillageAIState(meta.ai)) return false;
   const agentIds = meta.agents.map((agent) => isRecord(agent) ? agent.id : undefined);
   if (meta.agents.length !== Object.keys(AGENT_DEFINITIONS).length
     || new Set(agentIds).size !== meta.agents.length
@@ -391,6 +412,8 @@ export function createInitialVillageSave(seed: number): VillageSaveEnvelope {
         text: `${initialHero(seed).name}이(가) 신의 마을에서 첫 발을 내디뎠다.`,
       }],
       settings: { music: 0.7, sfx: 0.8, muted: false },
+      simulation: createVillageSimulationState(seed, now),
+      ai: createVillageAIState(seed, now),
     },
     run: {
       hero: initialHero(seed),
@@ -403,10 +426,37 @@ export function createInitialVillageSave(seed: number): VillageSaveEnvelope {
 }
 
 function normalizeLoadedVillageSave(save: VillageSaveEnvelope): VillageSaveEnvelope {
-  if (save.meta.sagaEntries.length <= Village_MAX_SAGA_ENTRIES) return save;
+  if (save.meta.sagaEntries.length <= Village_MAX_SAGA_ENTRIES
+    && save.meta.simulation.eventHistory.length <= Village_MAX_WORLD_EVENT_HISTORY) return save;
   const next = JSON.parse(JSON.stringify(save)) as VillageSaveEnvelope;
   next.meta.sagaEntries = next.meta.sagaEntries.slice(0, Village_MAX_SAGA_ENTRIES);
+  next.meta.simulation.eventHistory = next.meta.simulation.eventHistory.slice(0, Village_MAX_WORLD_EVENT_HISTORY);
   return next;
+}
+
+function migrateVillageSaveV2ToV3(value: unknown): VillageSaveEnvelope {
+  const legacy = JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
+  const createdAt = isPersistableNonNegativeNumber(legacy.createdAt) ? legacy.createdAt : 0;
+  const updatedAt = isPersistableNonNegativeNumber(legacy.updatedAt) ? legacy.updatedAt : createdAt;
+  const legacyMeta = isRecord(legacy.meta) ? legacy.meta : {};
+  const legacyAI = isValidVillageAIState(legacyMeta.ai)
+    ? legacyMeta.ai
+    : createVillageAIState(createdAt, createdAt);
+  const migrated: Record<string, unknown> = {
+    ...legacy,
+    schemaVersion: Village_SCHEMA_VERSION,
+    meta: {
+      ...legacyMeta,
+      simulation: createVillageSimulationState(
+        legacyAI.seed,
+        createdAt,
+        legacyAI.world.lastSimulatedDay,
+        updatedAt,
+      ),
+      ai: legacyAI,
+    },
+  };
+  return migrated as unknown as VillageSaveEnvelope;
 }
 
 function resourceDelta(
@@ -575,8 +625,20 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
     return { status: 'invalid', reason: 'malformed_json' };
   }
 
-  if (!isVillageSaveEnvelope(parsed)) return { status: 'invalid', reason: 'invalid_schema' };
-  const save = normalizeLoadedVillageSave(parsed);
+  if (isVillageSaveEnvelope(parsed)) {
+    const save = normalizeLoadedVillageSave(parsed);
+    return { status: 'valid', save };
+  }
+  if (!isVillageSaveEnvelope(parsed, Village_PREVIOUS_SCHEMA_VERSION)) {
+    return { status: 'invalid', reason: 'invalid_schema' };
+  }
+  const save = normalizeLoadedVillageSave(migrateVillageSaveV2ToV3(parsed));
+  if (!isVillageSaveEnvelope(save)) return { status: 'invalid', reason: 'invalid_schema' };
+  try {
+    storage.setItem(Village_SAVE_KEY, JSON.stringify(save));
+  } catch {
+    // A valid v2 save remains usable in memory even when the one-time upgrade cannot be written.
+  }
   return { status: 'valid', save };
 }
 

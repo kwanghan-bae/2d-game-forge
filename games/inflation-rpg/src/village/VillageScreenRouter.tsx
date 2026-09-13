@@ -32,6 +32,8 @@ export function VillageScreenRouter({ screen, game, onNavigate, onboardingSummar
         onUpgrade={game.upgrade}
         onNavigate={onNavigate}
         onIntervention={game.intervene}
+        pendingWorldEvents={game.pendingWorldEvents}
+        onResolveWorldEvent={game.resolveWorldEvent}
         monetizationAvailable={game.monetizationAvailable}
         adFree={game.adFree}
         adsToday={game.adsToday}

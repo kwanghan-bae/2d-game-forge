@@ -4,6 +4,7 @@ import {
   loadVillageSave,
   persistVillageSave,
   simulateOfflineProgress,
+  Village_SCHEMA_VERSION,
 } from '../save';
 import {
   completeFacilityTasks,
@@ -18,7 +19,7 @@ describe('Village save and domain façade', () => {
     vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
     const save = createInitialVillageSave(42);
 
-    expect(save.schemaVersion).toBe(2);
+    expect(save.schemaVersion).toBe(Village_SCHEMA_VERSION);
     expect(save.meta.currencies).toEqual({ spirit: 100, gold: 100, materials: 12, rift: 0 });
     expect(Object.keys(save.meta.facilities)).toHaveLength(7);
     expect(save.meta.agents.map((agent) => agent.id)).toEqual(['blacksmith', 'mudang', 'guide']);
@@ -27,6 +28,7 @@ describe('Village save and domain façade', () => {
     expect(save.run.lastExpeditionResult).toBeNull();
     expect(save.run.hero.realmId).toBe('sacred_fields');
     expect(save.run.hero.actionCount).toBe(185);
+    expect(save.meta.simulation).toMatchObject({ seed: 42, tick: 0, eventHistory: [] });
   });
 
   it('round-trips valid Village saves and rejects malformed schema data', () => {
@@ -38,7 +40,7 @@ describe('Village save and domain façade', () => {
     } as unknown as Storage;
 
     persistVillageSave(save, fakeStorage);
-    expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: 2, run: { hero: { name: save.run.hero.name } } });
+    expect(loadVillageSave(fakeStorage)).toMatchObject({ schemaVersion: Village_SCHEMA_VERSION, run: { hero: { name: save.run.hero.name } } });
 
     const { lastExpeditionResult: _removedResult, ...withoutCurrentResult } = save.run;
     void _removedResult;

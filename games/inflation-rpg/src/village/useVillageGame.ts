@@ -4,7 +4,9 @@ import {
   confirmPendingExpedition,
   confirmNextRealmUnlock,
   chooseStoryChoice as chooseStoryChoiceDomain,
+  getPendingVillageWorldEvents,
   rejuvenateHero,
+  resolveVillageWorldEvent,
   restAgent,
   setVillagePolicy,
   startExpedition,
@@ -124,6 +126,15 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     else setMessage(result.error);
   }, [commit]);
 
+  const resolveWorldEvent = useCallback((eventId: string, choiceId: string) => {
+    const result = resolveVillageWorldEvent(saveRef.current, eventId, choiceId, Date.now());
+    if (result.ok) {
+      commit(result.save, `${result.event.title}의 선택을 사가에 기록했습니다.`);
+      recordVillageSaveMetric(result.save, 'world_event_resolved', `world_event_resolved:${result.event.id}`, result.save.updatedAt, result.choice.id);
+    }
+    else setMessage(result.error);
+  }, [commit]);
+
   const confirmRun = useCallback(() => {
     const current = saveRef.current;
     if (current.run.expedition?.status !== 'awaiting_confirmation') return;
@@ -162,6 +173,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
   return {
     save,
     storyChoice: getAvailableStoryChoice(save),
+    pendingWorldEvents: getPendingVillageWorldEvents(save),
     storageStatus,
     storageIssue,
     now,
@@ -181,6 +193,7 @@ export function useVillageGame(monetization?: VillageMonetizationAdapter) {
     intervene,
     startRun,
     chooseStoryChoice: chooseStory,
+    resolveWorldEvent,
     confirmRun,
     confirmUnlock,
     upgrade,

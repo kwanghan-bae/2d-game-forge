@@ -1,6 +1,13 @@
 export type VillageCurrencyKey = 'spirit' | 'gold' | 'materials' | 'rift';
 export type VillagePolicy = 'aggression' | 'hoarding' | 'training';
 export type InterventionType = 'heal' | 'retreat';
+export type VillageSeason = 'spring' | 'summer' | 'autumn' | 'winter';
+export type VillageWeather = 'clear' | 'rain' | 'fog' | 'wind';
+export type VillageHeroPersonalityKey = 'courage' | 'caution' | 'compassion' | 'curiosity';
+export type VillageHeroGoal = 'recover' | 'prepare' | 'explore' | 'support';
+export type VillageMemoryTag = 'victory' | 'defeat' | 'support' | 'event' | 'choice';
+export type VillageWorldEventType = 'weather' | 'social' | 'supply' | 'omen';
+export type VillageWorldEventOutcome = 'chosen' | 'expired';
 export type FacilityId =
   | 'temple'
   | 'recovery'
@@ -17,6 +24,113 @@ export type StoryChoiceOptionId = 'protect_flame' | 'release_goblin';
 export const Village_MAX_SAGA_ENTRIES = 200;
 export const Village_MAX_INTERVENTION_CHARGES = 3;
 export const Village_HERO_AUTONOMY_DELAY_MS = 15_000;
+export const Village_MAX_AI_MEMORIES = 50;
+export const Village_MAX_PENDING_WORLD_EVENTS = 3;
+export const Village_MAX_RESOLVED_WORLD_EVENTS = 120;
+export const Village_MAX_WORLD_EVENT_HISTORY = 120;
+export const Village_SIMULATION_VERSION = 1 as const;
+
+export interface VillageHeroPersonality {
+  courage: number;
+  caution: number;
+  compassion: number;
+  curiosity: number;
+}
+
+export interface VillageHeroNeeds {
+  fatigue: number;
+  morale: number;
+  purpose: number;
+}
+
+export interface VillageMemory {
+  id: string;
+  tag: VillageMemoryTag;
+  summary: string;
+  valence: number;
+  salience: number;
+  createdAt: number;
+}
+
+export interface VillageAIWorldState {
+  day: number;
+  season: VillageSeason;
+  weather: VillageWeather;
+  prosperity: number;
+  threatByRealm: Record<RealmId, number>;
+  lastSimulatedDay: number;
+}
+
+export interface VillageAILastDecision {
+  action: HeroAction;
+  reason: HeroAutonomyReason;
+  confidence: number;
+  decidedAt: number;
+}
+
+export interface VillageAIHeroState {
+  personality: VillageHeroPersonality;
+  needs: VillageHeroNeeds;
+  currentGoal: VillageHeroGoal;
+  memories: VillageMemory[];
+  lastDecision: VillageAILastDecision | null;
+}
+
+export interface VillageWorldEventEffects {
+  currencyDelta?: Partial<Record<VillageCurrencyKey, number>>;
+  heroMoraleDelta?: number;
+  heroFatigueDelta?: number;
+  heroPurposeDelta?: number;
+  agentTrustDelta?: Partial<Record<SupportAgentId, number>>;
+  agentFatigueDelta?: Partial<Record<SupportAgentId, number>>;
+  realmThreatDelta?: Partial<Record<RealmId, number>>;
+  prosperityDelta?: number;
+}
+
+export interface VillageWorldEventChoice {
+  id: string;
+  title: string;
+  text: string;
+  effects: VillageWorldEventEffects;
+}
+
+export interface VillageWorldEvent {
+  id: string;
+  type: VillageWorldEventType;
+  day: number;
+  createdAt: number;
+  expiresAt: number;
+  title: string;
+  cause: string;
+  prompt: string;
+  choices: VillageWorldEventChoice[];
+}
+
+export interface VillageWorldEventRecord {
+  eventId: string;
+  type: VillageWorldEventType;
+  day: number;
+  choiceId: string | null;
+  outcome: VillageWorldEventOutcome;
+  resolvedAt: number;
+}
+
+export interface VillageSimulationState {
+  version: typeof Village_SIMULATION_VERSION;
+  seed: number;
+  tick: number;
+  lastSimulatedAt: number;
+  eventHistory: VillageWorldEventRecord[];
+}
+
+export interface VillageAIState {
+  version: 1;
+  seed: number;
+  world: VillageAIWorldState;
+  hero: VillageAIHeroState;
+  pendingEvents: VillageWorldEvent[];
+  resolvedEventIds: string[];
+}
 
 export interface RealmEncounterDefinition {
   id: string;
@@ -147,6 +261,8 @@ export interface VillageMetaState {
   unlockedRealms: RealmId[];
   sagaEntries: SagaEntry[];
   settings: VillageSettings;
+  simulation: VillageSimulationState;
+  ai: VillageAIState;
 }
 
 export interface VillageSettings {
@@ -164,7 +280,7 @@ export interface VillageRunState {
 }
 
 export interface VillageSaveEnvelope {
-  schemaVersion: 2;
+  schemaVersion: 3;
   createdAt: number;
   updatedAt: number;
   lastProcessedAt: number;
@@ -204,6 +320,7 @@ export type HeroAutonomyReason =
   | 'active_expedition'
   | 'result_confirmation'
   | 'realm_confirmation'
+  | 'world_event'
   | 'insufficient_resources'
   | 'invalid_clock'
   | 'no_action';
@@ -214,6 +331,10 @@ export interface HeroAutonomyDecision {
   realmId: RealmId | null;
   assignedAgentId: SupportAgentId | null;
   reason: HeroAutonomyReason;
+  /** Optional explanation fields used by the human-readable AI forecast. */
+  score?: number;
+  confidence?: number;
+  rationale?: string;
 }
 
 export interface HeroAutonomyResult {

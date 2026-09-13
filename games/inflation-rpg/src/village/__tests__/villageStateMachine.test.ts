@@ -11,6 +11,7 @@ import {
   upgradeFacility,
   useIntervention,
 } from '../domain';
+import { Village_SCHEMA_VERSION } from '../save';
 import {
   createInitialVillageSave,
   loadVillageSave,
@@ -115,7 +116,7 @@ describe('Village save state-machine invariants', () => {
     for (const seed of [11, 29, 47, 83, 101, 137, 211, 307]) {
       const save = runRandomizedSaveSequence(seed);
 
-      expect(save.schemaVersion).toBe(2);
+      expect(save.schemaVersion).toBe(Village_SCHEMA_VERSION);
       expect(save.updatedAt).toBeGreaterThanOrEqual(save.createdAt);
       expect(save.lastProcessedAt).toBeGreaterThanOrEqual(save.createdAt);
       expect(save.lastProcessedAt).toBeLessThanOrEqual(save.updatedAt);

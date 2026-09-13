@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const GAME_URL = '/games/inflation-rpg';
 const Village_SAVE_KEY = 'shin-ui-eternal-sponsor-save-v2';
+const Village_SCHEMA_VERSION = 3;
 const Village_RECOVERY_BACKUP_KEY = `${Village_SAVE_KEY}-recovery-backup`;
 
 test.describe('Village — 신의 마을 vertical slice', () => {
@@ -29,6 +30,39 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '원정 준비 →' }).click();
     await page.getByRole('button', { name: '길잡이와 출발' }).click();
     await expect(page.getByTestId('village-active-expedition')).toContainText('원정 진행 중');
+  });
+
+  test('게임 내 하루가 지나면 세계 사건을 선택하고 기억에 남긴다', async ({ page }) => {
+    await page.goto(GAME_URL);
+    await page.evaluate((key) => localStorage.removeItem(key), Village_SAVE_KEY);
+    await page.reload();
+    await page.waitForFunction((key) => Boolean(localStorage.getItem(key)), Village_SAVE_KEY);
+    await page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) throw new Error('save was not created');
+      const save = JSON.parse(raw) as { createdAt: number; updatedAt: number; lastProcessedAt: number };
+      const now = Date.now();
+      save.createdAt = now - 11 * 60 * 1000;
+      save.updatedAt = now;
+      save.lastProcessedAt = now;
+      localStorage.setItem(key, JSON.stringify(save));
+    }, Village_SAVE_KEY);
+    await page.reload();
+
+    const events = page.getByTestId('village-world-events');
+    await expect(events).toBeVisible();
+    await expect(events).toContainText('선택 필요');
+    await events.getByRole('button').first().click();
+    await expect(page.getByTestId('village-world-events')).toHaveCount(0);
+    await expect.poll(async () => page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const save = JSON.parse(raw) as { meta?: { ai?: { pendingEvents?: unknown[]; hero?: { memories?: Array<{ tag?: string }> } } } };
+      return {
+        pending: save.meta?.ai?.pendingEvents?.length ?? -1,
+        memoryTag: save.meta?.ai?.hero?.memories?.[0]?.tag ?? null,
+      };
+    }, Village_SAVE_KEY)).toEqual({ pending: 0, memoryTag: 'event' });
   });
 
   test('설정 화면에서 Village 음소거 상태를 저장한다', async ({ page }) => {
@@ -137,7 +171,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
     await page.getByRole('button', { name: '새 현재 게임 저장 시작' }).click();
     await expect(page.getByTestId('village-town-hub')).toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), Village_RECOVERY_BACKUP_KEY)).toBe(raw);
-    expect(JSON.parse(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(2);
+    expect(JSON.parse(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY) ?? '{}').schemaVersion).toBe(Village_SCHEMA_VERSION);
   });
 
   test('Village 부팅은 관련 없는 저장 데이터를 읽지 않는다', async ({ page }) => {
@@ -152,7 +186,7 @@ test.describe('Village — 신의 마을 vertical slice', () => {
 
     await expect(page.getByTestId('village-town-hub')).toBeVisible();
     expect(await page.evaluate((key) => localStorage.getItem(key), unrelatedKey)).toBe(unrelatedRaw);
-    expect(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY)).toContain('"schemaVersion":2');
+    expect(await page.evaluate((key) => localStorage.getItem(key), Village_SAVE_KEY)).toContain(`"schemaVersion":${Village_SCHEMA_VERSION}`);
   });
 
   test('신의 개입으로 영웅을 즉시 회복하고 충전을 소비한다', async ({ page }) => {

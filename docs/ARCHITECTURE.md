@@ -76,7 +76,9 @@ commands, module-boundaries 파일에 둔다.
 저장 경계는 `village/save.ts` 하나로 모은다. 현재 canonical key는
 `shin-ui-eternal-sponsor-save-v2`이며, 유효하지 않은 저장은 복구 사본을
 남긴 뒤 새 저장을 만들 수 있다. 다른 제품이나 과거 키를 자동으로 읽거나
-가져오지 않으며 schema 2, clone semantics, 오류와 결과 shape를 유지한다.
+가져오지 않으며 현재 schema 3, clone semantics, 오류와 결과 shape를 유지한다.
+유효한 현재 schema 2 저장만 canonical 슬롯에서 한 번 schema 3으로 승격하며,
+시뮬레이션 tick·결정형 seed·bounded 사건 처리 저널을 별도 저장한다.
 
 RPG 고유 계약은 현재 게임 workspace에 남긴다. 별도 두 번째 게임에서 같은
 계약이 실제로 필요하다는 증거가 생기기 전에는 `@forge/core`로 승격하지 않는다.

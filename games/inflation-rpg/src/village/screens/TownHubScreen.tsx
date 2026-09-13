@@ -3,7 +3,7 @@ import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getN
 import { getVillageEquipmentDefinition, getVillageEquipmentName } from '../equipment';
 import { Village_DAILY_REWARDED_LIMIT } from '../monetization';
 import { useVillageScreenHeadingFocus } from '../useVillageScreenHeadingFocus';
-import type { FacilityId, FacilityTask, InterventionType, RealmId, SupportAgentId, VillagePolicy, VillageSaveEnvelope } from '../types';
+import type { FacilityId, FacilityTask, InterventionType, RealmId, SupportAgentId, VillagePolicy, VillageSaveEnvelope, VillageWorldEvent } from '../types';
 import { Village_MAX_INTERVENTION_CHARGES } from '../types';
 
 interface Props {
@@ -18,6 +18,8 @@ interface Props {
   onUpgrade: (facilityId: FacilityId) => void;
   onNavigate: (screen: 'hero' | 'expedition' | 'saga') => void;
   onIntervention: (type: InterventionType) => void;
+  pendingWorldEvents?: readonly VillageWorldEvent[];
+  onResolveWorldEvent?: (eventId: string, choiceId: string) => void;
   monetizationAvailable: boolean;
   adFree: boolean;
   adsToday: number;
@@ -152,7 +154,7 @@ function getTownObjective(save: VillageSaveEnvelope): string {
   return '저승의 사가를 완성하세요. 시설을 강화하고 정책과 장비를 조정해 영원한 영웅의 마지막 원정을 준비하세요.';
 }
 
-export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, monetizationAvailable, adFree, adsToday, adFreePurchasePending = false, instantTaskPendingFacilities = [], interventionChargePending = false, onInterventionCharge, onBuyAdFree }: Props) {
+export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancelTask, onRestAgent, onInstantTask, onRefresh, onUpgrade, onNavigate, onIntervention, pendingWorldEvents = [], onResolveWorldEvent, monetizationAvailable, adFree, adsToday, adFreePurchasePending = false, instantTaskPendingFacilities = [], interventionChargePending = false, onInterventionCharge, onBuyAdFree }: Props) {
   const titleRef = useVillageScreenHeadingFocus();
   const hero = save.run.hero;
   const nextAction = getHeroNextAction(save);
@@ -181,6 +183,27 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
           <p>{objective}</p>
         </section>
       </div>
+
+      {pendingWorldEvents.length > 0 && <section className="village-panel" data-testid="village-world-events" aria-labelledby="village-world-events-title">
+        <div className="village-panel-head">
+          <h2 id="village-world-events-title">마을에 일어난 일</h2>
+          <span className="village-action">선택 필요</span>
+        </div>
+        {pendingWorldEvents.map((event) => <article key={event.id} className="village-task village-task--blocked">
+          <strong>{event.title}</strong>
+          <p>{event.cause}</p>
+          <p>{event.prompt}</p>
+          <div className="village-button-row">
+            {event.choices.map((choice) => <button
+              key={choice.id}
+              type="button"
+              className="village-btn village-btn--primary"
+              onClick={() => onResolveWorldEvent?.(event.id, choice.id)}
+            >{choice.title}</button>)}
+          </div>
+        </article>)}
+        <p className="village-muted">사건을 선택하기 전에는 영웅이 다음 행동을 결정하지 않습니다.</p>
+      </section>}
 
       <section className="village-panel">
         <h2>후원 정책</h2>

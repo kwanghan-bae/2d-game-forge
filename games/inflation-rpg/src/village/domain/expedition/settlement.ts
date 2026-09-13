@@ -12,6 +12,7 @@ import type {
   VillageSaveEnvelope,
 } from '../../types';
 import type { DomainResult } from '../contracts';
+import { recordVillageAIOutcome } from '../ai/state';
 import { getBlacksmithEquipmentRecommendation } from '../facility/preview';
 import { getVillageHeroPower, saturatingAdd } from '../hero/progression';
 import { applyAgentTrustGain } from '../shared/agentTrust';
@@ -212,6 +213,13 @@ function resolveExpedition(
       encountersCleared,
       totalEncounterCount,
     };
+    recordVillageAIOutcome(
+      save,
+      won ? 'victory' : 'defeat',
+      `${realm.nameKR} 원정에서 ${won ? '승리' : '패배'}했다.`,
+      won ? 0.8 : -0.8,
+      eventAt,
+    );
     if (won) {
       give(save, realm.reward, policyBonus * efficiency);
       save.run.hero.realmId = expedition.realmId;

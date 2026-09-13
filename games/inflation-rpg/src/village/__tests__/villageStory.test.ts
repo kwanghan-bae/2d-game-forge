@@ -7,7 +7,7 @@ import {
   getRejuvenationStoryEntry,
   hasVillageEpilogue,
 } from '../story';
-import { createInitialVillageSave } from '../save';
+import { createInitialVillageSave, Village_SCHEMA_VERSION } from '../save';
 import { Village_MAX_SAGA_ENTRIES } from '../types';
 import type { ExpeditionResult, SagaEntry } from '../types';
 
@@ -172,7 +172,7 @@ describe('Village deep forest story choice', () => {
     const selected = chooseStoryChoice(source, 'protect_flame', STORY_NOW);
     expect(selected.ok).toBe(true);
     if (!selected.ok) return;
-    expect(selected.save.schemaVersion).toBe(2);
+    expect(selected.save.schemaVersion).toBe(Village_SCHEMA_VERSION);
     expect(selected.save.meta.unlockedRealms).toContain('underworld');
     expect(selected.save.meta.currencies.rift).toBe(1);
     expect(selected.save.meta.agents.find((agent) => agent.id === 'mudang')?.trust).toBe(35);
