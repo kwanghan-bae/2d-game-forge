@@ -88,7 +88,12 @@ seed 기반 기본값을 한 번 채우며, scheduler는 세계 tick에서만 �
 추가로 보관한다. 실제 세계 상태와 에이전트의 인식을 분리하고, 관찰 노이즈와
 신뢰도는 seed로 재현한다. 기억·신념·계획은 상한을 넘지 않으며 기존 schema 3
 저장에는 결정형 기본값을 한 번 채운다. 제품은 LLM·외부 모델·서버·네트워크를
-사용하지 않고 로컬 결정형 규칙만으로 행동을 판정한다.
+사용하지 않고 로컬 결정형 규칙만으로 행동을 판정한다. `meta.ai.world.factions`는
+마을·상인·정령 세력의 trust·influence·tension을 보관하며, `world.chains`는 최대
+3개의 2단계 사건 연쇄와 다음 발생일·대기 사건·마지막 사건을 보관한다. 기존
+사건의 선택·만료는 세력 상태와 연쇄 momentum을 갱신하고, 후속 사건의 종류와
+우선순위를 결정한다. 사건 parent·step·faction은 pending event와 simulation
+journal에 함께 기록되어 seed·tick 기반 재현이 가능하다.
 
 RPG 고유 계약은 현재 게임 workspace에 남긴다. 별도 두 번째 게임에서 같은
 계약이 실제로 필요하다는 증거가 생기기 전에는 `@forge/core`로 승격하지 않는다.
