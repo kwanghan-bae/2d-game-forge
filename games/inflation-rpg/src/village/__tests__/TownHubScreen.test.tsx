@@ -237,6 +237,32 @@ describe('Village town hub support assignment', () => {
     expect(screen.getByTestId('village-world-events')).toHaveTextContent('솔바람 → 돌아오지 않는 이정표');
   });
 
+  it('names the relationship arc and both agents when it is waiting for a choice', () => {
+    const save = createInitialVillageSave(118);
+    const event: VillageWorldEvent = {
+      id: 'ui-relationship-event',
+      type: 'supply',
+      day: 12,
+      createdAt: save.createdAt,
+      expiresAt: save.createdAt + 60_000,
+      title: '부러진 수레바퀴가 작업대 앞에 멈췄다',
+      cause: '담철과 솔바람의 판단이 엇갈렸습니다.',
+      prompt: '어떻게 대응할까요?',
+      chainId: 'ui-relationship-chain',
+      chainKind: 'forge_route_dispute',
+      chainStep: 0,
+      factionId: 'merchants',
+      choices: [
+        { id: 'repair', title: '함께 고친다', text: '수레를 함께 살핍니다.', effects: {} },
+        { id: 'detour', title: '우회한다', text: '길을 바꿉니다.', effects: {} },
+      ],
+    };
+
+    renderHub({ save, pendingWorldEvents: [event] });
+
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('담철 · 솔바람 → 부서진 약속의 수레');
+  });
+
   it('renders the Joseon warrior sheet as the memorable town hero portrait', () => {
     renderHub();
 

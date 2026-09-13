@@ -19,6 +19,11 @@ import {
   isVillageLifeArcKind,
   selectVillageLifeArcKind,
 } from '../ai/lifeContent';
+import {
+  createVillageRelationshipArcEvent,
+  isVillageRelationshipArcKind,
+  selectVillageRelationshipArcKind,
+} from '../ai/relationshipContent';
 import { getHeroDecisionAnalysis } from '../ai/decision';
 import {
   compareVillageAIReplay,
@@ -43,7 +48,11 @@ import {
   Village_WORLD_DAY_MS,
 } from '../ai/state';
 import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
-import { VILLAGE_CONTENT_ARC_KINDS, VILLAGE_LIFE_ARC_KINDS } from '../../types';
+import {
+  VILLAGE_CONTENT_ARC_KINDS,
+  VILLAGE_LIFE_ARC_KINDS,
+  VILLAGE_RELATIONSHIP_ARC_KINDS,
+} from '../../types';
 
 beforeAll(() => {
   vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
@@ -532,6 +541,111 @@ describe('Village human-like AI slice', () => {
     expect(alternateFollowup?.title).not.toBe(firstFollowup.title);
   });
 
+  it('opens a two-agent relationship arc and changes both memories and affinity', () => {
+    const initial = createInitialVillageSave(336);
+    const blacksmith = initial.meta.agents.find((agent) => agent.id === 'blacksmith');
+    const guide = initial.meta.agents.find((agent) => agent.id === 'guide');
+    const brains = initial.meta.ai?.agentBrains;
+    if (!blacksmith || !guide || !brains) return;
+    blacksmith.trust = 34;
+    blacksmith.fatigue = 72;
+    guide.trust = 38;
+    guide.fatigue = 68;
+    brains.blacksmith.stress = 74;
+    brains.guide.stress = 78;
+    brains.blacksmith.relationships.guide = -0.82;
+    brains.guide.relationships.blacksmith = -0.82;
+
+    const relationshipKind = selectVillageRelationshipArcKind(initial, 12);
+    expect(relationshipKind).toBe('forge_route_dispute');
+    if (!relationshipKind) return;
+    const firstEvent = createVillageRelationshipArcEvent(
+      initial,
+      12,
+      initial.createdAt + Village_WORLD_DAY_MS * 12,
+      relationshipKind,
+    );
+    expect(firstEvent).toMatchObject({ chainStep: 0, factionId: 'merchants' });
+    expect(firstEvent?.choices[0]?.effects.agentRelationshipDelta).toEqual([
+      { leftAgentId: 'blacksmith', rightAgentId: 'guide', delta: 0.14 },
+    ]);
+    if (!firstEvent || !firstEvent.chainId) return;
+
+    const isolated = structuredClone(initial);
+    isolated.updatedAt = firstEvent.createdAt;
+    isolated.lastProcessedAt = firstEvent.createdAt;
+    isolated.meta.ai!.world.day = 12;
+    isolated.meta.ai!.world.lastSimulatedDay = 12;
+    isolated.meta.simulation.tick = 12;
+    isolated.meta.simulation.lastSimulatedAt = firstEvent.createdAt;
+    isolated.meta.ai!.pendingEvents = [firstEvent];
+    isolated.meta.ai!.world.chains = [];
+    expect(isValidVillageAIState(isolated.meta.ai)).toBe(true);
+
+    const malformed = structuredClone(isolated);
+    const malformedEffects = malformed.meta.ai!.pendingEvents[0]!.choices[0]!.effects as unknown as Record<string, unknown>;
+    malformedEffects.agentRelationshipDelta = [{ leftAgentId: 'blacksmith', rightAgentId: 'blacksmith', delta: 0.3 }];
+    expect(isValidVillageAIState(malformed.meta.ai)).toBe(false);
+
+    const beforeAffinity = getVillageAgentAIState(isolated, 'blacksmith').relationships.guide;
+    const firstResolved = resolveVillageWorldEvent(
+      isolated,
+      firstEvent.id,
+      firstEvent.choices[0].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(firstResolved.ok).toBe(true);
+    if (!firstResolved.ok) return;
+    expect(getVillageAgentAIState(firstResolved.save, 'blacksmith').relationships.guide)
+      .toBeGreaterThan(beforeAffinity);
+    expect(getVillageAgentAIState(firstResolved.save, 'guide').relationships.blacksmith)
+      .toBeGreaterThan(beforeAffinity);
+    expect(getVillageAgentCognitionState(firstResolved.save, 'blacksmith').memories
+      .some((memory) => memory.relatedAgentId === 'guide' && memory.summary.includes('수레'))).toBe(true);
+    expect(getVillageAgentCognitionState(firstResolved.save, 'guide').memories
+      .some((memory) => memory.relatedAgentId === 'blacksmith' && memory.summary.includes('수레'))).toBe(true);
+
+    const firstChain = firstResolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    expect(firstChain).toMatchObject({ step: 0, kind: 'forge_route_dispute' });
+    if (!firstChain) return;
+    const firstContinuation = advanceVillageWorld(
+      firstResolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * firstChain.nextDay,
+    );
+    const firstFollowup = firstContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(firstFollowup).toMatchObject({ chainStep: 1, parentEventId: firstEvent.id });
+    if (!firstFollowup) return;
+    const completed = resolveVillageWorldEvent(
+      firstContinuation.save,
+      firstFollowup.id,
+      firstFollowup.choices[0].id,
+      firstFollowup.createdAt + 1,
+    );
+    expect(completed.ok).toBe(true);
+    if (!completed.ok) return;
+    expect(completed.save.meta.ai!.world.chains?.some((chain) => chain.id === firstEvent.chainId)).toBe(false);
+    expect(isValidVillageAIState(completed.save.meta.ai)).toBe(true);
+
+    const alternate = structuredClone(isolated);
+    const alternateResolved = resolveVillageWorldEvent(
+      alternate,
+      firstEvent.id,
+      firstEvent.choices[1].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(alternateResolved.ok).toBe(true);
+    if (!alternateResolved.ok) return;
+    const alternateChain = alternateResolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    if (!alternateChain) return;
+    const alternateContinuation = advanceVillageWorld(
+      alternateResolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * alternateChain.nextDay,
+    );
+    const alternateFollowup = alternateContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(alternateFollowup).toBeDefined();
+    expect(alternateFollowup?.title).not.toBe(firstFollowup.title);
+  });
+
   it('expires an unanswered event into memory instead of blocking the village forever', () => {
     const initial = createInitialVillageSave(206);
     const advanced = advanceVillageWorld(initial, initial.createdAt + Village_WORLD_DAY_MS).save;
@@ -843,5 +957,9 @@ describe('Village human-like AI slice', () => {
       .map((record) => record.chainKind)
       .filter(isVillageLifeArcKind)));
     expect([...lifeKinds]).toEqual(expect.arrayContaining([...VILLAGE_LIFE_ARC_KINDS]));
+    const relationshipKinds = new Set(first.flatMap(({ result }) => result.save.meta.simulation.eventHistory
+      .map((record) => record.chainKind)
+      .filter(isVillageRelationshipArcKind)));
+    expect([...relationshipKinds]).toEqual(expect.arrayContaining([...VILLAGE_RELATIONSHIP_ARC_KINDS]));
   }, 30_000);
 });

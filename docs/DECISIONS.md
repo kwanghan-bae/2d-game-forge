@@ -1,5 +1,24 @@
 # 결정 기록
 
+## 2026-09-14 — CONTENT-03 에이전트 관계 교차 사건팩
+
+- 승인: 사용자가 CONTENT-02 이후 에이전트 간 관계가 실제 사건으로 이어지는 콘텐츠
+  확장을 승인했으며, LLM은 제품에서 영구 배제한다.
+- 결정: 대장장이·길잡이의 수레와 경로, 무당·대장장이의 제례와 쇠, 길잡이·무당의
+  이정표와 징조를 각각 2막 교차 arc로 연결한다. `forge_route_dispute`,
+  `bellows_vigil`, `waystone_rite`는 기존 world event·journal·bounded chain을
+  재사용하고 2막에서 종료한다.
+- 관계성: 피로·스트레스·현재 목표·동료 affinity·상대와 연결된 갈등/실패 기억을
+  결정형 pressure로 읽는다. 선택은 두 에이전트의 기억과 대칭 relationship delta를
+  기록하고, 기존 scheduler가 같은 world tick에 양쪽 계획을 다시 평가한다.
+- 재현·저장 경계: 새 저장 키·schema migration은 만들지 않는다. 관계 delta는 쌍별
+  최대 0.2의 bounded effect로 검증하며 기존 schema 3 validator·eventHistory·pending
+  상한을 사용한다. 아직 관측하지 못한 교차 arc는 scheduled pressure보다 먼저 선택해
+  기존 AI-05·CONTENT-02 콘텐츠가 함께 corpus에 남도록 한다.
+- 재검토: 3 seed × 3 선택 정책 × 30일 headless에서 세 교차 arc·기존 콘텐츠·개인
+  arc의 coverage, 선택/만료, 양방향 memory·affinity, replay fingerprint와 저장 상한을
+  확인한다. 실제 관계 체감·설명 이해도·실기기 성능은 별도 검증으로 남긴다.
+
 ## 2026-09-13 — CONTENT-02 에이전트 생활 사건팩
 
 - 승인: 사용자가 AI-05 커밋 후 콘텐츠를 더 확장하도록 승인했으며, LLM은 제품에서

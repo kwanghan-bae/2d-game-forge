@@ -27,13 +27,20 @@ export const VILLAGE_LIFE_ARC_KINDS = [
   'guide_waystone',
 ] as const;
 export type VillageLifeArcKind = typeof VILLAGE_LIFE_ARC_KINDS[number];
+export const VILLAGE_RELATIONSHIP_ARC_KINDS = [
+  'forge_route_dispute',
+  'bellows_vigil',
+  'waystone_rite',
+] as const;
+export type VillageRelationshipArcKind = typeof VILLAGE_RELATIONSHIP_ARC_KINDS[number];
 export type VillageWorldChainKind =
   | 'weather_supply'
   | 'supply_social'
   | 'social_omen'
   | 'omen_weather'
   | VillageContentArcKind
-  | VillageLifeArcKind;
+  | VillageLifeArcKind
+  | VillageRelationshipArcKind;
 export type VillageAIDecisionKind = 'hero_action' | 'agent_goal';
 export type FacilityId =
   | 'temple'
@@ -202,6 +209,8 @@ export interface VillageWorldEventEffects {
   heroPurposeDelta?: number;
   agentTrustDelta?: Partial<Record<SupportAgentId, number>>;
   agentFatigueDelta?: Partial<Record<SupportAgentId, number>>;
+  /** Symmetric bounded affinity changes caused by a shared interaction. */
+  agentRelationshipDelta?: VillageAgentRelationshipDelta[];
   /** Optional story-specific memory written for an agent when the choice resolves. */
   agentMemory?: Partial<Record<SupportAgentId, VillageAgentMemoryEffect>>;
   realmThreatDelta?: Partial<Record<RealmId, number>>;
@@ -224,6 +233,12 @@ export interface VillageAgentMemoryEffect {
   valence: number;
   salience: number;
   relatedAgentId?: SupportAgentId | null;
+}
+
+export interface VillageAgentRelationshipDelta {
+  leftAgentId: SupportAgentId;
+  rightAgentId: SupportAgentId;
+  delta: number;
 }
 
 export interface VillageWorldEvent {

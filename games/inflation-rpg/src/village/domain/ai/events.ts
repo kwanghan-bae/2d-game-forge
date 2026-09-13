@@ -18,6 +18,7 @@ import {
 } from '../../types';
 import {
   deterministicUnit,
+  ensureVillageAgentBrains,
   ensureVillageAIState,
   decayVillageAINeeds,
   getVillageAIState,
@@ -51,6 +52,12 @@ import {
   selectVillageLifeArcKind,
   VILLAGE_LIFE_ARC_FINAL_STEP,
 } from './lifeContent';
+import {
+  createVillageRelationshipArcEvent,
+  isVillageRelationshipArcKind,
+  selectVillageRelationshipArcKind,
+  VILLAGE_RELATIONSHIP_ARC_FINAL_STEP,
+} from './relationshipContent';
 
 export interface VillageWorldAdvanceResult {
   save: VillageSaveEnvelope;
@@ -74,7 +81,9 @@ function isSafeInteger(value: unknown): value is number {
 }
 
 function maxChainStep(kind: VillageWorldChainKind): number {
-  return isVillageLifeArcKind(kind) ? VILLAGE_LIFE_ARC_FINAL_STEP : Village_MAX_WORLD_CHAIN_STEP;
+  if (isVillageLifeArcKind(kind)) return VILLAGE_LIFE_ARC_FINAL_STEP;
+  if (isVillageRelationshipArcKind(kind)) return VILLAGE_RELATIONSHIP_ARC_FINAL_STEP;
+  return Village_MAX_WORLD_CHAIN_STEP;
 }
 
 function eventCreatedAt(save: VillageSaveEnvelope, day: number): number | null {
@@ -292,6 +301,14 @@ function createLifeOpportunityEvent(save: VillageSaveEnvelope, day: number): Vil
   return createVillageLifeArcEvent(save, day, createdAt, kind);
 }
 
+function createRelationshipOpportunityEvent(save: VillageSaveEnvelope, day: number): VillageWorldEvent | null {
+  if (hasDueWorldChain(save, day)) return null;
+  const kind = selectVillageRelationshipArcKind(save, day);
+  const createdAt = eventCreatedAt(save, day);
+  if (!kind || createdAt === null) return null;
+  return createVillageRelationshipArcEvent(save, day, createdAt, kind);
+}
+
 function createWorldChainEvent(
   save: VillageSaveEnvelope,
   day: number,
@@ -308,6 +325,9 @@ function createWorldChainEvent(
   }
   if (isVillageLifeArcKind(chain.kind)) {
     return createVillageLifeArcEvent(save, day, createdAt, chain.kind, nextStep, chain.id, parentEventId);
+  }
+  if (isVillageRelationshipArcKind(chain.kind)) {
+    return createVillageRelationshipArcEvent(save, day, createdAt, chain.kind, nextStep, chain.id, parentEventId);
   }
   const realmId: RealmId = save.meta.unlockedRealms.includes('underworld') ? 'underworld' : 'sacred_fields';
   const realm = getVillageRealmDefinition(realmId);
@@ -517,6 +537,11 @@ function createWorldEvent(save: VillageSaveEnvelope, day: number): VillageWorldE
     const lifeEvent = createVillageLifeArcEvent(save, day, createdAt, lifeKind);
     if (lifeEvent) return lifeEvent;
   }
+  const relationshipKind = selectVillageRelationshipArcKind(save, day);
+  if (relationshipKind) {
+    const relationshipEvent = createVillageRelationshipArcEvent(save, day, createdAt, relationshipKind);
+    if (relationshipEvent) return relationshipEvent;
+  }
   if (fatigue >= 75 || roll < 0.22 || (villageTension >= 0.72 && roll < 0.5)) {
     return decorateBaseWorldEvent(createSocialEvent(save, day, createdAt));
   }
@@ -711,7 +736,8 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
     ai.world.season = getVillageSeason(day);
     ai.world.weather = getVillageWeather(ai.seed, day);
     if (ai.pendingEvents.length >= Village_MAX_PENDING_WORLD_EVENTS) continue;
-    const event = createLifeOpportunityEvent(save, day)
+    const event = createRelationshipOpportunityEvent(save, day)
+      ?? createLifeOpportunityEvent(save, day)
       ?? createDueWorldChainEvent(save, day)
       ?? createWorldEvent(save, day);
     if (!event || event.expiresAt <= now) continue;
@@ -774,6 +800,29 @@ function applyAgentDelta(
   return true;
 }
 
+function applyAgentRelationshipDelta(
+  save: VillageSaveEnvelope,
+  delta: VillageWorldEventEffects['agentRelationshipDelta'],
+): boolean {
+  if (!delta) return true;
+  if (!Array.isArray(delta)) return false;
+  const brains = ensureVillageAgentBrains(save);
+  for (const effect of delta) {
+    if (!effect
+      || !VILLAGE_SUPPORT_AGENT_IDS.includes(effect.leftAgentId)
+      || !VILLAGE_SUPPORT_AGENT_IDS.includes(effect.rightAgentId)
+      || effect.leftAgentId === effect.rightAgentId
+      || !isFiniteNumber(effect.delta)
+      || Math.abs(effect.delta) > 0.2
+      || !brains[effect.leftAgentId]
+      || !brains[effect.rightAgentId]) return false;
+  }
+  for (const effect of delta) {
+    recordVillageAgentRelationship(save, effect.leftAgentId, effect.rightAgentId, effect.delta);
+  }
+  return true;
+}
+
 function applyFactionDelta(
   save: VillageSaveEnvelope,
   field: 'trust' | 'influence' | 'tension',
@@ -809,6 +858,7 @@ function applyWorldEventEffects(
   if (!applyCurrencyDelta(save, effects.currencyDelta ?? {})) return false;
   if (!applyAgentDelta(save, 'trust', effects.agentTrustDelta)) return false;
   if (!applyAgentDelta(save, 'fatigue', effects.agentFatigueDelta)) return false;
+  if (!applyAgentRelationshipDelta(save, effects.agentRelationshipDelta)) return false;
   for (const [agentId, memory] of Object.entries(effects.agentMemory ?? {})) {
     if (!memory
       || !VILLAGE_SUPPORT_AGENT_IDS.includes(agentId as SupportAgentId)

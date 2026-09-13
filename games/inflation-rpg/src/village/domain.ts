@@ -91,6 +91,17 @@ export {
   VILLAGE_LIFE_ARC_FINAL_STEP,
 } from './domain/ai/lifeContent';
 export type { VillageLifeArcDefinition } from './domain/ai/lifeContent';
+export {
+  createVillageRelationshipArcEvent,
+  getVillageRelationshipArcAgents,
+  getVillageRelationshipArcFactionLabel,
+  getVillageRelationshipArcLabel,
+  isVillageRelationshipArcKind,
+  selectVillageRelationshipArcKind,
+  VILLAGE_RELATIONSHIP_ARC_DEFINITIONS,
+  VILLAGE_RELATIONSHIP_ARC_FINAL_STEP,
+} from './domain/ai/relationshipContent';
+export type { VillageRelationshipArcDefinition } from './domain/ai/relationshipContent';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
 export {
   getBlacksmithEquipmentOutput,

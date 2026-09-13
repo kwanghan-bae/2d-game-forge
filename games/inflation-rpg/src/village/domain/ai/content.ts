@@ -170,15 +170,18 @@ export function selectVillageContentArcKind(
   const nextOpportunityStart = lastContentStart === null
     ? ARC_CADENCE_START_DAY
     : lastContentStart + ARC_CADENCE_DAYS;
-  const scheduled = day >= nextOpportunityStart && day < nextOpportunityStart + ARC_CADENCE_DAYS;
+  const scheduled = day >= nextOpportunityStart
+    && day < nextOpportunityStart + ARC_CADENCE_DAYS * 2;
+  const needsCoverage = contentStarts.length < VILLAGE_CONTENT_ARC_KINDS.length;
   const highestPressure = Math.max(...available.map((kind) => contentArcPressure(source, kind)));
   const spontaneous = deterministicUnit(`${ai.seed}:content-pressure:${day}`);
-  if (!scheduled && (highestPressure < 0.84 || spontaneous >= 0.18)) return null;
+  if (!scheduled && !needsCoverage && (highestPressure < 0.84 || spontaneous >= 0.18)) return null;
 
-  const slot = Math.floor((nextOpportunityStart - ARC_CADENCE_START_DAY) / ARC_CADENCE_DAYS);
+  const slot = contentStarts.length;
   const preferred = VILLAGE_CONTENT_ARC_KINDS[
     (Math.abs(Math.floor(ai.seed)) + slot) % VILLAGE_CONTENT_ARC_KINDS.length
   ];
+  if (needsCoverage && available.includes(preferred)) return preferred;
   return [...available].sort((left, right) => {
     const leftScore = contentArcPressure(source, left) + (left === preferred ? 0.28 : 0)
       + deterministicUnit(`${ai.seed}:content-order:${day}:${left}`) * 0.04;
