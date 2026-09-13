@@ -1,6 +1,6 @@
 # 우선순위 백로그
 
-상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력을 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
+상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력, AI-03C replay·행동 다양성 계측을 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
 
 | ID / 우선순위 | 해결할 문제 | 합격 조건 | 현재 증거·상태 |
 |---|---|---|---|
@@ -15,7 +15,8 @@
 | AI-02 / 구현됨 | 지원 에이전트가 서로 다른 목표와 관계를 갖지 못함 | 에이전트별 목표·피로·신뢰·스케줄러가 원정·시설·사건 선택에 설명 가능하게 반영 | `meta.ai.agentBrains` additive 확장. 3명별 utility·관계·일정 scheduler, 자동 원정 길잡이 배정, forecast 보정, 사건 관계 변화, Town Hub 설명을 구현하고 회귀 통과 |
 | AI-03A / 구현됨 | 행동이 현재 목표만 보고 즉시 바뀌어 경험의 연속성이 약함 | 에이전트별 기억·신념·다단계 계획·중단 횟수가 다음 계획에 반영되고 deterministic replay 가능 | `agentBrains.<agent>.cognition` additive 확장. bounded memory·role-biased beliefs·plan steps·event interruption·schema 3 one-time upgrade를 구현하고 회귀 통과 |
 | AI-03B / 구현됨 | 사건 결과가 다음 세계 상태와 연결되지 않고 마을 이해관계가 단일 값으로 뭉침 | 선택·만료가 후속 사건을 예약하고, 세력 신뢰·영향력·긴장도가 후속 생성과 결과에 반영되며 bounded deterministic replay 가능 | `meta.ai.world.factions`와 `world.chains` additive 확장. 기존 사건을 2단계 연쇄의 시작점으로 연결하고 schema 3 one-time upgrade·선택/만료·세력 회귀 통과 |
-| AI-03 / 장기 | 장기 사건 연쇄가 실제 행동 다양성과 설명 이해도로 이어지는지 측정하기 어려움 | deterministic replay, 행동 다양성·설명 이해도 평가, 장기 저장 크기·성능 기준 | AI-03B 이후 평가·튜닝 단계. LLM·외부 모델·서버를 제품 범위에 도입하지 않는 경계 유지 |
+| AI-03C / 구현됨 | deterministic replay를 눈으로 확인하기 어렵고 행동 다양성을 장기 비교할 기록이 없음 | 결정 journal·replay fingerprint·차이 섹션·행동 다양성 점수와 벽시계 noise 제외 비교 제공 | `meta.simulation.decisionHistory` bounded additive 확장과 순수 `ai/evaluation` 분석기를 구현. 영웅·에이전트 결정을 기록하고 replay·migration 회귀 통과 |
+| AI-03 / 장기 | 장기 사건 연쇄가 실제 행동 다양성과 설명 이해도로 이어지는지 측정하기 어려움 | 실사용 표본의 deterministic replay, 행동 다양성·설명 이해도 평가, 장기 저장 크기·성능 기준 | AI-03C 이후 평가·튜닝 단계. LLM·외부 모델·서버를 제품 범위에 도입하지 않는 경계 유지 |
 | DEVICE-01 / 차단 | 실기기 출시 검증 | iOS/Android 조작·복귀·광고 실패·결제 취소/복원/환불 결과 | 장비·스토어 계정이 필요하며 브라우저 에뮬레이션으로 대체할 수 없음 |
 
 다음 실행에서는 `QA-01`의 원격 결과 확인 또는 `DEVICE-01`의 실기기 검증을 AI-03 장기 평가·튜닝보다 먼저 선택한다. RPG 고유 계약의 core 승격은 별도 두 번째 게임에서 같은 계약이 필요해질 때까지 보류한다. 작업을 시작할 때만 담당·허용 파일·가설·재현 명령·예산을 기록하며, 테스트 존재와 실제 시장 검증을 구분한다.

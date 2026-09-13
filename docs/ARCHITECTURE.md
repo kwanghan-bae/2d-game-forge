@@ -80,7 +80,9 @@ commands, module-boundaries 파일에 둔다.
 남긴 뒤 새 저장을 만들 수 있다. 다른 제품이나 과거 키를 자동으로 읽거나
 가져오지 않으며 현재 schema 3, clone semantics, 오류와 결과 shape를 유지한다.
 유효한 현재 schema 2 저장만 canonical 슬롯에서 한 번 schema 3으로 승격하며,
-시뮬레이션 tick·결정형 seed·bounded 사건 처리 저널을 별도 저장한다.
+시뮬레이션 tick·결정형 seed·bounded 사건 처리 저널을 별도 저장한다. `simulation.decisionHistory`는
+영웅·지원 에이전트 결정을 최대 240건까지 저장해 로컬 replay와 행동 다양성
+분석에 사용하며, 기존 schema 3 저장에는 빈 배열을 한 번 채운다.
 `meta.ai.agentBrains`는 지원 에이전트별 목표·긴장도·동료 관계·다음 일정의
 additive schema 3 확장이다. 이전 유효 schema 3 저장에 이 필드가 없으면
 seed 기반 기본값을 한 번 채우며, scheduler는 세계 tick에서만 재계획한다.
@@ -135,3 +137,4 @@ active tree의 금지된 역사 자료 경로에서 추적 계획·설계 문서
 
 웹 Playwright는 로직·입력·레이아웃을 검증한다. Android 실기기 조작·복귀와
 스토어 기능은 별도 장비 검증으로 구분한다.
+journal의 논리 상태만 비교하고 벽시계 timestamp는 제외한다.

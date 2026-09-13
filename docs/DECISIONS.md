@@ -1,5 +1,23 @@
 # 결정 기록
 
+## 2026-09-13 — AI-03C local replay·행동 다양성 계측
+
+- 승인: 사용자가 커밋 후 다음 AI 고도화를 계속 진행하도록 승인했으며, LLM은
+  제품에서 영구 배제한다.
+- 결정: `meta.simulation.decisionHistory`에 영웅 자율행동과 지원 에이전트의
+  결정을 최대 240건까지 저장한다. 기록은 actor·kind·value·reason·논리 일자와
+  결정 시각을 가지며, 기존 schema 3 저장에는 빈 journal을 한 번 채운다.
+- 행동 연결: `ai/evaluation`은 AI 상태·사건·journal을 canonicalize해 replay
+  fingerprint를 만들고, 두 실행의 world·hero·pending event·agent brain·simulation
+  차이를 섹션별로 비교한다. 벽시계 timestamp는 비교에서 제외해 같은 규칙 실행의
+  일치 여부를 판정하며, 결정 종류·에이전트 목표·사건 선택·사건 타입의 다양성을
+  0..1 점수로 읽는다.
+- 안전 경계: journal은 bounded·중복 ID 제거를 유지하고, 평가기는 저장을 변경하지
+  않는 순수 조회 연산으로 둔다. 점수는 품질 판정이나 자동 튜닝을 대신하지 않으며,
+  LLM·외부 모델·서버·네트워크를 추가하지 않는다.
+- 재검토: 실사용 표본에서 replay mismatch·결정 편중·설명 이해도·저장 크기와
+  Android 성능을 함께 측정할 때.
+
 ## 2026-09-13 — AI-03B 사건 연쇄·세계 세력
 
 - 승인: 사용자가 AI 고도화를 계속 진행하도록 승인했으며, LLM은 영구 배제한다.
