@@ -27,12 +27,12 @@ import {
 import { cloneSave } from '../shared/saveMutation';
 
 export const Village_AI_EVALUATION_DEFAULT_DAYS = 7;
-export const Village_AI_EVALUATION_MAX_DAYS = 30;
+export const Village_AI_EVALUATION_MAX_DAYS = 45;
 
 export type VillageAIScenarioChoicePolicy = 'first' | 'last' | 'balanced';
 
 export interface VillageAIScenarioOptions {
-  /** Number of calendar steps to run; values are clamped to 0..30. */
+  /** Number of calendar steps to run; values are clamped to 0..45. */
   days?: number;
   /** Deterministic policy used when resolving each queued world event. */
   choicePolicy?: VillageAIScenarioChoicePolicy;

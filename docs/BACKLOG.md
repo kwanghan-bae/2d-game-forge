@@ -1,6 +1,6 @@
 # 우선순위 백로그
 
-상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력, AI-03C replay·행동 다양성 계측, AI-03D 세력 인식·행동 연결, AI-03E 장기 시나리오 평가, AI-04 상황 적응형 위기 대응, AI-03F 장기 행동 품질 게이트, AI-05 분기형 마을 사가 콘텐츠 확장, CONTENT-02 에이전트 생활 사건팩, CONTENT-03 에이전트 관계 교차 사건팩을 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
+상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력, AI-03C replay·행동 다양성 계측, AI-03D 세력 인식·행동 연결, AI-03E 장기 시나리오 평가, AI-04 상황 적응형 위기 대응, AI-03F 장기 행동 품질 게이트, AI-05 분기형 마을 사가 콘텐츠 확장, CONTENT-02 에이전트 생활 사건팩, CONTENT-03 에이전트 관계 교차 사건팩, CONTENT-04 3자 관계·세력 연쇄 사건팩을 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
 
 | ID / 우선순위 | 해결할 문제 | 합격 조건 | 현재 증거·상태 |
 |---|---|---|---|
@@ -23,7 +23,8 @@
 | AI-05 / 구현됨 | 기존 사건 풀이 4종 기본 사건과 짧은 연쇄에 머물러 장기 선택의 서사·관계 체감이 약함 | 세력별 3막 사건 연쇄가 선택에 따라 다른 후속 사건·에이전트 반응·보상·사가를 만들고 deterministic replay·저장 검증을 유지 | `village_refuge`·`merchant_ledger`·`spirit_embers` 3개 arc와 9개 선택 장면·18개 선택지를 추가. 기회 구간·세력 압력 기반 선택, journal branch 추적, Town Hub arc명 표시를 구현하고 AI/Town Hub 회귀 통과. LLM·외부 모델·서버는 제외 |
 | CONTENT-02 / 구현됨 | 세력의 큰 사건은 늘었지만 에이전트 개인의 기억·관계·욕구가 독립적인 생활 사건으로 체감되지 않음 | 대장장이·무당·길잡이별 2막 생활 arc가 피로·스트레스·신뢰·관계·기억에 따라 결정형으로 발생하고, 선택이 개인 기억·다음 계획·사가에 남으며 30일 corpus에서 세 arc를 관측 | `blacksmith_apprentice`·`mudang_memorial`·`guide_waystone` 3개 arc와 6개 선택 장면·12개 선택지를 추가. 개인 memory effect, 2막 terminal chain, 생활 arc 지연을 기존 schema 3·bounded state에 연결하고 AI/Town Hub 회귀 통과. LLM·외부 모델·서버는 제외 |
 | CONTENT-03 / 구현됨 | 개인 arc가 늘어도 에이전트가 서로의 선택을 체감하지 못하면 관계가 독립된 숫자로 남음 | 세 쌍의 에이전트가 관계·피로·스트레스·계획·갈등 기억에 따라 2막 교차 arc를 겪고, 선택이 양쪽 기억·대칭 affinity·다음 계획에 반영되며 기존 콘텐츠 corpus를 굶기지 않음 | `forge_route_dispute`·`bellows_vigil`·`waystone_rite` 3개 arc와 6개 장면·12개 선택지를 추가. bounded 대칭 relationship effect와 같은 tick scheduler 재평가, 미관측 arc coverage 우선, 기존 schema 3·pending 상한 재사용을 구현. 3 seed × 3 정책 × 30일에서 9개 arc corpus를 관측하고 fingerprint 결정성을 확인. LLM·외부 모델·서버는 제외 |
+| CONTENT-04 / 구현됨 | 2인 관계 arc 다음에도 집단 목표 충돌과 세력 간 trade-off가 장기 콘텐츠로 체감되지 않음 | 세 에이전트가 함께 얽힌 3막 arc가 세 쌍 관계·세력 상태·기억·지연 후속 사건을 결정형으로 갱신하고, 기존 9개 콘텐츠 arc를 굶기지 않음 | `granary_covenant`·`watchfire_triangle`·`bridge_of_names` 3개 arc와 9개 장면·18개 선택지를 추가. 선택마다 3쌍 bounded relationship delta와 3명 memory effect를 기록하고 due chain 우선·triad coverage·45일 평가 창을 연결. 고정 logical-clock 3 seed × 3 정책 × 45일에서 전체 15개 chain kind, 45개 생성·선택·만료 0·pending peak 1·저장 최대 77,171자와 replay 일치를 확인. LLM·외부 모델·서버는 제외 |
 | AI-03 / 장기 | 장기 사건 연쇄가 실제 행동 다양성과 설명 이해도로 이어지는지 측정하기 어려움 | 실사용 표본의 deterministic replay, 행동 다양성·설명 이해도 평가, 장기 저장 크기·성능 기준 | AI-03D 이후 평가·튜닝 단계. LLM·외부 모델·서버를 제품 범위에 도입하지 않는 경계 유지 |
 | DEVICE-01 / 차단 | 실기기 출시 검증 | iOS/Android 조작·복귀·광고 실패·결제 취소/복원/환불 결과 | 장비·스토어 계정이 필요하며 브라우저 에뮬레이션으로 대체할 수 없음 |
 
-다음 실행에서는 CONTENT-03 1차 결과를 기준으로 추가 교차 사건팩, `QA-01` 원격 결과 확인, `DEVICE-01` 실기기 검증 중 사용자가 새로 선택한다. AI-03E·AI-05·CONTENT-02·CONTENT-03의 headless 결과는 실제 사용자 표본·실기기 성능·설명 이해도를 대신하지 않는다. RPG 고유 계약의 core 승격은 별도 두 번째 게임에서 같은 계약이 필요해질 때까지 보류한다. 작업을 시작할 때만 담당·허용 파일·가설·재현 명령·예산을 기록하며, 테스트 존재와 실제 시장 검증을 구분한다.
+다음 실행에서는 CONTENT-04 1차 결과를 기준으로 결과 누적형 `CONTENT-05`, `QA-01` 장기 시나리오 정리, `DEVICE-01` 실기기 검증 중 사용자가 새로 선택한다. AI-03E·AI-05·CONTENT-02·CONTENT-03·CONTENT-04의 headless 결과는 실제 사용자 표본·실기기 성능·설명 이해도를 대신하지 않는다. RPG 고유 계약의 core 승격은 별도 두 번째 게임에서 같은 계약이 필요해질 때까지 보류한다. 작업을 시작할 때만 담당·허용 파일·가설·재현 명령·예산을 기록하며, 테스트 존재와 실제 시장 검증을 구분한다.

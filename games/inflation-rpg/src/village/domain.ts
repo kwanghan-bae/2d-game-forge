@@ -102,6 +102,17 @@ export {
   VILLAGE_RELATIONSHIP_ARC_FINAL_STEP,
 } from './domain/ai/relationshipContent';
 export type { VillageRelationshipArcDefinition } from './domain/ai/relationshipContent';
+export {
+  createVillageTriadArcEvent,
+  getVillageTriadArcAgents,
+  getVillageTriadArcFactionLabel,
+  getVillageTriadArcLabel,
+  isVillageTriadArcKind,
+  selectVillageTriadArcKind,
+  VILLAGE_TRIAD_ARC_DEFINITIONS,
+  VILLAGE_TRIAD_ARC_FINAL_STEP,
+} from './domain/ai/triadContent';
+export type { VillageTriadArcDefinition } from './domain/ai/triadContent';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
 export {
   getBlacksmithEquipmentOutput,

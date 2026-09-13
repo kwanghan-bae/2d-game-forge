@@ -24,6 +24,11 @@ import {
   isVillageRelationshipArcKind,
   selectVillageRelationshipArcKind,
 } from '../ai/relationshipContent';
+import {
+  createVillageTriadArcEvent,
+  isVillageTriadArcKind,
+  selectVillageTriadArcKind,
+} from '../ai/triadContent';
 import { getHeroDecisionAnalysis } from '../ai/decision';
 import {
   compareVillageAIReplay,
@@ -52,6 +57,7 @@ import {
   VILLAGE_CONTENT_ARC_KINDS,
   VILLAGE_LIFE_ARC_KINDS,
   VILLAGE_RELATIONSHIP_ARC_KINDS,
+  VILLAGE_TRIAD_ARC_KINDS,
 } from '../../types';
 
 beforeAll(() => {
@@ -673,6 +679,118 @@ describe('Village human-like AI slice', () => {
     });
   });
 
+  it('opens a three-agent arc with symmetric relationships, memories, and delayed acts', () => {
+    const initial = createInitialVillageSave(402);
+    const brains = initial.meta.ai?.agentBrains;
+    if (!brains) return;
+    const triadKind = selectVillageTriadArcKind(initial, 18);
+    expect(triadKind).toBeTruthy();
+    if (!triadKind) return;
+
+    const firstEvent = createVillageTriadArcEvent(
+      initial,
+      18,
+      initial.createdAt + Village_WORLD_DAY_MS * 18,
+      triadKind,
+    );
+    expect(firstEvent).toMatchObject({ chainStep: 0, chainKind: triadKind });
+    expect(firstEvent?.choices[0]?.effects.agentRelationshipDelta).toHaveLength(3);
+    expect(Object.keys(firstEvent?.choices[0]?.effects.agentMemory ?? {})).toHaveLength(3);
+    if (!firstEvent || !firstEvent.chainId) return;
+
+    const isolated = structuredClone(initial);
+    isolated.updatedAt = firstEvent.createdAt;
+    isolated.lastProcessedAt = firstEvent.createdAt;
+    isolated.meta.ai!.world.day = 18;
+    isolated.meta.ai!.world.lastSimulatedDay = 18;
+    isolated.meta.simulation.tick = 18;
+    isolated.meta.simulation.lastSimulatedAt = firstEvent.createdAt;
+    isolated.meta.ai!.pendingEvents = [firstEvent];
+    isolated.meta.ai!.world.chains = [];
+    expect(isValidVillageAIState(isolated.meta.ai)).toBe(true);
+
+    const before = {
+      blacksmithMudang: getVillageAgentAIState(isolated, 'blacksmith').relationships.mudang,
+      blacksmithGuide: getVillageAgentAIState(isolated, 'blacksmith').relationships.guide,
+      mudangGuide: getVillageAgentAIState(isolated, 'mudang').relationships.guide,
+    };
+    const resolved = resolveVillageWorldEvent(
+      isolated,
+      firstEvent.id,
+      firstEvent.choices[0].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(getVillageAgentAIState(resolved.save, 'blacksmith').relationships.mudang).toBeGreaterThan(before.blacksmithMudang);
+    expect(getVillageAgentAIState(resolved.save, 'blacksmith').relationships.guide).toBeGreaterThan(before.blacksmithGuide);
+    expect(getVillageAgentAIState(resolved.save, 'mudang').relationships.guide).toBeGreaterThan(before.mudangGuide);
+    for (const agentId of ['blacksmith', 'mudang', 'guide'] as const) {
+      expect(getVillageAgentCognitionState(resolved.save, agentId).memories.some((memory) => (
+        memory.relatedAgentId !== null && memory.salience >= 0.7
+      ))).toBe(true);
+    }
+
+    const firstChain = resolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    expect(firstChain).toMatchObject({ step: 0, kind: triadKind });
+    expect(firstChain?.nextDay).toBeGreaterThanOrEqual(firstEvent.day + 1);
+    expect(firstChain?.nextDay).toBeLessThanOrEqual(firstEvent.day + 3);
+    if (!firstChain) return;
+    const firstContinuation = advanceVillageWorld(
+      resolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * firstChain.nextDay,
+    );
+    const secondEvent = firstContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(secondEvent).toMatchObject({ chainStep: 1, parentEventId: firstEvent.id });
+    if (!secondEvent) return;
+    const secondResolved = resolveVillageWorldEvent(
+      firstContinuation.save,
+      secondEvent.id,
+      secondEvent.choices[0].id,
+      secondEvent.createdAt + 1,
+    );
+    expect(secondResolved.ok).toBe(true);
+    if (!secondResolved.ok) return;
+    const secondChain = secondResolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    expect(secondChain).toMatchObject({ step: 1, pendingEventId: null });
+    if (!secondChain) return;
+    const finalContinuation = advanceVillageWorld(
+      secondResolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * secondChain.nextDay,
+    );
+    const finalEvent = finalContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(finalEvent).toMatchObject({ chainStep: 2, parentEventId: secondEvent.id });
+    if (!finalEvent) return;
+    const completed = resolveVillageWorldEvent(
+      finalContinuation.save,
+      finalEvent.id,
+      finalEvent.choices[0].id,
+      finalEvent.createdAt + 1,
+    );
+    expect(completed.ok).toBe(true);
+    if (!completed.ok) return;
+    expect(completed.save.meta.ai!.world.chains?.some((chain) => chain.id === firstEvent.chainId)).toBe(false);
+    expect(isValidVillageAIState(completed.save.meta.ai)).toBe(true);
+
+    const alternate = structuredClone(isolated);
+    const alternateResolved = resolveVillageWorldEvent(
+      alternate,
+      firstEvent.id,
+      firstEvent.choices[1].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(alternateResolved.ok).toBe(true);
+    if (!alternateResolved.ok) return;
+    const alternateChain = alternateResolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    if (!alternateChain) return;
+    const alternateContinuation = advanceVillageWorld(
+      alternateResolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * alternateChain.nextDay,
+    );
+    const alternateEvent = alternateContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(alternateEvent?.title).not.toBe(secondEvent.title);
+  });
+
   it('pauses autonomous action until a world event is resolved', () => {
     const initial = createInitialVillageSave(204);
     const advanced = advanceVillageWorld(initial, initial.createdAt + Village_WORLD_DAY_MS).save;
@@ -890,7 +1008,7 @@ describe('Village human-like AI slice', () => {
     expect(first.evaluationWorkUnits).toBeGreaterThan(0);
   });
 
-  it('caps the evaluation horizon at 30 days', () => {
+  it('caps the evaluation horizon at the bounded long-run horizon', () => {
     const result = runVillageAIScenario(createInitialVillageSave(216), { days: 999 });
 
     expect(result.daysSimulated).toBe(Village_AI_EVALUATION_MAX_DAYS);
@@ -961,5 +1079,9 @@ describe('Village human-like AI slice', () => {
       .map((record) => record.chainKind)
       .filter(isVillageRelationshipArcKind)));
     expect([...relationshipKinds]).toEqual(expect.arrayContaining([...VILLAGE_RELATIONSHIP_ARC_KINDS]));
-  }, 30_000);
+    const triadKinds = new Set(first.flatMap(({ result }) => result.save.meta.simulation.eventHistory
+      .map((record) => record.chainKind)
+      .filter(isVillageTriadArcKind)));
+    expect([...triadKinds]).toEqual(expect.arrayContaining([...VILLAGE_TRIAD_ARC_KINDS]));
+  }, 90_000);
 });

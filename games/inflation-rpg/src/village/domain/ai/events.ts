@@ -58,6 +58,12 @@ import {
   selectVillageRelationshipArcKind,
   VILLAGE_RELATIONSHIP_ARC_FINAL_STEP,
 } from './relationshipContent';
+import {
+  createVillageTriadArcEvent,
+  isVillageTriadArcKind,
+  selectVillageTriadArcKind,
+  VILLAGE_TRIAD_ARC_FINAL_STEP,
+} from './triadContent';
 
 export interface VillageWorldAdvanceResult {
   save: VillageSaveEnvelope;
@@ -83,6 +89,7 @@ function isSafeInteger(value: unknown): value is number {
 function maxChainStep(kind: VillageWorldChainKind): number {
   if (isVillageLifeArcKind(kind)) return VILLAGE_LIFE_ARC_FINAL_STEP;
   if (isVillageRelationshipArcKind(kind)) return VILLAGE_RELATIONSHIP_ARC_FINAL_STEP;
+  if (isVillageTriadArcKind(kind)) return VILLAGE_TRIAD_ARC_FINAL_STEP;
   return Village_MAX_WORLD_CHAIN_STEP;
 }
 
@@ -295,6 +302,7 @@ function createOmenEvent(save: VillageSaveEnvelope, day: number, createdAt: numb
 }
 
 function createLifeOpportunityEvent(save: VillageSaveEnvelope, day: number): VillageWorldEvent | null {
+  if (hasDueWorldChain(save, day)) return null;
   const kind = selectVillageLifeArcKind(save, day);
   const createdAt = eventCreatedAt(save, day);
   if (!kind || createdAt === null) return null;
@@ -307,6 +315,14 @@ function createRelationshipOpportunityEvent(save: VillageSaveEnvelope, day: numb
   const createdAt = eventCreatedAt(save, day);
   if (!kind || createdAt === null) return null;
   return createVillageRelationshipArcEvent(save, day, createdAt, kind);
+}
+
+function createTriadOpportunityEvent(save: VillageSaveEnvelope, day: number): VillageWorldEvent | null {
+  if (hasDueWorldChain(save, day)) return null;
+  const kind = selectVillageTriadArcKind(save, day);
+  const createdAt = eventCreatedAt(save, day);
+  if (!kind || createdAt === null) return null;
+  return createVillageTriadArcEvent(save, day, createdAt, kind);
 }
 
 function createWorldChainEvent(
@@ -328,6 +344,9 @@ function createWorldChainEvent(
   }
   if (isVillageRelationshipArcKind(chain.kind)) {
     return createVillageRelationshipArcEvent(save, day, createdAt, chain.kind, nextStep, chain.id, parentEventId);
+  }
+  if (isVillageTriadArcKind(chain.kind)) {
+    return createVillageTriadArcEvent(save, day, createdAt, chain.kind, nextStep, chain.id, parentEventId);
   }
   const realmId: RealmId = save.meta.unlockedRealms.includes('underworld') ? 'underworld' : 'sacred_fields';
   const realm = getVillageRealmDefinition(realmId);
@@ -542,6 +561,13 @@ function createWorldEvent(save: VillageSaveEnvelope, day: number): VillageWorldE
     const relationshipEvent = createVillageRelationshipArcEvent(save, day, createdAt, relationshipKind);
     if (relationshipEvent) return relationshipEvent;
   }
+  if (!hasDueWorldChain(save, day)) {
+    const triadKind = selectVillageTriadArcKind(save, day);
+    if (triadKind) {
+      const triadEvent = createVillageTriadArcEvent(save, day, createdAt, triadKind);
+      if (triadEvent) return triadEvent;
+    }
+  }
   if (fatigue >= 75 || roll < 0.22 || (villageTension >= 0.72 && roll < 0.5)) {
     return decorateBaseWorldEvent(createSocialEvent(save, day, createdAt));
   }
@@ -736,7 +762,8 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
     ai.world.season = getVillageSeason(day);
     ai.world.weather = getVillageWeather(ai.seed, day);
     if (ai.pendingEvents.length >= Village_MAX_PENDING_WORLD_EVENTS) continue;
-    const event = createRelationshipOpportunityEvent(save, day)
+    const event = createTriadOpportunityEvent(save, day)
+      ?? createRelationshipOpportunityEvent(save, day)
       ?? createLifeOpportunityEvent(save, day)
       ?? createDueWorldChainEvent(save, day)
       ?? createWorldEvent(save, day);

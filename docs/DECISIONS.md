@@ -1,5 +1,25 @@
 # 결정 기록
 
+## 2026-09-14 — CONTENT-04 3자 관계·세력 연쇄 사건팩
+
+- 승인: 사용자가 CONTENT-03 이후에도 콘텐츠를 확장하고, 에이전트 집단의 목표 충돌과
+  세력 간 trade-off를 추가하는 범위를 승인했다. LLM·외부 모델·서버·네트워크는 제품에서
+  계속 영구 배제한다.
+- 결정: 세 에이전트가 모두 참여하는 `granary_covenant`(세 자물쇠의 곡식),
+  `watchfire_triangle`(세 갈래 봉화), `bridge_of_names`(이름 없는 다리)를 3막
+  world chain으로 연결한다. 각 장면은 두 선택지를 가지며, 직전 선택은 다음 막의
+  제목·원인·선택지에 결정형으로 반영된다.
+- 집단성: 선택마다 대장장이·무당·길잡이의 세 쌍 관계 delta와 세 명의 linked memory를
+  함께 기록한다. 세력 신뢰·영향력·긴장도와 영웅·에이전트 상태도 기존 bounded effect
+  범위 안에서 갱신하고, chain momentum이 다음 막을 1~3일 뒤 예약한다.
+- 생성·보존 경계: 신규 triad coverage를 due chain보다 앞세우지 않으며, 기존 관계·생활·
+  세력 arc의 coverage debt를 굶기지 않는다. 신규 chain kind는 기존 schema 3 validator,
+  eventHistory, `Village_MAX_WORLD_CHAINS`와 pending 상한을 재사용하고 저장 키·migration은
+  추가하지 않는다. 45일 evaluator와 fixed-clock replay로 전체 15개 chain kind를 확인한다.
+- 재검토: 3 seed × 3 선택 정책 × 45일에서 45개 생성·선택, 만료 0, pending peak 1,
+  저장 최대 77,171자, fingerprint 일치를 확인했다. 집단 갈등의 실제 체감·설명 이해도·
+  실기기 성능은 사용자 표본과 DEVICE-01에서 별도로 검증한다.
+
 ## 2026-09-14 — CONTENT-03 에이전트 관계 교차 사건팩
 
 - 승인: 사용자가 CONTENT-02 이후 에이전트 간 관계가 실제 사건으로 이어지는 콘텐츠

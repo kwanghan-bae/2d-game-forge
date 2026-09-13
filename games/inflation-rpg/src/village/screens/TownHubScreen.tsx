@@ -54,6 +54,9 @@ const VILLAGE_CHAIN_LABELS: Record<VillageWorldChainKind, string> = {
   forge_route_dispute: '담철 · 솔바람 → 부서진 약속의 수레',
   bellows_vigil: '월령 · 담철 → 꺼지지 않는 종',
   waystone_rite: '솔바람 · 월령 → 안개 속의 이정표',
+  granary_covenant: '담철 · 월령 · 솔바람 → 세 자물쇠의 곡식',
+  watchfire_triangle: '담철 · 월령 · 솔바람 → 세 갈래 봉화',
+  bridge_of_names: '담철 · 월령 · 솔바람 → 이름 없는 다리',
 };
 
 const formatNumber = (value: unknown): string => {

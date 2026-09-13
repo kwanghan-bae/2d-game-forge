@@ -33,6 +33,12 @@ export const VILLAGE_RELATIONSHIP_ARC_KINDS = [
   'waystone_rite',
 ] as const;
 export type VillageRelationshipArcKind = typeof VILLAGE_RELATIONSHIP_ARC_KINDS[number];
+export const VILLAGE_TRIAD_ARC_KINDS = [
+  'granary_covenant',
+  'watchfire_triangle',
+  'bridge_of_names',
+] as const;
+export type VillageTriadArcKind = typeof VILLAGE_TRIAD_ARC_KINDS[number];
 export type VillageWorldChainKind =
   | 'weather_supply'
   | 'supply_social'
@@ -40,7 +46,8 @@ export type VillageWorldChainKind =
   | 'omen_weather'
   | VillageContentArcKind
   | VillageLifeArcKind
-  | VillageRelationshipArcKind;
+  | VillageRelationshipArcKind
+  | VillageTriadArcKind;
 export type VillageAIDecisionKind = 'hero_action' | 'agent_goal';
 export type FacilityId =
   | 'temple'

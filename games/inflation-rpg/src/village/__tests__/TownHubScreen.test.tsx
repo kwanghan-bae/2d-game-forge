@@ -263,6 +263,32 @@ describe('Village town hub support assignment', () => {
     expect(screen.getByTestId('village-world-events')).toHaveTextContent('담철 · 솔바람 → 부서진 약속의 수레');
   });
 
+  it('names the triad arc and all three agents when it is waiting for a choice', () => {
+    const save = createInitialVillageSave(119);
+    const event: VillageWorldEvent = {
+      id: 'ui-triad-event',
+      type: 'supply',
+      day: 18,
+      createdAt: save.createdAt,
+      expiresAt: save.createdAt + 60_000,
+      title: '세 자물쇠가 잠긴 곡식 창고',
+      cause: '세 사람의 기록이 엇갈렸습니다.',
+      prompt: '어떻게 대응할까요?',
+      chainId: 'ui-triad-chain',
+      chainKind: 'granary_covenant',
+      chainStep: 0,
+      factionId: 'merchants',
+      choices: [
+        { id: 'open', title: '함께 연다', text: '창고를 엽니다.', effects: {} },
+        { id: 'lock', title: '잠근다', text: '비축을 지킵니다.', effects: {} },
+      ],
+    };
+
+    renderHub({ save, pendingWorldEvents: [event] });
+
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('담철 · 월령 · 솔바람 → 세 자물쇠의 곡식');
+  });
+
   it('renders the Joseon warrior sheet as the memorable town hero portrait', () => {
     renderHub();
 
