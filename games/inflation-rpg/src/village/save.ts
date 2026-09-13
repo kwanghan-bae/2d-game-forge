@@ -5,6 +5,7 @@ import {
   createVillageAIState,
   createVillageSimulationState,
   ensureVillageAIState,
+  ensureVillageSimulationState,
   isValidVillageAIState,
   isValidVillageSimulationState,
   VILLAGE_SUPPORT_AGENT_IDS,
@@ -633,8 +634,10 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
       && VILLAGE_SUPPORT_AGENT_IDS.every((agentId) => Boolean(save.meta.ai.agentBrains?.[agentId]?.cognition));
     const hasWorldDynamics = Boolean(save.meta.ai.world.factions)
       && Array.isArray(save.meta.ai.world.chains);
-    if (!hasAgentCognition || !hasWorldDynamics) {
+    const hasDecisionHistory = Array.isArray(save.meta.simulation.decisionHistory);
+    if (!hasAgentCognition || !hasWorldDynamics || !hasDecisionHistory) {
       ensureVillageAIState(save);
+      ensureVillageSimulationState(save);
       if (!isVillageSaveEnvelope(save)) return { status: 'invalid', reason: 'invalid_schema' };
       try {
         storage.setItem(Village_SAVE_KEY, JSON.stringify(save));

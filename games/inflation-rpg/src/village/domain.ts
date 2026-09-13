@@ -39,6 +39,11 @@ export {
   recordVillageAgentMemory,
 } from './domain/ai/cognition';
 export { getVillageAgentCognitionState } from './domain/ai/state';
+export {
+  compareVillageAIReplay,
+  getVillageAIBehaviorDiversity,
+  getVillageAIReplayFingerprint,
+} from './domain/ai/evaluation';
 export type {
   VillageAgentAssignmentAnalysis,
   VillageAgentAssignmentCandidate,
@@ -47,6 +52,7 @@ export type {
   VillageAgentPlanAnalysis,
   VillageAgentPlanCandidate,
 } from './domain/ai/agents';
+export type { VillageAIBehaviorDiversity, VillageAIReplayAudit } from './domain/ai/evaluation';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
 export {
   getBlacksmithEquipmentOutput,

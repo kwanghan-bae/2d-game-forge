@@ -7,7 +7,11 @@ import type {
   VillageSaveEnvelope,
 } from '../../types';
 import { getHeroDecisionAnalysis } from '../ai/decision';
-import { getVillageAIState, recordVillageAIDecision } from '../ai/state';
+import {
+  getVillageAIState,
+  recordVillageAIDecision,
+  recordVillageSimulationDecision,
+} from '../ai/state';
 import { startExpedition } from '../expedition/commands';
 import { getNextRealmId } from '../expedition/forecast';
 import { startFacilityTask } from '../facility/tasks';
@@ -44,6 +48,23 @@ function blockedAutonomyDecision(reason: HeroAutonomyReason): HeroAutonomyDecisi
     assignedAgentId: null,
     reason,
   };
+}
+
+function recordStartedHeroDecision(
+  save: VillageSaveEnvelope,
+  decision: HeroAutonomyDecision,
+  decidedAt: number,
+): void {
+  recordVillageAIDecision(save, decision, decidedAt, decision.confidence);
+  recordVillageSimulationDecision(save, {
+    id: `hero-action-${Math.floor(decidedAt)}`,
+    actor: 'hero',
+    kind: 'hero_action',
+    value: decision.action,
+    reason: decision.reason,
+    day: getVillageAIState(save).world.lastSimulatedDay,
+    decidedAt,
+  });
 }
 
 /** Selects the one action the autonomous hero may start after the grace period. */
@@ -93,7 +114,7 @@ export function advanceHeroAutonomy(source: VillageSaveEnvelope, now: number): H
   if (decision.facilityId) {
     const result = startFacilityTask(source, decision.facilityId, now, decision.assignedAgentId);
     if (result.ok) {
-      recordVillageAIDecision(result.save, decision, now, decision.confidence);
+      recordStartedHeroDecision(result.save, decision, now);
       touchSave(result.save, now);
       return { save: result.save, decision, started: true };
     }
@@ -107,7 +128,7 @@ export function advanceHeroAutonomy(source: VillageSaveEnvelope, now: number): H
   if (decision.realmId) {
     const result = startExpedition(source, decision.realmId, now, source.run.policy, decision.assignedAgentId);
     if (result.ok) {
-      recordVillageAIDecision(result.save, decision, now, decision.confidence);
+      recordStartedHeroDecision(result.save, decision, now);
       touchSave(result.save, now);
       return { save: result.save, decision, started: true };
     }

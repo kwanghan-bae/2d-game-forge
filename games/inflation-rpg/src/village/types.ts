@@ -16,6 +16,7 @@ export type VillageWorldEventType = 'weather' | 'social' | 'supply' | 'omen';
 export type VillageWorldEventOutcome = 'chosen' | 'expired';
 export type VillageFactionId = 'village' | 'merchants' | 'spirits';
 export type VillageWorldChainKind = 'weather_supply' | 'supply_social' | 'social_omen' | 'omen_weather';
+export type VillageAIDecisionKind = 'hero_action' | 'agent_goal';
 export type FacilityId =
   | 'temple'
   | 'recovery'
@@ -40,6 +41,7 @@ export const Village_MAX_RESOLVED_WORLD_EVENTS = 120;
 export const Village_MAX_WORLD_EVENT_HISTORY = 120;
 export const Village_MAX_WORLD_CHAINS = 3;
 export const Village_MAX_WORLD_CHAIN_STEP = 2;
+export const Village_MAX_AI_DECISION_HISTORY = 240;
 export const Village_SIMULATION_VERSION = 1 as const;
 
 export interface VillageHeroPersonality {
@@ -228,12 +230,24 @@ export interface VillageWorldEventRecord {
   parentEventId?: string;
 }
 
+export interface VillageAIDecisionRecord {
+  id: string;
+  actor: 'hero' | SupportAgentId;
+  kind: VillageAIDecisionKind;
+  value: HeroAction | VillageAgentGoal;
+  reason: HeroAutonomyReason | VillageAgentDecisionReason;
+  day: number;
+  decidedAt: number;
+}
+
 export interface VillageSimulationState {
   version: typeof Village_SIMULATION_VERSION;
   seed: number;
   tick: number;
   lastSimulatedAt: number;
   eventHistory: VillageWorldEventRecord[];
+  /** Additive schema 3 journal used for local replay and diversity audits. */
+  decisionHistory?: VillageAIDecisionRecord[];
 }
 
 export interface VillageAIState {

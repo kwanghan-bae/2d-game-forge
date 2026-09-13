@@ -124,9 +124,11 @@ describe('Village save recovery boundary', () => {
     const legacyWorld = legacyAI.world as Record<string, unknown>;
     delete legacyWorld.factions;
     delete legacyWorld.chains;
+    const legacySimulation = JSON.parse(JSON.stringify(current.meta.simulation)) as Record<string, unknown>;
+    delete legacySimulation.decisionHistory;
     const legacy = {
       ...current,
-      meta: { ...current.meta, ai: legacyAI },
+      meta: { ...current.meta, ai: legacyAI, simulation: legacySimulation },
     } as unknown;
     const storage = memoryStorage({ [Village_SAVE_KEY]: JSON.stringify(legacy) });
 
@@ -136,7 +138,9 @@ describe('Village save recovery boundary', () => {
     if (loaded.status !== 'valid') return;
     expect(Object.keys(loaded.save.meta.ai.world.factions ?? {})).toEqual(['village', 'merchants', 'spirits']);
     expect(loaded.save.meta.ai.world.chains).toEqual([]);
+    expect(loaded.save.meta.simulation.decisionHistory).toEqual([]);
     expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.ai.world.factions).toBeDefined();
+    expect(JSON.parse(storage.dump(Village_SAVE_KEY) ?? '{}').meta.simulation.decisionHistory).toEqual([]);
   });
 
   it('isolates arbitrary JSON payloads without throwing during recovery', () => {

@@ -24,6 +24,7 @@ import {
   getVillageAgentCognitionState,
   getVillageAIState,
   deterministicUnit,
+  recordVillageSimulationDecision,
   VILLAGE_SUPPORT_AGENT_IDS,
 } from './state';
 
@@ -404,6 +405,15 @@ export function advanceVillageAgentScheduler(save: VillageSaveEnvelope, targetTi
       endTick: Math.max(tick + 1, plan.schedule.endTick),
     };
     brain.lastDecisionTick = tick;
+    recordVillageSimulationDecision(save, {
+      id: `agent-goal-${agentId}-${tick}`,
+      actor: agentId,
+      kind: 'agent_goal',
+      value: plan.goal,
+      reason: plan.reason,
+      day: tick,
+      decidedAt: tick,
+    });
   }
 }
 

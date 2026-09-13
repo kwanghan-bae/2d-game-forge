@@ -17,6 +17,8 @@ import type {
   VillageAgentPlanState,
   VillageAgentPlanStep,
   VillageAgentPlanStepKind,
+  VillageAIDecisionKind,
+  VillageAIDecisionRecord,
   VillageAIState,
   VillageFactionId,
   VillageFactionState,
@@ -38,6 +40,7 @@ import type {
 } from '../../types';
 import {
   Village_MAX_AI_MEMORIES,
+  Village_MAX_AI_DECISION_HISTORY,
   Village_MAX_AGENT_BELIEFS,
   Village_MAX_AGENT_MEMORIES,
   Village_MAX_PENDING_WORLD_EVENTS,
@@ -125,6 +128,7 @@ const HERO_REASONS: readonly HeroAutonomyReason[] = [
   'invalid_clock',
   'no_action',
 ];
+const DECISION_KINDS: readonly VillageAIDecisionKind[] = ['hero_action', 'agent_goal'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -378,6 +382,7 @@ export function createVillageSimulationState(
     tick: safeTick,
     lastSimulatedAt: safeLastSimulatedAt,
     eventHistory: [],
+    decisionHistory: [],
   };
 }
 
@@ -550,6 +555,25 @@ function isValidVillageWorldChains(value: unknown): value is VillageWorldChainSt
     && new Set(value.map((chain) => chain.id)).size === value.length;
 }
 
+function isValidVillageAIDecisionRecord(value: unknown): value is VillageAIDecisionRecord {
+  if (!isRecord(value)
+    || !isNonEmptyString(value.id)
+    || !isPersistedNumber(value.day)
+    || !Number.isInteger(value.day)
+    || value.day < 0
+    || !isPersistedNumber(value.decidedAt)
+    || !isOneOf(DECISION_KINDS, value.kind)) return false;
+  if (value.actor === 'hero') {
+    return value.kind === 'hero_action'
+      && isOneOf(HERO_ACTIONS, value.value)
+      && isOneOf(HERO_REASONS, value.reason);
+  }
+  return isOneOf(VILLAGE_SUPPORT_AGENT_IDS, value.actor)
+    && value.kind === 'agent_goal'
+    && isOneOf(AGENT_GOALS, value.value)
+    && isOneOf(AGENT_DECISION_REASONS, value.reason);
+}
+
 function isValidVillageAgentMemory(value: unknown): value is VillageAgentMemory {
   return isRecord(value)
     && isNonEmptyString(value.id)
@@ -679,7 +703,12 @@ export function isValidVillageSimulationState(value: unknown): value is VillageS
     && Array.isArray(value.eventHistory)
     && value.eventHistory.length <= Village_MAX_WORLD_EVENT_HISTORY
     && value.eventHistory.every(isValidVillageWorldEventRecord)
-    && new Set(value.eventHistory.map((record) => record.eventId)).size === value.eventHistory.length;
+    && new Set(value.eventHistory.map((record) => record.eventId)).size === value.eventHistory.length
+    && (value.decisionHistory === undefined
+      || (Array.isArray(value.decisionHistory)
+        && value.decisionHistory.length <= Village_MAX_AI_DECISION_HISTORY
+        && value.decisionHistory.every(isValidVillageAIDecisionRecord)
+        && new Set(value.decisionHistory.map((record) => record.id)).size === value.decisionHistory.length));
 }
 
 export function isValidVillageAIState(value: unknown): value is VillageAIState {
@@ -858,6 +887,7 @@ export function ensureVillageSimulationState(save: VillageSaveEnvelope): Village
     || save.meta.simulation.tick > ai.world.lastSimulatedDay) {
     save.meta.simulation = createVillageSimulationState(ai.seed, save.createdAt, ai.world.lastSimulatedDay);
   }
+  if (!save.meta.simulation.decisionHistory) save.meta.simulation.decisionHistory = [];
   return save.meta.simulation;
 }
 
@@ -873,6 +903,19 @@ export function recordVillageSimulationEvent(
   ].slice(0, Village_MAX_WORLD_EVENT_HISTORY);
   simulation.tick = Math.max(simulation.tick, record.day);
   simulation.lastSimulatedAt = Math.max(simulation.lastSimulatedAt, record.resolvedAt);
+}
+
+export function recordVillageSimulationDecision(
+  save: VillageSaveEnvelope,
+  record: VillageAIDecisionRecord,
+): void {
+  const simulation = ensureVillageSimulationState(save);
+  if (!isValidVillageAIDecisionRecord(record)) return;
+  const history = simulation.decisionHistory ?? [];
+  if (history.some((candidate) => candidate.id === record.id)) return;
+  simulation.decisionHistory = [...history, record].slice(-Village_MAX_AI_DECISION_HISTORY);
+  simulation.tick = Math.max(simulation.tick, record.day);
+  simulation.lastSimulatedAt = Math.max(simulation.lastSimulatedAt, record.decidedAt);
 }
 
 function clamp(value: number, min: number, max: number): number {

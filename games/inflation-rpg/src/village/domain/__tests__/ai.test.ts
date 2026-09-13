@@ -11,6 +11,11 @@ import {
 import { getVillageAgentBelief, recordVillageAgentMemory } from '../ai/cognition';
 import { getHeroDecisionAnalysis } from '../ai/decision';
 import {
+  compareVillageAIReplay,
+  getVillageAIBehaviorDiversity,
+  getVillageAIReplayFingerprint,
+} from '../ai/evaluation';
+import {
   advanceVillageWorld,
   getPendingVillageWorldEvents,
   resolveVillageWorldEvent,
@@ -294,5 +299,36 @@ describe('Village human-like AI slice', () => {
     const later = advanceVillageWorld(expired, initial.createdAt + Village_WORLD_DAY_MS * 4);
     expect(later.save.meta.ai?.resolvedEventIds).toContain(event.id);
     expect(later.save.meta.ai?.world.chains?.length).toBeLessThanOrEqual(3);
+  });
+
+  it('records bounded AI decisions and audits replay without wall-clock noise', () => {
+    const initial = createInitialVillageSave(213);
+    const now = initial.createdAt + Village_WORLD_DAY_MS;
+    const first = advanceVillageWorld(initial, now).save;
+    const replay = advanceVillageWorld(initial, now).save;
+
+    expect(first.meta.simulation.decisionHistory).toHaveLength(3);
+    expect(getVillageAIReplayFingerprint(first)).toBe(getVillageAIReplayFingerprint(replay));
+    expect(compareVillageAIReplay(first, replay)).toMatchObject({ matches: true, differences: [] });
+    const clockShifted = structuredClone(first);
+    clockShifted.updatedAt += 5_000;
+    clockShifted.meta.simulation.lastSimulatedAt += 5_000;
+    clockShifted.meta.ai!.pendingEvents = clockShifted.meta.ai!.pendingEvents.map((candidate) => ({
+      ...candidate,
+      createdAt: candidate.createdAt + 5_000,
+      expiresAt: candidate.expiresAt + 5_000,
+    }));
+    expect(compareVillageAIReplay(first, clockShifted).matches).toBe(true);
+    const diversity = getVillageAIBehaviorDiversity(first);
+    expect(diversity.decisionCount).toBe(3);
+    expect(diversity.distinctAgentGoals).toBeGreaterThan(0);
+    expect(diversity.diversityScore).toBeGreaterThanOrEqual(0);
+    expect(diversity.diversityScore).toBeLessThanOrEqual(1);
+
+    const changed = structuredClone(first);
+    changed.meta.ai!.world.prosperity += 1;
+    const mismatch = compareVillageAIReplay(first, changed);
+    expect(mismatch.matches).toBe(false);
+    expect(mismatch.differences).toContain('world');
   });
 });
