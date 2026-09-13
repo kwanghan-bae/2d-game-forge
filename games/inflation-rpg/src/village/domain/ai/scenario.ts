@@ -11,8 +11,10 @@ import {
 } from './events';
 import {
   getVillageAIBehaviorDiversity,
+  getVillageAIBehaviorQuality,
   getVillageAIReplayFingerprint,
   type VillageAIBehaviorDiversity,
+  type VillageAIBehaviorQuality,
 } from './evaluation';
 import {
   deterministicUnit,
@@ -49,8 +51,13 @@ export interface VillageAIScenarioResult {
   crisisModeDecisionCount: number;
   replayFingerprint: string;
   behaviorDiversity: VillageAIBehaviorDiversity;
+  behaviorQuality: VillageAIBehaviorQuality;
   /** UTF-16 code-unit length of the JSON save snapshot. */
   serializedSize: number;
+  maxPendingEventCount: number;
+  maxDecisionHistoryLength: number;
+  /** Deterministic workload proxy: world steps + generated events + decisions. */
+  evaluationWorkUnits: number;
 }
 
 interface ScenarioCounters {
@@ -60,6 +67,18 @@ interface ScenarioCounters {
   pressureDecisionCount: number;
   agentGoalSwitchCount: number;
   crisisModeDecisionCount: number;
+}
+
+interface ScenarioPeaks {
+  maxPendingEventCount: number;
+  maxDecisionHistoryLength: number;
+}
+
+function observeScenarioPeaks(save: VillageSaveEnvelope, peaks: ScenarioPeaks): void {
+  const ai = getVillageAIState(save);
+  const simulation = getVillageSimulationState(save);
+  peaks.maxPendingEventCount = Math.max(peaks.maxPendingEventCount, ai.pendingEvents.length);
+  peaks.maxDecisionHistoryLength = Math.max(peaks.maxDecisionHistoryLength, simulation.decisionHistory?.length ?? 0);
 }
 
 function normalizeDays(days: number | undefined): number {
@@ -194,6 +213,11 @@ export function runVillageAIScenario(
     agentGoalSwitchCount: 0,
     crisisModeDecisionCount: 0,
   };
+  const peaks: ScenarioPeaks = {
+    maxPendingEventCount: 0,
+    maxDecisionHistoryLength: 0,
+  };
+  observeScenarioPeaks(save, peaks);
   const startDay = ai.world.lastSimulatedDay;
   let generatedEventCount = 0;
 
@@ -202,13 +226,16 @@ export function runVillageAIScenario(
     const advanced = advanceVillageWorld(save, scenarioTimestamp(save, targetDay));
     save = advanced.save;
     generatedEventCount += advanced.generatedEvents.length;
+    observeScenarioPeaks(save, peaks);
     collectNewSimulationRecords(save, knownEventIds, knownDecisionIds, counters, lastAgentGoals);
 
     save = resolveScenarioEvents(save, ai.seed, choicePolicy);
+    observeScenarioPeaks(save, peaks);
     collectNewSimulationRecords(save, knownEventIds, knownDecisionIds, counters, lastAgentGoals);
   }
 
   const serializedSize = JSON.stringify(save).length;
+  const evaluationWorkUnits = horizon + generatedEventCount + counters.decisionCount;
   return {
     save,
     seed: ai.seed,
@@ -222,6 +249,10 @@ export function runVillageAIScenario(
     crisisModeDecisionCount: counters.crisisModeDecisionCount,
     replayFingerprint: getVillageAIReplayFingerprint(save),
     behaviorDiversity: getVillageAIBehaviorDiversity(save),
+    behaviorQuality: getVillageAIBehaviorQuality(save),
     serializedSize,
+    maxPendingEventCount: peaks.maxPendingEventCount,
+    maxDecisionHistoryLength: peaks.maxDecisionHistoryLength,
+    evaluationWorkUnits,
   };
 }

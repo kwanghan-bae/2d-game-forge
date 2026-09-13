@@ -9,10 +9,16 @@ import {
   recordVillageAgentRelationship,
 } from '../ai/agents';
 import { getVillageAgentBelief, recordVillageAgentMemory } from '../ai/cognition';
+import {
+  createVillageContentArcEvent,
+  isVillageContentArcKind,
+  selectVillageContentArcKind,
+} from '../ai/content';
 import { getHeroDecisionAnalysis } from '../ai/decision';
 import {
   compareVillageAIReplay,
   getVillageAIBehaviorDiversity,
+  getVillageAIBehaviorQuality,
   getVillageAIReplayFingerprint,
 } from '../ai/evaluation';
 import {
@@ -28,9 +34,11 @@ import {
   getVillageAgentAIState,
   getVillageAgentCognitionState,
   getVillageAIState,
+  isValidVillageAIState,
   Village_WORLD_DAY_MS,
 } from '../ai/state';
 import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
+import { VILLAGE_CONTENT_ARC_KINDS } from '../../types';
 
 beforeAll(() => {
   vi.setSystemTime(new Date('2026-09-06T00:00:00.000Z'));
@@ -335,6 +343,102 @@ describe('Village human-like AI slice', () => {
     expect(first.save.updatedAt).toBe(now);
   });
 
+  it('branches a three-act faction arc and carries the selected path to its finale', () => {
+    const initial = createInitialVillageSave(301);
+    const contentKind = selectVillageContentArcKind(initial, 7);
+    expect(contentKind).not.toBeNull();
+    if (!contentKind) return;
+    const firstEvent = createVillageContentArcEvent(
+      initial,
+      3,
+      initial.createdAt + Village_WORLD_DAY_MS * 3,
+      contentKind,
+    );
+    expect(firstEvent).toMatchObject({ chainStep: 0, factionId: expect.any(String) });
+    if (!firstEvent || !firstEvent.chainId) return;
+
+    const isolated = structuredClone(initial);
+    isolated.updatedAt = firstEvent.createdAt;
+    isolated.lastProcessedAt = firstEvent.createdAt;
+    isolated.meta.ai!.world.day = 3;
+    isolated.meta.ai!.world.lastSimulatedDay = 3;
+    isolated.meta.simulation.tick = 3;
+    isolated.meta.simulation.lastSimulatedAt = firstEvent.createdAt;
+    isolated.meta.ai!.pendingEvents = [firstEvent];
+    isolated.meta.ai!.world.chains = [];
+
+    const firstBranch = resolveVillageWorldEvent(
+      isolated,
+      firstEvent.id,
+      firstEvent.choices[0].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(firstBranch.ok).toBe(true);
+    if (!firstBranch.ok) return;
+    const firstChain = firstBranch.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    expect(firstChain).toBeDefined();
+    if (!firstChain) return;
+
+    const firstContinuation = advanceVillageWorld(
+      firstBranch.save,
+      initial.createdAt + Village_WORLD_DAY_MS * firstChain.nextDay,
+    );
+    const firstFollowup = firstContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(firstFollowup).toMatchObject({ chainStep: 1, parentEventId: firstEvent.id });
+    if (!firstFollowup) return;
+
+    const secondBranch = resolveVillageWorldEvent(
+      isolated,
+      firstEvent.id,
+      firstEvent.choices[1].id,
+      firstEvent.createdAt + 1,
+    );
+    expect(secondBranch.ok).toBe(true);
+    if (!secondBranch.ok) return;
+    const secondChain = secondBranch.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    if (!secondChain) return;
+    const secondContinuation = advanceVillageWorld(
+      secondBranch.save,
+      initial.createdAt + Village_WORLD_DAY_MS * secondChain.nextDay,
+    );
+    const secondFollowup = secondContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(secondFollowup).toBeDefined();
+    expect(secondFollowup?.title).not.toBe(firstFollowup.title);
+
+    const secondActResolved = resolveVillageWorldEvent(
+      firstContinuation.save,
+      firstFollowup.id,
+      firstFollowup.choices[0].id,
+      firstFollowup.createdAt + 1,
+    );
+    expect(secondActResolved.ok).toBe(true);
+    if (!secondActResolved.ok) return;
+    const finalChain = secondActResolved.save.meta.ai!.world.chains?.find((chain) => chain.id === firstEvent.chainId);
+    if (!finalChain) return;
+    const finalContinuation = advanceVillageWorld(
+      secondActResolved.save,
+      initial.createdAt + Village_WORLD_DAY_MS * finalChain.nextDay,
+    );
+    const finale = finalContinuation.generatedEvents.find((event) => event.chainId === firstEvent.chainId);
+    expect(finale).toMatchObject({ chainStep: 2, parentEventId: firstFollowup.id });
+    if (!finale) return;
+
+    const completed = resolveVillageWorldEvent(
+      finalContinuation.save,
+      finale.id,
+      finale.choices[0].id,
+      finale.createdAt + 1,
+    );
+    expect(completed.ok).toBe(true);
+    if (!completed.ok) return;
+    expect(completed.save.meta.ai!.world.chains?.some((chain) => chain.id === firstEvent.chainId)).toBe(false);
+    expect(isValidVillageAIState(completed.save.meta.ai)).toBe(true);
+    expect(completed.save.meta.simulation.eventHistory
+      .filter((record) => record.chainId === firstEvent.chainId)
+      .map((record) => record.chainStep))
+      .toEqual([2, 1, 0]);
+  });
+
   it('expires an unanswered event into memory instead of blocking the village forever', () => {
     const initial = createInitialVillageSave(206);
     const advanced = advanceVillageWorld(initial, initial.createdAt + Village_WORLD_DAY_MS).save;
@@ -507,6 +611,53 @@ describe('Village human-like AI slice', () => {
     expect(mismatch.differences).toContain('world');
   });
 
+  it('detects goal oscillation, crisis transitions, and explanation-code consistency', () => {
+    const initial = createInitialVillageSave(218);
+    const ai = getVillageAIState(initial);
+    ai.world.lastSimulatedDay = 3;
+    initial.meta.simulation.tick = 3;
+    initial.meta.simulation.decisionHistory = [
+      {
+        id: 'quality-blacksmith-1',
+        actor: 'blacksmith',
+        kind: 'agent_goal',
+        value: 'craft',
+        reason: 'specialty',
+        day: 1,
+        decidedAt: initial.createdAt + 1,
+      },
+      {
+        id: 'quality-blacksmith-2',
+        actor: 'blacksmith',
+        kind: 'agent_goal',
+        value: 'bond',
+        reason: 'world_pressure',
+        day: 2,
+        decidedAt: initial.createdAt + 2,
+      },
+      {
+        id: 'quality-blacksmith-3',
+        actor: 'blacksmith',
+        kind: 'agent_goal',
+        value: 'craft',
+        reason: 'specialty',
+        day: 3,
+        decidedAt: initial.createdAt + 3,
+      },
+    ];
+
+    expect(getVillageAIBehaviorQuality(initial)).toEqual({
+      agentGoalDecisionCount: 3,
+      agentGoalReasonCoverage: 1,
+      agentGoalReasonConsistency: 1,
+      agentGoalSwitchCount: 2,
+      agentGoalOscillationCount: 1,
+      crisisEntryCount: 1,
+      crisisExitCount: 1,
+      crisisSpecialtyReturnCount: 1,
+    });
+  });
+
   it('runs a deterministic bounded scenario and exposes long-run behavior metrics', () => {
     const initial = createInitialVillageSave(215);
     const first = runVillageAIScenario(initial, { days: 7, choicePolicy: 'balanced' });
@@ -525,6 +676,11 @@ describe('Village human-like AI slice', () => {
     });
     expect(first.behaviorDiversity.diversityScore).toBeGreaterThanOrEqual(0);
     expect(first.behaviorDiversity.diversityScore).toBeLessThanOrEqual(1);
+    expect(first.behaviorQuality.agentGoalReasonCoverage).toBe(1);
+    expect(first.behaviorQuality.agentGoalReasonConsistency).toBe(1);
+    expect(first.maxPendingEventCount).toBeLessThanOrEqual(3);
+    expect(first.maxDecisionHistoryLength).toBeGreaterThanOrEqual(21);
+    expect(first.evaluationWorkUnits).toBeGreaterThan(0);
   });
 
   it('caps the evaluation horizon at 30 days', () => {
@@ -548,5 +704,47 @@ describe('Village human-like AI slice', () => {
     expect(result.pressureDecisionCount).toBeGreaterThan(0);
     expect(result.agentGoalSwitchCount).toBeGreaterThan(0);
     expect(result.crisisModeDecisionCount).toBeGreaterThan(0);
+    expect(result.behaviorQuality.crisisEntryCount).toBeGreaterThan(0);
   });
+
+  it('keeps a multi-seed quality corpus deterministic and bounded', () => {
+    const seeds = [301, 307, 313];
+    const policies = ['first', 'last', 'balanced'] as const;
+    const runCorpus = () => seeds.flatMap((seed) => policies.map((choicePolicy) => ({
+      choicePolicy,
+      result: runVillageAIScenario(createInitialVillageSave(seed), {
+        days: Village_AI_EVALUATION_MAX_DAYS,
+        choicePolicy,
+      }),
+    })));
+    const first = runCorpus();
+    const replay = runCorpus();
+    const signature = ({ choicePolicy, result }: (typeof first)[number]) => ({
+      choicePolicy,
+      seed: result.seed,
+      fingerprint: result.replayFingerprint,
+      serializedSize: result.serializedSize,
+      evaluationWorkUnits: result.evaluationWorkUnits,
+      behaviorQuality: result.behaviorQuality,
+    });
+
+    expect(first).toHaveLength(seeds.length * policies.length);
+    expect(first.map(signature)).toEqual(replay.map(signature));
+    expect(new Set(first.map(({ result }) => result.replayFingerprint)).size).toBeGreaterThan(1);
+    for (const { result } of first) {
+      expect(result.daysSimulated).toBe(Village_AI_EVALUATION_MAX_DAYS);
+      expect(result.behaviorQuality.agentGoalReasonCoverage).toBe(1);
+      expect(result.behaviorQuality.agentGoalReasonConsistency).toBe(1);
+      expect(result.maxPendingEventCount).toBeLessThanOrEqual(3);
+      expect(result.maxDecisionHistoryLength).toBeLessThanOrEqual(240);
+      expect(result.serializedSize).toBeLessThan(100_000);
+      expect(result.evaluationWorkUnits).toBeGreaterThan(0);
+      expect(result.behaviorQuality.agentGoalOscillationCount)
+        .toBeLessThanOrEqual(result.behaviorQuality.agentGoalSwitchCount);
+    }
+    const contentKinds = new Set(first.flatMap(({ result }) => result.save.meta.simulation.eventHistory
+      .map((record) => record.chainKind)
+      .filter(isVillageContentArcKind)));
+    expect([...contentKinds]).toEqual(expect.arrayContaining([...VILLAGE_CONTENT_ARC_KINDS]));
+  }, 30_000);
 });

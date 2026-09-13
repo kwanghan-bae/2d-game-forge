@@ -15,7 +15,18 @@ export type VillageMemoryTag = 'victory' | 'defeat' | 'support' | 'event' | 'cho
 export type VillageWorldEventType = 'weather' | 'social' | 'supply' | 'omen';
 export type VillageWorldEventOutcome = 'chosen' | 'expired';
 export type VillageFactionId = 'village' | 'merchants' | 'spirits';
-export type VillageWorldChainKind = 'weather_supply' | 'supply_social' | 'social_omen' | 'omen_weather';
+export const VILLAGE_CONTENT_ARC_KINDS = [
+  'village_refuge',
+  'merchant_ledger',
+  'spirit_embers',
+] as const;
+export type VillageContentArcKind = typeof VILLAGE_CONTENT_ARC_KINDS[number];
+export type VillageWorldChainKind =
+  | 'weather_supply'
+  | 'supply_social'
+  | 'social_omen'
+  | 'omen_weather'
+  | VillageContentArcKind;
 export type VillageAIDecisionKind = 'hero_action' | 'agent_goal';
 export type FacilityId =
   | 'temple'

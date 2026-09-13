@@ -49,6 +49,7 @@ import {
   Village_MAX_WORLD_CHAIN_STEP,
   Village_MAX_WORLD_EVENT_HISTORY,
   Village_SIMULATION_VERSION,
+  VILLAGE_CONTENT_ARC_KINDS,
 } from '../../types';
 
 export const Village_WORLD_DAY_MS = 10 * 60 * 1000;
@@ -69,6 +70,7 @@ const WORLD_CHAIN_KINDS: readonly VillageWorldChainKind[] = [
   'supply_social',
   'social_omen',
   'omen_weather',
+  ...VILLAGE_CONTENT_ARC_KINDS,
 ];
 const AGENT_GOALS: readonly VillageAgentGoal[] = ['recover', 'craft', 'ward', 'guide', 'bond'];
 const AGENT_MEMORY_TAGS: readonly VillageAgentMemoryTag[] = [

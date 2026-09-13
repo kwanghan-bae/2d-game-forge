@@ -181,7 +181,34 @@ describe('Village town hub support assignment', () => {
     expect(screen.getByTestId('village-world-dynamics')).toHaveTextContent('상단 세력');
     expect(screen.getByTestId('village-world-dynamics')).toHaveTextContent('지원 에이전트는 담당 세력');
     expect(screen.getByTestId('village-world-events')).toHaveTextContent('원인 축 · 정령');
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('민심 → 징조');
     expect(screen.getByTestId('village-world-events')).toHaveTextContent('사건 연쇄 1/3단계');
+  });
+
+  it('names the new faction arc when it is waiting for a player choice', () => {
+    const save = createInitialVillageSave(116);
+    const event: VillageWorldEvent = {
+      id: 'ui-content-event',
+      type: 'supply',
+      day: 7,
+      createdAt: save.createdAt,
+      expiresAt: save.createdAt + 60_000,
+      title: '상단의 붉은 장부에서 하루가 사라졌다',
+      cause: '장터의 거래량이 달라졌습니다.',
+      prompt: '어떻게 대응할까요?',
+      chainId: 'ui-content-chain',
+      chainKind: 'merchant_ledger',
+      chainStep: 0,
+      factionId: 'merchants',
+      choices: [
+        { id: 'audit', title: '장부를 대조한다', text: '함께 확인합니다.', effects: {} },
+        { id: 'trust', title: '수레를 믿는다', text: '거래를 계속합니다.', effects: {} },
+      ],
+    };
+
+    renderHub({ save, pendingWorldEvents: [event] });
+
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('상단의 붉은 장부');
   });
 
   it('renders the Joseon warrior sheet as the memorable town hero portrait', () => {

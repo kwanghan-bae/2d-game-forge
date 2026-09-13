@@ -1,6 +1,6 @@
 # 우선순위 백로그
 
-상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력, AI-03C replay·행동 다양성 계측, AI-03D 세력 인식·행동 연결, AI-03E 장기 시나리오 평가, AI-04 상황 적응형 위기 대응을 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
+상태: **Village domain 분해와 로컬 회귀·제품 정체성 검증, AI 1차 vertical slice, AI-02 지원 에이전트 brain, AI-03A 기억·신념·재계획, AI-03B 사건 연쇄·세계 세력, AI-03C replay·행동 다양성 계측, AI-03D 세력 인식·행동 연결, AI-03E 장기 시나리오 평가, AI-04 상황 적응형 위기 대응, AI-03F 장기 행동 품질 게이트, AI-05 분기형 마을 사가 콘텐츠 확장을 완료**. 실제 신규 사용자 지표와 실기기 검증은 측정 전으로 유지한다. 이후 작업은 사용자의 새 실행 명령과 새 generation 없이는 시작하지 않는다.
 
 | ID / 우선순위 | 해결할 문제 | 합격 조건 | 현재 증거·상태 |
 |---|---|---|---|
@@ -19,7 +19,9 @@
 | AI-03D / 구현됨 | 세계 세력 상태가 사건 생성에만 머물고 지원 에이전트의 판단·플레이어 설명으로 이어지지 않음 | 세력별 신뢰·긴장도 인식, 역할별 utility 연결, 사건 선택 직후 재계획, Town Hub 원인·연쇄 표시, 기존 저장 migration 회귀 | `faction_trust`·`faction_tension` 신념을 추가하고 대장장이·무당·길잡이의 담당 세력 압력을 목표 점수·판단 이유에 반영. 선택 직후 scheduler를 갱신하고 화면에 세력·연쇄 상태를 표시. 234개 파일·2,113개 game unit과 typecheck/lint/E2E/build 통과 |
 | AI-03E / 구현됨 | 장기 시나리오에서 결정 재현성·행동 다양성·세력 압력·저장 크기를 한 번에 검증하기 어려움 | 7/30일 bounded 로컬 실행, 동일 시드·정책 fingerprint 일치, 선택·만료·결정·world pressure 집계, 행동 다양성·저장 크기 반환 | `runVillageAIScenario`가 저장 복사본을 최대 30일 진행하고 `first`·`last`·`balanced` 정책, 자원 실패 fallback, replay fingerprint·diversity·JSON size를 반환. 234개 파일·2,113개 game unit, game typecheck/lint 통과. LLM·외부 모델·서버는 제외 |
 | AI-04 / 구현됨 | 세계 압력이 판단 이유만 바꾸고 실제 지원 에이전트 행동은 전문 역할에 고정됨 | 위기 모드 진입·자동 원정 지원 보류·최소 유지·압력 해소 후 전문 복귀, 결정형 replay, headless 전환 계측, Town Hub 설명 | `bond` 기반 `위기 조율` 파생 모드, 2 tick hold·12점 hysteresis, crisis 길잡이 자동 배정 보류, scenario의 goal switch/crisis metric과 Town Hub 행동 모드 표시를 구현. LLM·외부 모델·서버는 제외 |
+| AI-03F / 구현됨 | 단일 diversity score만으로 장기 목표 진동·위기 복귀·판단 이유 품질을 구분하기 어려움 | 여러 seed·정책의 30일 headless corpus가 deterministic하고, 목표 전환·A-B-A 진동·위기 진입/복귀·reason 코드 일치율·peak 저장 상태를 반환 | 순수 `getVillageAIBehaviorQuality` 분석과 scenario의 reason coverage/consistency·goal transition·crisis transition·peak pending/journal·결정형 workload 계측을 추가. 3 seed × 3 정책 × 30일 9개 샘플에서 fingerprint 9개, diversity 0.667~0.792, 저장 54,584 이하, pending peak 1, journal peak 90을 확인. reason 지표는 설명 이해도의 대리 지표이며 LLM·외부 모델·서버는 제외 |
+| AI-05 / 구현됨 | 기존 사건 풀이 4종 기본 사건과 짧은 연쇄에 머물러 장기 선택의 서사·관계 체감이 약함 | 세력별 3막 사건 연쇄가 선택에 따라 다른 후속 사건·에이전트 반응·보상·사가를 만들고 deterministic replay·저장 검증을 유지 | `village_refuge`·`merchant_ledger`·`spirit_embers` 3개 arc와 9개 선택 장면·18개 선택지를 추가. 기회 구간·세력 압력 기반 선택, journal branch 추적, Town Hub arc명 표시를 구현하고 AI/Town Hub 회귀 통과. LLM·외부 모델·서버는 제외 |
 | AI-03 / 장기 | 장기 사건 연쇄가 실제 행동 다양성과 설명 이해도로 이어지는지 측정하기 어려움 | 실사용 표본의 deterministic replay, 행동 다양성·설명 이해도 평가, 장기 저장 크기·성능 기준 | AI-03D 이후 평가·튜닝 단계. LLM·외부 모델·서버를 제품 범위에 도입하지 않는 경계 유지 |
 | DEVICE-01 / 차단 | 실기기 출시 검증 | iOS/Android 조작·복귀·광고 실패·결제 취소/복원/환불 결과 | 장비·스토어 계정이 필요하며 브라우저 에뮬레이션으로 대체할 수 없음 |
 
-다음 실행에서는 `QA-01`의 원격 결과 확인 또는 `DEVICE-01`의 실기기 검증을 AI-03 장기 평가·튜닝보다 먼저 선택한다. AI-03E의 시나리오 결과는 실제 사용자 표본·실기기 성능·설명 이해도를 대신하지 않는다. RPG 고유 계약의 core 승격은 별도 두 번째 게임에서 같은 계약이 필요해질 때까지 보류한다. 작업을 시작할 때만 담당·허용 파일·가설·재현 명령·예산을 기록하며, 테스트 존재와 실제 시장 검증을 구분한다.
+다음 실행에서는 AI-05 1차 콘텐츠 결과를 기준으로 남은 콘텐츠 패키지, `QA-01` 원격 결과 확인, `DEVICE-01` 실기기 검증 중 사용자가 새로 선택한다. AI-03E·AI-05의 headless 결과는 실제 사용자 표본·실기기 성능·설명 이해도를 대신하지 않는다. RPG 고유 계약의 core 승격은 별도 두 번째 게임에서 같은 계약이 필요해질 때까지 보류한다. 작업을 시작할 때만 담당·허용 파일·가설·재현 명령·예산을 기록하며, 테스트 존재와 실제 시장 검증을 구분한다.

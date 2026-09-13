@@ -39,6 +39,11 @@ import {
 import { isActionClockValid, isValidCurrencyBalance } from '../shared/guards';
 import { nextSaveId } from '../shared/ids';
 import { cloneSave, touchSave } from '../shared/saveMutation';
+import {
+  createVillageContentArcEvent,
+  isVillageContentArcKind,
+  selectVillageContentArcKind,
+} from './content';
 
 export interface VillageWorldAdvanceResult {
   save: VillageSaveEnvelope;
@@ -280,6 +285,9 @@ function createWorldChainEvent(
   const expiresAt = createdAt + Village_WORLD_DAY_MS * 2;
   const id = `${chain.id}-step-${nextStep}-day-${day}`;
   const parentEventId = chain.lastEventId;
+  if (isVillageContentArcKind(chain.kind)) {
+    return createVillageContentArcEvent(save, day, createdAt, chain.kind, nextStep, chain.id, parentEventId);
+  }
   const realmId: RealmId = save.meta.unlockedRealms.includes('underworld') ? 'underworld' : 'sacred_fields';
   const realm = getVillageRealmDefinition(realmId);
   const cause = '앞선 사건의 여파가 아직 가라앉지 않아 새로운 선택지가 생겼다.';
@@ -478,6 +486,11 @@ function createWorldEvent(save: VillageSaveEnvelope, day: number): VillageWorldE
   const spiritTension = safeNumber(ai.world.factions?.spirits?.tension);
   const createdAt = eventCreatedAt(save, day);
   if (createdAt === null) return null;
+  const contentKind = selectVillageContentArcKind(save, day);
+  if (contentKind) {
+    const contentEvent = createVillageContentArcEvent(save, day, createdAt, contentKind);
+    if (contentEvent) return contentEvent;
+  }
   if (fatigue >= 75 || roll < 0.22 || (villageTension >= 0.72 && roll < 0.5)) {
     return decorateBaseWorldEvent(createSocialEvent(save, day, createdAt));
   }

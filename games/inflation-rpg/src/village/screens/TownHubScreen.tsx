@@ -45,6 +45,9 @@ const VILLAGE_CHAIN_LABELS: Record<VillageWorldChainKind, string> = {
   supply_social: '물자 → 민심',
   social_omen: '민심 → 징조',
   omen_weather: '징조 → 날씨',
+  village_refuge: '마을 → 피난 행렬',
+  merchant_ledger: '상단 → 사라진 장부',
+  spirit_embers: '정령 → 푸른 불씨',
 };
 
 const formatNumber = (value: unknown): string => {
@@ -211,7 +214,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         </div>
         {pendingWorldEvents.map((event) => <article key={event.id} className="village-task village-task--blocked">
           <strong>{event.title}</strong>
-          {event.factionId && <p className="village-muted">원인 축 · {VILLAGE_FACTION_LABELS[event.factionId]}{event.chainStep === undefined ? '' : ` · 사건 연쇄 ${event.chainStep + 1}/${Village_MAX_WORLD_CHAIN_STEP + 1}단계`}</p>}
+          {event.factionId && <p className="village-muted">원인 축 · {VILLAGE_FACTION_LABELS[event.factionId]}{event.chainKind ? ` · ${VILLAGE_CHAIN_LABELS[event.chainKind]}` : ''}{event.chainStep === undefined ? '' : ` · 사건 연쇄 ${event.chainStep + 1}/${Village_MAX_WORLD_CHAIN_STEP + 1}단계`}</p>}
           <p>{event.cause}</p>
           <p>{event.prompt}</p>
           <div className="village-button-row">
