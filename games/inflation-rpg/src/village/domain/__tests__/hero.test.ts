@@ -279,7 +279,7 @@ describe('Village hero domain', () => {
     expect(aggression.save.run.expedition).toMatchObject({
       realmId: 'sacred_fields',
       policy: 'aggression',
-      assignedAgentId: null,
+      assignedAgentId: 'guide',
     });
     expect(Object.keys(aggression.save.meta.tasks)).toHaveLength(0);
 

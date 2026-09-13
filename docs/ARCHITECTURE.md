@@ -52,10 +52,12 @@ server component가 client loader를 직접 import하지 않도록 유지한다.
 - `village/useVillagePersistence.ts`: 저장 부팅·커밋·오프라인 정산·표시 시계
 - `village/useVillageMonetization.ts`: 광고·구매 명령과 pending 상태, entitlement 구독을 화면 계약으로 조합
 - `village/useVillageGame.ts`: 저장 수명주기와 도메인 명령을 화면 계약으로 조합
-- `village/domain.ts`: 기존 호출자를 위한 47줄 compatibility façade. 구현 없이
+- `village/domain.ts`: 기존 호출자를 위한 68줄 compatibility façade. 구현 없이
   아래 direct module의 공개 연산과 타입만 re-export한다.
 - `village/domain/contracts.ts`: 공개 결과·preview·cost 계약과 상수
 - `village/domain/hero/`: 영웅 자율 행동과 성장·회춘
+- `village/domain/ai/`: 결정형 세계 시뮬레이션, 영웅 Utility AI, 지원 에이전트
+  목표·관계·일정 scheduler
 - `village/domain/facility/`: 시설 preview, 작업, 업그레이드
 - `village/domain/expedition/`: 원정 forecast, 명령, 정산
 - `village/domain/story/`, `intervention/`, `rewards/`, `settings/`: 남은 공개 명령
@@ -79,6 +81,9 @@ commands, module-boundaries 파일에 둔다.
 가져오지 않으며 현재 schema 3, clone semantics, 오류와 결과 shape를 유지한다.
 유효한 현재 schema 2 저장만 canonical 슬롯에서 한 번 schema 3으로 승격하며,
 시뮬레이션 tick·결정형 seed·bounded 사건 처리 저널을 별도 저장한다.
+`meta.ai.agentBrains`는 지원 에이전트별 목표·긴장도·동료 관계·다음 일정의
+additive schema 3 확장이다. 이전 유효 schema 3 저장에 이 필드가 없으면
+seed 기반 기본값을 한 번 채우며, scheduler는 세계 tick에서만 재계획한다.
 
 RPG 고유 계약은 현재 게임 workspace에 남긴다. 별도 두 번째 게임에서 같은
 계약이 실제로 필요하다는 증거가 생기기 전에는 `@forge/core`로 승격하지 않는다.

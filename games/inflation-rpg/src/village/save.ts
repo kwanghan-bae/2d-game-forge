@@ -4,6 +4,7 @@ import { completeFacilityTasks } from './domain';
 import {
   createVillageAIState,
   createVillageSimulationState,
+  ensureVillageAIState,
   isValidVillageAIState,
   isValidVillageSimulationState,
 } from './domain/ai/state';
@@ -627,6 +628,16 @@ export function readVillageSave(storage: Storage | undefined = defaultStorage())
 
   if (isVillageSaveEnvelope(parsed)) {
     const save = normalizeLoadedVillageSave(parsed);
+    if (!save.meta.ai.agentBrains) {
+      ensureVillageAIState(save);
+      if (!isVillageSaveEnvelope(save)) return { status: 'invalid', reason: 'invalid_schema' };
+      try {
+        storage.setItem(Village_SAVE_KEY, JSON.stringify(save));
+      } catch {
+        // A valid schema 3 save remains usable in memory when the additive
+        // agent-brain upgrade cannot be written.
+      }
+    }
     return { status: 'valid', save };
   }
   if (!isVillageSaveEnvelope(parsed, Village_PREVIOUS_SCHEMA_VERSION)) {

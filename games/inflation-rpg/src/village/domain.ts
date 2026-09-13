@@ -25,6 +25,20 @@ export {
 } from './domain/ai/events';
 export type { VillageWorldAdvanceResult, WorldEventDomainResult } from './domain/ai/events';
 export { getHeroDecisionAnalysis } from './domain/ai/decision';
+export {
+  getVillageAgentAssignmentAnalysis,
+  getVillageAgentPlan,
+  getVillageAgentPlanAnalysis,
+  VILLAGE_AGENT_GOAL_LABELS,
+} from './domain/ai/agents';
+export type {
+  VillageAgentAssignmentAnalysis,
+  VillageAgentAssignmentCandidate,
+  VillageAgentDuty,
+  VillageAgentPlan,
+  VillageAgentPlanAnalysis,
+  VillageAgentPlanCandidate,
+} from './domain/ai/agents';
 export { getVillageHeroPower, rejuvenateHero } from './domain/hero/progression';
 export {
   getBlacksmithEquipmentOutput,

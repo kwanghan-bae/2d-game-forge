@@ -5,6 +5,8 @@ export type VillageSeason = 'spring' | 'summer' | 'autumn' | 'winter';
 export type VillageWeather = 'clear' | 'rain' | 'fog' | 'wind';
 export type VillageHeroPersonalityKey = 'courage' | 'caution' | 'compassion' | 'curiosity';
 export type VillageHeroGoal = 'recover' | 'prepare' | 'explore' | 'support';
+export type VillageAgentGoal = 'recover' | 'craft' | 'ward' | 'guide' | 'bond';
+export type VillageAgentDecisionReason = 'fatigue' | 'specialty' | 'relationship' | 'weather' | 'routine' | 'conflict';
 export type VillageMemoryTag = 'victory' | 'defeat' | 'support' | 'event' | 'choice';
 export type VillageWorldEventType = 'weather' | 'social' | 'supply' | 'omen';
 export type VillageWorldEventOutcome = 'chosen' | 'expired';
@@ -76,6 +78,23 @@ export interface VillageAIHeroState {
   lastDecision: VillageAILastDecision | null;
 }
 
+export interface VillageAgentSchedule {
+  goal: VillageAgentGoal;
+  startTick: number;
+  endTick: number;
+  reason: VillageAgentDecisionReason;
+}
+
+export interface VillageAgentAIState {
+  goal: VillageAgentGoal;
+  goalProgress: number;
+  stress: number;
+  /** Directed affinity toward each support agent. Self-affinity is always 0. */
+  relationships: Record<SupportAgentId, number>;
+  schedule: VillageAgentSchedule;
+  lastDecisionTick: number;
+}
+
 export interface VillageWorldEventEffects {
   currencyDelta?: Partial<Record<VillageCurrencyKey, number>>;
   heroMoraleDelta?: number;
@@ -130,6 +149,8 @@ export interface VillageAIState {
   hero: VillageAIHeroState;
   pendingEvents: VillageWorldEvent[];
   resolvedEventIds: string[];
+  /** Optional only for reading pre-AI-02 schema 3 saves; new writes include all three brains. */
+  agentBrains?: Record<SupportAgentId, VillageAgentAIState>;
 }
 
 export interface RealmEncounterDefinition {

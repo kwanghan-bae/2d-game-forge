@@ -1,5 +1,5 @@
 import { FACILITY_DEFINITIONS, getVillageAgentDefinition, getVillageCurrencyName, getVillagePolicyName, getVillageRealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
-import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId } from '../domain';
+import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId, getVillageAgentPlan } from '../domain';
 import { getVillageEquipmentDefinition, getVillageEquipmentName } from '../equipment';
 import { Village_DAILY_REWARDED_LIMIT } from '../monetization';
 import { useVillageScreenHeadingFocus } from '../useVillageScreenHeadingFocus';
@@ -313,13 +313,14 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
             {save.meta.agents.map((agent) => {
               const display = getAgentDisplay(agent);
               const usable = isUsableAgentState(agent);
+              const plan = getVillageAgentPlan(save, agent.id);
               return (
                 <div key={agent.id} className="village-agent">
                   <span>
                     <span className="village-agent-role">{display.role}</span> {display.name} · Lv.{formatNumber(agent.level)}
                     <br /><span className="village-agent-trait">특성 · {display.trait}</span>
                   </span>
-                  <span className="village-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br />{!usable ? '에이전트 정보 확인 필요' : agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="village-btn village-btn--quiet" disabled={!usable || Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
+                  <span className="village-agent-state">신뢰 {formatNumber(agent.trust)} · 피로 {formatNumber(agent.fatigue)}<br /><span title={plan.rationale}>다음 목표 · {plan.goalLabel}</span><br />{!usable ? '에이전트 정보 확인 필요' : agent.activeTaskId ? '작업 중' : '대기 중'}<br /><button type="button" className="village-btn village-btn--quiet" disabled={!usable || Boolean(agent.activeTaskId) || agent.fatigue <= 0} onClick={() => onRestAgent(agent.id)}>휴식</button></span>
                 </div>
               );
             })}

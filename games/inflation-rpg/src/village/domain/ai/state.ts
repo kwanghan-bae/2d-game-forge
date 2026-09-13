@@ -3,7 +3,11 @@ import type {
   HeroAction,
   HeroAutonomyDecision,
   HeroAutonomyReason,
+  SupportAgentId,
   RealmId,
+  VillageAgentAIState,
+  VillageAgentDecisionReason,
+  VillageAgentGoal,
   VillageAIState,
   VillageHeroGoal,
   VillageHeroPersonality,
@@ -38,6 +42,21 @@ const MEMORY_TAGS: readonly VillageMemoryTag[] = ['victory', 'defeat', 'support'
 const HERO_ACTIONS: readonly HeroAction[] = ['rest', 'train', 'expedition'];
 const EVENT_TYPES: readonly VillageWorldEvent['type'][] = ['weather', 'social', 'supply', 'omen'];
 const EVENT_OUTCOMES: readonly VillageWorldEventOutcome[] = ['chosen', 'expired'];
+export const VILLAGE_SUPPORT_AGENT_IDS: readonly SupportAgentId[] = ['blacksmith', 'mudang', 'guide'];
+const AGENT_GOALS: readonly VillageAgentGoal[] = ['recover', 'craft', 'ward', 'guide', 'bond'];
+const AGENT_DECISION_REASONS: readonly VillageAgentDecisionReason[] = [
+  'fatigue',
+  'specialty',
+  'relationship',
+  'weather',
+  'routine',
+  'conflict',
+];
+const AGENT_SPECIALTY_GOALS: Record<SupportAgentId, VillageAgentGoal> = {
+  blacksmith: 'craft',
+  mudang: 'ward',
+  guide: 'guide',
+};
 const HERO_REASONS: readonly HeroAutonomyReason[] = [
   'intervention_window',
   'low_hp',
@@ -116,6 +135,53 @@ function defaultWorld(): VillageAIState['world'] {
   };
 }
 
+function safeAgentTick(value: number, fallback = 0): number {
+  return isPersistedNumber(value) && Number.isInteger(value) && value >= 0 ? value : fallback;
+}
+
+function defaultAgentRelationships(seed: number, agentId: SupportAgentId): Record<SupportAgentId, number> {
+  return Object.fromEntries(
+    VILLAGE_SUPPORT_AGENT_IDS.map((targetId) => [
+      targetId,
+      targetId === agentId
+        ? 0
+        : Math.round((deterministicUnit(`${seed}:agent-relation:${agentId}:${targetId}`) * 2 - 1) * 100) / 100,
+    ]),
+  ) as Record<SupportAgentId, number>;
+}
+
+export function createVillageAgentAIState(
+  seed: number,
+  agentId: SupportAgentId,
+  tick = 0,
+): VillageAgentAIState {
+  const safeSeed = isPersistedNumber(seed) ? Math.floor(Math.abs(seed)) : 0;
+  const safeTick = safeAgentTick(tick);
+  const goal = AGENT_SPECIALTY_GOALS[agentId];
+  return {
+    goal,
+    goalProgress: 25 + Math.floor(deterministicUnit(`${safeSeed}:agent-progress:${agentId}`) * 36),
+    stress: 0,
+    relationships: defaultAgentRelationships(safeSeed, agentId),
+    schedule: {
+      goal,
+      startTick: safeTick,
+      endTick: safeTick + 1 + Math.floor(deterministicUnit(`${safeSeed}:agent-schedule:${agentId}:${safeTick}`) * 2),
+      reason: 'routine',
+    },
+    lastDecisionTick: safeTick,
+  };
+}
+
+export function createVillageAgentAIStates(
+  seed: number,
+  tick = 0,
+): Record<SupportAgentId, VillageAgentAIState> {
+  return Object.fromEntries(
+    VILLAGE_SUPPORT_AGENT_IDS.map((agentId) => [agentId, createVillageAgentAIState(seed, agentId, tick)]),
+  ) as Record<SupportAgentId, VillageAgentAIState>;
+}
+
 export function createVillageAIState(seed: number, createdAt: number): VillageAIState {
   const safeSeed = isPersistedNumber(seed)
     ? Math.floor(Math.abs(seed))
@@ -134,6 +200,7 @@ export function createVillageAIState(seed: number, createdAt: number): VillageAI
     },
     pendingEvents: [],
     resolvedEventIds: [],
+    agentBrains: createVillageAgentAIStates(safeSeed),
   };
 }
 
@@ -257,6 +324,49 @@ function isValidVillageWorldEventRecord(value: unknown): value is VillageWorldEv
     : isNonEmptyString(value.choiceId);
 }
 
+function isValidVillageAgentSchedule(value: unknown): value is VillageAgentAIState['schedule'] {
+  return isRecord(value)
+    && isOneOf(AGENT_GOALS, value.goal)
+    && isPersistedNumber(value.startTick)
+    && Number.isInteger(value.startTick)
+    && value.startTick >= 0
+    && isPersistedNumber(value.endTick)
+    && Number.isInteger(value.endTick)
+    && value.endTick > value.startTick
+    && isOneOf(AGENT_DECISION_REASONS, value.reason);
+}
+
+function isValidVillageAgentAIState(
+  value: unknown,
+  agentId: SupportAgentId,
+): value is VillageAgentAIState {
+  const relationships = isRecord(value) ? value.relationships : undefined;
+  if (!isRecord(value)
+    || !isOneOf(AGENT_GOALS, value.goal)
+    || !isBoundedNumber(value.goalProgress, 0, 100)
+    || !isBoundedNumber(value.stress, 0, 100)
+    || !isRecord(relationships)
+    || !isValidVillageAgentSchedule(value.schedule)
+    || !isPersistedNumber(value.lastDecisionTick)
+    || !Number.isInteger(value.lastDecisionTick)
+    || value.lastDecisionTick < 0) return false;
+  const relationshipKeys = Object.keys(relationships);
+  return relationshipKeys.length === VILLAGE_SUPPORT_AGENT_IDS.length
+    && VILLAGE_SUPPORT_AGENT_IDS.every((targetId) => (
+      isBoundedNumber(relationships[targetId], -1, 1)
+    ))
+    && relationships[agentId] === 0;
+}
+
+function isValidVillageAgentBrains(
+  value: unknown,
+): value is Record<SupportAgentId, VillageAgentAIState> {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length === VILLAGE_SUPPORT_AGENT_IDS.length
+    && VILLAGE_SUPPORT_AGENT_IDS.every((agentId) => isValidVillageAgentAIState(value[agentId], agentId));
+}
+
 export function isValidVillageSimulationState(value: unknown): value is VillageSimulationState {
   return isRecord(value)
     && value.version === Village_SIMULATION_VERSION
@@ -312,6 +422,11 @@ export function isValidVillageAIState(value: unknown): value is VillageAIState {
       || !isPersistedNumber(decision.decidedAt)) return false;
   }
 
+  // `agentBrains` was added as a backwards-compatible schema 3 extension.
+  // Older valid schema 3 saves may omit it and receive deterministic defaults
+  // the next time the domain mutates the save.
+  if (value.agentBrains !== undefined && !isValidVillageAgentBrains(value.agentBrains)) return false;
+
   return Array.isArray(value.pendingEvents)
     && value.pendingEvents.length <= Village_MAX_PENDING_WORLD_EVENTS
     && value.pendingEvents.every(isValidVillageWorldEvent)
@@ -328,9 +443,35 @@ export function getVillageAIState(source: VillageSaveEnvelope): VillageAIState {
     : createVillageAIState(source.createdAt, source.createdAt);
 }
 
+export function getVillageAgentAIState(
+  source: VillageSaveEnvelope,
+  agentId: SupportAgentId,
+): VillageAgentAIState {
+  const ai = getVillageAIState(source);
+  const brain = ai.agentBrains?.[agentId];
+  return brain && isValidVillageAgentAIState(brain, agentId)
+    ? brain
+    : createVillageAgentAIState(ai.seed, agentId, ai.world.lastSimulatedDay);
+}
+
+export function ensureVillageAgentBrains(
+  save: VillageSaveEnvelope,
+): Record<SupportAgentId, VillageAgentAIState> {
+  const ai = ensureVillageAIState(save);
+  if (!ai.agentBrains || !isValidVillageAgentBrains(ai.agentBrains)) {
+    ai.agentBrains = createVillageAgentAIStates(ai.seed, ai.world.lastSimulatedDay);
+  }
+  return ai.agentBrains;
+}
+
 export function ensureVillageAIState(save: VillageSaveEnvelope): VillageAIState {
   if (!save.meta.ai || !isValidVillageAIState(save.meta.ai)) {
     save.meta.ai = createVillageAIState(save.createdAt, save.createdAt);
+  } else if (!save.meta.ai.agentBrains || !isValidVillageAgentBrains(save.meta.ai.agentBrains)) {
+    save.meta.ai.agentBrains = createVillageAgentAIStates(
+      save.meta.ai.seed,
+      save.meta.ai.world.lastSimulatedDay,
+    );
   }
   return save.meta.ai;
 }

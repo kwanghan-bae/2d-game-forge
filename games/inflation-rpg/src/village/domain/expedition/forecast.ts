@@ -9,6 +9,7 @@ import type {
 } from '../../types';
 import { getVillageHeroPower } from '../hero/progression';
 import { MAX_ECONOMY_VALUE, positiveFiniteLevel } from '../shared/guards';
+import { getVillageAgentPlan } from '../ai/agents';
 import { getVillageAIState } from '../ai/state';
 
 const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
@@ -44,8 +45,14 @@ export function getExpeditionSuccessChance(
   const guideTrust = guide && typeof guide.trust === 'number' && Number.isFinite(guide.trust)
     ? Math.max(0, guide.trust)
     : 0;
+  const guidePlan = guide ? getVillageAgentPlan(source, 'guide') : null;
+  const guideGoalBonus = guidePlan?.goal === 'guide'
+    ? 0.04
+    : guidePlan?.goal === 'recover'
+      ? -0.03
+      : guidePlan?.goal === 'bond' ? 0.01 : 0;
   const guideBonus = guideIsAvailable && guide
-    ? Math.min(0.08, guideTrust / 1_250)
+    ? Math.min(0.1, guideTrust / 1_250 + guideGoalBonus)
     : 0;
   // Once an expedition has departed, its policy is part of the immutable run
   // snapshot. The town policy can be changed for the next departure without

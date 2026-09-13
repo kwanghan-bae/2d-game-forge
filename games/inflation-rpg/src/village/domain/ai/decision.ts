@@ -8,6 +8,7 @@ import type {
   VillageSaveEnvelope,
 } from '../../types';
 import { getVillageHeroPower } from '../hero/progression';
+import { getVillageAgentAssignmentAnalysis } from './agents';
 import { getVillageAIState, deterministicUnit } from './state';
 
 export interface VillageHeroDecisionAnalysis {
@@ -27,6 +28,7 @@ function makeDecision(
   action: HeroAction,
   facilityId: HeroAutonomyDecision['facilityId'],
   realmId: RealmId | null,
+  assignedAgentId: HeroAutonomyDecision['assignedAgentId'],
   reason: HeroAutonomyReason,
   score: number,
   rationale: string,
@@ -35,7 +37,7 @@ function makeDecision(
     action,
     facilityId,
     realmId,
-    assignedAgentId: null,
+    assignedAgentId,
     reason,
     // Keep the raw-ish score visible so personality differences are not
     // erased by an early percentage clamp. Confidence is normalized below.
@@ -102,6 +104,7 @@ export function getHeroDecisionAnalysis(source: VillageSaveEnvelope): VillageHer
     'rest',
     hpRatio < 0.9 ? 'recovery' : null,
     null,
+    null,
     hpRatio < 0.35 ? 'low_hp' : 'no_action',
     restScore,
     hpRatio < 0.35
@@ -120,6 +123,7 @@ export function getHeroDecisionAnalysis(source: VillageSaveEnvelope): VillageHer
   candidates.push(makeDecision(
     'train',
     'training',
+    null,
     null,
     source.run.policy === 'training' ? 'training_policy' : 'no_action',
     trainingScore,
@@ -151,10 +155,12 @@ export function getHeroDecisionAnalysis(source: VillageSaveEnvelope): VillageHer
   if (selectedRealmId) {
     const realm = REALM_DEFINITIONS[selectedRealmId];
     const score = realmScores.get(selectedRealmId) ?? 0;
+    const guideAssignment = getVillageAgentAssignmentAnalysis(source, 'expedition');
     candidates.push(makeDecision(
       'expedition',
       null,
       selectedRealmId,
+      guideAssignment.selected,
       policyReason(source.run.policy),
       score,
       `${realm.nameKR}을 선택했다. ${source.run.policy === 'aggression' ? '전진 의지' : source.run.policy === 'hoarding' ? '안전 여유' : '준비 상태'}와 현재 위험도를 함께 고려했다.`,
@@ -178,7 +184,7 @@ export function getHeroDecisionAnalysis(source: VillageSaveEnvelope): VillageHer
   const selected = [...candidates].sort((left, right) => {
     const difference = right.score - left.score;
     return difference || (left.action === 'expedition' ? -1 : left.action === 'train' ? 0 : 1);
-  })[0] ?? makeDecision('rest', null, null, 'no_action', 0, '가능한 행동이 없다.') as VillageHeroAutonomyCandidate;
+  })[0] ?? makeDecision('rest', null, null, null, 'no_action', 0, '가능한 행동이 없다.') as VillageHeroAutonomyCandidate;
   const confidence = confidenceFor(candidates);
   return {
     selected: { ...selected, confidence },

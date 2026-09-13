@@ -24,6 +24,11 @@ import {
   ensureVillageSimulationState,
   Village_WORLD_DAY_MS,
 } from './state';
+import {
+  advanceVillageAgentScheduler,
+  recordVillageAgentOutcome,
+  recordVillageAgentRelationship,
+} from './agents';
 import { isActionClockValid, isValidCurrencyBalance } from '../shared/guards';
 import { nextSaveId } from '../shared/ids';
 import { cloneSave, touchSave } from '../shared/saveMutation';
@@ -114,13 +119,13 @@ function createSocialEvent(save: VillageSaveEnvelope, day: number, createdAt: nu
         'rest-together',
         '함께 쉰다',
         '원정 계획을 늦추고 솔바람이 숨을 돌릴 시간을 준다.',
-        { agentTrustDelta: { guide: 5 }, agentFatigueDelta: { guide: -20 }, heroMoraleDelta: 3, heroPurposeDelta: 2 },
+        { agentTrustDelta: { guide: 5, mudang: 1 }, agentFatigueDelta: { guide: -20, mudang: -4 }, heroMoraleDelta: 3, heroPurposeDelta: 2 },
       ),
       choice(
         'keep-schedule',
         '일정을 지킨다',
         '마을의 기대를 저버리지 않기 위해 출발 준비를 계속한다.',
-        { agentTrustDelta: { guide: -5 }, agentFatigueDelta: { guide: 10 }, heroFatigueDelta: 5, heroPurposeDelta: 4 },
+        { agentTrustDelta: { guide: -5, mudang: -1 }, agentFatigueDelta: { guide: 10, mudang: 3 }, heroFatigueDelta: 5, heroPurposeDelta: 4 },
       ),
     ],
   };
@@ -245,7 +250,8 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
   const sourceAI = getVillageAIState(source);
   const targetDay = getVillageWorldDay(source.createdAt, now);
   const hasExpiredEvents = sourceAI.pendingEvents.some((event) => event.expiresAt <= now);
-  if (targetDay <= sourceAI.world.lastSimulatedDay && !hasExpiredEvents) {
+  const needsAgentBrains = !sourceAI.agentBrains;
+  if (targetDay <= sourceAI.world.lastSimulatedDay && !hasExpiredEvents && !needsAgentBrains) {
     return { save: source, generatedEvents: [] };
   }
 
@@ -254,7 +260,8 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
   const generatedEvents: VillageWorldEvent[] = [];
   const expiredEvents = expirePendingWorldEvents(save, now);
   if (targetDay <= sourceAI.world.lastSimulatedDay) {
-    if (!expiredEvents) return { save: source, generatedEvents: [] };
+    if (!expiredEvents && !needsAgentBrains) return { save: source, generatedEvents: [] };
+    advanceVillageAgentScheduler(save, targetDay);
     touchSave(save, now);
     return { save, generatedEvents };
   }
@@ -275,6 +282,7 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
   ai.world.season = getVillageSeason(targetDay);
   ai.world.weather = getVillageWeather(ai.seed, targetDay);
   ai.world.lastSimulatedDay = targetDay;
+  advanceVillageAgentScheduler(save, targetDay);
   const simulation = ensureVillageSimulationState(save);
   simulation.tick = Math.max(simulation.tick, targetDay);
   simulation.lastSimulatedAt = Math.max(
@@ -354,6 +362,23 @@ function applyWorldEventEffects(save: VillageSaveEnvelope, effects: VillageWorld
   if (effects.prosperityDelta !== undefined) {
     if (!isSafeInteger(effects.prosperityDelta)) return false;
     ai.world.prosperity = clamp(ai.world.prosperity + effects.prosperityDelta, 0, 100);
+  }
+  const trustEntries = Object.entries(effects.agentTrustDelta ?? {})
+    .filter((entry): entry is [SupportAgentId, number] => (
+      typeof entry[0] === 'string'
+      && Number.isSafeInteger(entry[1])
+      && save.meta.agents.some((agent) => agent.id === entry[0])
+    ));
+  for (const [agentId] of trustEntries) {
+    recordVillageAgentOutcome(save, agentId, 'support', ai.world.lastSimulatedDay);
+  }
+  for (let index = 0; index < trustEntries.length; index += 1) {
+    for (let nextIndex = index + 1; nextIndex < trustEntries.length; nextIndex += 1) {
+      const [leftId, leftDelta] = trustEntries[index];
+      const [rightId, rightDelta] = trustEntries[nextIndex];
+      const alignment = Math.sign(leftDelta) * Math.sign(rightDelta);
+      if (alignment !== 0) recordVillageAgentRelationship(save, leftId, rightId, alignment * 0.04);
+    }
   }
   return true;
 }

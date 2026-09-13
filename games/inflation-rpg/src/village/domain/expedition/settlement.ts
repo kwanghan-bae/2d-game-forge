@@ -12,6 +12,7 @@ import type {
   VillageSaveEnvelope,
 } from '../../types';
 import type { DomainResult } from '../contracts';
+import { recordVillageAgentOutcome } from '../ai/agents';
 import { recordVillageAIOutcome } from '../ai/state';
 import { getBlacksmithEquipmentRecommendation } from '../facility/preview';
 import { getVillageHeroPower, saturatingAdd } from '../hero/progression';
@@ -263,6 +264,7 @@ function resolveExpedition(
       guide.activeTaskId = null;
       guide.fatigue = Math.min(100, guide.fatigue + 8);
       applyAgentTrustGain(save, guide.id, won ? 2 : 1, eventAt);
+      recordVillageAgentOutcome(save, guide.id, won ? 'success' : 'failure', save.meta.simulation.tick);
     }
   }
 }
@@ -336,6 +338,7 @@ function settleFacilityTasks(
         agent.activeTaskId = null;
         agent.fatigue = Math.min(100, agent.fatigue + 5);
         applyAgentTrustGain(save, agent.id, 1, eventAt);
+        recordVillageAgentOutcome(save, agent.id, 'success', save.meta.simulation.tick);
         if (previousTrust < 100 && agent.trust === 100) {
           save.meta.sagaEntries.unshift({
             id: nextSaveId(save, `saga-agent-trust-${agent.id}-${task.id}`),

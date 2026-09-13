@@ -1,13 +1,23 @@
 // @vitest-environment node
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { createInitialVillageSave } from '../../save';
+import {
+  getVillageAgentAssignmentAnalysis,
+  getVillageAgentPlan,
+  getVillageAgentPlanAnalysis,
+  recordVillageAgentRelationship,
+} from '../ai/agents';
 import { getHeroDecisionAnalysis } from '../ai/decision';
 import {
   advanceVillageWorld,
   getPendingVillageWorldEvents,
   resolveVillageWorldEvent,
 } from '../ai/events';
-import { getVillageAIState, Village_WORLD_DAY_MS } from '../ai/state';
+import {
+  getVillageAgentAIState,
+  getVillageAIState,
+  Village_WORLD_DAY_MS,
+} from '../ai/state';
 import { advanceHeroAutonomy, decideHeroAction } from '../hero/autonomy';
 
 beforeAll(() => {
@@ -35,6 +45,45 @@ describe('Village human-like AI slice', () => {
     expect(cautiousDecision.rationale).toContain('신목 들판');
     expect(cautiousDecision.confidence).toBeGreaterThanOrEqual(0.5);
     expect(cautiousDecision.score).not.toBe(boldDecision.score);
+  });
+
+  it('gives each support agent a deterministic goal, schedule, and duty assignment', () => {
+    const initial = createInitialVillageSave(207);
+    const now = initial.createdAt + Village_WORLD_DAY_MS;
+    const first = advanceVillageWorld(initial, now).save;
+    const replay = advanceVillageWorld(initial, now).save;
+
+    for (const agentId of ['blacksmith', 'mudang', 'guide'] as const) {
+      expect(first.meta.ai.agentBrains?.[agentId]).toEqual(replay.meta.ai.agentBrains?.[agentId]);
+      const plan = getVillageAgentPlan(first, agentId);
+      expect(plan.agentId).toBe(agentId);
+      expect(plan.schedule.startTick).toBe(1);
+      expect(plan.schedule.endTick).toBeGreaterThan(plan.schedule.startTick);
+      expect(plan.rationale.length).toBeGreaterThan(0);
+    }
+
+    const assignment = getVillageAgentAssignmentAnalysis(first, 'expedition');
+    expect(assignment.selected).toBe('guide');
+    expect(assignment.candidates.find((candidate) => candidate.agentId === 'guide')?.available).toBe(true);
+  });
+
+  it('lets relationship tension change an agent plan and records it symmetrically', () => {
+    const initial = createInitialVillageSave(208);
+    const brains = initial.meta.ai.agentBrains;
+    if (!brains) return;
+    brains.blacksmith.relationships.mudang = -1;
+    brains.blacksmith.relationships.guide = -1;
+    brains.mudang.relationships.blacksmith = -1;
+    brains.guide.relationships.blacksmith = -1;
+
+    const before = getVillageAgentAIState(initial, 'blacksmith').relationships.mudang;
+    recordVillageAgentRelationship(initial, 'blacksmith', 'mudang', 0.2);
+    expect(getVillageAgentAIState(initial, 'blacksmith').relationships.mudang).toBeCloseTo(before + 0.2);
+    expect(getVillageAgentAIState(initial, 'mudang').relationships.blacksmith).toBeCloseTo(before + 0.2);
+
+    const plan = getVillageAgentPlanAnalysis(initial, 'blacksmith');
+    expect(plan.selected.goal).toBe('bond');
+    expect(plan.selected.reason).toBe('conflict');
   });
 
   it('generates one deterministic event when the in-game day advances', () => {
