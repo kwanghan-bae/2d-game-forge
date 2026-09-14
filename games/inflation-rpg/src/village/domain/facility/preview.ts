@@ -6,6 +6,7 @@ import type {
   VillageSaveEnvelope,
 } from '../../types';
 import type { FacilityTaskPreview } from '../contracts';
+import { getVillageConsequenceFacilityModifier } from '../ai/consequence';
 import { MAX_ECONOMY_VALUE, isValidAgentState, positiveFiniteLevel } from '../shared/guards';
 import { canPay, safeScaledEconomyAmount } from '../shared/resourceMath';
 
@@ -85,13 +86,15 @@ function facilityTaskEconomy(
   );
   const fatigueMultiplier = agent && agent.fatigue >= 80 ? 1.15 : 1;
   const agentSpeedMultiplier = agent ? Math.pow(1 - AGENT_SPEED_PER_LEVEL, Math.max(0, agentLevel - 1)) : 1;
+  const consequence = getVillageConsequenceFacilityModifier(save, facilityId);
   const durationSeconds = safeDurationSeconds(
     (definition?.baseDurationSeconds ?? 0) * Math.pow(0.94, facilityLevel - 1)
-      * (specialty ? 0.85 : 1) * agentSpeedMultiplier * fatigueMultiplier,
+      * (specialty ? 0.85 : 1) * agentSpeedMultiplier * fatigueMultiplier * consequence.durationMultiplier,
   );
   const outputMultiplier = boundedMultiplier((specialty ? 1.2 : 1)
     * (1 + FACILITY_OUTPUT_PER_LEVEL * (facilityLevel - 1))
-    * (agent ? 1 + AGENT_OUTPUT_PER_LEVEL * Math.max(0, agentLevel - 1) : 1));
+    * (agent ? 1 + AGENT_OUTPUT_PER_LEVEL * Math.max(0, agentLevel - 1) : 1)
+    * consequence.outputMultiplier);
   return {
     durationSeconds,
     input: { ...(definition?.input ?? {}) },

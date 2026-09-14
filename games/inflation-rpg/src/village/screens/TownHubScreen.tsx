@@ -1,5 +1,5 @@
 import { FACILITY_DEFINITIONS, getVillageAgentDefinition, getVillageCurrencyName, getVillagePolicyName, getVillageRealmName, POLICY_LABELS, REALM_DEFINITIONS } from '../data';
-import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId, getVillageAgentPlan } from '../domain';
+import { getFacilityTaskPreview, getFacilityUpgradeCost, getHeroNextAction, getNextRealmId, getVillageAgentPlan, getVillageConsequenceProfile, isVillageConsequenceEchoKind } from '../domain';
 import { getVillageEquipmentDefinition, getVillageEquipmentName } from '../equipment';
 import { Village_DAILY_REWARDED_LIMIT } from '../monetization';
 import { useVillageScreenHeadingFocus } from '../useVillageScreenHeadingFocus';
@@ -57,6 +57,9 @@ const VILLAGE_CHAIN_LABELS: Record<VillageWorldChainKind, string> = {
   granary_covenant: '담철 · 월령 · 솔바람 → 세 자물쇠의 곡식',
   watchfire_triangle: '담철 · 월령 · 솔바람 → 세 갈래 봉화',
   bridge_of_names: '담철 · 월령 · 솔바람 → 이름 없는 다리',
+  supply_aftershock: '상단 → 공급망 후폭풍',
+  cohesion_aftershock: '마을 → 공동체 후폭풍',
+  frontier_aftershock: '정령 → 원정로 후폭풍',
 };
 
 const formatNumber = (value: unknown): string => {
@@ -82,6 +85,12 @@ function formatUpgradeCost(cost: { gold: number; materials: number } | null): st
 function formatNormalized(value: unknown): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '확인 필요';
   return `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`;
+}
+
+function formatWorldChainProgress(kind: VillageWorldChainKind, step: number): string {
+  return isVillageConsequenceEchoKind(kind)
+    ? '후폭풍'
+    : `사건 연쇄 ${step + 1}/${Village_MAX_WORLD_CHAIN_STEP + 1}단계`;
 }
 
 function getFacilityTaskLabel(facilityId: FacilityId, fallback: string, outputEquipmentIds: string[]): string {
@@ -194,6 +203,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
   const objective = getTownObjective(save);
   const worldFactions = save.meta.ai.world.factions;
   const worldChains = save.meta.ai.world.chains ?? [];
+  const consequence = getVillageConsequenceProfile(save);
   return (
     <main className="village-container" data-testid="village-town-hub">
       <div className="village-town-overview" data-testid="village-town-overview">
@@ -223,7 +233,7 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
         </div>
         {pendingWorldEvents.map((event) => <article key={event.id} className="village-task village-task--blocked">
           <strong>{event.title}</strong>
-          {event.factionId && <p className="village-muted">원인 축 · {VILLAGE_FACTION_LABELS[event.factionId]}{event.chainKind ? ` · ${VILLAGE_CHAIN_LABELS[event.chainKind]}` : ''}{event.chainStep === undefined ? '' : ` · 사건 연쇄 ${event.chainStep + 1}/${Village_MAX_WORLD_CHAIN_STEP + 1}단계`}</p>}
+          {event.factionId && <p className="village-muted">원인 축 · {VILLAGE_FACTION_LABELS[event.factionId]}{event.chainKind ? ` · ${VILLAGE_CHAIN_LABELS[event.chainKind]}` : ''}{event.chainStep === undefined || !event.chainKind ? '' : ` · ${formatWorldChainProgress(event.chainKind, event.chainStep)}`}</p>}
           <p>{event.cause}</p>
           <p>{event.prompt}</p>
           <div className="village-button-row">
@@ -257,8 +267,9 @@ export function TownHubScreen({ save, now, onPolicyChange, onStartTask, onCancel
             );
           })}
         </div>
+        <p className="village-muted" data-testid="village-consequence-summary">마을 반향 · {consequence.dominantAxisLabel} {consequence.dominantLevelLabel} · {consequence.summaryKR}</p>
         {worldChains.length > 0
-          ? <p className="village-muted">진행 중인 원인 연쇄 · {worldChains.map((chain) => `${VILLAGE_CHAIN_LABELS[chain.kind]} ${chain.step + 1}/${Village_MAX_WORLD_CHAIN_STEP + 1}단계 · ${chain.momentum >= 0.35 ? '확대' : chain.momentum <= -0.35 ? '완화' : '유지'}`).join(' · ')}</p>
+          ? <p className="village-muted">진행 중인 원인 연쇄 · {worldChains.map((chain) => `${VILLAGE_CHAIN_LABELS[chain.kind]} ${formatWorldChainProgress(chain.kind, chain.step)} · ${chain.momentum >= 0.35 ? '확대' : chain.momentum <= -0.35 ? '완화' : '유지'}`).join(' · ')}</p>
           : <p className="village-muted">아직 이어지는 사건 연쇄가 없습니다. 선택과 시간이 다음 흐름을 만듭니다.</p>}
         <p className="village-muted">지원 에이전트는 담당 세력의 신뢰·긴장도와 사건 연쇄를 각자의 경험으로 해석해 다음 목표를 정합니다.</p>
       </section>

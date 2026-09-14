@@ -55,6 +55,7 @@ import {
   VILLAGE_LIFE_ARC_KINDS,
   VILLAGE_RELATIONSHIP_ARC_KINDS,
   VILLAGE_TRIAD_ARC_KINDS,
+  VILLAGE_CONSEQUENCE_ECHO_KINDS,
 } from '../../types';
 
 export const Village_WORLD_DAY_MS = 10 * 60 * 1000;
@@ -79,6 +80,7 @@ const WORLD_CHAIN_KINDS: readonly VillageWorldChainKind[] = [
   ...VILLAGE_LIFE_ARC_KINDS,
   ...VILLAGE_RELATIONSHIP_ARC_KINDS,
   ...VILLAGE_TRIAD_ARC_KINDS,
+  ...VILLAGE_CONSEQUENCE_ECHO_KINDS,
 ];
 const AGENT_GOALS: readonly VillageAgentGoal[] = ['recover', 'craft', 'ward', 'guide', 'bond'];
 const AGENT_MEMORY_TAGS: readonly VillageAgentMemoryTag[] = [

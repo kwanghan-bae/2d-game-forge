@@ -64,6 +64,12 @@ import {
   selectVillageTriadArcKind,
   VILLAGE_TRIAD_ARC_FINAL_STEP,
 } from './triadContent';
+import {
+  createVillageConsequenceEchoEvent,
+  isVillageConsequenceEchoKind,
+  selectVillageConsequenceEchoKind,
+  VILLAGE_CONSEQUENCE_ECHO_FINAL_STEP,
+} from './consequenceContent';
 
 export interface VillageWorldAdvanceResult {
   save: VillageSaveEnvelope;
@@ -90,6 +96,7 @@ function maxChainStep(kind: VillageWorldChainKind): number {
   if (isVillageLifeArcKind(kind)) return VILLAGE_LIFE_ARC_FINAL_STEP;
   if (isVillageRelationshipArcKind(kind)) return VILLAGE_RELATIONSHIP_ARC_FINAL_STEP;
   if (isVillageTriadArcKind(kind)) return VILLAGE_TRIAD_ARC_FINAL_STEP;
+  if (isVillageConsequenceEchoKind(kind)) return VILLAGE_CONSEQUENCE_ECHO_FINAL_STEP;
   return Village_MAX_WORLD_CHAIN_STEP;
 }
 
@@ -323,6 +330,14 @@ function createTriadOpportunityEvent(save: VillageSaveEnvelope, day: number): Vi
   const createdAt = eventCreatedAt(save, day);
   if (!kind || createdAt === null) return null;
   return createVillageTriadArcEvent(save, day, createdAt, kind);
+}
+
+function createConsequenceOpportunityEvent(save: VillageSaveEnvelope, day: number): VillageWorldEvent | null {
+  if (hasDueWorldChain(save, day)) return null;
+  const kind = selectVillageConsequenceEchoKind(save, day);
+  const createdAt = eventCreatedAt(save, day);
+  if (!kind || createdAt === null) return null;
+  return createVillageConsequenceEchoEvent(save, day, createdAt, kind);
 }
 
 function createWorldChainEvent(
@@ -762,10 +777,11 @@ export function advanceVillageWorld(source: VillageSaveEnvelope, now: number): V
     ai.world.season = getVillageSeason(day);
     ai.world.weather = getVillageWeather(ai.seed, day);
     if (ai.pendingEvents.length >= Village_MAX_PENDING_WORLD_EVENTS) continue;
-    const event = createTriadOpportunityEvent(save, day)
+    const event = createDueWorldChainEvent(save, day)
+      ?? createConsequenceOpportunityEvent(save, day)
+      ?? createTriadOpportunityEvent(save, day)
       ?? createRelationshipOpportunityEvent(save, day)
       ?? createLifeOpportunityEvent(save, day)
-      ?? createDueWorldChainEvent(save, day)
       ?? createWorldEvent(save, day);
     if (!event || event.expiresAt <= now) continue;
     if (ai.pendingEvents.some((candidate) => candidate.id === event.id) || hasResolvedEvent(save, event.id)) continue;

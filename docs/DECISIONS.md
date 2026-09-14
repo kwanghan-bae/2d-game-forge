@@ -1,5 +1,28 @@
 # 결정 기록
 
+## 2026-09-14 — CONTENT-05 결과 누적형 후폭풍
+
+- 승인: 사용자가 CONTENT-04 이후에도 콘텐츠가 부족하다고 판단해, 사건 결과가 장기
+  시설·원정·에이전트 행동으로 이어지는 후폭풍 확장을 승인했다. LLM·외부 모델·서버·
+  네트워크는 제품에서 계속 영구 배제한다.
+- 결정: 별도 저장 필드나 schema migration 없이 기존 `meta.ai.world.prosperity`, 세력
+  신뢰·영향력·긴장도, 영역 위협도, 에이전트 관계·스트레스·기억·최근 `eventHistory`를
+  순수 `consequence.ts`에서 읽어 공급망·공동체·원정로 세 축의 pressure를 파생한다.
+  파생 profile은 저장하지 않아 같은 저장·seed·tick에서 같은 결과를 만든다.
+- 장기 효과: 공급망·공동체·원정로 압력은 시설 작업 시간/산출(각 최대 5%), 원정 forecast
+  (최대 -0.06), 지원 에이전트 goal utility와 rationale에 각각 연결한다. stable 상태는
+  기존 baseline economy를 그대로 유지하며, 후폭풍은 기존 bounded effect와 pending·
+  world chain·event history 계약을 재사용한다.
+- 콘텐츠: `supply_aftershock`, `cohesion_aftershock`, `frontier_aftershock`를 각각
+  두 선택지의 1막 delayed echo로 추가한다. 현재 due chain을 먼저 처리하고, active chain과
+  pending echo가 없는 날의 신규 기회 슬롯에서 cadence·pressure·미관측 coverage를 결정형
+  으로 선택한다. terminal step 즉시 종료해 기존 장기 연쇄와 겹치지 않는다. 선택 결과는
+  기존 세력·번영·위협·관계·기억 효과로 누적된다.
+- 검증 경계: 도메인 전용 후폭풍 회귀 5건, Town Hub·원정소 화면 회귀, 현재 game unit
+  전체와 45일 pressured headless replay로 시설/원정/계획/echo와 저장 상한을 확인한다.
+  실제 후폭풍 체감·설명 이해도·Android 성능은 QA-01·DEVICE-01과 사용자 표본에서
+  별도로 검증한다.
+
 ## 2026-09-14 — CONTENT-04 3자 관계·세력 연쇄 사건팩
 
 - 승인: 사용자가 CONTENT-03 이후에도 콘텐츠를 확장하고, 에이전트 집단의 목표 충돌과

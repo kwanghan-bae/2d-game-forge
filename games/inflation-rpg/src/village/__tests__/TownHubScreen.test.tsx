@@ -185,6 +185,34 @@ describe('Village town hub support assignment', () => {
     expect(screen.getByTestId('village-world-events')).toHaveTextContent('사건 연쇄 1/3단계');
   });
 
+  it('shows the derived aftermath summary and one-act echo label', () => {
+    const save = createInitialVillageSave(120);
+    const event: VillageWorldEvent = {
+      id: 'ui-echo-event',
+      type: 'supply',
+      day: 13,
+      createdAt: save.createdAt,
+      expiresAt: save.createdAt + 60_000,
+      title: '장터의 저울이 지난 선택을 기억했다',
+      cause: '공급망 압력이 후폭풍으로 돌아왔습니다.',
+      prompt: '어떻게 대응할까요?',
+      chainId: 'ui-echo-chain',
+      chainKind: 'supply_aftershock',
+      chainStep: 0,
+      factionId: 'merchants',
+      choices: [
+        { id: 'ledger', title: '공동 장부를 연다', text: '기록합니다.', effects: {} },
+        { id: 'profit', title: '당장의 이익을 지킨다', text: '거래합니다.', effects: {} },
+      ],
+    };
+
+    renderHub({ save, pendingWorldEvents: [event] });
+
+    expect(screen.getByTestId('village-consequence-summary')).toHaveTextContent('마을 반향');
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('상단 → 공급망 후폭풍');
+    expect(screen.getByTestId('village-world-events')).toHaveTextContent('후폭풍');
+  });
+
   it('names the new faction arc when it is waiting for a player choice', () => {
     const save = createInitialVillageSave(116);
     const event: VillageWorldEvent = {

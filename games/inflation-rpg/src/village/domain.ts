@@ -81,6 +81,35 @@ export type {
 } from './domain/ai/scenario';
 export type { VillageContentArcDefinition } from './domain/ai/content';
 export {
+  getVillageConsequenceAgentGoalBonus,
+  getVillageConsequenceAxisLabel,
+  getVillageConsequenceExpeditionModifier,
+  getVillageConsequenceFacilityModifier,
+  getVillageConsequenceIntensity,
+  getVillageConsequenceLevelLabel,
+  getVillageConsequencePressure,
+  getVillageConsequenceProfile,
+  VILLAGE_CONSEQUENCE_AXES,
+} from './domain/ai/consequence';
+export type {
+  VillageConsequenceAxis,
+  VillageConsequenceFacilityModifier,
+  VillageConsequenceLevel,
+  VillageConsequenceProfile,
+  VillageConsequenceExpeditionModifier,
+} from './domain/ai/consequence';
+export {
+  createVillageConsequenceEchoEvent,
+  getVillageConsequenceEchoAxisLabel,
+  getVillageConsequenceEchoFactionLabel,
+  getVillageConsequenceEchoLabel,
+  isVillageConsequenceEchoKind,
+  selectVillageConsequenceEchoKind,
+  VILLAGE_CONSEQUENCE_ECHO_DEFINITIONS,
+  VILLAGE_CONSEQUENCE_ECHO_FINAL_STEP,
+} from './domain/ai/consequenceContent';
+export type { VillageConsequenceEchoDefinition } from './domain/ai/consequenceContent';
+export {
   createVillageLifeArcEvent,
   getVillageLifeArcAgent,
   getVillageLifeArcFactionLabel,

@@ -47,6 +47,25 @@ function baseResult(overrides: Partial<ExpeditionResult> = {}): ExpeditionResult
 }
 
 describe('Village expedition result screen', () => {
+  it('shows the derived aftermath context beside the expedition policy', () => {
+    const save = createInitialVillageSave(100);
+    const props = {
+      save,
+      now: save.updatedAt,
+      onStart: vi.fn(),
+      onConfirm: vi.fn(),
+      onConfirmUnlock: vi.fn(),
+      onRefresh: vi.fn(),
+      onIntervention: vi.fn(),
+      onBack: vi.fn(),
+    } satisfies React.ComponentProps<typeof ExpeditionScreen>;
+
+    render(<ExpeditionScreen {...props} />);
+
+    expect(screen.getByTestId('village-expedition-consequence')).toHaveTextContent('마을 반향');
+    expect(screen.getByTestId('village-expedition-consequence')).toHaveTextContent('기본 흐름');
+  });
+
   it('shows the expected reward before the player dispatches an expedition', () => {
     const save = createInitialVillageSave(100);
     const props = {

@@ -10,6 +10,7 @@ import type {
 import { getVillageHeroPower } from '../hero/progression';
 import { MAX_ECONOMY_VALUE, positiveFiniteLevel } from '../shared/guards';
 import { getVillageAgentPlan } from '../ai/agents';
+import { getVillageConsequenceExpeditionModifier } from '../ai/consequence';
 import { getVillageAIState } from '../ai/state';
 
 const SUCCESS_BASE_BY_TIER = { normal: 0.92, elite: 0.72, boss: 0.55 } as const;
@@ -80,7 +81,8 @@ export function getExpeditionSuccessChance(
   const healthPenalty = heroHp / heroHpMax < 0.35 ? 0.15 : 0;
   return clampSuccessChance(
     SUCCESS_BASE_BY_TIER[encounter.tier] + readinessBonus + guideBonus + policyBonus
-      + mudangBlessing - encounter.risk * 0.05 - worldThreatPenalty - healthPenalty,
+      + mudangBlessing - encounter.risk * 0.05 - worldThreatPenalty - healthPenalty
+      + getVillageConsequenceExpeditionModifier(source, realmId).successChanceDelta,
   );
 }
 

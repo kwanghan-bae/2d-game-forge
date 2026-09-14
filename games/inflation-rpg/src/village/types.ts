@@ -39,6 +39,12 @@ export const VILLAGE_TRIAD_ARC_KINDS = [
   'bridge_of_names',
 ] as const;
 export type VillageTriadArcKind = typeof VILLAGE_TRIAD_ARC_KINDS[number];
+export const VILLAGE_CONSEQUENCE_ECHO_KINDS = [
+  'supply_aftershock',
+  'cohesion_aftershock',
+  'frontier_aftershock',
+] as const;
+export type VillageConsequenceEchoKind = typeof VILLAGE_CONSEQUENCE_ECHO_KINDS[number];
 export type VillageWorldChainKind =
   | 'weather_supply'
   | 'supply_social'
@@ -47,7 +53,8 @@ export type VillageWorldChainKind =
   | VillageContentArcKind
   | VillageLifeArcKind
   | VillageRelationshipArcKind
-  | VillageTriadArcKind;
+  | VillageTriadArcKind
+  | VillageConsequenceEchoKind;
 export type VillageAIDecisionKind = 'hero_action' | 'agent_goal';
 export type FacilityId =
   | 'temple'

@@ -29,6 +29,10 @@ import {
   recordVillageSimulationDecision,
   VILLAGE_SUPPORT_AGENT_IDS,
 } from './state';
+import {
+  getVillageConsequenceAgentGoalBonus,
+  getVillageConsequenceProfile,
+} from './consequence';
 
 export type VillageAgentDuty = Extract<FacilityId, 'blacksmith' | 'mudang' | 'expedition'>;
 
@@ -351,6 +355,7 @@ function calculatePlan(
   const conflictMemory = salientMemoryScore(source, agentId, 'conflict');
   const failureMemory = salientMemoryScore(source, agentId, 'failure');
   const faction = factionPressure(source, agentId);
+  const consequence = getVillageConsequenceProfile(source);
   const worldDynamicsActive = ai.world.lastSimulatedDay > 0
     || (ai.world.chains ?? []).length > 0
     || Object.values(ai.world.factions ?? {}).some((state) => state.lastActionDay > 0);
@@ -363,6 +368,9 @@ function calculatePlan(
     : 0;
   const factionContext = `${FACTION_LABELS[faction.factionId]} 세력 신뢰 ${Math.round(faction.trust * 100)}%, 긴장 ${Math.round(faction.tension * 100)}%`
     + (faction.chainStep === null ? '' : `, ${faction.chainStep + 1}단계 연쇄 압력`);
+  const consequenceContext = consequence.dominantLevel === 'stable'
+    ? ''
+    : ` 누적 ${consequence.dominantAxisLabel} 후폭풍 ${Math.round(consequence.dominantPressure * 100)}%를 반영했다.`;
   const coordinationPressure = crisisPressure(worldPressure);
   const activePlanBias = (goal: VillageAgentGoal): number => getVillageAgentCognitionState(source, agentId).plan?.goal === goal ? 7 : 0;
   const specialtyGoal = SPECIALTY_GOAL_BY_AGENT[agentId];
@@ -374,9 +382,10 @@ function calculatePlan(
       goalLabel: VILLAGE_AGENT_GOAL_LABELS.recover,
       mode: modeForGoal('recover', worldPressure),
       modeLabel: VILLAGE_AGENT_MODE_LABELS[modeForGoal('recover', worldPressure)],
-      score: 22 + fatigue * 1.15 + brain.stress * 0.3 + failureMemory * 4 + worldPressure * 5 + activePlanBias('recover'),
+      score: 22 + fatigue * 1.15 + brain.stress * 0.3 + failureMemory * 4 + worldPressure * 5
+        + getVillageConsequenceAgentGoalBonus(source, agentId, 'recover', consequence) + activePlanBias('recover'),
       reason: goalReason('recover', fatigue, relation, 0, worldPressure),
-      rationale: `피로 ${Math.round(fatigue)}%와 긴장 ${Math.round(brain.stress)}%, ${factionContext}${failureMemory > 0.4 ? ', 최근 실패 기억' : ''}를 반영해 숨을 고른다.`,
+      rationale: `피로 ${Math.round(fatigue)}%와 긴장 ${Math.round(brain.stress)}%, ${factionContext}${failureMemory > 0.4 ? ', 최근 실패 기억' : ''}를 반영해 숨을 고른다.${consequenceContext}`,
       schedule: makeSchedule(source, agentId, 'recover', goalReason('recover', fatigue, relation, 0, worldPressure), tick),
       plan: planForGoal(source, agentId, 'recover', tick),
       available,
@@ -402,9 +411,10 @@ function calculatePlan(
         + worldPressure * 8
         + (worldDynamicsActive ? faction.influence * 2 : 0)
         + heroTrustBelief * 5
+        + getVillageConsequenceAgentGoalBonus(source, agentId, specialtyGoal, consequence)
         + activePlanBias(specialtyGoal),
       reason: goalReason(specialtyGoal, fatigue, relation, weatherBonus, worldPressure),
-      rationale: `${VILLAGE_AGENT_GOAL_LABELS[specialtyGoal]}에 대한 준비도 ${Math.round(brain.goalProgress)}%, 영웅 신뢰 ${Math.round(trust)}%, 개인 판단 신뢰 ${Math.round(heroTrustBelief * 100)}%, ${factionContext}를 반영했다.${worldPressure >= 0.62 ? ' 세력 압력이 높아 전문 역할을 앞당긴다.' : ''}${weatherBonus > 0 ? ' 현재 날씨가 이 역할을 돕는다.' : ''}`,
+      rationale: `${VILLAGE_AGENT_GOAL_LABELS[specialtyGoal]}에 대한 준비도 ${Math.round(brain.goalProgress)}%, 영웅 신뢰 ${Math.round(trust)}%, 개인 판단 신뢰 ${Math.round(heroTrustBelief * 100)}%, ${factionContext}를 반영했다.${worldPressure >= 0.62 ? ' 세력 압력이 높아 전문 역할을 앞당긴다.' : ''}${weatherBonus > 0 ? ' 현재 날씨가 이 역할을 돕는다.' : ''}${consequenceContext}`,
       schedule: makeSchedule(source, agentId, specialtyGoal, goalReason(specialtyGoal, fatigue, relation, weatherBonus, worldPressure), tick),
       plan: planForGoal(source, agentId, specialtyGoal, tick),
       available,
@@ -422,13 +432,14 @@ function calculatePlan(
         + (1 - averageBelief(source, agentId, 'peer_trust')) * 12
         + (faction.factionId === 'village' ? worldPressure * 8 : 0)
         + coordinationPressure * 100
-        + (brain.stress >= 60 ? 8 : 0),
+        + (brain.stress >= 60 ? 8 : 0)
+        + getVillageConsequenceAgentGoalBonus(source, agentId, 'bond', consequence),
       reason: goalReason('bond', fatigue, relation, 0, worldPressure),
       rationale: worldPressure >= VILLAGE_AGENT_CRISIS_PRESSURE_THRESHOLD
         ? `${factionContext}가 높아 전문 일을 잠시 늦추고 동료와 역할을 조율하려 한다.`
         : relation < -0.2
           ? `동료 관계가 ${relation.toFixed(2)}로 긴장되어 먼저 대화를 회복하려 한다.`
-          : `영웅 신뢰 ${Math.round(trust)}%와 동료 관계를 살피며 유대를 쌓으려 한다.`,
+          : `영웅 신뢰 ${Math.round(trust)}%와 동료 관계를 살피며 유대를 쌓으려 한다.${consequenceContext}`,
       schedule: makeSchedule(source, agentId, 'bond', goalReason('bond', fatigue, relation, 0, worldPressure), tick),
       plan: planForGoal(source, agentId, 'bond', tick),
       available,

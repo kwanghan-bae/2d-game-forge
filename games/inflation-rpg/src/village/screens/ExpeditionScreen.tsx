@@ -1,5 +1,5 @@
 import { FACILITY_DEFINITIONS, getVillageAgentDefinition, getVillageCurrencyName, getVillageFacilityName, getVillagePolicyName, getVillageRealmDefinition, getVillageRealmName, getVillageRealmRouteDurationSeconds, REALM_DEFINITIONS } from '../data';
-import { getAvailableStoryChoice, getExpeditionForecast, getNextRealmId, getVillageHeroPower } from '../domain';
+import { getAvailableStoryChoice, getExpeditionForecast, getNextRealmId, getVillageConsequenceProfile, getVillageHeroPower } from '../domain';
 import { getVillageEquipmentName } from '../equipment';
 import type { InterventionType, RealmId, SupportAgentId, VillageCurrencyKey, VillageSaveEnvelope } from '../types';
 import { useVillageScreenHeadingFocus } from '../useVillageScreenHeadingFocus';
@@ -125,6 +125,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
   const expedition = save.run.expedition;
   const result = save.run.lastExpeditionResult;
   const guide = save.meta.agents.find((agent) => agent.id === 'guide');
+  const consequence = getVillageConsequenceProfile(save);
   const guideAvailability = getGuideAvailability(guide);
   const guideName = guide ? getVillageAgentDefinition(guide.id)?.nameKR ?? '기록되지 않은 에이전트' : '없음';
   const activeRealm = expedition ? getVillageRealmDefinition(expedition.realmId) ?? null : null;
@@ -152,6 +153,7 @@ export function ExpeditionScreen({ save, now, onStart, onConfirm, onConfirmUnloc
         <div className="village-button-row"><button type="button" className="village-btn village-btn--quiet" onClick={onBack}>← 마을로</button></div>
         <h2 ref={titleRef} tabIndex={-1} style={{ marginTop: 12 }}>원정소</h2>
         <p>정책: <span className="village-action">{getVillagePolicyName(expedition?.policy ?? save.run.policy)}</span> · 길잡이: {guideName}</p>
+        <p className="village-muted" data-testid="village-expedition-consequence">마을 반향 · {consequence.summaryKR}</p>
       </section>
 
       {!expedition && result && (
